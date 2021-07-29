@@ -1,13 +1,16 @@
 var roleMain = require('role-main');
 
-var buildingTower = require('building.tower');
+var buildingMain = require('building-main');
 
 module.exports.loop = function () {
-
-    var tower = Game.getObjectById('e4433f6c8bf19d7ccdc2f531');
-    if(tower) {
-        buildingTower.run(tower)
+    for(var name in Memory.creeps) {
+        if(!Game.creeps[name]) {
+            delete Memory.creeps[name];
+            console.log('Clearing non-existing creep memory:', name);
+        }
     }
 
+  
+    buildingMain.run()
     roleMain.run();
 }
