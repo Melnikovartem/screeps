@@ -1,6 +1,4 @@
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
-}
+var roleFunctions = require('role.functions');
 
 var roleUpgrader = {
 
@@ -22,12 +20,7 @@ var roleUpgrader = {
             }
         }
         else {
-            var sources = creep.room.find(FIND_SOURCES);
-            var source = sources[getRandomInt(sources.length)];
-
-            if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(source); //, {visualizePathStyle: {stroke: '#ffffff'}});
-            }
+            roleFunctions.harvestClosesSource(creep);
         }
 	}
 };

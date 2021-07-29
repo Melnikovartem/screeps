@@ -1,3 +1,5 @@
+var buildingMain = require('building-main');
+
 var roleHarvester = {
 
     /** @param {Creep} creep **/
