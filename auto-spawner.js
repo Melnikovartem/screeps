@@ -18,11 +18,13 @@ var target = {
     "upgrader": 1,
 }
 
-emerency_roles = ["harvester"] //["harvester"];
+var target_parts = {
+    "harvester": [WORK,CARRY, MOVE], //200
+    "builder": [WORK,CARRY, MOVE,MOVE], //250
+    "upgrader": [WORK,CARRY, MOVE,MOVE], //250
+}
 
-worker = [WORK,WORK,CARRY,MOVE]; //300
-carrier = [WORK,CARRY,CARRY,MOVE,MOVE]; //300
-weak_worker = [WORK,CARRY,MOVE]; //200
+emerency_roles = ["harvester"] //["harvester"];
 
 var buildingTower = {
 
