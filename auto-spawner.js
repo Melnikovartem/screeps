@@ -1,56 +1,58 @@
+require('constants')
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function spawnCreepInMainRomm(role, parts) {
-  var creep_name = role + '' + getRandomInt(1000);
-  return Game.spawns['Spawn1'].spawnCreep(parts,  creep_name, { memory: { role: role } } );
+function spawnCreepInMainRomm(role, weak = 0) {
+  var parts = target_identity[role][0];
+  var type =  target_identity[role][1];
+  var creep_name = type + '' + getRandomInt(1000);
+
+  if (weak) {
+    creep_name = 'WEAK' + creep_name;
+    parts = WEAK_PARTS;
+  }
+
+
+  return Game.spawns[SPAWN_NAME].spawnCreep(parts,  creep_name, { memory: { role: role, type: type} } );
 }
 
-//Game.spawns['Spawn1'].spawnCreep( [WORK,CARRY,MOVE],     'Builder_1',     { memory: { role: 'builder' } } );
 function count_roles(role) {
   return _.filter(Game.creeps, (creep) => creep.memory.role == role).length;
 }
 
-var target = {
-    "harvester": 5,
-    "upgrader": 4,
-    "builder": 2,
-}
+var target = {};
+target[HARVESTERS_ROLENAME] = HARVESTERS_DESIRED;
+target[BUILDERS_ROLENAME]   = BUILDERS_DESIRED;
+target[UPGRADERS_ROLENAME]  = UPGRADERS_DESIRED;
 
-var target_parts = {
-    "harvester": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
-    "builder": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
-    "upgrader": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
-}
 
-emerency_roles = ["harvester"] //["harvester"];
+var target_identity = {};
+target_identity[HARVESTERS_ROLENAME] = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
+target_identity[BUILDERS_ROLENAME]   = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
+target_identity[UPGRADERS_ROLENAME]  = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
 
-weak_worker = [WORK,CARRY,MOVE]; //200
+emerency_roles = [HARVESTERS_ROLENAME] //["harvester"];
 
 var buildingTower = {
 
     /** @param {Tower} tower **/
     run: function(tower) {
-      var real = {
-        "harvester": count_roles('harvester'),
-        "builder": count_roles('builder'),
-        "upgrader": count_roles('upgrader')
-      };
+      var real = {};
+      real[HARVESTERS_ROLENAME] = count_roles(HARVESTERS_ROLENAME);
+      real[BUILDERS_ROLENAME]   = count_roles(BUILDERS_ROLENAME);
+      real[UPGRADERS_ROLENAME]  = count_roles(UPGRADERS_ROLENAME);
 
 
       for (role in target) {
-        //console.log(role + ": " + real[role]);
+        //console.log(role + ": " + real[role] + "/" + target[role]);
         if (real[role] < target[role]) {
 
-          var parts = target_parts[role];
-          var weak_parts = weak_worker;
-
-          var ans = spawnCreepInMainRomm(role, parts);
-
+          var ans = spawnCreepInMainRomm(role);
           if (ans == ERR_NOT_ENOUGH_ENERGY) {
-            if (emerency_roles.includes(role) && real[role] * 2 < target[role]) {
-              if (spawnCreepInMainRomm(role, weak_parts) == OK) {
+            if (emerency_roles.includes(role) && real[role] == 0) { //real[role] * 2 < target[role]
+              if (spawnCreepInMainRomm(role, 1) == OK) {
                 console.log(role + ' turned out WEAK');
               }
             } else {
@@ -58,6 +60,7 @@ var buildingTower = {
             }
           } else if (ans == OK) {
             console.log('spawned ' + role);
+            break;
           }
         }
       }

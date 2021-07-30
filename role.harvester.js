@@ -15,7 +15,7 @@ var roleHarvester = {
       }
       else {
         var target = null;
-        if (Game.rooms['E21S57'].energyAvailable < 550) {
+        if (Game.rooms[ROOM_NAME].energyAvailable < BUMBLEBEE_COST) {
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                   filter: (structure) => {
                       return (structure.structureType == STRUCTURE_EXTENSION ||

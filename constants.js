@@ -1,0 +1,21 @@
+global.SPAWN_NAME = "Spawn1"
+global.ROOM_NAME =  "E21S57"
+
+global.HARVESTERS_DESIRED = 5
+global.BUILDERS_DESIRED = 2
+global.UPGRADERS_DESIRED = 4
+
+global.HARVESTERS_ROLENAME = "harvester"
+global.BUILDERS_ROLENAME = "builder"
+global.UPGRADERS_ROLENAME = "upgrader"
+
+global.WEAK_PARTS = [WORK,CARRY,MOVE]; //200
+
+global.BUMBLEBEE_PARTS = [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE];
+global.BUMBLEBEE_COST = 550
+global.BUMBLEBEE_TYPENAME = "bumblebee"
+
+global.FIREANT_PARTS = [] //
+global.FIREANT_TYPENAME = "fireAnt"
+
+global.TTL_ALERT = 5
