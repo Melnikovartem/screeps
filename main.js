@@ -1,6 +1,6 @@
 var roleMain = require('role-main');
-
 var buildingMain = require('building-main');
+var autoSpawner = require('auto-spawner');
 
 module.exports.loop = function () {
     for(var name in Memory.creeps) {
@@ -10,7 +10,8 @@ module.exports.loop = function () {
         }
     }
 
-  
-    buildingMain.run()
+
     roleMain.run();
+    buildingMain.run()
+    autoSpawner.run();
 }
