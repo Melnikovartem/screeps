@@ -14,10 +14,18 @@ function harvestClosesSource(creep) {
 var roleFunctions = {
 
   getEnergyFromStorage: function(creep) {
-    var source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
-
-    if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(source); //, {visualizePathStyle: {stroke: '#ffffff'}});
+    var storage = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_CONTAINER) &&
+                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.store.getFreeCapacity();
+            }
+    });;
+    if (storage) {
+      if(creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(storage);
+      }
+    } else {
+      harvestClosesSource(creep)
     }
   },
 

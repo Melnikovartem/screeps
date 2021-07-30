@@ -12,6 +12,10 @@ var roleHarvester = {
         }
 
         else {
+
+          if (Game.spawns['Spawn1'].store.getFreeCapacity() > 0) {
+            var target = Game.spawns['Spawn1'];
+          } else {
             var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -21,13 +25,15 @@ var roleHarvester = {
                                 structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                     }
             });
-            if (target) {
-                if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-              creep.moveTo(Game.spawns['Spawn1']);
-            }
+          }
+          
+          if (target) {
+              if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                  creep.moveTo(target);
+              }
+          } else {
+            creep.moveTo(Game.spawns['Spawn1']);
+          }
         }
 	}
 };
