@@ -2,7 +2,7 @@ global.SPAWN_NAME = "Spawn1"
 global.ROOM_NAME =  "E21S57"
 
 global.HARVESTERS_DESIRED = 5
-global.BUILDERS_DESIRED = 2
+global.BUILDERS_DESIRED = 1
 global.UPGRADERS_DESIRED = 4
 
 global.HARVESTERS_ROLENAME = "harvester"

@@ -6,18 +6,18 @@ var roleBuilder = {
     run: function(creep) {
 	    if(creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.building = false;
-            creep.say('🔄 recharge');
+            creep.say('🔄');
 	    }
 	    if(!creep.memory.building && creep.store.getFreeCapacity() == 0) {
 	        creep.memory.building = true;
-	        creep.say('🚧 build');
+	        creep.say('🚧');
 	    }
 
 	    if(creep.memory.building) {
           // remove with addition of Tower
           var repairTarget = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => (structure.structureType != STRUCTURE_WALL) &&
-                                          structure.hits < structure.hitsMax * 0.6
+                                          structure.hits < structure.hitsMax * 0.5
             });
           if (repairTarget) {
               if(creep.repair(repairTarget) == ERR_NOT_IN_RANGE) {
@@ -33,7 +33,10 @@ var roleBuilder = {
               var repairTargetFull = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
                                               structure.hits < structure.hitsMax * 0.0003)
-                                          || ((structure.structureType != STRUCTURE_WALL) &&
+                                          || ((structure.structureType == STRUCTURE_RAMPART) &&
+                                              structure.hits < structure.hitsMax * 0.7)
+                                          || ((structure.structureType != STRUCTURE_WALL &&
+                                               structure.structureType != STRUCTURE_RAMPART) &&
                                               structure.hits < structure.hitsMax)
                 });
               if (repairTargetFull) {
