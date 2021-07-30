@@ -14,11 +14,21 @@ var roleBuilder = {
 	    }
 
 	    if(creep.memory.building) {
-	        var target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
-          if(target) {
-              if(creep.build(target) == ERR_NOT_IN_RANGE) {
-                  creep.moveTo(target);
+          // remove with addition of Tower
+          var repairTarget = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                filter: (structure) => structure.hits < structure.hitsMax
+            });
+          if (repairTarget) {
+              if(creep.repair(repairTarget) == ERR_NOT_IN_RANGE) {
+                  creep.moveTo(repairTarget);
               }
+          } else {
+            var buildTarget = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+            if(buildTarget) {
+                if(creep.build(buildTarget) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(buildTarget);
+                }
+            }
           }
 	    }
 	    else {

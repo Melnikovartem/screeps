@@ -1,19 +1,15 @@
-var buildingMain = require('building-main');
+var roleFunctions = require('role.functions');
 
 var roleHarvester = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
 	    if(creep.store.getFreeCapacity() > 0) {
-            var sources = creep.room.find(FIND_SOURCES);
-            if(creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(sources[0]);
-            }
+            roleFunctions.harvestClosesSource(creep);
         }
 
         else {
-
-          if (Game.spawns['Spawn1'].store.getFreeCapacity() > 0) {
+          if (Game.spawns['Spawn1'].store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
             var target = Game.spawns['Spawn1'];
           } else {
             var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
@@ -26,7 +22,7 @@ var roleHarvester = {
                     }
             });
           }
-          
+
           if (target) {
               if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                   creep.moveTo(target);

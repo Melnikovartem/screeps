@@ -13,9 +13,9 @@ function count_roles(role) {
 }
 
 var target = {
-    "harvester": 2,
-    "upgrader": 2,
+    "harvester": 4,
     "builder": 3,
+    "upgrader": 1,
 }
 
 emerency_roles = [] //["harvester"];
@@ -40,19 +40,21 @@ var buildingTower = {
         if (real[role] < target[role]) {
 
           var parts = worker;
-          if (["upgrader", "builder", "harvester"].includes(role))
+          if (["upgrader", "builder"].includes(role))
             parts = carrier;
 
           var weak_parts = weak_worker;
 
-          if (spawnCreepInMainRomm(role, parts) == ERR_NOT_ENOUGH_ENERGY) {
+          var ans = spawnCreepInMainRomm(role, parts);
+
+          if (ans == ERR_NOT_ENOUGH_ENERGY) {
             if (emerency_roles.includes(role)) {
               console.log(role + ' turned out WEAK');
               spawnCreepInMainRomm(role, weak_parts);
             } else {
               //console.log(role + " wont be WEAK")
             }
-          } else {
+          } else if (ans == OK) {
             console.log('spawned ' + role);
           }
         }

@@ -20,7 +20,7 @@ var roleUpgrader = {
             }
         }
         else {
-            roleFunctions.harvestClosesSource(creep);
+            roleFunctions.getEnergyFromStorage(creep);
         }
 	}
 };
