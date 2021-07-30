@@ -18,10 +18,11 @@ var target = {
     "builder": 3,
 }
 
-emerency_roles = ["harvester"];
+emerency_roles = [] //["harvester"];
 
-worker = [WORK,WORK,CARRY,CARRY,MOVE];
-weak_worker = [WORK,CARRY,MOVE,MOVE];
+worker = [WORK,WORK,CARRY,MOVE]; //300
+carrier = [WORK,CARRY,CARRY,MOVE,MOVE]; //300
+weak_worker = [WORK,CARRY,MOVE]; //200
 
 var buildingTower = {
 
@@ -37,10 +38,17 @@ var buildingTower = {
       for (role in target) {
         //console.log(role + ": " + real[role]);
         if (real[role] < target[role]) {
-          if (spawnCreepInMainRomm(role, worker) == ERR_NOT_ENOUGH_ENERGY) {
+
+          var parts = worker;
+          if (["upgrader", "builder", "harvester"].includes(role))
+            parts = carrier;
+
+          var weak_parts = weak_worker;
+
+          if (spawnCreepInMainRomm(role, parts) == ERR_NOT_ENOUGH_ENERGY) {
             if (emerency_roles.includes(role)) {
               console.log(role + ' turned out WEAK');
-              spawnCreepInMainRomm(role, weak_worker);
+              spawnCreepInMainRomm(role, weak_parts);
             } else {
               //console.log(role + " wont be WEAK")
             }
