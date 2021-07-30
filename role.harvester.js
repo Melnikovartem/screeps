@@ -9,16 +9,18 @@ var roleHarvester = {
         }
 
         else {
-          if (Game.rooms['E21S57'].energyAvailable < 300) {
-            var target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          var target = null;
+          if (Game.rooms['E21S57'].energyAvailable < 550) {
+            target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_EXTENSION ||
                                 structure.structureType == STRUCTURE_SPAWN) &&
                                 structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                     }
             });
-          } else {
-            var target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          }
+          if (!target) {
+            target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_EXTENSION ||
                                 structure.structureType == STRUCTURE_SPAWN ||

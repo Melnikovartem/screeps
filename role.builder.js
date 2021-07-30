@@ -6,7 +6,7 @@ var roleBuilder = {
     run: function(creep) {
 	    if(creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.building = false;
-            creep.say('🔄 harvest');
+            creep.say('🔄 recharge');
 	    }
 	    if(!creep.memory.building && creep.store.getFreeCapacity() == 0) {
 	        creep.memory.building = true;
@@ -16,7 +16,8 @@ var roleBuilder = {
 	    if(creep.memory.building) {
           // remove with addition of Tower
           var repairTarget = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: (structure) => structure.hits < structure.hitsMax
+                filter: (structure) => (structure.structureType != STRUCTURE_WALL) &&
+                                          structure.hits < structure.hitsMax * 0.6
             });
           if (repairTarget) {
               if(creep.repair(repairTarget) == ERR_NOT_IN_RANGE) {
@@ -28,6 +29,18 @@ var roleBuilder = {
                 if(creep.build(buildTarget) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(buildTarget);
                 }
+            } else {
+              var repairTargetFull = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                    filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
+                                              structure.hits < structure.hitsMax * 0.0003)
+                                          || ((structure.structureType != STRUCTURE_WALL) &&
+                                              structure.hits < structure.hitsMax)
+                });
+              if (repairTargetFull) {
+                  if(creep.repair(repairTargetFull) == ERR_NOT_IN_RANGE) {
+                      creep.moveTo(repairTargetFull);
+                  }
+              }
             }
           }
 	    }

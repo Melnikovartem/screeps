@@ -14,14 +14,14 @@ function count_roles(role) {
 
 var target = {
     "harvester": 5,
+    "upgrader": 4,
     "builder": 2,
-    "upgrader": 1,
 }
 
 var target_parts = {
-    "harvester": [WORK,CARRY, MOVE], //200
-    "builder": [WORK,CARRY, MOVE,MOVE], //250
-    "upgrader": [WORK,CARRY, MOVE,MOVE], //250
+    "harvester": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
+    "builder": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
+    "upgrader": [WORK,WORK,CARRY,CARRY,CARRY,CARRY, MOVE,MOVE,MOVE], //550
 }
 
 emerency_roles = ["harvester"] //["harvester"];
@@ -49,7 +49,7 @@ var buildingTower = {
           var ans = spawnCreepInMainRomm(role, parts);
 
           if (ans == ERR_NOT_ENOUGH_ENERGY) {
-            if (emerency_roles.includes(role)) {
+            if (emerency_roles.includes(role) && real[role] * 2 < target[role]) {
               if (spawnCreepInMainRomm(role, weak_parts) == OK) {
                 console.log(role + ' turned out WEAK');
               }
