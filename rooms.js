@@ -20,7 +20,7 @@ var roomSpawning = require('room.spawning');
 
 function roomLoop() {
     _.forEach(Game.rooms, function(room) {
-
+      
       roomDefense(room);
       roomSpawning(room);
 
