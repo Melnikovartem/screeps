@@ -1,5 +1,3 @@
-var roleFunctions = require('role.functions');
-
 var roleBuilder = {
 
     /** @param {Creep} creep **/

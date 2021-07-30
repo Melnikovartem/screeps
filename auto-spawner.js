@@ -33,7 +33,7 @@ target_identity[HARVESTERS_ROLENAME] = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
 target_identity[BUILDERS_ROLENAME]   = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
 target_identity[UPGRADERS_ROLENAME]  = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
 
-emerency_roles = [HARVESTERS_ROLENAME] //["harvester"];
+var emergency_roles = [HARVESTERS_ROLENAME] //["harvester"];
 
 var buildingTower = {
 
@@ -51,7 +51,7 @@ var buildingTower = {
 
           var ans = spawnCreepInMainRomm(role);
           if (ans == ERR_NOT_ENOUGH_ENERGY) {
-            if (emerency_roles.includes(role) && real[role] == 0) { //real[role] * 2 < target[role]
+            if (emergency_roles.includes(role) && real[role] == 0) { //real[role] * 2 < target[role]
               if (spawnCreepInMainRomm(role, 1) == OK) {
                 console.log(role + ' turned out WEAK');
               }

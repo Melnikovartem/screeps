@@ -1,6 +1,12 @@
-var roleMain = require('role-main');
+
 var buildingMain = require('building-main');
 var autoSpawner = require('auto-spawner');
+
+var roomLoop = require('rooms');
+var roleLoop = require('roles');
+
+var creepFuncitons = require('role.functions');
+
 
 module.exports.loop = function () {
     for(var name in Memory.creeps) {
@@ -10,8 +16,6 @@ module.exports.loop = function () {
         }
     }
 
-
-    roleMain.run();
-    buildingMain.run()
-    autoSpawner.run();
+    roleLoop();
+    roomLoop();
 }

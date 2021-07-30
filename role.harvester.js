@@ -1,5 +1,3 @@
-var roleFunctions = require('role.functions');
-
 var roleHarvester = {
 
     /** @param {Creep} creep **/
@@ -8,14 +6,14 @@ var roleHarvester = {
         creep.memory.fflush = false;
       }
 	    if(creep.store.getFreeCapacity() > 0 && !creep.memory.fflush) {
-            roleFunctions.harvestClosesSource(creep);
+            creep.harvestSource();
         }
       else if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
         creep.memory.fflush = true;
       }
       else {
         var target = null;
-        if (Game.rooms[ROOM_NAME].energyAvailable < BUMBLEBEE_COST) {
+        if (Game.rooms[creep.room.name].energyAvailable < BUMBLEBEE_COST) {
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                   filter: (structure) => {
                       return (structure.structureType == STRUCTURE_EXTENSION ||
