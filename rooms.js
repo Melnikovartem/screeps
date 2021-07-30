@@ -15,10 +15,15 @@ function findSources(room) {
   }
 }
 
+var roomDefense = require('room.defense');
+var roomSpawning = require('room.spawning');
+
 function roomLoop() {
     _.forEach(Game.rooms, function(room) {
 
-      
+      roomDefense();
+      roomSpawning();
+
       if (Game.time % 500 == 0) {
         findSources(room);
       }

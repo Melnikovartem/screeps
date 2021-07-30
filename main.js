@@ -1,7 +1,3 @@
-
-var buildingMain = require('building-main');
-var autoSpawner = require('auto-spawner');
-
 var roomLoop = require('rooms');
 var roleLoop = require('roles');
 

@@ -17,25 +17,3 @@ Creep.prototype.getEnergyFromStorage = function () {
       this.moveTo(storage);
   }
 }
-
-/* var roleFunctions = {
-  getEnergyFromStorage: function(creep) {
-    var storage = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_CONTAINER) &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.store.getFreeCapacity();
-            }
-    });;
-    if (storage) {
-      if(creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(storage);
-      }
-    } else {
-      harvestClosesSource(creep)
-    }
-  },
-
-  harvestClosesSource,
-
-  findClosestByRange,
-}; */
