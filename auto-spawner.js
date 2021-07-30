@@ -26,6 +26,8 @@ var target_parts = {
 
 emerency_roles = ["harvester"] //["harvester"];
 
+weak_worker = [WORK,CARRY,MOVE]; //200
+
 var buildingTower = {
 
     /** @param {Tower} tower **/
@@ -41,10 +43,7 @@ var buildingTower = {
         //console.log(role + ": " + real[role]);
         if (real[role] < target[role]) {
 
-          var parts = worker;
-          if (["upgrader", "builder"].includes(role))
-            parts = carrier;
-
+          var parts = target_parts[role];
           var weak_parts = weak_worker;
 
           var ans = spawnCreepInMainRomm(role, parts);
