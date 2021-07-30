@@ -13,9 +13,9 @@ function count_roles(role) {
 }
 
 var target = {
-    "harvester": 4,
+    "harvester": 5,
     "builder": 3,
-    "upgrader": 1,
+    "upgrader": 2,
 }
 
 emerency_roles = [] //["harvester"];

@@ -15,7 +15,7 @@ var roleBuilder = {
 
 	    if(creep.memory.building) {
           // remove with addition of Tower
-          var repairTarget = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+          var repairTarget = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => structure.hits < structure.hitsMax
             });
           if (repairTarget) {
@@ -23,7 +23,7 @@ var roleBuilder = {
                   creep.moveTo(repairTarget);
               }
           } else {
-            var buildTarget = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+            var buildTarget = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
             if(buildTarget) {
                 if(creep.build(buildTarget) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(buildTarget);
