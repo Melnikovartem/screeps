@@ -9,13 +9,13 @@ function roleLoop() {
         var creep = Game.creeps[name];
 
         if(creep.memory.role == HARVESTERS_ROLENAME) {
-            roleHarvester.run(creep);
+            roleHarvester(creep);
         }
         if(creep.memory.role == UPGRADERS_ROLENAME) {
-            roleUpgrader.run(creep);
+            roleUpgrader(creep);
         }
         if(creep.memory.role == BUILDERS_ROLENAME) {
-            roleBuilder.run(creep);
+            roleBuilder(creep);
         }
     }
 }

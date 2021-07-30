@@ -6,11 +6,11 @@ Creep.prototype.harvestSource = function() {
   }
 }
 
-Creep.prototype.getEnergyFromStorage = function () {
+Creep.prototype.getEnergyFromStorage = function() {
   var storage = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.store.getFreeCapacity();
+                      structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity();
           }
   });;
   if(this.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

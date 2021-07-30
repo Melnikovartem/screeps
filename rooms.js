@@ -21,8 +21,8 @@ var roomSpawning = require('room.spawning');
 function roomLoop() {
     _.forEach(Game.rooms, function(room) {
 
-      roomDefense();
-      roomSpawning();
+      roomDefense(room);
+      roomSpawning(room);
 
       if (Game.time % 500 == 0) {
         findSources(room);

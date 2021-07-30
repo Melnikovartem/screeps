@@ -36,7 +36,7 @@ function count_roles(role) {
 }
 
 
-function roomSpawning() {
+function roomSpawning(room) {
     var real = {};
     real[HARVESTERS_ROLENAME] = count_roles(HARVESTERS_ROLENAME);
     real[BUILDERS_ROLENAME]   = count_roles(BUILDERS_ROLENAME);
@@ -44,7 +44,8 @@ function roomSpawning() {
 
 
     for (var role in target) {
-      //console.log(role + ": " + real[role] + "/" + target[role]);
+      if (Game.time % 100 == 0)
+        console.log(role + ": " + real[role] + "/" + target[role]);
       if (real[role] < target[role]) {
         if (spawnCreepInMainRom(role) == OK) {
           console.log('spawned ' + role);
