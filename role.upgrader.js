@@ -5,17 +5,18 @@ function roleUpgrader(creep) {
   }
 
   if(!creep.memory.upgrading) {
-    creep.getEnergyFromStorage(creep);
+    if(creep.getEnergyFromStorage(creep)) {
+        creep.memory.upgrading = true;
+        creep.say('⚡');
+    }
   }
 
-
-  if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
-      creep.memory.upgrading = true;
-      creep.say('⚡');
-  }
-
-  if(creep.memory.upgrading && creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(creep.room.controller); //, {visualizePathStyle: {stroke: '#ffffff'}});
+  if(creep.memory.upgrading) {
+    if (!creep.pos.isNearTo(creep.room.controller)) {
+      creep.moveTo(creep.room.controller);
+    } else {
+      creep.upgradeController(creep.room.controller)
+    }
   }
 }
 

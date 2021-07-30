@@ -12,8 +12,11 @@ Creep.prototype.getEnergyFromStorage = function() {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
                       structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity();
           }
-  });;
-  if(this.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+  });
+  let ans = this.withdraw(storage, RESOURCE_ENERGY);
+  if(ans == ERR_NOT_IN_RANGE) {
       this.moveTo(storage);
+  } else if (ans == OK) {
+    return true;
   }
 }
