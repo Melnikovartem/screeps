@@ -15,7 +15,7 @@ function spawnCreepInMainRomm(role, weak = 0) {
   }
 
 
-  return Game.spawns[SPAWN_NAME].spawnCreep(parts,  creep_name, { memory: { role: role, type: type} } );
+  return Game.spawns[SPAWN_NAME].spawnCreep(parts,  creep_name, { memory: { role: role, type: type, switched: Game.time } } );
 }
 
 function count_roles(role) {
