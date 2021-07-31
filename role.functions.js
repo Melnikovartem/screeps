@@ -37,12 +37,10 @@ Creep.prototype.getEnergyFromContainer = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getFreeCapacity() < structure.store.getCapacity() * 0.05  &&
+                      structure.store.getFreeCapacity() < structure.store.getCapacity() * 0.1  &&
                       minerContainerIds.includes(structure.id);
           }
   });
-
-  console.log(target);
 
   if (!target) {
     target = this.pos.findClosestByPath(FIND_STRUCTURES, {

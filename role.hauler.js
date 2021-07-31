@@ -16,12 +16,20 @@ let roleUpgrader  = {
     let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
-                            structure.structureType == STRUCTURE_SPAWN ||
-                            structure.structureType == STRUCTURE_TOWER ||
-                            storageContainerIds.includes(structure.id)) &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+                            structure.structureType == STRUCTURE_SPAWN)  &&
+                            structure.store.getFreeCapacity() > 0;
                 }
       });
+
+      if(!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                    filter: (structure) => {
+                        return (structure.structureType == STRUCTURE_TOWER ||
+                                storageContainerIds.includes(structure.id)) &&
+                                structure.store.getFreeCapacity() > structure.store.getCapacity() * 0.1;
+                    }
+          });
+      }
 
       if (creep.room.energyAvailable < creep.room.energyCapacityAvailable) {
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
