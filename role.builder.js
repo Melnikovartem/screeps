@@ -6,7 +6,7 @@ let roleBuilder = {
     }
 
     if(!creep.memory.building) {
-      if(creep.getEnergyFromStorage(creep)) {
+      if(creep.getEnergyFromStorage() == OK) {
           creep.memory.building = true;
           creep.say('🚧');
       }
@@ -39,7 +39,10 @@ let roleBuilder = {
           }
         }
     }
-  }
+  },
+
+  bodyParts: [WORK,WORK,CARRY,CARRY,MOVE,MOVE],
+  coolName: "Colletidae ",
 }
 
 module.exports = roleBuilder;

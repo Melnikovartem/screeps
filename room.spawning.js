@@ -4,30 +4,26 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function spawnCreepInMainRom(spawn, role, room, weak = 0) {
+function spawnCreepInMainRom(spawn, roleName, room) {
 
   if (!spawn)
     return
 
-  var parts = target_identity[role][0];
-  var type =  target_identity[role][1];
-  var creep_name = type + '' + getRandomInt(10000);
+  var creep_name = ROLES[roleName].coolName + '' + getRandomInt(10000);
 
-  if (weak) {
-    creep_name = 'WEAK' + creep_name;
-    parts = WEAK_PARTS;
-  }
-
-  return spawn.spawnCreep(parts,  creep_name, { memory: { role: role, type: type, switched: Game.time, homeroom: room.name } } );
+  return spawn.spawnCreep(ROLES[roleName].bodyParts,  ROLES[roleName].coolName, {
+    memory: { role: roleName, born: Game.time, homeroom: room.name }
+  });
 }
 
 function get_target(room) {
   let target = _.get(room.memory, ["roles"]);
   if (!target) {
     room.memory.roles = {
-      harvester: HARVESTERS_DESIRED,
-      builder: BUILDERS_DESIRED,
-      upgrader: BUILDERS_DESIRED,
+      harvester: 2,
+      hauler: 1,
+      builder: 1,
+      upgrader: 2,
     }
     target = _.get(room.memory, ["roles"]);
   }

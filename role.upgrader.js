@@ -6,7 +6,7 @@ let roleUpgrader  = {
     }
 
     if(!creep.memory.upgrading) {
-      if(creep.getEnergyFromStorage(creep)) {
+      if(creep.getEnergyFromStorage() == OK) {
           creep.memory.upgrading = true;
           creep.say('⚡');
       }
@@ -19,7 +19,10 @@ let roleUpgrader  = {
         creep.upgradeController(creep.room.controller)
       }
     }
-  }
+  },
+
+  bodyParts: [WORK,WORK,CARRY,CARRY,MOVE,MOVE],
+  coolName: "Honey bee ",
 }
 
 module.exports = roleUpgrader;
