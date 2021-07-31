@@ -9,9 +9,9 @@ function spawnCreepInMainRom(spawn, roleName, room) {
   if (!spawn)
     return
 
-  var creep_name = ROLES[roleName].coolName + '' + getRandomInt(10000);
+  let creep_name = ROLES[roleName].coolName + '' + getRandomInt(10000);
 
-  return spawn.spawnCreep(ROLES[roleName].bodyParts,  ROLES[roleName].coolName, {
+  return spawn.spawnCreep(ROLES[roleName].bodyParts,  creep_name, {
     memory: { role: roleName, born: Game.time, homeroom: room.name }
   });
 }
@@ -29,11 +29,6 @@ function get_target(room) {
   }
   return target;
 }
-
-var target_identity = {};
-target_identity[HARVESTERS_ROLENAME] = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
-target_identity[BUILDERS_ROLENAME]   = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
-target_identity[UPGRADERS_ROLENAME]  = [BUMBLEBEE_PARTS, BUMBLEBEE_TYPENAME];
 
 function get_real(room) {
   let real = {};
@@ -65,7 +60,8 @@ function roomSpawning(room) {
         console.log(roleName + ": " + real[roleName] + "/" + target[roleName]);
       }
       if (real[roleName] < target[roleName]) {
-        if (spawnCreepInMainRom(spawns[i], roleName, room) == OK) {
+        let ans = spawnCreepInMainRom(spawns[i], roleName, room);
+        if (ans == OK) {
           console.log('spawned ' + roleName);
           i += 1;
         }

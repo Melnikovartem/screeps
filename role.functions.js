@@ -7,7 +7,7 @@ Creep.prototype.harvestSource = function() {
 }
 
 Creep.prototype.getEnergyFromStorage = function() {
-  var target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+  let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
                       structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
@@ -15,7 +15,7 @@ Creep.prototype.getEnergyFromStorage = function() {
           }
   });
   if (!target) {
-    var target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+    target = this.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: (structure) => {
                 return (structure.structureType == STRUCTURE_CONTAINER) &&
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity()
@@ -34,13 +34,14 @@ Creep.prototype.getEnergyFromStorage = function() {
 }
 
 Creep.prototype.getEnergyFromContainer = function() {
-  var target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+  let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
                       structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
-                      minerContainerIds.includes(structure.id);;
+                      minerContainerIds.includes(structure.id);
           }
   });
+
   if (!target) {
     return ERR_NOT_FOUND;
   }
