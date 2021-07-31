@@ -12,7 +12,7 @@ let roleHarvester = {
       (structure) => (minerContainerIds.includes(structure.id)) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     )[0];
 
-    if (creep.room.energyCapacityAvailable > creep.room.energyAvailable * 0.5) {
+    if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable ) {
         if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
           creep.memory.fflush = true;
         }
@@ -26,7 +26,7 @@ let roleHarvester = {
       }
 
     if (target) {
-      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 50) {
+      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 25) {
           creep.transfer(target, RESOURCE_ENERGY);
       } else if (creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
