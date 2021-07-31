@@ -37,13 +37,25 @@ Creep.prototype.getEnergyFromContainer = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
+                      structure.store.getFreeCapacity() < structure.store.getCapacity() * 0.05  &&
                       minerContainerIds.includes(structure.id);
           }
   });
 
+  console.log(target);
+
   if (!target) {
-    return ERR_NOT_FOUND;
+    target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_CONTAINER) &&
+                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
+                        minerContainerIds.includes(structure.id);
+            }
+    });
+
+    if (!target) {
+      return ERR_NOT_FOUND;
+    }
   }
 
   if(!this.pos.isNearTo(target)) {

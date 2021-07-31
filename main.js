@@ -18,6 +18,7 @@ global.minerContainerIds = [
 global.storageContainerIds = [
   "61042dbc3bd544104d05ab19",
   "61042329061eb6bf68d1cede",
+  "6104f8759f18546eddf20ab9",
 ];
 
 module.exports.loop = function () {

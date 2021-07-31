@@ -22,13 +22,13 @@ let roleBuilder = {
           }
         } else {
           var repairTargetFull = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
-                                          structure.hits < structure.hitsMax * 0.0003)
-                                      || ((structure.structureType == STRUCTURE_RAMPART) &&
-                                          structure.hits < structure.hitsMax * 0.2)
-                                      || ((structure.structureType != STRUCTURE_WALL &&
-                                           structure.structureType != STRUCTURE_RAMPART) &&
-                                          structure.hits < structure.hitsMax)
+              filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
+                                        structure.hits < 150000)
+                                    || ((structure.structureType == STRUCTURE_RAMPART) &&
+                                        structure.hits < 150000)
+                                    || ((structure.structureType != STRUCTURE_WALL &&
+                                         structure.structureType != STRUCTURE_RAMPART) &&
+                                        structure.hits < structure.hitsMax)
             });
           if (repairTargetFull) {
             if(creep.pos.getRangeTo(repairTargetFull) > 3) {
@@ -41,7 +41,7 @@ let roleBuilder = {
     }
   },
 
-  bodyParts: [WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE],
+  bodyParts: [WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE],
   coolName: "Colletidae ",
 }
 

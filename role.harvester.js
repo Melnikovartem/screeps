@@ -6,9 +6,6 @@ let roleHarvester = {
     if(creep.store.getFreeCapacity() > 0 && !creep.memory.fflush) {
           creep.harvestSource();
       }
-    else if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
-      creep.memory.fflush = true;
-    }
 
     let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: (structure) => {
@@ -22,6 +19,9 @@ let roleHarvester = {
 
     if (creep.room.energyAvailable < 700 &&
       _.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.memory.homeroom).length == 0) {
+        if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
+          creep.memory.fflush = true;
+        }
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -30,6 +30,7 @@ let roleHarvester = {
                 }
         });
       }
+
     if (creep.pos.isNearTo(target) || creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
@@ -43,7 +44,7 @@ let roleHarvester = {
     }
   },
 
-  bodyParts: [WORK,WORK,WORK,WORK,CARRY,CARRY,MOVE,MOVE,MOVE],
+  bodyParts: [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE],
   coolName: "Andrena ",
 }
 

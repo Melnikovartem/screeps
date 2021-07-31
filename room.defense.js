@@ -9,10 +9,16 @@ function roomDefense(room) {
             }
 
             var closestDamagedStructure = structure.pos.findClosestByRange(FIND_STRUCTURES, {
-                filter: (structureIter) => ((structureIter.structureType != STRUCTURE_WALL &&
-                                            structureIter.structureType != STRUCTURE_RAMPART) &&
-                                            structureIter.hits < structure.hitsMax)
+              filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
+                                        structure.hits < 10000)
+                                    || ((structure.structureType == STRUCTURE_RAMPART) &&
+                                        structure.hits < 10000)
+                                    || ((structure.structureType != STRUCTURE_WALL &&
+                                         structure.structureType != STRUCTURE_RAMPART) &&
+                                        structure.hits < structure.hitsMax)
             });
+
+
             if(closestDamagedStructure) {
                 structure.repair(closestDamagedStructure);
             }
