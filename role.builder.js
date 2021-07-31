@@ -16,7 +16,7 @@ let roleBuilder = {
         var buildTarget = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
         if(buildTarget) {
           if(creep.pos.getRangeTo(buildTarget) > 3) {
-            creep.moveTo(buildTarget);
+            creep.moveTo(buildTarget, {reusePath: RESUSE_PATH});
           } else {
             creep.build(buildTarget);
           }
@@ -32,7 +32,7 @@ let roleBuilder = {
             });
           if (repairTargetFull) {
             if(creep.pos.getRangeTo(repairTargetFull) > 3) {
-              creep.moveTo(repairTargetFull);
+              creep.moveTo(repairTargetFull, {reusePath: RESUSE_PATH});
             } else {
               creep.repair(repairTargetFull);
             }

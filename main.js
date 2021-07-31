@@ -12,6 +12,7 @@ global.ROLES = {
 };
 
 global.OUTPUT_TICK = 200;
+global.RESUSE_PATH = 3;
 
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",

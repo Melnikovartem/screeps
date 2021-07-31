@@ -26,11 +26,11 @@ let roleHarvester = {
       }
 
     if (target) {
-      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 25) {
+      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 50) {
           creep.transfer(target, RESOURCE_ENERGY);
       } else if (creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            creep.moveTo(target, {reusePath: RESUSE_PATH});
         }
       }
     } else {

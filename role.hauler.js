@@ -43,7 +43,7 @@ let roleUpgrader  = {
 
       if (creep.memory.hauling) {
         if(!creep.pos.isNearTo(target)) {
-          creep.moveTo(target);
+          creep.moveTo(target, {reusePath: RESUSE_PATH});
         }
         creep.transfer(target, RESOURCE_ENERGY);
       }
