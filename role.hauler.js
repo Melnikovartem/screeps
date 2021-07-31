@@ -30,6 +30,14 @@ let roleUpgrader  = {
           });
       }
 
+      if(!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                    filter: (structure) => {
+                        return (structure.structureType == STRUCTURE_TOWER || storageContainerIds.includes(structure.id))
+                    }
+          });
+      }
+
       if (creep.memory.hauling) {
         if(!creep.pos.isNearTo(target)) {
           creep.moveTo(target, {reusePath: RESUSE_PATH});
