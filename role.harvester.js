@@ -7,18 +7,12 @@ let roleHarvester = {
           creep.harvestSource();
       }
 
-    let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_EXTENSION ||
-                        structure.structureType == STRUCTURE_SPAWN ||
-                        structure.structureType == STRUCTURE_CONTAINER ||
-                        minerContainerIds.includes(structure.id)) &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-            }
-    });
+    let structuresNear = creep.pos.findInRange(FIND_STRUCTURES, 1);
+    let target = structuresNear.filter(
+      (structure) => (minerContainerIds.includes(structure.id)) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    )[0];
 
-    if (creep.room.energyCapacityAvailable > creep.room.energyAvailable &&
-      _.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.memory.homeroom).length == 0) {
+    if (creep.room.energyCapacityAvailable > creep.room.energyAvailable * 0.5) {
         if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
           creep.memory.fflush = true;
         }
@@ -31,13 +25,15 @@ let roleHarvester = {
         });
       }
 
-    if (creep.pos.isNearTo(target) || creep.memory.fflush) {
+    if (target) {
+      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 50) {
+          creep.transfer(target, RESOURCE_ENERGY);
+      } else if (creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-    }
-
-    if (!target) {
+      }
+    } else {
       if (creep.store.getFreeCapacity() > 0) {
         creep.memory.fflush = false;
       }
@@ -75,10 +71,6 @@ let roleHarvester = {
     _.forEach(segment, function(s) {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
     });
-
-    spawnSettings.bodyParts.sort((a, b) => PARTS_IMPORTANCE.indexOf(a) - PARTS_IMPORTANCE.indexOf(b));
-
-    console.log(JSON.stringify(spawnSettings.bodyParts));
 
     spawnSettings.memory  =  { role: roleName, born: Game.time, homeroom: room.name, fflush: false };
 

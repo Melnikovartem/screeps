@@ -67,8 +67,8 @@ let roleBuilder = {
 
     let maxSegment = Math.floor( roomEnergy / segmentCost);
 
-    _.forEach(segment, function() {
-      _.times(maxSegment, s => spawnSettings.bodyParts.push(s))
+    _.forEach(segment, function(s) {
+      _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
     });
 
     spawnSettings.memory  =  { role: roleName, born: Game.time, homeroom: room.name, building: false };

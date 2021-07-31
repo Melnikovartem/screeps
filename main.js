@@ -13,14 +13,12 @@ global.ROLES = {
 
 global.OUTPUT_TICK = 200;
 
-global.PARTS_IMPORTANCE = [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, MOVE];
-
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
 ];
 global.storageContainerIds = [
-  "61042dbc3bd544104d05ab19",
+  "61058ede26c3c4bf6b825be4",
   "61057ec20ac3811209f01e9e",
   "6104f8759f18546eddf20ab9",
 ];
@@ -31,6 +29,7 @@ module.exports.loop = function () {
       Game.cpu.generatePixel();
     }
 
+    let prevCPU = Game.cpu.getUsed();
     for(let name in Memory.creeps) {
         let creep = Game.creeps[name];
 
@@ -38,9 +37,11 @@ module.exports.loop = function () {
             delete Memory.creeps[name];
             console.log('Clearing non-existing creep memory:', name);
         } else {
+          // prevCPU = Game.cpu.getUsed();
           ROLES[creep.memory.role].run(creep);
+          // if (Game.time % 2 == 0 && creep.memory.role == "harvester") { console.log("On " + name + ": " + (Game.cpu.getUsed() - prevCPU)); }
         }
     }
-
+    // if (Game.time % 2 == 0) { console.log("----") }
     roomLoop();
 }
