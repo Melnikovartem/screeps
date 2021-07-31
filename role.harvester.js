@@ -17,7 +17,7 @@ let roleHarvester = {
             }
     });
 
-    if (creep.room.energyAvailable < 700 &&
+    if (creep.room.energyCapacityAvailable > creep.room.energyAvailable &&
       _.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.memory.homeroom).length == 0) {
         if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
           creep.memory.fflush = true;
@@ -43,9 +43,21 @@ let roleHarvester = {
       }
     }
   },
-
-  bodyParts: [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE],
   coolName: "Andrena ",
+  spawn: function(room) {
+    let target = _.get(room.memory, ["roles", "harvester", 2]);
+    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester" && creep.memory.homeroom == room.name).length
+
+    if (real >= target) {
+      return
+    }
+
+    let spawnSettings = {}
+    spawnSettings.bodyParts = [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE];
+    spawnSettings.memory    =  { role: "harvester", born: Game.time, homeroom: room.name, fflush: false };
+
+    return spawnSettings;
+  },
 }
 
 

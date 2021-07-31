@@ -1,9 +1,21 @@
+Creep.prototype.findSource = function() {
+  var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+
+  if(this.harvest(source) == ERR_NOT_IN_RANGE) {
+      this.moveTo(source);
+  }
+}
+
 Creep.prototype.harvestSource = function() {
   var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
 
   if(this.harvest(source) == ERR_NOT_IN_RANGE) {
       this.moveTo(source);
   }
+}
+
+Creep.prototype.moveToRoom = function(roomName) {
+  this.moveTo(new RoomPosition(25, 25, roomName));
 }
 
 Creep.prototype.getEnergyFromStorage = function() {

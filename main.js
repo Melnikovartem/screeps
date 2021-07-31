@@ -14,11 +14,15 @@ global.ROLES = {
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
+
+  "bbfec28deb585d7d5a2c03cd",
 ];
 global.storageContainerIds = [
   "61042dbc3bd544104d05ab19",
   "61042329061eb6bf68d1cede",
   "6104f8759f18546eddf20ab9",
+
+  "245f0fa5166173826f5a6910",
 ];
 
 module.exports.loop = function () {

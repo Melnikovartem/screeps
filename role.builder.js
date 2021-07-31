@@ -40,9 +40,41 @@ let roleBuilder = {
         }
     }
   },
-
-  bodyParts: [WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE],
   coolName: "Colletidae ",
+  spawn: function(room) {
+    let roleName = "builder";
+    let target = _.get(room.memory, ["roles", roleName], 2);
+    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
+
+    if (Game.time % 200 == 0) {
+      console.log(roleName + ": " + real + "/" + target);
+    }
+
+    if (room.find(FIND_CONSTRUCTION_SITES).length == 0 || real >= target) {
+      return
+    }
+
+    let spawnSettings = { bodyParts: [], memory: {} }
+    let roomEnergy = 300;
+    if (real < target/2 || target == 1) {
+      roomEnergy = room.energyAvailable;
+    } else {
+      roomEnergy = room.energyCapacityAvailable;
+    }
+
+    let segment = [WORK,CARRY,MOVE];
+    let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
+
+    let maxSegment = Math.floor( roomEnergy / segmentCost);
+
+    _.forEach(segment, function() {
+      _.times(maxSegment, s => spawnSettings.bodyParts.push(s))
+    });
+
+    spawnSettings.memory  =  { role: roleName, born: Game.time, homeroom: room.name, building: false };
+
+    return spawnSettings;
+  },
 }
 
 module.exports = roleBuilder;

@@ -49,8 +49,21 @@ let roleUpgrader  = {
       }
   },
 
-  bodyParts: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
   coolName: "Bumblebee ",
+  spawn: function(room) {
+    let target = _.get(room.memory, ["roles", "hauler", 2]);
+    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == "hauler" && creep.memory.homeroom == room.name).length
+
+    if (real >= target) {
+      return
+    }
+
+    let spawnSettings = {}
+    spawnSettings.bodyParts = [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+    spawnSettings.memory    =  { role: "hauler", born: Game.time, homeroom: room.name, hauling: false };
+
+    return spawnSettings;
+  },
 }
 
 module.exports = roleUpgrader;
