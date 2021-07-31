@@ -22,20 +22,12 @@ Creep.prototype.getEnergyFromStorage = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
-                      storageContainerIds.includes(structure.id);
+                      structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
           }
   });
+
   if (!target) {
-    target = this.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_CONTAINER) &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity()
-            }
-    });
-    if (!target) {
-      return ERR_NOT_FOUND;
-    }
+    return ERR_NOT_FOUND;
   }
 
   if(!this.pos.isNearTo(target)) {
@@ -49,7 +41,8 @@ Creep.prototype.getEnergyFromContainer = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
               return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getFreeCapacity() < structure.store.getCapacity() * 0.1  &&
+                      // almost full
+                      structure.store.getCapacity() * 0.1 > structure.store.getFreeCapacity()  &&
                       minerContainerIds.includes(structure.id);
           }
   });
@@ -58,6 +51,7 @@ Creep.prototype.getEnergyFromContainer = function() {
     target = this.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: (structure) => {
                 return (structure.structureType == STRUCTURE_CONTAINER) &&
+                        // any other container that is full enough
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
                         minerContainerIds.includes(structure.id);
             }

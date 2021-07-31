@@ -16,11 +16,8 @@ global.RESUSE_PATH = 3;
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
-];
-global.storageContainerIds = [
-  "61058ede26c3c4bf6b825be4",
-  "61057ec20ac3811209f01e9e",
-  "6104f8759f18546eddf20ab9",
+
+  "becc33c111d416296b91ea40",
 ];
 
 module.exports.loop = function () {

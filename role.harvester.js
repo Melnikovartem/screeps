@@ -1,6 +1,6 @@
 let roleHarvester = {
   run: function(creep) {
-    if (creep.store[RESOURCE_ENERGY] == 0) {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
       creep.memory.fflush = false;
     }
     if(creep.store.getFreeCapacity() > 0 && !creep.memory.fflush) {
@@ -12,11 +12,13 @@ let roleHarvester = {
       (structure) => (minerContainerIds.includes(structure.id)) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     )[0];
 
-    if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable ) {
+
+    if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
+      if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
         if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush){
           creep.memory.fflush = true;
         }
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
                             structure.structureType == STRUCTURE_SPAWN) &&
@@ -24,9 +26,10 @@ let roleHarvester = {
                 }
         });
       }
+    }
 
     if (target) {
-      if (creep.pos.isNearTo(target) && creep.store[RESOURCE_ENERGY] >= 50) {
+      if (creep.pos.isNearTo(target) && creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
           creep.transfer(target, RESOURCE_ENERGY);
       } else if (creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
