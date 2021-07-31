@@ -22,6 +22,10 @@ global.storageContainerIds = [
 
 module.exports.loop = function () {
 
+    if (Game.cpu.bucket == 10000) {
+      Game.cpu.generatePixel();
+    }
+
     for(let name in Game.creeps) {
         let creep = Game.creeps[name];
 
