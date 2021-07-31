@@ -1,5 +1,4 @@
 var roomLoop = require('rooms');
-var roleLoop = require('roles');
 
 var creepFuncitons = require('role.functions');
 var posFuncitons = require('pos.functions');

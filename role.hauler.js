@@ -13,7 +13,7 @@ let roleUpgrader  = {
       }
     }
 
-    let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
                             structure.structureType == STRUCTURE_SPAWN)  &&
@@ -24,22 +24,11 @@ let roleUpgrader  = {
       if(!target) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => {
-                        return (structure.structureType == STRUCTURE_TOWER ||
-                                storageContainerIds.includes(structure.id)) &&
-                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1;
+                        return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
+                               (storageContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store[RESOURCE_ENERGY])
                     }
           });
       }
-
-      if (creep.room.energyAvailable < creep.room.energyCapacityAvailable) {
-          target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                  filter: (structure) => {
-                      return (structure.structureType == STRUCTURE_EXTENSION ||
-                              structure.structureType == STRUCTURE_SPAWN) &&
-                              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-                  }
-          });
-        }
 
       if (creep.memory.hauling) {
         if(!creep.pos.isNearTo(target)) {
