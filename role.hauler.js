@@ -51,16 +51,36 @@ let roleUpgrader  = {
 
   coolName: "Bumblebee ",
   spawn: function(room) {
-    let target = _.get(room.memory, ["roles", "hauler", 2]);
-    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == "hauler" && creep.memory.homeroom == room.name).length
+    let roleName = "hauler";
+    let target = _.get(room.memory, ["roles", roleName], 2);
+    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
+
+    if (Game.time % OUTPUT_TICK == 0) {
+      console.log(roleName + ": " + real + "/" + target);
+    }
 
     if (real >= target) {
       return
     }
 
-    let spawnSettings = {}
-    spawnSettings.bodyParts = [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
-    spawnSettings.memory    =  { role: "hauler", born: Game.time, homeroom: room.name, hauling: false };
+    let spawnSettings = { bodyParts: [], memory: {} }
+    let roomEnergy = 300;
+    if (real < target/2 || target == 1) {
+      roomEnergy = room.energyAvailable;
+    } else {
+      roomEnergy = room.energyCapacityAvailable;
+    }
+
+    let segment = [CARRY,CARRY,MOVE];
+    let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
+
+    let maxSegment = Math.floor( roomEnergy / segmentCost);
+
+    _.forEach(segment, function(s) {
+      _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
+    });
+
+    spawnSettings.memory  =  { role: roleName, born: Game.time, homeroom: room.name, hauling: false };
 
     return spawnSettings;
   },

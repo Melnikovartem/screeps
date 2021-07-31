@@ -11,6 +11,10 @@ global.ROLES = {
   upgrader:  require('role.upgrader'),
 };
 
+global.OUTPUT_TICK = 10;
+
+global.PARTS_IMPORTANCE = [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, MOVE];
+
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",

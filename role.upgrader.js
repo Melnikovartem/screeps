@@ -26,7 +26,7 @@ let roleUpgrader  = {
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real   = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
-    if (Game.time % 200 == 0) {
+    if (Game.time % OUTPUT_TICK == 0) {
       console.log(roleName + ": " + real + "/" + target);
     }
 
