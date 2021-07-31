@@ -20,6 +20,16 @@ let roleHarvester = {
             }
     });
 
+    if (creep.room.energyAvailable < BUMBLEBEE_COST) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                filter: (structure) => {
+                    return (structure.structureType == STRUCTURE_EXTENSION ||
+                            structure.structureType == STRUCTURE_SPAWN) &&
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+                }
+        });
+      }
+
     if (creep.pos.isNearTo(target) || creep.memory.fflush) {
         if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target);

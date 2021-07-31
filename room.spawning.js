@@ -4,15 +4,9 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function spawnCreepInMainRom(role, room, weak = 0) {
-  let spawns = room.find(FIND_MY_STRUCTURES, {
-    filter: { structureType: STRUCTURE_SPAWN }
-  });
-  spawns = _.filter(spawns, {
-    filter: (structure) => structure.spawning == null
-  });
+function spawnCreepInMainRom(spawn, role, room, weak = 0) {
 
-  if (!spawns)
+  if (!spawn)
     return
 
   var parts = target_identity[role][0];
@@ -24,7 +18,7 @@ function spawnCreepInMainRom(role, room, weak = 0) {
     parts = WEAK_PARTS;
   }
 
-  return Game.spawns[SPAWN_NAME].spawnCreep(parts,  creep_name, { memory: { role: role, type: type, switched: Game.time, homeroom: room.name } } );
+  return spawn.spawnCreep(parts,  creep_name, { memory: { role: role, type: type, switched: Game.time, homeroom: room.name } } );
 }
 
 function get_target(room) {
@@ -57,20 +51,30 @@ function roomSpawning(room) {
     let real   = get_real(room);
     let target = get_target(room);
 
+
+    let spawns = room.find(FIND_MY_STRUCTURES, {
+      filter: { structureType: STRUCTURE_SPAWN }
+    });
+    spawns = _.filter(spawns, (structure) => structure.spawning == null);
+
+    let i = 0;
+
     if (Game.time % 200 == 0) {
       console.log("Room " + room.name + ":");
     }
 
-    for (let role in target) {
+
+    _.forEach(Object.keys(ROLES), function(roleName) {
       if (Game.time % 200 == 0) {
-        console.log(role + ": " + real[role] + "/" + target[role]);
+        console.log(roleName + ": " + real[roleName] + "/" + target[roleName]);
       }
-      if (real[role] < target[role]) {
-        if (spawnCreepInMainRom(role, room) == OK) {
-          console.log('spawned ' + role);
+      if (real[roleName] < target[roleName]) {
+        if (spawnCreepInMainRom(spawns[i], roleName, room) == OK) {
+          console.log('spawned ' + roleName);
+          i += 1;
         }
       }
-    }
+    });
 }
 
 
