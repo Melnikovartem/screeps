@@ -1,58 +1,60 @@
-let roleUpgrader  = {
+let roleUpgrader = {
   run: function(creep) {
-    if(creep.memory.hauling && creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        creep.memory.hauling = false;
-        creep.say('🔄');
+    if (creep.memory.hauling && creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+      creep.memory.hauling = false;
+      creep.say('🔄');
     }
 
-    if(!creep.memory.hauling) {
+    if (!creep.memory.hauling) {
       let ans = creep.getEnergyFromContainer();
-      if(ans == OK) {
-          creep.memory.hauling = true;
-          creep.say('➡');
+      if (ans == OK) {
+        creep.memory.hauling = true;
+        creep.say('➡');
       }
     }
 
     let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: (structure) => {
-                    return (structure.structureType == STRUCTURE_EXTENSION ||
-                            structure.structureType == STRUCTURE_SPAWN)  &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-                }
-      });
-
-      if(!target) {
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                      if (structure.store) {
-                        return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
-                               (!minerContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getUsedCapacity(RESOURCE_ENERGY))
-                      }
-                    }
-          });
+      filter: (structure) => {
+        return (structure.structureType == STRUCTURE_EXTENSION ||
+            structure.structureType == STRUCTURE_SPAWN) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
       }
+    });
 
-      if(!target) {
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id))
-                    }
-          });
-      }
-
-      if (creep.memory.hauling) {
-        if(!creep.pos.isNearTo(target)) {
-          creep.moveTo(target, {reusePath: RESUSE_PATH});
+    if (!target) {
+      target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) => {
+          if (structure.store) {
+            return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
+              (!minerContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getUsedCapacity(RESOURCE_ENERGY))
+          }
         }
-        creep.transfer(target, RESOURCE_ENERGY);
+      });
+    }
+
+    if (!target) {
+      target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id))
+        }
+      });
+    }
+
+    if (creep.memory.hauling) {
+      if (!creep.pos.isNearTo(target)) {
+        creep.moveTo(target, {
+          reusePath: RESUSE_PATH
+        });
       }
+      creep.transfer(target, RESOURCE_ENERGY);
+    }
   },
 
   coolName: "Bumblebee ",
   spawn: function(room) {
     let roleName = "hauler";
     let target = _.get(room.memory, ["roles", roleName], 2);
-    let real   = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
+    let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
     if (Game.time % OUTPUT_TICK == 0) {
       console.log(roleName + ": " + real + "/" + target);
@@ -62,24 +64,32 @@ let roleUpgrader  = {
       return
     }
 
-    let spawnSettings = { bodyParts: [], memory: {} }
+    let spawnSettings = {
+      bodyParts: [],
+      memory: {}
+    }
     let roomEnergy = 300;
-    if (real < target/2 || target == 1) {
+    if (real < target / 2 || target == 1) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
     }
 
-    let segment = [CARRY,CARRY,MOVE];
+    let segment = [CARRY, CARRY, MOVE];
     let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
 
-    let maxSegment = Math.floor( roomEnergy / segmentCost);
+    let maxSegment = Math.floor(roomEnergy / segmentCost);
 
     _.forEach(segment, function(s) {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
     });
 
-    spawnSettings.memory  =  { role: roleName, born: Game.time, homeroom: room.name, hauling: false };
+    spawnSettings.memory = {
+      role: roleName,
+      born: Game.time,
+      homeroom: room.name,
+      hauling: false
+    };
 
     return spawnSettings;
   },

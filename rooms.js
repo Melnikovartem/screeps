@@ -31,16 +31,16 @@ var roomDefense = require('room.defense');
 var roomSpawning = require('room.spawning');
 
 function roomLoop() {
-    _.forEach(Game.rooms, function(room) {
+  _.forEach(Game.rooms, function(room) {
 
-      roomDefense(room);
-      roomSpawning(room);
+    roomDefense(room);
+    roomSpawning(room);
 
-      if (Game.time % 500 == 0) {
-        findSources(room);
-        updateRolesTarget(room);
-      }
-    });
+    if (Game.time % 500 == 0) {
+      findSources(room);
+      updateRolesTarget(room);
+    }
+  });
 }
 
 

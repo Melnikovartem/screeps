@@ -1,37 +1,43 @@
 Creep.prototype.findSource = function() {
   var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
 
-  if(this.harvest(source) == ERR_NOT_IN_RANGE) {
-      this.moveTo(source, {reusePath: RESUSE_PATH});
+  if (this.harvest(source) == ERR_NOT_IN_RANGE) {
+    this.moveTo(source, {
+      reusePath: RESUSE_PATH
+    });
   }
 }
 
 Creep.prototype.harvestSource = function() {
   var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
 
-  if(this.harvest(source) == ERR_NOT_IN_RANGE) {
-      this.moveTo(source, {reusePath: RESUSE_PATH});
+  if (this.harvest(source) == ERR_NOT_IN_RANGE) {
+    this.moveTo(source, {
+      reusePath: RESUSE_PATH
+    });
   }
 }
 
 Creep.prototype.moveToRoom = function(roomName) {
-  this.moveTo(new RoomPosition(25, 25, roomName), {reusePath: RESUSE_PATH});
+  this.moveTo(new RoomPosition(25, 25, roomName), {
+    reusePath: RESUSE_PATH
+  });
 }
 
 Creep.prototype.getEnergyFromStorage = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-              return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
-          }
+    filter: (structure) => {
+      return (structure.structureType == STRUCTURE_CONTAINER) &&
+        structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
+    }
   });
 
   if (!target) {
     return ERR_NOT_FOUND;
   }
 
-  if(!this.pos.isNearTo(target)) {
-      this.moveTo(target);
+  if (!this.pos.isNearTo(target)) {
+    this.moveTo(target);
   }
 
   return this.withdraw(target, RESOURCE_ENERGY);
@@ -39,22 +45,22 @@ Creep.prototype.getEnergyFromStorage = function() {
 
 Creep.prototype.getEnergyFromContainer = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-              return (structure.structureType == STRUCTURE_CONTAINER) &&
-                      // almost full
-                      structure.store.getCapacity() * 0.1 > structure.store.getFreeCapacity()  &&
-                      minerContainerIds.includes(structure.id);
-          }
+    filter: (structure) => {
+      return (structure.structureType == STRUCTURE_CONTAINER) &&
+        // almost full
+        structure.store.getCapacity() * 0.1 > structure.store.getFreeCapacity() &&
+        minerContainerIds.includes(structure.id);
+    }
   });
 
   if (!target) {
     target = this.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType == STRUCTURE_CONTAINER) &&
-                        // any other container that is full enough
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
-                        minerContainerIds.includes(structure.id);
-            }
+      filter: (structure) => {
+        return (structure.structureType == STRUCTURE_CONTAINER) &&
+          // any other container that is full enough
+          structure.store.getUsedCapacity(RESOURCE_ENERGY) > this.store.getFreeCapacity() &&
+          minerContainerIds.includes(structure.id);
+      }
     });
 
     if (!target) {
@@ -62,8 +68,10 @@ Creep.prototype.getEnergyFromContainer = function() {
     }
   }
 
-  if(!this.pos.isNearTo(target)) {
-      this.moveTo(target, {reusePath: RESUSE_PATH});
+  if (!this.pos.isNearTo(target)) {
+    this.moveTo(target, {
+      reusePath: RESUSE_PATH
+    });
   }
 
   return this.withdraw(target, RESOURCE_ENERGY);

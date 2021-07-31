@@ -4,7 +4,9 @@ function getRandomInt(max) {
 
 function roomSpawning(room) {
   let spawns = room.find(FIND_MY_STRUCTURES, {
-    filter: { structureType: STRUCTURE_SPAWN }
+    filter: {
+      structureType: STRUCTURE_SPAWN
+    }
   });
   spawns = _.filter(spawns, (structure) => structure.spawning == null);
 
@@ -27,7 +29,9 @@ function roomSpawning(room) {
       spawnSettings.bodyParts.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
 
       let creepName = ROLES[roleName].coolName + '' + getRandomInt(10000);
-      let ans = spawns[i].spawnCreep(spawnSettings.bodyParts,  creepName, { memory: spawnSettings.memory });
+      let ans = spawns[i].spawnCreep(spawnSettings.bodyParts, creepName, {
+        memory: spawnSettings.memory
+      });
       if (ans == OK) {
         console.log('spawned ' + roleName);
         i += 1;

@@ -5,9 +5,9 @@ var posFuncitons = require('pos.functions');
 
 global.ROLES = {
   harvester: require('role.harvester'),
-  hauler:    require('role.hauler'),
-  builder:   require('role.builder'),
-  upgrader:  require('role.upgrader'),
+  hauler: require('role.hauler'),
+  builder: require('role.builder'),
+  upgrader: require('role.upgrader'),
 };
 
 global.OUTPUT_TICK = 200;
@@ -20,25 +20,25 @@ global.minerContainerIds = [
   "becc33c111d416296b91ea40",
 ];
 
-module.exports.loop = function () {
+module.exports.loop = function() {
 
-    if (Game.cpu.bucket == 10000) {
-      Game.cpu.generatePixel();
+  if (Game.cpu.bucket == 10000) {
+    Game.cpu.generatePixel();
+  }
+
+  let prevCPU = Game.cpu.getUsed();
+  for (let name in Memory.creeps) {
+    let creep = Game.creeps[name];
+
+    if (!creep) {
+      delete Memory.creeps[name];
+      console.log('Clearing non-existing creep memory:', name);
+    } else {
+      // prevCPU = Game.cpu.getUsed();
+      ROLES[creep.memory.role].run(creep);
+      // if (Game.time % 2 == 0 && creep.memory.role == "harvester") { console.log("On " + name + ": " + (Game.cpu.getUsed() - prevCPU)); }
     }
-
-    let prevCPU = Game.cpu.getUsed();
-    for(let name in Memory.creeps) {
-        let creep = Game.creeps[name];
-
-        if(!creep) {
-            delete Memory.creeps[name];
-            console.log('Clearing non-existing creep memory:', name);
-        } else {
-          // prevCPU = Game.cpu.getUsed();
-          ROLES[creep.memory.role].run(creep);
-          // if (Game.time % 2 == 0 && creep.memory.role == "harvester") { console.log("On " + name + ": " + (Game.cpu.getUsed() - prevCPU)); }
-        }
-    }
-    // if (Game.time % 2 == 0) { console.log("----") }
-    roomLoop();
+  }
+  // if (Game.time % 2 == 0) { console.log("----") }
+  roomLoop();
 }

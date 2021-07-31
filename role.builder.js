@@ -40,6 +40,7 @@ let roleBuilder = {
         }
     }
   },
+  
   coolName: "Colletidae ",
   spawn: function(room) {
     let roleName = "builder";

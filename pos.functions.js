@@ -1,5 +1,5 @@
 RoomPosition.prototype.getNearbyPositions = function() {
-  
+
 };
 
 RoomPosition.prototype.getOpenPositions = function() {
