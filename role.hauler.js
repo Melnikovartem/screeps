@@ -41,7 +41,7 @@ let roleUpgrader  = {
       }
   },
 
-  bodyParts: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+  bodyParts: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
   coolName: "Bumblebee ",
 }
 

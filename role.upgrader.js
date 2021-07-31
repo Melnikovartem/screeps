@@ -21,7 +21,7 @@ let roleUpgrader  = {
     }
   },
 
-  bodyParts: [WORK,WORK,CARRY,CARRY,MOVE,MOVE],
+  bodyParts: [WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE],
   coolName: "Honey bee ",
 }
 

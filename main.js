@@ -12,8 +12,8 @@ global.ROLES = {
 };
 
 global.minerContainerIds = [
-  "610349cd18c58e25391149c1",
   "6104cfbc0a328f04a3f0937e",
+  "6104d6e099c3721829eb8a0c",
 ];
 global.storageContainerIds = [
   "61042dbc3bd544104d05ab19",

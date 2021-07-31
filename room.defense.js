@@ -3,22 +3,18 @@ function roomDefense(room) {
         var structure = Game.structures[name];
 
         if(structure.structureType == STRUCTURE_TOWER) {
-            var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+            var closestHostile = structure.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
             if(closestHostile) {
                 tower.attack(closestHostile);
             }
 
-            var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-                filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
-                                          structure.hits < structure.hitsMax * 0.0003)
-                                      || ((structure.structureType == STRUCTURE_RAMPART) &&
-                                          structure.hits < structure.hitsMax * 0.2)
-                                      || ((structure.structureType != STRUCTURE_WALL &&
-                                           structure.structureType != STRUCTURE_RAMPART) &&
-                                          structure.hits < structure.hitsMax)
+            var closestDamagedStructure = structure.pos.findClosestByRange(FIND_STRUCTURES, {
+                filter: (structureIter) => ((structureIter.structureType != STRUCTURE_WALL &&
+                                            structureIter.structureType != STRUCTURE_RAMPART) &&
+                                            structureIter.hits < structure.hitsMax)
             });
             if(closestDamagedStructure) {
-                tower.repair(closestDamagedStructure);
+                structure.repair(closestDamagedStructure);
             }
         }
     }

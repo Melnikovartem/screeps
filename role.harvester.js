@@ -20,7 +20,7 @@ let roleHarvester = {
             }
     });
 
-    if (creep.room.energyAvailable < 400 &&
+    if (creep.room.energyAvailable < 700 &&
       _.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.memory.homeroom).length == 0) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => {
@@ -43,7 +43,7 @@ let roleHarvester = {
     }
   },
 
-  bodyParts: [WORK,WORK,WORK,CARRY,MOVE,MOVE],
+  bodyParts: [WORK,WORK,WORK,WORK,CARRY,CARRY,MOVE,MOVE,MOVE],
   coolName: "Andrena ",
 }
 
