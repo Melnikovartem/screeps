@@ -17,7 +17,7 @@ let roleUpgrader  = {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION ||
                             structure.structureType == STRUCTURE_SPAWN)  &&
-                            structure.store.getFreeCapacity() > 0;
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                 }
       });
 
@@ -26,7 +26,7 @@ let roleUpgrader  = {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_TOWER ||
                                 storageContainerIds.includes(structure.id)) &&
-                                structure.store.getFreeCapacity() > structure.store.getCapacity() * 0.1;
+                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1;
                     }
           });
       }

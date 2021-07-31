@@ -11,22 +11,18 @@ global.ROLES = {
   upgrader:  require('role.upgrader'),
 };
 
-global.OUTPUT_TICK = 10;
+global.OUTPUT_TICK = 200;
 
 global.PARTS_IMPORTANCE = [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, MOVE];
 
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
-
-  "bbfec28deb585d7d5a2c03cd",
 ];
 global.storageContainerIds = [
   "61042dbc3bd544104d05ab19",
-  "61042329061eb6bf68d1cede",
+  "61057ec20ac3811209f01e9e",
   "6104f8759f18546eddf20ab9",
-
-  "245f0fa5166173826f5a6910",
 ];
 
 module.exports.loop = function () {
@@ -35,7 +31,7 @@ module.exports.loop = function () {
       Game.cpu.generatePixel();
     }
 
-    for(let name in Game.creeps) {
+    for(let name in Memory.creeps) {
         let creep = Game.creeps[name];
 
         if(!creep) {
