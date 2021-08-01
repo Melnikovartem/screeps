@@ -64,7 +64,7 @@ let roleBuilder = {
       memory: {}
     }
     let roomEnergy = 300;
-    if (real < target / 2 || target == 1) {
+    if (real < target / 2) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
