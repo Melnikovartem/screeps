@@ -1,17 +1,25 @@
 let roleUpgrader = {
   run: function(creep) {
 
-    if (creep.memory.hauling) {
-      // prob coud add target cashing (!smart)
-
-      // spawners need to be filled
-      let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-        filter: (structure) => {
-          return (structure.structureType == STRUCTURE_EXTENSION ||
-              structure.structureType == STRUCTURE_SPAWN) &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+    if (creep.memory._target) {
+      // target cashing (!smart)
+      let target;
+      if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+        target = Game.getObjectById(creep.memory._target.id);
+        // target is still valid;
+        if (target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+          target = 0;
         }
-      });
+      }
+
+      if (!target) {
+        // spawners need to be filled
+        target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+          filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
+              structure.structureType == STRUCTURE_SPAWN) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        });
+      }
 
       if (!target) {
         // towers need to be filled
@@ -29,20 +37,26 @@ let roleUpgrader = {
         });
       }
 
-      if ((!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) != 0) || creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        creep.memory.hauling = false;
-        creep.say('🔄');
-      }
-
       if (!creep.pos.isNearTo(target)) {
+        creep.memory._target = {
+          id: target.id,
+          time: Game.time,
+        };
         creep.moveTo(target, {
           reusePath: REUSE_PATH
         });
+      } else {
+        creep.transfer(target, RESOURCE_ENERGY);
+        creep.memory._target = 0;
       }
-      creep.transfer(target, RESOURCE_ENERGY);
+
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) != 0)) {
+        creep.memory._target = 0;
+        creep.say('🔄');
+      }
     }
 
-    if (!creep.memory.hauling) {
+    if (!creep.memory._target) {
       let ans = ERR_NOT_FOUND;
       if (creep.room.energyCapacityAvailable > creep.room.energyAvailable && creep.room.controller && creep.room.controller.my) {
         // JUST GET ME ENERGY BITCH
@@ -53,7 +67,7 @@ let roleUpgrader = {
         ans = creep.getEnergyFromHarvesters();
       }
       if (ans == OK) {
-        creep.memory.hauling = true;
+        creep.memory._target = 1;
         creep.say('➡');
       }
     }

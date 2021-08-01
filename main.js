@@ -17,7 +17,10 @@ global.OUTPUT_TICK = 200;
 global.REUSE_PATH = 3;
 
 //for developing rooms
-global.storageContainerIds = [];
+global.storageContainerIds = [
+
+  //from sim
+];
 
 module.exports.loop = function() {
 

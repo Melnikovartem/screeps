@@ -44,6 +44,7 @@ Creep.prototype.getEnergyFromStorage = function() {
       target = 0;
     }
   }
+
   if (!target) {
     target = this.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) => {
@@ -52,16 +53,17 @@ Creep.prototype.getEnergyFromStorage = function() {
           structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
       }
     });
-    // update target info
-    this.memory._sucker_target = {
-      id: target.id,
-      time: Game.time,
-    };
   }
 
   if (!target) {
     return ERR_NOT_FOUND;
   }
+
+  // update target info
+  this.memory._sucker_target = {
+    id: target.id,
+    time: Game.time,
+  };
 
   if (!this.pos.isNearTo(target)) {
     this.moveTo(target);
