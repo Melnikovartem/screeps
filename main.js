@@ -6,8 +6,8 @@ var posFuncitons = require('pos.functions');
 var utilityFuncitons = require('utility.functions');
 
 global.ROLES = {
-  harvester: require('role.harvester'),
   hauler: require('role.hauler'),
+  harvester: require('role.harvester'),
   builder: require('role.builder'),
   upgrader: require('role.upgrader'),
   knight: require('role.knight'),

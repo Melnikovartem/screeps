@@ -4,11 +4,6 @@ let roleHarvester = {
   run: function(creep) {
     let sourceData = creep.getSourceData();
 
-    if (!creep.memory.introduced) {
-      creep.memory.introduced = 1;
-      sourceData.harvesters.push(creep.id);
-    }
-
     if (creep.store.getFreeCapacity() > 0) {
       creep.harvestSource();
     }
@@ -27,23 +22,31 @@ let roleHarvester = {
         )[0];
       }
 
-      /*
       // fail-safe if haulers are dead?
+      //made it very elaborate to stop from mis-fire
+      if (creep.room.controller.my) {
         if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
-          if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
-            if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush) {
-              creep.memory.fflush = true;
-            }
-            target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
-              filter: (structure) => {
-                return (structure.structureType == STRUCTURE_EXTENSION ||
-                    structure.structureType == STRUCTURE_SPAWN) &&
-                  structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+          if (creep.room.find(FIND_MY_CREEPS, {
+              filter: (creepIter) => creepIter.memory.role == "hauler" && !creep.memory.target_harvester && creepIter.memory.homeroom == creep.room.name
+            }).length == 0) {
+            let spawnsActive = _.filter(creep.room.find(FIND_MY_STRUCTURES, {
+              filter: {
+                structureType: STRUCTURE_SPAWN
               }
-            });
+            }), (structure) => structure.spawning != null);
+            if (spawnsActive.length == 0) {
+              console.log("here");
+              target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+                filter: (structure) => {
+                  return (structure.structureType == STRUCTURE_EXTENSION ||
+                      structure.structureType == STRUCTURE_SPAWN) &&
+                    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+                }
+              });
+            }
           }
+        }
       }
-      */
 
       if (creep.pos.isNearTo(target)) {
         creep.transfer(target, RESOURCE_ENERGY);
@@ -95,7 +98,6 @@ let roleHarvester = {
               role: roleName,
               born: Game.time,
               homeroom: room.name,
-              introduced: false,
               resource_id: sourceId
             };
 

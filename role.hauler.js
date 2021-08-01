@@ -88,7 +88,7 @@ let roleUpgrader = {
       memory: {}
     }
     let roomEnergy = 300;
-    if (real < target / 2 || real == 0) {
+    if (real == 0) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
