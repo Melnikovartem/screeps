@@ -6,7 +6,17 @@ let roleUpgrader = {
     }
 
     if (!creep.memory.hauling) {
-      let ans = creep.getEnergyFromContainer();
+      let ans = ERR_NOT_FOUND;
+      if (ans == ERR_NOT_FOUND) {
+        ans = creep.getEnergyFromContainer();
+      }
+      if (ans == ERR_NOT_FOUND) {
+        ans == creep.getEnergyFromStorage();
+      }
+      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+        //fail-safe
+        ans = OK;
+      }
       if (ans == OK) {
         creep.memory.hauling = true;
         creep.say('➡');
@@ -90,6 +100,8 @@ let roleUpgrader = {
       homeroom: room.name,
       hauling: false
     };
+
+    spawnSettings.postSpawn = function() {};
 
     return spawnSettings;
   },

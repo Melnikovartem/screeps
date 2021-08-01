@@ -40,6 +40,7 @@ let roleHarvester = {
       }
     } else {
       creep.memory.fflush = false;
+      creep.drop(RESOURCE_ENERGY, 1);
     }
   },
 
@@ -85,6 +86,8 @@ let roleHarvester = {
       homeroom: room.name,
       fflush: false
     };
+
+    spawnSettings.postSpawn = function() {};
 
     return spawnSettings;
   },

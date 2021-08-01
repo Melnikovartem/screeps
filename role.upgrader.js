@@ -63,6 +63,8 @@ let roleUpgrader = {
       building: false
     };
 
+    spawnSettings.postSpawn = function() {};
+
     return spawnSettings;
   },
 }
