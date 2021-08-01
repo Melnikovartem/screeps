@@ -1,11 +1,10 @@
 let roleUpgrader = {
   run: function(creep) {
 
-    if (!creep.memory.introduced) {
-      creep.memory.introduced = 1;
-    }
-
     if (creep.memory.hauling) {
+      // prob coud add target cashing (!smart)
+
+      // spawners need to be filled
       let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
         filter: (structure) => {
           return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -15,30 +14,18 @@ let roleUpgrader = {
       });
 
       if (!target) {
+        // towers need to be filled
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
-            if (structure.store) {
-              return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
-                (!minerContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getUsedCapacity(RESOURCE_ENERGY))
-            }
+            structure.store && structure.structureType == STRUCTURE_TOWER &&
+              structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
           }
         });
       }
 
       if (!target) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-            return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id)) &&
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-          }
-        });
-      }
-
-      if (!target) {
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-            return (structure.structureType == STRUCTURE_STORAGE)
-          }
+          filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id))
         });
       }
 
@@ -107,6 +94,8 @@ let roleUpgrader = {
       born: Game.time,
       homeroom: room.name,
       hauling: false,
+
+      // here also can be some _target cashing
     };
 
     spawnSettings.postSpawn = function() {

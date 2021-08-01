@@ -34,6 +34,7 @@ function roomSpawning(room) {
         i += 1;
       } else if (ans == ERR_NOT_ENOUGH_RESOURCES && roleName == "harvester") {
         // another fail-safe for my economy
+        //prob never will work cause same fail-safe in harvest spaw logic :/
         return;
       }
     }

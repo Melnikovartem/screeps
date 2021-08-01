@@ -12,11 +12,12 @@ let roleHarvester = {
       //check if harvestContainer
       let target = Game.getObjectById(sourceData.store_nearby);
 
-      if (!target && sourceData.store_nearby) {
+      if (!target) {
         // no harvestContainer == let's check if hauler waiting for us to unload
+        // sorted by free space
         target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-          (creepIter) => creepIter.memory.role == "hauler" > 0
-        ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0];
+          (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0]
       }
 
       if (!target) {
@@ -127,7 +128,9 @@ let roleHarvester = {
               role: roleName,
               born: Game.time,
               homeroom: room.name,
-              resource_id: sourceId
+              resource_id: sourceId,
+
+              // also can be _is_targeted if not near a store
             };
 
             spawnSettings.postSpawn = function() {

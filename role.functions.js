@@ -118,7 +118,8 @@ Creep.prototype.getEnergyFromHarvesters = function() {
             (creepId) => {
               let creep = Game.getObjectById(creepId);
               if (creep && (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
-                  creep.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
+                  creep.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) &&
+                (!creep.memory._is_targeted || !Game.getObjectById(creep.memory._is_targeted))) {
                 targets.push(creep);
               }
             });
@@ -154,6 +155,11 @@ Creep.prototype.getEnergyFromHarvesters = function() {
 
   if (target instanceof Creep) {
     ans = target.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && this.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+    if (ans == OK) {
+      target.memory._is_targeted = OK;
+    } else {
+      target.memory._is_targeted = this.id;
+    }
   } else {
     ans = this.withdraw(target, RESOURCE_ENERGY);
   }

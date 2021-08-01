@@ -79,7 +79,9 @@ let roleBuilder = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
-      building: false
+      building: false,
+
+      // here also can be some _target cashing
     };
 
     spawnSettings.postSpawn = function() {

@@ -18,6 +18,7 @@ let roleUpgrader = {
           reusePath: REUSE_PATH
         });
       } else {
+        // will need to set some rules based on mining / controller lvl (latter is more important)
         creep.upgradeController(creep.room.controller)
       }
     }
@@ -58,7 +59,9 @@ let roleUpgrader = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
-      upgrading: false
+      upgrading: false,
+
+      // here also can be some _target cashing
     };
 
     spawnSettings.postSpawn = function() {
