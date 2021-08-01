@@ -56,15 +56,14 @@ let roleUpgrader = {
     }
 
     if (!creep.memory.hauling) {
-      let ans = creep.getEnergyFromHarvesters()
-      if (ans == ERR_NOT_FOUND && creep.room.energyCapacityAvailable > creep.room.energyAvailable) {
-        ans = creep.getEnergyFromStorage()
+      let ans = ERR_NOT_FOUND;
+      if (creep.room.energyCapacityAvailable > creep.room.energyAvailable && creep.room.controller && creep.room.controller.my) {
+        // JUST GET ME ENERGY BITCH
+        ans = creep.getEnergyFromStorage();
       }
       if (ans == ERR_NOT_FOUND) {
-        creep.moveTo(Game.getObjectById(creep.memory.target_harvester));
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-          ans = OK;
-        }
+        // WELL TIME TO GET SOME WORK DONE FROM FUCKING HARVESTERS
+        ans = creep.getEnergyFromHarvesters();
       }
       if (ans == OK) {
         creep.memory.hauling = true;

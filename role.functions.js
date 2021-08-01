@@ -35,13 +35,29 @@ Creep.prototype.moveToRoom = function(roomName) {
 }
 
 Creep.prototype.getEnergyFromStorage = function() {
-  let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: (structure) => {
-      return (structure.structureType == STRUCTURE_CONTAINER ||
-          structure.structureType == STRUCTURE_STORAGE) &&
-        structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
+  // hey reusing is a good idea to save CPU
+  let target;
+  if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
+    target = Game.getObjectById(this.memory._sucker_target.id);
+    // target is still valid;
+    if (!(target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
+      target = 0;
     }
-  });
+  }
+  if (!target) {
+    target = this.pos.findClosestByPath(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return (structure.structureType == STRUCTURE_CONTAINER ||
+            structure.structureType == STRUCTURE_STORAGE) &&
+          structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
+      }
+    });
+    // update target info
+    this.memory._sucker_target = {
+      id: target.id,
+      time: Game.time,
+    };
+  }
 
   if (!target) {
     return ERR_NOT_FOUND;
@@ -51,14 +67,20 @@ Creep.prototype.getEnergyFromStorage = function() {
     this.moveTo(target);
   }
 
-  return this.withdraw(target, RESOURCE_ENERGY);
+  let ans = this.withdraw(target, RESOURCE_ENERGY);
+
+  if (ans == OK) {
+    this.memory._sucker_target = 0;
+  }
+
+  return ans;
 }
 
 Creep.prototype.getEnergyFromHarvesters = function() {
   //reusing target as reusing paths
   let target;
-  if (this.memory.target && Game.time - this.memory.target.time >= 100) {
-    target = Game.getObjectById(this.memory.target.id);
+  if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
+    target = Game.getObjectById(this.memory._sucker_target.id);
     // target is still valid;
     if (!(target.store.getUsedCapacity(RESOURCE_ENERGY) >= target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
         target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
@@ -117,7 +139,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
   }
 
   // update target info
-  this.memory.target = {
+  this.memory._sucker_target = {
     id: target.id,
     time: Game.time,
   };
@@ -137,7 +159,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
   }
 
   if (ans == OK) {
-    this.memory.target = 0;
+    this.memory._sucker_target = 0;
   }
 
   return ans;
