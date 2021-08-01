@@ -12,11 +12,6 @@ function roomSpawning(room) {
 
   let i = 0;
 
-  if (Game.time % 200 == 0) {
-    console.log("Role balance in room " + room.name + ":");
-  }
-
-
   for (let j in Object.keys(ROLES)) {
     if (!spawns[i]) {
       return;
@@ -33,10 +28,15 @@ function roomSpawning(room) {
         memory: spawnSettings.memory
       });
       if (ans == OK) {
+        spawnSettings.postSpawn();
         console.log('spawned ' + roleName);
         i += 1;
       }
     }
+  }
+
+  if (Game.time % 200 == 0) {
+    console.log("^ role balance in room " + room.name + " ^");
   }
 }
 
