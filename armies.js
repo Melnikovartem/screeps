@@ -41,6 +41,7 @@ function checkSafeRoom(army) {
 
 function armyLoop() {
   for (let armyName in Memory.armies) {
+    //let prevCPU = Game.cpu.getUsed();
     //right now more like a mob that comes in room
     let army = Memory.armies[armyName];
     let stationedRoom = Game.rooms[army.stationed];
@@ -67,8 +68,11 @@ function armyLoop() {
             armyFull = 0;
           }
 
+          // !!!!!! this is too heavy?!
           let inProcess = _.get(stationedRoom.memory, ["army_orders", roleName]) +
             stationedRoom.find(FIND_MY_STRUCTURES, (structure) => structure.Spawning && structure.Spawning.role == roleName);
+
+
           if (inProcess) {
             diff -= inProcess.count;
           }
@@ -117,6 +121,9 @@ function armyLoop() {
         }
       }
     }
+    // if (Game.time % 2 == 0) {
+    //  console.log("On inProcess: " + (Game.cpu.getUsed() - prevCPU));
+    //}
   }
 }
 

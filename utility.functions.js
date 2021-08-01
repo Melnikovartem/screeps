@@ -3,9 +3,7 @@ global.createArmy = function(armyName, roomName) {
     let armyData = {
       target: roomName,
       stationed: roomName,
-      roles: {
-        knight: 1,
-      },
+      roles: {},
       high_alert: 0, // do we need to check room each tick
       replenished: 0, // is process of replenishment finished
       reuse_path: 5, // how smart do we need to be with our moves

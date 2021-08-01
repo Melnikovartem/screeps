@@ -1,58 +1,49 @@
 let roleHarvester = {
   run: function(creep) {
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-      creep.memory.fflush = false;
-    }
     if (creep.store.getFreeCapacity() > 0 && !creep.memory.fflush) {
       creep.harvestSource();
     }
 
-
-
-
-    let target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-      (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    )[0];
-
-
-
-    if (!target) {
-      target = _.filter(creep.pos.findInRange(FIND_STRUCTURES, 1),
-        (structure) => structure.structureType == STRUCTURE_CONTAINER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    if (creep.memory.fflush || creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
+      let target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
+        (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
       )[0];
-    }
 
-    //console.log(target);
-
-
-    if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
-      if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
-        if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush) {
-          creep.memory.fflush = true;
-        }
-        target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
-          filter: (structure) => {
-            return (structure.structureType == STRUCTURE_EXTENSION ||
-                structure.structureType == STRUCTURE_SPAWN) &&
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-          }
-        });
+      if (!target) {
+        target = _.filter(creep.pos.findInRange(FIND_STRUCTURES, 1),
+          (structure) => structure.structureType == STRUCTURE_CONTAINER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        )[0];
       }
-    }
 
-    if (target) {
-      if (creep.pos.isNearTo(target) && creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
-        creep.transfer(target, RESOURCE_ENERGY);
-      } else if (creep.memory.fflush) {
-        if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      // fail-safe if haulers are dead
+      if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
+        if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
+          if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush) {
+            creep.memory.fflush = true;
+          }
+          target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+            filter: (structure) => {
+              return (structure.structureType == STRUCTURE_EXTENSION ||
+                  structure.structureType == STRUCTURE_SPAWN) &&
+                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+            }
+          });
+        }
+      }
+
+
+      if (target) {
+        if (creep.pos.isNearTo(target)) {
+          creep.transfer(target, RESOURCE_ENERGY);
+          if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+            creep.memory.fflush = false;
+          }
+        } else if (creep.memory.fflush) {
           creep.moveTo(target, {
             reusePath: REUSE_PATH
           });
         }
       }
-    } else {
-      creep.memory.fflush = false;
-      creep.drop(RESOURCE_ENERGY, 1);
     }
   },
 
