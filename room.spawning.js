@@ -31,6 +31,9 @@ function roomSpawning(room) {
         spawnSettings.postSpawn();
         console.log('spawned ' + roleName);
         i += 1;
+      } else if (ans == ERR_NOT_ENOUGH_RESOURCES && roleName == "harvester") {
+        // another fail-safe for my economy
+        return;
       }
     }
   }

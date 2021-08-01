@@ -60,7 +60,7 @@ let roleUpgrader = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
-      building: false
+      upgrading: false
     };
 
     spawnSettings.postSpawn = function() {};
