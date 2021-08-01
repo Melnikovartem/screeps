@@ -29,8 +29,6 @@ function roomSpawning(room) {
         memory: spawnSettings.memory
       });
 
-      console.log(ans);
-
       if (ans == OK) {
         spawnSettings.postSpawn();
         i += 1;

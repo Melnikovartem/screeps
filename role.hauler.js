@@ -1,6 +1,10 @@
 let roleUpgrader = {
   run: function(creep) {
 
+    if (!creep.memory.introduced) {
+      creep.memory.introduced = 1;
+    }
+
     if (creep.memory.hauling) {
       let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
         filter: (structure) => {
@@ -99,14 +103,11 @@ let roleUpgrader = {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
     });
 
-    let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester")
-
     spawnSettings.memory = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
       hauling: false,
-      target_harvester: harvesters[Object.keys(harvesters)[Math.floor(Math.random() * harvesters.length)]].id
     };
 
     spawnSettings.postSpawn = function() {

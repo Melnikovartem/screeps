@@ -76,10 +76,6 @@ function armyLoop() {
             inProcessOrder = 0;
           }
 
-          console.log("inProcessOrder: " + inProcessOrder);
-
-          console.log("-----");
-
           if (diff - inProcessOrder > 0) {
             // those in process not enough
             if (!stationedRoom.memory.army_orders) {
@@ -127,9 +123,6 @@ function armyLoop() {
         }
       }
     }
-    // if (Game.time % 2 == 0) {
-    //  console.log("On inProcess: " + (Game.cpu.getUsed() - prevCPU));
-    //}
   }
 }
 

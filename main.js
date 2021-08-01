@@ -20,14 +20,13 @@ global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
 
-  "99b6e0d250350a824babce18",
 ];
 
 module.exports.loop = function() {
 
   armyLoop();
 
-  let prevCPU = Game.cpu.getUsed();
+
   for (let creepName in Memory.creeps) {
     let creep = Game.creeps[creepName];
 
@@ -38,11 +37,8 @@ module.exports.loop = function() {
       if (Object.keys(ROLES).includes(creep.memory.role)) {
         ROLES[creep.memory.role].run(creep);
       }
-      // prevCPU = Game.cpu.getUsed();
-      // if (Game.time % 2 == 0 && creep.memory.role == "harvester") { console.log("On " + creepName + ": " + (Game.cpu.getUsed() - prevCPU)); }
     }
   }
-  // if (Game.time % 2 == 0) { console.log("----") }
   roomLoop();
 
   if (Game.cpu.bucket == 10000) {

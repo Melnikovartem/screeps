@@ -1,20 +1,26 @@
-Creep.prototype.findSource = function() {
-  var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
-
-  if (this.harvest(source) == ERR_NOT_IN_RANGE) {
-    this.moveTo(source, {
-      reusePath: REUSE_PATH
-    });
+Creep.prototype.getSource = function() {
+  let source = Game.getObjectById(this.memory.resource_id);
+  if (!source) {
+    source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+    this.memory.sourceId = source.id;
   }
+
+  return source;
+}
+
+Creep.prototype.getSourceData = function() {
+  let source = this.getSource();
+  let sourceData = _.get(Game.rooms[this.memory.homeroom].memory, ["resourses", source.room.name, "energy", source.id]);
+
+  if (!sourceData) {
+    sourceData = findSources(source.room, Game.rooms[this.memory.homeroom], source.id);
+  }
+
+  return sourceData;
 }
 
 Creep.prototype.harvestSource = function() {
-  let source = Game.getObjectById(this.memory.resource_id);
-
-  if (!source) {
-    source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
-  }
-
+  let source = this.getSource();
   if (this.harvest(source) == ERR_NOT_IN_RANGE) {
     this.moveTo(source, {
       reusePath: REUSE_PATH

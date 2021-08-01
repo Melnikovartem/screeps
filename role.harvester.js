@@ -1,10 +1,22 @@
+let roleName = "harvester";
+
 let roleHarvester = {
   run: function(creep) {
-    if (creep.store.getFreeCapacity() > 0 && !creep.memory.fflush) {
+    let sourceData = creep.getSourceData();
+
+    if (!creep.memory.introduced) {
+      creep.memory.introduced = 1;
+      sourceData.harvesters.push(creep.id);
+    }
+
+    if (creep.store.getFreeCapacity() > 0) {
       creep.harvestSource();
     }
 
-    if (creep.memory.fflush || creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
+      //check if harvestContainer
+
+      //check if haulers are nearby
       let target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
         (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
       )[0];
@@ -15,59 +27,40 @@ let roleHarvester = {
         )[0];
       }
 
-      // fail-safe if haulers are dead
-      if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
-        if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
-          if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush) {
-            creep.memory.fflush = true;
-          }
-          target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
-            filter: (structure) => {
-              return (structure.structureType == STRUCTURE_EXTENSION ||
-                  structure.structureType == STRUCTURE_SPAWN) &&
-                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+      /*
+      // fail-safe if haulers are dead?
+        if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
+          if (_.filter(Game.creeps, (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name).length == 0) {
+            if (creep.store.getFreeCapacity() == 0 && !creep.memory.fflush) {
+              creep.memory.fflush = true;
             }
-          });
-        }
-      }
-
-      if (!target) {
-        //fail safe if somth wrong with targets :/
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-            return (structure.structureType == STRUCTURE_EXTENSION ||
-                structure.structureType == STRUCTURE_SPAWN) &&
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+            target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+              filter: (structure) => {
+                return (structure.structureType == STRUCTURE_EXTENSION ||
+                    structure.structureType == STRUCTURE_SPAWN) &&
+                  structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+              }
+            });
           }
-        });
       }
+      */
 
-
-      if (target) {
-        if (creep.pos.isNearTo(target)) {
-          creep.transfer(target, RESOURCE_ENERGY);
-          if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-            creep.memory.fflush = false;
-          }
-        } else if (creep.memory.fflush) {
-          creep.moveTo(target, {
-            reusePath: REUSE_PATH
-          });
-        }
+      if (creep.pos.isNearTo(target)) {
+        creep.transfer(target, RESOURCE_ENERGY);
+      } else {
+        creep.moveTo(target);
       }
     }
   },
 
   coolName: "Andrena ",
   spawn: function(room) {
-    let roleName = "harvester";
 
     if (room.memory.resourses) {
       for (let roomName in room.memory.resourses) {
         for (let sourceId in room.memory.resourses[roomName].energy) {
           let source = room.memory.resourses[roomName].energy[sourceId];
-
-          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
+          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME || source.harvesters.length == 0) {
 
             let spawnSettings = {}
 
@@ -102,7 +95,7 @@ let roleHarvester = {
               role: roleName,
               born: Game.time,
               homeroom: room.name,
-              fflush: false,
+              introduced: false,
               resource_id: sourceId
             };
 
@@ -110,7 +103,6 @@ let roleHarvester = {
               source.last_spawned = Game.time;
               console.log("spawned " + roleName + " in " + room.name + " for " + sourceId + "  located in " + roomName);
             };
-
 
             return spawnSettings;
           }
