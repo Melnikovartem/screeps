@@ -43,7 +43,7 @@ Creep.prototype.getEnergyFromStorage = function() {
   return this.withdraw(target, RESOURCE_ENERGY);
 }
 
-Creep.prototype.getEnergyFromContainer = function() {
+Creep.prototype.getEnergyFromHarvesters = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
     filter: (structure) => {
       return (structure.structureType == STRUCTURE_CONTAINER) &&

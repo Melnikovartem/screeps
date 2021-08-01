@@ -43,10 +43,9 @@ let roleUpgrader = {
     }
 
     if (!creep.memory.hauling) {
-      let ans = creep.getEnergyFromContainer()
+      let ans = creep.getEnergyFromHarvesters()
       if (ans == ERR_NOT_FOUND && creep.room.energyCapacityAvailable > creep.room.energyAvailable) {
         ans = creep.getEnergyFromStorage()
-        console.log(ans);
       }
       if (ans == ERR_NOT_FOUND) {
         creep.moveTo(Game.getObjectById(creep.memory.target_harvester));
@@ -95,11 +94,14 @@ let roleUpgrader = {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
     });
 
+    let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester")
+
     spawnSettings.memory = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
-      hauling: false
+      hauling: false,
+      target_harvester: harvesters[Object.keys(harvesters)[Math.floor(Math.random() * harvesters.length)]].id
     };
 
     spawnSettings.postSpawn = function() {};
