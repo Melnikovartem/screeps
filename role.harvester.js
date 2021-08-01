@@ -15,8 +15,8 @@ let roleHarvester = {
       if (!target && sourceData.store_nearby) {
         // no harvestContainer == let's check if hauler waiting for us to unload
         target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-          (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-        )[0];
+          (creepIter) => creepIter.memory.role == "hauler" > 0
+        ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0];
       }
 
       if (!target) {
@@ -32,7 +32,7 @@ let roleHarvester = {
           creep.pos.isNearTo(creep.getSource()) && !sourcePos.findInRange(FIND_CONSTRUCTION_SITES, 2).length) {
           if (target) {
             // already have a container? great
-            sourceData.store_nearby = target;
+            sourceData.store_nearby = target.id;
             console.log("found a store for " + creep.getSource().id + " \nit was: " + target.id + " a " + target.structureType);
           } else {
             let roadOnSpot = creep.pos.lookFor(LOOK_STRUCTURES, {
@@ -115,7 +115,8 @@ let roleHarvester = {
 
             if (source.route_time && !source.store_nearby) {
               segment = [CARRY, CARRY, MOVE];
-              maxSegment = Math.min(Math.ceil(source.route_time * 2 / 50), Math.floor((roomEnergy - sumCost) / segmentCost));
+              // Math.min(Math.ceil(source.route_time * 2 / 50), Math.floor((roomEnergy - sumCost) / segmentCost));
+              maxSegment = Math.floor((roomEnergy - sumCost) / segmentCost);
 
               _.times(maxSegment, function() {
                 _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))

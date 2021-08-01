@@ -77,13 +77,11 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
         route_time: 0, //route to spawner from resource
         last_spawned: Game.time - CREEP_LIFE_TIME, // last time i spawned a harvester,
         harvesters: [],
-        haulers: [],
       };
       _.set(parentRoom.memory, ['resourses', checkRoom.name, RESOURCE_ENERGY, source.id], data);
     }
 
     data.harvesters = [];
-    data.haulers = [];
 
     let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester" && creep.memory.resource_id == source.id);
     if (harvesters.length) {
@@ -91,11 +89,6 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
       data.last_spawned = harvesters[harvesters.length - 1].memory.born;
     } else {
       data.last_spawned = data.last_spawned = Game.time - CREEP_LIFE_TIME;
-    }
-
-    let haulers = _.filter(Game.creeps, (creep) => creep.memory.role == "hauler" && creep.memory.resource_id == source.id);
-    if (haulers.length) {
-      _.forEach(haulers, (creep) => data.haulers.push(creep.id));
     }
 
     if (spawn) {
