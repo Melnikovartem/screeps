@@ -10,16 +10,44 @@ let roleHarvester = {
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
       //check if harvestContainer
+      let target = Game.getObjectById(sourceData.store_nearby);
 
-      //check if haulers are nearby
-      let target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-        (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-      )[0];
+      if (!target && sourceData.store_nearby) {
+        // no harvestContainer == let's check if hauler waiting for us to unload
+        target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
+          (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        )[0];
+      }
 
       if (!target) {
+        // ufff any harvest container?
         target = _.filter(creep.pos.findInRange(FIND_STRUCTURES, 1),
           (structure) => structure.structureType == STRUCTURE_CONTAINER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
         )[0];
+
+        //sure hard to get constuction site going
+        let sourcePos = creep.getSource().pos
+
+        if (creep.room.controller && creep.room.controller.my && !sourceData.store_nearby &&
+          creep.pos.isNearTo(creep.getSource()) && !sourcePos.findInRange(FIND_CONSTRUCTION_SITES, 1).length &&
+          !_.filter(creep.pos.findInRange(FIND_STRUCTURES, 1), {
+            structureType: STRUCTURE_CONTAINER
+          }).length) {
+          if (target) {
+            // already have a container? great
+            sourceData.store_nearby = target
+          } else {
+            let roadOnSpot = creep.pos.lookFor(LOOK_STRUCTURES, {
+              filter: {
+                structureType: STRUCTURE_CONTAINER
+              }
+            });
+            if (roadOnSpot.length) {
+              roadOnSpot[0].destroy();
+            }
+            creep.pos.createConstructionSite(STRUCTURE_CONTAINER);
+          }
+        }
       }
 
       // fail-safe if haulers are dead?
@@ -48,6 +76,7 @@ let roleHarvester = {
         }
       }
 
+      //time to transfer :/
       if (creep.pos.isNearTo(target)) {
         creep.transfer(target, RESOURCE_ENERGY);
       } else {
@@ -63,7 +92,7 @@ let roleHarvester = {
       for (let roomName in room.memory.resourses) {
         for (let sourceId in room.memory.resourses[roomName].energy) {
           let source = room.memory.resourses[roomName].energy[sourceId];
-          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME || source.harvesters.length == 0) {
+          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
 
             let spawnSettings = {}
 

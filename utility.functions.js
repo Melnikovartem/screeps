@@ -103,6 +103,7 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
     }
 
     if (!data.store_nearby || !Game.getObjectById(data.store_nearby)) {
+      data.store_nearby = 0;
       let store = _.filter(source.pos.findInRange(FIND_STRUCTURES, 1),
         (structure) => structure.structureType == STRUCTURE_CONTAINER
       )[0];
