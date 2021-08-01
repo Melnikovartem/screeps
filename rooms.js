@@ -9,19 +9,13 @@ function findSources(room) {
       let data = _.get(room.memory, ['resourses', room.name, RESOURCE_ENERGY, source.id]);
 
       if (data == undefined) {
-        data = {
-          /*
-          mining_spot: {
-            x: source.x,
-            y: source.y
-          },
-          route_time: 0,
-          produce_time: 0,
-          last_spawned: Game.time - CREEP_LIFE_TIME,
-          hauler_needed: 0,
-          */
-        }
-
+        data = {}
+        /*
+          harvester: "", // Id
+          produce_time: 0, // produce timer for a harvester
+          route_time: 0, //route to spawner from resource
+          last_spawned: Game.time - CREEP_LIFE_TIME, // last time i spawned a harvester,
+        */
         _.set(room.memory, ['resourses', room.name, RESOURCE_ENERGY, source.id], data);
       }
     })
