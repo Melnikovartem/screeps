@@ -59,25 +59,28 @@ function armyLoop() {
     let soliders = _.filter(Game.creeps, (creep) => creep.memory.army_name == armyName);
 
     if (stationedRoom.controller.my) {
-      if (army.replenished == 0 || Game.time % 50 == 0) {
+      if (army.replenished == 0 || (Game.time - army.replenished >= 1000 && Game.time % 1)) {
         let armyFull = 1;
         // if needed the room will start replenishing
         _.forEach(Object.keys(army.roles), function(roleName) {
-          let diff = army.roles[roleName] - _.filter(soliders, (creep) => creep.memory.role == roleName).length
+          let diff = army.roles[roleName] - _.filter(soliders, (creep) => creep.memory.role == roleName).length;
           if (diff > 0) {
             armyFull = 0;
           }
 
-          // !!!!!! this is too heavy?!
-          let inProcess = _.get(stationedRoom.memory, ["army_orders", roleName]) +
-            stationedRoom.find(FIND_MY_STRUCTURES, (structure) => structure.Spawning && structure.Spawning.role == roleName);
+          let inProcessOrder = _.get(stationedRoom.memory, ["army_orders", roleName]);
 
-
-          if (inProcess) {
-            diff -= inProcess.count;
+          if (inProcessOrder) {
+            inProcessOrder = inProcessOrder.count
+          } else {
+            inProcessOrder = 0;
           }
 
-          if (diff > 0) {
+          console.log("inProcessOrder: " + inProcessOrder);
+
+          console.log("-----");
+
+          if (diff - inProcessOrder > 0) {
             // those in process not enough
             if (!stationedRoom.memory.army_orders) {
               stationedRoom.memory.army_orders = {};
@@ -89,8 +92,11 @@ function armyLoop() {
             console.log("New " + armyName + " order for " + diff + " " + roleName);
           }
         });
+
         if (armyFull) {
-          army.replenished = 1;
+          if (!army.replenished) {
+            army.replenished = Game.time;
+          }
         } else {
           army.replenished = 0;
         }

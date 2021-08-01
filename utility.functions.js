@@ -5,7 +5,7 @@ global.createArmy = function(armyName, roomName) {
       stationed: roomName,
       roles: {},
       high_alert: 0, // do we need to check room each tick
-      replenished: 0, // is process of replenishment finished
+      replenished: 0, // last time this army was replenished finished
       reuse_path: 5, // how smart do we need to be with our moves
       enenmies: {}
     };
@@ -28,12 +28,11 @@ global.addSolider = function(armyName, role, amount = 1) {
     }
 
     if (army.roles[role] <= 0) {
-      delete army.roles[role];
-      return OK;
-    } else {
-      army.replenished == 0;
-      return army.roles[role];
+      army.roles[role] = 0;
     }
+
+    army.replenished = 0;
+    return army.roles[role];
   } else {
     return ERR_NOT_FOUND;
   }

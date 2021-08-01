@@ -35,7 +35,8 @@ let roleKnight = {
 
     let segment = [TOUGH, ATTACK, MOVE];
     let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
-    let sumCost = segmentCost;
+
+    let sumCost = 0;
 
     for (let i = 0; sumCost + segmentCost <= roomEnergy &&
       spawnSettings.bodyParts.length + segment.length <= 50; ++i) {
@@ -52,7 +53,11 @@ let roleKnight = {
       segmentCost = _.sum(segment, s => BODYPART_COST[s]);
     }
 
+
+
     segment = [TOUGH, TOUGH, MOVE];
+    segmentCost = _.sum(segment, s => BODYPART_COST[s]);
+
     if (sumCost + segmentCost <= roomEnergy &&
       spawnSettings.bodyParts.length + segment.length <= 50) {
       _.forEach(segment, (s) => spawnSettings.bodyParts.push(s));
