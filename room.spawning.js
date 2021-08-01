@@ -19,6 +19,7 @@ function roomSpawning(room) {
 
     let roleName = Object.keys(ROLES)[j];
     let spawnSettings = ROLES[roleName].spawn(room);
+
     if (spawnSettings) {
       let partsImportance = [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, MOVE];
       spawnSettings.bodyParts.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
@@ -27,19 +28,17 @@ function roomSpawning(room) {
       let ans = spawns[i].spawnCreep(spawnSettings.bodyParts, creepName, {
         memory: spawnSettings.memory
       });
+
+      console.log(ans);
+
       if (ans == OK) {
         spawnSettings.postSpawn();
-        console.log('spawned ' + roleName);
         i += 1;
       } else if (ans == ERR_NOT_ENOUGH_RESOURCES && roleName == "harvester") {
         // another fail-safe for my economy
         return;
       }
     }
-  }
-
-  if (Game.time % 200 == 0) {
-    console.log("^ role balance in room " + room.name + " ^");
   }
 }
 

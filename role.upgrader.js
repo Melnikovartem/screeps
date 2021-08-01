@@ -28,10 +28,6 @@ let roleUpgrader = {
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
-    if (Game.time % OUTPUT_TICK == 0) {
-      console.log(roleName + ": " + real + "/" + target);
-    }
-
     if (real >= target) {
       return
     }
@@ -65,7 +61,9 @@ let roleUpgrader = {
       upgrading: false
     };
 
-    spawnSettings.postSpawn = function() {};
+    spawnSettings.postSpawn = function() {
+      console.log("spawned a " + roleName + " in " + room.name);
+    };
 
     return spawnSettings;
   },

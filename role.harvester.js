@@ -61,51 +61,63 @@ let roleHarvester = {
   coolName: "Andrena ",
   spawn: function(room) {
     let roleName = "harvester";
-    let target = _.get(room.memory, ["roles", roleName], 2);
-    let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
-    if (Game.time % OUTPUT_TICK == 0) {
-      console.log(roleName + ": " + real + "/" + target);
+    if (room.memory.resourses) {
+      for (let roomName in room.memory.resourses) {
+        for (let sourceId in room.memory.resourses[roomName].energy) {
+          let source = room.memory.resourses[roomName].energy[sourceId];
+
+          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
+
+            let spawnSettings = {}
+
+            let roomEnergy = room.energyAvailable;
+
+
+            spawnSettings.bodyParts = [WORK, CARRY, MOVE]
+
+            let fixedCosts = _.sum(spawnSettings.bodyParts, s => BODYPART_COST[s]);
+
+            let segment = [WORK, WORK, MOVE];
+            let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
+
+            let maxSegment = Math.min(2, Math.floor((roomEnergy - fixedCosts) / segmentCost));
+
+            let sumCost = fixedCosts + segmentCost * maxSegment
+
+            _.times(maxSegment, function() {
+              _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))
+            });
+
+            if (source.route_time && !source.store_nearby) {
+              segment = [CARRY, CARRY, MOVE];
+              maxSegment = Math.min(Math.ceil(source.route_time * 2 / 50), Math.floor((roomEnergy - sumCost) / segmentCost));
+
+              _.times(maxSegment, function() {
+                _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))
+              });
+            }
+
+            spawnSettings.memory = {
+              role: roleName,
+              born: Game.time,
+              homeroom: room.name,
+              fflush: false,
+              resource_id: sourceId
+            };
+
+            spawnSettings.postSpawn = function() {
+              source.last_spawned = Game.time;
+              console.log("spawned " + roleName + " in " + room.name + " for " + sourceId + "  located in " + roomName);
+            };
+
+
+            return spawnSettings;
+          }
+        }
+      }
     }
-
-    if (real >= target) {
-      return
-    }
-
-    let spawnSettings = {
-      bodyParts: [WORK, CARRY, MOVE],
-      memory: {}
-    }
-    let roomEnergy = 300;
-    if (real < target / 3 || real == 0) {
-      roomEnergy = room.energyAvailable;
-    } else {
-      roomEnergy = room.energyCapacityAvailable;
-    }
-
-    let fixedCosts = _.sum(spawnSettings.bodyParts, s => BODYPART_COST[s]);
-
-    let segment = [WORK, WORK, MOVE];
-    let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
-
-    let maxSegment = Math.min(2, Math.floor((roomEnergy - fixedCosts) / segmentCost));
-
-    _.forEach(segment, function(s) {
-      _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
-    });
-
-    spawnSettings.memory = {
-      role: roleName,
-      born: Game.time,
-      homeroom: room.name,
-      fflush: false
-    };
-
-    spawnSettings.postSpawn = function() {};
-
-    return spawnSettings;
   },
 }
-
 
 module.exports = roleHarvester;

@@ -19,6 +19,8 @@ global.REUSE_PATH = 3;
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
+
+  "99b6e0d250350a824babce18",
 ];
 
 module.exports.loop = function() {

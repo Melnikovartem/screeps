@@ -37,3 +37,12 @@ global.addSolider = function(armyName, role, amount = 1) {
     return ERR_NOT_FOUND;
   }
 }
+
+global.roomBalance = function(roomName) {
+  console.log("role balance in room " + roomName + "");
+
+  _.forEach(Object.keys(ROLES), function(roleName) {
+    let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == roomName).length
+    console.log(roleName + ": " + real);
+  });
+}

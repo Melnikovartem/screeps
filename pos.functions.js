@@ -35,3 +35,13 @@ RoomPosition.prototype.getOpenPositions = function() {
 
   return freePosition;
 };
+
+
+RoomPosition.prototype.getTimeForPath = function(roomPos) {
+  let path = this.findPathTo(roomPos, {
+    ignoreCreeps: true
+  });
+
+  //for future i need to iterate and check for roads
+  return path.length
+};

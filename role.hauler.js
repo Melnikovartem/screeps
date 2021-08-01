@@ -24,7 +24,16 @@ let roleUpgrader = {
       if (!target) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => {
-            return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id))
+            return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id)) &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          }
+        });
+      }
+
+      if (!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => {
+            return (structure.structureType == STRUCTURE_STORAGE)
           }
         });
       }
@@ -61,14 +70,10 @@ let roleUpgrader = {
   },
 
   coolName: "Bumblebee ",
-  spawn: function(room, maxSize = 0) {
+  spawn: function(room) {
     let roleName = "hauler";
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
-
-    if (Game.time % OUTPUT_TICK == 0) {
-      console.log(roleName + ": " + real + "/" + target);
-    }
 
     if (real >= target) {
       return
@@ -79,7 +84,7 @@ let roleUpgrader = {
       memory: {}
     }
     let roomEnergy = 300;
-    if ((real < target / 2 || real == 0) && !maxSize) {
+    if (real < target / 2 || real == 0) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
@@ -104,7 +109,9 @@ let roleUpgrader = {
       target_harvester: harvesters[Object.keys(harvesters)[Math.floor(Math.random() * harvesters.length)]].id
     };
 
-    spawnSettings.postSpawn = function() {};
+    spawnSettings.postSpawn = function() {
+      console.log("spawned a " + roleName + " in " + room.name);
+    };
 
     return spawnSettings;
   },

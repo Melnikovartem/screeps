@@ -14,15 +14,6 @@ let roleKnight = {
     let roleName = "knight";
     let orderInfo = _.get(room.memory, ["army_orders", roleName]);
 
-    if (Game.time % OUTPUT_TICK == 0) {
-      let status = "no order"
-      if (orderInfo) {
-        status = "ordered " + orderInfo.count;
-      }
-      console.log("knights: " + status);
-    }
-
-
     if (!orderInfo) {
       return
     }
@@ -79,6 +70,7 @@ let roleKnight = {
       if (room.memory.army_orders[roleName].count <= 0) {
         delete room.memory.army_orders[roleName];
       }
+      console.log("spawned a " + roleName + " in " + room.name + " for " + armyName);
     };
 
     return spawnSettings;

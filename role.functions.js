@@ -9,7 +9,11 @@ Creep.prototype.findSource = function() {
 }
 
 Creep.prototype.harvestSource = function() {
-  var source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+  let source = Game.getObjectById(this.memory.resource_id);
+
+  if (!source) {
+    source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+  }
 
   if (this.harvest(source) == ERR_NOT_IN_RANGE) {
     this.moveTo(source, {
@@ -27,7 +31,8 @@ Creep.prototype.moveToRoom = function(roomName) {
 Creep.prototype.getEnergyFromStorage = function() {
   let target = this.pos.findClosestByPath(FIND_STRUCTURES, {
     filter: (structure) => {
-      return (structure.structureType == STRUCTURE_CONTAINER) &&
+      return (structure.structureType == STRUCTURE_CONTAINER ||
+          structure.structureType == STRUCTURE_STORAGE) &&
         structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
     }
   });
