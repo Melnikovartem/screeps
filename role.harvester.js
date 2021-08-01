@@ -29,13 +29,11 @@ let roleHarvester = {
         let sourcePos = creep.getSource().pos
 
         if (creep.room.controller && creep.room.controller.my && !sourceData.store_nearby &&
-          creep.pos.isNearTo(creep.getSource()) && !sourcePos.findInRange(FIND_CONSTRUCTION_SITES, 1).length &&
-          !_.filter(creep.pos.findInRange(FIND_STRUCTURES, 1), {
-            structureType: STRUCTURE_CONTAINER
-          }).length) {
+          creep.pos.isNearTo(creep.getSource()) && !sourcePos.findInRange(FIND_CONSTRUCTION_SITES, 2).length) {
           if (target) {
             // already have a container? great
-            sourceData.store_nearby = target
+            sourceData.store_nearby = target;
+            console.log("found a store for " + creep.getSource().id + " \nit was: " + target.id + " a " + target.structureType);
           } else {
             let roadOnSpot = creep.pos.lookFor(LOOK_STRUCTURES, {
               filter: {
@@ -45,7 +43,8 @@ let roleHarvester = {
             if (roadOnSpot.length) {
               roadOnSpot[0].destroy();
             }
-            creep.pos.createConstructionSite(STRUCTURE_CONTAINER);
+            let ans = creep.pos.createConstructionSite(STRUCTURE_CONTAINER);
+            console.log("created a store for " + creep.getSource().id + " \nresult: " + ans);
           }
         }
       }
