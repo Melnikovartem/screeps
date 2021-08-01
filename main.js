@@ -14,13 +14,11 @@ global.ROLES = {
 };
 
 global.OUTPUT_TICK = 200;
-global.RESUSE_PATH = 3;
+global.REUSE_PATH = 3;
 
 global.minerContainerIds = [
   "6104cfbc0a328f04a3f0937e",
   "6104d6e099c3721829eb8a0c",
-
-  "7d47db5178835b81bfd4c8b5",
 ];
 
 module.exports.loop = function() {

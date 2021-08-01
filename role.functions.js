@@ -3,7 +3,7 @@ Creep.prototype.findSource = function() {
 
   if (this.harvest(source) == ERR_NOT_IN_RANGE) {
     this.moveTo(source, {
-      reusePath: RESUSE_PATH
+      reusePath: REUSE_PATH
     });
   }
 }
@@ -13,14 +13,14 @@ Creep.prototype.harvestSource = function() {
 
   if (this.harvest(source) == ERR_NOT_IN_RANGE) {
     this.moveTo(source, {
-      reusePath: RESUSE_PATH
+      reusePath: REUSE_PATH
     });
   }
 }
 
 Creep.prototype.moveToRoom = function(roomName) {
   this.moveTo(new RoomPosition(25, 25, roomName), {
-    reusePath: RESUSE_PATH
+    reusePath: REUSE_PATH
   });
 }
 
@@ -70,7 +70,7 @@ Creep.prototype.getEnergyFromContainer = function() {
 
   if (!this.pos.isNearTo(target)) {
     this.moveTo(target, {
-      reusePath: RESUSE_PATH
+      reusePath: REUSE_PATH
     });
   }
 

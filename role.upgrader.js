@@ -15,7 +15,7 @@ let roleUpgrader = {
     if (creep.memory.upgrading) {
       if (creep.pos.getRangeTo(creep.room.controller) > 3) {
         creep.moveTo(creep.room.controller, {
-          reusePath: RESUSE_PATH
+          reusePath: REUSE_PATH
         });
       } else {
         creep.upgradeController(creep.room.controller)

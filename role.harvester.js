@@ -7,10 +7,22 @@ let roleHarvester = {
       creep.harvestSource();
     }
 
-    let structuresNear = creep.pos.findInRange(FIND_STRUCTURES, 1);
-    let target = structuresNear.filter(
-      (structure) => (minerContainerIds.includes(structure.id)) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+
+
+
+    let target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
+      (creepIter) => creepIter.memory.role == "hauler" && creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     )[0];
+
+
+
+    if (!target) {
+      target = _.filter(creep.pos.findInRange(FIND_STRUCTURES, 1),
+        (structure) => structure.structureType == STRUCTURE_CONTAINER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+      )[0];
+    }
+
+    //console.log(target);
 
 
     if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
@@ -34,7 +46,7 @@ let roleHarvester = {
       } else if (creep.memory.fflush) {
         if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
           creep.moveTo(target, {
-            reusePath: RESUSE_PATH
+            reusePath: REUSE_PATH
           });
         }
       }

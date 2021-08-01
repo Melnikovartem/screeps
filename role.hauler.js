@@ -1,62 +1,63 @@
 let roleUpgrader = {
   run: function(creep) {
-    if (creep.memory.hauling && creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-      creep.memory.hauling = false;
-      creep.say('🔄');
+
+    if (creep.memory.hauling) {
+      let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+        filter: (structure) => {
+          return (structure.structureType == STRUCTURE_EXTENSION ||
+              structure.structureType == STRUCTURE_SPAWN) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+        }
+      });
+
+      if (!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => {
+            if (structure.store) {
+              return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
+                (!minerContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getUsedCapacity(RESOURCE_ENERGY))
+            }
+          }
+        });
+      }
+
+      if (!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => {
+            return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id))
+          }
+        });
+      }
+
+      if ((!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) != 0) || creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        creep.memory.hauling = false;
+        creep.say('🔄');
+      }
+
+      if (!creep.pos.isNearTo(target)) {
+        creep.moveTo(target, {
+          reusePath: REUSE_PATH
+        });
+      }
+      creep.transfer(target, RESOURCE_ENERGY);
     }
 
     if (!creep.memory.hauling) {
-      let ans = ERR_NOT_FOUND;
-      if (ans == ERR_NOT_FOUND) {
-        ans = creep.getEnergyFromContainer();
+      let ans = creep.getEnergyFromContainer()
+      if (ans == ERR_NOT_FOUND && creep.room.energyCapacityAvailable > creep.room.energyAvailable) {
+        ans = creep.getEnergyFromStorage()
+        console.log(ans);
       }
       if (ans == ERR_NOT_FOUND) {
-        ans == creep.getEnergyFromStorage();
-      }
-      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-        //fail-safe
-        ans = OK;
+        creep.moveTo(Game.getObjectById(creep.memory.target_harvester));
+        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+          ans = OK;
+        }
       }
       if (ans == OK) {
         creep.memory.hauling = true;
         creep.say('➡');
       }
-    }
-
-    let target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-      filter: (structure) => {
-        return (structure.structureType == STRUCTURE_EXTENSION ||
-            structure.structureType == STRUCTURE_SPAWN) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-      }
-    });
-
-    if (!target) {
-      target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: (structure) => {
-          if (structure.store) {
-            return (structure.structureType == STRUCTURE_TOWER && structure.store.getFreeCapacity(RESOURCE_ENERGY) > structure.store.getCapacity(RESOURCE_ENERGY) * 0.1) ||
-              (!minerContainerIds.includes(structure.id) && structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getUsedCapacity(RESOURCE_ENERGY))
-          }
-        }
-      });
-    }
-
-    if (!target) {
-      target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: (structure) => {
-          return (structure.structureType == STRUCTURE_TOWER || !minerContainerIds.includes(structure.id))
-        }
-      });
-    }
-
-    if (creep.memory.hauling) {
-      if (!creep.pos.isNearTo(target)) {
-        creep.moveTo(target, {
-          reusePath: RESUSE_PATH
-        });
-      }
-      creep.transfer(target, RESOURCE_ENERGY);
     }
   },
 

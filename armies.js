@@ -67,7 +67,8 @@ function armyLoop() {
             armyFull = 0;
           }
 
-          let inProcess = _.get(stationedRoom.memory, ["army_orders", roleName]);
+          let inProcess = _.get(stationedRoom.memory, ["army_orders", roleName]) +
+            stationedRoom.find(FIND_MY_STRUCTURES, (structure) => structure.Spawning && structure.Spawning.role == roleName);
           if (inProcess) {
             diff -= inProcess.count;
           }

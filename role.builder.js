@@ -17,7 +17,7 @@ let roleBuilder = {
       if (buildTarget) {
         if (creep.pos.getRangeTo(buildTarget) > 3) {
           creep.moveTo(buildTarget, {
-            reusePath: RESUSE_PATH
+            reusePath: REUSE_PATH
           });
         } else {
           creep.build(buildTarget);
@@ -35,7 +35,7 @@ let roleBuilder = {
         if (repairTargetFull) {
           if (creep.pos.getRangeTo(repairTargetFull) > 3) {
             creep.moveTo(repairTargetFull, {
-              reusePath: RESUSE_PATH
+              reusePath: REUSE_PATH
             });
           } else {
             creep.repair(repairTargetFull);
