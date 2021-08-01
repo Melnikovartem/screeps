@@ -9,7 +9,20 @@ function findSources(room) {
       let data = _.get(room.memory, ['resourses', room.name, RESOURCE_ENERGY, source.id]);
 
       if (data == undefined) {
-        _.set(room.memory, ['resourses', room.name, RESOURCE_ENERGY, source.id], {});
+        data = {
+          /*
+          mining_spot: {
+            x: source.x,
+            y: source.y
+          },
+          route_time: 0,
+          produce_time: 0,
+          last_spawned: Game.time - CREEP_LIFE_TIME,
+          hauler_needed: 0,
+          */
+        }
+
+        _.set(room.memory, ['resourses', room.name, RESOURCE_ENERGY, source.id], data);
       }
     })
   }

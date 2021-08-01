@@ -51,6 +51,8 @@ let roleUpgrader = {
     let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
 
     let maxSegment = Math.floor(roomEnergy / segmentCost);
+    // handicap cause burn materials too fast
+    maxSegment = Math.min(maxSegment, 4)
 
     _.forEach(segment, function(s) {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))

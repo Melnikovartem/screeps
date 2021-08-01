@@ -61,7 +61,7 @@ let roleUpgrader = {
   },
 
   coolName: "Bumblebee ",
-  spawn: function(room) {
+  spawn: function(room, maxSize = 0) {
     let roleName = "hauler";
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
@@ -79,7 +79,7 @@ let roleUpgrader = {
       memory: {}
     }
     let roomEnergy = 300;
-    if (real < target / 2 || target == 1) {
+    if ((real < target / 2 || real == 0) && !maxSize) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
