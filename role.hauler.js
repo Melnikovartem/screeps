@@ -16,7 +16,7 @@ let roleUpgrader = {
         // spawners need to be filled
         target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
           filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
-              structure.structureType == STRUCTURE_SPAWN) &&
+              structure.structureType == STRUCTURE_SPAWN) && structure.store &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
         });
       }
@@ -24,29 +24,31 @@ let roleUpgrader = {
       if (!target) {
         // towers need to be filled
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => {
-            structure.store && structure.structureType == STRUCTURE_TOWER &&
-              structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
-          }
+          filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
+            structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
         });
+
       }
 
       if (!target) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id))
+          filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
         });
       }
 
-      if (!creep.pos.isNearTo(target)) {
-        creep.memory._target = {
-          id: target.id,
-          time: Game.time,
-        };
-        creep.moveTo(target, {
-          reusePath: REUSE_PATH
-        });
-      } else {
-        creep.transfer(target, RESOURCE_ENERGY);
+      if (target) {
+        if (!creep.pos.isNearTo(target)) {
+          creep.memory._target = {
+            id: target.id,
+            time: Game.time,
+          };
+          creep.moveTo(target, {
+            reusePath: REUSE_PATH
+          });
+        } else {
+          creep.transfer(target, RESOURCE_ENERGY);
+        }
       }
 
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0)) {

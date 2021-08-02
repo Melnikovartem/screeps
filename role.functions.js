@@ -97,7 +97,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
 
     if (!room.memory.resourses) {
       if (this.room.name != this.memory.homeroom) {
-        findSources(room, creep.room);
+        findSources(room, this.room);
       }
       findSources(room, this.memory.homeroom);
     }
@@ -139,6 +139,10 @@ Creep.prototype.getEnergyFromHarvesters = function() {
     });
 
     target = targets[0];
+  }
+
+  if (!target) {
+    return ERR_NOT_FOUND;
   }
 
   // update target info
