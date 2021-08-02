@@ -7,7 +7,7 @@ let roleUpgrader = {
       if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
         target = Game.getObjectById(creep.memory._target.id);
         // target is still valid;
-        if (target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+        if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
           target = 0;
         }
       }

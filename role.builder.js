@@ -13,37 +13,63 @@ let roleBuilder = {
     }
 
     if (creep.memory.building) {
-      var buildTarget = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
-      if (buildTarget) {
-        if (creep.pos.getRangeTo(buildTarget) > 3) {
-          creep.moveTo(buildTarget, {
-            reusePath: REUSE_PATH
-          });
-        } else {
-          creep.build(buildTarget);
-        }
-      } else {
-        let repairSheet = {
-          [STRUCTURE_RAMPART]: 200000,
-          [STRUCTURE_WALL]: 200000,
-          other: 1,
-        }
 
-        let closestDamagedStructure = structure.pos.findClosestByPath(FIND_STRUCTURES, {
+      // prob can set it in room memory for different types of rooms
+      let repairSheet = {
+        [STRUCTURE_RAMPART]: 200000,
+        [STRUCTURE_WALL]: 200000,
+        other: 1,
+      }
+
+      let target;
+      if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+        target = Game.getObjectById(creep.memory._target.id);
+        // target is still valid;
+        if (!target || !(creep.memory._target.type == "repair" && (repairSheet[target.structureType] &&
+              target.hits < repairSheet[target.structureType]) ||
+            (!repairSheet[target.structureType] &&
+              target.hits < target.hitsMax * repairSheet["other"]))) {
+          target = 0;
+        }
+      }
+
+      target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
+      if (target) {
+        creep.memory._target = {
+          id: target.id,
+          time: Game.time,
+          type: "build"
+        };
+      }
+
+      if (!target) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
           filter: (structure) => (repairSheet[structure.structureType] &&
               structure.hits < repairSheet[structure.structureType]) ||
             (!repairSheet[structure.structureType] &&
               structure.hits < structure.hitsMax * repairSheet["other"])
         });
+        if (target) {
+          creep.memory._target = {
+            id: target.id,
+            time: Game.time,
+            type: "repair"
+          };
+        }
+      }
 
-        if (closestDamagedStructure) {
-          if (creep.pos.getRangeTo(closestDamagedStructure) > 3) {
-            creep.moveTo(closestDamagedStructure, {
-              reusePath: REUSE_PATH
-            });
-          } else {
-            creep.repair(closestDamagedStructure);
+      if (target) {
+        if (creep.pos.getRangeTo(target) > 3) {
+          creep.moveTo(target, {
+            reusePath: REUSE_PATH
+          });
+        } else {
+          if (creep.memory._target.type == "build") {
+            creep.build(target);
+          } else if (creep.memory._target.type == "repair") {
+            creep.repair(target);
           }
+          // didnt add fail-safe, but i added _target.type for all cases higher
         }
       }
     }

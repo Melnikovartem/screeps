@@ -40,7 +40,7 @@ Creep.prototype.getEnergyFromStorage = function() {
   if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
     target = Game.getObjectById(this.memory._sucker_target.id);
     // target is still valid;
-    if (!(target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
+    if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
       target = 0;
     }
   }
@@ -84,7 +84,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
   if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
     target = Game.getObjectById(this.memory._sucker_target.id);
     // target is still valid;
-    if (!(target.store.getUsedCapacity(RESOURCE_ENERGY) >= target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
+    if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
         target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
       target = 0;
     }
