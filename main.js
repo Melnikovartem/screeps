@@ -18,7 +18,9 @@ global.REUSE_PATH = 3;
 
 //for developing rooms
 global.storageContainerIds = [
-
+  "61057ec20ac3811209f01e9e",
+  "61058ede26c3c4bf6b825be4",
+  "6104f8759f18546eddf20ab9",
   //from sim
 ];
 

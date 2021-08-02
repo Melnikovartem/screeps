@@ -47,10 +47,9 @@ let roleUpgrader = {
         });
       } else {
         creep.transfer(target, RESOURCE_ENERGY);
-        creep.memory._target = 0;
       }
 
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) != 0)) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0)) {
         creep.memory._target = 0;
         creep.say('🔄');
       }
