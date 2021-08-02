@@ -168,8 +168,6 @@ Creep.prototype.getEnergyFromHarvesters = function() {
       }
     }
 
-    //console.log(targets);
-
     // sort by empty size, then by max size
     // need to think what to do with distance ?
     targets.sort((a, b) => {
@@ -178,7 +176,6 @@ Creep.prototype.getEnergyFromHarvesters = function() {
       }
       return a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY);
     });
-
 
     target = targets[0];
   }

@@ -100,8 +100,7 @@ let roleHarvester = {
       for (let roomName in room.memory.resourses) {
         for (let sourceId in room.memory.resourses[roomName].energy) {
           let source = room.memory.resourses[roomName].energy[sourceId];
-          // 10 ticks - for random shit
-          if (Game.time + source.route_time + 10 >= source.last_spawned + CREEP_LIFE_TIME) {
+          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
 
             let spawnSettings = {}
 

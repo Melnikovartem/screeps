@@ -110,7 +110,13 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
     }
 
     if (spawn) {
-      data.route_time = spawn.pos.getTimeForPath(source.pos);
+      // 10 ticks - for random shit
+      data.route_time = spawn.pos.getTimeForPath(source.pos) + 10;
+
+      // cause it is calculated in a wrong way for extra rooms (path to exit)
+      if (spawn.room.name != source.room.name) {
+        data.route_time += 25;
+      }
     }
 
     if (!data.store_nearby || !Game.getObjectById(data.store_nearby)) {

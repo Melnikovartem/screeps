@@ -78,7 +78,7 @@ let roleHauler = {
           // towers need to be filled
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
             filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
-              structure.store && structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
+              structure.store && structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
           });
         }
 
