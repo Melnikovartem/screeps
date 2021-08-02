@@ -57,7 +57,7 @@ Creep.prototype.suckFromTarget = function(target) {
     });
   } else {
     if (target instanceof Creep) {
-      ans = !(target.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0);
+      ans = !(target.store.getUsedCapacity(RESOURCE_ENERGY) < 25 || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0);
 
       if (ans == OK) {
         target.memory._is_targeted = OK;
@@ -66,6 +66,10 @@ Creep.prototype.suckFromTarget = function(target) {
       }
     } else {
       ans = this.withdraw(target, RESOURCE_ENERGY);
+    }
+
+    if (ans == ERR_FULL) {
+      ans = OK;
     }
 
     if (ans == OK) {
@@ -94,6 +98,8 @@ Creep.prototype.getEnergyFromStorage = function() {
     });
   }
 
+
+
   if (!target) {
     //fail-safe for early game
     if (this.room.find(FIND_STRUCTURES, {
@@ -101,6 +107,9 @@ Creep.prototype.getEnergyFromStorage = function() {
           structure.structureType == STRUCTURE_STORAGE)
       }).length == 0 && Game.rooms[this.memory.homeroom].controller.level < 4) {
       return this.getEnergyFromHarvesters();
+    } else if (this.room.name != this.memory.homeroom) {
+      // get your energy home if you cant find it here
+      this.moveToRoom(this.memory.homeroom);
     }
   }
 
@@ -169,6 +178,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
       }
       return a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY);
     });
+
 
     target = targets[0];
   }

@@ -23,7 +23,7 @@ function checkRoomsForTargets(creep) {
   }
 
   if (creep.room.name != creep.memory.homeroom) {
-    if (checkRoomsForTargets(creep, Game.rooms[creep.memory.homeroom])) {
+    if (checkRoomForTargets(creep, Game.rooms[creep.memory.homeroom])) {
       creep.memory._target.room = creep.memory.homeroom;
     }
   }
@@ -48,8 +48,13 @@ function checkRoomsForTargets(creep) {
 let roleName = "hauler";
 let roleHauler = {
   run: function(creep) {
+    // just reffiled, but a lot of space left 65% +
+    if (creep.memory._target == {} && creep.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.65) {
+      creep.memory._target = 0;
+      creep.say('🔄');
+    }
     if (creep.memory._target) {
-      if (creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
+      if (creep.memory._target && creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
         creep.moveToRoom(creep.memory._target.room);
       } else {
 
@@ -123,6 +128,7 @@ let roleHauler = {
         ans = creep.getEnergyFromHarvesters();
       }
 
+      //this is a dangerous if cause now i need to FEED my boys if i want my energy delivered
       if (ans == OK) {
         creep.memory._target = {};
         creep.say('➡');

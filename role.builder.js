@@ -10,14 +10,17 @@ function checkRoomForTargets(creep, room, targetType = "build") {
         (!repairSheet[structure.structureType] &&
           structure.hits < structure.hitsMax * repairSheet["other"])
     }).length;
+    console.log(targets);
   }
   return targets;
 }
 
 function checkRoomsForTargets(creep, targetType) {
   creep.memory._target = {
+    id: 0,
     time: Game.time,
     room: 0,
+    type: targetType,
   }
 
   if (creep.room.name != creep.memory.homeroom) {
@@ -65,7 +68,7 @@ let roleBuilder = {
     }
 
     if (creep.memory.building) {
-      if (creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
+      if (creep.memory._target && creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
         creep.moveToRoom(creep.memory._target.room);
       } else {
 
@@ -79,7 +82,6 @@ let roleBuilder = {
               (!repairSheet[target.structureType] &&
                 target.hits < target.hitsMax * repairSheet["other"]))) {
             target = 0;
-            creep.memory._target = {};
           }
         }
 
@@ -141,13 +143,19 @@ let roleBuilder = {
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
     //just summon 1 builder from time to time. Just to keep repairs in check -_-
-    if (!(Game.time % 4500 == 0 && real > 0) && (real >= target || room.find(FIND_CONSTRUCTION_SITES).length == 0)) {
+    if (real >= target && !(Game.time % 4500 == 0 && real == 0)) {
+      return
+    }
+    // no work for my BUILDers POG
+    if (room.find(FIND_CONSTRUCTION_SITES).length == 0) {
       let annexConstructionSites = 0;
       for (let annexName in room.memory.annexes) {
-        annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName], room.find(FIND_CONSTRUCTION_SITES).length);
+        annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName].find(FIND_CONSTRUCTION_SITES).length);
+        if (annexConstructionSites) {
+          break;
+        }
       }
-
-      if (!annexConstructionSites) {
+      if (real >= target || annexConstructionSites == 0) {
         return
       }
     }
