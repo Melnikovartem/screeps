@@ -50,6 +50,13 @@ let roleHarvester = {
         }
       }
 
+      //fail-safe for early game
+      if (!target) {
+        target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
+          (creepIter) => creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0]
+      }
+
       // fail-safe if haulers are dead?
       //made it very elaborate to stop from mis-fire
       if (creep.room.controller.my) {

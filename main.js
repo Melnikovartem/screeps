@@ -42,6 +42,7 @@ module.exports.loop = function() {
   roomLoop();
 
   if (Game.cpu.bucket == 10000) {
-    Game.cpu.generatePixel();
+    // only on official
+    // Game.cpu.generatePixel();
   }
 }

@@ -67,8 +67,9 @@ let roleUpgrader = {
         // WELL TIME TO GET SOME WORK DONE FROM FUCKING HARVESTERS
         ans = creep.getEnergyFromHarvesters();
       }
+
       if (ans == OK) {
-        creep.memory._target = 1;
+        creep.memory._target = {};
         creep.say('➡');
       }
     }
@@ -108,7 +109,6 @@ let roleUpgrader = {
       role: roleName,
       born: Game.time,
       homeroom: room.name,
-      hauling: false,
 
       // here also can be some _target cashing
     };
