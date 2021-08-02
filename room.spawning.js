@@ -12,12 +12,11 @@ function roomSpawning(room) {
 
   let i = 0;
 
-  for (let j in Object.keys(ROLES)) {
+  for (let roleName in ROLES) {
     if (!spawns[i]) {
       return;
     }
 
-    let roleName = Object.keys(ROLES)[j];
     let spawnSettings = ROLES[roleName].spawn(room);
 
     if (spawnSettings) {

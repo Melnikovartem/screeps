@@ -22,10 +22,19 @@ global.storageContainerIds = [
   //from sim
 ];
 
+/*
+  for (let roleName in ROLES) {
+    profiler.registerObject(ROLES[roleName], roleName + ".Role");
+  }
+
+  const profiler = require('screeps-profiler');
+  profiler.enable();
+
+  profiler.wrap(function() {});
+*/
+
 module.exports.loop = function() {
-
   armyLoop();
-
 
   for (let creepName in Memory.creeps) {
     let creep = Game.creeps[creepName];
@@ -43,6 +52,6 @@ module.exports.loop = function() {
 
   if (Game.cpu.bucket == 10000) {
     // only on official
-    // Game.cpu.generatePixel();
+    Game.cpu.generatePixel();
   }
 }

@@ -143,22 +143,25 @@ let roleBuilder = {
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
     //just summon 1 builder from time to time. Just to keep repairs in check -_-
-    if (real >= target && !(Game.time % 4500 == 0 && real == 0)) {
-      return
-    }
-    // no work for my BUILDers POG
-    if (room.find(FIND_CONSTRUCTION_SITES).length == 0) {
-      let annexConstructionSites = 0;
-      for (let annexName in room.memory.annexes) {
-        annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName].find(FIND_CONSTRUCTION_SITES).length);
-        if (annexConstructionSites) {
-          break;
-        }
-      }
-      if (real >= target || annexConstructionSites == 0) {
+    if (!(Game.time % 3000 == 0 && real == 0)) {
+      if (real >= target) {
         return
       }
+      // no work for my BUILDers POG
+      if (room.find(FIND_CONSTRUCTION_SITES).length == 0) {
+        let annexConstructionSites = 0;
+        for (let annexName in room.memory.annexes) {
+          annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName].find(FIND_CONSTRUCTION_SITES).length);
+          if (annexConstructionSites) {
+            break;
+          }
+        }
+        if (real >= target || annexConstructionSites == 0) {
+          return
+        }
+      }
     }
+
 
     let spawnSettings = {
       bodyParts: [],
