@@ -8,7 +8,7 @@ let roleHarvester = {
       creep.harvestSource();
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 50) {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
       //check if harvestContainer
       let target = Game.getObjectById(sourceData.store_nearby);
 
@@ -63,7 +63,6 @@ let roleHarvester = {
               }
             }), (structure) => structure.spawning != null);
             if (spawnsActive.length == 0) {
-              console.log("here");
               target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
                 filter: (structure) => {
                   return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -92,7 +91,8 @@ let roleHarvester = {
       for (let roomName in room.memory.resourses) {
         for (let sourceId in room.memory.resourses[roomName].energy) {
           let source = room.memory.resourses[roomName].energy[sourceId];
-          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
+          // 10 ticks - for random shit
+          if (Game.time + source.route_time + 10 >= source.last_spawned + CREEP_LIFE_TIME) {
 
             let spawnSettings = {}
 

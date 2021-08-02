@@ -23,22 +23,26 @@ let roleBuilder = {
           creep.build(buildTarget);
         }
       } else {
-        var repairTargetFull = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => ((structure.structureType == STRUCTURE_WALL) &&
-              structure.hits < 150000) ||
-            ((structure.structureType == STRUCTURE_RAMPART) &&
-              structure.hits < 150000) ||
-            ((structure.structureType != STRUCTURE_WALL &&
-                structure.structureType != STRUCTURE_RAMPART) &&
-              structure.hits < structure.hitsMax)
+        let repairSheet = {
+          [STRUCTURE_RAMPART]: 200000,
+          [STRUCTURE_WALL]: 200000,
+          other: 1,
+        }
+
+        let closestDamagedStructure = structure.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => (repairSheet[structure.structureType] &&
+              structure.hits < repairSheet[structure.structureType]) ||
+            (!repairSheet[structure.structureType] &&
+              structure.hits < structure.hitsMax * repairSheet["other"])
         });
-        if (repairTargetFull) {
-          if (creep.pos.getRangeTo(repairTargetFull) > 3) {
-            creep.moveTo(repairTargetFull, {
+
+        if (closestDamagedStructure) {
+          if (creep.pos.getRangeTo(closestDamagedStructure) > 3) {
+            creep.moveTo(closestDamagedStructure, {
               reusePath: REUSE_PATH
             });
           } else {
-            creep.repair(repairTargetFull);
+            creep.repair(closestDamagedStructure);
           }
         }
       }

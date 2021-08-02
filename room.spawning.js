@@ -21,7 +21,8 @@ function roomSpawning(room) {
     let spawnSettings = ROLES[roleName].spawn(room);
 
     if (spawnSettings) {
-      let partsImportance = [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, MOVE];
+      // optimizing movement cpu or smth? 
+      let partsImportance = [TOUGH, MOVE, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL];
       spawnSettings.bodyParts.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
 
       let creepName = ROLES[roleName].coolName + '' + getRandomInt(10000);
