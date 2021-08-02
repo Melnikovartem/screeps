@@ -99,7 +99,7 @@ Creep.prototype.getEnergyFromStorage = function() {
     if (this.room.find(FIND_STRUCTURES, {
         filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
           structure.structureType == STRUCTURE_STORAGE)
-      }).length == 0) {
+      }).length == 0 && Game.rooms[this.memory.homeroom].controller.level < 4) {
       return this.getEnergyFromHarvesters();
     }
   }

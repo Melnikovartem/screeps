@@ -1,100 +1,111 @@
-function getTarget(creep, room) {
-  if (!target) {
-    // spawners need to be filled
-    target = creep.pos.findClosestByRange(room.find(FIND_MY_STRUCTURES, {
-      filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
-          structure.structureType == STRUCTURE_SPAWN) && structure.store &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    }));
+function checkRoomForTargets(creep, room) {
+  //return something OR nothing if no targets
+
+  let targets = room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
+        structure.structureType == STRUCTURE_SPAWN) && structure.store &&
+      structure.store && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+  }).length;
+
+  if (!targets) {
+    targets = room.find(FIND_STRUCTURES, {
+      filter: (structure) => structure.store && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    }).length;
   }
 
-  if (!target) {
-    // towers need to be filled
-    target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES, {
-      filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
-        structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
-    }));
-
-  }
-
-  // target in room that i am checking rn is better than target in another room
-  if (!target) {
-    target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES, {
-      filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    }));
-  }
-
-  return target;
+  return targets;
 }
 
-function checkRooms(creep) {
-  // target cashing (!smart)
-  let target;
-  if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
-    target = Game.getObjectById(creep.memory._target.id);
-    // target is still valid;
-    if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-      target = 0;
+function checkRoomsForTargets(creep) {
+  creep.memory._target = {
+    time: Game.time,
+    room: 0,
+  }
+
+  if (creep.room.name != creep.memory.homeroom) {
+    if (checkRoomsForTargets(creep, Game.rooms[creep.memory.homeroom])) {
+      creep.memory._target.room = creep.memory.homeroom;
     }
   }
 
-  if (!target) {
-    target = getTarget(creep, creep.room);
-  }
-
-  if (!target && creep.room.name != creep.memory.homeroom) {
-    target = getTarget(creep, Game.rooms[creep.memory.homeroom]);
-  }
-
-  if (!target) {
+  if (!creep.memory._target.room) {
     for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
       if (creep.room.name != annexName) {
-        target = getTarget(creep, Game.rooms[annexName]);
-        if (target) {
+        if (checkRoomForTargets(creep, Game.rooms[annexName])) {
+          creep.memory._target.room = annexName;
           break;
         }
       }
     }
   }
 
-  return target;
+  if (!creep.memory._target.room) {
+    creep.memory._target.room = creep.memory.homeroom;
+  }
 }
 
 
 let roleName = "hauler";
 let roleHauler = {
   run: function(creep) {
-
     if (creep.memory._target) {
-      target = checkRooms(creep);
+      if (creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
+        creep.moveToRoom(creep.memory._target.room);
+      } else {
 
-      if (target) {
-        // this can also be done in checkRooms if needed;
-        creep.memory._target = {
-          id: target.id,
-          time: Game.time,
-        };
-
-        if (!creep.pos.isNearTo(target)) {
-          creep.moveTo(target, {
-            reusePath: REUSE_PATH
-          });
-        } else {
-          creep.transfer(target, RESOURCE_ENERGY);
+        // target cashing (!smart)
+        let target;
+        if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+          target = Game.getObjectById(creep.memory._target.id);
+          // target is still valid;
+          if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+            target = 0;
+          }
         }
-      } else if (creep.room.name != creep.memory.homeroom) {
-        creep.moveToRoom(creep.memory.homeroom);
-      }
 
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        creep.memory._target = 0;
-        creep.say('🔄');
-      } else if (!target) {
-        // some fail-safes
-        if (creep.room.name != creep.memory.homeroom) {
-          creep.moveToRoom(creep.memory.homeroom)
-        } else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+          filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
+              structure.structureType == STRUCTURE_SPAWN) && structure.store &&
+            structure.store && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        });
+
+        if (!target) {
+          // towers need to be filled
+          target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
+              structure.store && structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
+          });
+        }
+
+        // target in room that i am checking rn is better than target in another room
+        if (!target) {
+          target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
+              structure.store && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          });
+        }
+
+        if (target) {
+          // this can also be done in checkRooms if needed;
+          creep.memory._target = {
+            id: target.id,
+            time: Game.time,
+            room: target.room.name,
+          };
+
+          if (!creep.pos.isNearTo(target)) {
+            creep.moveTo(target, {
+              reusePath: REUSE_PATH
+            });
+          } else {
+            creep.transfer(target, RESOURCE_ENERGY);
+          }
+        } else {
+          // no targets in this room
+          checkRoomsForTargets(creep);
+        }
+
+        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
           creep.memory._target = 0;
           creep.say('🔄');
         }
