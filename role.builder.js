@@ -1,3 +1,98 @@
+function getTargetBuild(creep, room) {
+  target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES));
+  if (target) {
+    creep.memory._target = {
+      id: target.id,
+      time: Game.time,
+      type: "build"
+    };
+  }
+
+  return target;
+}
+
+function getTargetRepair(creep, room) {
+  // prob can set it in room memory for different types of rooms
+  let repairSheet = {
+    [STRUCTURE_RAMPART]: 200000,
+    [STRUCTURE_WALL]: 200000,
+    other: 1,
+  }
+
+  target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES), {
+    filter: (structure) => (repairSheet[structure.structureType] &&
+        structure.hits < repairSheet[structure.structureType]) ||
+      (!repairSheet[structure.structureType] &&
+        structure.hits < structure.hitsMax * repairSheet["other"])
+  });
+  if (target) {
+    creep.memory._target = {
+      id: target.id,
+      time: Game.time,
+      type: "repair"
+    };
+  }
+
+  return target;
+}
+
+function checkRooms(creep) {
+  // target cashing (!smart)
+  let target;
+  if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+    target = Game.getObjectById(creep.memory._target.id);
+    // target is still valid;
+    if (!target || !(creep.memory._target.type == "repair" && (repairSheet[target.structureType] &&
+          target.hits < repairSheet[target.structureType]) ||
+        (!repairSheet[target.structureType] &&
+          target.hits < target.hitsMax * repairSheet["other"]))) {
+      target = 0;
+    }
+  }
+
+  if (!target) {
+    target = getTargetBuild(creep, creep.room);
+  }
+
+  if (!target && creep.room.name != creep.memory.homeroom) {
+    target = getTargetBuild(creep, Game.rooms[creep.memory.homeroom]);
+  }
+
+  if (!target) {
+    // idk why would i need this case but sure
+    for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
+      if (creep.room.name != annexName) {
+        target = getTargetBuild(creep, Game.rooms[annexName]);
+        if (target) {
+          break;
+        }
+      }
+    }
+  }
+
+  if (!target) {
+    target = getTargetRepair(creep, creep.room);
+  }
+
+  if (!target && creep.room.name != creep.memory.homeroom) {
+    target = getTargetRepair(creep, Game.rooms[creep.memory.homeroom]);
+  }
+
+  if (!target) {
+    for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
+      if (creep.room.name != annexName) {
+        target = getTargetRepair(creep, Game.rooms[annexName]);
+        if (target) {
+          break;
+        }
+      }
+    }
+  }
+
+  return target;
+}
+
+let roleName = "builder";
 let roleBuilder = {
   run: function(creep) {
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
@@ -77,12 +172,18 @@ let roleBuilder = {
 
   coolName: "Colletidae ",
   spawn: function(room) {
-    let roleName = "builder";
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
-    if (room.find(FIND_CONSTRUCTION_SITES).length == 0 || real >= target) {
-      return
+    //just summon 1 builder from time to time. Just to keep repairs in check -_-
+    if (!(Game.time % 4500 == 0 && real > 0) && (real >= target || room.find(FIND_CONSTRUCTION_SITES).length == 0)) {
+      let annexConstructionSites = 0
+      for (let annexName in room.memory.annexes) {
+        annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName], room.find(FIND_CONSTRUCTION_SITES).length)
+      }
+
+      if (!annexConstructionSites)
+        return
     }
 
     let spawnSettings = {

@@ -1,5 +1,6 @@
 let roleUpgrader = {
   run: function(creep) {
+    // this guy prob never leaves homeroom
     if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.upgrading = false;
       creep.say('🔄');
@@ -13,13 +14,18 @@ let roleUpgrader = {
     }
 
     if (creep.memory.upgrading) {
-      if (creep.pos.getRangeTo(creep.room.controller) > 3) {
-        creep.moveTo(creep.room.controller, {
-          reusePath: REUSE_PATH
-        });
+      // fail-safe for early game
+      if (creep.room.name == creep.memory.homeroom) {
+        if (creep.pos.getRangeTo(creep.room.controller) > 3) {
+          creep.moveTo(creep.room.controller, {
+            reusePath: REUSE_PATH
+          });
+        } else {
+          // will need to set some rules based on mining / controller lvl (latter is more important)
+          creep.upgradeController(creep.room.controller);
+        }
       } else {
-        // will need to set some rules based on mining / controller lvl (latter is more important)
-        creep.upgradeController(creep.room.controller)
+        creep.moveToRoom(creep.memory.homeroom);
       }
     }
   },

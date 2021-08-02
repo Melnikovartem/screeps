@@ -1,14 +1,4 @@
 function getTarget(creep, room) {
-  // target cashing (!smart)
-  let target;
-  if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
-    target = Game.getObjectById(creep.memory._target.id);
-    // target is still valid;
-    if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-      target = 0;
-    }
-  }
-
   if (!target) {
     // spawners need to be filled
     target = creep.pos.findClosestByRange(room.find(FIND_MY_STRUCTURES, {
@@ -39,13 +29,25 @@ function getTarget(creep, room) {
 }
 
 function checkRooms(creep) {
-  let target = getTarget(creep, creep.room);
+  // target cashing (!smart)
+  let target;
+  if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+    target = Game.getObjectById(creep.memory._target.id);
+    // target is still valid;
+    if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+      target = 0;
+    }
+  }
+
+  if (!target) {
+    target = getTarget(creep, creep.room);
+  }
+
   if (!target && creep.room.name != creep.memory.homeroom) {
     target = getTarget(creep, Game.rooms[creep.memory.homeroom]);
   }
 
   if (!target) {
-    // idk why would i need this case but sure
     for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
       if (creep.room.name != annexName) {
         target = getTarget(creep, Game.rooms[annexName]);
@@ -59,18 +61,22 @@ function checkRooms(creep) {
   return target;
 }
 
-let roleUpgrader = {
+
+let roleName = "hauler";
+let roleHauler = {
   run: function(creep) {
 
     if (creep.memory._target) {
       target = checkRooms(creep);
 
       if (target) {
+        // this can also be done in checkRooms if needed;
+        creep.memory._target = {
+          id: target.id,
+          time: Game.time,
+        };
+
         if (!creep.pos.isNearTo(target)) {
-          creep.memory._target = {
-            id: target.id,
-            time: Game.time,
-          };
           creep.moveTo(target, {
             reusePath: REUSE_PATH
           });
@@ -78,7 +84,7 @@ let roleUpgrader = {
           creep.transfer(target, RESOURCE_ENERGY);
         }
       } else if (creep.room.name != creep.memory.homeroom) {
-        creep.moveTo
+        creep.moveToRoom(creep.memory.homeroom);
       }
 
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
@@ -115,7 +121,6 @@ let roleUpgrader = {
 
   coolName: "Bumblebee ",
   spawn: function(room) {
-    let roleName = "hauler";
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
@@ -159,4 +164,4 @@ let roleUpgrader = {
   },
 }
 
-module.exports = roleUpgrader;
+module.exports = roleHauler;
