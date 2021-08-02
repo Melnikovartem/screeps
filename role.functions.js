@@ -44,10 +44,12 @@ Creep.prototype.suckFromTarget = function(target) {
     console.log(this.name + " targeting from " + target.name)
   }
 
-  this.memory._sucker_target = {
-    id: target.id,
-    time: Game.time,
-  };
+  if (!(target instanceof Creep) || (!target.memory._is_targeted || !Game.getObjectById(target.memory._is_targeted))) {
+    this.memory._sucker_target = {
+      id: target.id,
+      time: Game.time,
+    };
+  }
 
   let ans = ERR_NOT_IN_RANGE; // 0 is OK
   if (!this.pos.isNearTo(target)) {
@@ -58,7 +60,6 @@ Creep.prototype.suckFromTarget = function(target) {
     if (target instanceof Creep) {
       ans = !(target.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0);
 
-      console.log(this.name + " suck from " + target.name + "?" + (ans == OK));
       if (ans == OK) {
         target.memory._is_targeted = OK;
       } else {
@@ -152,6 +153,8 @@ Creep.prototype.getEnergyFromHarvesters = function() {
               if (creep && (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
                   creep.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) &&
                 (!creep.memory._is_targeted || !Game.getObjectById(creep.memory._is_targeted) || creep.memory._is_targeted == this.id)) {
+                if (creep.memory._is_targeted != this.id)
+                  console.log(this.name, "looking at", creep.name, "wich is", creep.memory._is_targeted, " and the targeteer is ", Game.getObjectById(creep.memory._is_targeted));
                 targets.push(creep);
               }
             });
