@@ -1,41 +1,69 @@
+function getTarget(creep, room) {
+  // target cashing (!smart)
+  let target;
+  if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+    target = Game.getObjectById(creep.memory._target.id);
+    // target is still valid;
+    if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+      target = 0;
+    }
+  }
+
+  if (!target) {
+    // spawners need to be filled
+    target = creep.pos.findClosestByRange(room.find(FIND_MY_STRUCTURES, {
+      filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
+          structure.structureType == STRUCTURE_SPAWN) && structure.store &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    }));
+  }
+
+  if (!target) {
+    // towers need to be filled
+    target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES, {
+      filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
+        structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
+    }));
+
+  }
+
+  // target in room that i am checking rn is better than target in another room
+  if (!target) {
+    target = creep.pos.findClosestByPath(room.find(FIND_STRUCTURES, {
+      filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    }));
+  }
+
+  return target;
+}
+
+function checkRooms(creep) {
+  let target = getTarget(creep, creep.room);
+  if (!target && creep.room.name != creep.memory.homeroom) {
+    target = getTarget(creep, Game.rooms[creep.memory.homeroom]);
+  }
+
+  if (!target) {
+    // idk why would i need this case but sure
+    for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
+      if (creep.room.name != annexName) {
+        target = getTarget(creep, Game.rooms[annexName]);
+        if (target) {
+          break;
+        }
+      }
+    }
+  }
+
+  return target;
+}
+
 let roleUpgrader = {
   run: function(creep) {
 
     if (creep.memory._target) {
-      // target cashing (!smart)
-      let target;
-      if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
-        target = Game.getObjectById(creep.memory._target.id);
-        // target is still valid;
-        if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-          target = 0;
-        }
-      }
-
-      if (!target) {
-        // spawners need to be filled
-        target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-          filter: (structure) => (structure.structureType == STRUCTURE_EXTENSION ||
-              structure.structureType == STRUCTURE_SPAWN) && structure.store &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-        });
-      }
-
-      if (!target) {
-        // towers need to be filled
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
-            structure.store.getCapacity(RESOURCE_ENERGY) * 0.9 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
-        });
-
-      }
-
-      if (!target) {
-        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-        });
-      }
+      target = checkRooms(creep);
 
       if (target) {
         if (!creep.pos.isNearTo(target)) {
@@ -49,11 +77,21 @@ let roleUpgrader = {
         } else {
           creep.transfer(target, RESOURCE_ENERGY);
         }
+      } else if (creep.room.name != creep.memory.homeroom) {
+        creep.moveTo
       }
 
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (!target && creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0)) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         creep.memory._target = 0;
         creep.say('🔄');
+      } else if (!target) {
+        // some fail-safes
+        if (creep.room.name != creep.memory.homeroom) {
+          creep.moveToRoom(creep.memory.homeroom)
+        } else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          creep.memory._target = 0;
+          creep.say('🔄');
+        }
       }
     }
 
