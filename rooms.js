@@ -2,7 +2,6 @@ function updateRolesTarget(room) {
   let target = _.get(room.memory, ["roles"]);
   if (!target) {
     room.memory.roles = {
-      harvester: 2,
       hauler: 1,
       builder: 1,
       upgrader: 1,
