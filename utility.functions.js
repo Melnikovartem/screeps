@@ -84,6 +84,7 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
     data.harvesters = [];
 
     let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester" && creep.memory.resource_id == source.id);
+    console.log(harvesters.length);
     if (harvesters.length) {
       _.forEach(harvesters, (creep) => data.harvesters.push(creep.id))
       data.last_spawned = harvesters[harvesters.length - 1].memory.born;

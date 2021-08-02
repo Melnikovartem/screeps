@@ -53,7 +53,7 @@ let roleHarvester = {
       //fail-safe for early game
       if (!target) {
         target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-          (creepIter) => creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          (creepIter) => creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.memory.role != "harvester"
         ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0]
       }
 
@@ -62,7 +62,7 @@ let roleHarvester = {
       if (creep.room.controller.my) {
         if (creep.room.energyCapacityAvailable * 0.5 > creep.room.energyAvailable) {
           if (creep.room.find(FIND_MY_CREEPS, {
-              filter: (creepIter) => creepIter.memory.role == "hauler" && !creep.memory.target_harvester && creepIter.memory.homeroom == creep.room.name
+              filter: (creepIter) => creepIter.memory.role == "hauler" && creepIter.memory.homeroom == creep.room.name
             }).length == 0) {
             let spawnsActive = _.filter(creep.room.find(FIND_MY_STRUCTURES, {
               filter: {
