@@ -3,6 +3,9 @@ Creep.prototype.getSource = function() {
   if (!source) {
     source = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
     this.memory.resource_id = source.id;
+
+    let room = Game.rooms[this.memory.homeroom]
+    findSources(room, room, source.id);
   }
 
   return source;
