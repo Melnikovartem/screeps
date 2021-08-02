@@ -18,9 +18,12 @@ function roomLoop() {
     roomDefense(room);
     roomSpawning(room);
 
-    if (Game.time % 500 == 0) {
+    if (Game.time % 1 == 0) {
       findSources(room);
       updateRolesTarget(room);
+      _.forEach(room.memory.annexes, function(annexData, annexName) {
+        findSources(Game.rooms[annexName], room);
+      });
     }
   });
 }

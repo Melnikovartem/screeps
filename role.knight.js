@@ -65,12 +65,12 @@ let roleKnight = {
       }
     };
 
-    spawnSettings.postSpawn = function() {
+    spawnSettings.postSpawn = function(creepName) {
       room.memory.army_orders[roleName].count -= 1
       if (room.memory.army_orders[roleName].count <= 0) {
         delete room.memory.army_orders[roleName];
       }
-      console.log("spawned a " + roleName + " in " + room.name + " for " + armyName);
+      console.log("spawned a " + roleName + " named " + creepName + " in " + room.name + " for " + armyName);
     };
 
     return spawnSettings;

@@ -53,7 +53,7 @@ let roleHarvester = {
       //fail-safe for early game
       if (!target) {
         target = _.filter(creep.pos.findInRange(FIND_MY_CREEPS, 1),
-          (creepIter) => creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.memory.role != "harvester"
+          (creepIter) => creepIter.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creepIter.memory.role != "harvester"
         ).sort((a, b) => b.store.getFreeCapacity() - a.store.getFreeCapacity())[0]
       }
 
@@ -140,9 +140,10 @@ let roleHarvester = {
               // also can be _is_targeted if not near a store
             };
 
-            spawnSettings.postSpawn = function() {
+            spawnSettings.postSpawn = function(creepName) {
               source.last_spawned = Game.time;
-              console.log("spawned " + roleName + " in " + room.name + " for " + sourceId + "  located in " + roomName);
+              console.log("spawned a " + roleName + " named " + creepName + " in " +
+                room.name + " for " + sourceId + " located in " + roomName);
             };
 
             return spawnSettings;

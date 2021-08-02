@@ -114,8 +114,8 @@ let roleBuilder = {
       // here also can be some _target cashing
     };
 
-    spawnSettings.postSpawn = function() {
-      console.log("spawned a " + roleName + " in " + room.name);
+    spawnSettings.postSpawn = function(creepName) {
+      console.log("spawned a " + roleName + " named " + creepName + " in " + room.name);
     };
 
     return spawnSettings;

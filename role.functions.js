@@ -24,15 +24,17 @@ Creep.prototype.getSourceData = function() {
 
 Creep.prototype.harvestSource = function() {
   let source = this.getSource();
-  if (this.harvest(source) == ERR_NOT_IN_RANGE) {
-    this.moveTo(source, {
+  let ans = this.harvest(source);
+  if (ans == ERR_NOT_IN_RANGE) {
+    return this.moveTo(source, {
       reusePath: REUSE_PATH
     });
   }
+  return ans;
 }
 
 Creep.prototype.moveToRoom = function(roomName) {
-  this.moveTo(new RoomPosition(25, 25, roomName), {
+  return this.moveTo(new RoomPosition(25, 25, roomName), {
     reusePath: REUSE_PATH
   });
 }
@@ -119,7 +121,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
 
   if (!target) {
     let targets = [];
-    let room = Game.rooms[this.memory.homeroom]
+    let room = Game.rooms[this.memory.homeroom];
 
 
     if (!room.memory.resourses) {
@@ -156,6 +158,8 @@ Creep.prototype.getEnergyFromHarvesters = function() {
         }
       }
     }
+
+    //console.log(targets);
 
     // sort by empty size, then by max size
     // need to think what to do with distance ?

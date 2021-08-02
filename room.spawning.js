@@ -21,7 +21,7 @@ function roomSpawning(room) {
     let spawnSettings = ROLES[roleName].spawn(room);
 
     if (spawnSettings) {
-      // optimizing movement cpu or smth? 
+      // optimizing movement cpu or smth?
       let partsImportance = [TOUGH, MOVE, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL];
       spawnSettings.bodyParts.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
 
@@ -31,7 +31,7 @@ function roomSpawning(room) {
       });
 
       if (ans == OK) {
-        spawnSettings.postSpawn();
+        spawnSettings.postSpawn(creepName);
         i += 1;
       } else if (ans == ERR_NOT_ENOUGH_RESOURCES && roleName == "harvester") {
         // another fail-safe for my economy
