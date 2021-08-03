@@ -47,11 +47,11 @@ global.roomBalance = function(roomName) {
   });
 }
 
-global.annexation = function(myRoomName, targetRoomName) {
+global.annexation = function(myRoomName, targetRoomName, reservation = 1) {
   let myRoom = Game.rooms[myRoomName];
   let targetRoom = Game.rooms[targetRoomName];
 
-  if (!myRoom.controller.my || !targetRoom) {
+  if (!myRoom || !myRoom.controller.my || !targetRoom) {
     return;
   }
 
@@ -61,6 +61,13 @@ global.annexation = function(myRoomName, targetRoomName) {
 
   // think of tags later
   myRoom.memory.annexes[targetRoomName] = {}
+
+  if (reservation) {
+    myRoom.memory.annexes[targetRoomName].reservation = {
+      route_time: 0, //route from spawner to contoller
+      last_spawned: Game.time - CREEP_LIFE_TIME, // last time i spawned a claimer,
+    }
+  }
 
   return OK;
 }

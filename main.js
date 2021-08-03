@@ -11,6 +11,7 @@ global.ROLES = {
   builder: require('role.builder'),
   upgrader: require('role.upgrader'),
   knight: require('role.knight'),
+  claimer: require('role.claimer'),
 };
 
 global.OUTPUT_TICK = 200;

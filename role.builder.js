@@ -143,7 +143,7 @@ let roleBuilder = {
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
     //just summon 1 builder from time to time. Just to keep repairs in check -_-
-    if (!(Game.time % 3000 == 0 && real == 0)) {
+    if (!(Game.time % 1600 == 0 && real == 0)) {
       if (real >= target) {
         return
       }

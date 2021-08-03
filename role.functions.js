@@ -71,11 +71,8 @@ Creep.prototype.suckFromTarget = function(target) {
     if (ans == ERR_FULL) {
       ans = OK;
     }
-
-    if (ans == OK) {
-      this.memory._sucker_target = 0;
-    }
   }
+
   return ans;
 }
 
@@ -180,5 +177,11 @@ Creep.prototype.getEnergyFromHarvesters = function() {
     target = targets[0];
   }
 
-  return this.suckFromTarget(target);
+  let ans = this.suckFromTarget(target);
+
+  if (ans == OK) {
+    this.memory._sucker_target = 0;
+  }
+
+  return ans;
 }
