@@ -64,7 +64,7 @@ global.annexation = function(myRoomName, targetRoomName, reservation = 1) {
 
   if (reservation) {
     myRoom.memory.annexes[targetRoomName].reservation = {
-      route_time: 0, //route from spawner to contoller
+      route_time: 75, //route from spawner to contoller //for now just a random number
       last_spawned: Game.time - CREEP_LIFE_TIME, // last time i spawned a claimer,
     }
   }
@@ -83,33 +83,15 @@ global.findSources = function(checkRoom, parentRoom = 0) {
 
   let sources = checkRoom.find(FIND_SOURCES);
 
-
-  let spawn = parentRoom.find(FIND_MY_STRUCTURES, {
-    filter: {
-      structureType: STRUCTURE_SPAWN
-    }
-  })[0];
-
   _.forEach(sources, function(source) {
     let data = _.get(parentRoom.memory, ['resourses', checkRoom.name, RESOURCE_ENERGY, source.id]);
 
     if (data == undefined) {
       data = {
         store_nearby: "", // Id
-        route_time: 0, //route to spawner from resource
         last_spawned: Game.time - CREEP_LIFE_TIME, // last time i spawned a harvester,
       };
       _.set(parentRoom.memory, ['resourses', checkRoom.name, RESOURCE_ENERGY, source.id], data);
-    }
-
-    if (spawn) {
-      // 10 ticks - for random shit
-      data.route_time = spawn.pos.getTimeForPath(source.pos) + 10;
-
-      // cause it is calculated in a wrong way for extra rooms (path to exit)
-      if (spawn.room.name != source.room.name) {
-        data.route_time += 25;
-      }
     }
 
     if (!data.store_nearby || !Game.getObjectById(data.store_nearby)) {

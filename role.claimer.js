@@ -3,7 +3,7 @@ let roleClaimer = {
   run: function(creep) {
     // this guy prob never leaves target_room
     if (creep.room.name == creep.memory.target_room) {
-      if (creep.pos.getRangeTo(creep.room.controller) > 3) {
+      if (!creep.pos.isNearTo(creep.room.controller)) {
         creep.moveTo(creep.room.controller, {
           reusePath: REUSE_PATH
         });
@@ -27,7 +27,7 @@ let roleClaimer = {
       for (let annexName in room.memory.annexes) {
         if (room.memory.annexes[annexName].reservation) {
           let reservationData = room.memory.annexes[annexName].reservation;
-          if (Game.time + reservationData.route_time >= reservationData.last_spawned + CREEP_LIFE_TIME) {
+          if (Game.time >= reservationData.last_spawned + CREEP_CLAIM_LIFE_TIME) {
             let roomEnergy = room.energyCapacityAvailable;
 
             let segment = [MOVE, CLAIM];

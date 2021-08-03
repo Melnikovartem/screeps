@@ -85,7 +85,7 @@ let roleHauler = {
         // target in room that i am checking rn is better than target in another room
         if (!target) {
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => (structure.structureType == STRUCTURE_STORAGE || storageContainerIds.includes(structure.id)) &&
+            filter: (structure) => (structure.structureType == STRUCTURE_STORAGE) &&
               structure.store && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
           });
         }

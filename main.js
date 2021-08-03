@@ -15,13 +15,7 @@ global.ROLES = {
 };
 
 global.OUTPUT_TICK = 200;
-global.REUSE_PATH = 3;
-
-//for developing rooms
-global.storageContainerIds = [
-  // after storage is done no need in small containers
-  //from sim
-];
+global.REUSE_PATH = 5;
 
 /*
   for (let roleName in ROLES) {

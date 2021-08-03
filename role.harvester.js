@@ -99,12 +99,11 @@ let roleHarvester = {
       for (let roomName in room.memory.resourses) {
         for (let sourceId in room.memory.resourses[roomName].energy) {
           let source = room.memory.resourses[roomName].energy[sourceId];
-          if (Game.time + source.route_time >= source.last_spawned + CREEP_LIFE_TIME) {
+          if (Game.time >= source.last_spawned + CREEP_LIFE_TIME && source.store_nearby) {
 
             let spawnSettings = {}
 
             let roomEnergy = room.energyAvailable;
-
 
             spawnSettings.bodyParts = [WORK, CARRY, MOVE]
 
@@ -120,16 +119,6 @@ let roleHarvester = {
             _.times(maxSegment, function() {
               _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))
             });
-
-            if (source.route_time && !source.store_nearby) {
-              segment = [CARRY, CARRY, MOVE];
-              // Math.min(Math.ceil(source.route_time * 2 / 50), Math.floor((roomEnergy - sumCost) / segmentCost));
-              maxSegment = Math.floor((roomEnergy - sumCost) / segmentCost);
-
-              _.times(maxSegment, function() {
-                _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))
-              });
-            }
 
             spawnSettings.memory = {
               role: roleName,
