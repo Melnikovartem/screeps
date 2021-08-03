@@ -78,14 +78,15 @@ let roleBuilder = {
         target = Game.getObjectById(creep.memory._target.id);
 
         if (!target ||
-          !((creep.memory._target.type == "repair" || creep.memory._target.type == "repair_emergency") &&
+          ((creep.memory._target.type == "repair" || creep.memory._target.type == "repair_emergency") &&
             (repairSheet[target.structureType] && target.hits < repairSheet[target.structureType]) ||
             (!repairSheet[target.structureType] && target.hits < target.hitsMax * repairSheet["other"]))) {
           target = 0;
         }
       }
 
-      if (!target && (!creep.memory._target || (creep.room.name == creep.memory._target.room && creep.memory._target.id == 0))) {
+
+      if (!target || !creep.memory._target || (creep.room.name == creep.memory._target.room && creep.memory._target.id == 0)) {
         creep.memory._target = {
           id: 0,
           time: Game.time,
@@ -95,16 +96,12 @@ let roleBuilder = {
 
       if (!target && !creep.memory._target.room) {
         target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-          filter: (structure) => console.log((repairSheet[structure.structureType] &&
-                structure.hits < repairSheet[structure.structureType] * repairSheet["collapse"]) ||
-              (!repairSheet[structure.structureType] &&
-                structure.hits < structure.hitsMax * repairSheet["other"] * repairSheet["collapse"])) ||
+          filter: (structure) =>
             (repairSheet[structure.structureType] &&
               structure.hits < repairSheet[structure.structureType] * repairSheet["collapse"]) ||
             (!repairSheet[structure.structureType] &&
               structure.hits < structure.hitsMax * repairSheet["other"] * repairSheet["collapse"])
         });
-        console.log("HERE!", target);
         if (target) {
           creep.memory._target = {
             id: target.id,
@@ -155,8 +152,6 @@ let roleBuilder = {
       if (!target && !creep.memory._target.room) {
         checkRoomsForTargets(creep, "repair");
       }
-
-      // console.log(creep.name + " in " + creep.room.name + ":\n", JSON.stringify(target), JSON.stringify(creep.memory._target));
 
       if (target) {
         if (creep.pos.getRangeTo(target) > 3) {

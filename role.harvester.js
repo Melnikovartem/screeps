@@ -136,8 +136,6 @@ let roleHarvester = {
               born: Game.time,
               homeroom: room.name,
               resource_id: sourceId,
-
-              // also can be _is_targeted if not near a store
             };
 
             spawnSettings.postSpawn = function(creepName) {

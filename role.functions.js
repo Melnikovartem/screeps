@@ -24,13 +24,17 @@ Creep.prototype.getSourceData = function() {
 
 Creep.prototype.harvestSource = function() {
   let source = this.getSource();
-  let ans = this.harvest(source);
-  if (ans == ERR_NOT_IN_RANGE) {
-    return this.moveTo(source, {
+  if (!this.pos.isNearTo(source)) {
+    this.moveTo(source, {
       reusePath: REUSE_PATH
     });
+  } else {
+    this.harvest(source)
   }
-  return ans;
+
+  if (this.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+    return OK;
+  }
 }
 
 Creep.prototype.moveToRoom = function(roomName) {
@@ -40,6 +44,12 @@ Creep.prototype.moveToRoom = function(roomName) {
 }
 
 Creep.prototype.suckFromTarget = function(target) {
+
+  // fail-safe for early game
+  if (!target && Game.rooms[this.memory.homeroom].controller.level < 4) {
+    return this.harvestSource();
+  }
+
   if (!target) {
     return ERR_NOT_FOUND;
   }
@@ -56,17 +66,7 @@ Creep.prototype.suckFromTarget = function(target) {
       reusePath: REUSE_PATH
     });
   } else {
-    if (target instanceof Creep) {
-      ans = !(target.store.getUsedCapacity(RESOURCE_ENERGY) < 25 || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0);
-
-      if (ans == OK) {
-        target.memory._is_targeted = OK;
-      } else {
-        target.memory._is_targeted = this.id;
-      }
-    } else {
-      ans = this.withdraw(target, RESOURCE_ENERGY);
-    }
+    ans = this.withdraw(target, RESOURCE_ENERGY);
 
     if (ans == ERR_FULL) {
       ans = OK;
@@ -100,15 +100,10 @@ Creep.prototype.getEnergyFromStorage = function() {
   }
 
   if (!target) {
-    //fail-safe for early game
-    if (this.room.find(FIND_STRUCTURES, {
-        filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-          structure.structureType == STRUCTURE_STORAGE)
-      }).length == 0 && Game.rooms[this.memory.homeroom].controller.level < 4) {
-      return this.getEnergyFromHarvesters();
-    } else if (this.room.name != this.memory.homeroom) {
+    if (this.room.name != this.memory.homeroom) {
       // get your energy home if you cant find it here
       this.moveToRoom(this.memory.homeroom);
+      return ERR_NOT_FOUND;
     }
   }
 
@@ -139,7 +134,6 @@ Creep.prototype.getEnergyFromHarvesters = function() {
       findSources(room, room);
     }
 
-
     for (let roomName in room.memory.resourses) {
       for (let sourceId in room.memory.resourses[roomName].energy) {
         let source = room.memory.resourses[roomName].energy[sourceId];
@@ -151,18 +145,6 @@ Creep.prototype.getEnergyFromHarvesters = function() {
             storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) {
             targets.push(storeNearby);
           }
-        } else {
-          _.forEach(source.harvesters,
-            // Full over half or a lot of energy inside
-            (creepId) => {
-              let creep = Game.getObjectById(creepId);
-
-              if (creep && (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
-                  creep.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) &&
-                (!creep.memory._is_targeted || !Game.getObjectById(creep.memory._is_targeted) || creep.memory._is_targeted == this.id)) {
-                targets.push(creep);
-              }
-            });
         }
       }
     }
