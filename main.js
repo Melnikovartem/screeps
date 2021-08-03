@@ -29,20 +29,28 @@ global.REUSE_PATH = 5;
 */
 
 module.exports.loop = function() {
-  armyLoop();
-
+  try {
+    armyLoop();
+  } catch (error) {
+    console.log("FUCK FUCK FUCK army is in trouble\n", error)
+  }
   for (let creepName in Memory.creeps) {
     let creep = Game.creeps[creepName];
 
     if (!creep) {
       delete Memory.creeps[creepName];
-      console.log('Clearing non-existing creep memory:', creepName);
+      // console.log('Clearing non-existing creep memory:', creepName);
     } else {
       if (Object.keys(ROLES).includes(creep.memory.role)) {
-        ROLES[creep.memory.role].run(creep);
+        try {
+          ROLES[creep.memory.role].run(creep);
+        } catch (error) {
+          console.log("error on creep " + creep.name + " in room " + creem.room, "\n", error);
+        }
       }
     }
   }
+
   roomLoop();
 
   if (Game.cpu.bucket == 10000) {

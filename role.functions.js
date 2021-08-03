@@ -46,7 +46,7 @@ Creep.prototype.moveToRoom = function(roomName) {
 
 Creep.prototype.suckFromTarget = function(target) {
   // fail-safe for early game
-  if (!target && Game.rooms[this.memory.homeroom].controller.level < 4) {
+  if (!target && Game.rooms[this.memory.homeroom].controller.level < 3) {
     return this.harvestSource();
   }
 
@@ -173,8 +173,6 @@ Creep.prototype.getEnergyFromHarvesters = function() {
       target = Game.getObjectById(targets[0].storeId);
 
       Game.rooms[this.memory.homeroom].memory.resourses[target.room.name].energy[targets[0].sourceId]._is_targeted = this.id;
-
-      console.log(this.name, "targeted", targets[0].storeId);
     }
   }
 

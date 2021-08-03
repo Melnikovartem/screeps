@@ -146,10 +146,8 @@ let roleHauler = {
       return
     }
 
-    let spawnSettings = {
-      bodyParts: [],
-      memory: {}
-    }
+    let spawnSettings = {};
+
     let roomEnergy = 300;
     if (real == 0) {
       roomEnergy = room.energyAvailable;
@@ -157,10 +155,17 @@ let roleHauler = {
       roomEnergy = room.energyCapacityAvailable;
     }
 
+    spawnSettings.bodyParts = [];
+    //early game fail safe
+    if (room.controller.level < 3) {
+      spawnSettings.bodyParts = [WORK];
+    }
+    let fixedCosts = _.sum(spawnSettings.bodyParts, s => BODYPART_COST[s]);
+
     let segment = [CARRY, CARRY, MOVE];
     let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
 
-    let maxSegment = Math.floor(roomEnergy / segmentCost);
+    let maxSegment = Math.floor((roomEnergy - fixedCosts) / segmentCost);
 
     _.forEach(segment, function(s) {
       _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
