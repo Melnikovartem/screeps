@@ -25,12 +25,12 @@ Creep.prototype.getSourceData = function() {
 
 Creep.prototype.harvestSource = function() {
   let source = this.getSource();
-  if (!this.pos.isNearTo(source)) {
+  if (this.pos.isNearTo(source)) {
+    this.harvest(source)
+  } else {
     this.moveTo(source, {
       reusePath: REUSE_PATH
     });
-  } else {
-    this.harvest(source)
   }
 
   if (this.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
@@ -45,7 +45,6 @@ Creep.prototype.moveToRoom = function(roomName) {
 }
 
 Creep.prototype.suckFromTarget = function(target) {
-
   // fail-safe for early game
   if (!target && Game.rooms[this.memory.homeroom].controller.level < 4) {
     return this.harvestSource();
@@ -75,7 +74,7 @@ Creep.prototype.suckFromTarget = function(target) {
   }
 
   if (ans == OK) {
-    this.memory._sucker_target = 0;
+    this.memory._sucker_target = null;
   }
 
   return ans;
@@ -88,7 +87,7 @@ Creep.prototype.getEnergyFromStorage = function() {
     target = Game.getObjectById(this.memory._sucker_target.id);
     // target is still valid;
     if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
-      target = 0;
+      target = null;
     }
   }
 
@@ -100,12 +99,10 @@ Creep.prototype.getEnergyFromStorage = function() {
     });
   }
 
-  if (!target) {
-    if (this.room.name != this.memory.homeroom) {
-      // get your energy home if you cant find it here
-      this.moveToRoom(this.memory.homeroom);
-      return ERR_NOT_FOUND;
-    }
+  if (!target && this.room.name != this.memory.homeroom) {
+    // get your energy home if you cant find it here
+    this.moveToRoom(this.memory.homeroom);
+    return ERR_NOT_FOUND;
   }
 
   return this.suckFromTarget(target);
@@ -119,7 +116,7 @@ Creep.prototype.getEnergyFromHarvesters = function() {
     // target is still valid;
     if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
         target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-      target = 0;
+      target = null;
     }
   }
 
@@ -141,9 +138,8 @@ Creep.prototype.getEnergyFromHarvesters = function() {
         let storeNearby = Game.getObjectById(source.store_nearby);
 
         if (storeNearby) {
-          // Full over half or a lot of energy inside
-          if (storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= storeNearby.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
-            storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) {
+          // Just PUSH that bad boy in
+          if (storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= 100) {
             targets.push(storeNearby);
           }
         }
@@ -152,14 +148,12 @@ Creep.prototype.getEnergyFromHarvesters = function() {
 
     // sort by empty size, then by max size
     // need to think what to do with distance ?
-    targets.sort((a, b) => {
+    target = targets.sort((a, b) => {
       if (a.store.getFreeCapacity(RESOURCE_ENERGY) == b.store.getFreeCapacity(RESOURCE_ENERGY)) {
         return b.store.getCapacity(RESOURCE_ENERGY) - a.store.getCapacity(RESOURCE_ENERGY);
       }
       return a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY);
-    });
-
-    target = targets[0];
+    })[0];
   }
 
   return this.suckFromTarget(target);

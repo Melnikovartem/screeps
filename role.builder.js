@@ -80,7 +80,7 @@ let roleBuilder = {
           ((creep.memory._target.type == "repair" || creep.memory._target.type == "repair_emergency") &&
             (repairSheet[target.structureType] && target.hits < repairSheet[target.structureType]) ||
             (!repairSheet[target.structureType] && target.hits < target.hitsMax * repairSheet["other"]))) {
-          target = 0;
+          target = null;
         }
       }
 

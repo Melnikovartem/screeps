@@ -87,7 +87,9 @@ let roleHarvester = {
       if (creep.pos.isNearTo(target)) {
         creep.transfer(target, RESOURCE_ENERGY);
       } else {
-        creep.moveTo(target);
+        creep.moveTo(target, {
+          reusePath: REUSE_PATH
+        });
       }
     }
   },

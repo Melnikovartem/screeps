@@ -50,7 +50,7 @@ let roleHauler = {
   run: function(creep) {
     // just reffiled, but a lot of space left 65% +
     if (creep.memory._target == {} && creep.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.65) {
-      creep.memory._target = 0;
+      creep.memory._target = null;
       creep.say('🔄');
     }
     if (creep.memory._target) {
@@ -64,7 +64,7 @@ let roleHauler = {
           target = Game.getObjectById(creep.memory._target.id);
           // target is still valid;
           if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-            target = 0;
+            target = null;
           }
         }
 
@@ -111,7 +111,7 @@ let roleHauler = {
         }
 
         if (creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-          creep.memory._target = 0;
+          creep.memory._target = null;
           creep.say('🔄');
         }
       }
