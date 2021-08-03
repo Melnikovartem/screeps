@@ -73,6 +73,10 @@ Creep.prototype.suckFromTarget = function(target) {
     }
   }
 
+  if (ans == OK) {
+    this.memory._sucker_target = 0;
+  }
+
   return ans;
 }
 
@@ -94,8 +98,6 @@ Creep.prototype.getEnergyFromStorage = function() {
         structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
     });
   }
-
-
 
   if (!target) {
     //fail-safe for early game
@@ -177,11 +179,5 @@ Creep.prototype.getEnergyFromHarvesters = function() {
     target = targets[0];
   }
 
-  let ans = this.suckFromTarget(target);
-
-  if (ans == OK) {
-    this.memory._sucker_target = 0;
-  }
-
-  return ans;
+  return this.suckFromTarget(target);
 }

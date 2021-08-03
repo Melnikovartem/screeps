@@ -1,4 +1,4 @@
-function checkRoomForTargets(creep, room, targetType = "build") {
+function checkRoomForTargets(room, targetType = "build") {
   //return build, repair OR nothing if no targets
   let targets;
   if (targetType == "build") {
@@ -11,20 +11,22 @@ function checkRoomForTargets(creep, room, targetType = "build") {
           structure.hits < structure.hitsMax * repairSheet["other"])
     }).length;
     console.log(targets);
+  } else if (targetType == "repair_emergency") {
+    targets = room.find(FIND_STRUCTURES, {
+      filter: (structure) => (repairSheet[structure.structureType] &&
+          structure.hits < repairSheet[structure.structureType] * repairSheet["collapse"]) ||
+        (!repairSheet[structure.structureType] &&
+          structure.hits < structure.hitsMax * repairSheet["other"] * repairSheet["collapse"])
+    }).length;
   }
   return targets;
 }
 
 function checkRoomsForTargets(creep, targetType) {
-  creep.memory._target = {
-    id: 0,
-    time: Game.time,
-    room: 0,
-    type: targetType,
-  }
+  creep.memory._target.type = targetType;
 
   if (creep.room.name != creep.memory.homeroom) {
-    if (checkRoomForTargets(creep, Game.rooms[creep.memory.homeroom]), targetType) {
+    if (checkRoomForTargets(Game.rooms[creep.memory.homeroom], targetType)) {
       creep.memory._target.room = creep.memory.homeroom;
     }
   }
@@ -32,7 +34,7 @@ function checkRoomsForTargets(creep, targetType) {
   if (!creep.memory._target.room) {
     for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
       if (creep.room.name != annexName) {
-        if (checkRoomForTargets(creep, Game.rooms[annexName]), targetType) {
+        if (checkRoomForTargets(Game.rooms[annexName], targetType)) {
           creep.memory._target.room = annexName;
           break;
         }
@@ -50,6 +52,7 @@ let repairSheet = {
   [STRUCTURE_RAMPART]: 200000,
   [STRUCTURE_WALL]: 200000,
   other: 1,
+  collapse: 0.5
 }
 
 let roleName = "builder";
@@ -68,23 +71,55 @@ let roleBuilder = {
     }
 
     if (creep.memory.building) {
-      if (creep.memory._target && creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
-        creep.moveToRoom(creep.memory._target.room);
-      } else {
 
-        // target cashing (!smart)
-        let target;
-        if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
-          target = Game.getObjectById(creep.memory._target.id);
-          // target is still valid;
-          if (!target || !(creep.memory._target.type == "repair" && (repairSheet[target.structureType] &&
-                target.hits < repairSheet[target.structureType]) ||
-              (!repairSheet[target.structureType] &&
-                target.hits < target.hitsMax * repairSheet["other"]))) {
-            target = 0;
-          }
+      // target cashing (!smart)
+      let target;
+      if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+        target = Game.getObjectById(creep.memory._target.id);
+
+        if (!target ||
+          !((creep.memory._target.type == "repair" || creep.memory._target.type == "repair_emergency") &&
+            (repairSheet[target.structureType] && target.hits < repairSheet[target.structureType]) ||
+            (!repairSheet[target.structureType] && target.hits < target.hitsMax * repairSheet["other"]))) {
+          target = 0;
         }
+      }
 
+      if (!target && (!creep.memory._target || (creep.room.name == creep.memory._target.room && creep.memory._target.id == 0))) {
+        creep.memory._target = {
+          id: 0,
+          time: Game.time,
+          room: 0,
+        }
+      }
+
+      if (!target && !creep.memory._target.room) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => console.log((repairSheet[structure.structureType] &&
+                structure.hits < repairSheet[structure.structureType] * repairSheet["collapse"]) ||
+              (!repairSheet[structure.structureType] &&
+                structure.hits < structure.hitsMax * repairSheet["other"] * repairSheet["collapse"])) ||
+            (repairSheet[structure.structureType] &&
+              structure.hits < repairSheet[structure.structureType] * repairSheet["collapse"]) ||
+            (!repairSheet[structure.structureType] &&
+              structure.hits < structure.hitsMax * repairSheet["other"] * repairSheet["collapse"])
+        });
+        console.log("HERE!", target);
+        if (target) {
+          creep.memory._target = {
+            id: target.id,
+            time: Game.time,
+            room: target.room.name,
+            type: "repair_emergency",
+          };
+        }
+      }
+
+      if (!target && !creep.memory._target.room) {
+        checkRoomsForTargets(creep, "repair_emergency");
+      }
+
+      if (!target && !creep.memory._target.room) {
         target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
         if (target) {
           creep.memory._target = {
@@ -94,45 +129,50 @@ let roleBuilder = {
             type: "build"
           };
         }
+      }
 
-        if (!target) {
-          checkRoomsForTargets(creep, "build");
-        }
+      if (!target && !creep.memory._target.room) {
+        checkRoomsForTargets(creep, "build");
+      }
 
-        if (!target && !creep.memory._target.room) {
-          target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => (repairSheet[structure.structureType] &&
-                structure.hits < repairSheet[structure.structureType]) ||
-              (!repairSheet[structure.structureType] &&
-                structure.hits < structure.hitsMax * repairSheet["other"])
-          });
-          if (target) {
-            creep.memory._target = {
-              id: target.id,
-              time: Game.time,
-              room: target.room.name,
-              type: "repair",
-            };
-          }
-        }
-
+      if (!target && !creep.memory._target.room) {
+        target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+          filter: (structure) => (repairSheet[structure.structureType] &&
+              structure.hits < repairSheet[structure.structureType]) ||
+            (!repairSheet[structure.structureType] &&
+              structure.hits < structure.hitsMax * repairSheet["other"])
+        });
         if (target) {
-          if (creep.pos.getRangeTo(target) > 3) {
-            creep.moveTo(target, {
-              reusePath: REUSE_PATH
-            });
-          } else {
-            if (creep.memory._target.type == "build") {
-              creep.build(target);
-            } else if (creep.memory._target.type == "repair") {
-              creep.repair(target);
-            }
-            // didnt add fail-safe, but i added _target.type for all cases higher
-          }
-        } else {
-          // no targets in this room
-          checkRoomsForTargets(creep, "repair");
+          creep.memory._target = {
+            id: target.id,
+            time: Game.time,
+            room: target.room.name,
+            type: "repair",
+          };
         }
+      }
+
+      if (!target && !creep.memory._target.room) {
+        checkRoomsForTargets(creep, "repair");
+      }
+
+      // console.log(creep.name + " in " + creep.room.name + ":\n", JSON.stringify(target), JSON.stringify(creep.memory._target));
+
+      if (target) {
+        if (creep.pos.getRangeTo(target) > 3) {
+          creep.moveTo(target, {
+            reusePath: REUSE_PATH
+          });
+        } else {
+          if (creep.memory._target.type == "build") {
+            creep.build(target);
+          } else if (creep.memory._target.type == "repair" || creep.memory._target.type == "repair_emergency") {
+            creep.repair(target);
+          }
+          // didnt add fail-safe, but i added _target.type for all cases higher
+        }
+      } else if (creep.memory._target.room) {
+        creep.moveToRoom(creep.memory._target.room);
       }
     }
   },
@@ -142,26 +182,25 @@ let roleBuilder = {
     let target = _.get(room.memory, ["roles", roleName], 2);
     let real = _.filter(Game.creeps, (creep) => creep.memory.role == roleName && creep.memory.homeroom == room.name).length
 
-    //just summon 1 builder from time to time. Just to keep repairs in check -_-
-    if (!(Game.time % 1600 == 0 && real == 0)) {
-      if (real >= target) {
-        return
-      }
-      // no work for my BUILDers POG
-      if (room.find(FIND_CONSTRUCTION_SITES).length == 0) {
-        let annexConstructionSites = 0;
-        for (let annexName in room.memory.annexes) {
-          annexConstructionSites = Math.max(annexConstructionSites, Game.rooms[annexName].find(FIND_CONSTRUCTION_SITES).length);
-          if (annexConstructionSites) {
-            break;
-          }
-        }
-        if (real >= target || annexConstructionSites == 0) {
-          return
-        }
-      }
+    if (real >= target) {
+      return
     }
 
+    console.log("targets in home room: ", "build: " + checkRoomForTargets(room, "build"), "emergency: " + checkRoomForTargets(room, "repair_emergency"));
+    if ((checkRoomForTargets(room, "build") + checkRoomForTargets(room, "repair_emergency")) == 0) {
+      let annexTargets = 0;
+      for (let annexName in room.memory.annexes) {
+        annexTargets = Math.max(annexTargets, checkRoomForTargets(Game.rooms[annexName], "build") + checkRoomForTargets(room, "repair_emergency"));
+        console.log("targets in annex " + annexName + ": ", "build: " + checkRoomForTargets(Game.rooms[annexName], "build"), "emergency: " + checkRoomForTargets(Game.rooms[annexName], "repair_emergency"))
+        if (annexTargets) {
+          break;
+        }
+      }
+      if (annexTargets == 0) {
+        // no work for my BUILDers POG
+        return;
+      }
+    }
 
     let spawnSettings = {
       bodyParts: [],

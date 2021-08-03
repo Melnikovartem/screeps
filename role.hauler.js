@@ -1,4 +1,4 @@
-function checkRoomForTargets(creep, room) {
+function checkRoomForTargets(room) {
   //return something OR nothing if no targets
 
   let targets = room.find(FIND_MY_STRUCTURES, {
@@ -23,7 +23,7 @@ function checkRoomsForTargets(creep) {
   }
 
   if (creep.room.name != creep.memory.homeroom) {
-    if (checkRoomForTargets(creep, Game.rooms[creep.memory.homeroom])) {
+    if (checkRoomForTargets(Game.rooms[creep.memory.homeroom])) {
       creep.memory._target.room = creep.memory.homeroom;
     }
   }
@@ -31,7 +31,7 @@ function checkRoomsForTargets(creep) {
   if (!creep.memory._target.room) {
     for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
       if (creep.room.name != annexName) {
-        if (checkRoomForTargets(creep, Game.rooms[annexName])) {
+        if (checkRoomForTargets(Game.rooms[annexName])) {
           creep.memory._target.room = annexName;
           break;
         }
