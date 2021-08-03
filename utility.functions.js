@@ -72,8 +72,7 @@ global.annexation = function(myRoomName, targetRoomName, reservation = 1) {
   return OK;
 }
 
-//if looking to check only one source we put it in sourceId
-global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
+global.findSources = function(checkRoom, parentRoom = 0) {
   if (!parentRoom) {
     parentRoom = checkRoom;
   }
@@ -82,9 +81,7 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
     parentRoom.memory.resourses = {}
   }
 
-  let sources = checkRoom.find(FIND_SOURCES, {
-    filter: (source) => !sourceId || source.id == sourceId
-  });
+  let sources = checkRoom.find(FIND_SOURCES);
 
 
   let spawn = parentRoom.find(FIND_MY_STRUCTURES, {
@@ -126,11 +123,12 @@ global.findSources = function(checkRoom, parentRoom = 0, sourceId = 0) {
     }
 
     if (!data.last_spawned) {
-      data.last_spawned = Game.time - CREEP_LIFE_TIME;
-    }
-
-    if (sourceId == source.id) {
-      return data;
+      let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == "harvester" && creep.memory.resource_id == source.id);
+      if (harvesters.length) {
+        data.last_spawned = harvesters[harvesters.length - 1].memory.born;
+      } else {
+        data.last_spawned = Game.time - CREEP_LIFE_TIME;
+      }
     }
   });
 }

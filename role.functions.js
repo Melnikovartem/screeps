@@ -16,7 +16,8 @@ Creep.prototype.getSourceData = function() {
   let sourceData = _.get(Game.rooms[this.memory.homeroom].memory, ["resourses", source.room.name, "energy", source.id]);
 
   if (!sourceData) {
-    sourceData = findSources(source.room, Game.rooms[this.memory.homeroom], source.id);
+    findSources(source.room, Game.rooms[this.memory.homeroom]);
+    sourceData = {}; // next tick this will not be
   }
 
   return sourceData;

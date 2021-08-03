@@ -71,7 +71,6 @@ let roleBuilder = {
     }
 
     if (creep.memory.building) {
-
       // target cashing (!smart)
       let target;
       if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
@@ -181,12 +180,10 @@ let roleBuilder = {
       return
     }
 
-    console.log("targets in home room: ", "build: " + checkRoomForTargets(room, "build"), "emergency: " + checkRoomForTargets(room, "repair_emergency"));
     if ((checkRoomForTargets(room, "build") + checkRoomForTargets(room, "repair_emergency")) == 0) {
       let annexTargets = 0;
       for (let annexName in room.memory.annexes) {
         annexTargets = Math.max(annexTargets, checkRoomForTargets(Game.rooms[annexName], "build") + checkRoomForTargets(room, "repair_emergency"));
-        console.log("targets in annex " + annexName + ": ", "build: " + checkRoomForTargets(Game.rooms[annexName], "build"), "emergency: " + checkRoomForTargets(Game.rooms[annexName], "repair_emergency"))
         if (annexTargets) {
           break;
         }
