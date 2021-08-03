@@ -31,7 +31,8 @@ function checkRoomsForTargets(creep) {
   if (!creep.memory._target.room) {
     for (let annexName in Game.rooms[creep.memory.homeroom].memory.annexes) {
       if (creep.room.name != annexName) {
-        if (checkRoomForTargets(Game.rooms[annexName])) {
+        let annex = Game.rooms[annexName];
+        if (annex && checkRoomForTargets(annex)) {
           creep.memory._target.room = annexName;
           break;
         }
@@ -49,18 +50,18 @@ let roleName = "hauler";
 let roleHauler = {
   run: function(creep) {
     // just reffiled, but a lot of space left 65% +
-    if (creep.memory._target == {} && creep.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity(RESOURCE_ENERGY) * 0.65) {
+    if (creep.memory._target == {} && 200 >= creep.store.getUsedCapacity(RESOURCE_ENERGY)) {
       creep.memory._target = null;
       creep.say('🔄');
     }
+
     if (creep.memory._target) {
-      if (creep.memory._target && creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
+      if (creep.memory._target.room && creep.room.name != creep.memory._target.room && Game.time - creep.memory._target.time <= 50) {
         creep.moveToRoom(creep.memory._target.room);
       } else {
-
         // target cashing (!smart)
         let target;
-        if (creep.memory._target && Game.time - creep.memory._target.time <= 50) {
+        if (Game.time - creep.memory._target.time <= 50) {
           target = Game.getObjectById(creep.memory._target.id);
           // target is still valid;
           if (!target || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
@@ -170,7 +171,7 @@ let roleHauler = {
       born: Game.time,
       homeroom: room.name,
 
-      // here also can be some _target cashing
+      // also can be some _target cashing
     };
 
     spawnSettings.postSpawn = function(creepName) {

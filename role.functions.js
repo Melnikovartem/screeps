@@ -40,7 +40,7 @@ Creep.prototype.harvestSource = function() {
 
 Creep.prototype.moveToRoom = function(roomName) {
   return this.moveTo(new RoomPosition(25, 25, roomName), {
-    reusePath: REUSE_PATH
+    reusePath: REUSE_PATH,
   });
 }
 
@@ -85,7 +85,7 @@ Creep.prototype.getEnergyFromStorage = function() {
   let target;
   if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
     target = Game.getObjectById(this.memory._sucker_target.id);
-    // target is still valid;
+    // target is still valid; need to fill the creep storage as fast as i can
     if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY))) {
       target = null;
     }
@@ -100,7 +100,7 @@ Creep.prototype.getEnergyFromStorage = function() {
   }
 
   if (!target && this.room.name != this.memory.homeroom) {
-    // get your energy home if you cant find it here
+    // get your energy home if you cant find it in this one
     this.moveToRoom(this.memory.homeroom);
     return ERR_NOT_FOUND;
   }
@@ -113,9 +113,8 @@ Creep.prototype.getEnergyFromHarvesters = function() {
   let target;
   if (this.memory._sucker_target && Game.time - this.memory._sucker_target.time <= 100) {
     target = Game.getObjectById(this.memory._sucker_target.id);
-    // target is still valid;
-    if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
-        target.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)) || this.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+    // target is still valid; need to ceep the container storage empty
+    if (!target || !(target.store.getUsedCapacity(RESOURCE_ENERGY) >= 200 && target.structureType == STRUCTURE_CONTAINER)) {
       target = null;
     }
   }
@@ -137,23 +136,46 @@ Creep.prototype.getEnergyFromHarvesters = function() {
         let source = room.memory.resourses[roomName].energy[sourceId];
         let storeNearby = Game.getObjectById(source.store_nearby);
 
-        if (storeNearby) {
+        let isTargeted = source._is_targeted && Game.getObjectById(source._is_targeted);
+        if (isTargeted) {
+          isTargeted = isTargeted.memory._sucker_target && isTargeted.memory._sucker_target.id == source.store_nearby;
+        }
+
+        if (!isTargeted && source._is_targeted || source._is_targeted == this.id) {
+          isTargeted = null;
+          source._is_targeted = null;
+        }
+
+        if (storeNearby && !isTargeted) {
           // Just PUSH that bad boy in
-          if (storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= 100) {
-            targets.push(storeNearby);
+          if (storeNearby.store.getUsedCapacity(RESOURCE_ENERGY) >= 200) {
+            targets.push({
+              sourceId: sourceId,
+              storeId: source.store_nearby,
+              freeCapacity: storeNearby.store.getFreeCapacity(RESOURCE_ENERGY),
+              capacity: storeNearby.store.getCapacity(RESOURCE_ENERGY),
+            });
           }
         }
       }
     }
 
-    // sort by empty size, then by max size
-    // need to think what to do with distance ?
-    target = targets.sort((a, b) => {
-      if (a.store.getFreeCapacity(RESOURCE_ENERGY) == b.store.getFreeCapacity(RESOURCE_ENERGY)) {
-        return b.store.getCapacity(RESOURCE_ENERGY) - a.store.getCapacity(RESOURCE_ENERGY);
-      }
-      return a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY);
-    })[0];
+    if (targets.length) {
+      // sort by empty size, then by max size
+      // need to think what to do with distance ?
+      targets.sort((a, b) => {
+        if (a.freeCapacity == b.freeCapacity) {
+          return b.capacity - a.capacity;
+        }
+        return a.freeCapacity - b.freeCapacity;
+      });
+
+      target = Game.getObjectById(targets[0].storeId);
+
+      Game.rooms[this.memory.homeroom].memory.resourses[target.room.name].energy[targets[0].sourceId]._is_targeted = this.id;
+
+      console.log(this.name, "targeted", targets[0].storeId);
+    }
   }
 
   return this.suckFromTarget(target);

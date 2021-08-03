@@ -8,10 +8,10 @@ var utilityFuncitons = require('utility.functions');
 global.ROLES = {
   hauler: require('role.hauler'),
   harvester: require('role.harvester'),
+  claimer: require('role.claimer'),
   builder: require('role.builder'),
   upgrader: require('role.upgrader'),
   knight: require('role.knight'),
-  claimer: require('role.claimer'),
 };
 
 global.OUTPUT_TICK = 200;

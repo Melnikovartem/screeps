@@ -65,7 +65,7 @@ let roleUpgrader = {
       homeroom: room.name,
       upgrading: false,
 
-      // here also can be some _target cashing
+      // also can be some _target cashing
     };
 
     spawnSettings.postSpawn = function(creepName) {
