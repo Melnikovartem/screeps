@@ -17,16 +17,18 @@ if (!dest) {
 export default {
   input: "src/main.ts",
   output: {
-    file: "dist/main.js",
+    file: "build/main.js",
     format: "cjs",
-    sourcemap: true
+    // sourcemap: true
   },
 
   plugins: [
-    clear({ targets: ["dist"] }),
+    clear({ targets: ["build"] }),
     resolve({ rootDir: "src" }),
-    commonjs(),
-    typescript({tsconfig: "./tsconfig.json"}),
-    screeps({config: cfg, dryRun: cfg == null})
+    commonjs({
+      // namedExports: { 'node_modules/screeps-profiler/screeps-profiler.js': ['enable', 'wrap'] },
+    }),
+    typescript({ tsconfig: "./tsconfig.json" }),
+    screeps({ config: cfg, dryRun: cfg == null })
   ]
 }
