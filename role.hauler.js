@@ -78,8 +78,17 @@ let roleHauler = {
         if (!target) {
           // towers need to be filled
           target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => structure.structureType == STRUCTURE_TOWER && structure.store &&
+            filter: (structure) => structure.structureType == STRUCTURE_TOWER &&
               structure.store && structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY)
+          });
+        }
+
+        if (!target) {
+          // link near storage
+          target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+            filter: (structure) => structure.structureType == STRUCTURE_LINK &&
+              structure.store.getUsedCapacity(RESOURCE_ENERGY) == 0 &&
+              _.filter(structure.pos.findInRange(FIND_MY_STRUCTURES, 2), {structureType : STRUCTURE_STORAGE}).length
           });
         }
 

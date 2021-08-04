@@ -39,24 +39,28 @@ let roleUpgrader = {
       return
     }
 
-    let spawnSettings = {
-      bodyParts: [],
-      memory: {}
-    }
+    let spawnSettings = {};
+
     let roomEnergy = 300;
-    if (real < target / 2) {
+    if (real == 0) {
       roomEnergy = room.energyAvailable;
     } else {
       roomEnergy = room.energyCapacityAvailable;
     }
 
-    let segment = [WORK, CARRY, MOVE];
+    spawnSettings.bodyParts = [WORK, CARRY, MOVE]
+
+    let fixedCosts = _.sum(spawnSettings.bodyParts, s => BODYPART_COST[s]);
+
+    let segment = [WORK, WORK, MOVE];
     let segmentCost = _.sum(segment, s => BODYPART_COST[s]);
 
-    let maxSegment = Math.floor(roomEnergy / segmentCost);
+    let maxSegment = Math.min(6, Math.floor((roomEnergy - fixedCosts) / segmentCost));
 
-    _.forEach(segment, function(s) {
-      _.times(maxSegment, () => spawnSettings.bodyParts.push(s))
+    let sumCost = fixedCosts + segmentCost * maxSegment
+
+    _.times(maxSegment, function() {
+      _.forEach(segment, (s) => spawnSettings.bodyParts.push(s))
     });
 
     spawnSettings.memory = {

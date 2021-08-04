@@ -94,7 +94,7 @@ Creep.prototype.getEnergyFromStorage = function() {
   if (!target) {
     target = this.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-          structure.structureType == STRUCTURE_STORAGE) &&
+          structure.structureType == STRUCTURE_STORAGE || structure.structureType == STRUCTURE_LINK) &&
         structure.store.getUsedCapacity(RESOURCE_ENERGY) >= this.store.getFreeCapacity(RESOURCE_ENERGY)
     });
   }
