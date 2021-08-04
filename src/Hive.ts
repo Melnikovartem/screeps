@@ -1,3 +1,7 @@
+import { Cell } from "cells/_Cell";
+// import { resourceCell } from "cells/resourceCell"
+
+
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
   room: Room;
