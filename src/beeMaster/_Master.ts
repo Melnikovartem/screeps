@@ -1,8 +1,7 @@
-export abstract class BeeMaster {
 
-  constructor() {
-
-  }
+// i will need to do something so i can build up structure from memory
+export abstract class Master {
+  constructor() { }
 
   // first stage of decision making like do i need to spawn new creeps
   abstract init(): void;

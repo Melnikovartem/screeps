@@ -1,9 +1,22 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { Mem } from "./memory";
+import { Hive } from "./Hive";
 
+// This gets run on each global reset
+function onGlobalReset(): void {
+  global.hives = [];
+  global.hives.push(new Hive("sim", []));
+
+  console.log("reset", Game.time);
+
+  global.masters = [];
+}
 
 function main() {
-  console.log(`Current game tick is ${Game.time}`);
+
+  if (!global.hives) {
+    onGlobalReset();
+  }
 
   // Automatically delete memory of missing creeps
 
@@ -27,3 +40,5 @@ if (0) {
 }
 
 export const loop = _loop;
+
+onGlobalReset();

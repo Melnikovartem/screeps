@@ -1,17 +1,13 @@
-interface Memory {
-  uuid: number;
-  log: any;
-}
-
-interface CreepMemory {
-  role: string;
-  room: string;
-  working: boolean;
-}
+import { Hive } from "./Hive"
+import { Master } from "./beeMaster/_Master"
 
 // Syntax for adding proprties to `global` (ex "global.log")
-declare namespace NodeJS {
-  interface Global {
-    log: any;
+
+declare global {
+  namespace NodeJS {
+    interface Global {
+      hives: Hive[];
+      masters: Master[];
+    }
   }
 }
