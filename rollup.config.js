@@ -19,7 +19,7 @@ export default {
   output: {
     file: "build/main.js",
     format: "cjs",
-    // sourcemap: true
+    sourcemap: true
   },
 
   plugins: [

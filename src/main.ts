@@ -4,13 +4,13 @@ import { Hive } from "./Hive";
 import "./prototypes/creeps"
 import "./prototypes/pos"
 
-const GENERATE_PIXEL = true; // turn on on official
+const GENERATE_PIXEL = false; // turn on on official
 const ERROR_WRAPPER = true; // turn off on official
 
 // This gets run on each global reset
 function onGlobalReset(): void {
   global.hives = [];
-  global.hives.push(new Hive("sim", []));
+  global.hives.push(new Hive("E37S19", []));
 
   console.log("Reset? Cool time is", Game.time);
 

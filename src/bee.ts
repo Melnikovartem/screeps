@@ -5,6 +5,7 @@ export class Bee {
   master: Master;
 
   creep: Creep;
+  // time to inherite some shit from Creep
 
   // for now it will be forever binded
   constructor(master: Master, creep: Creep) {
@@ -16,6 +17,17 @@ export class Bee {
 
   harvest(source: Source) {
     this.creep.harvest(source);
+  }
+
+  transfer(target: Structure, resourceType: ResourceConstant) {
+    this.creep.transfer(target, resourceType);
+  }
+
+  goTo(pos: RoomPosition) {
+    if (this.creep.pos != pos)
+      this.creep.moveTo(pos, {
+        reusePath: 3
+      });
   }
 
   /*

@@ -2,6 +2,7 @@ import { excavationCell } from "./cells/excavationCell"
 import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
 import { defenseCell } from "./cells/defenseCell"
+import { CreepSetup } from "./creepSetups"
 
 // TODO visuals
 // const VISUALS_ON = true;
@@ -41,6 +42,7 @@ class repairSheet {
     }
   }
 }
+
 
 
 export class Hive {
@@ -142,7 +144,7 @@ export class Hive {
   }
 
   // add to list a new creep
-  wish() {
+  wish(setup: CreepSetup) {
 
   }
 
@@ -153,7 +155,6 @@ export class Hive {
       this.updateNormalRepairs();
     } else if (Game.time % 5 == 1) {
       this.findTargets();
-      console.log("targets in main room: " + this.roomTargets.length);
     }
 
     _.forEach(this.cells, (cell) => {

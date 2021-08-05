@@ -23,6 +23,15 @@
     "path": "/season",
     "branch": "main"
   },
+  "test": {
+    "email": "hereToTest",
+    "password": "this1sATest",
+    "protocol": "http",
+    "hostname": "server1.screepspl.us",
+    "port": 21025,
+    "path": "/",
+    "branch": "main"
+  },
   "pserver": {
     "email": "username",
     "password": "Password",

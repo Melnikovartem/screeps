@@ -8,7 +8,7 @@ interface BodySetup {
 
 const partsImportance = [TOUGH, MOVE, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL]
 
-class CreepSetup {
+export class CreepSetup {
   name: string;
   bodySetup: BodySetup;
 
@@ -45,7 +45,8 @@ class CreepSetup {
 
 const SetupsNames = {
   // Civilian
-  claimer: 'Bumblebee',
+  starter: 'Just a bee',
+  claimer: 'Bee Drone',
   manager: 'Andrenidae',
   hauler: 'Bumblebee',
   miner: 'Andrena',
@@ -55,6 +56,9 @@ const SetupsNames = {
 
 
 export const Setups = {
+  starter: new CreepSetup(SetupsNames.starter, {
+    pattern: [WORK, CARRY, MOVE],
+  }),
   claimer: new CreepSetup(SetupsNames.claimer, {
     pattern: [CLAIM, MOVE],
     sizeLimit: 2,
@@ -69,9 +73,8 @@ export const Setups = {
   }),
   miner: {
     energy: new CreepSetup(SetupsNames.miner, {
-      fixed: [WORK, CARRY, MOVE],
-      pattern: [WORK, WORK, MOVE],
-      sizeLimit: 2,
+      pattern: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+      sizeLimit: 1,
     })
   },
   upgrader: new CreepSetup(SetupsNames.upgrader, {
