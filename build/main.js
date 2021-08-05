@@ -1105,7 +1105,7 @@ var ArraySet = arraySet.ArraySet;
 
 var quickSort = quickSort$1.quickSort;
 
-function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
+function SourceMapConsumer(aSourceMap, aSourceMapURL) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
     sourceMap = util.parseSourceMapInput(aSourceMap);
@@ -1116,14 +1116,14 @@ function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
     : new BasicSourceMapConsumer(sourceMap, aSourceMapURL);
 }
 
-SourceMapConsumer$1.fromSourceMap = function(aSourceMap, aSourceMapURL) {
+SourceMapConsumer.fromSourceMap = function(aSourceMap, aSourceMapURL) {
   return BasicSourceMapConsumer.fromSourceMap(aSourceMap, aSourceMapURL);
 };
 
 /**
  * The version of the source mapping spec that we are consuming.
  */
-SourceMapConsumer$1.prototype._version = 3;
+SourceMapConsumer.prototype._version = 3;
 
 // `__generatedMappings` and `__originalMappings` are arrays that hold the
 // parsed mapping coordinates from the source map's "mappings" attribute. They
@@ -1155,8 +1155,8 @@ SourceMapConsumer$1.prototype._version = 3;
 //
 // `_originalMappings` is ordered by the original positions.
 
-SourceMapConsumer$1.prototype.__generatedMappings = null;
-Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
+SourceMapConsumer.prototype.__generatedMappings = null;
+Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1168,8 +1168,8 @@ Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
   }
 });
 
-SourceMapConsumer$1.prototype.__originalMappings = null;
-Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
+SourceMapConsumer.prototype.__originalMappings = null;
+Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1181,7 +1181,7 @@ Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
   }
 });
 
-SourceMapConsumer$1.prototype._charIsMappingSeparator =
+SourceMapConsumer.prototype._charIsMappingSeparator =
   function SourceMapConsumer_charIsMappingSeparator(aStr, index) {
     var c = aStr.charAt(index);
     return c === ";" || c === ",";
@@ -1192,16 +1192,16 @@ SourceMapConsumer$1.prototype._charIsMappingSeparator =
  * query (the ordered arrays in the `this.__generatedMappings` and
  * `this.__originalMappings` properties).
  */
-SourceMapConsumer$1.prototype._parseMappings =
+SourceMapConsumer.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     throw new Error("Subclasses must implement _parseMappings");
   };
 
-SourceMapConsumer$1.GENERATED_ORDER = 1;
-SourceMapConsumer$1.ORIGINAL_ORDER = 2;
+SourceMapConsumer.GENERATED_ORDER = 1;
+SourceMapConsumer.ORIGINAL_ORDER = 2;
 
-SourceMapConsumer$1.GREATEST_LOWER_BOUND = 1;
-SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
+SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
+SourceMapConsumer.LEAST_UPPER_BOUND = 2;
 
 /**
  * Iterate over each mapping between an original source/line/column and a
@@ -1219,17 +1219,17 @@ SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
  *        order or the original's source/line/column order, respectively. Defaults to
  *        `SourceMapConsumer.GENERATED_ORDER`.
  */
-SourceMapConsumer$1.prototype.eachMapping =
+SourceMapConsumer.prototype.eachMapping =
   function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
     var context = aContext || null;
-    var order = aOrder || SourceMapConsumer$1.GENERATED_ORDER;
+    var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
 
     var mappings;
     switch (order) {
-    case SourceMapConsumer$1.GENERATED_ORDER:
+    case SourceMapConsumer.GENERATED_ORDER:
       mappings = this._generatedMappings;
       break;
-    case SourceMapConsumer$1.ORIGINAL_ORDER:
+    case SourceMapConsumer.ORIGINAL_ORDER:
       mappings = this._originalMappings;
       break;
     default:
@@ -1273,7 +1273,7 @@ SourceMapConsumer$1.prototype.eachMapping =
  *   - column: The column number in the generated source, or null.
  *    The column number is 0-based.
  */
-SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
+SourceMapConsumer.prototype.allGeneratedPositionsFor =
   function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
     var line = util.getArg(aArgs, 'line');
 
@@ -1342,8 +1342,6 @@ SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
 
     return mappings;
   };
-
-var SourceMapConsumer_1 = SourceMapConsumer$1;
 
 /**
  * A BasicSourceMapConsumer instance represents a parsed source map which we can
@@ -1439,8 +1437,8 @@ function BasicSourceMapConsumer(aSourceMap, aSourceMapURL) {
   this.file = file;
 }
 
-BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
-BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer$1;
+BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
 
 /**
  * Utility function to find the index of a source.  Returns -1 if not
@@ -1750,7 +1748,7 @@ BasicSourceMapConsumer.prototype.originalPositionFor =
       "generatedLine",
       "generatedColumn",
       util.compareByGeneratedPositionsDeflated,
-      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1895,7 +1893,7 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       "originalLine",
       "originalColumn",
       util.compareByOriginalPositions,
-      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1916,8 +1914,6 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       lastColumn: null
     };
   };
-
-var BasicSourceMapConsumer_1 = BasicSourceMapConsumer;
 
 /**
  * An IndexedSourceMapConsumer instance represents a parsed source map which
@@ -2011,13 +2007,13 @@ function IndexedSourceMapConsumer(aSourceMap, aSourceMapURL) {
         generatedLine: offsetLine + 1,
         generatedColumn: offsetColumn + 1
       },
-      consumer: new SourceMapConsumer$1(util.getArg(s, 'map'), aSourceMapURL)
+      consumer: new SourceMapConsumer(util.getArg(s, 'map'), aSourceMapURL)
     }
   });
 }
 
-IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
-IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer$1;
+IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
 
 /**
  * The version of the source mapping spec that we are consuming.
@@ -2236,111 +2232,250 @@ IndexedSourceMapConsumer.prototype._parseMappings =
     quickSort(this.__originalMappings, util.compareByOriginalPositions);
   };
 
-var IndexedSourceMapConsumer_1 = IndexedSourceMapConsumer;
-
-var sourceMapConsumer = {
-	SourceMapConsumer: SourceMapConsumer_1,
-	BasicSourceMapConsumer: BasicSourceMapConsumer_1,
-	IndexedSourceMapConsumer: IndexedSourceMapConsumer_1
-};
-
-var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
-
-class ErrorMapper {
-    static get consumer() {
-        if (this._consumer == null) {
-            this._consumer = new SourceMapConsumer(require("main.js.map"));
-        }
-        return this._consumer;
-    }
-    /**
-     * Generates a stack trace using a source map generate original symbol names.
-     *
-     * WARNING - EXTREMELY high CPU cost for first call after reset - >30 CPU! Use sparingly!
-     * (Consecutive calls after a reset are more reasonable, ~0.1 CPU/ea)
-     *
-     * @param {Error | string} error The error or original stack trace
-     * @returns {string} The source-mapped stack trace
-     */
-    static sourceMappedStackTrace(error) {
-        const stack = error instanceof Error ? error.stack : error;
-        if (Object.prototype.hasOwnProperty.call(this.cache, stack)) {
-            return this.cache[stack];
-        }
-        // eslint-disable-next-line no-useless-escape
-        const re = /^\s+at\s+(.+?\s+)?\(?([0-z._\-\\\/]+):(\d+):(\d+)\)?$/gm;
-        let match;
-        let outStack = error.toString();
-        while ((match = re.exec(stack))) {
-            if (match[2] === "main") {
-                const pos = this.consumer.originalPositionFor({
-                    column: parseInt(match[4], 10),
-                    line: parseInt(match[3], 10)
-                });
-                if (pos.line != null) {
-                    if (pos.name) {
-                        outStack += `\n    at ${pos.name} (${pos.source}:${pos.line}:${pos.column})`;
-                    }
-                    else {
-                        if (match[1]) {
-                            // no original source file name known - use file name from given trace
-                            outStack += `\n    at ${match[1]} (${pos.source}:${pos.line}:${pos.column})`;
-                        }
-                        else {
-                            // no original source file name known or in given trace - omit name
-                            outStack += `\n    at ${pos.source}:${pos.line}:${pos.column}`;
-                        }
-                    }
-                }
-                else {
-                    // no known position
-                    break;
-                }
-            }
-            else {
-                // no more parseable lines
-                break;
+class Mem {
+    static clean() {
+        for (const name in Memory.creeps) {
+            if (!(name in Game.creeps)) {
+                delete Memory.creeps[name];
             }
         }
-        this.cache[stack] = outStack;
-        return outStack;
-    }
-    static wrapLoop(loop) {
-        return () => {
-            try {
-                loop();
-            }
-            catch (e) {
-                if (e instanceof Error) {
-                    if ("sim" in Game.rooms) {
-                        const message = `Source maps don't work in the simulator - displaying original error`;
-                        console.log(`<span style='color:red'>${message}<br>${_.escape(e.stack)}</span>`);
-                    }
-                    else {
-                        console.log(`<span style='color:red'>${_.escape(this.sourceMappedStackTrace(e))}</span>`);
-                    }
-                }
-                else {
-                    // can't handle it
-                    throw e;
-                }
-            }
-        };
     }
 }
-// Cache previously mapped traces to improve performance
-ErrorMapper.cache = {};
 
-// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
-// This utility uses source maps to get the line numbers and file names of the original, TS source code
-const loop = ErrorMapper.wrapLoop(() => {
-    console.log(`Current game tick is ${Game.time}`);
-    // Automatically delete memory of missing creeps
-    for (const name in Memory.creeps) {
-        if (!(name in Game.creeps)) {
-            delete Memory.creeps[name];
+class Cell {
+    constructor(hive, cellName) {
+        this.hive = hive;
+        this.name = cellName;
+    }
+}
+
+// cell that will extract energy or minerals? from ground
+class resourceCell extends Cell {
+    constructor(hive, source) {
+        super(hive, "resourceCell for " + source.id.slice(-3));
+        this.source = source;
+    }
+    update() {
+        if (this.container && this.container.store.getUsedCapacity() >= 200) ;
+    }
+    run() {
+        if (this.link && this.link.store) ;
+    }
+}
+
+class excavationCell extends Cell {
+    constructor(hive, sources) {
+        super(hive, "excavationCell");
+        this.resourceCells = [];
+        _.forEach(sources, (source) => {
+            this.resourceCells.push(new resourceCell(this.hive, source));
+        });
+    }
+    // first stage of decision making like do i a logistic transfer do i need more beeMasters
+    update() {
+        _.forEach(this.resourceCells, (cell) => {
+            cell.update();
+        });
+    }
+    ;
+    // second stage of decision making like where do i need to spawn creeps or do i need
+    run() {
+        _.forEach(this.resourceCells, (cell) => {
+            cell.update();
+        });
+    }
+    ;
+}
+
+class storageCell extends Cell {
+    constructor(hive, storage) {
+        super(hive, "storageCell");
+        this.storage = storage;
+    }
+    update() { }
+    run() { }
+}
+
+class defenseCell extends Cell {
+    constructor(hive, towers) {
+        super(hive, "excavationCell");
+        this.towers = towers;
+        console.log(towers.length);
+    }
+    // first stage of decision making like do i a logistic transfer do i need more beeMasters
+    update() {
+    }
+    ;
+    // second stage of decision making like where do i need to spawn creeps or do i need
+    run() {
+        // #TODO better target picking
+        if (this.hive.roomTargets.length) {
+            _.forEach(this.towers, (tower) => {
+                let closest = tower.pos.findClosestByRange(this.hive.roomTargets);
+                if (closest)
+                    tower.attack(closest);
+            });
         }
     }
-});
+    ;
+}
+
+var _a, _b;
+class repairSheet {
+    constructor() {
+        this[_a] = 200000;
+        this[_b] = 200000;
+        this.other = 1;
+        this.collapse = 0.5;
+    }
+    isAnEmergency(structure) {
+        switch (structure.structureType) {
+            case STRUCTURE_RAMPART:
+            case STRUCTURE_WALL: {
+                return structure.hits < this[structure.structureType] * this.collapse;
+            }
+            default: {
+                return structure.hits < structure.hitsMax * this.other * this.collapse;
+            }
+        }
+    }
+    isAnRepairCase(structure) {
+        switch (structure.structureType) {
+            case STRUCTURE_RAMPART:
+            case STRUCTURE_WALL: {
+                return structure.hits < this[structure.structureType];
+            }
+            default: {
+                return structure.hits < structure.hitsMax * this.other;
+            }
+        }
+    }
+}
+_a = STRUCTURE_RAMPART, _b = STRUCTURE_WALL;
+class Hive {
+    constructor(roomName, annexNames) {
+        //targets for defense systems
+        this.roomTargets = [];
+        this.annexTargets = [];
+        // some structures (aka preprocess of filters)
+        this.constructionSites = [];
+        this.emergencyRepairs = [];
+        this.normalRepairs = [];
+        this.room = Game.rooms[roomName];
+        this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
+        this.rooms = [this.room].concat(this.annexes);
+        this.storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+        this.repairSheet = new repairSheet();
+        this.cells = {};
+        this.parseStructures();
+    }
+    parseStructures() {
+        this.updateConstructionSites();
+        this.updateEmeregcyRepairs();
+        this.updateNormalRepairs();
+        if (this.storage) {
+            this.cells.storageCell = new storageCell(this, this.storage);
+        }
+        let towers = [];
+        _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
+            if (structure instanceof StructureTower) {
+                towers.push(structure);
+            }
+        });
+        if (towers.length) {
+            this.cells.defenseCell = new defenseCell(this, towers);
+        }
+        let allSources = [];
+        _.forEach(this.rooms, (room) => {
+            let sources = room.find(FIND_SOURCES);
+            allSources = allSources.concat(sources);
+        });
+        if (allSources.length) {
+            this.cells.excavationCell = new excavationCell(this, allSources);
+        }
+    }
+    updateConstructionSites() {
+        this.constructionSites = [];
+        _.forEach(this.rooms, (room) => {
+            this.constructionSites = this.constructionSites.concat(room.find(FIND_CONSTRUCTION_SITES));
+        });
+    }
+    updateEmeregcyRepairs() {
+        this.emergencyRepairs = [];
+        _.forEach(this.rooms, (room) => {
+            this.emergencyRepairs = this.emergencyRepairs.concat(_.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnEmergency(structure)));
+        });
+    }
+    updateNormalRepairs() {
+        this.normalRepairs = [];
+        _.forEach(this.rooms, (room) => {
+            this.normalRepairs = this.normalRepairs.concat(_.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnRepairCase(structure)));
+        });
+    }
+    // look for targets inside room
+    findTargets() {
+        this.roomTargets = _.filter(this.room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
+        this.annexTargets = [];
+        _.forEach(this.annexes, (room) => {
+            this.annexTargets = this.annexTargets.concat(_.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL)));
+        });
+    }
+    // add to list a new creep
+    wish() {
+    }
+    update() {
+        if (Game.time % 5 == 0) {
+            this.updateConstructionSites();
+            this.updateEmeregcyRepairs();
+            this.updateNormalRepairs();
+        }
+        else if (Game.time % 5 == 1) {
+            this.findTargets();
+            console.log("targets in main room: " + this.roomTargets.length);
+        }
+        _.forEach(this.cells, (cell) => {
+            cell.update();
+        });
+    }
+    run() {
+        _.forEach(this.cells, (cell) => {
+            cell.run();
+        });
+    }
+}
+
+Creep.prototype.getBodyparts = function (partType) {
+    return _.filter(this.body, (part) => part.type == partType).length;
+};
+
+// This gets run on each global reset
+function onGlobalReset() {
+    global.hives = [];
+    global.hives.push(new Hive("sim", []));
+    console.log("Reset? Cool time is", Game.time);
+    global.masters = [];
+}
+function main() {
+    if (!global.hives) {
+        onGlobalReset();
+    }
+    // Automatically delete memory of missing creeps
+    Mem.clean();
+    // update phase
+    _.forEach(global.hives, (hive) => {
+        hive.update();
+    });
+    // run phase
+    _.forEach(global.hives, (hive) => {
+        hive.run();
+    });
+    if (Game.cpu.bucket == 10000) {
+        // only on official
+        Game.cpu.generatePixel();
+    }
+}
+let _loop = main;
+const loop = _loop;
+// onGlobalReset();
 
 exports.loop = loop;

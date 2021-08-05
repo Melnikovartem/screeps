@@ -22,8 +22,9 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    if (this.link && this.link.store) {
-
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5
+      && this.link.cooldown == 0 && this.hive.cells.storageCell && this.hive.cells.storageCell.link) {
+      this.link.transferEnergy(this.hive.cells.storageCell.link);
     }
   }
 }

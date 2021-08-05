@@ -1,3 +1,6 @@
+// TRANSFERED
+// cause only imports
+
 var armyLoop = require('armies');
 var roomLoop = require('rooms');
 
@@ -30,7 +33,7 @@ global.REUSE_PATH = 5;
 
 module.exports.loop = function() {
   armyLoop();
-  
+
   for (let creepName in Memory.creeps) {
     let creep = Game.creeps[creepName];
 

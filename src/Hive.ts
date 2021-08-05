@@ -1,14 +1,16 @@
 import { excavationCell } from "./cells/excavationCell"
 import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
+import { defenseCell } from "./cells/defenseCell"
 
-
-const VISUALS_ON = true;
+// TODO visuals
+// const VISUALS_ON = true;
 
 interface hiveCells {
   excavationCell?: excavationCell;
   storageCell?: storageCell;
   upgradeCell?: upgradeCell;
+  defenseCell?: defenseCell;
 }
 
 class repairSheet {
@@ -49,6 +51,10 @@ export class Hive {
   cells: hiveCells;
   repairSheet: repairSheet;
 
+  //targets for defense systems
+  roomTargets: Creep[] = [];
+  annexTargets: Creep[] = [];
+
   // some structures (aka preprocess of filters)
   constructionSites: ConstructionSite[] = [];
   emergencyRepairs: Structure[] = [];
@@ -80,10 +86,20 @@ export class Hive {
       this.cells.storageCell = new storageCell(this, this.storage);
     }
 
+    let towers: StructureTower[] = [];
+    _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
+      if (structure instanceof StructureTower && structure.isActive()) {
+        towers.push(structure);
+      }
+    });
+    if (towers.length) {
+      this.cells.defenseCell = new defenseCell(this, towers);
+    }
+
     let allSources: Source[] = [];
     _.forEach(this.rooms, (room) => {
       let sources = room.find(FIND_SOURCES);
-      allSources.concat(sources);
+      allSources = allSources.concat(sources);
     });
     if (allSources.length) {
       this.cells.excavationCell = new excavationCell(this, allSources);
@@ -91,24 +107,37 @@ export class Hive {
   }
 
   private updateConstructionSites() {
+    this.constructionSites = [];
     _.forEach(this.rooms, (room) => {
-      let constructionSites = room.find(FIND_CONSTRUCTION_SITES);
-      this.constructionSites.concat(constructionSites);
+      this.constructionSites = this.constructionSites.concat(room.find(FIND_CONSTRUCTION_SITES));
     });
   }
 
 
   private updateEmeregcyRepairs() {
+    this.emergencyRepairs = [];
     _.forEach(this.rooms, (room) => {
-      let emergencyRepairs = _.filter(room.find(FIND_STRUCTURES), this.repairSheet.isAnEmergency);
-      this.emergencyRepairs.concat(emergencyRepairs);
+      this.emergencyRepairs = this.emergencyRepairs.concat(
+        _.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnEmergency(structure)))
     });
   }
 
   private updateNormalRepairs() {
+    this.normalRepairs = [];
     _.forEach(this.rooms, (room) => {
-      let normalRepairs = _.filter(room.find(FIND_STRUCTURES), this.repairSheet.isAnRepairCase);
-      this.normalRepairs.concat(normalRepairs);
+      this.normalRepairs = this.normalRepairs.concat(
+        _.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnRepairCase(structure)))
+    });
+  }
+
+  // look for targets inside room
+  private findTargets() {
+    this.roomTargets = _.filter(this.room.find(FIND_HOSTILE_CREEPS),
+      (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
+    this.annexTargets = [];
+    _.forEach(this.annexes, (room) => {
+      this.annexTargets = this.annexTargets.concat(
+        _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL)))
     });
   }
 
@@ -122,6 +151,9 @@ export class Hive {
       this.updateConstructionSites();
       this.updateEmeregcyRepairs();
       this.updateNormalRepairs();
+    } else if (Game.time % 5 == 1) {
+      this.findTargets();
+      console.log("targets in main room: " + this.roomTargets.length);
     }
 
     _.forEach(this.cells, (cell) => {
@@ -131,7 +163,7 @@ export class Hive {
 
   run() {
     _.forEach(this.cells, (cell) => {
-      cell.update();
+      cell.run();
     });
   }
 }
