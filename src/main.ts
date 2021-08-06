@@ -9,6 +9,9 @@ const ERROR_WRAPPER = true; // turn off on official
 
 // This gets run on each global reset
 function onGlobalReset(): void {
+  // check if all memory position were created
+  Mem.init();
+
   global.hives = [];
   global.hives.push(new Hive("E37S19", []));
 

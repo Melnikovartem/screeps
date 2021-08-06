@@ -7,6 +7,7 @@ export class Bee {
   creep: Creep;
   // time to inherite some shit from Creep
 
+
   // for now it will be forever binded
   constructor(master: Master, creep: Creep) {
     this.master = master;
@@ -23,11 +24,21 @@ export class Bee {
     this.creep.transfer(target, resourceType);
   }
 
-  goTo(pos: RoomPosition) {
-    if (this.creep.pos != pos)
-      this.creep.moveTo(pos, {
-        reusePath: 3
+  reserveController(target: StructureController) {
+    this.creep.reserveController(target);
+  }
+
+  goTo(target: RoomPosition | Room) {
+    if (target instanceof RoomPosition) {
+      if (this.creep.pos != target)
+        this.creep.moveTo(target, {
+          reusePath: 3,
+        });
+    } else if (target instanceof Room) {
+      this.creep.moveTo(new RoomPosition(25, 25, target.name), {
+        reusePath: 3,
       });
+    }
   }
 
   /*

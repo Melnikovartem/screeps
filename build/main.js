@@ -2332,6 +2332,12 @@ class ErrorMapper {
 ErrorMapper.cache = {};
 
 class Mem {
+    static init() {
+        /*
+        if (!Memory.masters)
+          Memory.masters = [];
+        */
+    }
     static clean() {
         for (const name in Memory.creeps) {
             if (!(name in Game.creeps)) {
@@ -2456,6 +2462,7 @@ class repairSheet {
 _a = STRUCTURE_RAMPART, _b = STRUCTURE_WALL;
 class Hive {
     constructor(roomName, annexNames) {
+        this.orderList = [];
         //targets for defense systems
         this.roomTargets = [];
         this.annexTargets = [];
@@ -2472,7 +2479,6 @@ class Hive {
         this.parseStructures();
     }
     parseStructures() {
-        console.log(this.room);
         this.updateConstructionSites();
         this.updateEmeregcyRepairs();
         this.updateNormalRepairs();
@@ -2524,7 +2530,9 @@ class Hive {
         });
     }
     // add to list a new creep
-    wish(setup) {
+    wish(order) {
+        // add some checks
+        this.orderList.push(order);
     }
     update() {
         if (Game.time % 5 == 0) {
@@ -2534,7 +2542,6 @@ class Hive {
         }
         else if (Game.time % 5 == 1) {
             this.findTargets();
-            console.log("targets in main room: " + this.roomTargets.length);
         }
         _.forEach(this.cells, (cell) => {
             cell.update();

@@ -9,5 +9,9 @@ declare global {
       hives: Hive[];
       masters: Master[];
     }
+
+    interface Memory {
+      masters: Master[];
+    }
   }
 }

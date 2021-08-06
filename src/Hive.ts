@@ -3,7 +3,7 @@ import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
 import { defenseCell } from "./cells/defenseCell"
 import { CreepSetup } from "./creepSetups"
-
+import { Master } from "./beeMaster/_Master"
 // TODO visuals
 // const VISUALS_ON = true;
 
@@ -43,6 +43,11 @@ class repairSheet {
   }
 }
 
+export interface spawnOrder {
+  master: Master;
+  amount: number;
+  setup: CreepSetup;
+}
 
 
 export class Hive {
@@ -52,6 +57,8 @@ export class Hive {
   rooms: Room[]; //this room and annexes
   cells: hiveCells;
   repairSheet: repairSheet;
+
+  orderList: spawnOrder[] = [];
 
   //targets for defense systems
   roomTargets: Creep[] = [];
@@ -144,8 +151,9 @@ export class Hive {
   }
 
   // add to list a new creep
-  wish(setup: CreepSetup) {
-
+  wish(order: spawnOrder) {
+    // add some checks
+    this.orderList.push(order)
   }
 
   update() {

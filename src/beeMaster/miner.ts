@@ -1,8 +1,8 @@
 import { Master } from "./_Master";
-import { Hive } from "../Hive";
-import { resourceCell } from "../cells/resourceCell"
-import { Bee } from "../Bee"
-import { Setups } from "../creepSetups"
+import { Hive, spawnOrder } from "../Hive";
+import { resourceCell } from "../cells/resourceCell";
+import { Bee } from "../Bee";
+import { Setups } from "../creepSetups";
 
 export class minerMaster extends Master {
   cell: resourceCell;
@@ -18,8 +18,15 @@ export class minerMaster extends Master {
 
   update() {
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
-      this.hive.wish(Setups.miner.energy);
+    console.log(this.cell.source.id, (this.cell.link || this.cell.container));
+    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
+      let order: spawnOrder = {
+        master: this,
+        setup: Setups.miner.energy,
+        amount: 1,
+      };
+
+      this.hive.wish(order);
     }
   };
 
@@ -31,7 +38,6 @@ export class minerMaster extends Master {
         else
           bee.goTo(this.cell.source.pos);
       }
-
 
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
