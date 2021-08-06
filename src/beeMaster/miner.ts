@@ -1,5 +1,5 @@
 import { Master } from "./_Master";
-import { Hive, spawnOrder } from "../Hive";
+import { spawnOrder } from "../Hive";
 import { resourceCell } from "../cells/resourceCell";
 import { Bee } from "../Bee";
 import { Setups } from "../creepSetups";
@@ -23,14 +23,13 @@ export class minerMaster extends Master {
 
   update() {
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container) || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
+    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)
+      || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
       let order: spawnOrder = {
         master: this,
         setup: Setups.miner.energy,
         amount: 1,
       };
-
-      console.log("spawn order for a miner");
 
       this.lastSpawned = Game.time;
       this.hive.wish(order);

@@ -2,6 +2,7 @@ import { excavationCell } from "./cells/excavationCell"
 import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
 import { defenseCell } from "./cells/defenseCell"
+import { respawnCell } from "./cells/respawnCell"
 import { CreepSetup } from "./creepSetups"
 import { Master } from "./beeMaster/_Master"
 // TODO visuals
@@ -12,6 +13,7 @@ interface hiveCells {
   storageCell?: storageCell;
   upgradeCell?: upgradeCell;
   defenseCell?: defenseCell;
+  respawnCell?: respawnCell;
 }
 
 class repairSheet {
@@ -69,16 +71,10 @@ export class Hive {
   emergencyRepairs: Structure[] = [];
   normalRepairs: Structure[] = [];
 
-  // some shit inherited from room object
-  storage: StructureStorage | undefined;
-  links: StructureLink[] | undefined;
-
   constructor(roomName: string, annexNames: string[]) {
     this.room = Game.rooms[roomName];
     this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
     this.rooms = [this.room].concat(this.annexes);
-
-    this.storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
 
     this.repairSheet = new repairSheet();
 
@@ -91,8 +87,19 @@ export class Hive {
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
 
-    if (this.storage) {
-      this.cells.storageCell = new storageCell(this, this.storage);
+    let spawns: StructureSpawn[] = [];
+    _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
+      if (structure instanceof StructureSpawn && structure.isActive()) {
+        spawns.push(structure);
+      }
+    });
+    if (spawns.length) {
+      this.cells.respawnCell = new respawnCell(this, spawns);
+    }
+
+    let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+    if (storage) {
+      this.cells.storageCell = new storageCell(this, storage);
     }
 
     let towers: StructureTower[] = [];

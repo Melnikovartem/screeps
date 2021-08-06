@@ -2380,7 +2380,6 @@ class CreepSetup {
             patternLimit: Infinity,
         };
         this.bodySetup = bodySetup;
-        console.log("!", this.bodySetup.patternLimit);
     }
     getBody(energy) {
         let body = [];
@@ -2393,6 +2392,7 @@ class CreepSetup {
             limitSegments = this.bodySetup.patternLimit;
         let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
         _.forEach(this.bodySetup.pattern, (s) => _.times(maxSegment, () => body.push(s)));
+        console.log("a body:", body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b)));
         return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
     }
 }
@@ -2449,13 +2449,13 @@ class minerMaster extends Master {
     }
     update() {
         // 5 for random shit
-        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container) || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
+        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)
+            || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
             let order = {
                 master: this,
                 setup: Setups.miner.energy,
                 amount: 1,
             };
-            console.log("spawn order for a miner");
             this.lastSpawned = Game.time;
             this.hive.wish(order);
         }
@@ -2561,6 +2561,40 @@ class defenseCell extends Cell {
     ;
 }
 
+class respawnCell extends Cell {
+    constructor(hive, spawns) {
+        super(hive, "excavationCell");
+        this.freeSpawns = [];
+        this.spawns = spawns;
+    }
+    // first stage of decision making like do i a logistic transfer do i need more beeMasters
+    update() {
+        // find free spawners
+        this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
+    }
+    ;
+    // second stage of decision making like where do i need to spawn creeps or do i need
+    run() {
+        // generate the queue and start spawning
+        _.forEach(this.hive.orderList, (order) => {
+            //console.log("!", this.freeSpawns.length, order.setup.getBody(this.hive.room.energyAvailable));
+            if (!this.freeSpawns.length)
+                return;
+            let spawn = this.freeSpawns.pop();
+            let body = order.setup.getBody(this.hive.room.energyAvailable);
+            let name = order.setup.bodySetup + " " + makeId(4);
+            let memory = {
+                ref: order.master.ref
+            };
+            let ans = spawn.spawnCreep(body, name, { memory: memory });
+            if (ans == ERR_NOT_ENOUGH_RESOURCES) {
+                return;
+            }
+        });
+    }
+    ;
+}
+
 var _a, _b;
 class repairSheet {
     constructor() {
@@ -2606,7 +2640,6 @@ class Hive {
         this.room = Game.rooms[roomName];
         this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
         this.rooms = [this.room].concat(this.annexes);
-        this.storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
         this.repairSheet = new repairSheet();
         this.cells = {};
         this.parseStructures();
@@ -2615,8 +2648,18 @@ class Hive {
         this.updateConstructionSites();
         this.updateEmeregcyRepairs();
         this.updateNormalRepairs();
-        if (this.storage) {
-            this.cells.storageCell = new storageCell(this, this.storage);
+        let spawns = [];
+        _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
+            if (structure instanceof StructureSpawn && structure.isActive()) {
+                spawns.push(structure);
+            }
+        });
+        if (spawns.length) {
+            this.cells.respawnCell = new respawnCell(this, spawns);
+        }
+        let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+        if (storage) {
+            this.cells.storageCell = new storageCell(this, storage);
         }
         let towers = [];
         _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
