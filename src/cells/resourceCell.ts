@@ -1,6 +1,8 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
+import { minerMaster } from "../beeMaster/miner"
+
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
 
@@ -16,6 +18,9 @@ export class resourceCell extends Cell {
   }
 
   update() {
+    if (!this.master) {
+      this.master = new minerMaster(this);
+    }
     if (this.container && this.container.store.getUsedCapacity() >= 200) {
 
     }

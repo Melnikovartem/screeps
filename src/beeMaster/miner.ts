@@ -5,27 +5,34 @@ import { Bee } from "../Bee";
 import { Setups } from "../creepSetups";
 
 export class minerMaster extends Master {
-  cell: resourceCell;
   miners: Bee[] = [];
   lastSpawned: number;
 
-  constructor(hive: Hive, resourceCell: resourceCell) {
-    super(hive);
-    this.cell = resourceCell;
+  source: Source;
+  link: StructureLink | undefined;
+  container: StructureContainer | undefined;
+
+  constructor(resourceCell: resourceCell) {
+    super(resourceCell.hive);
+    this.source = resourceCell.source;
+    this.container = resourceCell.container;
+    this.link = resourceCell.link;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
   }
 
   update() {
     // 5 for random shit
-    console.log(this.cell.source.id, (this.cell.link || this.cell.container));
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
+    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container) || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
       let order: spawnOrder = {
         master: this,
         setup: Setups.miner.energy,
         amount: 1,
       };
 
+      console.log("spawn order for a miner");
+
+      this.lastSpawned = Game.time;
       this.hive.wish(order);
     }
   };
@@ -33,19 +40,19 @@ export class minerMaster extends Master {
   run() {
     _.forEach(this.miners, (bee) => {
       if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        if (bee.creep.pos.isNearTo(this.cell.source))
-          bee.harvest(this.cell.source);
+        if (bee.creep.pos.isNearTo(this.source))
+          bee.harvest(this.source);
         else
-          bee.goTo(this.cell.source.pos);
+          bee.goTo(this.source.pos);
       }
 
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
         let target: Structure | undefined;
-        if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY))
-          target = this.cell.link;
-        else if (this.cell.container && this.cell.container.store.getFreeCapacity(RESOURCE_ENERGY))
-          target = this.cell.container;
+        if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY))
+          target = this.link;
+        else if (this.container && this.container.store.getFreeCapacity(RESOURCE_ENERGY))
+          target = this.container;
 
         if (target) {
           if (bee.creep.pos.isNearTo(target))

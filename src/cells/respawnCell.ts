@@ -21,6 +21,7 @@ export class respawnCell extends Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // generate the queue and start spawning
+    console.log("orders this tick:", this.hive.orderList.length);
     _.forEach(this.hive.orderList, (order) => {
       if (!this.freeSpawns.length)
         return;

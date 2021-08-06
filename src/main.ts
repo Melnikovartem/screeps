@@ -13,7 +13,11 @@ function onGlobalReset(): void {
   // check if all memory position were created
   Mem.init();
 
-  let roomName = "E37S19";
+  global.hives = {};
+  global.bees = {};
+  global.masters = {};
+
+  let roomName = "sim";
   global.hives[roomName] = new Hive(roomName, []);
 
   console.log("Reset? Cool time is", Game.time);
@@ -36,6 +40,9 @@ function main() {
   Mem.clean();
 
   // update phase
+  _.forEach(global.masters, (master) => {
+    master.update();
+  });
   _.forEach(global.hives, (hive) => {
     hive.update();
   });
@@ -43,6 +50,9 @@ function main() {
   // run phase
   _.forEach(global.hives, (hive) => {
     hive.run();
+  });
+  _.forEach(global.masters, (master) => {
+    master.run();
   });
 
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000) {
@@ -64,4 +74,4 @@ if (0) {
 
 export const loop = _loop;
 
-// onGlobalReset();
+onGlobalReset();

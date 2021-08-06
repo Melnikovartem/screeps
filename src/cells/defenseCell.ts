@@ -8,7 +8,6 @@ export class defenseCell extends Cell {
     super(hive, "excavationCell");
 
     this.towers = towers;
-    console.log(towers.length);
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
