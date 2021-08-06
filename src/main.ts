@@ -1,6 +1,7 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { Mem } from "./memory";
 import { Hive } from "./Hive";
+import { Bee } from "./bee";
 import "./prototypes/creeps"
 import "./prototypes/pos"
 
@@ -12,12 +13,11 @@ function onGlobalReset(): void {
   // check if all memory position were created
   Mem.init();
 
-  global.hives = [];
-  global.hives.push(new Hive("E37S19", []));
+  let roomName = "E37S19";
+  global.hives[roomName] = new Hive(roomName, []);
 
   console.log("Reset? Cool time is", Game.time);
 
-  global.masters = [];
 }
 
 function main() {
@@ -25,6 +25,12 @@ function main() {
   if (!global.hives) {
     onGlobalReset();
   }
+
+  _.forEach(Game.creeps, (creep) => {
+    if (!global.bees[creep.name]) {
+      global.bees[creep.name] = new Bee(creep);
+    }
+  });
 
   // Automatically delete memory of missing creeps
   Mem.clean();

@@ -1,17 +1,23 @@
 import { Hive } from "./Hive"
 import { Master } from "./beeMaster/_Master"
+import { Bee } from "./bee"
 
 // Syntax for adding proprties to `global` (ex "global.log")
 
 declare global {
   namespace NodeJS {
     interface Global {
-      hives: Hive[];
-      masters: Master[];
+      hives: { [id: string]: Hive };
+      masters: { [id: string]: Master };
+      bees: { [id: string]: Bee };
     }
+  }
 
-    interface Memory {
-      masters: Master[];
-    }
+  interface Memory {
+    masters: { [id: string]: Master };
+  }
+
+  interface CreepMemory {
+    ref: string;
   }
 }

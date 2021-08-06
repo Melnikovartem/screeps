@@ -1,9 +1,5 @@
 export class Mem {
   static init() {
-    /*
-    if (!Memory.masters)
-      Memory.masters = [];
-    */
   }
 
   static clean() {

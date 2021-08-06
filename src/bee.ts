@@ -3,17 +3,18 @@ import { Master } from "beeMaster/_Master";
 export class Bee {
 
   master: Master;
-
   creep: Creep;
+
   // time to inherite some shit from Creep
 
 
   // for now it will be forever binded
-  constructor(master: Master, creep: Creep) {
-    this.master = master;
+  constructor(creep: Creep) {
     this.creep = creep;
+    this.master = global.masters[this.creep.memory.ref];
 
     // not sure weather i should copy all parameters from creep like body and stuff
+    global.bees[this.creep.name] = this;
   }
 
   harvest(source: Source) {

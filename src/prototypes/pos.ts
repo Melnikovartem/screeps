@@ -2,6 +2,7 @@ interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
   getTimeForPath(roomPos: RoomPosition): number;
+  findClosest(structures: RoomObject[]): RoomObject | null;
 }
 
 RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
@@ -52,3 +53,8 @@ RoomPosition.prototype.getTimeForPath = function(roomPos: RoomPosition): number 
   //for future i need to iterate and check for roads
   return path.length
 };
+
+RoomPosition.prototype.findClosest = function(structures: RoomObject[]): RoomObject | null {
+  // TODO if structure is in another room
+  return this.findClosestByRange(structures);
+}

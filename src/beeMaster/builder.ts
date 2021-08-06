@@ -25,7 +25,16 @@ export class builderMaster extends Master {
 
   run() {
     _.forEach(this.builders, (bee) => {
+      // TODO: getting energy
+      let target: RoomObject | null = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+      if (!target)
+        target = bee.creep.pos.findClosest(this.hive.constructionSites);
+      if (!target)
+        target = bee.creep.pos.findClosest(this.hive.normalRepairs);
 
+      if (target) {
+        bee.goTo(target.pos);
+      }
     });
   };
 }
