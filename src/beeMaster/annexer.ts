@@ -17,6 +17,18 @@ export class annexesMaster extends Master {
     this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
   }
 
+  catchBee(bee: Bee): void {
+    this.claimers.push(bee);
+    this.refreshLastSpawned();
+  }
+
+  refreshLastSpawned(): void {
+    _.forEach(this.claimers, (bee) => {
+      if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
+        this.lastSpawned = Game.time - bee.creep.ticksToLive;
+    });
+  }
+
   update() {
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_CLAIM_LIFE_TIME) {

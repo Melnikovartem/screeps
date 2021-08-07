@@ -24,7 +24,7 @@ export class excavationCell extends Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     _.forEach(this.resourceCells, (cell) => {
-      cell.update();
+      cell.run();
     });
   };
 }

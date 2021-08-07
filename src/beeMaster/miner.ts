@@ -19,6 +19,19 @@ export class minerMaster extends Master {
     this.link = resourceCell.link;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
+    this.refreshLastSpawned();
+  }
+
+  catchBee(bee: Bee): void {
+    this.miners.push(bee);
+    this.refreshLastSpawned();
+  }
+
+  refreshLastSpawned(): void {
+    _.forEach(this.miners, (bee) => {
+      if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
+        this.lastSpawned = Game.time - bee.creep.ticksToLive;
+    });
   }
 
   update() {

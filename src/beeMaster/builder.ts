@@ -6,18 +6,26 @@ import { Setups } from "../creepSetups";
 export class builderMaster extends Master {
   builders: Bee[] = [];
   targetBeeCount: number = 1;
+  waitingForABee: number = 0;
 
   constructor(hive: Hive) {
     super(hive);
   }
 
+  catchBee(bee: Bee): void {
+    this.builders.push(bee);
+    this.waitingForABee -= 1;
+  }
+
   update() {
-    if ((this.hive.emergencyRepairs || this.hive.constructionSites) && this.builders.length < this.targetBeeCount) {
+    if ((this.hive.emergencyRepairs || this.hive.constructionSites) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this,
         setup: Setups.builder,
         amount: this.builders.length - this.targetBeeCount,
       };
+
+      this.waitingForABee += this.builders.length - this.targetBeeCount;
 
       this.hive.wish(order);
     }
