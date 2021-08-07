@@ -32,7 +32,6 @@ export class builderMaster extends Master {
 
   update() {
     if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
-      console.log("?", this.hive.emergencyRepairs, this.hive.constructionSites);
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.builder,
