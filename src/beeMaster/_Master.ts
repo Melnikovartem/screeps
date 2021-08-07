@@ -1,4 +1,4 @@
-import { makeId } from "../utils/other"
+// import { makeId } from "../utils/other"
 
 import type { Hive } from "../Hive";
 import { Bee } from "../bee";
@@ -8,13 +8,11 @@ export abstract class Master {
 
   hive: Hive;
   ref: string;
-  refCell: string; // if "" then constructed not from cell
   bees: Bee[] = [];
 
-  constructor(hive: Hive, refCell: string) {
+  constructor(hive: Hive, ref: string) {
     this.hive = hive;
-    this.ref = makeId(8);
-    this.refCell = refCell;
+    this.ref = ref;
 
     global.masters[this.ref] = this;
 
@@ -57,8 +55,8 @@ export abstract class Master {
         console.log(key, gameObject);
         // set this parameter to new class object
       } else {
-        console.log(key, value);
         // set this parameter to new class object
+        console.log(key, value);
       }
       ;
     }

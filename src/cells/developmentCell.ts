@@ -1,16 +1,16 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { upgraderMaster } from "../beeMaster/upgrader"
+// import { bootstrapMaster } from "../beeMaster/bootstrap"
 
-export class upgradeCell extends Cell {
+export class developmentCell extends Cell {
 
   controller: StructureController;
   link: StructureLink | undefined;
 
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "upgradeCell");
+    super(hive, "developmentCell_" + hive.room.name);
 
     this.controller = controller;
 
@@ -21,8 +21,8 @@ export class upgradeCell extends Cell {
   }
 
   update() {
-    if (!this.beeMaster)
-      this.beeMaster = new upgraderMaster(this);
+    //if (!this.master)
+    // this.master = new bootstrapMaster(this);
   }
 
   run() { }

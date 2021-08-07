@@ -10,7 +10,7 @@ export class builderMaster extends Master {
   waitingForABee: number = 0;
 
   constructor(hive: Hive) {
-    super(hive, "");
+    super(hive, "builderHive_" + hive.room.name);
   }
 
   newBee(bee: Bee): void {

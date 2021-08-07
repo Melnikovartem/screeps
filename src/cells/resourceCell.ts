@@ -29,11 +29,9 @@ export class resourceCell extends Cell {
   }
 
   update() {
-    if (!this.master) {
-      this.checkForMaster();
-      if (!this.master)
-        this.master = new minerMaster(this);
-    }
+    if (!this.master)
+      this.master = new minerMaster(this);
+
     if (this.container && this.container.store.getUsedCapacity() >= 200) {
 
     }

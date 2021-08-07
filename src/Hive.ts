@@ -3,6 +3,9 @@ import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
 import { defenseCell } from "./cells/defenseCell"
 import { respawnCell } from "./cells/respawnCell"
+import { developmentCell } from "./cells/developmentCell"
+
+import { builderMaster } from "./beeMaster/builder"
 
 import { CreepSetup } from "./creepSetups"
 
@@ -16,7 +19,8 @@ export interface spawnOrder {
 }
 
 interface hiveCells {
-  upgradeCell: upgradeCell;
+  upgradeCell?: upgradeCell;
+  developmentCell?: developmentCell;
   excavationCell?: excavationCell;
   storageCell?: storageCell;
   defenseCell?: defenseCell;
@@ -72,6 +76,8 @@ export class Hive {
   emergencyRepairs: Structure[] = [];
   normalRepairs: Structure[] = [];
 
+  builder: builderMaster;
+
   constructor(roomName: string, annexNames: string[]) {
     this.room = Game.rooms[roomName];
     this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
@@ -79,10 +85,10 @@ export class Hive {
 
     this.repairSheet = new repairSheet();
 
-    this.cells = {
-      upgradeCell: new upgradeCell(this, this.room.controller!)
-    };
+    this.cells = {};
     this.parseStructures();
+
+    this.builder = new builderMaster(this);
   }
 
   private parseStructures() {
@@ -103,6 +109,10 @@ export class Hive {
     let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
     if (storage) {
       this.cells.storageCell = new storageCell(this, storage);
+
+      this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
+    } else {
+      this.cells.developmentCell = new developmentCell(this, this.room.controller!);
     }
 
     let towers: StructureTower[] = [];
