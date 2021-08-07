@@ -18,16 +18,55 @@ export class Bee {
   }
 
   harvest(source: Source) {
-    this.creep.harvest(source);
+    if (this.creep.pos.isNearTo(source))
+      this.creep.harvest(source);
+    else
+      this.goTo(source.pos);
   }
 
   transfer(target: Structure, resourceType: ResourceConstant) {
-    this.creep.transfer(target, resourceType);
+    if (this.creep.pos.isNearTo(target))
+      this.creep.transfer(target, resourceType);
+    else
+      this.goTo(target.pos);
+  }
+
+  withdraw(target: Structure, resourceType: ResourceConstant) {
+    if (this.creep.pos.isNearTo(target))
+      this.creep.withdraw(target, resourceType);
+    else
+      this.goTo(target.pos);
+  }
+
+  build(target: ConstructionSite) {
+    if (this.creep.pos.getRangeTo(target.pos) <= 3)
+      this.creep.build(target);
+    else
+      this.goTo(target.pos);
+  }
+
+  repair(target: Structure) {
+    if (this.creep.pos.getRangeTo(target.pos) <= 3)
+      this.creep.repair(target);
+    else
+      this.goTo(target.pos);
   }
 
   reserveController(target: StructureController) {
-    this.creep.reserveController(target);
+    if (this.creep.pos.isNearTo(target))
+      this.creep.reserveController(target);
+    else
+      this.goTo(target.pos);
   }
+
+  upgradeController(target: StructureController) {
+    if (this.creep.pos.getRangeTo(target.pos) <= 3)
+      this.creep.upgradeController(target);
+    else
+      this.goTo(target.pos);
+  }
+
+
 
   goTo(target: RoomPosition | Room) {
     if (target instanceof RoomPosition) {

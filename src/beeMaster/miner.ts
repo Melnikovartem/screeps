@@ -57,10 +57,7 @@ export class minerMaster extends Master {
   run() {
     _.forEach(this.miners, (bee) => {
       if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        if (bee.creep.pos.isNearTo(this.source))
-          bee.harvest(this.source);
-        else
-          bee.goTo(this.source.pos);
+        bee.harvest(this.source);
       }
 
 
@@ -72,8 +69,7 @@ export class minerMaster extends Master {
           target = this.container;
 
         if (target) {
-          if (bee.creep.pos.isNearTo(target))
-            bee.transfer(target, RESOURCE_ENERGY);
+          bee.transfer(target, RESOURCE_ENERGY);
         }
       }
     });

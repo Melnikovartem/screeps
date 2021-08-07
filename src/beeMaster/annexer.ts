@@ -49,15 +49,7 @@ export class annexesMaster extends Master {
 
   run() {
     _.forEach(this.claimers, (bee) => {
-      if (bee.creep.room == this.target) {
-        if (bee.creep.pos.isNearTo(this.controller)) {
-          bee.reserveController(this.controller);
-        } else {
-          bee.goTo(this.controller.pos);
-        }
-      } else {
-        bee.goTo(this.target);
-      }
+      bee.reserveController(this.controller);
     });
   };
 }

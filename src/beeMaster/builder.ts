@@ -46,15 +46,28 @@ export class builderMaster extends Master {
 
   run() {
     _.forEach(this.builders, (bee) => {
-      // TODO: getting energy
-      let target: RoomObject | null = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
-      if (!target)
-        target = bee.creep.pos.findClosest(this.hive.constructionSites);
-      if (!target)
-        target = bee.creep.pos.findClosest(this.hive.normalRepairs);
+      // TODO: getting energy if no targets?
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        let target;
 
-      if (target) {
-        bee.goTo(target.pos);
+        if (!target && this.hive.cells.storageCell)
+          target = this.hive.cells.storageCell.storage;
+
+        if (target)
+          bee.withdraw(target, RESOURCE_ENERGY);
+      } else {
+        let target: RoomObject | null = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+        if (!target)
+          target = bee.creep.pos.findClosest(this.hive.constructionSites);
+        if (!target)
+          target = bee.creep.pos.findClosest(this.hive.normalRepairs);
+
+        if (target) {
+          if (target instanceof ConstructionSite)
+            bee.build(target);
+          else if (target instanceof Structure)
+            bee.repair(target);
+        }
       }
     });
   };

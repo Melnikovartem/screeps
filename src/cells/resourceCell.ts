@@ -16,6 +16,16 @@ export class resourceCell extends Cell {
     super(hive, "resourceCell_" + source.id);
 
     this.source = source;
+
+    let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER);
+    if (container instanceof StructureContainer) {
+      this.container = container;
+    }
+
+    let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+    if (link instanceof StructureLink) {
+      this.link = link;
+    }
   }
 
   update() {
