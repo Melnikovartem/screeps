@@ -13,7 +13,10 @@ export class minerMaster extends Master {
   container: StructureContainer | undefined;
 
   constructor(resourceCell: resourceCell) {
-    super(resourceCell.hive);
+    super(resourceCell.hive, resourceCell.ref);
+
+    this.updateCash();
+
     this.source = resourceCell.source;
     this.container = resourceCell.container;
     this.link = resourceCell.link;

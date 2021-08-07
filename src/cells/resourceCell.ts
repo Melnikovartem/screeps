@@ -12,14 +12,16 @@ export class resourceCell extends Cell {
 
 
   constructor(hive: Hive, source: Source) {
-    super(hive, "resourceCell for " + source.id.slice(-3));
+    super(hive, "resourceCell_" + source.id);
 
     this.source = source;
   }
 
   update() {
     if (!this.master) {
-      this.master = new minerMaster(this);
+      this.checkForMaster();
+      if (!this.master)
+        this.master = new minerMaster(this);
     }
     if (this.container && this.container.store.getUsedCapacity() >= 200) {
 

@@ -9,7 +9,7 @@ export class builderMaster extends Master {
   waitingForABee: number = 0;
 
   constructor(hive: Hive) {
-    super(hive);
+    super(hive, "");
   }
 
   catchBee(bee: Bee): void {

@@ -7,12 +7,22 @@ export abstract class Master {
 
   hive: Hive;
   ref: string;
+  refCell: string; // if "" then constructed not from cell
 
-  constructor(hive: Hive) {
+  constructor(hive: Hive, refCell: string) {
     this.hive = hive;
     this.ref = makeId(8);
+    this.refCell = refCell;
 
     global.masters[this.ref] = this;
+
+    Memory.masters[this.ref] = {};
+  }
+
+  updateCash() {
+    _.forEach(Object.entries(this), (key, value) => {
+      console.log(key, "!", value);
+    });
   }
 
   // catch a bee after it has requested a master

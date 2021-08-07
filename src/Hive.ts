@@ -87,6 +87,9 @@ export class Hive {
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
 
+    if (this.room.controller)
+      this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
+
     let spawns: StructureSpawn[] = [];
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
       if (structure instanceof StructureSpawn && structure.isActive()) {

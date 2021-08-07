@@ -47,7 +47,6 @@ export class CreepSetup {
 
 }
 
-
 const SetupsNames = {
   // Civilian
   starter: 'Just a bee',

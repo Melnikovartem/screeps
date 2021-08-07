@@ -7,7 +7,7 @@ export class upgradeCell extends Cell {
 
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "controllerCell");
+    super(hive, "upgradeCell");
 
     this.controller = controller;
   }

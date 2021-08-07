@@ -4,12 +4,22 @@ import { Master } from "../beeMaster/_Master";
 export abstract class Cell {
 
   hive: Hive;
-  name: string;
+  ref: string;
   master: Master | undefined;
 
   constructor(hive: Hive, cellName: string) {
     this.hive = hive;
-    this.name = cellName;
+    this.ref = cellName;
+  }
+
+  checkForMaster() {
+    _.some(global.masters, (master) => {
+      if (master.refCell == this.ref) {
+        this.master = master;
+        return true
+      }
+      return false
+    });
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters

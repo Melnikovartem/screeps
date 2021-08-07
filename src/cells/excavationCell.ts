@@ -6,7 +6,7 @@ export class excavationCell extends Cell {
   resourceCells: resourceCell[];
 
   constructor(hive: Hive, sources: Source[]) {
-    super(hive, "excavationCell");
+    super(hive, "excavationCell_" + hive.room.name);
 
     this.resourceCells = [];
     _.forEach(sources, (source) => {

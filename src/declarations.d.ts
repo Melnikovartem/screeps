@@ -14,7 +14,7 @@ declare global {
   }
 
   interface Memory {
-    masters: { [id: string]: Master };
+    masters: { [id: string]: any };
   }
 
   interface CreepMemory {

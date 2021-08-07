@@ -7,7 +7,7 @@ export class respawnCell extends Cell {
   freeSpawns: StructureSpawn[] = [];
 
   constructor(hive: Hive, spawns: StructureSpawn[]) {
-    super(hive, "excavationCell");
+    super(hive, "excavationCell_" + hive.room.name);
 
     this.spawns = spawns;
   }
@@ -21,9 +21,9 @@ export class respawnCell extends Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // generate the queue and start spawning
-    _.forEach(this.hive.orderList, (order) => {
+    _.some(this.hive.orderList, (order) => {
       if (!this.freeSpawns.length)
-        return;
+        return true;
 
       let body = order.setup.getBody(this.hive.room.energyAvailable);
       // if we were able to get a body :/
@@ -38,9 +38,11 @@ export class respawnCell extends Cell {
         let ans = spawn!.spawnCreep(body, name, { memory: memory });
 
         if (ans == ERR_NOT_ENOUGH_RESOURCES) {
-          return;
+          return true;
         }
       }
+
+      return false;
     });
   };
 }
