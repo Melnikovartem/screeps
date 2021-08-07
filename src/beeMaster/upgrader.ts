@@ -55,13 +55,11 @@ export class upgraderMaster extends Master {
         if (!target && this.hive.cells.storageCell)
           target = this.hive.cells.storageCell.storage;
 
-        if (target) {
+        if (target)
           if (bee.withdraw(target, RESOURCE_ENERGY) == OK)
             bee.upgradeController(this.controller);
-        }
-      } else {
+      } else
         bee.upgradeController(this.controller);
-      }
     });
   };
 }

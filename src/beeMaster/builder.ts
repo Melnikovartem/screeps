@@ -15,20 +15,9 @@ export class builderMaster extends Master {
 
   newBee(bee: Bee): void {
     this.builders.push(bee);
-    this.waitingForABee -= 1;
+    if (!this.waitingForABee)
+      this.waitingForABee -= 1;
   }
-
-  /*
-    checkForNewBees(): void {
-      if (this.builders.length < this.bees.length) {
-        _.forEach(this.bees, (bee) => {
-          if (!this.builders.includes(bee)) {
-            this.newBee(bee);
-          }
-        });
-      }
-    }
-  */
 
   update() {
     if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
@@ -56,6 +45,8 @@ export class builderMaster extends Master {
 
         if (target)
           ans = bee.withdraw(target, RESOURCE_ENERGY);
+        else
+          ans = OK;
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {

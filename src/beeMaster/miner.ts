@@ -59,7 +59,6 @@ export class minerMaster extends Master {
         bee.harvest(this.source);
       }
 
-
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
         let target: Structure | undefined;
         if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY))
@@ -67,9 +66,8 @@ export class minerMaster extends Master {
         else if (this.container && this.container.store.getFreeCapacity(RESOURCE_ENERGY))
           target = this.container;
 
-        if (target) {
+        if (target)
           bee.transfer(target, RESOURCE_ENERGY);
-        }
       }
     });
   };
