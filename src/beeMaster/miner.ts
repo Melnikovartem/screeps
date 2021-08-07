@@ -1,8 +1,10 @@
-import { Master } from "./_Master";
-import { spawnOrder } from "../Hive";
 import { resourceCell } from "../cells/resourceCell";
-import { Bee } from "../Bee";
+
 import { Setups } from "../creepSetups";
+
+import { spawnOrder } from "../Hive";
+import { Bee } from "../Bee";
+import { Master } from "./_Master";
 
 export class minerMaster extends Master {
   miners: Bee[] = [];
@@ -15,17 +17,17 @@ export class minerMaster extends Master {
   constructor(resourceCell: resourceCell) {
     super(resourceCell.hive, resourceCell.ref);
 
-    this.updateCash();
-
     this.source = resourceCell.source;
     this.container = resourceCell.container;
     this.link = resourceCell.link;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
     this.refreshLastSpawned();
+
+    this.updateCash(['source', 'container', 'link']);
   }
 
-  catchBee(bee: Bee): void {
+  newBee(bee: Bee): void {
     this.miners.push(bee);
     this.refreshLastSpawned();
   }
@@ -42,7 +44,7 @@ export class minerMaster extends Master {
     if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)
       || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
       let order: spawnOrder = {
-        master: this,
+        master: this.ref,
         setup: Setups.miner.energy,
         amount: 1,
       };

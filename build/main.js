@@ -2331,25 +2331,6 @@ class ErrorMapper {
 // Cache previously mapped traces to improve performance
 ErrorMapper.cache = {};
 
-class Mem {
-    static init() {
-    }
-    static clean() {
-        for (const name in Memory.creeps) {
-            if (!(name in Game.creeps)) {
-                delete Memory.creeps[name];
-            }
-        }
-    }
-}
-
-class Cell {
-    constructor(hive, cellName) {
-        this.hive = hive;
-        this.name = cellName;
-    }
-}
-
 function makeId(length) {
     var result = '';
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -2363,10 +2344,88 @@ function makeId(length) {
 
 // i will need to do something so i can build up structure from memory
 class Master {
-    constructor(hive) {
+    constructor(hive, refCell) {
+        this.bees = [];
         this.hive = hive;
         this.ref = makeId(8);
+        this.refCell = refCell;
         global.masters[this.ref] = this;
+        this.updateCash(['hive', 'ref', 'refCell']);
+    }
+    // update keys or all keys
+    updateCash(keys) {
+        if (!Memory.masters[this.ref])
+            Memory.masters[this.ref] = {};
+        _.forEach(keys || Object.entries(this), (values) => {
+            let key = values[0];
+            let value = values[1];
+            if (typeof value == "string") {
+                Memory.masters[this.ref][key] = value;
+            }
+            else if (value instanceof Structure || value instanceof Source) {
+                Memory.masters[this.ref][key] = value.id;
+            }
+            else if (key == "hive") {
+                Memory.masters[this.ref][key] = value.room.name;
+            }
+        });
+    }
+    static fromCash(ref) {
+        if (!Memory.masters[ref])
+            return;
+        console.log("V----");
+        _.forEach(Object.entries(this), (values) => {
+            let key = values[0];
+            let value = values[1];
+            console.log(key, value);
+        });
+        console.log("-----");
+        _.forEach(Memory.masters[ref], (value, key) => {
+            console.log(key, value);
+        });
+        console.log("^----");
+    }
+    // catch a bee after it has requested a master
+    catchBee(bee) {
+        this.bees.push(bee);
+        this.newBee(bee);
+    }
+}
+
+class Mem {
+    static init() {
+        if (!Memory.masters)
+            Memory.masters = {};
+        else {
+            if (Object.keys(Memory.masters).length > 100)
+                Memory.masters = {};
+            console.log("here is", Object.keys(Memory.masters).length);
+            if (Object.keys(Memory.masters).length)
+                Master.fromCash(Object.keys(Memory.masters)[0]);
+        }
+    }
+    static clean() {
+        for (const name in Memory.creeps) {
+            if (!(name in Game.creeps)) {
+                delete Memory.creeps[name];
+            }
+        }
+    }
+}
+
+class Cell {
+    constructor(hive, cellName) {
+        this.hive = hive;
+        this.ref = cellName;
+    }
+    checkForMaster() {
+        _.some(global.masters, (master) => {
+            if (master.refCell == this.ref) {
+                this.master = master;
+                return true;
+            }
+            return false;
+        });
     }
 }
 
@@ -2392,7 +2451,6 @@ class CreepSetup {
             limitSegments = this.bodySetup.patternLimit;
         let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
         _.forEach(this.bodySetup.pattern, (s) => _.times(maxSegment, () => body.push(s)));
-        console.log("a body:", body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b)));
         return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
     }
 }
@@ -2440,19 +2498,31 @@ const Setups = {
 
 class minerMaster extends Master {
     constructor(resourceCell) {
-        super(resourceCell.hive);
+        super(resourceCell.hive, resourceCell.ref);
         this.miners = [];
         this.source = resourceCell.source;
         this.container = resourceCell.container;
         this.link = resourceCell.link;
         this.lastSpawned = Game.time - CREEP_LIFE_TIME;
+        this.refreshLastSpawned();
+        this.updateCash(['source', 'container', 'link']);
+    }
+    newBee(bee) {
+        this.miners.push(bee);
+        this.refreshLastSpawned();
+    }
+    refreshLastSpawned() {
+        _.forEach(this.miners, (bee) => {
+            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
+                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+        });
     }
     update() {
         // 5 for random shit
         if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)
             || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
             let order = {
-                master: this,
+                master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
             };
@@ -2485,21 +2555,36 @@ class minerMaster extends Master {
     ;
 }
 
+class storageCell extends Cell {
+    constructor(hive, storage) {
+        super(hive, "storageCell_" + hive.room.name);
+        this.storage = storage;
+        let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+        if (link instanceof StructureLink) {
+            this.link = link;
+        }
+    }
+    update() { }
+    run() { }
+}
+
 // cell that will extract energy or minerals? from ground
 class resourceCell extends Cell {
     constructor(hive, source) {
-        super(hive, "resourceCell for " + source.id.slice(-3));
+        super(hive, "resourceCell_" + source.id);
         this.source = source;
     }
     update() {
         if (!this.master) {
-            this.master = new minerMaster(this);
+            this.checkForMaster();
+            if (!this.master)
+                this.master = new minerMaster(this);
         }
         if (this.container && this.container.store.getUsedCapacity() >= 200) ;
     }
     run() {
         if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5
-            && this.link.cooldown == 0 && this.hive.cells.storageCell && this.hive.cells.storageCell.link) {
+            && this.link.cooldown == 0 && this.hive.cells.storageCell instanceof storageCell && this.hive.cells.storageCell.link) {
             this.link.transferEnergy(this.hive.cells.storageCell.link);
         }
     }
@@ -2507,7 +2592,7 @@ class resourceCell extends Cell {
 
 class excavationCell extends Cell {
     constructor(hive, sources) {
-        super(hive, "excavationCell");
+        super(hive, "excavationCell_" + hive.room.name);
         this.resourceCells = [];
         _.forEach(sources, (source) => {
             this.resourceCells.push(new resourceCell(this.hive, source));
@@ -2523,16 +2608,16 @@ class excavationCell extends Cell {
     // second stage of decision making like where do i need to spawn creeps or do i need
     run() {
         _.forEach(this.resourceCells, (cell) => {
-            cell.update();
+            cell.run();
         });
     }
     ;
 }
 
-class storageCell extends Cell {
-    constructor(hive, storage) {
-        super(hive, "storageCell");
-        this.storage = storage;
+class upgradeCell extends Cell {
+    constructor(hive, controller) {
+        super(hive, "upgradeCell");
+        this.controller = controller;
     }
     update() { }
     run() { }
@@ -2540,7 +2625,7 @@ class storageCell extends Cell {
 
 class defenseCell extends Cell {
     constructor(hive, towers) {
-        super(hive, "excavationCell");
+        super(hive, "defenseCell_" + hive.room.name);
         this.towers = towers;
     }
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
@@ -2563,7 +2648,7 @@ class defenseCell extends Cell {
 
 class respawnCell extends Cell {
     constructor(hive, spawns) {
-        super(hive, "excavationCell");
+        super(hive, "excavationCell_" + hive.room.name);
         this.freeSpawns = [];
         this.spawns = spawns;
     }
@@ -2576,20 +2661,29 @@ class respawnCell extends Cell {
     // second stage of decision making like where do i need to spawn creeps or do i need
     run() {
         // generate the queue and start spawning
-        _.forEach(this.hive.orderList, (order) => {
-            //console.log("!", this.freeSpawns.length, order.setup.getBody(this.hive.room.energyAvailable));
+        _.some(this.hive.orderList, (order, key) => {
             if (!this.freeSpawns.length)
-                return;
-            let spawn = this.freeSpawns.pop();
-            let body = order.setup.getBody(this.hive.room.energyAvailable);
-            let name = order.setup.bodySetup + " " + makeId(4);
-            let memory = {
-                ref: order.master.ref
-            };
-            let ans = spawn.spawnCreep(body, name, { memory: memory });
-            if (ans == ERR_NOT_ENOUGH_RESOURCES) {
-                return;
+                return true;
+            if (order.amount <= 0 || !global.masters[order.master]) {
+                delete this.hive.orderList[key];
             }
+            else {
+                let body = order.setup.getBody(this.hive.room.energyAvailable);
+                // if we were able to get a body :/
+                if (body.length) {
+                    let spawn = this.freeSpawns.pop();
+                    let name = order.setup.bodySetup + " " + makeId(4);
+                    let memory = {
+                        ref: order.master
+                    };
+                    let ans = spawn.spawnCreep(body, name, { memory: memory });
+                    if (ans == ERR_NOT_ENOUGH_RESOURCES) {
+                        return true;
+                    }
+                    order.amount -= 1;
+                }
+            }
+            return false;
         });
     }
     ;
@@ -2641,7 +2735,9 @@ class Hive {
         this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
         this.rooms = [this.room].concat(this.annexes);
         this.repairSheet = new repairSheet();
-        this.cells = {};
+        this.cells = {
+            upgradeCell: new upgradeCell(this, this.room.controller)
+        };
         this.parseStructures();
     }
     parseStructures() {
@@ -2809,6 +2905,8 @@ RoomPosition.prototype.findClosest = function (structures) {
 
 // This gets run on each global reset
 function onGlobalReset() {
+    // check if all memory position were created
+    Mem.init();
     global.hives = {};
     global.bees = {};
     global.masters = {};

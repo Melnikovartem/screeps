@@ -1,6 +1,7 @@
-import { Hive } from "../Hive";
-import { Bee } from "../bee";
 import { makeId } from "../utils/other"
+
+import type { Hive } from "../Hive";
+import { Bee } from "../bee";
 
 // i will need to do something so i can build up structure from memory
 export abstract class Master {
@@ -8,6 +9,7 @@ export abstract class Master {
   hive: Hive;
   ref: string;
   refCell: string; // if "" then constructed not from cell
+  bees: Bee[] = [];
 
   constructor(hive: Hive, refCell: string) {
     this.hive = hive;
@@ -16,17 +18,53 @@ export abstract class Master {
 
     global.masters[this.ref] = this;
 
-    Memory.masters[this.ref] = {};
+    this.updateCash(['hive', 'ref', 'refCell']);
   }
 
-  updateCash() {
-    _.forEach(Object.entries(this), (key, value) => {
-      console.log(key, "!", value);
+  // update keys or all keys
+  updateCash(keys?: string[]) {
+    if (!Memory.masters[this.ref])
+      Memory.masters[this.ref] = {};
+
+    _.forEach(keys || Object.entries(this), (values) => {
+      let key: string = values[0];
+      let value = values[1];
+
+      if (typeof value == "string") {
+        Memory.masters[this.ref][key] = value;
+      } else if (value instanceof Structure || value instanceof Source) {
+        Memory.masters[this.ref][key] = value.id;
+      } else if (key == "hive") {
+        Memory.masters[this.ref][key] = value.room.name;
+      }
     });
   }
 
+  static fromCash(ref: string) {
+    if (!Memory.masters[ref])
+      return;
+
+    console.log("V----");
+    _.forEach(Object.entries(this), (values) => {
+      let key: string = values[0];
+      let value = values[1];
+
+      console.log(key, value);
+    });
+    console.log("-----");
+    _.forEach(Memory.masters[ref], (value, key) => {
+      console.log(key, value);
+    });
+    console.log("^----");
+  }
+
   // catch a bee after it has requested a master
-  abstract catchBee(bee: Bee): void;
+  catchBee(bee: Bee): void {
+    this.bees.push(bee);
+    this.newBee(bee);
+  }
+
+  abstract newBee(bee: Bee): void
 
   // first stage of decision making like do i need to spawn new creeps
   abstract update(): void;

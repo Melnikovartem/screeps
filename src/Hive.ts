@@ -3,15 +3,22 @@ import { storageCell } from "./cells/storageCell"
 import { upgradeCell } from "./cells/upgradeCell"
 import { defenseCell } from "./cells/defenseCell"
 import { respawnCell } from "./cells/respawnCell"
+
 import { CreepSetup } from "./creepSetups"
-import { Master } from "./beeMaster/_Master"
+
 // TODO visuals
 // const VISUALS_ON = true;
 
+export interface spawnOrder {
+  master: string;
+  amount: number;
+  setup: CreepSetup;
+}
+
 interface hiveCells {
+  upgradeCell: upgradeCell;
   excavationCell?: excavationCell;
   storageCell?: storageCell;
-  upgradeCell?: upgradeCell;
   defenseCell?: defenseCell;
   respawnCell?: respawnCell;
 }
@@ -45,12 +52,6 @@ class repairSheet {
   }
 }
 
-export interface spawnOrder {
-  master: Master;
-  amount: number;
-  setup: CreepSetup;
-}
-
 
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
@@ -78,7 +79,9 @@ export class Hive {
 
     this.repairSheet = new repairSheet();
 
-    this.cells = {};
+    this.cells = {
+      upgradeCell: new upgradeCell(this, this.room.controller!)
+    };
     this.parseStructures();
   }
 
@@ -86,9 +89,6 @@ export class Hive {
     this.updateConstructionSites();
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
-
-    if (this.room.controller)
-      this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
 
     let spawns: StructureSpawn[] = [];
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {

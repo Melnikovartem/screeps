@@ -1,7 +1,8 @@
-import { Master } from "./_Master";
+import { Setups } from "../creepSetups";
+
 import { Hive, spawnOrder } from "../Hive";
 import { Bee } from "../Bee";
-import { Setups } from "../creepSetups";
+import { Master } from "./_Master";
 
 export class builderMaster extends Master {
   builders: Bee[] = [];
@@ -12,15 +13,27 @@ export class builderMaster extends Master {
     super(hive, "");
   }
 
-  catchBee(bee: Bee): void {
+  newBee(bee: Bee): void {
     this.builders.push(bee);
     this.waitingForABee -= 1;
   }
 
+  /*
+    checkForNewBees(): void {
+      if (this.builders.length < this.bees.length) {
+        _.forEach(this.bees, (bee) => {
+          if (!this.builders.includes(bee)) {
+            this.newBee(bee);
+          }
+        });
+      }
+    }
+  */
+
   update() {
     if ((this.hive.emergencyRepairs || this.hive.constructionSites) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
-        master: this,
+        master: this.ref,
         setup: Setups.builder,
         amount: this.builders.length - this.targetBeeCount,
       };

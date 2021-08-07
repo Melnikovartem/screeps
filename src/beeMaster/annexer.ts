@@ -1,7 +1,8 @@
-import { Master } from "./_Master";
+import { Setups } from "../creepSetups"
+
 import { Hive, spawnOrder } from "../Hive";
 import { Bee } from "../Bee"
-import { Setups } from "../creepSetups"
+import { Master } from "./_Master";
 
 export class annexesMaster extends Master {
   claimers: Bee[] = [];
@@ -15,9 +16,11 @@ export class annexesMaster extends Master {
     this.target = controller.room;
     this.controller = controller;
     this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
+
+    this.updateCash(['controller']);
   }
 
-  catchBee(bee: Bee): void {
+  newBee(bee: Bee): void {
     this.claimers.push(bee);
     this.refreshLastSpawned();
   }
@@ -33,7 +36,7 @@ export class annexesMaster extends Master {
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_CLAIM_LIFE_TIME) {
       let order: spawnOrder = {
-        master: this,
+        master: this.ref,
         setup: Setups.claimer,
         amount: 1,
       };
