@@ -1,9 +1,12 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { Mem } from "./memory";
-import { Hive } from "./Hive";
-import { Bee } from "./bee";
+
 import "./prototypes/creeps"
 import "./prototypes/pos"
+
+import { Hive } from "./Hive";
+import { Bee } from "./bee";
+import { Master } from "./beeMaster/_Master";
 
 const GENERATE_PIXEL = false; // turn on on official
 const ERROR_WRAPPER = true; // turn off on official
@@ -16,6 +19,15 @@ function onGlobalReset(): void {
   global.hives = {};
   global.bees = {};
   global.masters = {};
+
+  _.forEach(Object.keys(Memory.masters), (refMaster) => {
+    // recreate all the masters if failed => delete the master
+    let master = Master.fromCash(refMaster);
+    if (master)
+      global.masters[refMaster] = master;
+    else
+      delete Memory.masters[refMaster];
+  });
 
   let roomName = "sim";
   global.hives[roomName] = new Hive(roomName, []);
@@ -32,7 +44,12 @@ function main() {
 
   _.forEach(Game.creeps, (creep) => {
     if (!global.bees[creep.name]) {
-      global.bees[creep.name] = new Bee(creep);
+      if (global.masters[creep.memory.refMaster]) {
+        // not sure if i rly need a global bees hash
+        global.bees[creep.name] = new Bee(creep);
+        global.masters[creep.memory.refMaster].catchBee(global.bees[creep.name]);
+      }
+      // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
     }
   });
 

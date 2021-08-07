@@ -18,6 +18,6 @@ declare global {
   }
 
   interface CreepMemory {
-    ref: string;
+    refMaster: string;
   }
 }

@@ -2355,18 +2355,21 @@ class Master {
     // update keys or all keys
     updateCash(keys) {
         if (!Memory.masters[this.ref])
-            Memory.masters[this.ref] = {};
-        _.forEach(keys || Object.entries(this), (values) => {
-            let key = values[0];
-            let value = values[1];
-            if (typeof value == "string") {
-                Memory.masters[this.ref][key] = value;
-            }
-            else if (value instanceof Structure || value instanceof Source) {
-                Memory.masters[this.ref][key] = value.id;
-            }
-            else if (key == "hive") {
-                Memory.masters[this.ref][key] = value.room.name;
+            Memory.masters[this.ref] = {
+                masterType: this.constructor.name
+            };
+        _.forEach(keys || Object.entries(this), (key) => {
+            let value = this[key];
+            if (value) {
+                if (typeof value == "string") {
+                    Memory.masters[this.ref][key] = value;
+                }
+                else if (value instanceof Structure || value instanceof Source) {
+                    Memory.masters[this.ref][key] = value.id;
+                }
+                else if (key == "hive") {
+                    Memory.masters[this.ref][key] = value.room.name;
+                }
             }
         });
     }
@@ -2396,13 +2399,8 @@ class Mem {
     static init() {
         if (!Memory.masters)
             Memory.masters = {};
-        else {
-            if (Object.keys(Memory.masters).length > 100)
-                Memory.masters = {};
-            console.log("here is", Object.keys(Memory.masters).length);
-            if (Object.keys(Memory.masters).length)
-                Master.fromCash(Object.keys(Memory.masters)[0]);
-        }
+        else if (Object.keys(Memory.masters).length)
+            Master.fromCash(Object.keys(Memory.masters)[0]);
     }
     static clean() {
         for (const name in Memory.creeps) {

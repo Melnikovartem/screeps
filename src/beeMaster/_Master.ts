@@ -22,40 +22,49 @@ export abstract class Master {
   }
 
   // update keys or all keys
-  updateCash(keys?: string[]) {
+  // later to do it for all objects
+  updateCash(keys: string[]) {
     if (!Memory.masters[this.ref])
-      Memory.masters[this.ref] = {};
+      Memory.masters[this.ref] = {
+        masterType: this.constructor.name
+      };
 
-    _.forEach(keys || Object.entries(this), (values) => {
-      let key: string = values[0];
-      let value = values[1];
-
-      if (typeof value == "string") {
-        Memory.masters[this.ref][key] = value;
-      } else if (value instanceof Structure || value instanceof Source) {
-        Memory.masters[this.ref][key] = value.id;
-      } else if (key == "hive") {
-        Memory.masters[this.ref][key] = value.room.name;
+    _.forEach(keys || Object.entries(this), (key) => {
+      let value = (<any>this)[key];
+      if (value) {
+        if (typeof value == "string") {
+          Memory.masters[this.ref][key] = value;
+        } else if (value instanceof Structure || value instanceof Source) {
+          Memory.masters[this.ref][key] = { id: value.id };
+        } else if (key == "hive") {
+          Memory.masters[this.ref][key] = value.room.name;
+        }
       }
     });
   }
 
-  static fromCash(ref: string) {
-    if (!Memory.masters[ref])
-      return;
+  static fromCash(ref: string): Master | null {
 
     console.log("V----");
-    _.forEach(Object.entries(this), (values) => {
-      let key: string = values[0];
-      let value = values[1];
+    for (let key in Memory.masters[ref]) {
+      let value = Memory.masters[ref][key];
 
-      console.log(key, value);
-    });
-    console.log("-----");
-    _.forEach(Memory.masters[ref], (value, key) => {
-      console.log(key, value);
-    });
+      if (value.id) {
+        let gameObject = Game.getObjectById(value.id)
+        if (!gameObject)
+          return null;
+
+        console.log(key, gameObject);
+        // set this parameter to new class object
+      } else {
+        console.log(key, value);
+        // set this parameter to new class object
+      }
+      ;
+    }
     console.log("^----");
+
+    return null;
   }
 
   // catch a bee after it has requested a master
