@@ -15,7 +15,7 @@ export class upgraderMaster extends Master {
   waitingForABee: number = 0;
 
   constructor(upgradeCell: upgradeCell) {
-    super(upgradeCell.hive, upgradeCell.ref);
+    super(upgradeCell.hive, "master_" + upgradeCell.ref);
 
     this.controller = upgradeCell.controller;
     this.link = upgradeCell.link;
@@ -25,18 +25,19 @@ export class upgraderMaster extends Master {
 
   newBee(bee: Bee): void {
     this.upgraders.push(bee);
-    this.waitingForABee -= 1;
+    if (this.waitingForABee)
+      this.waitingForABee -= 1;
   }
 
   update() {
-    if ((this.hive.emergencyRepairs || this.hive.constructionSites) && this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
+    if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this.ref,
-        setup: Setups.builder,
-        amount: this.upgraders.length - this.targetBeeCount,
+        setup: Setups.upgrader,
+        amount: this.targetBeeCount - this.upgraders.length,
       };
 
-      this.waitingForABee += this.upgraders.length - this.targetBeeCount;
+      this.waitingForABee += this.targetBeeCount - this.upgraders.length;
 
       this.hive.wish(order);
     }
@@ -44,6 +45,7 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.upgraders, (bee) => {
+
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let target;
 
@@ -53,8 +55,10 @@ export class upgraderMaster extends Master {
         if (!target && this.hive.cells.storageCell)
           target = this.hive.cells.storageCell.storage;
 
-        if (target)
-          bee.withdraw(target, RESOURCE_ENERGY);
+        if (target) {
+          if (bee.withdraw(target, RESOURCE_ENERGY) == OK)
+            bee.upgradeController(this.controller);
+        }
       } else {
         bee.upgradeController(this.controller);
       }

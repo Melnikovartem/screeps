@@ -16,7 +16,7 @@ export abstract class Master {
 
     global.masters[this.ref] = this;
 
-    this.updateCash(['hive', 'ref', 'refCell']);
+    this.updateCash(['hive', 'ref']);
   }
 
   // update keys or all keys
@@ -79,4 +79,7 @@ export abstract class Master {
   // second stage of decision making like where do i need to move
   abstract run(): void;
 
+  print(info: any) {
+    console.log(Game.time, "!", this.ref, "?", info);
+  }
 }

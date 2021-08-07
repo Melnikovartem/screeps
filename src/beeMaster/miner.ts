@@ -15,7 +15,7 @@ export class minerMaster extends Master {
   container: StructureContainer | undefined;
 
   constructor(resourceCell: resourceCell) {
-    super(resourceCell.hive, resourceCell.ref);
+    super(resourceCell.hive, "master_" + resourceCell.ref);
 
     this.source = resourceCell.source;
     this.container = resourceCell.container;
@@ -41,8 +41,7 @@ export class minerMaster extends Master {
 
   update() {
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)
-      || (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME)) {
+    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,

@@ -17,4 +17,8 @@ export abstract class Cell {
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   abstract run(): void;
+
+  print(info: any) {
+    console.log(Game.time, "!", this.ref, "?", info);
+  }
 }

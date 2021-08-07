@@ -7,7 +7,6 @@ export class Bee {
 
   // time to inherite some shit from Creep
 
-
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
@@ -17,68 +16,70 @@ export class Bee {
     global.bees[this.creep.name] = this;
   }
 
-  harvest(source: Source) {
+  print(info: any) {
+    console.log(Game.time, "!", this.creep.name, "?", info);
+  }
+
+  harvest(source: Source): number {
     if (this.creep.pos.isNearTo(source))
       this.creep.harvest(source);
     else
-      this.goTo(source.pos);
+      this.goTo(source);
+    return ERR_NOT_IN_RANGE;
   }
 
-  transfer(target: Structure, resourceType: ResourceConstant) {
+  transfer(target: Structure, resourceType: ResourceConstant): number {
     if (this.creep.pos.isNearTo(target))
-      this.creep.transfer(target, resourceType);
+      return this.creep.transfer(target, resourceType);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-  withdraw(target: Structure, resourceType: ResourceConstant) {
+  withdraw(target: Structure, resourceType: ResourceConstant): number {
     if (this.creep.pos.isNearTo(target))
-      this.creep.withdraw(target, resourceType);
+      return this.creep.withdraw(target, resourceType);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-  build(target: ConstructionSite) {
+  build(target: ConstructionSite): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      this.creep.build(target);
+      return this.creep.build(target);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-  repair(target: Structure) {
+  repair(target: Structure): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      this.creep.repair(target);
+      return this.creep.repair(target);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-  reserveController(target: StructureController) {
+  reserveController(target: StructureController): number {
     if (this.creep.pos.isNearTo(target))
-      this.creep.reserveController(target);
+      return this.creep.reserveController(target);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-  upgradeController(target: StructureController) {
+  upgradeController(target: StructureController): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      this.creep.upgradeController(target);
+      return this.creep.upgradeController(target);
     else
-      this.goTo(target.pos);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
-
-
-  goTo(target: RoomPosition | Room) {
-    if (target instanceof RoomPosition) {
-      if (this.creep.pos != target)
-        this.creep.moveTo(target, {
-          reusePath: 3,
-        });
-    } else if (target instanceof Room) {
-      this.creep.moveTo(new RoomPosition(25, 25, target.name), {
-        reusePath: 3,
-      });
-    }
+  goTo(target: RoomPosition | RoomObject) {
+    this.creep.moveTo(target, {
+      reusePath: 1,
+    });
   }
 
   /*

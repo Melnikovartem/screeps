@@ -44,9 +44,6 @@ function main() {
   Mem.clean();
 
   // update phase
-  _.forEach(global.masters, (master) => {
-    master.update();
-  });
   _.forEach(global.hives, (hive) => {
     hive.update();
   });
@@ -60,7 +57,14 @@ function main() {
         global.masters[creep.memory.refMaster].catchBee(global.bees[creep.name]);
       }
       // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+    } else {
+      // i will need to fix this cause like wtf
+      global.bees[creep.name].creep = creep;
     }
+  });
+
+  _.forEach(global.masters, (master) => {
+    master.update();
   });
 
   // run phase

@@ -11,7 +11,7 @@ export class annexesMaster extends Master {
   controller: StructureController;
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "");
+    super(hive, "master_" + "claimerRoom_" + controller.room.name);
 
     this.target = controller.room;
     this.controller = controller;

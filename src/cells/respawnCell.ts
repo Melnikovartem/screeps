@@ -21,20 +21,20 @@ export class respawnCell extends Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // generate the queue and start spawning
+    let remove: any[] = [];
     _.some(this.hive.orderList, (order, key) => {
-
       if (!this.freeSpawns.length)
         return true;
 
       if (order.amount <= 0 || !global.masters[order.master]) {
-        delete this.hive.orderList[key];
+        remove.push(this.hive.orderList[key]);
       } else {
         let body = order.setup.getBody(this.hive.room.energyAvailable);
         // if we were able to get a body :/
         if (body.length) {
           let spawn = this.freeSpawns.pop();
 
-          let name = order.setup.bodySetup + " " + makeId(4);
+          let name = order.setup.name + " " + makeId(4);
           let memory: CreepMemory = {
             refMaster: order.master
           };
@@ -49,6 +49,10 @@ export class respawnCell extends Cell {
       }
 
       return false;
+    });
+
+    _.forEach(remove.reverse(), (key) => {
+      this.hive.orderList.splice(key, 1);
     });
   };
 }

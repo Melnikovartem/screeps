@@ -10,7 +10,7 @@ export class builderMaster extends Master {
   waitingForABee: number = 0;
 
   constructor(hive: Hive) {
-    super(hive, "builderHive_" + hive.room.name);
+    super(hive, "master_" + "builderHive_" + hive.room.name);
   }
 
   newBee(bee: Bee): void {
@@ -31,14 +31,15 @@ export class builderMaster extends Master {
   */
 
   update() {
-    if ((this.hive.emergencyRepairs || this.hive.constructionSites) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
+    if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
+      console.log("?", this.hive.emergencyRepairs, this.hive.constructionSites);
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.builder,
-        amount: this.builders.length - this.targetBeeCount,
+        amount: this.targetBeeCount - this.builders.length,
       };
 
-      this.waitingForABee += this.builders.length - this.targetBeeCount;
+      this.waitingForABee += this.targetBeeCount - this.builders.length;
 
       this.hive.wish(order);
     }
@@ -47,6 +48,7 @@ export class builderMaster extends Master {
   run() {
     _.forEach(this.builders, (bee) => {
       // TODO: getting energy if no targets?
+      let ans: number = ERR_FULL;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let target;
 
@@ -54,8 +56,10 @@ export class builderMaster extends Master {
           target = this.hive.cells.storageCell.storage;
 
         if (target)
-          bee.withdraw(target, RESOURCE_ENERGY);
-      } else {
+          ans = bee.withdraw(target, RESOURCE_ENERGY);
+      }
+
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
         let target: RoomObject | null = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
         if (!target)
           target = bee.creep.pos.findClosest(this.hive.constructionSites);
