@@ -16,7 +16,7 @@ export class managerMaster extends Master {
 
   cell: storageCell;
 
-  targets: (StructureTower | StructureLink)[] = [];
+  targets: (StructureTower | StructureLink | StructureStorage)[] = [];
   suckerTargets: (StructureStorage | StructureLink)[] = [];
 
   constructor(storageCell: storageCell) {
@@ -49,8 +49,10 @@ export class managerMaster extends Master {
 
     //if you don't need to withdraw => then it is not enough
     if (this.cell.link) {
-      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
+      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
+        this.targets.push(this.cell.storage);
         this.suckerTargets.push(this.cell.link);
+      }
       else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5 > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
         this.targets.push(this.cell.link);
     }
@@ -74,6 +76,7 @@ export class managerMaster extends Master {
     // TODO smarter choosing of target
     _.forEach(this.managers, (bee) => {
       let target;
+      let ans;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
 
         target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
@@ -87,15 +90,15 @@ export class managerMaster extends Master {
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
 
-        if (!target && this.cell.link &&
-          this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
-          target = this.cell.storage;
+        if (!target)
+          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0]
 
         if (target)
-          bee.transfer(target, RESOURCE_ENERGY);
+          ans = bee.transfer(target, RESOURCE_ENERGY);
       }
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
         let suckerTarget;
 
         if (!suckerTarget)

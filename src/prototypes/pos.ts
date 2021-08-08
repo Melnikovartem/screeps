@@ -54,7 +54,7 @@ RoomPosition.prototype.getTimeForPath = function(roomPos: RoomPosition): number 
   return path.length
 };
 
-RoomPosition.prototype.findClosest = function(structures: RoomObject[]): RoomObject | null {
+RoomPosition.prototype.findClosest = function <Obj extends RoomObject>(structures: Obj[]): Obj | null {
   // TODO if structure is in another room
   return this.findClosestByRange(structures);
 }

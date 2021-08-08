@@ -16,9 +16,18 @@ export abstract class Cell {
   update<K extends keyof Cell>(): void {
     // updating structure object to actual data
     _.forEach(Object.keys(this), (key: K) => {
-      let structure = this[key];
-      if (structure instanceof Structure)
-        this[key] = <typeof structure>Game.getObjectById(structure.id);
+      let data = this[key];
+      if (data instanceof Structure) {
+        this[key] = <typeof data>Game.getObjectById(data.id);
+      } else if (Array.isArray(data) && data[0] instanceof Structure) {
+        let new_data: (typeof data[0])[] = [];
+
+        _.forEach(data, (structure) => {
+          new_data.push(Game.getObjectById(structure.id));
+        });
+
+        this[key] = <typeof data>new_data;
+      }
     });
   }
 

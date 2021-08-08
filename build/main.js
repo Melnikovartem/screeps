@@ -2398,9 +2398,17 @@ class Cell {
     update() {
         // updating structure object to actual data
         _.forEach(Object.keys(this), (key) => {
-            let structure = this[key];
-            if (structure instanceof Structure)
-                this[key] = Game.getObjectById(structure.id);
+            let data = this[key];
+            if (data instanceof Structure) {
+                this[key] = Game.getObjectById(data.id);
+            }
+            else if (Array.isArray(data) && data[0] instanceof Structure) {
+                let new_data = [];
+                _.forEach(data, (structure) => {
+                    new_data.push(Game.getObjectById(structure.id));
+                });
+                this[key] = new_data;
+            }
         });
     }
     print(info) {
@@ -2628,8 +2636,10 @@ class managerMaster extends Master {
             this.targets = this.targets.concat(this.hive.cells.defenseCell.towers);
         //if you don't need to withdraw => then it is not enough
         if (this.cell.link) {
-            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
+            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
+                this.targets.push(this.cell.storage);
                 this.suckerTargets.push(this.cell.link);
+            }
             else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5 > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
                 this.targets.push(this.cell.link);
         }
@@ -2650,6 +2660,7 @@ class managerMaster extends Master {
         // TODO smarter choosing of target
         _.forEach(this.managers, (bee) => {
             let target;
+            let ans;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
                 target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                     structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
@@ -2659,13 +2670,13 @@ class managerMaster extends Master {
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
-                if (!target && this.cell.link &&
-                    this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
-                    target = this.cell.storage;
+                if (!target)
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
                 if (target)
-                    bee.transfer(target, RESOURCE_ENERGY);
+                    ans = bee.transfer(target, RESOURCE_ENERGY);
             }
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
                 let suckerTarget;
                 if (!suckerTarget)
                     suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
@@ -2884,11 +2895,13 @@ class queenMaster extends Master {
     ;
     run() {
         let targets = this.cell.spawns;
-        targets = targets.concat(this.cell.extensions);
+        targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
         _.forEach(this.queens, (bee) => {
-            let target = _.filter(targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && target) {
-                bee.transfer(target, RESOURCE_ENERGY);
+            let target;
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+                target = bee.creep.pos.findClosest(targets);
+                if (target)
+                    bee.transfer(target, RESOURCE_ENERGY);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
                 let suckerTarget;

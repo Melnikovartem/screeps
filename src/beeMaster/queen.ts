@@ -50,13 +50,15 @@ export class queenMaster extends Master {
 
   run() {
     let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
-    targets = targets.concat(this.cell.extensions);
+    targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.queens, (bee) => {
-      let target = _.filter(targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+      let target;
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && target) {
-        bee.transfer(target, RESOURCE_ENERGY);
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        target = <typeof targets[0]>bee.creep.pos.findClosest(targets);
+        if (target)
+          bee.transfer(target, RESOURCE_ENERGY);
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
