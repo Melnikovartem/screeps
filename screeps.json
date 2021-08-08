@@ -32,6 +32,15 @@
     "path": "/",
     "branch": "main"
   },
+  "local": {
+    "email": "abs",
+    "password": "",
+    "protocol": "http",
+    "hostname": "127.0.0.1",
+    "port": 21025,
+    "path": "/",
+    "branch": "main"
+  },
   "pserver": {
     "email": "username",
     "password": "Password",

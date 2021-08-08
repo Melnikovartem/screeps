@@ -2384,6 +2384,7 @@ RoomPosition.prototype.getTimeForPath = function (roomPos) {
     //for future i need to iterate and check for roads
     return path.length;
 };
+// TODO different class types to forget casting in and out
 RoomPosition.prototype.findClosest = function (structures) {
     // TODO if structure is in another room
     return this.findClosestByRange(structures);
@@ -3031,6 +3032,7 @@ class bootstrapMaster extends Master {
         super(developmentCell.hive, "master_" + developmentCell.ref);
         this.workers = [];
         this.waitingForABee = 0;
+        // some small caching. I just couldn't resist
         this.stateMap = {};
         this.cell = developmentCell;
         this.targetBeeCount = 0;
@@ -3043,7 +3045,10 @@ class bootstrapMaster extends Master {
     }
     newBee(bee) {
         this.workers.push(bee);
-        this.stateMap[bee.ref] = "mining";
+        this.stateMap[bee.ref] = {
+            type: "mining",
+            target: "",
+        };
         if (this.waitingForABee)
             this.waitingForABee -= 1;
     }
@@ -3062,53 +3067,75 @@ class bootstrapMaster extends Master {
     }
     ;
     run() {
+        let count = {
+            upgrade: 0,
+            repair: 0,
+            build: 0,
+            refill: 0,
+        };
         _.forEach(this.workers, (bee) => {
-            if (this.stateMap[bee.ref] == "working" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                this.stateMap[bee.ref] = "mining";
+            if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                this.stateMap[bee.ref].type = "mining";
                 bee.creep.say('🔄');
             }
-            if (this.stateMap[bee.ref] != "working" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-                this.stateMap[bee.ref] = "working";
+            if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+                this.stateMap[bee.ref].type = "working";
                 bee.creep.say('🛠️');
             }
-            if (this.stateMap[bee.ref] == "working") {
-                let target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
-                let targetType = "repair";
+            if (this.stateMap[bee.ref].type != "mining") {
+                let target;
+                let workType = this.stateMap[bee.ref].type;
+                if (workType == "working")
+                    target = null;
+                else
+                    target = Game.getObjectById(this.stateMap[bee.ref].target);
+                if (!target && this.cell.controller.ticksToDowngrade <= 3000 && count["upgrade"] == 0) {
+                    target = this.cell.controller;
+                    workType = "upgrade";
+                }
+                if (!target) {
+                    target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+                    workType = "repair";
+                }
                 if (!target) {
                     target = bee.creep.pos.findClosest(this.hive.constructionSites);
-                    targetType = "build";
+                    workType = "build";
                 }
                 if (!target && this.hive.cells.respawnCell) {
                     let targets = this.hive.cells.respawnCell.spawns;
                     targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
                     if (targets.length) {
                         target = bee.creep.pos.findClosest(targets);
-                        targetType = "refill";
+                        workType = "refill";
                     }
                 }
                 if (!target) {
                     target = this.cell.controller;
-                    targetType = "upgrade";
+                    workType = "upgrade";
                 }
                 //second check is kinda useless one, but sure
-                if (targetType == "build" && target instanceof ConstructionSite)
+                if (workType == "build" && target instanceof ConstructionSite)
                     bee.build(target);
-                else if (targetType == "repair" && target instanceof Structure)
+                else if (workType == "repair" && target instanceof Structure)
                     bee.repair(target);
-                else if (targetType == "refill" && (target instanceof StructureSpawn || target instanceof StructureExtension))
+                else if (workType == "refill" && (target instanceof StructureSpawn || target instanceof StructureExtension))
                     bee.transfer(target, RESOURCE_ENERGY);
-                else if (targetType == "upgrade" && target instanceof StructureController)
+                else if (workType == "upgrade" && target instanceof StructureController)
                     bee.upgradeController(target);
+                else
+                    workType = "working";
+                count[workType] += 1;
+                this.stateMap[bee.ref].type = workType;
+                this.stateMap[bee.ref].target = target.id;
             }
             else {
-                // some small caching. I just couldn't resist
-                let source = Game.getObjectById(this.stateMap[bee.ref]);
+                let source = Game.getObjectById(this.stateMap[bee.ref].target);
                 // find new source if this one is clamped or not a source
                 if (!source || (!source.pos.getOpenPositions().length && !bee.creep.pos.isNearTo(source)))
                     source = bee.creep.pos.findClosest(_.filter(this.cell.sources, (source) => source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)));
                 if (source) {
                     bee.harvest(source);
-                    this.stateMap[bee.ref] = source.id;
+                    this.stateMap[bee.ref].target = source.id;
                 }
             }
         });
@@ -3417,7 +3444,7 @@ function onGlobalReset() {
           delete Memory.masters[ref];
       });
     */
-    let roomName = "sim";
+    let roomName = "W6N8";
     global.hives[roomName] = new Hive(roomName, []);
     console.log("Reset? Cool time is", Game.time);
 }

@@ -27,7 +27,7 @@ function onGlobalReset(): void {
     });
   */
 
-  let roomName = "sim";
+  let roomName = "W6N8";
   global.hives[roomName] = new Hive(roomName, []);
 
   console.log("Reset? Cool time is", Game.time);
