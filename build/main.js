@@ -2459,16 +2459,10 @@ const Setups = {
         pattern: [CLAIM, MOVE],
         patternLimit: 2,
     }),
-    manager: {
-        small: new CreepSetup(SetupsNames.manager, {
-            pattern: [CARRY, CARRY, MOVE],
-            patternLimit: 5,
-        }),
-        normal: new CreepSetup(SetupsNames.manager, {
-            pattern: [CARRY, CARRY, MOVE],
-            patternLimit: 15,
-        }),
-    },
+    manager: new CreepSetup(SetupsNames.manager, {
+        pattern: [CARRY, CARRY, MOVE],
+        patternLimit: 8,
+    }),
     hauler: new CreepSetup(SetupsNames.hauler, {
         pattern: [CARRY, CARRY, MOVE],
         patternLimit: 10,
@@ -2602,11 +2596,11 @@ class haulerMaster extends Master {
         this.waitingForABee = 0;
         this.targetMap = {};
         this.cell = excavationCell;
-        this.targetBeeCount = Math.ceil(this.cell.resourceCells.length / 2);
         _.forEach(this.cell.resourceCells, (cell) => {
             if (cell.container)
                 this.targetMap[cell.container.id] = null;
         });
+        this.targetBeeCount = Math.ceil(Object.keys(this.targetMap).length / 2);
     }
     newBee(bee) {
         this.haulers.push(bee);
@@ -2631,6 +2625,7 @@ class haulerMaster extends Master {
     }
     ;
     run() {
+        // for future might be good to find closest bee for container and not the other way around
         if (this.hive.cells.storageCell) {
             let target = this.hive.cells.storageCell.storage;
             _.forEach(this.haulers, (bee) => {
@@ -2638,9 +2633,7 @@ class haulerMaster extends Master {
                     bee.transfer(target, RESOURCE_ENERGY);
                 }
                 if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                    let suckerTarget = bee.creep.pos.findClosest(_.filter(this.cell.fullContainers.concat(this.cell.quitefullContainers), (container) => this.targetMap[container.id] == bee.ref));
-                    if (!suckerTarget)
-                        suckerTarget = bee.creep.pos.findClosest(_.filter(this.cell.fullContainers, (container) => this.targetMap[container.id] == null));
+                    let suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == bee.ref)[0];
                     if (!suckerTarget)
                         suckerTarget = bee.creep.pos.findClosest(_.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == null));
                     if (suckerTarget) {
@@ -2659,7 +2652,6 @@ class haulerMaster extends Master {
 class excavationCell extends Cell {
     constructor(hive, sources) {
         super(hive, "excavationCell_" + hive.room.name);
-        this.fullContainers = [];
         this.quitefullContainers = [];
         this.resourceCells = [];
         _.forEach(sources, (source) => {
@@ -2671,17 +2663,15 @@ class excavationCell extends Cell {
         // super.update(); // i update continers in each resourceCell
         if (!this.beeMaster)
             this.beeMaster = new haulerMaster(this);
-        this.fullContainers = [];
         this.quitefullContainers = [];
         _.forEach(this.resourceCells, (cell) => {
             cell.update();
             if (cell.container) {
-                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 1500)
-                    this.fullContainers.push(cell.container);
-                else if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 500)
+                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 500)
                     this.quitefullContainers.push(cell.container);
             }
         });
+        this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY));
     }
     ;
     // second stage of decision making like where do i need to spawn creeps or do i need
@@ -2733,7 +2723,7 @@ class managerMaster extends Master {
         if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
             let order = {
                 master: this.ref,
-                setup: Setups.manager.normal,
+                setup: Setups.manager,
                 amount: 1,
             };
             this.lastSpawned = Game.time;
@@ -2942,9 +2932,11 @@ class queenMaster extends Master {
         if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
             let order = {
                 master: this.ref,
-                setup: Setups.manager.normal,
+                setup: Setups.manager,
                 amount: 1,
             };
+            // it can refill in 1 run
+            order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
             this.lastSpawned = Game.time;
             this.hive.wish(order);
         }

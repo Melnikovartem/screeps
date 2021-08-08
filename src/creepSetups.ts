@@ -67,16 +67,10 @@ export const Setups = {
     pattern: [CLAIM, MOVE],
     patternLimit: 2,
   }),
-  manager: {
-    small: new CreepSetup(SetupsNames.manager, {
-      pattern: [CARRY, CARRY, MOVE],
-      patternLimit: 5,
-    }),
-    normal: new CreepSetup(SetupsNames.manager, {
-      pattern: [CARRY, CARRY, MOVE],
-      patternLimit: 15,
-    }),
-  },
+  manager: new CreepSetup(SetupsNames.manager, {
+    pattern: [CARRY, CARRY, MOVE],
+    patternLimit: 8,
+  }),
   hauler: new CreepSetup(SetupsNames.hauler, {
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 10,

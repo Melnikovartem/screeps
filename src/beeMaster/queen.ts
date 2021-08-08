@@ -41,9 +41,12 @@ export class queenMaster extends Master {
     if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
       let order: spawnOrder = {
         master: this.ref,
-        setup: Setups.manager.normal,
+        setup: Setups.manager,
         amount: 1,
       };
+
+      // it can refill in 1 run
+      order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
 
       this.lastSpawned = Game.time;
       this.hive.wish(order);

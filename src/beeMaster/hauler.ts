@@ -22,11 +22,12 @@ export class haulerMaster extends Master {
 
     this.cell = excavationCell;
 
-    this.targetBeeCount = Math.ceil(this.cell.resourceCells.length / 2);
     _.forEach(this.cell.resourceCells, (cell) => {
       if (cell.container)
         this.targetMap[cell.container.id] = null;
     });
+
+    this.targetBeeCount = Math.ceil(Object.keys(this.targetMap).length / 2);
   }
 
   newBee(bee: Bee): void {
@@ -57,6 +58,7 @@ export class haulerMaster extends Master {
   };
 
   run() {
+    // for future might be good to find closest bee for container and not the other way around
     if (this.hive.cells.storageCell) {
       let target = this.hive.cells.storageCell.storage;
       _.forEach(this.haulers, (bee) => {
@@ -66,13 +68,8 @@ export class haulerMaster extends Master {
         }
 
         if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-          let suckerTarget = <StructureContainer>bee.creep.pos.findClosest(
-            _.filter(this.cell.fullContainers.concat(this.cell.quitefullContainers),
-              (container) => this.targetMap[container.id] == bee.ref));
-
-          if (!suckerTarget)
-            suckerTarget = <StructureContainer>bee.creep.pos.findClosest(
-              _.filter(this.cell.fullContainers, (container) => this.targetMap[container.id] == null));
+          let suckerTarget = _.filter(this.cell.quitefullContainers,
+            (container) => this.targetMap[container.id] == bee.ref)[0];
 
           if (!suckerTarget)
             suckerTarget = <StructureContainer>bee.creep.pos.findClosest(

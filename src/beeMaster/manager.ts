@@ -65,7 +65,7 @@ export class managerMaster extends Master {
     if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
       let order: spawnOrder = {
         master: this.ref,
-        setup: Setups.manager.normal,
+        setup: Setups.manager,
         amount: 1,
       };
 

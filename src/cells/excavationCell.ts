@@ -6,7 +6,6 @@ import { haulerMaster } from "../beeMaster/hauler";
 
 export class excavationCell extends Cell {
   resourceCells: resourceCell[];
-  fullContainers: StructureContainer[] = [];
   quitefullContainers: StructureContainer[] = [];
 
   constructor(hive: Hive, sources: Source[]) {
@@ -25,18 +24,17 @@ export class excavationCell extends Cell {
     if (!this.beeMaster)
       this.beeMaster = new haulerMaster(this);
 
-    this.fullContainers = [];
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       cell.update();
 
       if (cell.container) {
-        if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 1500)
-          this.fullContainers.push(cell.container);
-        else if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 500)
+        if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 500)
           this.quitefullContainers.push(cell.container);
       }
     });
+    this.quitefullContainers.sort(
+      (a, b) => a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY));
   };
 
   // second stage of decision making like where do i need to spawn creeps or do i need
