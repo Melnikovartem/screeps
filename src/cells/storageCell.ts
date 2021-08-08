@@ -3,10 +3,19 @@ import { Hive } from "../Hive";
 
 import { managerMaster } from "../beeMaster/manager"
 
+export interface linkRequest {
+  target: StructureLink;
+  resourceType: ResourceConstant;
+  amount?: number;
+}
+
 export class storageCell extends Cell {
 
   storage: StructureStorage;
   link: StructureLink | undefined;
+
+  percentInLink: number = 0.5;
+  linkRequests: linkRequest[] = [];
 
 
   constructor(hive: Hive, storage: StructureStorage) {
@@ -26,5 +35,9 @@ export class storageCell extends Cell {
       this.beeMaster = new managerMaster(this);
   }
 
-  run() { }
+  run() {
+    if (this.link) {
+
+    }
+  }
 }

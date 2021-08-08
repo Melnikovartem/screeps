@@ -34,6 +34,8 @@ export class minerMaster extends Master {
   }
 
   update() {
+    this.miners = this.clearBees(this.miners);
+
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
       let order: spawnOrder = {

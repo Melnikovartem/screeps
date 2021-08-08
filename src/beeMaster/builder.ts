@@ -20,6 +20,8 @@ export class builderMaster extends Master {
   }
 
   update() {
+    this.builders = this.clearBees(this.builders);
+
     if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this.ref,

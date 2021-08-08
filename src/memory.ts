@@ -5,9 +5,9 @@ export class Mem {
   }
 
   static clean() {
-    for (const name in Memory.creeps) {
-      if (!(name in Game.creeps)) {
-        delete Memory.creeps[name];
+    for (const creepName in Memory.creeps) {
+      if (!(creepName in Game.creeps)) {
+        delete Memory.creeps[creepName];
       }
     }
   }

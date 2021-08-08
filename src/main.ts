@@ -40,28 +40,29 @@ function main() {
     onGlobalReset();
   }
 
-  // Automatically delete memory of missing creeps
-  Mem.clean();
-
   // update phase
   _.forEach(global.hives, (hive) => {
     hive.update();
   });
 
   // after all the masters where created and retrived if it was needed
-  _.forEach(Game.creeps, (creep) => {
-    if (!global.bees[creep.name]) {
-      if (global.masters[creep.memory.refMaster]) {
-        // not sure if i rly need a global bees hash
-        global.bees[creep.name] = new Bee(creep);
-        global.masters[creep.memory.refMaster].catchBee(global.bees[creep.name]);
+  for (const creepName in Memory.creeps) {
+    let creep = Game.creeps[creepName];
+    if (creep)
+      if (!global.bees[creepName]) {
+        if (global.masters[creep.memory.refMaster]) {
+          // not sure if i rly need a global bees hash
+          global.bees[creep.name] = new Bee(creep);
+          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+        }
+        // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+      } else {
+        // i guess it is not gonna be fixed :/
+        global.bees[creepName].creep = creep;
       }
-      // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
-    } else {
-      // i guess it is not gonna be fixed :/
-      global.bees[creep.name].creep = creep;
-    }
-  });
+    else if (global.bees[creepName])
+      delete global.bees[creepName];
+  }
 
   _.forEach(global.masters, (master) => {
     master.update();
@@ -79,6 +80,9 @@ function main() {
     // only on official
     Game.cpu.generatePixel();
   }
+
+  // Automatically delete memory
+  Mem.clean();
 }
 
 let _loop = main;

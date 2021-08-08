@@ -5,12 +5,16 @@ export class Bee {
   master: Master;
   creep: Creep;
 
+  ref: string;
+
   // time to inherite some shit from Creep
 
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
     this.master = global.masters[this.creep.memory.refMaster];
+
+    this.ref = creep.name;
 
     // not sure weather i should copy all parameters from creep like body and stuff
     global.bees[this.creep.name] = this;

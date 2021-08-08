@@ -8,7 +8,6 @@ export abstract class Master {
 
   hive: Hive;
   ref: string;
-  bees: Bee[] = [];
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
@@ -71,15 +70,25 @@ export abstract class Master {
   */
 
   // catch a bee after it has requested a master
-  catchBee(bee: Bee): void {
-    this.bees.push(bee);
-    this.newBee(bee);
-  }
-
-  abstract newBee(bee: Bee): void
+  abstract newBee(bee: Bee): void;
 
   // first stage of decision making like do i need to spawn new creeps
   abstract update(): void;
+
+  clearBees(beeArray: Bee[]) {
+    // clear non-exisiting bees
+    let deletedBees = false;
+    _.forEach(beeArray, (bee, key) => {
+      if (!global.bees[bee.ref]) {
+        deletedBees = true;
+        delete beeArray[key];
+      }
+    });
+    if (deletedBees)
+      beeArray = _.compact(beeArray);
+
+    return beeArray;
+  }
 
   // second stage of decision making like where do i need to move
   abstract run(): void;

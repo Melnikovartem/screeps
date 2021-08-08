@@ -31,6 +31,8 @@ export class annexesMaster extends Master {
   }
 
   update() {
+    this.claimers = this.clearBees(this.claimers);
+
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_CLAIM_LIFE_TIME) {
       let order: spawnOrder = {

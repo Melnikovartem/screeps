@@ -2,7 +2,6 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { minerMaster } from "../beeMaster/miner"
-import { storageCell } from "./storageCell"
 
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
@@ -39,8 +38,9 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5
-      && this.link.cooldown == 0 && this.hive.cells.storageCell instanceof storageCell && this.hive.cells.storageCell.link) {
+    if (this.link && this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
+      this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY)
+      * (1 - this.hive.cells.storageCell.percentInLink) && this.link.cooldown == 0) {
       this.link.transferEnergy(this.hive.cells.storageCell.link);
     }
   }

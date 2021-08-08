@@ -26,6 +26,8 @@ export class upgraderMaster extends Master {
   }
 
   update() {
+    this.upgraders = this.clearBees(this.upgraders);
+
     if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this.ref,
@@ -41,7 +43,6 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.upgraders, (bee) => {
-
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 

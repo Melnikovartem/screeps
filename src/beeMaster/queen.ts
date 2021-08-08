@@ -35,6 +35,8 @@ export class queenMaster extends Master {
   }
 
   update() {
+    this.queens = this.clearBees(this.queens);
+
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
       let order: spawnOrder = {

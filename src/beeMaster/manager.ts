@@ -41,6 +41,8 @@ export class managerMaster extends Master {
   }
 
   update() {
+    this.managers = this.clearBees(this.managers);
+
     this.targets = [];
     this.suckerTargets = [this.cell.storage];
 
@@ -49,11 +51,11 @@ export class managerMaster extends Master {
 
     //if you don't need to withdraw => then it is not enough
     if (this.cell.link) {
-      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
+      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink) {
         this.targets.push(this.cell.storage);
         this.suckerTargets.push(this.cell.link);
       }
-      else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * 0.5 > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
+      else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
         this.targets.push(this.cell.link);
     }
 
@@ -112,7 +114,7 @@ export class managerMaster extends Master {
         if (suckerTarget) {
           if (suckerTarget instanceof StructureLink)
             bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY),
-              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - suckerTarget.store.getCapacity(RESOURCE_ENERGY) * 0.5));
+              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - suckerTarget.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink));
           else
             bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }
