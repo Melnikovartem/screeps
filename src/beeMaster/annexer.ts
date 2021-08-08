@@ -47,11 +47,11 @@ export class annexesMaster extends Master {
       // well he placed an order now just need to catch a creep after a spawn
       this.lastSpawned = Game.time;
     }
-  };
+  }
 
   run() {
     _.forEach(this.claimers, (bee) => {
       bee.reserveController(this.controller);
     });
-  };
+  }
 }

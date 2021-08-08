@@ -34,11 +34,10 @@ export class builderMaster extends Master {
 
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     _.forEach(this.builders, (bee) => {
-      // TODO: getting energy if no targets?
       let ans: number = ERR_FULL;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
@@ -67,5 +66,5 @@ export class builderMaster extends Master {
         }
       }
     });
-  };
+  }
 }

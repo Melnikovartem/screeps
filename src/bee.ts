@@ -7,7 +7,7 @@ export class Bee {
 
   ref: string;
 
-  // time to inherite some shit from Creep
+  reusePath: number = 3;
 
   // for now it will be forever binded
   constructor(creep: Creep) {
@@ -82,7 +82,7 @@ export class Bee {
 
   goTo(target: RoomPosition | RoomObject) {
     this.creep.moveTo(target, {
-      reusePath: 1,
+      reusePath: this.reusePath,
     });
   }
 

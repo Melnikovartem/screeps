@@ -14,8 +14,6 @@ export abstract class Master {
     this.ref = ref;
 
     global.masters[this.ref] = this;
-
-    //this.updateCash(['hive', 'ref']);
   }
 
   /*

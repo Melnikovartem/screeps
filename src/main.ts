@@ -4,80 +4,36 @@ import { Mem } from "./memory";
 import "./prototypes/creeps"
 import "./prototypes/pos"
 
-import { Hive } from "./Hive";
-import { Bee } from "./bee";
+import { _Apiary } from "./Apiary";
 
 const GENERATE_PIXEL = false; // turn on on official
 const ERROR_WRAPPER = true; // turn off on official
 
 // This gets run on each global reset
 function onGlobalReset(): void {
+  console.log("Reset? Cool time is", Game.time);
+
   // check if all memory position were created
   Mem.init();
 
-  global.hives = {};
   global.bees = {};
   global.masters = {};
 
-  /*
-    _.forEach(Object.keys(Memory.masters), (ref) => {
-      // recreate all the masters if failed => delete the master
-      if (!global.masters[ref])
-        delete Memory.masters[ref];
-    });
-  */
-
-  let roomName = "W6N8";
-  global.hives[roomName] = new Hive(roomName, []);
-
-  console.log("Reset? Cool time is", Game.time);
-
+  global.Apiary = new _Apiary();
 }
 
 function main() {
 
-  if (!global.hives) {
-    onGlobalReset();
+  if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+    delete global.Apiary;
+    global.Apiary = new _Apiary();
   }
 
-  // update phase
-  _.forEach(global.hives, (hive) => {
-    hive.update();
-  });
+  global.Apiary.update();
+  global.Apiary.run();
 
-  // after all the masters where created and retrived if it was needed
-  for (const name in Memory.creeps) {
-    let creep = Game.creeps[name];
-    if (creep)
-      if (!global.bees[name]) {
-        if (global.masters[creep.memory.refMaster]) {
-          // not sure if i rly need a global bees hash
-          global.bees[creep.name] = new Bee(creep);
-          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
-        }
-        // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
-      } else {
-        // i guess it is not gonna be fixed :/
-        global.bees[name].creep = creep;
-      }
-    else if (global.bees[name])
-      delete global.bees[name];
-  }
-
-  _.forEach(global.masters, (master) => {
-    master.update();
-  });
-
-  // run phase
-  _.forEach(global.hives, (hive) => {
-    hive.run();
-  });
-  _.forEach(global.masters, (master) => {
-    master.run();
-  });
-
+  // only on official
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000) {
-    // only on official
     Game.cpu.generatePixel();
   }
 
@@ -85,6 +41,7 @@ function main() {
   Mem.clean();
 }
 
+// time to wrap things up
 let _loop = main;
 
 if (ERROR_WRAPPER) {

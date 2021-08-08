@@ -48,7 +48,7 @@ export class minerMaster extends Master {
       this.lastSpawned = Game.time;
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     _.forEach(this.miners, (bee) => {
@@ -67,5 +67,5 @@ export class minerMaster extends Master {
           bee.transfer(target, RESOURCE_ENERGY);
       }
     });
-  };
+  }
 }

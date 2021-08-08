@@ -52,7 +52,7 @@ export class queenMaster extends Master {
       this.lastSpawned = Game.time;
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
@@ -77,5 +77,5 @@ export class queenMaster extends Master {
           bee.withdraw(suckerTarget, RESOURCE_ENERGY);
       }
     });
-  };
+  }
 }

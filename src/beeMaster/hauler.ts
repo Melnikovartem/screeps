@@ -56,7 +56,7 @@ export class haulerMaster extends Master {
 
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     // for future might be good to find closest bee for container and not the other way around
@@ -85,5 +85,5 @@ export class haulerMaster extends Master {
         }
       });
     }
-  };
+  }
 }

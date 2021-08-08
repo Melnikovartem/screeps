@@ -28,7 +28,7 @@ export class bootstrapMaster extends Master {
 
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getwalkablePositions().length;
-      this.targetBeeCount += walkablePositions * 1.55;
+      this.targetBeeCount += walkablePositions * 1.5;
 
       this.sourceTargeting[source.id] = {
         max: walkablePositions,
@@ -39,6 +39,7 @@ export class bootstrapMaster extends Master {
   }
 
   newBee(bee: Bee): void {
+    bee.reusePath = 1;
     this.workers.push(bee);
     this.stateMap[bee.ref] = {
       type: "working",
@@ -63,7 +64,7 @@ export class bootstrapMaster extends Master {
 
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     let count: { [id: string]: number } = {
@@ -72,6 +73,12 @@ export class bootstrapMaster extends Master {
       build: 0,
       refill: 0,
     };
+
+    let sourceTargetingCurrent: { [id: string]: number } = {};
+
+    _.forEach(this.cell.sources, (source) => {
+      sourceTargetingCurrent[source.id] = 0;
+    });
 
     _.forEach(this.workers, (bee) => {
 
@@ -84,9 +91,6 @@ export class bootstrapMaster extends Master {
       }
 
       if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-        if (this.sourceTargeting[this.stateMap[bee.ref].target])
-          this.sourceTargeting[this.stateMap[bee.ref].target].current -= 1;
-
         this.stateMap[bee.ref] = {
           type: "working",
           target: "",
@@ -113,8 +117,10 @@ export class bootstrapMaster extends Master {
           source = Game.getObjectById(this.stateMap[bee.ref].target);
         }
 
-        if (source)
+        if (source) {
           bee.harvest(source);
+          sourceTargetingCurrent[source.id] += 1;
+        }
       } else {
         let target: Structure | ConstructionSite | null = Game.getObjectById(this.stateMap[bee.ref].target);
         let workType: workTypes = this.stateMap[bee.ref].type;
@@ -147,7 +153,7 @@ export class bootstrapMaster extends Master {
           }
         }
 
-        if (!target && count["build"] + count["repair"] <= this.targetBeeCount * 0.5) {
+        if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.5)) {
           if (!target) {
             target = <Structure>bee.creep.pos.findClosest(this.hive.emergencyRepairs)
             workType = "repair";
@@ -181,5 +187,9 @@ export class bootstrapMaster extends Master {
         this.stateMap[bee.ref].target = target.id;
       }
     });
-  };
+
+    _.forEach(sourceTargetingCurrent, (current, sourceId) => {
+      this.sourceTargeting[<string>sourceId].current = current;
+    });
+  }
 }

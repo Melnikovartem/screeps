@@ -40,7 +40,7 @@ export class upgraderMaster extends Master {
 
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     _.forEach(this.upgraders, (bee) => {
@@ -59,5 +59,5 @@ export class upgraderMaster extends Master {
       } else
         bee.upgradeController(this.cell.controller);
     });
-  };
+  }
 }

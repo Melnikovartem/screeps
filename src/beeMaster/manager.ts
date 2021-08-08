@@ -73,7 +73,7 @@ export class managerMaster extends Master {
       this.lastSpawned = Game.time;
       this.hive.wish(order);
     }
-  };
+  }
 
   run() {
     // TODO smarter choosing of target
@@ -126,5 +126,5 @@ export class managerMaster extends Master {
         }
       }
     });
-  };
+  }
 }

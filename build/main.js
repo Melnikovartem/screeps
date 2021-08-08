@@ -2495,7 +2495,6 @@ class Master {
         this.hive = hive;
         this.ref = ref;
         global.masters[this.ref] = this;
-        //this.updateCash(['hive', 'ref']);
     }
     clearBees(beeArray) {
         // clear non-exisiting bees
@@ -2547,7 +2546,6 @@ class minerMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         _.forEach(this.miners, (bee) => {
             if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
@@ -2564,7 +2562,6 @@ class minerMaster extends Master {
             }
         });
     }
-    ;
 }
 
 // cell that will extract energy or minerals? from ground
@@ -2630,7 +2627,6 @@ class haulerMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         // for future might be good to find closest bee for container and not the other way around
         if (this.hive.cells.storageCell) {
@@ -2653,7 +2649,6 @@ class haulerMaster extends Master {
             });
         }
     }
-    ;
 }
 
 class excavationCell extends Cell {
@@ -2738,7 +2733,6 @@ class managerMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         // TODO smarter choosing of target
         _.forEach(this.managers, (bee) => {
@@ -2779,7 +2773,6 @@ class managerMaster extends Master {
             }
         });
     }
-    ;
 }
 
 class storageCell extends Cell {
@@ -2838,7 +2831,6 @@ class upgraderMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         _.forEach(this.upgraders, (bee) => {
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
@@ -2855,7 +2847,6 @@ class upgraderMaster extends Master {
                 bee.upgradeController(this.cell.controller);
         });
     }
-    ;
 }
 
 class upgradeCell extends Cell {
@@ -2951,7 +2942,6 @@ class queenMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         let targets = this.cell.spawns;
         targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -2971,7 +2961,6 @@ class queenMaster extends Master {
             }
         });
     }
-    ;
 }
 
 class respawnCell extends Cell {
@@ -3052,6 +3041,7 @@ class bootstrapMaster extends Master {
         this.targetBeeCount = Math.ceil(this.targetBeeCount);
     }
     newBee(bee) {
+        bee.reusePath = 1;
         this.workers.push(bee);
         this.stateMap[bee.ref] = {
             type: "working",
@@ -3073,7 +3063,6 @@ class bootstrapMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         let count = {
             upgrade: 0,
@@ -3081,6 +3070,10 @@ class bootstrapMaster extends Master {
             build: 0,
             refill: 0,
         };
+        let sourceTargetingCurrent = {};
+        _.forEach(this.cell.sources, (source) => {
+            sourceTargetingCurrent[source.id] = 0;
+        });
         _.forEach(this.workers, (bee) => {
             if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 this.stateMap[bee.ref] = {
@@ -3090,8 +3083,6 @@ class bootstrapMaster extends Master {
                 bee.creep.say('🔄');
             }
             if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-                if (this.sourceTargeting[this.stateMap[bee.ref].target])
-                    this.sourceTargeting[this.stateMap[bee.ref].target].current -= 1;
                 this.stateMap[bee.ref] = {
                     type: "working",
                     target: "",
@@ -3114,8 +3105,10 @@ class bootstrapMaster extends Master {
                 else {
                     source = Game.getObjectById(this.stateMap[bee.ref].target);
                 }
-                if (source)
+                if (source) {
                     bee.harvest(source);
+                    sourceTargetingCurrent[source.id] += 1;
+                }
             }
             else {
                 let target = Game.getObjectById(this.stateMap[bee.ref].target);
@@ -3144,7 +3137,7 @@ class bootstrapMaster extends Master {
                         workType = "refill";
                     }
                 }
-                if (!target && count["build"] + count["repair"] <= this.targetBeeCount * 0.5) {
+                if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.5)) {
                     if (!target) {
                         target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
                         workType = "repair";
@@ -3174,8 +3167,10 @@ class bootstrapMaster extends Master {
                 this.stateMap[bee.ref].target = target.id;
             }
         });
+        _.forEach(sourceTargetingCurrent, (current, sourceId) => {
+            this.sourceTargeting[sourceId].current = current;
+        });
     }
-    ;
 }
 
 class developmentCell extends Cell {
@@ -3218,10 +3213,8 @@ class builderMaster extends Master {
             this.hive.wish(order);
         }
     }
-    ;
     run() {
         _.forEach(this.builders, (bee) => {
-            // TODO: getting energy if no targets?
             let ans = ERR_FULL;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 let suckerTarget;
@@ -3247,7 +3240,6 @@ class builderMaster extends Master {
             }
         });
     }
-    ;
 }
 
 var _a, _b;
@@ -3397,9 +3389,9 @@ class Hive {
 }
 
 class Bee {
-    // time to inherite some shit from Creep
     // for now it will be forever binded
     constructor(creep) {
+        this.reusePath = 3;
         this.creep = creep;
         this.master = global.masters[this.creep.memory.refMaster];
         this.ref = creep.name;
@@ -3460,69 +3452,79 @@ class Bee {
     }
     goTo(target) {
         this.creep.moveTo(target, {
-            reusePath: 1,
+            reusePath: this.reusePath,
+        });
+    }
+}
+
+class _Apiary {
+    constructor() {
+        this.hives = [];
+        this.destroyTime = Game.time + 2000;
+        _.forEach(Game.rooms, (room) => {
+            if (room.controller && room.controller.my)
+                this.hives.push(new Hive(room.name, []));
+        });
+    }
+    // update phase
+    update() {
+        _.forEach(this.hives, (hive) => {
+            hive.update();
+        });
+        // after all the masters where created and retrived if it was needed
+        for (const name in Memory.creeps) {
+            let creep = Game.creeps[name];
+            if (creep)
+                if (!global.bees[name]) {
+                    if (global.masters[creep.memory.refMaster]) {
+                        // not sure if i rly need a global bees hash
+                        global.bees[creep.name] = new Bee(creep);
+                        global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+                    }
+                    // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+                }
+                else {
+                    // i guess it is not gonna be fixed :/
+                    global.bees[name].creep = creep;
+                }
+            else if (global.bees[name])
+                delete global.bees[name];
+        }
+        _.forEach(global.masters, (master) => {
+            master.update();
+        });
+    }
+    // run phase
+    run() {
+        _.forEach(this.hives, (hive) => {
+            hive.run();
+        });
+        _.forEach(global.masters, (master) => {
+            master.run();
         });
     }
 }
 
 // This gets run on each global reset
 function onGlobalReset() {
+    console.log("Reset? Cool time is", Game.time);
     // check if all memory position were created
     Mem.init();
-    global.hives = {};
     global.bees = {};
     global.masters = {};
-    /*
-      _.forEach(Object.keys(Memory.masters), (ref) => {
-        // recreate all the masters if failed => delete the master
-        if (!global.masters[ref])
-          delete Memory.masters[ref];
-      });
-    */
-    let roomName = "W6N8";
-    global.hives[roomName] = new Hive(roomName, []);
-    console.log("Reset? Cool time is", Game.time);
+    global.Apiary = new _Apiary();
 }
 function main() {
-    if (!global.hives) {
-        onGlobalReset();
+    if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+        delete global.Apiary;
+        global.Apiary = new _Apiary();
     }
-    // update phase
-    _.forEach(global.hives, (hive) => {
-        hive.update();
-    });
-    // after all the masters where created and retrived if it was needed
-    for (const name in Memory.creeps) {
-        let creep = Game.creeps[name];
-        if (creep)
-            if (!global.bees[name]) {
-                if (global.masters[creep.memory.refMaster]) {
-                    // not sure if i rly need a global bees hash
-                    global.bees[creep.name] = new Bee(creep);
-                    global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
-                }
-                // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
-            }
-            else {
-                // i guess it is not gonna be fixed :/
-                global.bees[name].creep = creep;
-            }
-        else if (global.bees[name])
-            delete global.bees[name];
-    }
-    _.forEach(global.masters, (master) => {
-        master.update();
-    });
-    // run phase
-    _.forEach(global.hives, (hive) => {
-        hive.run();
-    });
-    _.forEach(global.masters, (master) => {
-        master.run();
-    });
+    global.Apiary.update();
+    global.Apiary.run();
     // Automatically delete memory
     Mem.clean();
 }
+// time to wrap things up
 let _loop = main;
 {
     _loop = ErrorMapper.wrapLoop(main);
