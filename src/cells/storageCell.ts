@@ -25,7 +25,7 @@ export class storageCell extends Cell {
     let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
     if (link instanceof StructureLink) {
       this.link = link;
-      this.inLink = link.store.getCapacity(RESOURCE_ENERGY) * 0.5;
+      this.inLink = LINK_CAPACITY * 0.5;
     }
   }
 
@@ -36,13 +36,24 @@ export class storageCell extends Cell {
   }
 
   run() {
-    if (this.link && Object.keys(this.linkRequests).length) {
-      let key = Object.keys(this.linkRequests)[0];
-      let order = this.linkRequests[key];
-      if (!this.link.cooldown && (!order.amount || this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= order.amount
-        || order.amount >= this.inLink)) {
-        this.link.transferEnergy(order.link, order.amount);
-        delete this.linkRequests[key];
+    if (this.link) {
+      if (Object.keys(this.linkRequests).length) {
+        let key = Object.keys(this.linkRequests)[0];
+        let order = this.linkRequests[key];
+        let tooBigOrder = order.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < order.amount
+          && order.amount <= this.link.store.getCapacity(RESOURCE_ENERGY);
+        if (!this.link.cooldown && !tooBigOrder) {
+          this.link.transferEnergy(order.link, order.amount);
+          delete this.linkRequests[key];
+
+          // back to normal lvl of inLink
+          this.inLink = this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5;
+        } else if (tooBigOrder) {
+          // order.amount literally in tooBigOrder
+          this.inLink = order.amount!;
+        }
+      } else {
+        this.inLink = this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5;
       }
     }
   }

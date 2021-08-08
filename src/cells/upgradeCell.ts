@@ -26,9 +26,10 @@ export class upgradeCell extends Cell {
       this.beeMaster = new upgraderMaster(this);
 
     if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > 50 &&
-      this.hive.cells.storageCell && !this.hive.cells.storageCell.linkRequests[this.ref]) {
+      this.hive.cells.storageCell) {
       this.hive.cells.storageCell.linkRequests[this.ref] = {
-        link: this.link
+        link: this.link,
+        amount: this.link.store.getFreeCapacity(RESOURCE_ENERGY),
       }
     }
   }

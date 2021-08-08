@@ -39,16 +39,8 @@ export class builderMaster extends Master {
   run() {
     _.forEach(this.builders, (bee) => {
       let ans: number = ERR_FULL;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        let suckerTarget;
-
-        if (!suckerTarget && this.hive.cells.storageCell)
-          suckerTarget = this.hive.cells.storageCell.storage;
-
-        if (suckerTarget)
-          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-        else
-          ans = OK;
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
+        ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {

@@ -87,7 +87,9 @@ export class managerMaster extends Master {
 
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+            (this.cell.inLink - structure.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
+              || this.cell.inLink == structure.store.getCapacity(RESOURCE_ENERGY)))[0];
 
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
@@ -111,7 +113,8 @@ export class managerMaster extends Master {
 
         if (!suckerTarget)
           suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+            structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
 
         if (!suckerTarget)
           suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
