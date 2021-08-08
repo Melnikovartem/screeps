@@ -138,6 +138,11 @@ let roleHauler = {
         ans = creep.getEnergyFromHarvesters();
       }
 
+      if (ans == ERR_NOT_FOUND && Game.getObjectById("610a113a21e8a68645e5fb07").store.getFreeCapacity(RESOURCE_ENERGY) >= 200) {
+        //hot fix to fill up link
+        ans = creep.getEnergyFromStorage();
+      }
+
       //this is a dangerous if cause now i need to FEED my boys if i want my energy delivered
       if (ans == OK) {
         creep.memory._target = {};

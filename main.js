@@ -45,7 +45,7 @@ module.exports.loop = function() {
         try {
           ROLES[creep.memory.role].run(creep);
         } catch (error) {
-          console.log("error on creep " + creep.name + " in room " + creem.room, "\n", error);
+          console.log("error on creep " + creep.name + " in room " + creep.room, "\n", error);
         }
       }
     }
