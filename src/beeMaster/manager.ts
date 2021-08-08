@@ -118,7 +118,7 @@ export class managerMaster extends Master {
 
         if (!suckerTarget)
           suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)[0];
 
         if (suckerTarget) {
           if (suckerTarget instanceof StructureLink)

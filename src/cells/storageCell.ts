@@ -31,7 +31,7 @@ export class storageCell extends Cell {
 
   update() {
     super.update();
-    if (!this.beeMaster)
+    if (!this.beeMaster && this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
       this.beeMaster = new managerMaster(this);
   }
 
