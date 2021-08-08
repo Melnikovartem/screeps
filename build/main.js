@@ -2458,7 +2458,7 @@ const Setups = {
     }),
     miner: {
         energy: new CreepSetup(SetupsNames.miner, {
-            pattern: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+            pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
             patternLimit: 1,
         })
     },
@@ -2559,7 +2559,6 @@ class minerMaster extends Master {
     }
     update() {
         // 5 for random shit
-        this.print(this.container);
         if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)) {
             let order = {
                 master: this.ref,
@@ -2596,8 +2595,9 @@ class managerMaster extends Master {
         this.managers = [];
         this.targets = []; //idk what else for now
         this.storage = storageCell.storage;
-        if (storageCell.link)
-            this.targets.push(storageCell.link);
+        this.link = storageCell.link;
+        if (this.link)
+            this.targets.push(this.link);
         this.targets = this.targets.concat(this.hive.towers);
         this.lastSpawned = Game.time - CREEP_LIFE_TIME;
         this.refreshLastSpawned();
@@ -2635,22 +2635,28 @@ class managerMaster extends Master {
                     structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-                        structure.store.getCapacity(RESOURCE_ENERGY) * 0.6 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
+                        structure.store.getCapacity(RESOURCE_ENERGY) * 0.5 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
-                if (!target)
-                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                if (!target && this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
+                    target = this.storage;
                 if (target)
                     bee.transfer(target, RESOURCE_ENERGY);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
                 let suckerTarget;
-                if (!suckerTarget && this.hive.cells.storageCell)
-                    suckerTarget = this.hive.cells.storageCell.storage;
+                let amount = bee.creep.store.getFreeCapacity(RESOURCE_ENERGY);
+                if (!suckerTarget && this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
+                    suckerTarget = this.link;
+                    amount = Math.min(amount, this.link.store.getUsedCapacity(RESOURCE_ENERGY) - this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5);
+                }
+                if (!suckerTarget) {
+                    suckerTarget = this.storage;
+                    amount = Math.min(amount, this.storage.store.getUsedCapacity(RESOURCE_ENERGY));
+                }
                 if (suckerTarget)
-                    bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                    bee.withdraw(suckerTarget, RESOURCE_ENERGY, amount);
             }
         });
     }
@@ -2678,11 +2684,11 @@ class resourceCell extends Cell {
     constructor(hive, source) {
         super(hive, "resourceCell_" + source.id);
         this.source = source;
-        let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER);
+        let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
         if (container instanceof StructureContainer) {
             this.container = container;
         }
-        let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+        let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
             this.link = link;
         }
@@ -2695,6 +2701,7 @@ class resourceCell extends Cell {
     run() {
         if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5
             && this.link.cooldown == 0 && this.hive.cells.storageCell instanceof storageCell && this.hive.cells.storageCell.link) {
+            console.log("here");
             this.link.transferEnergy(this.hive.cells.storageCell.link);
         }
     }
@@ -2889,9 +2896,6 @@ class respawnCell extends Cell {
     run() {
         // generate the queue and start spawning
         let remove = [];
-        _.forEach(this.hive.orderList, (order) => {
-            this.print([order.master, order.setup.name]);
-        });
         _.some(this.hive.orderList, (order, key) => {
             if (!this.freeSpawns.length)
                 return true;
@@ -3151,16 +3155,16 @@ class Bee {
             this.goTo(source);
         return ERR_NOT_IN_RANGE;
     }
-    transfer(target, resourceType) {
+    transfer(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
-            return this.creep.transfer(target, resourceType);
+            return this.creep.transfer(target, resourceType, amount);
         else
             this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
-    withdraw(target, resourceType) {
+    withdraw(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
-            return this.creep.withdraw(target, resourceType);
+            return this.creep.withdraw(target, resourceType, amount);
         else
             this.goTo(target);
         return ERR_NOT_IN_RANGE;

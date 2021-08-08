@@ -17,12 +17,12 @@ export class resourceCell extends Cell {
 
     this.source = source;
 
-    let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER);
+    let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
     if (container instanceof StructureContainer) {
       this.container = container;
     }
 
-    let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+    let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
     if (link instanceof StructureLink) {
       this.link = link;
     }

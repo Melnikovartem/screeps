@@ -28,17 +28,17 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
-  transfer(target: Structure, resourceType: ResourceConstant): number {
+  transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
-      return this.creep.transfer(target, resourceType);
+      return this.creep.transfer(target, resourceType, amount);
     else
       this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 
-  withdraw(target: Structure, resourceType: ResourceConstant): number {
+  withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
-      return this.creep.withdraw(target, resourceType);
+      return this.creep.withdraw(target, resourceType, amount);
     else
       this.goTo(target);
     return ERR_NOT_IN_RANGE;

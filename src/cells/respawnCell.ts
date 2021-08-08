@@ -26,9 +26,6 @@ export class respawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let remove: any[] = [];
-    _.forEach(this.hive.orderList, (order) => {
-      this.print([order.master, order.setup.name]);
-    });
     _.some(this.hive.orderList, (order, key) => {
       if (!this.freeSpawns.length)
         return true;

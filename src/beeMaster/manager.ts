@@ -15,6 +15,7 @@ export class managerMaster extends Master {
   lastSpawned: number;
 
   storage: StructureStorage;
+  link: StructureLink | undefined;
   targets: (StructureLink | StructureTower)[] = []; //idk what else for now
 
   constructor(storageCell: storageCell) {
@@ -22,8 +23,10 @@ export class managerMaster extends Master {
 
     this.storage = storageCell.storage;
 
-    if (storageCell.link)
-      this.targets.push(storageCell.link);
+    this.link = storageCell.link;
+    if (this.link)
+      this.targets.push(this.link);
+
 
     this.targets = this.targets.concat(this.hive.towers);
 
@@ -64,22 +67,21 @@ export class managerMaster extends Master {
   run() {
     _.forEach(this.managers, (bee) => {
       let target;
-
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+
         target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
           structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
 
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getCapacity(RESOURCE_ENERGY) * 0.6 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
+            structure.store.getCapacity(RESOURCE_ENERGY) * 0.5 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
 
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
 
-        if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+        if (!target && this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5)
+          target = this.storage;
 
         if (target)
           bee.transfer(target, RESOURCE_ENERGY);
@@ -87,12 +89,20 @@ export class managerMaster extends Master {
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
         let suckerTarget;
+        let amount = bee.creep.store.getFreeCapacity(RESOURCE_ENERGY);
 
-        if (!suckerTarget && this.hive.cells.storageCell)
-          suckerTarget = this.hive.cells.storageCell.storage;
+        if (!suckerTarget && this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
+          suckerTarget = this.link;
+          amount = Math.min(amount, this.link.store.getUsedCapacity(RESOURCE_ENERGY) - this.link.store.getCapacity(RESOURCE_ENERGY) * 0.5);
+        }
+
+        if (!suckerTarget) {
+          suckerTarget = this.storage;
+          amount = Math.min(amount, this.storage.store.getUsedCapacity(RESOURCE_ENERGY));
+        }
 
         if (suckerTarget)
-          bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+          bee.withdraw(suckerTarget, RESOURCE_ENERGY, amount);
       }
     });
   };
