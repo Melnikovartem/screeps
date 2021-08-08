@@ -51,11 +51,11 @@ export class managerMaster extends Master {
 
     //if you don't need to withdraw => then it is not enough
     if (this.cell.link) {
-      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink) {
+      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.inLink) {
         this.targets.push(this.cell.storage);
         this.suckerTargets.push(this.cell.link);
       }
-      else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
+      else if (this.cell.inLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
         this.targets.push(this.cell.link);
     }
 
@@ -88,6 +88,8 @@ export class managerMaster extends Master {
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
 
+        console.log(this.targets);
+
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
@@ -97,7 +99,12 @@ export class managerMaster extends Master {
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0]
 
         if (target)
-          ans = bee.transfer(target, RESOURCE_ENERGY);
+
+          if (target instanceof StructureLink)
+            ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
+              this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
+          else
+            ans = bee.transfer(target, RESOURCE_ENERGY);
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
@@ -114,7 +121,7 @@ export class managerMaster extends Master {
         if (suckerTarget) {
           if (suckerTarget instanceof StructureLink)
             bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY),
-              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - suckerTarget.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink));
+              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
           else
             bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }

@@ -1,7 +1,7 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { upgraderMaster } from "../beeMaster/upgrader"
+import { upgraderMaster } from "../beeMaster/upgrader";
 
 export class upgradeCell extends Cell {
 
@@ -10,7 +10,7 @@ export class upgradeCell extends Cell {
 
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "upgradeCell");
+    super(hive, "upgradeCell_" + hive.room.name);
 
     this.controller = controller;
 
@@ -24,7 +24,15 @@ export class upgradeCell extends Cell {
     super.update();
     if (!this.beeMaster)
       this.beeMaster = new upgraderMaster(this);
+
+    if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > 50 &&
+      this.hive.cells.storageCell && !this.hive.cells.storageCell.linkRequests[this.ref]) {
+      this.hive.cells.storageCell.linkRequests[this.ref] = {
+        link: this.link
+      }
+    }
   }
 
-  run() { }
+  run() {
+  }
 }

@@ -1,6 +1,6 @@
-import { Hive } from "./Hive"
-import { Master } from "./beeMaster/_Master"
-import { Bee } from "./bee"
+import { Hive } from "./Hive";
+import { Master } from "./beeMaster/_Master";
+import { Bee } from "./bee";
 
 // Syntax for adding proprties to `global` (ex "global.log")
 

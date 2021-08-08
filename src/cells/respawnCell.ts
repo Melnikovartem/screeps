@@ -1,8 +1,9 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
-import { makeId } from "../utils/other"
 
-import { queenMaster } from "../beeMaster/queen"
+import { makeId } from "../utils/other";
+
+import { queenMaster } from "../beeMaster/queen";
 
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];

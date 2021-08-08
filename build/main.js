@@ -2590,7 +2590,7 @@ class resourceCell extends Cell {
     run() {
         if (this.link && this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
             this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.link.store.getCapacity(RESOURCE_ENERGY)
-                * (1 - this.hive.cells.storageCell.percentInLink) && this.link.cooldown == 0) {
+                - this.hive.cells.storageCell.inLink && this.link.cooldown == 0) {
             this.link.transferEnergy(this.hive.cells.storageCell.link);
         }
     }
@@ -2649,11 +2649,11 @@ class managerMaster extends Master {
             this.targets = this.targets.concat(this.hive.cells.defenseCell.towers);
         //if you don't need to withdraw => then it is not enough
         if (this.cell.link) {
-            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink) {
+            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.inLink) {
                 this.targets.push(this.cell.storage);
                 this.suckerTargets.push(this.cell.link);
             }
-            else if (this.cell.link.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
+            else if (this.cell.inLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
                 this.targets.push(this.cell.link);
         }
         // 5 for random shit
@@ -2680,6 +2680,7 @@ class managerMaster extends Master {
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                console.log(this.targets);
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
@@ -2687,7 +2688,10 @@ class managerMaster extends Master {
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
                 if (target)
-                    ans = bee.transfer(target, RESOURCE_ENERGY);
+                    if (target instanceof StructureLink)
+                        ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY), this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
+                    else
+                        ans = bee.transfer(target, RESOURCE_ENERGY);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
                 let suckerTarget;
@@ -2699,7 +2703,7 @@ class managerMaster extends Master {
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
                 if (suckerTarget) {
                     if (suckerTarget instanceof StructureLink)
-                        bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - suckerTarget.store.getCapacity(RESOURCE_ENERGY) * this.cell.percentInLink));
+                        bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
                     else
                         bee.withdraw(suckerTarget, RESOURCE_ENERGY);
                 }
@@ -2712,12 +2716,13 @@ class managerMaster extends Master {
 class storageCell extends Cell {
     constructor(hive, storage) {
         super(hive, "storageCell_" + hive.room.name);
-        this.percentInLink = 0.5;
-        this.linkRequests = [];
+        this.inLink = 0;
+        this.linkRequests = {};
         this.storage = storage;
         let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
             this.link = link;
+            this.inLink = link.store.getCapacity(RESOURCE_ENERGY) * 0.5;
         }
     }
     update() {
@@ -2726,7 +2731,15 @@ class storageCell extends Cell {
             this.beeMaster = new managerMaster(this);
     }
     run() {
-        if (this.link) ;
+        if (this.link && Object.keys(this.linkRequests).length) {
+            let key = Object.keys(this.linkRequests)[0];
+            let order = this.linkRequests[key];
+            if (!this.link.cooldown && (!order.amount || this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= order.amount
+                || order.amount >= this.inLink)) {
+                this.link.transferEnergy(order.link, order.amount);
+                delete this.linkRequests[key];
+            }
+        }
     }
 }
 
@@ -2777,7 +2790,7 @@ class upgraderMaster extends Master {
 
 class upgradeCell extends Cell {
     constructor(hive, controller) {
-        super(hive, "upgradeCell");
+        super(hive, "upgradeCell_" + hive.room.name);
         this.controller = controller;
         let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
@@ -2788,8 +2801,15 @@ class upgradeCell extends Cell {
         super.update();
         if (!this.beeMaster)
             this.beeMaster = new upgraderMaster(this);
+        if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > 50 &&
+            this.hive.cells.storageCell && !this.hive.cells.storageCell.linkRequests[this.ref]) {
+            this.hive.cells.storageCell.linkRequests[this.ref] = {
+                link: this.link
+            };
+        }
     }
-    run() { }
+    run() {
+    }
 }
 
 class defenseCell extends Cell {
@@ -2932,7 +2952,7 @@ class respawnCell extends Cell {
     ;
 }
 
-// import { bootstrapMaster } from "../beeMaster/bootstrap"
+// import { bootstrapMaster } from "../beeMaster/bootstrap";
 class developmentCell extends Cell {
     constructor(hive, controller) {
         super(hive, "developmentCell_" + hive.room.name);

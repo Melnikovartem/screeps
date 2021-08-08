@@ -1,13 +1,13 @@
-import { excavationCell } from "./cells/excavationCell"
-import { storageCell } from "./cells/storageCell"
-import { upgradeCell } from "./cells/upgradeCell"
-import { defenseCell } from "./cells/defenseCell"
-import { respawnCell } from "./cells/respawnCell"
-import { developmentCell } from "./cells/developmentCell"
+import { excavationCell } from "./cells/excavationCell";
+import { storageCell } from "./cells/storageCell";
+import { upgradeCell } from "./cells/upgradeCell";
+import { defenseCell } from "./cells/defenseCell";
+import { respawnCell } from "./cells/respawnCell";
+import { developmentCell } from "./cells/developmentCell";
 
-import { builderMaster } from "./beeMaster/builder"
+import { builderMaster } from "./beeMaster/builder";
 
-import { CreepSetup } from "./creepSetups"
+import { CreepSetup } from "./creepSetups";
 
 // TODO visuals
 // const VISUALS_ON = true;

@@ -1,7 +1,7 @@
-import { Setups } from "../creepSetups"
+import { Setups } from "../creepSetups";
 
 import { Hive, spawnOrder } from "../Hive";
-import { Bee } from "../Bee"
+import { Bee } from "../Bee";
 import { Master } from "./_Master";
 
 export class annexesMaster extends Master {

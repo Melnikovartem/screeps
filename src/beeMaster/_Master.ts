@@ -1,4 +1,4 @@
-// import { makeId } from "../utils/other"
+// import { makeId } from "../utils/other";
 
 import type { Hive } from "../Hive";
 import { Bee } from "../bee";
