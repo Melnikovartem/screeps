@@ -2360,7 +2360,7 @@ RoomPosition.prototype.getNearbyPositions = function () {
     }
     return positions;
 };
-RoomPosition.prototype.getOpenPositions = function () {
+RoomPosition.prototype.getwalkablePositions = function () {
     let nearbyPositions = this.getNearbyPositions();
     let terrain = Game.map.getRoomTerrain(this.roomName);
     switch (terrain.get(this.x, this.y)) {
@@ -2372,6 +2372,10 @@ RoomPosition.prototype.getOpenPositions = function () {
     let walkablePositions = _.filter(nearbyPositions, function (pos) {
         return terrain.get(pos.x, pos.y) != TERRAIN_MASK_WALL;
     });
+    return walkablePositions;
+};
+RoomPosition.prototype.getOpenPositions = function () {
+    let walkablePositions = this.getwalkablePositions();
     let freePositions = _.filter(walkablePositions, function (pos) {
         return !pos.lookFor(LOOK_CREEPS).length;
     });
@@ -3031,22 +3035,26 @@ class bootstrapMaster extends Master {
     constructor(developmentCell) {
         super(developmentCell.hive, "master_" + developmentCell.ref);
         this.workers = [];
+        this.targetBeeCount = 0;
         this.waitingForABee = 0;
         // some small caching. I just couldn't resist
         this.stateMap = {};
+        this.sourceTargeting = {};
         this.cell = developmentCell;
-        this.targetBeeCount = 0;
         _.forEach(this.cell.sources, (source) => {
-            this.targetBeeCount += source.pos.getOpenPositions().length * 1.5;
+            let walkablePositions = source.pos.getwalkablePositions().length;
+            this.targetBeeCount += walkablePositions * 1.55;
+            this.sourceTargeting[source.id] = {
+                max: walkablePositions,
+                current: 0,
+            };
         });
         this.targetBeeCount = Math.ceil(this.targetBeeCount);
-        // this.print(this.targetBeeCount);
-        this.targetBeeCount = 3;
     }
     newBee(bee) {
         this.workers.push(bee);
         this.stateMap[bee.ref] = {
-            type: "mining",
+            type: "working",
             target: "",
         };
         if (this.waitingForABee)
@@ -3075,31 +3083,58 @@ class bootstrapMaster extends Master {
         };
         _.forEach(this.workers, (bee) => {
             if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                this.stateMap[bee.ref].type = "mining";
+                this.stateMap[bee.ref] = {
+                    type: "mining",
+                    target: "",
+                };
                 bee.creep.say('🔄');
             }
             if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-                this.stateMap[bee.ref].type = "working";
+                if (this.sourceTargeting[this.stateMap[bee.ref].target])
+                    this.sourceTargeting[this.stateMap[bee.ref].target].current -= 1;
+                this.stateMap[bee.ref] = {
+                    type: "working",
+                    target: "",
+                };
                 bee.creep.say('🛠️');
             }
-            if (this.stateMap[bee.ref].type != "mining") {
-                let target;
+            if (this.stateMap[bee.ref].type == "mining") {
+                let source;
+                if (this.stateMap[bee.ref].target == "") {
+                    // find new source
+                    // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
+                    // but that is too much for too little
+                    source = bee.creep.pos.findClosest(_.filter(this.cell.sources, (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
+                        && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source))));
+                    if (source) {
+                        this.sourceTargeting[source.id].current += 1;
+                        this.stateMap[bee.ref].target = source.id;
+                    }
+                }
+                else {
+                    source = Game.getObjectById(this.stateMap[bee.ref].target);
+                }
+                if (source)
+                    bee.harvest(source);
+            }
+            else {
+                let target = Game.getObjectById(this.stateMap[bee.ref].target);
                 let workType = this.stateMap[bee.ref].type;
+                // checking if target is valid
+                if (workType == "refill") {
+                    if (!(target instanceof StructureSpawn || target instanceof StructureExtension)
+                        || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
+                        workType = "working";
+                }
+                else if (workType == "repair") {
+                    if (!(target instanceof Structure) || target.hits == target.hitsMax)
+                        workType = "working";
+                }
                 if (workType == "working")
                     target = null;
-                else
-                    target = Game.getObjectById(this.stateMap[bee.ref].target);
-                if (!target && this.cell.controller.ticksToDowngrade <= 3000 && count["upgrade"] == 0) {
+                if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] == 0) {
                     target = this.cell.controller;
                     workType = "upgrade";
-                }
-                if (!target) {
-                    target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
-                    workType = "repair";
-                }
-                if (!target) {
-                    target = bee.creep.pos.findClosest(this.hive.constructionSites);
-                    workType = "build";
                 }
                 if (!target && this.hive.cells.respawnCell) {
                     let targets = this.hive.cells.respawnCell.spawns;
@@ -3107,6 +3142,16 @@ class bootstrapMaster extends Master {
                     if (targets.length) {
                         target = bee.creep.pos.findClosest(targets);
                         workType = "refill";
+                    }
+                }
+                if (!target && count["build"] + count["repair"] <= this.targetBeeCount * 0.5) {
+                    if (!target) {
+                        target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+                        workType = "repair";
+                    }
+                    if (!target) {
+                        target = bee.creep.pos.findClosest(this.hive.constructionSites);
+                        workType = "build";
                     }
                 }
                 if (!target) {
@@ -3127,16 +3172,6 @@ class bootstrapMaster extends Master {
                 count[workType] += 1;
                 this.stateMap[bee.ref].type = workType;
                 this.stateMap[bee.ref].target = target.id;
-            }
-            else {
-                let source = Game.getObjectById(this.stateMap[bee.ref].target);
-                // find new source if this one is clamped or not a source
-                if (!source || (!source.pos.getOpenPositions().length && !bee.creep.pos.isNearTo(source)))
-                    source = bee.creep.pos.findClosest(_.filter(this.cell.sources, (source) => source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)));
-                if (source) {
-                    bee.harvest(source);
-                    this.stateMap[bee.ref].target = source.id;
-                }
             }
         });
     }
