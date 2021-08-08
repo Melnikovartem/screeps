@@ -1,3 +1,5 @@
+// TRANSFERED
+
 RoomPosition.prototype.getNearbyPositions = function() {
   let positions = [];
 

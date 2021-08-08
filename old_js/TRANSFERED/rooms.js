@@ -1,3 +1,6 @@
+// here nothing important (getting rid of roles) so
+// TRANSFERED
+
 function updateRolesTarget(room) {
   let target = _.get(room.memory, ["roles"]);
   if (!target) {

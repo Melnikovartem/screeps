@@ -1,3 +1,4 @@
+// TRANSFERED
 function roomDefense(room) {
   for (var name in Game.structures) {
     var structure = Game.structures[name];

@@ -1,3 +1,6 @@
+// TRANSFERED
+// cause only imports
+
 var armyLoop = require('armies');
 var roomLoop = require('rooms');
 
@@ -23,17 +26,14 @@ global.REUSE_PATH = 5;
   }
 
   const profiler = require('screeps-profiler');
-  profiler.enable();
+
 
   profiler.wrap(function() {});
 */
 
 module.exports.loop = function() {
-  try {
-    armyLoop();
-  } catch (error) {
-    console.log("FUCK FUCK FUCK army is in trouble\n", error)
-  }
+  armyLoop();
+
   for (let creepName in Memory.creeps) {
     let creep = Game.creeps[creepName];
 
@@ -50,9 +50,7 @@ module.exports.loop = function() {
       }
     }
   }
-
-  roomLoop();
-
+  
   if (Game.cpu.bucket == 10000) {
     // only on official
     Game.cpu.generatePixel();

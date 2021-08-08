@@ -5,7 +5,7 @@ function getRandomInt(max) {
 function roomSpawning(room) {
   let spawns = room.find(FIND_MY_STRUCTURES, {
     filter: {
-      structureType: STRUCTURE_SPAWN
+      structureType: STRUCTURE_SPAWN;
     }
   });
   spawns = _.filter(spawns, (structure) => structure.spawning == null);
