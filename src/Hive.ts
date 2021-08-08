@@ -19,12 +19,12 @@ export interface spawnOrder {
 }
 
 interface hiveCells {
-  upgradeCell?: upgradeCell;
-  developmentCell?: developmentCell;
+  respawnCell?: respawnCell;
   excavationCell?: excavationCell;
   storageCell?: storageCell;
+  upgradeCell?: upgradeCell;
+  developmentCell?: developmentCell;
   defenseCell?: defenseCell;
-  respawnCell?: respawnCell;
 }
 
 class repairSheet {
@@ -66,6 +66,9 @@ export class Hive {
   repairSheet: repairSheet;
 
   orderList: spawnOrder[] = [];
+  spawns: StructureSpawn[] = [];
+  extensions: StructureExtension[] = [];
+  towers: StructureTower[] = [];
 
   //targets for defense systems
   roomTargets: Creep[] = [];
@@ -96,42 +99,37 @@ export class Hive {
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
 
-    let spawns: StructureSpawn[] = [];
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (structure instanceof StructureSpawn && structure.isActive()) {
-        spawns.push(structure);
-      }
+      if (structure instanceof StructureSpawn && structure.isActive())
+        this.spawns.push(structure);
+      else if (structure instanceof StructureExtension && structure.isActive())
+        this.extensions.push(structure);
+      else if (structure instanceof StructureTower && structure.isActive())
+        this.towers.push(structure);
     });
-    if (spawns.length) {
-      this.cells.respawnCell = new respawnCell(this, spawns);
-    }
 
     let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
     if (storage) {
       this.cells.storageCell = new storageCell(this, storage);
 
       this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
+
+      let allSources: Source[] = [];
+      _.forEach(this.rooms, (room) => {
+        let sources = room.find(FIND_SOURCES);
+        allSources = allSources.concat(sources);
+      });
+      if (allSources.length) {
+        this.cells.excavationCell = new excavationCell(this, allSources);
+      }
+
+      this.cells.respawnCell = new respawnCell(this);
     } else {
       this.cells.developmentCell = new developmentCell(this, this.room.controller!);
     }
 
-    let towers: StructureTower[] = [];
-    _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (structure instanceof StructureTower && structure.isActive()) {
-        towers.push(structure);
-      }
-    });
-    if (towers.length) {
-      this.cells.defenseCell = new defenseCell(this, towers);
-    }
-
-    let allSources: Source[] = [];
-    _.forEach(this.rooms, (room) => {
-      let sources = room.find(FIND_SOURCES);
-      allSources = allSources.concat(sources);
-    });
-    if (allSources.length) {
-      this.cells.excavationCell = new excavationCell(this, allSources);
+    if (this.towers.length) {
+      this.cells.defenseCell = new defenseCell(this);
     }
   }
 

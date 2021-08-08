@@ -36,6 +36,8 @@ export abstract class Master {
           Memory.masters[this.ref][key] = { id: value.id };
         } else if (key == "hive") {
           Memory.masters[this.ref][key] = value.room.name;
+        } else if (Array.isArray(value) && value[0] instanceof Structure) {
+          Memory.masters[this.ref][key] = _.map(value, (structure: Structure) => structure.id);
         }
       }
     });

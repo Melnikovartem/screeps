@@ -38,13 +38,13 @@ export class builderMaster extends Master {
       // TODO: getting energy if no targets?
       let ans: number = ERR_FULL;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        let target;
+        let suckerTarget;
 
-        if (!target && this.hive.cells.storageCell)
-          target = this.hive.cells.storageCell.storage;
+        if (!suckerTarget && this.hive.cells.storageCell)
+          suckerTarget = this.hive.cells.storageCell.storage;
 
-        if (target)
-          ans = bee.withdraw(target, RESOURCE_ENERGY);
+        if (suckerTarget)
+          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         else
           ans = OK;
       }

@@ -2428,7 +2428,7 @@ const SetupsNames = {
     // Civilian
     starter: 'Just a bee',
     claimer: 'Bee Drone',
-    manager: 'Andrenidae',
+    manager: 'Stingless bee',
     hauler: 'Bumblebee',
     miner: 'Andrena',
     upgrader: 'Honey bee',
@@ -2442,10 +2442,16 @@ const Setups = {
         pattern: [CLAIM, MOVE],
         patternLimit: 2,
     }),
-    manager: new CreepSetup(SetupsNames.manager, {
-        pattern: [CARRY, CARRY, MOVE],
-        patternLimit: 15,
-    }),
+    manager: {
+        small: new CreepSetup(SetupsNames.manager, {
+            pattern: [CARRY, CARRY, MOVE],
+            patternLimit: 5,
+        }),
+        normal: new CreepSetup(SetupsNames.manager, {
+            pattern: [CARRY, CARRY, MOVE],
+            patternLimit: 15,
+        }),
+    },
     hauler: new CreepSetup(SetupsNames.hauler, {
         pattern: [CARRY, CARRY, MOVE],
         patternLimit: 15,
@@ -2494,6 +2500,9 @@ class Master {
                 }
                 else if (key == "hive") {
                     Memory.masters[this.ref][key] = value.room.name;
+                }
+                else if (Array.isArray(value) && value[0] instanceof Structure) {
+                    Memory.masters[this.ref][key] = _.map(value, (structure) => structure.id);
                 }
             }
         });
@@ -2550,6 +2559,7 @@ class minerMaster extends Master {
     }
     update() {
         // 5 for random shit
+        this.print(this.container);
         if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)) {
             let order = {
                 master: this.ref,
@@ -2572,9 +2582,75 @@ class minerMaster extends Master {
                     target = this.link;
                 else if (this.container && this.container.store.getFreeCapacity(RESOURCE_ENERGY))
                     target = this.container;
-                if (target) {
+                if (target)
                     bee.transfer(target, RESOURCE_ENERGY);
-                }
+            }
+        });
+    }
+    ;
+}
+
+class managerMaster extends Master {
+    constructor(storageCell) {
+        super(storageCell.hive, "master_" + storageCell.ref);
+        this.managers = [];
+        this.targets = []; //idk what else for now
+        this.storage = storageCell.storage;
+        if (storageCell.link)
+            this.targets.push(storageCell.link);
+        this.targets = this.targets.concat(this.hive.towers);
+        this.lastSpawned = Game.time - CREEP_LIFE_TIME;
+        this.refreshLastSpawned();
+        this.updateCash(['targets']);
+    }
+    newBee(bee) {
+        this.managers.push(bee);
+        this.refreshLastSpawned();
+    }
+    refreshLastSpawned() {
+        _.forEach(this.managers, (bee) => {
+            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
+                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+        });
+    }
+    update() {
+        // 5 for random shit
+        // tragets.length cause dont need a manager for nothing
+        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
+            let order = {
+                master: this.ref,
+                setup: Setups.manager.normal,
+                amount: 1,
+            };
+            this.lastSpawned = Game.time;
+            this.hive.wish(order);
+        }
+    }
+    ;
+    run() {
+        _.forEach(this.managers, (bee) => {
+            let target;
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+                target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
+                    structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
+                if (!target)
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
+                        structure.store.getCapacity(RESOURCE_ENERGY) * 0.6 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
+                if (!target)
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                if (!target)
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                if (target)
+                    bee.transfer(target, RESOURCE_ENERGY);
+            }
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+                let suckerTarget;
+                if (!suckerTarget && this.hive.cells.storageCell)
+                    suckerTarget = this.hive.cells.storageCell.storage;
+                if (suckerTarget)
+                    bee.withdraw(suckerTarget, RESOURCE_ENERGY);
             }
         });
     }
@@ -2585,12 +2661,15 @@ class storageCell extends Cell {
     constructor(hive, storage) {
         super(hive, "storageCell_" + hive.room.name);
         this.storage = storage;
-        let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+        let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
             this.link = link;
         }
     }
-    update() { }
+    update() {
+        if (!this.beeMaster)
+            this.beeMaster = new managerMaster(this);
+    }
     run() { }
 }
 
@@ -2675,19 +2754,17 @@ class upgraderMaster extends Master {
     run() {
         _.forEach(this.upgraders, (bee) => {
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                let target;
+                let suckerTarget;
                 if (this.link)
-                    target = this.link;
-                if (!target && this.hive.cells.storageCell)
-                    target = this.hive.cells.storageCell.storage;
-                if (target) {
-                    if (bee.withdraw(target, RESOURCE_ENERGY) == OK)
+                    suckerTarget = this.link;
+                if (!suckerTarget && this.hive.cells.storageCell)
+                    suckerTarget = this.hive.cells.storageCell.storage;
+                if (suckerTarget)
+                    if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
                         bee.upgradeController(this.controller);
-                }
             }
-            else {
+            else
                 bee.upgradeController(this.controller);
-            }
         });
     }
     ;
@@ -2697,7 +2774,7 @@ class upgradeCell extends Cell {
     constructor(hive, controller) {
         super(hive, "upgradeCell");
         this.controller = controller;
-        let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+        let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
             this.link = link;
         }
@@ -2710,9 +2787,9 @@ class upgradeCell extends Cell {
 }
 
 class defenseCell extends Cell {
-    constructor(hive, towers) {
+    constructor(hive) {
         super(hive, "defenseCell_" + hive.room.name);
-        this.towers = towers;
+        this.towers = hive.towers;
     }
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
     update() {
@@ -2743,22 +2820,78 @@ function makeId(length) {
     return result;
 }
 
+class queenMaster extends Master {
+    constructor(respawnCell) {
+        super(respawnCell.hive, "master_" + respawnCell.ref);
+        this.queens = [];
+        this.targets = this.hive.spawns;
+        this.targets = this.targets.concat(this.hive.extensions);
+        this.lastSpawned = Game.time - CREEP_LIFE_TIME;
+        this.refreshLastSpawned();
+        this.updateCash(['targets']);
+    }
+    newBee(bee) {
+        this.queens.push(bee);
+        this.refreshLastSpawned();
+    }
+    refreshLastSpawned() {
+        _.forEach(this.queens, (bee) => {
+            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
+                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+        });
+    }
+    update() {
+        // 5 for random shit
+        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
+            let order = {
+                master: this.ref,
+                setup: Setups.manager.normal,
+                amount: 1,
+            };
+            this.lastSpawned = Game.time;
+            this.hive.wish(order);
+        }
+    }
+    ;
+    run() {
+        _.forEach(this.queens, (bee) => {
+            let target = _.filter(this.targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && target) {
+                bee.transfer(target, RESOURCE_ENERGY);
+            }
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+                let suckerTarget;
+                if (!suckerTarget && this.hive.cells.storageCell)
+                    suckerTarget = this.hive.cells.storageCell.storage;
+                if (suckerTarget)
+                    bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+            }
+        });
+    }
+    ;
+}
+
 class respawnCell extends Cell {
-    constructor(hive, spawns) {
-        super(hive, "excavationCell_" + hive.room.name);
+    constructor(hive) {
+        super(hive, "respawnCell_" + hive.room.name);
         this.freeSpawns = [];
-        this.spawns = spawns;
+        this.spawns = this.hive.spawns;
     }
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
     update() {
         // find free spawners
         this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
+        if (!this.beeMaster)
+            this.beeMaster = new queenMaster(this);
     }
     ;
     // second stage of decision making like where do i need to spawn creeps or do i need
     run() {
         // generate the queue and start spawning
         let remove = [];
+        _.forEach(this.hive.orderList, (order) => {
+            this.print([order.master, order.setup.name]);
+        });
         _.some(this.hive.orderList, (order, key) => {
             if (!this.freeSpawns.length)
                 return true;
@@ -2816,22 +2949,11 @@ class builderMaster extends Master {
     }
     newBee(bee) {
         this.builders.push(bee);
-        this.waitingForABee -= 1;
+        if (!this.waitingForABee)
+            this.waitingForABee -= 1;
     }
-    /*
-      checkForNewBees(): void {
-        if (this.builders.length < this.bees.length) {
-          _.forEach(this.bees, (bee) => {
-            if (!this.builders.includes(bee)) {
-              this.newBee(bee);
-            }
-          });
-        }
-      }
-    */
     update() {
         if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
-            console.log("?", this.hive.emergencyRepairs, this.hive.constructionSites);
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
@@ -2847,11 +2969,13 @@ class builderMaster extends Master {
             // TODO: getting energy if no targets?
             let ans = ERR_FULL;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                let target;
-                if (!target && this.hive.cells.storageCell)
-                    target = this.hive.cells.storageCell.storage;
-                if (target)
-                    ans = bee.withdraw(target, RESOURCE_ENERGY);
+                let suckerTarget;
+                if (!suckerTarget && this.hive.cells.storageCell)
+                    suckerTarget = this.hive.cells.storageCell.storage;
+                if (suckerTarget)
+                    ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                else
+                    ans = OK;
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
                 let target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
@@ -2906,6 +3030,9 @@ _a = STRUCTURE_RAMPART, _b = STRUCTURE_WALL;
 class Hive {
     constructor(roomName, annexNames) {
         this.orderList = [];
+        this.spawns = [];
+        this.extensions = [];
+        this.towers = [];
         //targets for defense systems
         this.roomTargets = [];
         this.annexTargets = [];
@@ -2925,39 +3052,33 @@ class Hive {
         this.updateConstructionSites();
         this.updateEmeregcyRepairs();
         this.updateNormalRepairs();
-        let spawns = [];
         _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-            if (structure instanceof StructureSpawn && structure.isActive()) {
-                spawns.push(structure);
-            }
+            if (structure instanceof StructureSpawn && structure.isActive())
+                this.spawns.push(structure);
+            else if (structure instanceof StructureExtension && structure.isActive())
+                this.extensions.push(structure);
+            else if (structure instanceof StructureTower && structure.isActive())
+                this.towers.push(structure);
         });
-        if (spawns.length) {
-            this.cells.respawnCell = new respawnCell(this, spawns);
-        }
         let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
         if (storage) {
             this.cells.storageCell = new storageCell(this, storage);
             this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
+            let allSources = [];
+            _.forEach(this.rooms, (room) => {
+                let sources = room.find(FIND_SOURCES);
+                allSources = allSources.concat(sources);
+            });
+            if (allSources.length) {
+                this.cells.excavationCell = new excavationCell(this, allSources);
+            }
+            this.cells.respawnCell = new respawnCell(this);
         }
         else {
             this.cells.developmentCell = new developmentCell(this, this.room.controller);
         }
-        let towers = [];
-        _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-            if (structure instanceof StructureTower && structure.isActive()) {
-                towers.push(structure);
-            }
-        });
-        if (towers.length) {
-            this.cells.defenseCell = new defenseCell(this, towers);
-        }
-        let allSources = [];
-        _.forEach(this.rooms, (room) => {
-            let sources = room.find(FIND_SOURCES);
-            allSources = allSources.concat(sources);
-        });
-        if (allSources.length) {
-            this.cells.excavationCell = new excavationCell(this, allSources);
+        if (this.towers.length) {
+            this.cells.defenseCell = new defenseCell(this);
         }
     }
     updateConstructionSites() {

@@ -2,26 +2,33 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 import { makeId } from "../utils/other"
 
+import { queenMaster } from "../beeMaster/queen"
+
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];
   freeSpawns: StructureSpawn[] = [];
 
-  constructor(hive: Hive, spawns: StructureSpawn[]) {
-    super(hive, "excavationCell_" + hive.room.name);
+  constructor(hive: Hive) {
+    super(hive, "respawnCell_" + hive.room.name);
 
-    this.spawns = spawns;
+    this.spawns = this.hive.spawns;
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
+    if (!this.beeMaster)
+      this.beeMaster = new queenMaster(this);
   };
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // generate the queue and start spawning
     let remove: any[] = [];
+    _.forEach(this.hive.orderList, (order) => {
+      this.print([order.master, order.setup.name]);
+    });
     _.some(this.hive.orderList, (order, key) => {
       if (!this.freeSpawns.length)
         return true;

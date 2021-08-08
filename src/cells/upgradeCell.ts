@@ -14,7 +14,7 @@ export class upgradeCell extends Cell {
 
     this.controller = controller;
 
-    let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
+    let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
     if (link instanceof StructureLink) {
       this.link = link;
     }

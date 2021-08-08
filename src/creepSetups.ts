@@ -51,7 +51,7 @@ const SetupsNames = {
   // Civilian
   starter: 'Just a bee',
   claimer: 'Bee Drone',
-  manager: 'Andrenidae',
+  manager: 'Stingless bee',
   hauler: 'Bumblebee',
   miner: 'Andrena',
   upgrader: 'Honey bee',
@@ -67,10 +67,16 @@ export const Setups = {
     pattern: [CLAIM, MOVE],
     patternLimit: 2,
   }),
-  manager: new CreepSetup(SetupsNames.manager, {
-    pattern: [CARRY, CARRY, MOVE],
-    patternLimit: 15,
-  }),
+  manager: {
+    small: new CreepSetup(SetupsNames.manager, {
+      pattern: [CARRY, CARRY, MOVE],
+      patternLimit: 5,
+    }),
+    normal: new CreepSetup(SetupsNames.manager, {
+      pattern: [CARRY, CARRY, MOVE],
+      patternLimit: 15,
+    }),
+  },
   hauler: new CreepSetup(SetupsNames.hauler, {
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 15,

@@ -4,10 +4,10 @@ import { Hive } from "../Hive";
 export class defenseCell extends Cell {
   towers: StructureTower[];
 
-  constructor(hive: Hive, towers: StructureTower[]) {
+  constructor(hive: Hive) {
     super(hive, "defenseCell_" + hive.room.name);
 
-    this.towers = towers;
+    this.towers = hive.towers;
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
