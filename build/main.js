@@ -2981,7 +2981,7 @@ class respawnCell extends Cell {
         super.update();
         // find free spawners
         this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
-        if (!this.beeMaster)
+        if (!this.beeMaster && this.hive.cells.storageCell)
             this.beeMaster = new queenMaster(this);
     }
     ;
@@ -2990,11 +2990,9 @@ class respawnCell extends Cell {
         // generate the queue and start spawning
         let remove = [];
         this.hive.orderList.sort((a, b) => a.priority - b.priority);
-        console.log(_.map(this.hive.orderList, (order) => order.priority));
         _.some(this.hive.orderList, (order, key) => {
             if (!this.freeSpawns.length)
                 return true;
-            console.log("..", order.master, order.amount);
             if (order.amount <= 0 || !global.masters[order.master]) {
                 remove.push(key);
             }
@@ -3021,29 +3019,114 @@ class respawnCell extends Cell {
             return false;
         });
         if (remove.length)
-            console.log("!", this.hive.orderList);
-        _.forEach(remove.reverse(), (key) => {
-            this.hive.orderList.splice(key, 1);
-            console.log("!", this.hive.orderList);
+            _.forEach(remove.reverse(), (key) => {
+                this.hive.orderList.splice(key, 1);
+            });
+    }
+    ;
+}
+
+class bootstrapMaster extends Master {
+    constructor(developmentCell) {
+        super(developmentCell.hive, "master_" + developmentCell.ref);
+        this.workers = [];
+        this.waitingForABee = 0;
+        this.stateMap = {};
+        this.cell = developmentCell;
+        this.targetBeeCount = 0;
+        _.forEach(this.cell.sources, (source) => {
+            this.targetBeeCount += source.pos.getOpenPositions().length * 1.5;
+        });
+        this.targetBeeCount = Math.ceil(this.targetBeeCount);
+        // this.print(this.targetBeeCount);
+        this.targetBeeCount = 3;
+    }
+    newBee(bee) {
+        this.workers.push(bee);
+        this.stateMap[bee.ref] = "mining";
+        if (this.waitingForABee)
+            this.waitingForABee -= 1;
+    }
+    update() {
+        this.workers = this.clearBees(this.workers);
+        if (this.workers.length < this.targetBeeCount && !this.waitingForABee) {
+            let order = {
+                master: this.ref,
+                setup: Setups.builder,
+                amount: 1,
+                priority: 5,
+            };
+            this.waitingForABee += 1;
+            this.hive.wish(order);
+        }
+    }
+    ;
+    run() {
+        _.forEach(this.workers, (bee) => {
+            if (this.stateMap[bee.ref] == "working" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                this.stateMap[bee.ref] = "mining";
+                bee.creep.say('🔄');
+            }
+            if (this.stateMap[bee.ref] != "working" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+                this.stateMap[bee.ref] = "working";
+                bee.creep.say('🛠️');
+            }
+            if (this.stateMap[bee.ref] == "working") {
+                let target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+                let targetType = "repair";
+                if (!target) {
+                    target = bee.creep.pos.findClosest(this.hive.constructionSites);
+                    targetType = "build";
+                }
+                if (!target && this.hive.cells.respawnCell) {
+                    let targets = this.hive.cells.respawnCell.spawns;
+                    targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+                    if (targets.length) {
+                        target = bee.creep.pos.findClosest(targets);
+                        targetType = "refill";
+                    }
+                }
+                if (!target) {
+                    target = this.cell.controller;
+                    targetType = "upgrade";
+                }
+                //second check is kinda useless one, but sure
+                if (targetType == "build" && target instanceof ConstructionSite)
+                    bee.build(target);
+                else if (targetType == "repair" && target instanceof Structure)
+                    bee.repair(target);
+                else if (targetType == "refill" && (target instanceof StructureSpawn || target instanceof StructureExtension))
+                    bee.transfer(target, RESOURCE_ENERGY);
+                else if (targetType == "upgrade" && target instanceof StructureController)
+                    bee.upgradeController(target);
+            }
+            else {
+                // some small caching. I just couldn't resist
+                let source = Game.getObjectById(this.stateMap[bee.ref]);
+                // find new source if this one is clamped or not a source
+                if (!source || (!source.pos.getOpenPositions().length && !bee.creep.pos.isNearTo(source)))
+                    source = bee.creep.pos.findClosest(_.filter(this.cell.sources, (source) => source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)));
+                if (source) {
+                    bee.harvest(source);
+                    this.stateMap[bee.ref] = source.id;
+                }
+            }
         });
     }
     ;
 }
 
-// import { bootstrapMaster } from "../beeMaster/bootstrap";
 class developmentCell extends Cell {
-    constructor(hive, controller) {
+    constructor(hive, controller, sources) {
         super(hive, "developmentCell_" + hive.room.name);
         this.controller = controller;
-        let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
-        if (link instanceof StructureLink) {
-            this.link = link;
-        }
+        this.sources = sources;
     }
     update() {
         super.update();
-        //if (!this.master)
-        // this.master = new bootstrapMaster(this);
+        if (!this.beeMaster)
+            this.beeMaster = new bootstrapMaster(this);
+        // delete when reached state of storage? rn it will just fade with vr recreation
     }
     run() { }
 }
@@ -3057,7 +3140,7 @@ class builderMaster extends Master {
     }
     newBee(bee) {
         this.builders.push(bee);
-        if (!this.waitingForABee)
+        if (this.waitingForABee)
             this.waitingForABee -= 1;
     }
     update() {
@@ -3153,7 +3236,8 @@ class Hive {
         this.repairSheet = new repairSheet();
         this.cells = {};
         this.parseStructures();
-        this.builder = new builderMaster(this);
+        if (this.cells.storageCell)
+            this.builder = new builderMaster(this);
     }
     parseStructures() {
         this.updateConstructionSites();
@@ -3171,21 +3255,21 @@ class Hive {
                 towers.push(structure);
         });
         let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+        let allSources = [];
+        _.forEach(this.rooms, (room) => {
+            let sources = room.find(FIND_SOURCES);
+            allSources = allSources.concat(sources);
+        });
+        this.cells.respawnCell = new respawnCell(this, spawns, extensions);
         if (storage) {
             this.cells.storageCell = new storageCell(this, storage);
             this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
-            let allSources = [];
-            _.forEach(this.rooms, (room) => {
-                let sources = room.find(FIND_SOURCES);
-                allSources = allSources.concat(sources);
-            });
             if (allSources.length) {
                 this.cells.excavationCell = new excavationCell(this, allSources);
             }
-            this.cells.respawnCell = new respawnCell(this, spawns, extensions);
         }
         else {
-            this.cells.developmentCell = new developmentCell(this, this.room.controller);
+            this.cells.developmentCell = new developmentCell(this, this.room.controller, allSources);
         }
         if (towers.length) {
             this.cells.defenseCell = new defenseCell(this, towers);

@@ -77,7 +77,7 @@ export class Hive {
   emergencyRepairs: Structure[] = [];
   normalRepairs: Structure[] = [];
 
-  builder: builderMaster;
+  builder?: builderMaster;
 
   constructor(roomName: string, annexNames: string[]) {
     this.room = Game.rooms[roomName];
@@ -89,7 +89,8 @@ export class Hive {
     this.cells = {};
     this.parseStructures();
 
-    this.builder = new builderMaster(this);
+    if (this.cells.storageCell)
+      this.builder = new builderMaster(this);
   }
 
   private parseStructures() {
@@ -111,23 +112,25 @@ export class Hive {
     });
 
     let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+
+    let allSources: Source[] = [];
+    _.forEach(this.rooms, (room) => {
+      let sources = room.find(FIND_SOURCES);
+      allSources = allSources.concat(sources);
+    });
+
+    this.cells.respawnCell = new respawnCell(this, spawns, extensions);
+
     if (storage) {
       this.cells.storageCell = new storageCell(this, storage);
 
       this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
 
-      let allSources: Source[] = [];
-      _.forEach(this.rooms, (room) => {
-        let sources = room.find(FIND_SOURCES);
-        allSources = allSources.concat(sources);
-      });
       if (allSources.length) {
         this.cells.excavationCell = new excavationCell(this, allSources);
       }
-
-      this.cells.respawnCell = new respawnCell(this, spawns, extensions);
     } else {
-      this.cells.developmentCell = new developmentCell(this, this.room.controller!);
+      this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
     }
 
     if (towers.length) {

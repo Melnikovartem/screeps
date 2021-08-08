@@ -22,7 +22,7 @@ export class respawnCell extends Cell {
     super.update();
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
-    if (!this.beeMaster)
+    if (!this.beeMaster && this.hive.cells.storageCell)
       this.beeMaster = new queenMaster(this);
   };
 
@@ -66,12 +66,9 @@ export class respawnCell extends Cell {
       return false;
     });
 
-    //remove after testing
     if (remove.length)
-      console.log("!!", this.hive.orderList);
-    _.forEach(remove.reverse(), (key) => {
-      this.hive.orderList.splice(key, 1);
-      console.log("!!", this.hive.orderList);
-    });
+      _.forEach(remove.reverse(), (key) => {
+        this.hive.orderList.splice(key, 1);
+      });
   };
 }

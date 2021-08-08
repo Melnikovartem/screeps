@@ -1,29 +1,27 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-// import { bootstrapMaster } from "../beeMaster/bootstrap";
+import { bootstrapMaster } from "../beeMaster/bootstrap";
 
 export class developmentCell extends Cell {
 
   controller: StructureController;
-  link: StructureLink | undefined;
+  sources: Source[];
 
 
-  constructor(hive: Hive, controller: StructureController) {
+  constructor(hive: Hive, controller: StructureController, sources: Source[]) {
     super(hive, "developmentCell_" + hive.room.name);
 
     this.controller = controller;
-
-    let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK);
-    if (link instanceof StructureLink) {
-      this.link = link;
-    }
+    this.sources = sources;
   }
 
   update() {
     super.update();
-    //if (!this.master)
-    // this.master = new bootstrapMaster(this);
+    if (!this.beeMaster)
+      this.beeMaster = new bootstrapMaster(this);
+
+    // delete when reached state of storage? rn it will just fade with vr recreation
   }
 
   run() { }

@@ -15,7 +15,7 @@ export class builderMaster extends Master {
 
   newBee(bee: Bee): void {
     this.builders.push(bee);
-    if (!this.waitingForABee)
+    if (this.waitingForABee)
       this.waitingForABee -= 1;
   }
 
