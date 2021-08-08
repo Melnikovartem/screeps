@@ -88,8 +88,6 @@ export class managerMaster extends Master {
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
 
-        console.log(this.targets);
-
         if (!target)
           target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];

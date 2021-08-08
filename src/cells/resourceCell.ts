@@ -31,10 +31,6 @@ export class resourceCell extends Cell {
     super.update();
     if (!this.beeMaster)
       this.beeMaster = new minerMaster(this);
-
-    if (this.container && this.container.store.getUsedCapacity() >= 200) {
-
-    }
   }
 
   run() {

@@ -8,7 +8,7 @@ export class annexesMaster extends Master {
   claimers: Bee[] = [];
   lastSpawned: number;
   target: Room;
-  controller: StructureController;
+  controller: StructureController; //controllers rly don't age...
 
   constructor(hive: Hive, controller: StructureController) {
     super(hive, "master_" + "claimerRoom_" + controller.room.name);

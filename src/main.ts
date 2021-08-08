@@ -46,10 +46,10 @@ function main() {
   });
 
   // after all the masters where created and retrived if it was needed
-  for (const creepName in Memory.creeps) {
-    let creep = Game.creeps[creepName];
+  for (const name in Memory.creeps) {
+    let creep = Game.creeps[name];
     if (creep)
-      if (!global.bees[creepName]) {
+      if (!global.bees[name]) {
         if (global.masters[creep.memory.refMaster]) {
           // not sure if i rly need a global bees hash
           global.bees[creep.name] = new Bee(creep);
@@ -58,10 +58,10 @@ function main() {
         // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
       } else {
         // i guess it is not gonna be fixed :/
-        global.bees[creepName].creep = creep;
+        global.bees[name].creep = creep;
       }
-    else if (global.bees[creepName])
-      delete global.bees[creepName];
+    else if (global.bees[name])
+      delete global.bees[name];
   }
 
   _.forEach(global.masters, (master) => {
