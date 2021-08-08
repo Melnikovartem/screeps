@@ -21,6 +21,7 @@ export class upgradeCell extends Cell {
   }
 
   update() {
+    super.update();
     if (!this.beeMaster)
       this.beeMaster = new upgraderMaster(this);
   }

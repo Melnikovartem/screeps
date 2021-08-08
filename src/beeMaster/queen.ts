@@ -11,19 +11,15 @@ export class queenMaster extends Master {
   queens: Bee[] = [];
   lastSpawned: number;
 
-  targets: (StructureSpawn | StructureExtension)[];
+  cell: respawnCell;
 
   constructor(respawnCell: respawnCell) {
     super(respawnCell.hive, "master_" + respawnCell.ref);
 
-    this.targets = this.hive.spawns;
-    this.targets = this.targets.concat(this.hive.extensions);
-
+    this.cell = respawnCell;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
     this.refreshLastSpawned();
-
-    this.updateCash(['targets']);
   }
 
   newBee(bee: Bee): void {
@@ -53,8 +49,11 @@ export class queenMaster extends Master {
   };
 
   run() {
+    let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
+    targets = targets.concat(this.cell.extensions);
+
     _.forEach(this.queens, (bee) => {
-      let target = _.filter(this.targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+      let target = _.filter(targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && target) {
         bee.transfer(target, RESOURCE_ENERGY);

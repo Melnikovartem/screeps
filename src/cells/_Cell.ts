@@ -13,7 +13,14 @@ export abstract class Cell {
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
-  abstract update(): void;
+  update<K extends keyof Cell>(): void {
+    // updating structure object to actual data
+    _.forEach(Object.keys(this), (key: K) => {
+      let structure = this[key];
+      if (structure instanceof Structure)
+        this[key] = <typeof structure>Game.getObjectById(structure.id);
+    });
+  }
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   abstract run(): void;

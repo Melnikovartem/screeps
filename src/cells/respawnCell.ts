@@ -7,15 +7,18 @@ import { queenMaster } from "../beeMaster/queen"
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];
   freeSpawns: StructureSpawn[] = [];
+  extensions: StructureExtension[];
 
-  constructor(hive: Hive) {
+  constructor(hive: Hive, spawns: StructureSpawn[], extensions: StructureExtension[]) {
     super(hive, "respawnCell_" + hive.room.name);
 
-    this.spawns = this.hive.spawns;
+    this.spawns = spawns;
+    this.extensions = extensions;
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
+    super.update();
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
     if (!this.beeMaster)

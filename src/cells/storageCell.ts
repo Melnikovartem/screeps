@@ -21,6 +21,7 @@ export class storageCell extends Cell {
   }
 
   update() {
+    super.update();
     if (!this.beeMaster)
       this.beeMaster = new managerMaster(this);
   }

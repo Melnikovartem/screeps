@@ -16,6 +16,7 @@ export class excavationCell extends Cell {
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
+    super.update();
     _.forEach(this.resourceCells, (cell) => {
       cell.update();
     });

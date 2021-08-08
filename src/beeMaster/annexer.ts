@@ -16,8 +16,6 @@ export class annexesMaster extends Master {
     this.target = controller.room;
     this.controller = controller;
     this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
-
-    this.updateCash(['controller']);
   }
 
   newBee(bee: Bee): void {

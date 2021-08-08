@@ -8,8 +8,7 @@ import { Master } from "./_Master";
 
 export class upgraderMaster extends Master {
   upgraders: Bee[] = [];
-  controller: StructureController;
-  link: StructureLink | undefined;
+  cell: upgradeCell;
 
   targetBeeCount: number = 2;
   waitingForABee: number = 0;
@@ -17,10 +16,7 @@ export class upgraderMaster extends Master {
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, "master_" + upgradeCell.ref);
 
-    this.controller = upgradeCell.controller;
-    this.link = upgradeCell.link;
-
-    this.updateCash(['controller']);
+    this.cell = upgradeCell;
   }
 
   newBee(bee: Bee): void {
@@ -49,17 +45,17 @@ export class upgraderMaster extends Master {
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 
-        if (this.link)
-          suckerTarget = this.link;
+        if (this.cell.link)
+          suckerTarget = this.cell.link;
 
         if (!suckerTarget && this.hive.cells.storageCell)
           suckerTarget = this.hive.cells.storageCell.storage;
 
         if (suckerTarget)
           if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
-            bee.upgradeController(this.controller);
+            bee.upgradeController(this.cell.controller);
       } else
-        bee.upgradeController(this.controller);
+        bee.upgradeController(this.cell.controller);
     });
   };
 }

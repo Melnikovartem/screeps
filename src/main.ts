@@ -58,7 +58,7 @@ function main() {
       }
       // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
     } else {
-      // i will need to fix this cause like wtf
+      // i guess it is not gonna be fixed :/
       global.bees[creep.name].creep = creep;
     }
   });

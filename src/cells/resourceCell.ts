@@ -29,6 +29,7 @@ export class resourceCell extends Cell {
   }
 
   update() {
+    super.update();
     if (!this.beeMaster)
       this.beeMaster = new minerMaster(this);
 

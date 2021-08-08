@@ -16,56 +16,59 @@ export abstract class Master {
 
     global.masters[this.ref] = this;
 
-    this.updateCash(['hive', 'ref']);
+    //this.updateCash(['hive', 'ref']);
   }
 
-  // update keys or all keys
-  // later to do it for all objects
-  updateCash(keys: string[]) {
-    if (!Memory.masters[this.ref])
-      Memory.masters[this.ref] = {
-        masterType: this.constructor.name
-      };
+  /*
+  updateCash turnedOff for now
+    // update keys or all keys
+    // later to do it for all objects
+    updateCash(keys: string[]) {
+      if (!Memory.masters[this.ref])
+        Memory.masters[this.ref] = {
+          masterType: this.constructor.name
+        };
 
-    _.forEach(keys || Object.entries(this), (key) => {
-      let value = (<any>this)[key];
-      if (value) {
-        if (typeof value == "string") {
-          Memory.masters[this.ref][key] = value;
-        } else if (value instanceof Structure || value instanceof Source) {
-          Memory.masters[this.ref][key] = { id: value.id };
-        } else if (key == "hive") {
-          Memory.masters[this.ref][key] = value.room.name;
-        } else if (Array.isArray(value) && value[0] instanceof Structure) {
-          Memory.masters[this.ref][key] = _.map(value, (structure: Structure) => structure.id);
+      _.forEach(keys || Object.entries(this), (key) => {
+        let value = (<any>this)[key];
+        if (value) {
+          if (typeof value == "string") {
+            Memory.masters[this.ref][key] = value;
+          } else if (value instanceof Structure || value instanceof Source) {
+            Memory.masters[this.ref][key] = { id: value.id };
+          } else if (key == "hive") {
+            Memory.masters[this.ref][key] = value.room.name;
+          } else if (Array.isArray(value) && value[0] instanceof Structure) {
+            Memory.masters[this.ref][key] = _.map(value, (structure: Structure) => structure.id);
+          }
         }
-      }
-    });
-  }
-
-  static fromCash(ref: string): Master | null {
-
-    console.log("V----");
-    for (let key in Memory.masters[ref]) {
-      let value = Memory.masters[ref][key];
-
-      if (value.id) {
-        let gameObject = Game.getObjectById(value.id)
-        if (!gameObject)
-          return null;
-
-        console.log(key, gameObject);
-        // set this parameter to new class object
-      } else {
-        // set this parameter to new class object
-        console.log(key, value);
-      }
-      ;
+      });
     }
-    console.log("^----");
 
-    return null;
-  }
+    static fromCash(ref: string): Master | null {
+
+      console.log("V----");
+      for (let key in Memory.masters[ref]) {
+        let value = Memory.masters[ref][key];
+
+        if (value.id) {
+          let gameObject = Game.getObjectById(value.id)
+          if (!gameObject)
+            return null;
+
+          console.log(key, gameObject);
+          // set this parameter to new class object
+        } else {
+          // set this parameter to new class object
+          console.log(key, value);
+        }
+        ;
+      }
+      console.log("^----");
+
+      return null;
+    }
+  */
 
   // catch a bee after it has requested a master
   catchBee(bee: Bee): void {

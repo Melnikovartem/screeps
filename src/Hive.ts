@@ -66,9 +66,6 @@ export class Hive {
   repairSheet: repairSheet;
 
   orderList: spawnOrder[] = [];
-  spawns: StructureSpawn[] = [];
-  extensions: StructureExtension[] = [];
-  towers: StructureTower[] = [];
 
   //targets for defense systems
   roomTargets: Creep[] = [];
@@ -99,13 +96,17 @@ export class Hive {
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
 
+    let spawns: StructureSpawn[] = [];
+    let extensions: StructureExtension[] = [];
+    let towers: StructureTower[] = [];
+
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
       if (structure instanceof StructureSpawn && structure.isActive())
-        this.spawns.push(structure);
+        spawns.push(structure);
       else if (structure instanceof StructureExtension && structure.isActive())
-        this.extensions.push(structure);
+        extensions.push(structure);
       else if (structure instanceof StructureTower && structure.isActive())
-        this.towers.push(structure);
+        towers.push(structure);
     });
 
     let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
@@ -123,13 +124,13 @@ export class Hive {
         this.cells.excavationCell = new excavationCell(this, allSources);
       }
 
-      this.cells.respawnCell = new respawnCell(this);
+      this.cells.respawnCell = new respawnCell(this, spawns, extensions);
     } else {
       this.cells.developmentCell = new developmentCell(this, this.room.controller!);
     }
 
-    if (this.towers.length) {
-      this.cells.defenseCell = new defenseCell(this);
+    if (towers.length) {
+      this.cells.defenseCell = new defenseCell(this, towers);
     }
   }
 
@@ -174,6 +175,12 @@ export class Hive {
     this.orderList.push(order)
   }
 
+  updateRooms(): void {
+    this.room = Game.rooms[this.room.name];
+    this.annexes = _.compact(_.map(this.annexes, (annex) => Game.rooms[annex.name]));
+    this.rooms = [this.room].concat(this.annexes);
+  }
+
   update() {
     if (Game.time % 5 == 0) {
       this.updateConstructionSites();
@@ -181,6 +188,8 @@ export class Hive {
       this.updateNormalRepairs();
     } else if (Game.time % 5 == 1) {
       this.findTargets();
+    } else if (Game.time % 5 == 2) {
+      this.updateRooms();
     }
 
     _.forEach(this.cells, (cell) => {

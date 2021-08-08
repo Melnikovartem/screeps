@@ -10,21 +10,15 @@ export class minerMaster extends Master {
   miners: Bee[] = [];
   lastSpawned: number;
 
-  source: Source;
-  link: StructureLink | undefined;
-  container: StructureContainer | undefined;
+  cell: resourceCell;
 
   constructor(resourceCell: resourceCell) {
     super(resourceCell.hive, "master_" + resourceCell.ref);
 
-    this.source = resourceCell.source;
-    this.container = resourceCell.container;
-    this.link = resourceCell.link;
+    this.cell = resourceCell;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
     this.refreshLastSpawned();
-
-    this.updateCash(['source', 'container', 'link']);
   }
 
   newBee(bee: Bee): void {
@@ -41,7 +35,7 @@ export class minerMaster extends Master {
 
   update() {
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.link || this.container)) {
+    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,
@@ -56,15 +50,15 @@ export class minerMaster extends Master {
   run() {
     _.forEach(this.miners, (bee) => {
       if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        bee.harvest(this.source);
+        bee.harvest(this.cell.source);
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
         let target: Structure | undefined;
-        if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY))
-          target = this.link;
-        else if (this.container && this.container.store.getFreeCapacity(RESOURCE_ENERGY))
-          target = this.container;
+        if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY))
+          target = this.cell.link;
+        else if (this.cell.container && this.cell.container.store.getFreeCapacity(RESOURCE_ENERGY))
+          target = this.cell.container;
 
         if (target)
           bee.transfer(target, RESOURCE_ENERGY);
