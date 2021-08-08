@@ -25,7 +25,6 @@ export class managerMaster extends Master {
     this.cell = storageCell;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-    this.refreshLastSpawned();
   }
 
   newBee(bee: Bee): void {
@@ -35,8 +34,9 @@ export class managerMaster extends Master {
 
   refreshLastSpawned(): void {
     _.forEach(this.managers, (bee) => {
-      if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-        this.lastSpawned = Game.time - bee.creep.ticksToLive;
+      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+      if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+        this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
     });
   }
 
@@ -67,6 +67,7 @@ export class managerMaster extends Master {
         master: this.ref,
         setup: Setups.manager,
         amount: 1,
+        priority: 3,
       };
 
       this.lastSpawned = Game.time;

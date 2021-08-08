@@ -2516,7 +2516,6 @@ class minerMaster extends Master {
         this.miners = [];
         this.cell = resourceCell;
         this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-        this.refreshLastSpawned();
     }
     newBee(bee) {
         this.miners.push(bee);
@@ -2524,8 +2523,9 @@ class minerMaster extends Master {
     }
     refreshLastSpawned() {
         _.forEach(this.miners, (bee) => {
-            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
         });
     }
     update() {
@@ -2536,6 +2536,7 @@ class minerMaster extends Master {
                 master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
+                priority: 2,
             };
             this.lastSpawned = Game.time;
             this.hive.wish(order);
@@ -2618,6 +2619,7 @@ class haulerMaster extends Master {
                 master: this.ref,
                 setup: Setups.hauler,
                 amount: this.targetBeeCount - this.haulers.length,
+                priority: 4,
             };
             this.waitingForABee += this.targetBeeCount - this.haulers.length;
             this.hive.wish(order);
@@ -2691,7 +2693,6 @@ class managerMaster extends Master {
         this.suckerTargets = [];
         this.cell = storageCell;
         this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-        this.refreshLastSpawned();
     }
     newBee(bee) {
         this.managers.push(bee);
@@ -2699,8 +2700,9 @@ class managerMaster extends Master {
     }
     refreshLastSpawned() {
         _.forEach(this.managers, (bee) => {
-            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
         });
     }
     update() {
@@ -2725,6 +2727,7 @@ class managerMaster extends Master {
                 master: this.ref,
                 setup: Setups.manager,
                 amount: 1,
+                priority: 3,
             };
             this.lastSpawned = Game.time;
             this.hive.wish(order);
@@ -2824,6 +2827,7 @@ class upgraderMaster extends Master {
                 master: this.ref,
                 setup: Setups.upgrader,
                 amount: this.targetBeeCount - this.upgraders.length,
+                priority: 4,
             };
             this.waitingForABee += this.targetBeeCount - this.upgraders.length;
             this.hive.wish(order);
@@ -2914,7 +2918,6 @@ class queenMaster extends Master {
         this.queens = [];
         this.cell = respawnCell;
         this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-        this.refreshLastSpawned();
     }
     newBee(bee) {
         this.queens.push(bee);
@@ -2922,8 +2925,9 @@ class queenMaster extends Master {
     }
     refreshLastSpawned() {
         _.forEach(this.queens, (bee) => {
-            if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-                this.lastSpawned = Game.time - bee.creep.ticksToLive;
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
         });
     }
     update() {
@@ -2934,6 +2938,7 @@ class queenMaster extends Master {
                 master: this.ref,
                 setup: Setups.manager,
                 amount: 1,
+                priority: 0,
             };
             // it can refill in 1 run
             order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
@@ -2984,14 +2989,21 @@ class respawnCell extends Cell {
     run() {
         // generate the queue and start spawning
         let remove = [];
+        this.hive.orderList.sort((a, b) => a.priority - b.priority);
+        console.log(_.map(this.hive.orderList, (order) => order.priority));
         _.some(this.hive.orderList, (order, key) => {
             if (!this.freeSpawns.length)
                 return true;
+            console.log("..", order.master, order.amount);
             if (order.amount <= 0 || !global.masters[order.master]) {
-                remove.push(this.hive.orderList[key]);
+                remove.push(key);
             }
             else {
-                let body = order.setup.getBody(this.hive.room.energyAvailable);
+                let body;
+                if (order.priority < 3)
+                    body = order.setup.getBody(this.hive.room.energyAvailable);
+                else
+                    body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
                 // if we were able to get a body :/
                 if (body.length) {
                     let spawn = this.freeSpawns.pop();
@@ -3003,13 +3015,16 @@ class respawnCell extends Cell {
                     if (ans == ERR_NOT_ENOUGH_RESOURCES) {
                         return true;
                     }
-                    order.amount -= 1;
+                    this.hive.orderList[key].amount -= 1;
                 }
             }
             return false;
         });
+        if (remove.length)
+            console.log("!", this.hive.orderList);
         _.forEach(remove.reverse(), (key) => {
             this.hive.orderList.splice(key, 1);
+            console.log("!", this.hive.orderList);
         });
     }
     ;
@@ -3052,6 +3067,7 @@ class builderMaster extends Master {
                 master: this.ref,
                 setup: Setups.builder,
                 amount: this.targetBeeCount - this.builders.length,
+                priority: 4,
             };
             this.waitingForABee += this.targetBeeCount - this.builders.length;
             this.hive.wish(order);

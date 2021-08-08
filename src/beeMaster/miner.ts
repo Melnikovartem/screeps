@@ -18,7 +18,6 @@ export class minerMaster extends Master {
     this.cell = resourceCell;
 
     this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-    this.refreshLastSpawned();
   }
 
   newBee(bee: Bee): void {
@@ -28,8 +27,9 @@ export class minerMaster extends Master {
 
   refreshLastSpawned(): void {
     _.forEach(this.miners, (bee) => {
-      if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-        this.lastSpawned = Game.time - bee.creep.ticksToLive;
+      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+      if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+        this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
     });
   }
 
@@ -42,6 +42,7 @@ export class minerMaster extends Master {
         master: this.ref,
         setup: Setups.miner.energy,
         amount: 1,
+        priority: 2,
       };
 
       this.lastSpawned = Game.time;

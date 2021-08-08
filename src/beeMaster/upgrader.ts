@@ -33,6 +33,7 @@ export class upgraderMaster extends Master {
         master: this.ref,
         setup: Setups.upgrader,
         amount: this.targetBeeCount - this.upgraders.length,
+        priority: 4,
       };
 
       this.waitingForABee += this.targetBeeCount - this.upgraders.length;

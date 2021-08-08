@@ -30,14 +30,21 @@ export class respawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let remove: any[] = [];
+    this.hive.orderList.sort((a, b) => a.priority - b.priority);
+
     _.some(this.hive.orderList, (order, key) => {
       if (!this.freeSpawns.length)
         return true;
 
       if (order.amount <= 0 || !global.masters[order.master]) {
-        remove.push(this.hive.orderList[key]);
+        remove.push(key);
       } else {
-        let body = order.setup.getBody(this.hive.room.energyAvailable);
+        let body;
+        if (order.priority < 3)
+          body = order.setup.getBody(this.hive.room.energyAvailable);
+        else
+          body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
+
         // if we were able to get a body :/
         if (body.length) {
           let spawn = this.freeSpawns.pop();
@@ -52,15 +59,19 @@ export class respawnCell extends Cell {
           if (ans == ERR_NOT_ENOUGH_RESOURCES) {
             return true;
           }
-          order.amount -= 1;
+          this.hive.orderList[key].amount -= 1;
         }
       }
 
       return false;
     });
 
+    //remove after testing
+    if (remove.length)
+      console.log("!!", this.hive.orderList);
     _.forEach(remove.reverse(), (key) => {
       this.hive.orderList.splice(key, 1);
+      console.log("!!", this.hive.orderList);
     });
   };
 }

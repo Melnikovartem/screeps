@@ -27,6 +27,7 @@ export class builderMaster extends Master {
         master: this.ref,
         setup: Setups.builder,
         amount: this.targetBeeCount - this.builders.length,
+        priority: 4,
       };
 
       this.waitingForABee += this.targetBeeCount - this.builders.length;

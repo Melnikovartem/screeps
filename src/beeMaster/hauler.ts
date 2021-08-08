@@ -49,6 +49,7 @@ export class haulerMaster extends Master {
         master: this.ref,
         setup: Setups.hauler,
         amount: this.targetBeeCount - this.haulers.length,
+        priority: 4,
       };
 
       this.waitingForABee += this.targetBeeCount - this.haulers.length;

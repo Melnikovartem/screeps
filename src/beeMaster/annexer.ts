@@ -25,8 +25,9 @@ export class annexesMaster extends Master {
 
   refreshLastSpawned(): void {
     _.forEach(this.claimers, (bee) => {
-      if (bee.creep.ticksToLive && Game.time - bee.creep.ticksToLive >= this.lastSpawned)
-        this.lastSpawned = Game.time - bee.creep.ticksToLive;
+      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+      if (Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+        this.lastSpawned = Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive);
     });
   }
 
@@ -39,6 +40,7 @@ export class annexesMaster extends Master {
         master: this.ref,
         setup: Setups.claimer,
         amount: 1,
+        priority: 2,
       };
 
       this.hive.wish(order);

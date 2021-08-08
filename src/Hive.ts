@@ -16,6 +16,7 @@ export interface spawnOrder {
   master: string;
   amount: number;
   setup: CreepSetup;
+  priority: 0 | 1 | 2 | 3 | 4 | 5; // how urgent is this spawn
 }
 
 interface hiveCells {
