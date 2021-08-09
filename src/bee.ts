@@ -81,9 +81,7 @@ export class Bee {
   }
 
   goTo(target: RoomPosition | RoomObject) {
-    this.creep.moveTo(target, {
-      reusePath: this.reusePath,
-    });
+    this.creep.travelTo(target, {});
   }
 
   /*

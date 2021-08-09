@@ -19,9 +19,21 @@ declare global {
       reset?: number,
     },
     masters: { [id: string]: any };
+
+    // for TRAVELER
+    empire?: any;
+  }
+
+  interface RoomMemory {
+    // for TRAVELER
+    avoid?: any;
   }
 
   interface CreepMemory {
     refMaster: string;
+
+    //for TRAVELER
+    _trav?: any;
+    _travel?: any;
   }
 }

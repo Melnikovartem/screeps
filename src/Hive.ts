@@ -13,6 +13,7 @@ import { CreepSetup } from "./creepSetups";
 
 // TODO visuals
 // const VISUALS_ON = true;
+const USE_RELEASED = false;
 
 export interface spawnOrder {
   master: string;
@@ -227,13 +228,15 @@ export class Hive {
   }
 
   update() {
-    if (Game.time % 5 == 0) {
+    if (Game.time % 5 == 0 || !USE_RELEASED) {
       this.updateRooms();
-    } else if (Game.time % 5 == 1) {
+    }
+    if (Game.time % 5 == 1 || !USE_RELEASED) {
       this.updateConstructionSites();
       this.updateEmeregcyRepairs();
       this.updateNormalRepairs();
-    } else if (Game.time % 5 == 2) {
+    }
+    if (Game.time % 5 == 2 || !USE_RELEASED) {
       this.findTargets();
     }
 

@@ -1,6 +1,8 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { Mem } from "./memory";
 
+import "./Traveler/Traveler"
+
 import "./prototypes/creeps"
 import "./prototypes/pos"
 
