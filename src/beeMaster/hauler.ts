@@ -22,12 +22,15 @@ export class haulerMaster extends Master {
 
     this.cell = excavationCell;
 
+    let sourcesWithLinks = 0;
     _.forEach(this.cell.resourceCells, (cell) => {
       if (cell.container)
         this.targetMap[cell.container.id] = null;
+      if (cell.link)
+        sourcesWithLinks += 1;
     });
 
-    this.targetBeeCount = Math.ceil(Object.keys(this.targetMap).length / 2);
+    this.targetBeeCount = Math.ceil((Object.keys(this.targetMap).length - sourcesWithLinks) / 2);
   }
 
   newBee(bee: Bee): void {

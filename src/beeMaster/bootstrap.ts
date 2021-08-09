@@ -55,7 +55,7 @@ export class bootstrapMaster extends Master {
   update() {
     this.workers = this.clearBees(this.workers);
 
-    if (this.workers.length < this.targetBeeCount && !this.waitingForABee) {
+    if (this.workers.length < this.targetBeeCount && !this.waitingForABee && this.hive.stage == 0) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.builder,

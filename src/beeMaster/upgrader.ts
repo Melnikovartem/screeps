@@ -31,10 +31,13 @@ export class upgraderMaster extends Master {
     if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this.ref,
-        setup: Setups.upgrader,
+        setup: Setups.upgrader.manual,
         amount: this.targetBeeCount - this.upgraders.length,
         priority: 4,
       };
+
+      if (this.cell.link)
+        order.setup = Setups.upgrader.link;
 
       this.waitingForABee += this.targetBeeCount - this.upgraders.length;
 

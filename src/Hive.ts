@@ -210,15 +210,17 @@ export class Hive {
   }
 
   update() {
+    console.log(Game.time % 5 == 1, this.constructionSites);
     if (Game.time % 5 == 0) {
+      this.updateRooms();
+    } else if (Game.time % 5 == 1) {
       this.updateConstructionSites();
       this.updateEmeregcyRepairs();
       this.updateNormalRepairs();
-    } else if (Game.time % 5 == 1) {
-      this.findTargets();
     } else if (Game.time % 5 == 2) {
-      this.updateRooms();
+      this.findTargets();
     }
+    console.log("after", this.constructionSites);
 
     _.forEach(this.cells, (cell) => {
       cell.update();

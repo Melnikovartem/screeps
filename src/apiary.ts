@@ -51,6 +51,13 @@ export class _Apiary {
             // not sure if i rly need a global bees hash
             global.bees[creep.name] = new Bee(creep);
             global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+          } else if (creep.memory.refMaster.includes("master_developmentCell_")) {
+            // TODO think of something smart
+            let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
+            creep.memory.refMaster = randomMaster;
+
+            global.bees[creep.name] = new Bee(creep);
+            global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
           }
           // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
         } else {

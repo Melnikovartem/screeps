@@ -2496,11 +2496,17 @@ const Setups = {
             patternLimit: 1,
         })
     },
-    upgrader: new CreepSetup(SetupsNames.upgrader, {
-        fixed: [WORK, CARRY, MOVE],
-        pattern: [WORK, WORK, MOVE],
-        patternLimit: 5,
-    }),
+    upgrader: {
+        manual: new CreepSetup(SetupsNames.upgrader, {
+            pattern: [WORK, CARRY, MOVE],
+            patternLimit: 11,
+        }),
+        link: new CreepSetup(SetupsNames.upgrader, {
+            fixed: [WORK, CARRY, MOVE],
+            pattern: [WORK, WORK, MOVE],
+            patternLimit: 5,
+        }),
+    },
     builder: new CreepSetup(SetupsNames.builder, {
         pattern: [WORK, CARRY, MOVE],
     }),
@@ -2626,11 +2632,14 @@ class haulerMaster extends Master {
         this.waitingForABee = 0;
         this.targetMap = {};
         this.cell = excavationCell;
+        let sourcesWithLinks = 0;
         _.forEach(this.cell.resourceCells, (cell) => {
             if (cell.container)
                 this.targetMap[cell.container.id] = null;
+            if (cell.link)
+                sourcesWithLinks += 1;
         });
-        this.targetBeeCount = Math.ceil(Object.keys(this.targetMap).length / 2);
+        this.targetBeeCount = Math.ceil((Object.keys(this.targetMap).length - sourcesWithLinks) / 2);
     }
     newBee(bee) {
         this.haulers.push(bee);
@@ -2818,7 +2827,8 @@ class storageCell extends Cell {
     }
     update() {
         super.update();
-        if (!this.beeMaster && this.hive.stage > 0)
+        // check if manager is needed
+        if (!this.beeMaster && this.link && this.hive.stage > 0)
             this.beeMaster = new managerMaster(this);
     }
     run() {
@@ -2864,10 +2874,12 @@ class upgraderMaster extends Master {
         if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
             let order = {
                 master: this.ref,
-                setup: Setups.upgrader,
+                setup: Setups.upgrader.manual,
                 amount: this.targetBeeCount - this.upgraders.length,
                 priority: 4,
             };
+            if (this.cell.link)
+                order.setup = Setups.upgrader.link;
             this.waitingForABee += this.targetBeeCount - this.upgraders.length;
             this.hive.wish(order);
         }
@@ -3097,7 +3109,7 @@ class bootstrapMaster extends Master {
     }
     update() {
         this.workers = this.clearBees(this.workers);
-        if (this.workers.length < this.targetBeeCount && !this.waitingForABee) {
+        if (this.workers.length < this.targetBeeCount && !this.waitingForABee && this.hive.stage == 0) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
@@ -3264,7 +3276,15 @@ class builderMaster extends Master {
     }
     update() {
         this.builders = this.clearBees(this.builders);
-        if ((this.hive.emergencyRepairs.length || this.hive.constructionSites.length) && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
+        // TODO smarter counting of builders needed
+        let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
+        if (targetsNumber > 5) {
+            this.targetBeeCount = 2;
+        }
+        else {
+            this.targetBeeCount = 1;
+        }
+        if (targetsNumber && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
@@ -3353,7 +3373,7 @@ class puppetMaster extends Master {
     update() {
         this.puppets = this.clearBees(this.puppets);
         // 5 for random shit
-        if (this.puppets.length == 0 && !this.waitingForABee) {
+        if (this.puppets.length == 0 && !this.waitingForABee && !Game.rooms[this.target.roomName]) {
             let order = {
                 master: this.ref,
                 setup: Setups.puppet,
@@ -3517,17 +3537,19 @@ class Hive {
         this.orderList.push(order);
     }
     update() {
+        console.log(Game.time % 5 == 1, this.constructionSites);
         if (Game.time % 5 == 0) {
+            this.updateRooms();
+        }
+        else if (Game.time % 5 == 1) {
             this.updateConstructionSites();
             this.updateEmeregcyRepairs();
             this.updateNormalRepairs();
         }
-        else if (Game.time % 5 == 1) {
+        else if (Game.time % 5 == 2) {
             this.findTargets();
         }
-        else if (Game.time % 5 == 2) {
-            this.updateRooms();
-        }
+        console.log("after", this.constructionSites);
         _.forEach(this.cells, (cell) => {
             cell.update();
         });
@@ -3646,6 +3668,13 @@ class _Apiary {
                 if (!global.bees[name]) {
                     if (global.masters[creep.memory.refMaster]) {
                         // not sure if i rly need a global bees hash
+                        global.bees[creep.name] = new Bee(creep);
+                        global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+                    }
+                    else if (creep.memory.refMaster.includes("master_developmentCell_")) {
+                        // TODO think of something smart
+                        let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
+                        creep.memory.refMaster = randomMaster;
                         global.bees[creep.name] = new Bee(creep);
                         global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
                     }
