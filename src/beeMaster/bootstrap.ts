@@ -27,9 +27,11 @@ export class bootstrapMaster extends Master {
     this.cell = developmentCell;
 
     _.forEach(this.cell.sources, (source) => {
-      this.print(source);
       let walkablePositions = source.pos.getwalkablePositions().length;
-      this.targetBeeCount += walkablePositions * 1.5;
+      if (source.room.name == this.hive.roomName)
+        this.targetBeeCount += walkablePositions * 1.5;
+      else
+        this.targetBeeCount += walkablePositions * 2;
 
       this.sourceTargeting[source.id] = {
         max: walkablePositions,
@@ -158,7 +160,7 @@ export class bootstrapMaster extends Master {
           targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
-            target = <StructureSpawn | StructureExtension>bee.creep.pos.findClosest(targets);
+            target = bee.creep.pos.findClosest(targets);
             workType = "refill";
           }
         }
@@ -167,7 +169,7 @@ export class bootstrapMaster extends Master {
           let targets: (StructureTower)[] = _.filter(this.hive.cells.defenseCell.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
-            target = <StructureTower>bee.creep.pos.findClosest(targets);
+            target = bee.creep.pos.findClosest(targets);
             workType = "refill";
           }
         }

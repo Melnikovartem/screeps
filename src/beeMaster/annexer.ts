@@ -10,7 +10,7 @@ export class annexMaster extends Master {
   controller: StructureController; //controllers rly don't age...
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "master_" + "claimerRoom_" + controller.room.name);
+    super(hive, "master_" + "annexerRoom_" + controller.room.name);
 
     this.controller = controller;
     this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
@@ -19,6 +19,7 @@ export class annexMaster extends Master {
   newBee(bee: Bee): void {
     this.claimers.push(bee);
     this.refreshLastSpawned();
+    this.print(this.lastSpawned);
   }
 
   refreshLastSpawned(): void {

@@ -62,9 +62,12 @@ class repairSheet {
 
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
+  roomName: string;
+  annexNames: string[];
+
   room: Room;
-  annexes: Room[]; // this room and annexes
-  rooms: Room[]; //this room and annexes
+  annexes: Room[] = []; // this room and annexes
+  rooms: Room[] = []; //this room and annexes
   cells: hiveCells;
   repairSheet: repairSheet;
 
@@ -84,17 +87,11 @@ export class Hive {
   puppets: puppetMaster[] = [];
 
   constructor(roomName: string, annexNames: string[]) {
+    this.roomName = roomName;
+    this.annexNames = annexNames;
+
     this.room = Game.rooms[roomName];
-    this.annexes = <Room[]>_.compact(_.map(annexNames, (annexName) => {
-      let annex = Game.rooms[annexName];
-      if (!annex && !global.masters["master_puppetFor_" + annexName]
-        && this.room.energyCapacityAvailable >= 650)
-        this.puppets.push(new puppetMaster(this, annexName));
-      else if (annex.controller)
-        this.claimers.push(new annexMaster(this, annex.controller));
-      return annex;
-    }));
-    this.rooms = [this.room].concat(this.annexes);
+    this.updateRooms();
 
     this.repairSheet = new repairSheet();
 
@@ -103,6 +100,20 @@ export class Hive {
 
     if (this.room.storage)
       this.builder = new builderMaster(this);
+  }
+
+  updateRooms(): void {
+    this.room = Game.rooms[this.roomName];
+    this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
+      let annex = Game.rooms[annexName];
+      if (!annex && !global.masters["master_puppetFor_" + annexName])
+        this.puppets.push(new puppetMaster(this, annexName));
+      else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
+        && !global.masters["master_annexerRoom_" + annexName])
+        this.claimers.push(new annexMaster(this, annex.controller));
+      return annex;
+    }));
+    this.rooms = [this.room].concat(this.annexes);
   }
 
   private parseStructures() {
@@ -136,11 +147,14 @@ export class Hive {
     if (storage) {
       this.cells.storageCell = new storageCell(this, storage);
 
-      this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
+      if (storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+        this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
 
-      if (allSources.length) {
-        this.cells.excavationCell = new excavationCell(this, allSources);
-      }
+        if (allSources.length) {
+          this.cells.excavationCell = new excavationCell(this, allSources);
+        }
+      } else
+        this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
     } else {
       this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
     }
@@ -188,13 +202,7 @@ export class Hive {
   // add to list a new creep
   wish(order: spawnOrder) {
     // add some checks
-    this.orderList.push(order)
-  }
-
-  updateRooms(): void {
-    this.room = Game.rooms[this.room.name];
-    this.annexes = _.compact(_.map(this.annexes, (annex) => Game.rooms[annex.name]));
-    this.rooms = [this.room].concat(this.annexes);
+    this.orderList.push(order);
   }
 
   update() {

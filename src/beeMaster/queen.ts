@@ -62,7 +62,7 @@ export class queenMaster extends Master {
       let target;
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        target = <typeof targets[0]>bee.creep.pos.findClosest(targets);
+        target = bee.creep.pos.findClosest(targets);
         if (target)
           bee.transfer(target, RESOURCE_ENERGY);
       }

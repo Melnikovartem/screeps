@@ -18,12 +18,16 @@ export abstract class Cell {
     _.forEach(Object.keys(this), (key: K) => {
       let data = this[key];
       if (data instanceof Structure) {
-        this[key] = <typeof data>Game.getObjectById(data.id);
+        let gameObject = Game.getObjectById(data.id)
+        if (gameObject)
+          this[key] = <typeof data>gameObject;
       } else if (Array.isArray(data) && data[0] instanceof Structure) {
         let new_data: (typeof data[0])[] = [];
 
         _.forEach(data, (structure) => {
-          new_data.push(Game.getObjectById(structure.id));
+          let gameObject = Game.getObjectById(structure.id)
+          if (gameObject)
+            new_data.push(gameObject);
         });
 
         this[key] = <typeof data>new_data;

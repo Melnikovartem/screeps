@@ -13,6 +13,11 @@ export abstract class Master {
     this.hive = hive;
     this.ref = ref;
 
+    /*
+        if (global.masters[this.ref])
+          this.print("ERROR duplicate ref");
+    */
+
     global.masters[this.ref] = this;
   }
 

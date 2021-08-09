@@ -2392,8 +2392,19 @@ RoomPosition.prototype.getTimeForPath = function (roomPos) {
 };
 // TODO different class types to forget casting in and out
 RoomPosition.prototype.findClosest = function (structures) {
-    // TODO if structure is in another room
-    return this.findClosestByRange(structures);
+    if (structures.length == 0)
+        return null;
+    let ans = structures.pop();
+    let distance = this.getRangeTo(ans);
+    // TODO smarter room-to-room distance
+    _.forEach(structures, (structure) => {
+        let newDistance = this.getRangeTo(structure);
+        if (newDistance < distance) {
+            ans = structure;
+            distance = newDistance;
+        }
+    });
+    return ans;
 };
 
 class Cell {
@@ -2407,12 +2418,16 @@ class Cell {
         _.forEach(Object.keys(this), (key) => {
             let data = this[key];
             if (data instanceof Structure) {
-                this[key] = Game.getObjectById(data.id);
+                let gameObject = Game.getObjectById(data.id);
+                if (gameObject)
+                    this[key] = gameObject;
             }
             else if (Array.isArray(data) && data[0] instanceof Structure) {
                 let new_data = [];
                 _.forEach(data, (structure) => {
-                    new_data.push(Game.getObjectById(structure.id));
+                    let gameObject = Game.getObjectById(structure.id);
+                    if (gameObject)
+                        new_data.push(gameObject);
                 });
                 this[key] = new_data;
             }
@@ -2501,6 +2516,10 @@ class Master {
     constructor(hive, ref) {
         this.hive = hive;
         this.ref = ref;
+        /*
+            if (global.masters[this.ref])
+              this.print("ERROR duplicate ref");
+        */
         global.masters[this.ref] = this;
     }
     clearBees(beeArray) {
@@ -2773,8 +2792,7 @@ class managerMaster extends Master {
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
                 if (!suckerTarget)
-                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)[0];
+                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
                 if (suckerTarget) {
                     if (suckerTarget instanceof StructureLink)
                         bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
@@ -3055,9 +3073,11 @@ class bootstrapMaster extends Master {
         this.sourceTargeting = {};
         this.cell = developmentCell;
         _.forEach(this.cell.sources, (source) => {
-            this.print(source);
             let walkablePositions = source.pos.getwalkablePositions().length;
-            this.targetBeeCount += walkablePositions * 1.5;
+            if (source.room.name == this.hive.roomName)
+                this.targetBeeCount += walkablePositions * 1.5;
+            else
+                this.targetBeeCount += walkablePositions * 2;
             this.sourceTargeting[source.id] = {
                 max: walkablePositions,
                 current: 0,
@@ -3280,7 +3300,7 @@ class builderMaster extends Master {
 
 class annexMaster extends Master {
     constructor(hive, controller) {
-        super(hive, "master_" + "claimerRoom_" + controller.room.name);
+        super(hive, "master_" + "annexerRoom_" + controller.room.name);
         this.claimers = [];
         this.controller = controller;
         this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
@@ -3288,6 +3308,7 @@ class annexMaster extends Master {
     newBee(bee) {
         this.claimers.push(bee);
         this.refreshLastSpawned();
+        this.print(this.lastSpawned);
     }
     refreshLastSpawned() {
         _.forEach(this.claimers, (bee) => {
@@ -3323,7 +3344,6 @@ class puppetMaster extends Master {
         super(hive, "master_" + "puppetFor_" + annexName);
         this.puppets = [];
         this.waitingForABee = 0;
-        console.log("here");
         this.target = new RoomPosition(25, 25, annexName);
     }
     newBee(bee) {
@@ -3391,6 +3411,8 @@ class repairSheet {
 _a = STRUCTURE_RAMPART, _b = STRUCTURE_WALL;
 class Hive {
     constructor(roomName, annexNames) {
+        this.annexes = []; // this room and annexes
+        this.rooms = []; //this room and annexes
         this.orderList = [];
         //targets for defense systems
         this.roomTargets = [];
@@ -3401,22 +3423,28 @@ class Hive {
         this.normalRepairs = [];
         this.claimers = [];
         this.puppets = [];
+        this.roomName = roomName;
+        this.annexNames = annexNames;
         this.room = Game.rooms[roomName];
-        this.annexes = _.compact(_.map(annexNames, (annexName) => {
-            let annex = Game.rooms[annexName];
-            if (!annex && !global.masters["master_puppetFor_" + annexName]
-                && this.room.energyCapacityAvailable >= 650)
-                this.puppets.push(new puppetMaster(this, annexName));
-            else if (annex.controller)
-                this.claimers.push(new annexMaster(this, annex.controller));
-            return annex;
-        }));
-        this.rooms = [this.room].concat(this.annexes);
+        this.updateRooms();
         this.repairSheet = new repairSheet();
         this.cells = {};
         this.parseStructures();
         if (this.room.storage)
             this.builder = new builderMaster(this);
+    }
+    updateRooms() {
+        this.room = Game.rooms[this.roomName];
+        this.annexes = _.compact(_.map(this.annexNames, (annexName) => {
+            let annex = Game.rooms[annexName];
+            if (!annex && !global.masters["master_puppetFor_" + annexName])
+                this.puppets.push(new puppetMaster(this, annexName));
+            else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
+                && !global.masters["master_annexerRoom_" + annexName])
+                this.claimers.push(new annexMaster(this, annex.controller));
+            return annex;
+        }));
+        this.rooms = [this.room].concat(this.annexes);
     }
     parseStructures() {
         this.updateConstructionSites();
@@ -3442,10 +3470,14 @@ class Hive {
         this.cells.respawnCell = new respawnCell(this, spawns, extensions);
         if (storage) {
             this.cells.storageCell = new storageCell(this, storage);
-            this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
-            if (allSources.length) {
-                this.cells.excavationCell = new excavationCell(this, allSources);
+            if (storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+                this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
+                if (allSources.length) {
+                    this.cells.excavationCell = new excavationCell(this, allSources);
+                }
             }
+            else
+                this.cells.developmentCell = new developmentCell(this, this.room.controller, allSources);
         }
         else {
             this.cells.developmentCell = new developmentCell(this, this.room.controller, allSources);
@@ -3484,11 +3516,6 @@ class Hive {
     wish(order) {
         // add some checks
         this.orderList.push(order);
-    }
-    updateRooms() {
-        this.room = Game.rooms[this.room.name];
-        this.annexes = _.compact(_.map(this.annexes, (annex) => Game.rooms[annex.name]));
-        this.rooms = [this.room].concat(this.annexes);
     }
     update() {
         if (Game.time % 5 == 0) {

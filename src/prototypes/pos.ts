@@ -3,7 +3,7 @@ interface RoomPosition {
   getOpenPositions(): RoomPosition[];
   getwalkablePositions(): RoomPosition[];
   getTimeForPath(roomPos: RoomPosition): number;
-  findClosest(structures: RoomObject[]): RoomObject | null;
+  findClosest<Obj extends RoomObject>(structures: Obj[]): Obj | null;
 }
 
 RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
@@ -63,6 +63,21 @@ RoomPosition.prototype.getTimeForPath = function(roomPos: RoomPosition): number 
 
 // TODO different class types to forget casting in and out
 RoomPosition.prototype.findClosest = function <Obj extends RoomObject>(structures: Obj[]): Obj | null {
-  // TODO if structure is in another room
-  return this.findClosestByRange(structures);
+  if (structures.length == 0)
+    return null;
+
+  let ans: Obj = structures.pop()!;
+  let distance = this.getRangeTo(ans);
+
+  // TODO smarter room-to-room distance
+
+  _.forEach(structures, (structure) => {
+    let newDistance = this.getRangeTo(structure)
+    if (newDistance < distance) {
+      ans = structure;
+      distance = newDistance;
+    }
+  });
+
+  return ans;
 }
