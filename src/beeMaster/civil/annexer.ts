@@ -4,6 +4,8 @@ import { Hive, spawnOrder } from "../../Hive";
 import { Bee } from "../../Bee";
 import { Master } from "../_Master";
 
+import { UPDATE_EACH_TICK } from "../../settings";
+
 export class annexMaster extends Master {
   claimers: Bee[] = [];
   lastSpawned: number;
@@ -31,6 +33,12 @@ export class annexMaster extends Master {
 
   update() {
     this.claimers = this.clearBees(this.claimers);
+
+    if (UPDATE_EACH_TICK) {
+      let controller = Game.getObjectById(this.controller.id);
+      if (controller)
+        this.controller = controller;
+    }
 
     // 5 for random shit
     if (Game.time + 5 >= this.lastSpawned + CREEP_CLAIM_LIFE_TIME) {

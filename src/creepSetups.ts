@@ -85,17 +85,17 @@ export const Setups = {
   upgrader: {
     manual: new CreepSetup(SetupsNames.upgrader, {
       pattern: [WORK, CARRY, MOVE],
-      patternLimit: 11,
+      patternLimit: 10,
     }),
     fast: new CreepSetup(SetupsNames.upgrader, {
-      fixed: [WORK, CARRY, MOVE],
+      fixed: [WORK, WORK, CARRY, MOVE],
       pattern: [WORK, WORK, MOVE],
       patternLimit: 5,
     }),
   },
   builder: new CreepSetup(SetupsNames.builder, {
     pattern: [WORK, CARRY, MOVE],
-    patternLimit: 11, // not sure if you need anyone bigger than that
+    patternLimit: 10, // not sure if you need anyone bigger than that
   }),
   puppet: new CreepSetup(SetupsNames.scout, {
     pattern: [MOVE],

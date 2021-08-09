@@ -5,6 +5,8 @@ import { makeId } from "../utils/other";
 
 import { queenMaster } from "../beeMaster/civil/queen";
 
+import { LOGGING } from "../settings";
+
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];
   freeSpawns: StructureSpawn[] = [];
@@ -59,7 +61,19 @@ export class respawnCell extends Cell {
           if (ans == ERR_NOT_ENOUGH_RESOURCES) {
             return true;
           }
-          this.hive.orderList[key].amount -= 1;
+
+          if (ans == OK) {
+            if (LOGGING)
+              Memory.log.spawns.push({
+                time: Game.time,
+                spawnRoom: this.hive.roomName,
+                fromSpawn: spawn!.name,
+                spawning: order.setup.name,
+                orderedBy: order.master,
+              });
+            this.hive.orderList[key].amount -= 1;
+          }
+
         }
       }
 

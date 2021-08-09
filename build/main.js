@@ -2236,14 +2236,18 @@ class Mem {
     static init() {
         if (!Memory.masters)
             Memory.masters = {};
-        if (!Memory.log)
-            Memory.log = {};
+        if (!Memory.log) {
+            Memory.log = { spawns: [] };
+        }
     }
     static clean() {
         for (const name in Memory.creeps) {
             if (!(name in Game.creeps)) {
                 delete Memory.creeps[name];
             }
+        }
+        if (Memory.log.spawns.length > 50) {
+            Memory.log.spawns.splice(0, Memory.log.spawns.length - 10);
         }
     }
 }
@@ -2429,9 +2433,6 @@ class Traveler {
      * @param opacity
      */
     static circle(pos, color, opacity) {
-        new RoomVisual(pos.roomName).circle(pos, {
-                radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
-            });
     }
     /**
      * update memory on whether a room should be avoided based on controller owner
@@ -2723,8 +2724,6 @@ class Traveler {
         this.circle(startPos, color);
         for (let position of path) {
             if (position.roomName === lastPosition.roomName) {
-                new RoomVisual(position.roomName)
-                        .line(position, lastPosition, { color: color, lineStyle: "dashed" });
                 serializedPath += lastPosition.getDirectionTo(position);
             }
             lastPosition = position;
@@ -2980,17 +2979,17 @@ const Setups = {
     upgrader: {
         manual: new CreepSetup(SetupsNames.upgrader, {
             pattern: [WORK, CARRY, MOVE],
-            patternLimit: 11,
+            patternLimit: 10,
         }),
         fast: new CreepSetup(SetupsNames.upgrader, {
-            fixed: [WORK, CARRY, MOVE],
+            fixed: [WORK, WORK, CARRY, MOVE],
             pattern: [WORK, WORK, MOVE],
             patternLimit: 5,
         }),
     },
     builder: new CreepSetup(SetupsNames.builder, {
         pattern: [WORK, CARRY, MOVE],
-        patternLimit: 11,
+        patternLimit: 10,
     }),
     puppet: new CreepSetup(SetupsNames.scout, {
         pattern: [MOVE],
@@ -3487,8 +3486,8 @@ class queenMaster extends Master {
                 amount: 1,
                 priority: 0,
             };
-            // it can refill in 1 run
-            order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
+            // can refill in 2.5 runs
+            order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2.5);
             this.lastSpawned = Game.time;
             this.hive.wish(order);
         }
@@ -3558,7 +3557,16 @@ class respawnCell extends Cell {
                     if (ans == ERR_NOT_ENOUGH_RESOURCES) {
                         return true;
                     }
-                    this.hive.orderList[key].amount -= 1;
+                    if (ans == OK) {
+                        Memory.log.spawns.push({
+                                time: Game.time,
+                                spawnRoom: this.hive.roomName,
+                                fromSpawn: spawn.name,
+                                spawning: order.setup.name,
+                                orderedBy: order.master,
+                            });
+                        this.hive.orderList[key].amount -= 1;
+                    }
                 }
             }
             return false;
@@ -3636,14 +3644,12 @@ class bootstrapMaster extends Master {
                     type: "mining",
                     target: "",
                 };
-                bee.creep.say('🔄');
             }
             if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
                 this.stateMap[bee.ref] = {
                     type: "working",
                     target: "",
                 };
-                bee.creep.say('🛠️');
             }
             if (this.stateMap[bee.ref].type == "mining") {
                 let source;
@@ -4226,7 +4232,6 @@ class _Apiary {
 
 // This gets run on each global reset
 function onGlobalReset() {
-    console.log("Reset? Cool time is", Game.time);
     // check if all memory position were created
     Mem.init();
     Memory.log.reset = Game.time;

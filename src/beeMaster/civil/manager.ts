@@ -59,10 +59,8 @@ export class managerMaster extends Master {
         this.targets.push(this.cell.link);
     }
 
-
-    // 5 for random shit
     // tragets.length cause dont need a manager for nothing
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
+    if (Game.time >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.manager,
@@ -77,6 +75,7 @@ export class managerMaster extends Master {
 
   run() {
     // TODO smarter choosing of target
+    // aka draw energy if there is a target and otherwise put it back
     _.forEach(this.managers, (bee) => {
       let ans;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
@@ -118,7 +117,6 @@ export class managerMaster extends Master {
             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0]
 
         if (target)
-
           if (target instanceof StructureLink)
             ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
               this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));

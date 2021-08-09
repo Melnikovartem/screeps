@@ -14,16 +14,6 @@ declare global {
     }
   }
 
-  interface Memory {
-    log: {
-      reset?: number,
-    },
-    masters: { [id: string]: any };
-
-    // for TRAVELER
-    empire?: any;
-  }
-
   interface RoomMemory {
     // for TRAVELER
     avoid?: any;
@@ -35,5 +25,22 @@ declare global {
     //for TRAVELER
     _trav?: any;
     _travel?: any;
+  }
+
+  interface Memory {
+    log: {
+      reset?: number,
+      spawns: {
+        time: number,
+        spawnRoom: string,
+        fromSpawn: string,
+        spawning: string,
+        orderedBy: string,
+      }[],
+    },
+    masters: { [id: string]: any };
+
+    // for TRAVELER
+    empire?: any;
   }
 }

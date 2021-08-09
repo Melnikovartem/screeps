@@ -8,16 +8,17 @@ import "./prototypes/pos"
 
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, ERROR_WRAPPER } from "./settings";
+import { GENERATE_PIXEL, ERROR_WRAPPER, LOGGING, PRINT_INFO } from "./settings";
 
 // This gets run on each global reset
 function onGlobalReset(): void {
-  console.log("Reset? Cool time is", Game.time);
-
   // check if all memory position were created
   Mem.init();
 
-  Memory.log.reset = Game.time;
+  if (LOGGING)
+    Memory.log.reset = Game.time;
+  if (PRINT_INFO)
+    console.log("Reset? Cool time is", Game.time);
 
   global.bees = {};
   global.masters = {};
@@ -32,8 +33,10 @@ function main() {
     onGlobalReset()
   }
 
+
   global.Apiary.update();
   global.Apiary.run();
+
 
   // only on official
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000) {
