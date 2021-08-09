@@ -2429,6 +2429,9 @@ class Traveler {
      * @param opacity
      */
     static circle(pos, color, opacity) {
+        new RoomVisual(pos.roomName).circle(pos, {
+                radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
+            });
     }
     /**
      * update memory on whether a room should be avoided based on controller owner
@@ -2720,6 +2723,8 @@ class Traveler {
         this.circle(startPos, color);
         for (let position of path) {
             if (position.roomName === lastPosition.roomName) {
+                new RoomVisual(position.roomName)
+                        .line(position, lastPosition, { color: color, lineStyle: "dashed" });
                 serializedPath += lastPosition.getDirectionTo(position);
             }
             lastPosition = position;
@@ -3154,19 +3159,21 @@ class haulerMaster extends Master {
         if (this.hive.cells.storageCell) {
             let target = this.hive.cells.storageCell.storage;
             _.forEach(this.haulers, (bee) => {
-                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-                    bee.transfer(target, RESOURCE_ENERGY);
-                }
+                let ans;
                 if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                     let suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == bee.ref)[0];
                     if (!suckerTarget)
                         suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == null)[0];
                     if (suckerTarget) {
-                        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
+                        ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                        if (ans == OK)
                             this.targetMap[suckerTarget.id] = null;
                         else
                             this.targetMap[suckerTarget.id] = bee.ref;
                     }
+                }
+                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+                    bee.transfer(target, RESOURCE_ENERGY);
                 }
             });
         }
@@ -3258,10 +3265,24 @@ class managerMaster extends Master {
     run() {
         // TODO smarter choosing of target
         _.forEach(this.managers, (bee) => {
-            let target;
             let ans;
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-                target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                let suckerTarget;
+                if (!suckerTarget)
+                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
+                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+                        structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
+                if (!suckerTarget)
+                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
+                if (suckerTarget) {
+                    if (suckerTarget instanceof StructureLink)
+                        ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
+                    else
+                        ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                }
+            }
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+                let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                     structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
                 if (!target)
                     target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
@@ -3278,22 +3299,7 @@ class managerMaster extends Master {
                     if (target instanceof StructureLink)
                         ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY), this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
                     else
-                        ans = bee.transfer(target, RESOURCE_ENERGY);
-            }
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
-                let suckerTarget;
-                if (!suckerTarget)
-                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
-                if (!suckerTarget)
-                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
-                if (suckerTarget) {
-                    if (suckerTarget instanceof StructureLink)
-                        bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
-                    else
-                        bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-                }
+                        bee.transfer(target, RESOURCE_ENERGY);
             }
         });
     }
@@ -3491,18 +3497,18 @@ class queenMaster extends Master {
         let targets = this.cell.spawns;
         targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
         _.forEach(this.queens, (bee) => {
-            let target;
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-                target = bee.creep.pos.findClosest(targets);
-                if (target)
-                    bee.transfer(target, RESOURCE_ENERGY);
-            }
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+            let ans;
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 let suckerTarget;
                 if (!suckerTarget && this.hive.cells.storageCell)
                     suckerTarget = this.hive.cells.storageCell.storage;
                 if (suckerTarget)
-                    bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                    ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+            }
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+                let target = bee.creep.pos.findClosest(targets);
+                if (target)
+                    bee.transfer(target, RESOURCE_ENERGY);
             }
         });
     }
@@ -3630,12 +3636,14 @@ class bootstrapMaster extends Master {
                     type: "mining",
                     target: "",
                 };
+                bee.creep.say('🔄');
             }
             if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
                 this.stateMap[bee.ref] = {
                     type: "working",
                     target: "",
                 };
+                bee.creep.say('🛠️');
             }
             if (this.stateMap[bee.ref].type == "mining") {
                 let source;
@@ -4085,37 +4093,30 @@ class Bee {
         // not sure weather i should copy all parameters from creep like body and stuff
         global.bees[this.creep.name] = this;
     }
+    // for future: could path to open position near object for targets that require isNearTo
+    // but is it worh in terms of CPU?
     print(info) {
         console.log(Game.time, "!", this.creep.name, "?", info);
     }
     harvest(target) {
         if (this.creep.pos.isNearTo(target))
             this.creep.harvest(target);
-        else {
-            let openPositions = target.pos.getOpenPositions();
-            if (openPositions.length)
-                this.goTo(openPositions[0]);
-        }
+        else
+            this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
     transfer(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.transfer(target, resourceType, amount);
-        else {
-            let openPositions = target.pos.getOpenPositions();
-            if (openPositions.length)
-                this.goTo(openPositions[0]);
-        }
+        else
+            this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
     withdraw(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.withdraw(target, resourceType, amount);
-        else {
-            let openPositions = target.pos.getOpenPositions();
-            if (openPositions.length)
-                this.goTo(openPositions[0]);
-        }
+        else
+            this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
     build(target) {
@@ -4135,11 +4136,8 @@ class Bee {
     reserveController(target) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.reserveController(target);
-        else {
-            let openPositions = target.pos.getOpenPositions();
-            if (openPositions.length)
-                this.goTo(openPositions[0]);
-        }
+        else
+            this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
     upgradeController(target) {

@@ -78,11 +78,29 @@ export class managerMaster extends Master {
   run() {
     // TODO smarter choosing of target
     _.forEach(this.managers, (bee) => {
-      let target;
       let ans;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        let suckerTarget;
 
-        target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
+        if (!suckerTarget)
+          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
+            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+            structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
+
+        if (!suckerTarget)
+          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
+
+        if (suckerTarget) {
+          if (suckerTarget instanceof StructureLink)
+            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY),
+              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
+          else
+            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        }
+      }
+
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+        let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
           structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
 
         if (!target)
@@ -105,27 +123,7 @@ export class managerMaster extends Master {
             ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
               this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
           else
-            ans = bee.transfer(target, RESOURCE_ENERGY);
-      }
-
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target || ans == OK) {
-        let suckerTarget;
-
-        if (!suckerTarget)
-          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
-
-        if (!suckerTarget)
-          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
-
-        if (suckerTarget) {
-          if (suckerTarget instanceof StructureLink)
-            bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY),
-              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
-          else
-            bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-        }
+            bee.transfer(target, RESOURCE_ENERGY);
       }
     });
   }

@@ -20,6 +20,9 @@ export class Bee {
     global.bees[this.creep.name] = this;
   }
 
+  // for future: could path to open position near object for targets that require isNearTo
+  // but is it worh in terms of CPU?
+
   print(info: any) {
     console.log(Game.time, "!", this.creep.name, "?", info);
   }
@@ -27,33 +30,24 @@ export class Bee {
   harvest(target: Source | Mineral): number {
     if (this.creep.pos.isNearTo(target))
       this.creep.harvest(target);
-    else {
-      let openPositions = target.pos.getOpenPositions();
-      if (openPositions.length)
-        this.goTo(openPositions[0]);
-    }
+    else
+      this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 
   transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.transfer(target, resourceType, amount);
-    else {
-      let openPositions = target.pos.getOpenPositions();
-      if (openPositions.length)
-        this.goTo(openPositions[0]);
-    }
+    else
+      this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 
   withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.withdraw(target, resourceType, amount);
-    else {
-      let openPositions = target.pos.getOpenPositions();
-      if (openPositions.length)
-        this.goTo(openPositions[0]);
-    }
+    else
+      this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 
@@ -76,11 +70,8 @@ export class Bee {
   reserveController(target: StructureController): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.reserveController(target);
-    else {
-      let openPositions = target.pos.getOpenPositions();
-      if (openPositions.length)
-        this.goTo(openPositions[0]);
-    }
+    else
+      this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 

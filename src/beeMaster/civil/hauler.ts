@@ -76,10 +76,7 @@ export class haulerMaster extends Master {
     if (this.hive.cells.storageCell) {
       let target = this.hive.cells.storageCell.storage;
       _.forEach(this.haulers, (bee) => {
-
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          bee.transfer(target, RESOURCE_ENERGY);
-        }
+        let ans;
 
         if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
           let suckerTarget = _.filter(this.cell.quitefullContainers,
@@ -90,11 +87,16 @@ export class haulerMaster extends Master {
               (container) => this.targetMap[container.id] == null)[0];
 
           if (suckerTarget) {
-            if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
+            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY)
+            if (ans == OK)
               this.targetMap[suckerTarget.id] = null;
             else
               this.targetMap[suckerTarget.id] = bee.ref;
           }
+        }
+
+        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+          bee.transfer(target, RESOURCE_ENERGY);
         }
       });
     }

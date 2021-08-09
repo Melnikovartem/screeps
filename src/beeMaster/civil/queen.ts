@@ -59,22 +59,21 @@ export class queenMaster extends Master {
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.queens, (bee) => {
-      let target;
-
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        target = bee.creep.pos.findClosest(targets);
-        if (target)
-          bee.transfer(target, RESOURCE_ENERGY);
-      }
-
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || !target) {
+      let ans;
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 
         if (!suckerTarget && this.hive.cells.storageCell)
           suckerTarget = this.hive.cells.storageCell.storage;
 
         if (suckerTarget)
-          bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+      }
+
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+        let target = bee.creep.pos.findClosest(targets);
+        if (target)
+          bee.transfer(target, RESOURCE_ENERGY);
       }
     });
   }
