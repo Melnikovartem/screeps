@@ -24,27 +24,36 @@ export class Bee {
     console.log(Game.time, "!", this.creep.name, "?", info);
   }
 
-  harvest(source: Source): number {
-    if (this.creep.pos.isNearTo(source))
-      this.creep.harvest(source);
-    else
-      this.goTo(source);
+  harvest(target: Source | Mineral): number {
+    if (this.creep.pos.isNearTo(target))
+      this.creep.harvest(target);
+    else {
+      let openPositions = target.pos.getOpenPositions();
+      if (openPositions.length)
+        this.goTo(openPositions[0]);
+    }
     return ERR_NOT_IN_RANGE;
   }
 
   transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.transfer(target, resourceType, amount);
-    else
-      this.goTo(target);
+    else {
+      let openPositions = target.pos.getOpenPositions();
+      if (openPositions.length)
+        this.goTo(openPositions[0]);
+    }
     return ERR_NOT_IN_RANGE;
   }
 
   withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.withdraw(target, resourceType, amount);
-    else
-      this.goTo(target);
+    else {
+      let openPositions = target.pos.getOpenPositions();
+      if (openPositions.length)
+        this.goTo(openPositions[0]);
+    }
     return ERR_NOT_IN_RANGE;
   }
 
@@ -67,8 +76,11 @@ export class Bee {
   reserveController(target: StructureController): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.reserveController(target);
-    else
-      this.goTo(target);
+    else {
+      let openPositions = target.pos.getOpenPositions();
+      if (openPositions.length)
+        this.goTo(openPositions[0]);
+    }
     return ERR_NOT_IN_RANGE;
   }
 

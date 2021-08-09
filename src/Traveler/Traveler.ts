@@ -3,6 +3,8 @@
  * Example: var Traveler = require('Traveler.js');
  */
 
+import { VISUALS_ON } from "../settings";
+
 export class Traveler {
 
   private static structureMatrixCache: { [roomName: string]: CostMatrix } = {};
@@ -216,9 +218,10 @@ export class Traveler {
    */
 
   public static circle(pos: RoomPosition, color: string, opacity?: number) {
-    new RoomVisual(pos.roomName).circle(pos, {
-      radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
-    });
+    if (VISUALS_ON)
+      new RoomVisual(pos.roomName).circle(pos, {
+        radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
+      });
   }
 
   /**
@@ -547,8 +550,9 @@ export class Traveler {
     this.circle(startPos, color);
     for (let position of path) {
       if (position.roomName === lastPosition.roomName) {
-        new RoomVisual(position.roomName)
-          .line(position, lastPosition, { color: color, lineStyle: "dashed" });
+        if (VISUALS_ON)
+          new RoomVisual(position.roomName)
+            .line(position, lastPosition, { color: color, lineStyle: "dashed" });
         serializedPath += lastPosition.getDirectionTo(position);
       }
       lastPosition = position;

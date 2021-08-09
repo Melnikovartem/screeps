@@ -11,9 +11,9 @@ import { puppetMaster } from "./beeMaster/civil/puppet";
 
 import { CreepSetup } from "./creepSetups";
 
-// TODO visuals
-// const VISUALS_ON = true;
-const USE_RELEASED = false;
+// TODO visuals VISUALS_ON
+import { UPDATE_EACH_TICK } from "./settings";
+
 
 export interface spawnOrder {
   master: string;
@@ -228,15 +228,15 @@ export class Hive {
   }
 
   update() {
-    if (Game.time % 5 == 0 || !USE_RELEASED) {
+    if (UPDATE_EACH_TICK || Game.time % 5 == 0) {
       this.updateRooms();
     }
-    if (Game.time % 5 == 1 || !USE_RELEASED) {
+    if (UPDATE_EACH_TICK || Game.time % 5 == 1) {
       this.updateConstructionSites();
       this.updateEmeregcyRepairs();
       this.updateNormalRepairs();
     }
-    if (Game.time % 5 == 2 || !USE_RELEASED) {
+    if (UPDATE_EACH_TICK || Game.time % 5 == 2) {
       this.findTargets();
     }
 

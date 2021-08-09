@@ -7,7 +7,9 @@ import { spawnOrder } from "../../Hive";
 import { Bee } from "../../Bee";
 import { Master } from "../_Master";
 
-type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working"
+type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
+
+import { VISUALS_ON } from "../../settings";
 
 export class bootstrapMaster extends Master {
   workers: Bee[] = [];
@@ -27,7 +29,7 @@ export class bootstrapMaster extends Master {
     this.cell = developmentCell;
 
     _.forEach(this.cell.sources, (source) => {
-      let walkablePositions = source.pos.getwalkablePositions().length;
+      let walkablePositions = source.pos.getWalkablePositions().length;
       if (source.room.name == this.hive.roomName)
         this.targetBeeCount += walkablePositions * 1.5;
       else
@@ -93,7 +95,8 @@ export class bootstrapMaster extends Master {
           type: "mining",
           target: "",
         };
-        bee.creep.say('🔄');
+        if (VISUALS_ON)
+          bee.creep.say('🔄');
       }
 
       if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
@@ -101,7 +104,8 @@ export class bootstrapMaster extends Master {
           type: "working",
           target: "",
         };
-        bee.creep.say('🛠️');
+        if (VISUALS_ON)
+          bee.creep.say('🛠️');
       }
 
       if (this.stateMap[bee.ref].type == "mining") {

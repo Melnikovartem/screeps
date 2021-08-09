@@ -1,7 +1,7 @@
 interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
-  getwalkablePositions(): RoomPosition[];
+  getWalkablePositions(): RoomPosition[];
   getTimeForPath(roomPos: RoomPosition): number;
   findClosest<Obj extends RoomObject>(structures: Obj[]): Obj | null;
 }
@@ -21,7 +21,7 @@ RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
   return positions
 };
 
-RoomPosition.prototype.getwalkablePositions = function(): RoomPosition[] {
+RoomPosition.prototype.getWalkablePositions = function(): RoomPosition[] {
   let nearbyPositions: RoomPosition[] = this.getNearbyPositions();
 
   let terrain = Game.map.getRoomTerrain(this.roomName);
@@ -42,7 +42,7 @@ RoomPosition.prototype.getwalkablePositions = function(): RoomPosition[] {
 };
 
 RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
-  let walkablePositions: RoomPosition[] = this.getwalkablePositions();
+  let walkablePositions: RoomPosition[] = this.getWalkablePositions();
 
   let freePositions = _.filter(walkablePositions, function(pos) {
     return !pos.lookFor(LOOK_CREEPS).length
