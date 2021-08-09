@@ -66,8 +66,8 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomObject>(structure
   if (structures.length == 0)
     return null;
 
-  let ans: Obj = structures.pop()!;
-  let distance = this.getRangeTo(ans);
+  let ans: Obj = structures[0];
+  let distance = Infinity;
 
   // TODO smarter room-to-room distance
 

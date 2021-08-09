@@ -10,7 +10,7 @@ export class upgraderMaster extends Master {
   upgraders: Bee[] = [];
   cell: upgradeCell;
 
-  targetBeeCount: number = 2;
+  targetBeeCount: number = 1;
   waitingForABee: number = 0;
 
   constructor(upgradeCell: upgradeCell) {
@@ -28,6 +28,11 @@ export class upgraderMaster extends Master {
   update() {
     this.upgraders = this.clearBees(this.upgraders);
 
+    if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)
+      this.targetBeeCount = 2; // burn some energy on controller
+    else
+      this.targetBeeCount = 1;
+
     if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
       let order: spawnOrder = {
         master: this.ref,
@@ -36,8 +41,9 @@ export class upgraderMaster extends Master {
         priority: 4,
       };
 
-      if (this.cell.link)
-        order.setup = Setups.upgrader.link;
+      if (this.cell.link || (this.hive.cells.storageCell
+        && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5))
+        order.setup = Setups.upgrader.fast;
 
       this.waitingForABee += this.targetBeeCount - this.upgraders.length;
 

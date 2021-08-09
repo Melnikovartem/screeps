@@ -210,7 +210,6 @@ export class Hive {
   }
 
   update() {
-    console.log(Game.time % 5 == 1, this.constructionSites);
     if (Game.time % 5 == 0) {
       this.updateRooms();
     } else if (Game.time % 5 == 1) {
@@ -220,7 +219,6 @@ export class Hive {
     } else if (Game.time % 5 == 2) {
       this.findTargets();
     }
-    console.log("after", this.constructionSites);
 
     _.forEach(this.cells, (cell) => {
       cell.update();

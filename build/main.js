@@ -2394,8 +2394,8 @@ RoomPosition.prototype.getTimeForPath = function (roomPos) {
 RoomPosition.prototype.findClosest = function (structures) {
     if (structures.length == 0)
         return null;
-    let ans = structures.pop();
-    let distance = this.getRangeTo(ans);
+    let ans = structures[0];
+    let distance = Infinity;
     // TODO smarter room-to-room distance
     _.forEach(structures, (structure) => {
         let newDistance = this.getRangeTo(structure);
@@ -2501,7 +2501,7 @@ const Setups = {
             pattern: [WORK, CARRY, MOVE],
             patternLimit: 11,
         }),
-        link: new CreepSetup(SetupsNames.upgrader, {
+        fast: new CreepSetup(SetupsNames.upgrader, {
             fixed: [WORK, CARRY, MOVE],
             pattern: [WORK, WORK, MOVE],
             patternLimit: 5,
@@ -2860,7 +2860,7 @@ class upgraderMaster extends Master {
     constructor(upgradeCell) {
         super(upgradeCell.hive, "master_" + upgradeCell.ref);
         this.upgraders = [];
-        this.targetBeeCount = 2;
+        this.targetBeeCount = 1;
         this.waitingForABee = 0;
         this.cell = upgradeCell;
     }
@@ -2871,6 +2871,10 @@ class upgraderMaster extends Master {
     }
     update() {
         this.upgraders = this.clearBees(this.upgraders);
+        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)
+            this.targetBeeCount = 2; // burn some energy on controller
+        else
+            this.targetBeeCount = 1;
         if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
             let order = {
                 master: this.ref,
@@ -2878,8 +2882,9 @@ class upgraderMaster extends Master {
                 amount: this.targetBeeCount - this.upgraders.length,
                 priority: 4,
             };
-            if (this.cell.link)
-                order.setup = Setups.upgrader.link;
+            if (this.cell.link || (this.hive.cells.storageCell
+                && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5))
+                order.setup = Setups.upgrader.fast;
             this.waitingForABee += this.targetBeeCount - this.upgraders.length;
             this.hive.wish(order);
         }
@@ -3537,7 +3542,6 @@ class Hive {
         this.orderList.push(order);
     }
     update() {
-        console.log(Game.time % 5 == 1, this.constructionSites);
         if (Game.time % 5 == 0) {
             this.updateRooms();
         }
@@ -3549,7 +3553,6 @@ class Hive {
         else if (Game.time % 5 == 2) {
             this.findTargets();
         }
-        console.log("after", this.constructionSites);
         _.forEach(this.cells, (cell) => {
             cell.update();
         });

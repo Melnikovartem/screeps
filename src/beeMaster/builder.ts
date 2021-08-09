@@ -23,7 +23,7 @@ export class builderMaster extends Master {
     this.builders = this.clearBees(this.builders);
 
     // TODO smarter counting of builders needed
-    let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length
+    let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
     if (targetsNumber > 5) {
       this.targetBeeCount = 2;
     } else {
