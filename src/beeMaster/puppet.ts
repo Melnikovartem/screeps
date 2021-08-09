@@ -31,7 +31,7 @@ export class puppetMaster extends Master {
         master: this.ref,
         setup: Setups.puppet,
         amount: 1,
-        priority: 5,
+        priority: 1, // well it is cheap -_-
       };
 
       this.waitingForABee = 1;

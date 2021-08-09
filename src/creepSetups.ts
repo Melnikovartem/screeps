@@ -74,7 +74,7 @@ export const Setups = {
   }),
   hauler: new CreepSetup(SetupsNames.hauler, {
     pattern: [CARRY, CARRY, MOVE],
-    patternLimit: 10,
+    patternLimit: 15,
   }),
   miner: {
     energy: new CreepSetup(SetupsNames.miner, {
@@ -95,6 +95,7 @@ export const Setups = {
   },
   builder: new CreepSetup(SetupsNames.builder, {
     pattern: [WORK, CARRY, MOVE],
+    patternLimit: 11, // not sure if you need anyone bigger than that
   }),
   puppet: new CreepSetup(SetupsNames.scout, {
     pattern: [MOVE],

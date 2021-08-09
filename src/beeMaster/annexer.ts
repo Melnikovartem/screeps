@@ -41,6 +41,15 @@ export class annexMaster extends Master {
         priority: 2,
       };
 
+      let controller = Game.getObjectById(this.controller.id);
+      if (controller)
+        this.controller = controller;
+
+      // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
+      if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
+        order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
+
+
       this.hive.wish(order);
       // well he placed an order now just need to catch a creep after a spawn
       this.lastSpawned = Game.time;

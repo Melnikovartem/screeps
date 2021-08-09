@@ -2488,7 +2488,7 @@ const Setups = {
     }),
     hauler: new CreepSetup(SetupsNames.hauler, {
         pattern: [CARRY, CARRY, MOVE],
-        patternLimit: 10,
+        patternLimit: 15,
     }),
     miner: {
         energy: new CreepSetup(SetupsNames.miner, {
@@ -2632,14 +2632,21 @@ class haulerMaster extends Master {
         this.waitingForABee = 0;
         this.targetMap = {};
         this.cell = excavationCell;
-        let sourcesWithLinks = 0;
+        this.targetBeeCount = 0;
         _.forEach(this.cell.resourceCells, (cell) => {
-            if (cell.container)
+            let beeForSource = 0;
+            if (cell.container) {
                 this.targetMap[cell.container.id] = null;
+                if (this.hive.stage == 2)
+                    beeForSource += 0.38;
+                else
+                    beeForSource += 0.55;
+            }
             if (cell.link)
-                sourcesWithLinks += 1;
+                beeForSource = 0;
+            this.targetBeeCount += beeForSource;
         });
-        this.targetBeeCount = Math.ceil((Object.keys(this.targetMap).length - sourcesWithLinks) / 2);
+        this.targetBeeCount = Math.ceil(this.targetBeeCount);
     }
     newBee(bee) {
         this.haulers.push(bee);
@@ -2705,7 +2712,7 @@ class excavationCell extends Cell {
         _.forEach(this.resourceCells, (cell) => {
             cell.update();
             if (cell.container) {
-                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 500)
+                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 1000)
                     this.quitefullContainers.push(cell.container);
             }
         });
@@ -3351,6 +3358,12 @@ class annexMaster extends Master {
                 amount: 1,
                 priority: 2,
             };
+            let controller = Game.getObjectById(this.controller.id);
+            if (controller)
+                this.controller = controller;
+            // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
+            if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
+                order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
             this.hive.wish(order);
             // well he placed an order now just need to catch a creep after a spawn
             this.lastSpawned = Game.time;
@@ -3383,7 +3396,7 @@ class puppetMaster extends Master {
                 master: this.ref,
                 setup: Setups.puppet,
                 amount: 1,
-                priority: 5,
+                priority: 1,
             };
             this.waitingForABee = 1;
             this.hive.wish(order);
