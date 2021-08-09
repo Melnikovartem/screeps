@@ -2236,6 +2236,8 @@ class Mem {
     static init() {
         if (!Memory.masters)
             Memory.masters = {};
+        if (!Memory.log)
+            Memory.log = {};
     }
     static clean() {
         for (const name in Memory.creeps) {
@@ -2668,7 +2670,7 @@ class managerMaster extends Master {
                         structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
                 if (!suckerTarget)
                     suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)[0];
                 if (suckerTarget) {
                     if (suckerTarget instanceof StructureLink)
                         bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY), suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
@@ -2694,7 +2696,7 @@ class storageCell extends Cell {
     }
     update() {
         super.update();
-        if (!this.beeMaster)
+        if (!this.beeMaster && this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
             this.beeMaster = new managerMaster(this);
     }
     run() {
@@ -3422,14 +3424,15 @@ function onGlobalReset() {
     console.log("Reset? Cool time is", Game.time);
     // check if all memory position were created
     Mem.init();
+    Memory.log.reset = Game.time;
     global.bees = {};
     global.masters = {};
+    delete global.Apiary;
     global.Apiary = new _Apiary();
 }
 function main() {
     if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-        delete global.Apiary;
-        global.Apiary = new _Apiary();
+        onGlobalReset();
     }
     global.Apiary.update();
     global.Apiary.run();

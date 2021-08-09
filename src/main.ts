@@ -16,17 +16,19 @@ function onGlobalReset(): void {
   // check if all memory position were created
   Mem.init();
 
+  Memory.log.reset = Game.time;
+
   global.bees = {};
   global.masters = {};
 
+  delete global.Apiary;
   global.Apiary = new _Apiary();
 }
 
 function main() {
 
   if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-    delete global.Apiary;
-    global.Apiary = new _Apiary();
+    onGlobalReset()
   }
 
   global.Apiary.update();

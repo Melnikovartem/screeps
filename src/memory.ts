@@ -2,6 +2,8 @@ export class Mem {
   static init() {
     if (!Memory.masters)
       Memory.masters = {};
+    if (!Memory.log)
+      Memory.log = {};
   }
 
   static clean() {

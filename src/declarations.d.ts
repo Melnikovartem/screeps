@@ -15,6 +15,9 @@ declare global {
   }
 
   interface Memory {
+    log: {
+      reset?: number,
+    },
     masters: { [id: string]: any };
   }
 
