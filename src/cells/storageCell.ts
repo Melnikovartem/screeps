@@ -32,7 +32,7 @@ export class storageCell extends Cell {
   update() {
     super.update();
     // check if manager is needed
-    if (!this.beeMaster && this.link && this.hive.stage > 0)
+    if (!this.beeMaster && this.hive.stage > 0 && (this.link || this.hive.cells.defenseCell))
       this.beeMaster = new managerMaster(this);
   }
 

@@ -2509,6 +2509,7 @@ const Setups = {
     },
     builder: new CreepSetup(SetupsNames.builder, {
         pattern: [WORK, CARRY, MOVE],
+        patternLimit: 11,
     }),
     puppet: new CreepSetup(SetupsNames.scout, {
         pattern: [MOVE],
@@ -2681,7 +2682,7 @@ class haulerMaster extends Master {
                 if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                     let suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == bee.ref)[0];
                     if (!suckerTarget)
-                        suckerTarget = bee.creep.pos.findClosest(_.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == null));
+                        suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == null)[0];
                     if (suckerTarget) {
                         if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
                             this.targetMap[suckerTarget.id] = null;
@@ -2712,7 +2713,7 @@ class excavationCell extends Cell {
         _.forEach(this.resourceCells, (cell) => {
             cell.update();
             if (cell.container) {
-                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 1000)
+                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 700)
                     this.quitefullContainers.push(cell.container);
             }
         });
@@ -2835,7 +2836,7 @@ class storageCell extends Cell {
     update() {
         super.update();
         // check if manager is needed
-        if (!this.beeMaster && this.link && this.hive.stage > 0)
+        if (!this.beeMaster && this.hive.stage > 0 && (this.link || this.hive.cells.defenseCell))
             this.beeMaster = new managerMaster(this);
     }
     run() {
@@ -3280,6 +3281,7 @@ class builderMaster extends Master {
         this.builders = [];
         this.targetBeeCount = 1;
         this.waitingForABee = 0;
+        this.targetCaching = {};
     }
     newBee(bee) {
         this.builders.push(bee);
@@ -3314,7 +3316,11 @@ class builderMaster extends Master {
                 ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-                let target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+                let target = Game.getObjectById(this.targetCaching[bee.ref]);
+                if (target instanceof Structure && target.hits == target.hitsMax)
+                    target = null;
+                if (!target)
+                    target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
                 if (!target)
                     target = bee.creep.pos.findClosest(this.hive.constructionSites);
                 if (!target)
@@ -3324,6 +3330,7 @@ class builderMaster extends Master {
                         bee.build(target);
                     else if (target instanceof Structure)
                         bee.repair(target);
+                    this.targetCaching[bee.ref] = target.id;
                 }
             }
         });

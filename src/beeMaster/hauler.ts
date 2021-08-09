@@ -83,8 +83,8 @@ export class haulerMaster extends Master {
             (container) => this.targetMap[container.id] == bee.ref)[0];
 
           if (!suckerTarget)
-            suckerTarget = <StructureContainer>bee.creep.pos.findClosest(
-              _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == null));
+            suckerTarget = <StructureContainer>_.filter(this.cell.quitefullContainers,
+              (container) => this.targetMap[container.id] == null)[0];
 
           if (suckerTarget) {
             if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)

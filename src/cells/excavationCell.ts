@@ -29,7 +29,7 @@ export class excavationCell extends Cell {
       cell.update();
 
       if (cell.container) {
-        if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 1000)
+        if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 700)
           this.quitefullContainers.push(cell.container);
       }
     });

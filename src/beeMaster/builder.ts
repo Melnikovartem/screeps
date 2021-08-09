@@ -9,6 +9,8 @@ export class builderMaster extends Master {
   targetBeeCount: number = 1;
   waitingForABee: number = 0;
 
+  targetCaching: { [id: string]: string } = {};
+
   constructor(hive: Hive) {
     super(hive, "master_" + "builderHive_" + hive.room.name);
   }
@@ -52,7 +54,13 @@ export class builderMaster extends Master {
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-        let target: RoomObject | null = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+        let target: Structure | ConstructionSite | null = Game.getObjectById(this.targetCaching[bee.ref]);
+
+        if (target instanceof Structure && target.hits == target.hitsMax)
+          target = null;
+
+        if (!target)
+          target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
         if (!target)
           target = bee.creep.pos.findClosest(this.hive.constructionSites);
         if (!target)
@@ -63,6 +71,8 @@ export class builderMaster extends Master {
             bee.build(target);
           else if (target instanceof Structure)
             bee.repair(target);
+
+          this.targetCaching[bee.ref] = target.id;
         }
       }
     });
