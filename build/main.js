@@ -3235,22 +3235,24 @@ class managerMaster extends Master {
     }
     update() {
         this.managers = this.clearBees(this.managers);
-        this.targets = [];
+        // if order will matter (not a feature rn) i will like to put storage last
+        this.targets = [this.cell.storage];
         this.suckerTargets = [this.cell.storage];
         if (this.hive.cells.defenseCell && this.hive.cells.defenseCell.towers.length)
             this.targets = this.targets.concat(this.hive.cells.defenseCell.towers);
         //if you don't need to withdraw => then it is not enough
         if (this.cell.link) {
-            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.inLink) {
-                this.targets.push(this.cell.storage);
+            if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25) {
                 this.suckerTargets.push(this.cell.link);
             }
-            else if (this.cell.inLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
+            else if ((this.cell.inLink - this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
+                || this.cell.inLink == this.cell.link.store.getCapacity(RESOURCE_ENERGY)))
                 this.targets.push(this.cell.link);
         }
-        // 5 for random shit
+        // the >> is made by beatify cause >_> is better
+        this.targets = _.filter(this.targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
         // tragets.length cause dont need a manager for nothing
-        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
+        if (Game.time >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
             let order = {
                 master: this.ref,
                 setup: Setups.manager,
@@ -3263,14 +3265,11 @@ class managerMaster extends Master {
     }
     run() {
         // TODO smarter choosing of target
+        // aka draw energy if there is a target and otherwise put it back
         _.forEach(this.managers, (bee) => {
             let ans;
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                let suckerTarget;
-                if (!suckerTarget)
-                    suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
-                        structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.targets.length > 1) {
+                let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
                 if (!suckerTarget)
                     suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
                 if (suckerTarget) {
@@ -3281,19 +3280,15 @@ class managerMaster extends Master {
                 }
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+                // i cloud sort this.targets, but this is more convenient
                 let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
                     structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
                 if (!target)
-                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        (this.cell.inLink - structure.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
-                            || this.cell.inLink == structure.store.getCapacity(RESOURCE_ENERGY)))[0];
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
                 if (!target)
-                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER)[0];
                 if (!target)
-                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                    target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
                 if (target)
                     if (target instanceof StructureLink)
                         ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY), this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
@@ -3589,12 +3584,15 @@ class bootstrapMaster extends Master {
         this.stateMap = {};
         this.sourceTargeting = {};
         this.cell = developmentCell;
+        let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
         _.forEach(this.cell.sources, (source) => {
             let walkablePositions = source.pos.getWalkablePositions().length;
+            // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
+            // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
             if (source.room.name == this.hive.roomName)
-                this.targetBeeCount += walkablePositions * 1.5;
+                this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.5;
             else
-                this.targetBeeCount += walkablePositions * 2;
+                this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.666; // they need to walk more;
             this.sourceTargeting[source.id] = {
                 max: walkablePositions,
                 current: 0,
@@ -3658,7 +3656,7 @@ class bootstrapMaster extends Master {
                     // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
                     // but that is too much for too little
                     source = bee.creep.pos.findClosest(_.filter(this.cell.sources, (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                        && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source))));
+                        && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)) && source.energy > 0));
                     if (source) {
                         this.sourceTargeting[source.id].current += 1;
                         this.stateMap[bee.ref].target = source.id;
@@ -3668,8 +3666,12 @@ class bootstrapMaster extends Master {
                     source = Game.getObjectById(this.stateMap[bee.ref].target);
                 }
                 if (source) {
-                    bee.harvest(source);
-                    sourceTargetingCurrent[source.id] += 1;
+                    if (source.energy == 0)
+                        this.stateMap[bee.ref].target = "";
+                    else {
+                        bee.harvest(source);
+                        sourceTargetingCurrent[source.id] += 1;
+                    }
                 }
             }
             else {
@@ -3758,6 +3760,13 @@ class developmentCell extends Cell {
     }
     update() {
         super.update();
+        // caustom-made update for sources for developmentCell
+        if (Game.time % 5 == 4)
+            _.forEach(this.sources, (source, key) => {
+                let sourceNew = Game.getObjectById(source.id);
+                if (sourceNew instanceof Source)
+                    this.sources[key] = sourceNew;
+            });
         if (!this.beeMaster)
             this.beeMaster = new bootstrapMaster(this);
         // delete when reached state of storage? rn it will just fade with vr recreation

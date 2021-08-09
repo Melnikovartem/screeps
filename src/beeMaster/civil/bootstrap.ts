@@ -28,12 +28,15 @@ export class bootstrapMaster extends Master {
 
     this.cell = developmentCell;
 
+    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getWalkablePositions().length;
+      // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
+      // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
       if (source.room.name == this.hive.roomName)
-        this.targetBeeCount += walkablePositions * 1.5;
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.5;
       else
-        this.targetBeeCount += walkablePositions * 2;
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.666; // they need to walk more;
 
       this.sourceTargeting[source.id] = {
         max: walkablePositions,
@@ -118,7 +121,7 @@ export class bootstrapMaster extends Master {
           source = <Source>bee.creep.pos.findClosest(
             _.filter(this.cell.sources,
               (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source))));
+                && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)) && source.energy > 0));
           if (source) {
             this.sourceTargeting[source.id].current += 1;
             this.stateMap[bee.ref].target = source.id;
@@ -128,8 +131,12 @@ export class bootstrapMaster extends Master {
         }
 
         if (source) {
-          bee.harvest(source);
-          sourceTargetingCurrent[source.id] += 1;
+          if (source.energy == 0)
+            this.stateMap[bee.ref].target = "";
+          else {
+            bee.harvest(source);
+            sourceTargetingCurrent[source.id] += 1;
+          }
         }
       } else {
         let target: Structure | ConstructionSite | null = Game.getObjectById(this.stateMap[bee.ref].target);

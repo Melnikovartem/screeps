@@ -2,6 +2,7 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { bootstrapMaster } from "../beeMaster/civil/bootstrap";
+import { UPDATE_EACH_TICK } from "../settings";
 
 export class developmentCell extends Cell {
 
@@ -18,6 +19,15 @@ export class developmentCell extends Cell {
 
   update() {
     super.update();
+
+    // caustom-made update for sources for developmentCell
+    if (UPDATE_EACH_TICK || Game.time % 5 == 4)
+      _.forEach(this.sources, (source, key) => {
+        let sourceNew = Game.getObjectById(source.id);
+        if (sourceNew instanceof Source)
+          this.sources[key] = sourceNew;
+      });
+
     if (!this.beeMaster)
       this.beeMaster = new bootstrapMaster(this);
 

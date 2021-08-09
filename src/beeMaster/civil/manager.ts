@@ -43,7 +43,8 @@ export class managerMaster extends Master {
   update() {
     this.managers = this.clearBees(this.managers);
 
-    this.targets = [];
+    // if order will matter (not a feature rn) i will like to put storage last
+    this.targets = [this.cell.storage];
     this.suckerTargets = [this.cell.storage];
 
     if (this.hive.cells.defenseCell && this.hive.cells.defenseCell.towers.length)
@@ -51,13 +52,17 @@ export class managerMaster extends Master {
 
     //if you don't need to withdraw => then it is not enough
     if (this.cell.link) {
-      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > this.cell.inLink) {
-        this.targets.push(this.cell.storage);
+      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25) {
         this.suckerTargets.push(this.cell.link);
       }
-      else if (this.cell.inLink > this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY))
+      else if ((this.cell.inLink - this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
+        || this.cell.inLink == this.cell.link.store.getCapacity(RESOURCE_ENERGY)))
         this.targets.push(this.cell.link);
     }
+
+    // the >> is made by beatify cause >_> is better
+    this.targets = _.filter(this.targets, (structure) =>
+      (<Store<RESOURCE_ENERGY, false>>structure.store).getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     // tragets.length cause dont need a manager for nothing
     if (Game.time >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
@@ -78,13 +83,8 @@ export class managerMaster extends Master {
     // aka draw energy if there is a target and otherwise put it back
     _.forEach(this.managers, (bee) => {
       let ans;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        let suckerTarget;
-
-        if (!suckerTarget)
-          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
-            structure.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25)[0];
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.targets.length > 1) {
+        let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
         if (!suckerTarget)
           suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
@@ -99,22 +99,18 @@ export class managerMaster extends Master {
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+        // i cloud sort this.targets, but this is more convenient
         let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
           structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
 
         if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-            (this.cell.inLink - structure.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
-              || this.cell.inLink == structure.store.getCapacity(RESOURCE_ENERGY)))[0];
+          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
         if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER)[0];
 
         if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0]
+          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0]
 
         if (target)
           if (target instanceof StructureLink)
