@@ -19,7 +19,6 @@ export class annexMaster extends Master {
   newBee(bee: Bee): void {
     this.claimers.push(bee);
     this.refreshLastSpawned();
-    this.print(this.lastSpawned);
   }
 
   refreshLastSpawned(): void {

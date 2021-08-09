@@ -179,7 +179,7 @@ export class bootstrapMaster extends Master {
           workType = "refill";
         }
 
-        if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.5)) {
+        if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
           if (!target) {
             target = <Structure>bee.creep.pos.findClosest(this.hive.emergencyRepairs)
             workType = "repair";

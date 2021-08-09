@@ -86,6 +86,8 @@ export class Hive {
   claimers: annexMaster[] = [];
   puppets: puppetMaster[] = [];
 
+  stage: 0 | 1 | 2 = 0;
+
   constructor(roomName: string, annexNames: string[]) {
     this.roomName = roomName;
     this.annexNames = annexNames;
@@ -98,7 +100,7 @@ export class Hive {
     this.cells = {};
     this.parseStructures();
 
-    if (this.room.storage)
+    if (this.stage > 0)
       this.builder = new builderMaster(this);
   }
 
@@ -148,14 +150,16 @@ export class Hive {
       this.cells.storageCell = new storageCell(this, storage);
 
       if (storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+        this.stage = 1;
         this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
 
         if (allSources.length) {
           this.cells.excavationCell = new excavationCell(this, allSources);
         }
-      } else
-        this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
-    } else {
+      }
+    }
+
+    if (this.stage == 0) {
       this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
     }
 

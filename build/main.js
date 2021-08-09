@@ -2818,7 +2818,7 @@ class storageCell extends Cell {
     }
     update() {
         super.update();
-        if (!this.beeMaster && this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
+        if (!this.beeMaster && this.hive.stage > 0)
             this.beeMaster = new managerMaster(this);
     }
     run() {
@@ -3017,7 +3017,7 @@ class respawnCell extends Cell {
         super.update();
         // find free spawners
         this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
-        if (!this.beeMaster && this.hive.cells.storageCell)
+        if (!this.beeMaster && this.hive.stage > 0)
             this.beeMaster = new queenMaster(this);
     }
     ;
@@ -3199,7 +3199,7 @@ class bootstrapMaster extends Master {
                     target = this.hive.cells.storageCell.storage;
                     workType = "refill";
                 }
-                if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.5)) {
+                if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
                     if (!target) {
                         target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
                         workType = "repair";
@@ -3308,7 +3308,6 @@ class annexMaster extends Master {
     newBee(bee) {
         this.claimers.push(bee);
         this.refreshLastSpawned();
-        this.print(this.lastSpawned);
     }
     refreshLastSpawned() {
         _.forEach(this.claimers, (bee) => {
@@ -3423,6 +3422,7 @@ class Hive {
         this.normalRepairs = [];
         this.claimers = [];
         this.puppets = [];
+        this.stage = 0;
         this.roomName = roomName;
         this.annexNames = annexNames;
         this.room = Game.rooms[roomName];
@@ -3430,7 +3430,7 @@ class Hive {
         this.repairSheet = new repairSheet();
         this.cells = {};
         this.parseStructures();
-        if (this.room.storage)
+        if (this.stage > 0)
             this.builder = new builderMaster(this);
     }
     updateRooms() {
@@ -3471,15 +3471,14 @@ class Hive {
         if (storage) {
             this.cells.storageCell = new storageCell(this, storage);
             if (storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+                this.stage = 1;
                 this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
                 if (allSources.length) {
                     this.cells.excavationCell = new excavationCell(this, allSources);
                 }
             }
-            else
-                this.cells.developmentCell = new developmentCell(this, this.room.controller, allSources);
         }
-        else {
+        if (this.stage == 0) {
             this.cells.developmentCell = new developmentCell(this, this.room.controller, allSources);
         }
         if (towers.length) {

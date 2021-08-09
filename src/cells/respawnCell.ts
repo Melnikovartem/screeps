@@ -22,7 +22,7 @@ export class respawnCell extends Cell {
     super.update();
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
-    if (!this.beeMaster && this.hive.cells.storageCell)
+    if (!this.beeMaster && this.hive.stage > 0)
       this.beeMaster = new queenMaster(this);
   };
 
