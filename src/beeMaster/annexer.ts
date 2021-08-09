@@ -4,16 +4,14 @@ import { Hive, spawnOrder } from "../Hive";
 import { Bee } from "../Bee";
 import { Master } from "./_Master";
 
-export class annexesMaster extends Master {
+export class annexMaster extends Master {
   claimers: Bee[] = [];
   lastSpawned: number;
-  target: Room;
   controller: StructureController; //controllers rly don't age...
 
   constructor(hive: Hive, controller: StructureController) {
     super(hive, "master_" + "claimerRoom_" + controller.room.name);
 
-    this.target = controller.room;
     this.controller = controller;
     this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
   }

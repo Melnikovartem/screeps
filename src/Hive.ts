@@ -6,6 +6,8 @@ import { respawnCell } from "./cells/respawnCell";
 import { developmentCell } from "./cells/developmentCell";
 
 import { builderMaster } from "./beeMaster/builder";
+import { annexMaster } from "./beeMaster/annexer";
+import { puppetMaster } from "./beeMaster/puppet";
 
 import { CreepSetup } from "./creepSetups";
 
@@ -78,10 +80,20 @@ export class Hive {
   normalRepairs: Structure[] = [];
 
   builder?: builderMaster;
+  claimers: annexMaster[] = [];
+  puppets: puppetMaster[] = [];
 
   constructor(roomName: string, annexNames: string[]) {
     this.room = Game.rooms[roomName];
-    this.annexes = _.compact(_.map(annexNames, (annexName) => Game.rooms[annexName]));
+    this.annexes = <Room[]>_.compact(_.map(annexNames, (annexName) => {
+      let annex = Game.rooms[annexName];
+      if (!annex && !global.masters["master_puppetFor_" + annexName]
+        && this.room.energyCapacityAvailable >= 650)
+        this.puppets.push(new puppetMaster(this, annexName));
+      else if (annex.controller)
+        this.claimers.push(new annexMaster(this, annex.controller));
+      return annex;
+    }));
     this.rooms = [this.room].concat(this.annexes);
 
     this.repairSheet = new repairSheet();
@@ -89,7 +101,7 @@ export class Hive {
     this.cells = {};
     this.parseStructures();
 
-    if (this.cells.storageCell)
+    if (this.room.storage)
       this.builder = new builderMaster(this);
   }
 

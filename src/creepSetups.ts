@@ -56,6 +56,7 @@ const SetupsNames = {
   miner: 'Andrena',
   upgrader: 'Honey bee',
   builder: 'Colletidae',
+  scout: 'Stenotritidae',
 }
 
 
@@ -88,5 +89,9 @@ export const Setups = {
   }),
   builder: new CreepSetup(SetupsNames.builder, {
     pattern: [WORK, CARRY, MOVE],
+  }),
+  puppet: new CreepSetup(SetupsNames.scout, {
+    pattern: [MOVE],
+    patternLimit: 1,
   }),
 }

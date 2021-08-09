@@ -5,12 +5,33 @@ export class _Apiary {
   hives: Hive[] = [];
   destroyTime: number;
 
+
   constructor() {
     this.destroyTime = Game.time + 2000;
 
+    let myRoomsAnnexes: { [id: string]: string[] } = {};
+
     _.forEach(Game.rooms, (room) => {
       if (room.controller && room.controller.my)
-        this.hives.push(new Hive(room.name, []));
+        myRoomsAnnexes[room.name] = [];
+    });
+
+    _.forEach(Game.flags, (flag) => {
+      // annex room
+      if (flag.color == 2 && flag.secondaryColor == 2) {
+        _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
+          if (exit && myRoomsAnnexes[exit] && !myRoomsAnnexes[exit].includes(flag.pos.roomName)) {
+            myRoomsAnnexes[exit].push(flag.pos.roomName);
+            return true;
+          }
+          return false;
+        });
+      }
+    });
+
+    _.forEach(myRoomsAnnexes, (annexNames, roomName) => {
+      if (roomName)
+        this.hives.push(new Hive(roomName, annexNames));
     });
   }
 

@@ -6,8 +6,8 @@ import "./prototypes/pos"
 
 import { _Apiary } from "./Apiary";
 
-const GENERATE_PIXEL = true; // turn on on official
-const ERROR_WRAPPER = false; // turn off on official
+const GENERATE_PIXEL = false; // turn on on official
+const ERROR_WRAPPER = true; // turn off on official
 
 // This gets run on each global reset
 function onGlobalReset(): void {

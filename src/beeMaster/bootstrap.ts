@@ -27,6 +27,7 @@ export class bootstrapMaster extends Master {
     this.cell = developmentCell;
 
     _.forEach(this.cell.sources, (source) => {
+      this.print(source);
       let walkablePositions = source.pos.getwalkablePositions().length;
       this.targetBeeCount += walkablePositions * 1.5;
 
@@ -61,6 +62,9 @@ export class bootstrapMaster extends Master {
       };
 
       this.waitingForABee += 1;
+
+      if (this.workers.length < this.targetBeeCount * 0.5)
+        order.priority = 2;
 
       this.hive.wish(order);
     }
@@ -127,9 +131,15 @@ export class bootstrapMaster extends Master {
 
         // checking if target is valid
         if (workType == "refill") {
-          if (!(target instanceof StructureSpawn || target instanceof StructureExtension)
-            || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
-            workType = "working";
+          workType = "working";
+          if ((target instanceof StructureSpawn || target instanceof StructureExtension || target instanceof StructureTower)
+            && target.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+            workType = "refill";
+
+          // idk why it wont let me mesh it all in 1 if i guess couse storage can have more then energy
+          if ((target instanceof StructureStorage) && target.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+            workType = "refill";
+
         } else if (workType == "repair") {
           if (!(target instanceof Structure) || target.hits == target.hitsMax)
             workType = "working";
@@ -151,6 +161,20 @@ export class bootstrapMaster extends Master {
             target = <StructureSpawn | StructureExtension>bee.creep.pos.findClosest(targets);
             workType = "refill";
           }
+        }
+
+        if (!target && this.hive.cells.defenseCell) {
+          let targets: (StructureTower)[] = _.filter(this.hive.cells.defenseCell.towers,
+            (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+          if (targets.length) {
+            target = <StructureTower>bee.creep.pos.findClosest(targets);
+            workType = "refill";
+          }
+        }
+
+        if (!target && this.hive.cells.storageCell) {
+          target = this.hive.cells.storageCell.storage;
+          workType = "refill";
         }
 
         if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.5)) {
@@ -175,7 +199,7 @@ export class bootstrapMaster extends Master {
           bee.build(target);
         else if (workType == "repair" && target instanceof Structure)
           bee.repair(target);
-        else if (workType == "refill" && (target instanceof StructureSpawn || target instanceof StructureExtension))
+        else if (workType == "refill" && target instanceof Structure)
           bee.transfer(target, RESOURCE_ENERGY);
         else if (workType == "upgrade" && target instanceof StructureController)
           bee.upgradeController(target);
