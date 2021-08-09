@@ -1,8 +1,8 @@
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { Hive, spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { Hive, spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class annexMaster extends Master {
   claimers: Bee[] = [];

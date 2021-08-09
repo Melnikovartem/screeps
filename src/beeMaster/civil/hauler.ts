@@ -1,11 +1,11 @@
 // refills the respawnCell
-import { excavationCell } from "../cells/excavationCell";
+import { excavationCell } from "../../cells/excavationCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class haulerMaster extends Master {
   haulers: Bee[] = [];
@@ -61,6 +61,9 @@ export class haulerMaster extends Master {
         amount: this.targetBeeCount - this.haulers.length,
         priority: 4,
       };
+
+      if (this.hive.stage < 2)
+        order.setup.bodySetup.patternLimit = 10;
 
       this.waitingForABee += this.targetBeeCount - this.haulers.length;
 

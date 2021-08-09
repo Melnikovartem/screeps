@@ -2,7 +2,7 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { resourceCell } from "./resourceCell";
-import { haulerMaster } from "../beeMaster/hauler";
+import { haulerMaster } from "../beeMaster/civil/hauler";
 
 export class excavationCell extends Cell {
   resourceCells: resourceCell[];

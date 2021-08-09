@@ -1,11 +1,11 @@
 // refills the respawnCell
-import { respawnCell } from "../cells/respawnCell";
+import { respawnCell } from "../../cells/respawnCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class queenMaster extends Master {
   queens: Bee[] = [];

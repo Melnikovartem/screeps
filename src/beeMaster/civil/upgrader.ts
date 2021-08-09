@@ -1,10 +1,10 @@
-import { upgradeCell } from "../cells/upgradeCell";
+import { upgradeCell } from "../../cells/upgradeCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class upgraderMaster extends Master {
   upgraders: Bee[] = [];

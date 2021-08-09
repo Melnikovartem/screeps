@@ -1,7 +1,7 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { managerMaster } from "../beeMaster/manager"
+import { managerMaster } from "../beeMaster/civil/manager"
 
 export interface linkRequest {
   link: StructureLink;

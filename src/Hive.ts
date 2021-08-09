@@ -5,9 +5,9 @@ import { defenseCell } from "./cells/defenseCell";
 import { respawnCell } from "./cells/respawnCell";
 import { developmentCell } from "./cells/developmentCell";
 
-import { builderMaster } from "./beeMaster/builder";
-import { annexMaster } from "./beeMaster/annexer";
-import { puppetMaster } from "./beeMaster/puppet";
+import { builderMaster } from "./beeMaster/civil/builder";
+import { annexMaster } from "./beeMaster/civil/annexer";
+import { puppetMaster } from "./beeMaster/civil/puppet";
 
 import { CreepSetup } from "./creepSetups";
 
@@ -35,6 +35,20 @@ class repairSheet {
   [STRUCTURE_WALL]: number = 200000;
   other: number = 1;
   collapse: number = 0.5;
+
+  constructor(hiveStage: 0 | 1 | 2) {
+    if (hiveStage == 0) {
+      this[STRUCTURE_RAMPART] = 20000;
+      this[STRUCTURE_WALL] = 20000;
+      this.other = 0.7;
+      this.collapse = 0.3;
+    } else if (hiveStage == 2) {
+      this[STRUCTURE_RAMPART] = 2000000;
+      this[STRUCTURE_WALL] = 2000000;
+      this.other = 1;
+      this.collapse = 0.7;
+    }
+  }
 
   isAnEmergency(structure: Structure): boolean {
     switch (structure.structureType) {
@@ -95,13 +109,19 @@ export class Hive {
     this.room = Game.rooms[roomName];
     this.updateRooms();
 
-    this.repairSheet = new repairSheet();
-
     this.cells = {};
     this.parseStructures();
 
+    this.repairSheet = new repairSheet(this.stage);
+
     if (this.stage > 0)
       this.builder = new builderMaster(this);
+
+    this.updateConstructionSites();
+    this.updateEmeregcyRepairs();
+    this.updateNormalRepairs();
+
+    this.findTargets();
   }
 
   updateRooms(): void {
@@ -119,9 +139,6 @@ export class Hive {
   }
 
   private parseStructures() {
-    this.updateConstructionSites();
-    this.updateEmeregcyRepairs();
-    this.updateNormalRepairs();
 
     let spawns: StructureSpawn[] = [];
     let extensions: StructureExtension[] = [];

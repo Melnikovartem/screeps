@@ -2,13 +2,13 @@
 // like from storage to link or terminal
 // refill towers?
 // refills the respawnCell
-import { storageCell } from "../cells/storageCell";
+import { storageCell } from "../../cells/storageCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class managerMaster extends Master {
   managers: Bee[] = [];

@@ -1,7 +1,7 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { bootstrapMaster } from "../beeMaster/bootstrap";
+import { bootstrapMaster } from "../beeMaster/civil/bootstrap";
 
 export class developmentCell extends Cell {
 

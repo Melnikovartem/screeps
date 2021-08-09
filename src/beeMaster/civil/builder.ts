@@ -1,8 +1,8 @@
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { Hive, spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { Hive, spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class builderMaster extends Master {
   builders: Bee[] = [];
@@ -17,6 +17,7 @@ export class builderMaster extends Master {
 
   newBee(bee: Bee): void {
     this.builders.push(bee);
+    this.targetCaching[bee.ref] = "";
     if (this.waitingForABee)
       this.waitingForABee -= 1;
   }
@@ -51,6 +52,7 @@ export class builderMaster extends Master {
       let ans: number = ERR_FULL;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
         ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
+        this.targetCaching[bee.ref] = "";
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {

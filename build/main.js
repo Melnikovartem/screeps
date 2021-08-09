@@ -2667,6 +2667,8 @@ class haulerMaster extends Master {
                 amount: this.targetBeeCount - this.haulers.length,
                 priority: 4,
             };
+            if (this.hive.stage < 2)
+                order.setup.bodySetup.patternLimit = 10;
             this.waitingForABee += this.targetBeeCount - this.haulers.length;
             this.hive.wish(order);
         }
@@ -3285,6 +3287,7 @@ class builderMaster extends Master {
     }
     newBee(bee) {
         this.builders.push(bee);
+        this.targetCaching[bee.ref] = "";
         if (this.waitingForABee)
             this.waitingForABee -= 1;
     }
@@ -3314,6 +3317,7 @@ class builderMaster extends Master {
             let ans = ERR_FULL;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
                 ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
+                this.targetCaching[bee.ref] = "";
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
                 let target = Game.getObjectById(this.targetCaching[bee.ref]);
@@ -3423,11 +3427,23 @@ class puppetMaster extends Master {
 
 var _a, _b;
 class repairSheet {
-    constructor() {
+    constructor(hiveStage) {
         this[_a] = 200000;
         this[_b] = 200000;
         this.other = 1;
         this.collapse = 0.5;
+        if (hiveStage == 0) {
+            this[STRUCTURE_RAMPART] = 20000;
+            this[STRUCTURE_WALL] = 20000;
+            this.other = 0.7;
+            this.collapse = 0.3;
+        }
+        else if (hiveStage == 2) {
+            this[STRUCTURE_RAMPART] = 2000000;
+            this[STRUCTURE_WALL] = 2000000;
+            this.other = 1;
+            this.collapse = 0.7;
+        }
     }
     isAnEmergency(structure) {
         switch (structure.structureType) {
@@ -3472,11 +3488,15 @@ class Hive {
         this.annexNames = annexNames;
         this.room = Game.rooms[roomName];
         this.updateRooms();
-        this.repairSheet = new repairSheet();
         this.cells = {};
         this.parseStructures();
+        this.repairSheet = new repairSheet(this.stage);
         if (this.stage > 0)
             this.builder = new builderMaster(this);
+        this.updateConstructionSites();
+        this.updateEmeregcyRepairs();
+        this.updateNormalRepairs();
+        this.findTargets();
     }
     updateRooms() {
         this.room = Game.rooms[this.roomName];
@@ -3492,9 +3512,6 @@ class Hive {
         this.rooms = [this.room].concat(this.annexes);
     }
     parseStructures() {
-        this.updateConstructionSites();
-        this.updateEmeregcyRepairs();
-        this.updateNormalRepairs();
         let spawns = [];
         let extensions = [];
         let towers = [];

@@ -1,10 +1,10 @@
-import { resourceCell } from "../cells/resourceCell";
+import { resourceCell } from "../../cells/resourceCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 export class minerMaster extends Master {
   miners: Bee[] = [];

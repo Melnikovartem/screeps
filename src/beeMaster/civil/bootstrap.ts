@@ -1,11 +1,11 @@
 // amanges colony untill storage lvl
-import { developmentCell } from "../cells/developmentCell";
+import { developmentCell } from "../../cells/developmentCell";
 
-import { Setups } from "../creepSetups";
+import { Setups } from "../../creepSetups";
 
-import { spawnOrder } from "../Hive";
-import { Bee } from "../Bee";
-import { Master } from "./_Master";
+import { spawnOrder } from "../../Hive";
+import { Bee } from "../../Bee";
+import { Master } from "../_Master";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working"
 

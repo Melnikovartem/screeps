@@ -1,7 +1,7 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { upgraderMaster } from "../beeMaster/upgrader";
+import { upgraderMaster } from "../beeMaster/civil/upgrader";
 
 export class upgradeCell extends Cell {
 

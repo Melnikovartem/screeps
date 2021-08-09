@@ -1,7 +1,7 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
-import { minerMaster } from "../beeMaster/miner";
+import { minerMaster } from "../beeMaster/civil/miner";
 
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {

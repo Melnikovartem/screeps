@@ -3,7 +3,7 @@ import { Hive } from "../Hive";
 
 import { makeId } from "../utils/other";
 
-import { queenMaster } from "../beeMaster/queen";
+import { queenMaster } from "../beeMaster/civil/queen";
 
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];
