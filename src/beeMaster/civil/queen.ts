@@ -59,21 +59,26 @@ export class queenMaster extends Master {
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.queens, (bee) => {
-      let ans;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        let suckerTarget;
+      if (targets.length) {
+        let ans;
+        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+          let suckerTarget;
 
-        if (!suckerTarget && this.hive.cells.storageCell)
-          suckerTarget = this.hive.cells.storageCell.storage;
+          if (!suckerTarget && this.hive.cells.storageCell)
+            suckerTarget = this.hive.cells.storageCell.storage;
 
-        if (suckerTarget)
-          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-      }
+          if (suckerTarget)
+            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        }
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-        let target = bee.creep.pos.findClosest(targets);
-        if (target)
-          bee.transfer(target, RESOURCE_ENERGY);
+        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+          let target = bee.creep.pos.findClosest(targets);
+          if (target)
+            bee.transfer(target, RESOURCE_ENERGY);
+        }
+      } else if (this.hive.cells.storageCell && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+        && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
       }
     });
   }

@@ -83,7 +83,7 @@ export class managerMaster extends Master {
     // aka draw energy if there is a target and otherwise put it back
     _.forEach(this.managers, (bee) => {
       let ans;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.targets.length > 1) {
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && (this.targets.length > 1 || this.suckerTargets.length > 1)) {
         let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
         if (!suckerTarget)
@@ -96,6 +96,8 @@ export class managerMaster extends Master {
           else
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }
+      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        bee.goTo(this.cell.storage);
       }
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {

@@ -3268,7 +3268,7 @@ class managerMaster extends Master {
         // aka draw energy if there is a target and otherwise put it back
         _.forEach(this.managers, (bee) => {
             let ans;
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.targets.length > 1) {
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && (this.targets.length > 1 || this.suckerTargets.length > 1)) {
                 let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
                 if (!suckerTarget)
                     suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
@@ -3278,6 +3278,9 @@ class managerMaster extends Master {
                     else
                         ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
                 }
+            }
+            else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                bee.goTo(this.cell.storage);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
                 // i cloud sort this.targets, but this is more convenient
@@ -3426,6 +3429,9 @@ class defenseCell extends Cell {
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
     update() {
         super.update();
+        // oh no towers fell guess time to safe mode
+        //if (!this.towers.length && this.hive.stage > 0)
+        //  this.hive.room.controller!.activateSafeMode();
     }
     ;
     // second stage of decision making like where do i need to spawn creeps or do i need
@@ -3491,18 +3497,24 @@ class queenMaster extends Master {
         let targets = this.cell.spawns;
         targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
         _.forEach(this.queens, (bee) => {
-            let ans;
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                let suckerTarget;
-                if (!suckerTarget && this.hive.cells.storageCell)
-                    suckerTarget = this.hive.cells.storageCell.storage;
-                if (suckerTarget)
-                    ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+            if (targets.length) {
+                let ans;
+                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                    let suckerTarget;
+                    if (!suckerTarget && this.hive.cells.storageCell)
+                        suckerTarget = this.hive.cells.storageCell.storage;
+                    if (suckerTarget)
+                        ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                }
+                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+                    let target = bee.creep.pos.findClosest(targets);
+                    if (target)
+                        bee.transfer(target, RESOURCE_ENERGY);
+                }
             }
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-                let target = bee.creep.pos.findClosest(targets);
-                if (target)
-                    bee.transfer(target, RESOURCE_ENERGY);
+            else if (this.hive.cells.storageCell && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+                && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+                bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
             }
         });
     }

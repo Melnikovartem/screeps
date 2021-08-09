@@ -13,6 +13,10 @@ export class defenseCell extends Cell {
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     super.update();
+
+    // oh no towers fell guess time to safe mode
+    //if (!this.towers.length && this.hive.stage > 0)
+    //  this.hive.room.controller!.activateSafeMode();
   };
 
   // second stage of decision making like where do i need to spawn creeps or do i need
