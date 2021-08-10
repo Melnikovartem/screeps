@@ -27,7 +27,8 @@ export class builderMaster extends Master {
 
     // TODO smarter counting of builders needed
     let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
-    if (targetsNumber > 5) {
+    if (targetsNumber > 5 && this.hive.cells.storageCell
+      && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
       this.targetBeeCount = 2;
     } else {
       this.targetBeeCount = 1;

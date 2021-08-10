@@ -2936,10 +2936,10 @@ class CreepSetup {
         let fixedCosts = _.sum(body, s => BODYPART_COST[s]);
         let segmentCost = _.sum(this.bodySetup.pattern, s => BODYPART_COST[s]);
         let limitSegments = Infinity;
-        if (this.bodySetup.patternLimit)
+        if (this.bodySetup.patternLimit != undefined)
             limitSegments = this.bodySetup.patternLimit;
         let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
-        _.forEach(this.bodySetup.pattern, (s) => _.times(maxSegment, () => body.push(s)));
+        _.times(maxSegment, () => _.forEach(this.bodySetup.pattern, (s) => body.push(s)));
         return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
     }
 }
@@ -3259,6 +3259,8 @@ class managerMaster extends Master {
                 amount: 1,
                 priority: 3,
             };
+            if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+                order.setup.bodySetup.patternLimit = 5; // save energy from burning
             this.lastSpawned = Game.time;
             this.hive.wish(order);
         }
@@ -3360,7 +3362,7 @@ class upgraderMaster extends Master {
     }
     update() {
         this.upgraders = this.clearBees(this.upgraders);
-        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)
+        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000)
             this.targetBeeCount = 2; // burn some energy on controller
         else
             this.targetBeeCount = 1;
@@ -3372,8 +3374,11 @@ class upgraderMaster extends Master {
                 priority: 4,
             };
             if (this.cell.link || (this.hive.cells.storageCell
-                && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5))
+                && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5)) {
                 order.setup = Setups.upgrader.fast;
+                if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+                    order.setup.bodySetup.patternLimit = 0; // save energy from burning
+            }
             this.waitingForABee += this.targetBeeCount - this.upgraders.length;
             this.hive.wish(order);
         }
@@ -3804,7 +3809,8 @@ class builderMaster extends Master {
         this.builders = this.clearBees(this.builders);
         // TODO smarter counting of builders needed
         let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
-        if (targetsNumber > 5) {
+        if (targetsNumber > 5 && this.hive.cells.storageCell
+            && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
             this.targetBeeCount = 2;
         }
         else {

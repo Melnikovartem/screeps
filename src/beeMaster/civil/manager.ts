@@ -73,6 +73,9 @@ export class managerMaster extends Master {
         priority: 3,
       };
 
+      if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+        order.setup.bodySetup.patternLimit = 5; // save energy from burning
+
       this.lastSpawned = Game.time;
       this.hive.wish(order);
     }
