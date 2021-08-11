@@ -3113,7 +3113,6 @@ const Setups = {
 class Master {
     constructor(hive, ref) {
         this.targetBeeCount = 1;
-        this.beeLifeTime = CREEP_LIFE_TIME;
         this.waitingForBees = 0;
         this.lastSpawns = [];
         this.bees = [];
@@ -3127,13 +3126,14 @@ class Master {
         if (this.waitingForBees)
             this.waitingForBees -= 1;
         _.forEach(this.bees, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : this.beeLifeTime;
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
+            let birthTime = Game.time - (bee.lifeTime - ticksToLive);
             if (this.lastSpawns.length < this.targetBeeCount) {
-                this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+                this.lastSpawns.push();
             }
-            else if (Game.time - (this.beeLifeTime - ticksToLive) >= this.lastSpawns[0]) {
+            else if (birthTime >= this.lastSpawns[0]) {
                 this.lastSpawns.shift();
-                this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+                this.lastSpawns.push(birthTime);
             }
         });
     }
@@ -3575,12 +3575,12 @@ class queenMaster extends Master {
     constructor(respawnCell) {
         super(respawnCell.hive, "master_" + respawnCell.ref);
         this.cell = respawnCell;
-        this.lastSpawns.push(Game.time - this.beeLifeTime);
+        this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
     }
     update() {
         super.update();
         // 5 for random shit
-        if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + this.beeLifeTime) {
+        if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME) {
             let order = {
                 master: this.ref,
                 setup: Setups.manager,
@@ -3883,7 +3883,6 @@ class developmentCell extends Cell {
 class builderMaster extends Master {
     constructor(hive) {
         super(hive, "master_" + "builderHive_" + hive.room.name);
-        this.builders = [];
         this.targetCaching = {};
     }
     update() {
@@ -3897,18 +3896,18 @@ class builderMaster extends Master {
         else {
             this.targetBeeCount = 1;
         }
-        if (!this.waitingForBees && targetsNumber && this.builders.length < this.targetBeeCount) {
+        if (!this.waitingForBees && targetsNumber && this.bees.length < this.targetBeeCount) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
-                amount: this.targetBeeCount - this.builders.length,
+                amount: this.targetBeeCount - this.bees.length,
                 priority: 4,
             };
             this.wish(order);
         }
     }
     run() {
-        _.forEach(this.builders, (bee) => {
+        _.forEach(this.bees, (bee) => {
             let ans = ERR_FULL;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
                 ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
@@ -3940,7 +3939,6 @@ class annexMaster extends Master {
     constructor(hive, controller) {
         super(hive, "master_" + "annexerRoom_" + controller.room.name);
         this.controller = controller;
-        this.beeLifeTime = CREEP_CLAIM_LIFE_TIME;
         this.lastSpawns.push(Game.time - CREEP_CLAIM_LIFE_TIME);
     }
     update() {
@@ -3951,7 +3949,7 @@ class annexMaster extends Master {
                 this.controller = controller;
         }
         // 5 for random shit
-        if (Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
+        if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
             let order = {
                 master: this.ref,
                 setup: Setups.claimer,
@@ -4189,9 +4187,12 @@ class Bee {
     // for now it will be forever binded
     constructor(creep) {
         this.reusePath = 3;
+        this.lifeTime = CREEP_LIFE_TIME;
         this.creep = creep;
         this.master = global.masters[this.creep.memory.refMaster];
         this.ref = creep.name;
+        if (creep.getBodyparts(CLAIM))
+            this.lifeTime = CREEP_CLAIM_LIFE_TIME;
         // not sure weather i should copy all parameters from creep like body and stuff
         global.bees[this.creep.name] = this;
     }
@@ -4380,13 +4381,12 @@ class hordeMaster extends SwarmMaster {
     run() {
         // it is cached after first check
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-        if (this.tryToDowngrade && roomInfo.safeToDowngrade && this.order.pos.roomName in Game.rooms) {
-            if (roomInfo.ownedByEnemy) {
-                let controller = Game.rooms[this.order.pos.roomName].controller;
-                if (controller && !controller.pos.lookFor(LOOK_FLAGS).length)
-                    controller.pos.createFlag("downgrade_" + this.order.pos.roomName, COLOR_RED, COLOR_PURPLE);
-                this.tryToDowngrade = false;
-            }
+        if (this.tryToDowngrade && roomInfo.safeToDowngrade && roomInfo.ownedByEnemy && this.order.pos.roomName in Game.rooms) {
+            console.log("here");
+            let controller = Game.rooms[this.order.pos.roomName].controller;
+            if (controller && !controller.pos.lookFor(LOOK_FLAGS).length)
+                controller.pos.createFlag("downgrade_" + this.order.pos.roomName, COLOR_RED, COLOR_PURPLE);
+            this.tryToDowngrade = false;
         }
         let enemyTargetingCurrent = {};
         _.forEach(roomInfo.targetBuildings.concat(roomInfo.targetCreeps), (enemy) => {

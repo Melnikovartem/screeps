@@ -10,7 +10,6 @@ export abstract class Master {
   ref: string;
 
   targetBeeCount: number = 1;
-  beeLifeTime: number = CREEP_LIFE_TIME;
   waitingForBees: number = 0;
 
   lastSpawns: number[] = [];
@@ -30,12 +29,13 @@ export abstract class Master {
       this.waitingForBees -= 1;
 
     _.forEach(this.bees, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : this.beeLifeTime;
+      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
+      let birthTime = Game.time - (bee.lifeTime - ticksToLive);
       if (this.lastSpawns.length < this.targetBeeCount) {
-        this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
-      } else if (Game.time - (this.beeLifeTime - ticksToLive) >= this.lastSpawns[0]) {
+        this.lastSpawns.push();
+      } else if (birthTime >= this.lastSpawns[0]) {
         this.lastSpawns.shift();
-        this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+        this.lastSpawns.push(birthTime);
       }
     });
   };

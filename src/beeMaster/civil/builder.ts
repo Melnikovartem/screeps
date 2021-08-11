@@ -1,11 +1,8 @@
 import { Setups } from "../../creepSetups";
 import { SpawnOrder, Hive } from "../../Hive";
-import { Bee } from "../../Bee";
 import { Master } from "../_Master";
 
 export class builderMaster extends Master {
-  builders: Bee[] = [];
-
   targetCaching: { [id: string]: string } = {};
 
   constructor(hive: Hive) {
@@ -24,11 +21,11 @@ export class builderMaster extends Master {
       this.targetBeeCount = 1;
     }
 
-    if (!this.waitingForBees && targetsNumber && this.builders.length < this.targetBeeCount) {
+    if (!this.waitingForBees && targetsNumber && this.bees.length < this.targetBeeCount) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
-        amount: this.targetBeeCount - this.builders.length,
+        amount: this.targetBeeCount - this.bees.length,
         priority: 4,
       };
 
@@ -37,7 +34,7 @@ export class builderMaster extends Master {
   }
 
   run() {
-    _.forEach(this.builders, (bee) => {
+    _.forEach(this.bees, (bee) => {
       let ans: number = ERR_FULL;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
         ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);

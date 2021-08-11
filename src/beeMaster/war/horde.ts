@@ -49,13 +49,11 @@ export class hordeMaster extends SwarmMaster {
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
 
-    if (this.tryToDowngrade && roomInfo.safeToDowngrade && this.order.pos.roomName in Game.rooms) {
-      if (roomInfo.ownedByEnemy) {
-        let controller = Game.rooms[this.order.pos.roomName].controller;
-        if (controller && !controller.pos.lookFor(LOOK_FLAGS).length)
-          controller.pos.createFlag("downgrade_" + this.order.pos.roomName, COLOR_RED, COLOR_PURPLE);
-        this.tryToDowngrade = false;
-      }
+    if (this.tryToDowngrade && roomInfo.safeToDowngrade && roomInfo.ownedByEnemy && this.order.pos.roomName in Game.rooms) {
+      let controller = Game.rooms[this.order.pos.roomName].controller;
+      if (controller && !controller.pos.lookFor(LOOK_FLAGS).length)
+        controller.pos.createFlag("downgrade_" + this.order.pos.roomName, COLOR_RED, COLOR_PURPLE);
+      this.tryToDowngrade = false;
     }
 
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};

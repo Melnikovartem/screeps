@@ -11,7 +11,6 @@ export class annexMaster extends Master {
     super(hive, "master_" + "annexerRoom_" + controller.room.name);
 
     this.controller = controller;
-    this.beeLifeTime = CREEP_CLAIM_LIFE_TIME;
     this.lastSpawns.push(Game.time - CREEP_CLAIM_LIFE_TIME);
   }
 
@@ -25,7 +24,7 @@ export class annexMaster extends Master {
     }
 
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
+    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer,

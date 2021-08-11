@@ -13,14 +13,14 @@ export class queenMaster extends Master {
 
     this.cell = respawnCell;
 
-    this.lastSpawns.push(Game.time - this.beeLifeTime);
+    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
     super.update();
 
     // 5 for random shit
-    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + this.beeLifeTime) {
+    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,

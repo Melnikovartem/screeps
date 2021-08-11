@@ -8,6 +8,7 @@ export class Bee {
   ref: string;
 
   reusePath: number = 3;
+  lifeTime: number = CREEP_LIFE_TIME;
 
   // for now it will be forever binded
   constructor(creep: Creep) {
@@ -15,6 +16,9 @@ export class Bee {
     this.master = global.masters[this.creep.memory.refMaster];
 
     this.ref = creep.name;
+
+    if (creep.getBodyparts(CLAIM))
+      this.lifeTime = CREEP_CLAIM_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
     global.bees[this.creep.name] = this;
