@@ -1105,7 +1105,7 @@ var ArraySet = arraySet.ArraySet;
 
 var quickSort = quickSort$1.quickSort;
 
-function SourceMapConsumer(aSourceMap, aSourceMapURL) {
+function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
     sourceMap = util.parseSourceMapInput(aSourceMap);
@@ -1116,14 +1116,14 @@ function SourceMapConsumer(aSourceMap, aSourceMapURL) {
     : new BasicSourceMapConsumer(sourceMap, aSourceMapURL);
 }
 
-SourceMapConsumer.fromSourceMap = function(aSourceMap, aSourceMapURL) {
+SourceMapConsumer$1.fromSourceMap = function(aSourceMap, aSourceMapURL) {
   return BasicSourceMapConsumer.fromSourceMap(aSourceMap, aSourceMapURL);
 };
 
 /**
  * The version of the source mapping spec that we are consuming.
  */
-SourceMapConsumer.prototype._version = 3;
+SourceMapConsumer$1.prototype._version = 3;
 
 // `__generatedMappings` and `__originalMappings` are arrays that hold the
 // parsed mapping coordinates from the source map's "mappings" attribute. They
@@ -1155,8 +1155,8 @@ SourceMapConsumer.prototype._version = 3;
 //
 // `_originalMappings` is ordered by the original positions.
 
-SourceMapConsumer.prototype.__generatedMappings = null;
-Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
+SourceMapConsumer$1.prototype.__generatedMappings = null;
+Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1168,8 +1168,8 @@ Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
   }
 });
 
-SourceMapConsumer.prototype.__originalMappings = null;
-Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
+SourceMapConsumer$1.prototype.__originalMappings = null;
+Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1181,7 +1181,7 @@ Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
   }
 });
 
-SourceMapConsumer.prototype._charIsMappingSeparator =
+SourceMapConsumer$1.prototype._charIsMappingSeparator =
   function SourceMapConsumer_charIsMappingSeparator(aStr, index) {
     var c = aStr.charAt(index);
     return c === ";" || c === ",";
@@ -1192,16 +1192,16 @@ SourceMapConsumer.prototype._charIsMappingSeparator =
  * query (the ordered arrays in the `this.__generatedMappings` and
  * `this.__originalMappings` properties).
  */
-SourceMapConsumer.prototype._parseMappings =
+SourceMapConsumer$1.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     throw new Error("Subclasses must implement _parseMappings");
   };
 
-SourceMapConsumer.GENERATED_ORDER = 1;
-SourceMapConsumer.ORIGINAL_ORDER = 2;
+SourceMapConsumer$1.GENERATED_ORDER = 1;
+SourceMapConsumer$1.ORIGINAL_ORDER = 2;
 
-SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
-SourceMapConsumer.LEAST_UPPER_BOUND = 2;
+SourceMapConsumer$1.GREATEST_LOWER_BOUND = 1;
+SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
 
 /**
  * Iterate over each mapping between an original source/line/column and a
@@ -1219,17 +1219,17 @@ SourceMapConsumer.LEAST_UPPER_BOUND = 2;
  *        order or the original's source/line/column order, respectively. Defaults to
  *        `SourceMapConsumer.GENERATED_ORDER`.
  */
-SourceMapConsumer.prototype.eachMapping =
+SourceMapConsumer$1.prototype.eachMapping =
   function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
     var context = aContext || null;
-    var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
+    var order = aOrder || SourceMapConsumer$1.GENERATED_ORDER;
 
     var mappings;
     switch (order) {
-    case SourceMapConsumer.GENERATED_ORDER:
+    case SourceMapConsumer$1.GENERATED_ORDER:
       mappings = this._generatedMappings;
       break;
-    case SourceMapConsumer.ORIGINAL_ORDER:
+    case SourceMapConsumer$1.ORIGINAL_ORDER:
       mappings = this._originalMappings;
       break;
     default:
@@ -1273,7 +1273,7 @@ SourceMapConsumer.prototype.eachMapping =
  *   - column: The column number in the generated source, or null.
  *    The column number is 0-based.
  */
-SourceMapConsumer.prototype.allGeneratedPositionsFor =
+SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
   function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
     var line = util.getArg(aArgs, 'line');
 
@@ -1342,6 +1342,8 @@ SourceMapConsumer.prototype.allGeneratedPositionsFor =
 
     return mappings;
   };
+
+var SourceMapConsumer_1 = SourceMapConsumer$1;
 
 /**
  * A BasicSourceMapConsumer instance represents a parsed source map which we can
@@ -1437,8 +1439,8 @@ function BasicSourceMapConsumer(aSourceMap, aSourceMapURL) {
   this.file = file;
 }
 
-BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
-BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
+BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
+BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer$1;
 
 /**
  * Utility function to find the index of a source.  Returns -1 if not
@@ -1748,7 +1750,7 @@ BasicSourceMapConsumer.prototype.originalPositionFor =
       "generatedLine",
       "generatedColumn",
       util.compareByGeneratedPositionsDeflated,
-      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1893,7 +1895,7 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       "originalLine",
       "originalColumn",
       util.compareByOriginalPositions,
-      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1914,6 +1916,8 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       lastColumn: null
     };
   };
+
+var BasicSourceMapConsumer_1 = BasicSourceMapConsumer;
 
 /**
  * An IndexedSourceMapConsumer instance represents a parsed source map which
@@ -2007,13 +2011,13 @@ function IndexedSourceMapConsumer(aSourceMap, aSourceMapURL) {
         generatedLine: offsetLine + 1,
         generatedColumn: offsetColumn + 1
       },
-      consumer: new SourceMapConsumer(util.getArg(s, 'map'), aSourceMapURL)
+      consumer: new SourceMapConsumer$1(util.getArg(s, 'map'), aSourceMapURL)
     }
   });
 }
 
-IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
-IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
+IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
+IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer$1;
 
 /**
  * The version of the source mapping spec that we are consuming.
@@ -2232,6 +2236,101 @@ IndexedSourceMapConsumer.prototype._parseMappings =
     quickSort(this.__originalMappings, util.compareByOriginalPositions);
   };
 
+var IndexedSourceMapConsumer_1 = IndexedSourceMapConsumer;
+
+var sourceMapConsumer = {
+	SourceMapConsumer: SourceMapConsumer_1,
+	BasicSourceMapConsumer: BasicSourceMapConsumer_1,
+	IndexedSourceMapConsumer: IndexedSourceMapConsumer_1
+};
+
+var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
+
+class ErrorMapper {
+    static get consumer() {
+        if (this._consumer == null) {
+            this._consumer = new SourceMapConsumer(require("main.js.map"));
+        }
+        return this._consumer;
+    }
+    /**
+     * Generates a stack trace using a source map generate original symbol names.
+     *
+     * WARNING - EXTREMELY high CPU cost for first call after reset - >30 CPU! Use sparingly!
+     * (Consecutive calls after a reset are more reasonable, ~0.1 CPU/ea)
+     *
+     * @param {Error | string} error The error or original stack trace
+     * @returns {string} The source-mapped stack trace
+     */
+    static sourceMappedStackTrace(error) {
+        const stack = error instanceof Error ? error.stack : error;
+        if (Object.prototype.hasOwnProperty.call(this.cache, stack)) {
+            return this.cache[stack];
+        }
+        // eslint-disable-next-line no-useless-escape
+        const re = /^\s+at\s+(.+?\s+)?\(?([0-z._\-\\\/]+):(\d+):(\d+)\)?$/gm;
+        let match;
+        let outStack = error.toString();
+        while ((match = re.exec(stack))) {
+            if (match[2] === "main") {
+                const pos = this.consumer.originalPositionFor({
+                    column: parseInt(match[4], 10),
+                    line: parseInt(match[3], 10)
+                });
+                if (pos.line != null) {
+                    if (pos.name) {
+                        outStack += `\n    at ${pos.name} (${pos.source}:${pos.line}:${pos.column})`;
+                    }
+                    else {
+                        if (match[1]) {
+                            // no original source file name known - use file name from given trace
+                            outStack += `\n    at ${match[1]} (${pos.source}:${pos.line}:${pos.column})`;
+                        }
+                        else {
+                            // no original source file name known or in given trace - omit name
+                            outStack += `\n    at ${pos.source}:${pos.line}:${pos.column}`;
+                        }
+                    }
+                }
+                else {
+                    // no known position
+                    break;
+                }
+            }
+            else {
+                // no more parseable lines
+                break;
+            }
+        }
+        this.cache[stack] = outStack;
+        return outStack;
+    }
+    static wrapLoop(loop) {
+        return () => {
+            try {
+                loop();
+            }
+            catch (e) {
+                if (e instanceof Error) {
+                    if ("sim" in Game.rooms) {
+                        const message = `Source maps don't work in the simulator - displaying original error`;
+                        console.log(`<span style='color:red'>${message}<br>${_.escape(e.stack)}</span>`);
+                    }
+                    else {
+                        console.log(`<span style='color:red'>${_.escape(this.sourceMappedStackTrace(e))}</span>`);
+                    }
+                }
+                else {
+                    // can't handle it
+                    throw e;
+                }
+            }
+        };
+    }
+}
+// Cache previously mapped traces to improve performance
+ErrorMapper.cache = {};
+
 class Mem {
     static init() {
         if (!Memory.masters)
@@ -2434,6 +2533,9 @@ class Traveler {
      * @param opacity
      */
     static circle(pos, color, opacity) {
+        new RoomVisual(pos.roomName).circle(pos, {
+                radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
+            });
     }
     /**
      * update memory on whether a room should be avoided based on controller owner
@@ -2725,6 +2827,8 @@ class Traveler {
         this.circle(startPos, color);
         for (let position of path) {
             if (position.roomName === lastPosition.roomName) {
+                new RoomVisual(position.roomName)
+                        .line(position, lastPosition, { color: color, lineStyle: "dashed" });
                 serializedPath += lastPosition.getDirectionTo(position);
             }
             lastPosition = position;
@@ -3008,13 +3112,40 @@ const Setups = {
 // i will need to do something so i can build up structure from memory
 class Master {
     constructor(hive, ref) {
+        this.targetBeeCount = 1;
+        this.beeLifeTime = CREEP_LIFE_TIME;
+        this.waitingForBees = 0;
+        this.lastSpawns = [];
+        this.bees = [];
         this.hive = hive;
         this.ref = ref;
-        /*
-            if (global.masters[this.ref])
-              this.print("ERROR duplicate ref");
-        */
         global.masters[this.ref] = this;
+    }
+    // catch a bee after it has requested a master
+    newBee(bee) {
+        this.bees.push(bee);
+        if (this.waitingForBees)
+            this.waitingForBees -= 1;
+        _.forEach(this.bees, (bee) => {
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : this.beeLifeTime;
+            if (this.lastSpawns.length < this.targetBeeCount) {
+                this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+            }
+            else if (Game.time - (this.beeLifeTime - ticksToLive) >= this.lastSpawns[0]) {
+                this.lastSpawns.shift();
+                this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+            }
+        });
+    }
+    ;
+    // first stage of decision making like do i need to spawn new creeps
+    update() {
+        this.bees = this.clearBees(this.bees);
+    }
+    wish(order) {
+        this.waitingForBees += order.amount;
+        this.hive.wish(order);
+        // well he placed an order now just need to catch a creep after a spawn
     }
     clearBees(beeArray) {
         // clear non-exisiting bees
@@ -3037,37 +3168,24 @@ class Master {
 class minerMaster extends Master {
     constructor(resourceCell) {
         super(resourceCell.hive, "master_" + resourceCell.ref);
-        this.miners = [];
         this.cell = resourceCell;
-        this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-    }
-    newBee(bee) {
-        this.miners.push(bee);
-        this.refreshLastSpawned();
-    }
-    refreshLastSpawned() {
-        _.forEach(this.miners, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-        });
+        this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
     }
     update() {
-        this.miners = this.clearBees(this.miners);
+        super.update();
         // 5 for random shit
-        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
+        if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
             let order = {
                 master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
                 priority: 2,
             };
-            this.lastSpawned = Game.time;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
-        _.forEach(this.miners, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
                 bee.harvest(this.cell.source);
             }
@@ -3100,6 +3218,11 @@ class resourceCell extends Cell {
     }
     update() {
         super.update();
+        {
+            let sourceNew = Game.getObjectById(this.source.id);
+            if (sourceNew instanceof Source || sourceNew instanceof Mineral)
+                this.source = sourceNew;
+        }
         if (!this.beeMaster)
             this.beeMaster = new minerMaster(this);
     }
@@ -3116,8 +3239,6 @@ class resourceCell extends Cell {
 class haulerMaster extends Master {
     constructor(excavationCell) {
         super(excavationCell.hive, "master_" + excavationCell.ref);
-        this.haulers = [];
-        this.waitingForABee = 0;
         this.targetMap = {};
         this.cell = excavationCell;
         this.targetBeeCount = 0;
@@ -3136,35 +3257,29 @@ class haulerMaster extends Master {
         });
         this.targetBeeCount = Math.ceil(this.targetBeeCount);
     }
-    newBee(bee) {
-        this.haulers.push(bee);
-        if (this.waitingForABee)
-            this.waitingForABee -= 1;
-    }
     update() {
-        this.haulers = this.clearBees(this.haulers);
+        super.update();
         _.forEach(this.targetMap, (ref, key) => {
             if (ref && key && !global.bees[ref])
                 this.targetMap[key] = null;
         });
-        if (this.haulers.length < this.targetBeeCount && !this.waitingForABee) {
+        if (!this.waitingForBees && this.bees.length < this.targetBeeCount) {
             let order = {
                 master: this.ref,
                 setup: Setups.hauler,
-                amount: this.targetBeeCount - this.haulers.length,
+                amount: this.targetBeeCount - this.bees.length,
                 priority: 4,
             };
             if (this.hive.stage < 2)
                 order.setup.bodySetup.patternLimit = 10;
-            this.waitingForABee += this.targetBeeCount - this.haulers.length;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
         // for future might be good to find closest bee for container and not the other way around
         if (this.hive.cells.storageCell) {
             let target = this.hive.cells.storageCell.storage;
-            _.forEach(this.haulers, (bee) => {
+            _.forEach(this.bees, (bee) => {
                 let ans;
                 if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                     let suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == bee.ref)[0];
@@ -3223,25 +3338,13 @@ class excavationCell extends Cell {
 class managerMaster extends Master {
     constructor(storageCell) {
         super(storageCell.hive, "master_" + storageCell.ref);
-        this.managers = [];
         this.targets = [];
         this.suckerTargets = [];
         this.cell = storageCell;
-        this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-    }
-    newBee(bee) {
-        this.managers.push(bee);
-        this.refreshLastSpawned();
-    }
-    refreshLastSpawned() {
-        _.forEach(this.managers, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-        });
+        this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
     }
     update() {
-        this.managers = this.clearBees(this.managers);
+        super.update();
         // if order will matter (not a feature rn) i will like to put storage last
         this.targets = [this.cell.storage];
         this.suckerTargets = [this.cell.storage];
@@ -3259,7 +3362,7 @@ class managerMaster extends Master {
         // the >> is made by beatify cause >_> is better
         this.targets = _.filter(this.targets, (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
         // tragets.length cause dont need a manager for nothing
-        if (Game.time >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
+        if (!this.waitingForBees && Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME && this.targets.length > 0) {
             let order = {
                 master: this.ref,
                 setup: Setups.manager,
@@ -3268,14 +3371,13 @@ class managerMaster extends Master {
             };
             if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
                 order.setup.bodySetup.patternLimit = 5; // save energy from burning
-            this.lastSpawned = Game.time;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
         // TODO smarter choosing of target
         // aka draw energy if there is a target and otherwise put it back
-        _.forEach(this.managers, (bee) => {
+        _.forEach(this.bees, (bee) => {
             let ans;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && (this.targets.length > 1 || this.suckerTargets.length > 1)) {
                 let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
@@ -3357,18 +3459,10 @@ class storageCell extends Cell {
 class upgraderMaster extends Master {
     constructor(upgradeCell) {
         super(upgradeCell.hive, "master_" + upgradeCell.ref);
-        this.upgraders = [];
-        this.targetBeeCount = 1;
-        this.waitingForABee = 0;
         this.cell = upgradeCell;
     }
-    newBee(bee) {
-        this.upgraders.push(bee);
-        if (this.waitingForABee)
-            this.waitingForABee -= 1;
-    }
     update() {
-        this.upgraders = this.clearBees(this.upgraders);
+        super.update();
         if (this.hive.cells.storageCell) {
             // burn some energy on controller
             if (this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000)
@@ -3378,11 +3472,11 @@ class upgraderMaster extends Master {
         }
         else
             this.targetBeeCount = 1;
-        if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
+        if (!this.waitingForBees && this.bees.length < this.targetBeeCount) {
             let order = {
                 master: this.ref,
                 setup: Setups.upgrader.manual,
-                amount: this.targetBeeCount - this.upgraders.length,
+                amount: this.targetBeeCount - this.bees.length,
                 priority: 4,
             };
             if (this.cell.link || (this.hive.cells.storageCell
@@ -3391,12 +3485,11 @@ class upgraderMaster extends Master {
                 if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
                     order.setup.bodySetup.patternLimit = 0; // save energy from burning
             }
-            this.waitingForABee += this.targetBeeCount - this.upgraders.length;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
-        _.forEach(this.upgraders, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 let suckerTarget;
                 if (this.cell.link)
@@ -3481,25 +3574,13 @@ function makeId(length) {
 class queenMaster extends Master {
     constructor(respawnCell) {
         super(respawnCell.hive, "master_" + respawnCell.ref);
-        this.queens = [];
         this.cell = respawnCell;
-        this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-    }
-    newBee(bee) {
-        this.queens.push(bee);
-        this.refreshLastSpawned();
-    }
-    refreshLastSpawned() {
-        _.forEach(this.queens, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-            if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-                this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-        });
+        this.lastSpawns.push(Game.time - this.beeLifeTime);
     }
     update() {
-        this.queens = this.clearBees(this.queens);
+        super.update();
         // 5 for random shit
-        if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
+        if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + this.beeLifeTime) {
             let order = {
                 master: this.ref,
                 setup: Setups.manager,
@@ -3508,14 +3589,13 @@ class queenMaster extends Master {
             };
             // can refill in 2.5 runs
             order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2.5);
-            this.lastSpawned = Game.time;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
         let targets = this.cell.spawns;
         targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-        _.forEach(this.queens, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (targets.length) {
                 let ans;
                 if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
@@ -3609,9 +3689,6 @@ let maxSize = 6;
 class bootstrapMaster extends Master {
     constructor(developmentCell) {
         super(developmentCell.hive, "master_" + developmentCell.ref);
-        this.workers = [];
-        this.targetBeeCount = 0;
-        this.waitingForABee = 0;
         // some small caching. I just couldn't resist
         this.stateMap = {};
         this.sourceTargeting = {};
@@ -3633,18 +3710,16 @@ class bootstrapMaster extends Master {
         this.targetBeeCount = Math.ceil(this.targetBeeCount);
     }
     newBee(bee) {
+        super.newBee(bee);
         bee.reusePath = 1;
-        this.workers.push(bee);
         this.stateMap[bee.ref] = {
             type: "working",
             target: "",
         };
-        if (this.waitingForABee)
-            this.waitingForABee -= 1;
     }
     update() {
-        this.workers = this.clearBees(this.workers);
-        if (this.workers.length < this.targetBeeCount && !this.waitingForABee && this.hive.stage == 0) {
+        super.update();
+        if (!this.waitingForBees && this.bees.length < this.targetBeeCount && this.hive.stage == 0) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
@@ -3652,10 +3727,9 @@ class bootstrapMaster extends Master {
                 priority: 5,
             };
             order.setup.bodySetup.patternLimit = maxSize;
-            this.waitingForABee += 1;
-            if (this.workers.length < this.targetBeeCount * 0.5)
+            if (this.bees.length < this.targetBeeCount * 0.5)
                 order.priority = 2;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
@@ -3669,7 +3743,7 @@ class bootstrapMaster extends Master {
         _.forEach(this.cell.sources, (source) => {
             sourceTargetingCurrent[source.id] = 0;
         });
-        _.forEach(this.workers, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 this.stateMap[bee.ref] = {
                     type: "mining",
@@ -3794,8 +3868,7 @@ class developmentCell extends Cell {
     update() {
         super.update();
         // caustom-made update for sources for developmentCell
-        if (Game.time % 5 == 4)
-            _.forEach(this.sources, (source, key) => {
+        _.forEach(this.sources, (source, key) => {
                 let sourceNew = Game.getObjectById(source.id);
                 if (sourceNew instanceof Source)
                     this.sources[key] = sourceNew;
@@ -3811,18 +3884,10 @@ class builderMaster extends Master {
     constructor(hive) {
         super(hive, "master_" + "builderHive_" + hive.room.name);
         this.builders = [];
-        this.targetBeeCount = 1;
-        this.waitingForABee = 0;
         this.targetCaching = {};
     }
-    newBee(bee) {
-        this.builders.push(bee);
-        this.targetCaching[bee.ref] = "";
-        if (this.waitingForABee)
-            this.waitingForABee -= 1;
-    }
     update() {
-        this.builders = this.clearBees(this.builders);
+        super.update();
         // TODO smarter counting of builders needed
         let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
         if (targetsNumber > 5 && this.hive.cells.storageCell
@@ -3832,15 +3897,14 @@ class builderMaster extends Master {
         else {
             this.targetBeeCount = 1;
         }
-        if (targetsNumber && this.builders.length < this.targetBeeCount && !this.waitingForABee) {
+        if (!this.waitingForBees && targetsNumber && this.builders.length < this.targetBeeCount) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
                 amount: this.targetBeeCount - this.builders.length,
                 priority: 4,
             };
-            this.waitingForABee += this.targetBeeCount - this.builders.length;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
@@ -3875,25 +3939,19 @@ class builderMaster extends Master {
 class annexMaster extends Master {
     constructor(hive, controller) {
         super(hive, "master_" + "annexerRoom_" + controller.room.name);
-        this.claimers = [];
         this.controller = controller;
-        this.lastSpawned = Game.time - CREEP_CLAIM_LIFE_TIME;
-    }
-    newBee(bee) {
-        this.claimers.push(bee);
-        this.refreshLastSpawned();
-    }
-    refreshLastSpawned() {
-        _.forEach(this.claimers, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-            if (Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-                this.lastSpawned = Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive);
-        });
+        this.beeLifeTime = CREEP_CLAIM_LIFE_TIME;
+        this.lastSpawns.push(Game.time - CREEP_CLAIM_LIFE_TIME);
     }
     update() {
-        this.claimers = this.clearBees(this.claimers);
+        super.update();
+        {
+            let controller = Game.getObjectById(this.controller.id);
+            if (controller)
+                this.controller = controller;
+        }
         // 5 for random shit
-        if (Game.time + 5 >= this.lastSpawned + CREEP_CLAIM_LIFE_TIME) {
+        if (Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
             let order = {
                 master: this.ref,
                 setup: Setups.claimer,
@@ -3906,13 +3964,11 @@ class annexMaster extends Master {
             // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
             if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
                 order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
-            this.hive.wish(order);
-            // well he placed an order now just need to catch a creep after a spawn
-            this.lastSpawned = Game.time;
+            this.wish(order);
         }
     }
     run() {
-        _.forEach(this.claimers, (bee) => {
+        _.forEach(this.bees, (bee) => {
             bee.reserveController(this.controller);
         });
     }
@@ -3921,27 +3977,19 @@ class annexMaster extends Master {
 class puppetMaster extends Master {
     constructor(hive, annexName) {
         super(hive, "master_" + "puppetFor_" + annexName);
-        this.puppets = [];
-        this.waitingForABee = 0;
         this.target = new RoomPosition(25, 25, annexName);
     }
-    newBee(bee) {
-        this.puppets.push(bee);
-        if (this.waitingForABee)
-            this.waitingForABee = 0;
-    }
     update() {
-        this.puppets = this.clearBees(this.puppets);
+        super.update();
         // 5 for random shit
-        if (this.puppets.length == 0 && !this.waitingForABee && !Game.rooms[this.target.roomName]) {
+        if (!this.waitingForBees && this.bees.length == 0 && !this.waitingForBees && !Game.rooms[this.target.roomName]) {
             let order = {
                 master: this.ref,
                 setup: Setups.puppet,
                 amount: 1,
                 priority: 1,
             };
-            this.waitingForABee = 1;
-            this.hive.wish(order);
+            this.wish(order);
         }
     }
     run() {
@@ -3949,7 +3997,7 @@ class puppetMaster extends Master {
             // for now will recreate everything
             global.Apiary.destroyTime = Game.time + 10;
         }
-        _.forEach(this.puppets, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (bee.creep.pos.getRangeTo(this.target) > 10)
                 bee.goTo(this.target);
         });
@@ -4115,15 +4163,15 @@ class Hive {
         this.orderList.push(order);
     }
     update() {
-        if (Game.time % 5 == 0) {
+        {
             this.updateRooms();
         }
-        if (Game.time % 5 == 1) {
+        {
             this.updateConstructionSites();
             this.updateEmeregcyRepairs();
             this.updateNormalRepairs();
         }
-        if (Game.time % 5 == 2) {
+        {
             this.findTargets();
         }
         _.forEach(this.cells, (cell) => {
@@ -4156,55 +4204,64 @@ class Bee {
         if (this.creep.pos.isNearTo(target))
             return this.creep.attack(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     harvest(target) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.harvest(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     transfer(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.transfer(target, resourceType, amount);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     withdraw(target, resourceType, amount) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.withdraw(target, resourceType, amount);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     build(target) {
         if (this.creep.pos.getRangeTo(target.pos) <= 3)
             return this.creep.build(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     repair(target) {
         if (this.creep.pos.getRangeTo(target.pos) <= 3)
             return this.creep.repair(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     upgradeController(target) {
         if (this.creep.pos.getRangeTo(target.pos) <= 3)
             return this.creep.upgradeController(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     reserveController(target) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.reserveController(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     attackController(target) {
         if (this.creep.pos.isNearTo(target))
             return this.creep.attackController(target);
         else
-            return this.goTo(target);
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
     }
     goTo(target) {
         return this.creep.travelTo(target, {});
@@ -4234,7 +4291,14 @@ class Intel {
         if (this.roomInfo[roomName].lastUpdated == Game.time)
             return this.roomInfo[roomName];
         if (!(roomName in Game.rooms))
-            return this.roomInfo[roomName];
+            return {
+                    lastUpdated: 0,
+                    targetCreeps: [],
+                    targetBuildings: [],
+                    safeToDowngrade: false,
+                    ownedByEnemy: true,
+                    safeModeEndTime: 0,
+                };
         let room = Game.rooms[roomName];
         this.updateEnemiesInRoom(room);
         if (room.controller) {
@@ -4286,39 +4350,31 @@ class SwarmMaster extends Master {
 class hordeMaster extends SwarmMaster {
     constructor(hive, order) {
         super(hive, order);
-        this.knights = [];
-        this.waitingForABee = 0;
         // failsafe
         this.maxSpawns = 500;
         this.spawned = 0;
         this.tryToDowngrade = false;
         this.targetBeeCount = 1;
     }
-    newBee(bee) {
-        this.knights.push(bee);
-        if (this.waitingForABee)
-            this.waitingForABee -= 1;
-    }
     update() {
-        this.knights = this.clearBees(this.knights);
+        this.bees = this.clearBees(this.bees);
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         let targetsAlive = !(roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0);
         if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns)
             this.destroyTime = Game.time + CREEP_LIFE_TIME + 1;
-        if (this.knights.length < this.targetBeeCount && !this.waitingForABee &&
+        if (!this.waitingForBees && this.bees.length < this.targetBeeCount &&
             this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
             && Game.time >= roomInfo.safeModeEndTime - 100) {
             let order = {
                 master: this.ref,
                 setup: Setups.knight,
-                amount: this.targetBeeCount - this.knights.length,
+                amount: this.targetBeeCount - this.bees.length,
                 priority: 1,
             };
-            if (this.targetBeeCount - this.knights.length == 1 && this.targetBeeCount > 1)
+            if (this.targetBeeCount - this.bees.length == 1 && this.targetBeeCount > 1)
                 order.priority = 5;
-            this.waitingForABee += this.targetBeeCount - this.knights.length;
-            this.spawned += this.targetBeeCount - this.knights.length;
-            this.hive.wish(order);
+            this.spawned += order.amount;
+            this.wish(order);
         }
     }
     run() {
@@ -4339,7 +4395,7 @@ class hordeMaster extends SwarmMaster {
                 max: enemy.pos.getOpenPositions().length,
             };
         });
-        _.forEach(this.knights, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (roomInfo.safeModeEndTime < Game.time)
                 if (bee.creep.room.name != this.order.pos.roomName) {
                     bee.goTo(this.order.pos);
@@ -4367,23 +4423,11 @@ class hordeMaster extends SwarmMaster {
 class downgradeMaster extends SwarmMaster {
     constructor(hive, order) {
         super(hive, order);
-        this.claimers = [];
-        this.lastSpawned = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+        this.lastSpawns.push(Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE);
         this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
     }
-    newBee(bee) {
-        this.claimers.push(bee);
-        this.refreshLastSpawned();
-    }
-    refreshLastSpawned() {
-        _.forEach(this.claimers, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-            if (Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-                this.lastSpawned = Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive);
-        });
-    }
     update() {
-        this.claimers = this.clearBees(this.claimers);
+        super.update();
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         if (!roomInfo.ownedByEnemy)
             this.destroyTime = Game.time;
@@ -4392,7 +4436,8 @@ class downgradeMaster extends SwarmMaster {
         if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.destroyTime)
             this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
         // 5 for random shit
-        if (Game.time - this.lastSpawned >= CONTROLLER_ATTACK_BLOCKED_UPGRADE && this.destroyTime > Game.time + 100) {
+        if (!this.waitingForBees && Game.time - this.lastSpawns[0] >= CONTROLLER_ATTACK_BLOCKED_UPGRADE
+            && this.destroyTime > Game.time + 100) {
             let order = {
                 master: this.ref,
                 setup: Setups.claimer,
@@ -4400,13 +4445,12 @@ class downgradeMaster extends SwarmMaster {
                 priority: 5,
             };
             order.setup.bodySetup.patternLimit = 1; //main idea - block upgrading
-            this.hive.wish(order);
-            this.lastSpawned = Game.time;
+            this.wish(order);
         }
     }
     run() {
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-        _.forEach(this.claimers, (bee) => {
+        _.forEach(this.bees, (bee) => {
             if (!bee.creep.pos.isNearTo(this.order.pos))
                 bee.goTo(this.order.pos);
             else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
@@ -4488,7 +4532,7 @@ class _Apiary {
                         delete global.masters["master_Swarm_" + flag.name];
                         flag.remove();
                     }
-                    else if (Game.time % 100 == 0) {
+                    else {
                         master.order = flag;
                     }
                 }
@@ -4549,6 +4593,7 @@ function onGlobalReset() {
     // check if all memory position were created
     Mem.init();
     Memory.log.reset = Game.time;
+    console.log("Reset? Cool time is", Game.time);
     global.bees = {};
     global.masters = {};
     delete global.Apiary;
@@ -4560,15 +4605,14 @@ function main() {
     }
     global.Apiary.update();
     global.Apiary.run();
-    // only on official
-    if (Game.cpu.bucket == 10000) {
-        Game.cpu.generatePixel();
-    }
     // Automatically delete memory
     Mem.clean();
 }
 // time to wrap things up
 let _loop = main;
+{
+    _loop = ErrorMapper.wrapLoop(main);
+}
 const loop = _loop;
 onGlobalReset();
 

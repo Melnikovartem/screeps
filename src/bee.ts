@@ -31,63 +31,72 @@ export class Bee {
     if (this.creep.pos.isNearTo(target))
       return this.creep.attack(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   harvest(target: Source | Mineral): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.harvest(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.transfer(target, resourceType, amount);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.withdraw(target, resourceType, amount);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   build(target: ConstructionSite): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
       return this.creep.build(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   repair(target: Structure): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
       return this.creep.repair(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   upgradeController(target: StructureController): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
       return this.creep.upgradeController(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   reserveController(target: StructureController): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.reserveController(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   attackController(target: StructureController): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.attackController(target);
     else
-      return this.goTo(target);
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
   }
 
   goTo(target: RoomPosition | RoomObject): number {

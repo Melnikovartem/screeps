@@ -2,19 +2,12 @@
 import { excavationCell } from "../../cells/excavationCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
+import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class haulerMaster extends Master {
-  haulers: Bee[] = [];
 
   cell: excavationCell;
-
-  targetBeeCount: number;
-  waitingForABee: number = 0;
-
   targetMap: { [id: string]: string | null } = {};
 
   constructor(excavationCell: excavationCell) {
@@ -40,34 +33,26 @@ export class haulerMaster extends Master {
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
   }
 
-  newBee(bee: Bee): void {
-    this.haulers.push(bee);
-    if (this.waitingForABee)
-      this.waitingForABee -= 1;
-  }
-
   update() {
-    this.haulers = this.clearBees(this.haulers);
+    super.update();
 
     _.forEach(this.targetMap, (ref, key) => {
       if (ref && key && !global.bees[ref])
         this.targetMap[key] = null;
     });
 
-    if (this.haulers.length < this.targetBeeCount && !this.waitingForABee) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && this.bees.length < this.targetBeeCount) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.hauler,
-        amount: this.targetBeeCount - this.haulers.length,
+        amount: this.targetBeeCount - this.bees.length,
         priority: 4,
       };
 
       if (this.hive.stage < 2)
         order.setup.bodySetup.patternLimit = 10;
 
-      this.waitingForABee += this.targetBeeCount - this.haulers.length;
-
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
@@ -75,7 +60,7 @@ export class haulerMaster extends Master {
     // for future might be good to find closest bee for container and not the other way around
     if (this.hive.cells.storageCell) {
       let target = this.hive.cells.storageCell.storage;
-      _.forEach(this.haulers, (bee) => {
+      _.forEach(this.bees, (bee) => {
         let ans;
 
         if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {

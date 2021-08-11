@@ -1,17 +1,11 @@
 import { upgradeCell } from "../../cells/upgradeCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
+import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class upgraderMaster extends Master {
-  upgraders: Bee[] = [];
   cell: upgradeCell;
-
-  targetBeeCount: number = 1;
-  waitingForABee: number = 0;
 
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, "master_" + upgradeCell.ref);
@@ -19,14 +13,8 @@ export class upgraderMaster extends Master {
     this.cell = upgradeCell;
   }
 
-  newBee(bee: Bee): void {
-    this.upgraders.push(bee);
-    if (this.waitingForABee)
-      this.waitingForABee -= 1;
-  }
-
   update() {
-    this.upgraders = this.clearBees(this.upgraders);
+    super.update();
 
     if (this.hive.cells.storageCell) {
       // burn some energy on controller
@@ -37,11 +25,11 @@ export class upgraderMaster extends Master {
     } else
       this.targetBeeCount = 1;
 
-    if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && this.bees.length < this.targetBeeCount) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.upgrader.manual,
-        amount: this.targetBeeCount - this.upgraders.length,
+        amount: this.targetBeeCount - this.bees.length,
         priority: 4,
       };
 
@@ -52,14 +40,12 @@ export class upgraderMaster extends Master {
           order.setup.bodySetup.patternLimit = 0; // save energy from burning
       }
 
-      this.waitingForABee += this.targetBeeCount - this.upgraders.length;
-
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
   run() {
-    _.forEach(this.upgraders, (bee) => {
+    _.forEach(this.bees, (bee) => {
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 

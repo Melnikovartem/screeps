@@ -1,38 +1,19 @@
-import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import type { Hive } from "../../Hive";
-import type { Bee } from "../../Bee";
+import { Setups } from "../../creepSetups"
+import type { SpawnOrder, Hive } from "../../Hive";
 import { SwarmMaster } from "../_SwarmMaster";
 
 export class downgradeMaster extends SwarmMaster {
-  claimers: Bee[] = [];
-  lastSpawned: number;
-
   lastAttacked: number;
 
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
 
-    this.lastSpawned = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+    this.lastSpawns.push(Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE);
     this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
   }
 
-  newBee(bee: Bee): void {
-    this.claimers.push(bee);
-    this.refreshLastSpawned();
-  }
-
-  refreshLastSpawned(): void {
-    _.forEach(this.claimers, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-      if (Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-        this.lastSpawned = Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive);
-    });
-  }
-
   update() {
-    this.claimers = this.clearBees(this.claimers);
+    super.update();
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
     if (!roomInfo.ownedByEnemy)
@@ -45,8 +26,9 @@ export class downgradeMaster extends SwarmMaster {
 
 
     // 5 for random shit
-    if (Game.time - this.lastSpawned >= CONTROLLER_ATTACK_BLOCKED_UPGRADE && this.destroyTime > Game.time + 100) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && Game.time - this.lastSpawns[0] >= CONTROLLER_ATTACK_BLOCKED_UPGRADE
+      && this.destroyTime > Game.time + 100) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer,
         amount: 1,
@@ -55,15 +37,14 @@ export class downgradeMaster extends SwarmMaster {
 
       order.setup.bodySetup.patternLimit = 1; //main idea - block upgrading
 
-      this.hive.wish(order);
-      this.lastSpawned = Game.time;
+      this.wish(order);
     }
   }
 
   run() {
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
 
-    _.forEach(this.claimers, (bee) => {
+    _.forEach(this.bees, (bee) => {
       if (!bee.creep.pos.isNearTo(this.order.pos))
         bee.goTo(this.order.pos)
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {

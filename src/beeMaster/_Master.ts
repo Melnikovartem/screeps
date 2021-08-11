@@ -1,6 +1,6 @@
 // import { makeId } from "../utils/other";
 
-import type { Hive } from "../Hive";
+import { SpawnOrder, Hive } from "../Hive";
 import { Bee } from "../bee";
 
 // i will need to do something so i can build up structure from memory
@@ -9,16 +9,68 @@ export abstract class Master {
   hive: Hive;
   ref: string;
 
+  targetBeeCount: number = 1;
+  beeLifeTime: number = CREEP_LIFE_TIME;
+  waitingForBees: number = 0;
+
+  lastSpawns: number[] = [];
+  bees: Bee[] = [];
+
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
     this.ref = ref;
 
-    /*
-        if (global.masters[this.ref])
-          this.print("ERROR duplicate ref");
-    */
-
     global.masters[this.ref] = this;
+  }
+
+  // catch a bee after it has requested a master
+  newBee(bee: Bee) {
+    this.bees.push(bee);
+    if (this.waitingForBees)
+      this.waitingForBees -= 1;
+
+    _.forEach(this.bees, (bee) => {
+      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : this.beeLifeTime;
+      if (this.lastSpawns.length < this.targetBeeCount) {
+        this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+      } else if (Game.time - (this.beeLifeTime - ticksToLive) >= this.lastSpawns[0]) {
+        this.lastSpawns.shift();
+        this.lastSpawns.push(Game.time - (this.beeLifeTime - ticksToLive));
+      }
+    });
+  };
+
+  // first stage of decision making like do i need to spawn new creeps
+  update() {
+    this.bees = this.clearBees(this.bees);
+  }
+
+  wish(order: SpawnOrder) {
+    this.waitingForBees += order.amount;
+    this.hive.wish(order);
+    // well he placed an order now just need to catch a creep after a spawn
+  }
+
+  clearBees(beeArray: Bee[]) {
+    // clear non-exisiting bees
+    let deletedBees = false;
+    _.forEach(beeArray, (bee, key) => {
+      if (!global.bees[bee.ref]) {
+        deletedBees = true;
+        delete beeArray[key];
+      }
+    });
+    if (deletedBees)
+      beeArray = _.compact(beeArray);
+
+    return beeArray;
+  }
+
+  // second stage of decision making like where do i need to move
+  abstract run(): void;
+
+  print(info: any) {
+    console.log(Game.time, "!", this.ref, "?", info);
   }
 
   /*
@@ -71,32 +123,4 @@ export abstract class Master {
       return null;
     }
   */
-
-  // catch a bee after it has requested a master
-  abstract newBee(bee: Bee): void;
-
-  // first stage of decision making like do i need to spawn new creeps
-  abstract update(): void;
-
-  clearBees(beeArray: Bee[]) {
-    // clear non-exisiting bees
-    let deletedBees = false;
-    _.forEach(beeArray, (bee, key) => {
-      if (!global.bees[bee.ref]) {
-        deletedBees = true;
-        delete beeArray[key];
-      }
-    });
-    if (deletedBees)
-      beeArray = _.compact(beeArray);
-
-    return beeArray;
-  }
-
-  // second stage of decision making like where do i need to move
-  abstract run(): void;
-
-  print(info: any) {
-    console.log(Game.time, "!", this.ref, "?", info);
-  }
 }

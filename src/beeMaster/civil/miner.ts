@@ -1,14 +1,10 @@
 import { resourceCell } from "../../cells/resourceCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
+import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class minerMaster extends Master {
-  miners: Bee[] = [];
-  lastSpawned: number;
 
   cell: resourceCell;
 
@@ -17,41 +13,27 @@ export class minerMaster extends Master {
 
     this.cell = resourceCell;
 
-    this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-  }
-
-  newBee(bee: Bee): void {
-    this.miners.push(bee);
-    this.refreshLastSpawned();
-  }
-
-  refreshLastSpawned(): void {
-    _.forEach(this.miners, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-      if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-        this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-    });
+    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
-    this.miners = this.clearBees(this.miners);
+    super.update();
 
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,
         amount: 1,
         priority: 2,
       };
 
-      this.lastSpawned = Game.time;
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
   run() {
-    _.forEach(this.miners, (bee) => {
+    _.forEach(this.bees, (bee) => {
       if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         bee.harvest(this.cell.source);
       }

@@ -2,15 +2,10 @@
 import { respawnCell } from "../../cells/respawnCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
+import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class queenMaster extends Master {
-  queens: Bee[] = [];
-  lastSpawned: number;
-
   cell: respawnCell;
 
   constructor(respawnCell: respawnCell) {
@@ -18,28 +13,15 @@ export class queenMaster extends Master {
 
     this.cell = respawnCell;
 
-    this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-  }
-
-  newBee(bee: Bee): void {
-    this.queens.push(bee);
-    this.refreshLastSpawned();
-  }
-
-  refreshLastSpawned(): void {
-    _.forEach(this.queens, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-      if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-        this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-    });
+    this.lastSpawns.push(Game.time - this.beeLifeTime);
   }
 
   update() {
-    this.queens = this.clearBees(this.queens);
+    super.update();
 
     // 5 for random shit
-    if (Game.time + 5 >= this.lastSpawned + CREEP_LIFE_TIME) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + this.beeLifeTime) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,
         amount: 1,
@@ -49,8 +31,7 @@ export class queenMaster extends Master {
       // can refill in 2.5 runs
       order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2.5);
 
-      this.lastSpawned = Game.time;
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
@@ -58,7 +39,7 @@ export class queenMaster extends Master {
     let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
-    _.forEach(this.queens, (bee) => {
+    _.forEach(this.bees, (bee) => {
       if (targets.length) {
         let ans;
         if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {

@@ -15,7 +15,7 @@ import { CreepSetup } from "./creepSetups";
 import { UPDATE_EACH_TICK } from "./settings";
 
 
-export interface spawnOrder {
+export interface SpawnOrder {
   master: string;
   amount: number;
   setup: CreepSetup;
@@ -86,7 +86,7 @@ export class Hive {
   cells: hiveCells;
   repairSheet: repairSheet;
 
-  orderList: spawnOrder[] = [];
+  orderList: SpawnOrder[] = [];
 
   //targets for defense systems
   roomTargets: boolean = false;
@@ -226,7 +226,7 @@ export class Hive {
   }
 
   // add to list a new creep
-  wish(order: spawnOrder) {
+  wish(order: SpawnOrder) {
     // add some checks
     this.orderList.push(order);
   }

@@ -2,8 +2,7 @@
 import { developmentCell } from "../../cells/developmentCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
+import { SpawnOrder } from "../../Hive";
 import { Bee } from "../../Bee";
 import { Master } from "../_Master";
 
@@ -14,12 +13,7 @@ import { VISUALS_ON } from "../../settings";
 let maxSize = 6;
 
 export class bootstrapMaster extends Master {
-  workers: Bee[] = [];
-
   cell: developmentCell;
-
-  targetBeeCount: number = 0;
-  waitingForABee: number = 0;
 
   // some small caching. I just couldn't resist
   stateMap: { [id: string]: { type: workTypes, target: string } } = {};
@@ -49,21 +43,19 @@ export class bootstrapMaster extends Master {
   }
 
   newBee(bee: Bee): void {
+    super.newBee(bee);
     bee.reusePath = 1;
-    this.workers.push(bee);
     this.stateMap[bee.ref] = {
       type: "working",
       target: "",
     };
-    if (this.waitingForABee)
-      this.waitingForABee -= 1;
   }
 
   update() {
-    this.workers = this.clearBees(this.workers);
+    super.update();
 
-    if (this.workers.length < this.targetBeeCount && !this.waitingForABee && this.hive.stage == 0) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && this.bees.length < this.targetBeeCount && this.hive.stage == 0) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
         amount: 1,
@@ -72,12 +64,10 @@ export class bootstrapMaster extends Master {
 
       order.setup.bodySetup.patternLimit = maxSize;
 
-      this.waitingForABee += 1;
-
-      if (this.workers.length < this.targetBeeCount * 0.5)
+      if (this.bees.length < this.targetBeeCount * 0.5)
         order.priority = 2;
 
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
@@ -95,7 +85,7 @@ export class bootstrapMaster extends Master {
       sourceTargetingCurrent[source.id] = 0;
     });
 
-    _.forEach(this.workers, (bee) => {
+    _.forEach(this.bees, (bee) => {
 
       if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         this.stateMap[bee.ref] = {

@@ -5,14 +5,10 @@
 import { storageCell } from "../../cells/storageCell";
 
 import { Setups } from "../../creepSetups";
-
-import { spawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
+import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class managerMaster extends Master {
-  managers: Bee[] = [];
-  lastSpawned: number;
 
   cell: storageCell;
 
@@ -24,24 +20,11 @@ export class managerMaster extends Master {
 
     this.cell = storageCell;
 
-    this.lastSpawned = Game.time - CREEP_LIFE_TIME;
-  }
-
-  newBee(bee: Bee): void {
-    this.managers.push(bee);
-    this.refreshLastSpawned();
-  }
-
-  refreshLastSpawned(): void {
-    _.forEach(this.managers, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
-      if (Game.time - (CREEP_LIFE_TIME - ticksToLive) >= this.lastSpawned)
-        this.lastSpawned = Game.time - (CREEP_LIFE_TIME - ticksToLive);
-    });
+    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
-    this.managers = this.clearBees(this.managers);
+    super.update();
 
     // if order will matter (not a feature rn) i will like to put storage last
     this.targets = [this.cell.storage];
@@ -65,8 +48,8 @@ export class managerMaster extends Master {
       (<Store<RESOURCE_ENERGY, false>>structure.store).getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     // tragets.length cause dont need a manager for nothing
-    if (Game.time >= this.lastSpawned + CREEP_LIFE_TIME && this.targets.length > 0) {
-      let order: spawnOrder = {
+    if (!this.waitingForBees && Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME && this.targets.length > 0) {
+      let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,
         amount: 1,
@@ -76,15 +59,14 @@ export class managerMaster extends Master {
       if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
         order.setup.bodySetup.patternLimit = 5; // save energy from burning
 
-      this.lastSpawned = Game.time;
-      this.hive.wish(order);
+      this.wish(order);
     }
   }
 
   run() {
     // TODO smarter choosing of target
     // aka draw energy if there is a target and otherwise put it back
-    _.forEach(this.managers, (bee) => {
+    _.forEach(this.bees, (bee) => {
       let ans;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && (this.targets.length > 1 || this.suckerTargets.length > 1)) {
         let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
