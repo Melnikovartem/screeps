@@ -57,6 +57,8 @@ const SetupsNames = {
   upgrader: 'Honey bee',
   builder: 'Colletidae',
   scout: 'Stenotritidae',
+  // War
+  knight: 'European hornet',
 }
 
 
@@ -100,5 +102,9 @@ export const Setups = {
   puppet: new CreepSetup(SetupsNames.scout, {
     pattern: [MOVE],
     patternLimit: 1,
+  }),
+  knight: new CreepSetup(SetupsNames.scout, {
+    pattern: [TOUGH, ATTACK, MOVE],
+    patternLimit: 10,
   }),
 }

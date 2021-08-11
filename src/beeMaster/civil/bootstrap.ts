@@ -11,6 +11,8 @@ type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working
 
 import { VISUALS_ON } from "../../settings";
 
+let maxSize = 6;
+
 export class bootstrapMaster extends Master {
   workers: Bee[] = [];
 
@@ -28,7 +30,7 @@ export class bootstrapMaster extends Master {
 
     this.cell = developmentCell;
 
-    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
+    let workBodyParts = Math.min(maxSize, Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3));
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getWalkablePositions().length;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
@@ -65,8 +67,10 @@ export class bootstrapMaster extends Master {
         master: this.ref,
         setup: Setups.builder,
         amount: 1,
-        priority: 5,
+        priority: 5, // same as non-important army
       };
+
+      order.setup.bodySetup.patternLimit = maxSize;
 
       this.waitingForABee += 1;
 

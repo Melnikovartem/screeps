@@ -3591,6 +3591,7 @@ class respawnCell extends Cell {
     ;
 }
 
+let maxSize = 6;
 class bootstrapMaster extends Master {
     constructor(developmentCell) {
         super(developmentCell.hive, "master_" + developmentCell.ref);
@@ -3601,7 +3602,7 @@ class bootstrapMaster extends Master {
         this.stateMap = {};
         this.sourceTargeting = {};
         this.cell = developmentCell;
-        let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
+        let workBodyParts = Math.min(maxSize, Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3));
         _.forEach(this.cell.sources, (source) => {
             let walkablePositions = source.pos.getWalkablePositions().length;
             // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
@@ -3636,6 +3637,7 @@ class bootstrapMaster extends Master {
                 amount: 1,
                 priority: 5,
             };
+            order.setup.bodySetup.patternLimit = maxSize;
             this.waitingForABee += 1;
             if (this.workers.length < this.targetBeeCount * 0.5)
                 order.priority = 2;

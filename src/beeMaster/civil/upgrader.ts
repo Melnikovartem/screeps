@@ -44,7 +44,7 @@ export class upgraderMaster extends Master {
       if (this.cell.link || (this.hive.cells.storageCell
         && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5)) {
         order.setup = Setups.upgrader.fast;
-        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
           order.setup.bodySetup.patternLimit = 0; // save energy from burning
       }
 
