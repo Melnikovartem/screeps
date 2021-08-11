@@ -73,7 +73,6 @@ export class respawnCell extends Cell {
               });
             this.hive.orderList[key].amount -= 1;
           }
-
         }
       }
 

@@ -82,7 +82,7 @@ export class _Apiary {
           } else if (master.destroyTime < Game.time) {
             delete global.masters["master_Swarm_" + flag.name];
             flag.remove();
-          } else if (UPDATE_EACH_TICK || Game.time % 10 == 0) {
+          } else if (UPDATE_EACH_TICK || Game.time % 100 == 0) {
             master.order = flag;
           }
         }

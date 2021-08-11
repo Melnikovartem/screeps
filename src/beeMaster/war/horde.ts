@@ -33,12 +33,8 @@ export class hordeMaster extends SwarmMaster {
   update() {
     this.knights = this.clearBees(this.knights);
 
-    let targetsAlive: boolean = true;
-
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-
-    if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0)
-      targetsAlive = false;
+    let targetsAlive: boolean = !(roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0);
 
     if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns)
       this.destroyTime = Game.time + CREEP_LIFE_TIME + 1;
@@ -77,8 +73,6 @@ export class hordeMaster extends SwarmMaster {
       }
     }
 
-    this.print(roomInfo);
-
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
 
     _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
@@ -89,23 +83,27 @@ export class hordeMaster extends SwarmMaster {
     });
 
     _.forEach(this.knights, (bee) => {
-      if (bee.creep.room.name != this.order.pos.roomName) {
-        bee.goTo(this.order.pos);
-      } else {
-        let target: Structure | Creep = <Structure>bee.creep.pos.findClosest(_.filter(roomInfo.targetBuildings,
-          (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
-
-        if (!target)
-          target = <Creep>bee.creep.pos.findClosest(_.filter(roomInfo.targetCreeps,
-            (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
-
-        if (target) {
-          bee.attack(target);
-          enemyTargetingCurrent[target.id].current += 1;
+      if (roomInfo.safeModeEndTime < Game.time)
+        if (bee.creep.room.name != this.order.pos.roomName) {
+          bee.goTo(this.order.pos);
         } else {
-          if (!bee.creep.pos.isNearTo(this.order.pos))
-            bee.goTo(this.order.pos);
+          let target: Structure | Creep = <Structure>bee.creep.pos.findClosest(_.filter(roomInfo.targetBuildings,
+            (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
+
+          if (!target)
+            target = <Creep>bee.creep.pos.findClosest(_.filter(roomInfo.targetCreeps,
+              (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
+
+          if (target) {
+            bee.attack(target);
+            enemyTargetingCurrent[target.id].current += 1;
+          } else {
+            if (!bee.creep.pos.isNearTo(this.order.pos))
+              bee.goTo(this.order.pos);
+          }
         }
+      else if (bee.creep.room.name != this.hive.roomName) {
+        bee.goToRoom(this.hive.roomName);
       }
     });
   }
