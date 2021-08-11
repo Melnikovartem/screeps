@@ -17,6 +17,11 @@ export class Intel {
 
   roomInfo: { [id: string]: RoomInfo } = {};
 
+  constructor() {
+    this.roomInfo = <{ [id: string]: RoomInfo }>Memory.cache.intellegence;
+  }
+
+
   getInfo(roomName: string): RoomInfo {
     if (!this.roomInfo[roomName]) {
       this.roomInfo[roomName] = {
@@ -60,6 +65,9 @@ export class Intel {
   }
 
   updateEnemiesInRoom(room: Room) {
+    if (Game.time % 50 == 0) // for case of reboot
+      Memory.cache.intellegence = this.roomInfo;
+
     this.roomInfo[room.name].lastUpdated = Game.time;
 
     this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {

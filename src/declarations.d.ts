@@ -38,6 +38,9 @@ declare global {
         orderedBy: string,
       }[],
     },
+    cache: {
+      intellegence: any;
+    },
     masters: { [id: string]: any };
 
     // for TRAVELER

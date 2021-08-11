@@ -2236,9 +2236,10 @@ class Mem {
     static init() {
         if (!Memory.masters)
             Memory.masters = {};
-        if (!Memory.log) {
+        if (!Memory.log)
             Memory.log = { spawns: [] };
-        }
+        if (!Memory.cache)
+            Memory.cache = { intellegence: {} };
     }
     static clean() {
         for (const name in Memory.creeps) {
@@ -4217,6 +4218,7 @@ class Bee {
 class Intel {
     constructor() {
         this.roomInfo = {};
+        this.roomInfo = Memory.cache.intellegence;
     }
     getInfo(roomName) {
         if (!this.roomInfo[roomName]) {
@@ -4244,6 +4246,8 @@ class Intel {
         return this.roomInfo[roomName];
     }
     updateEnemiesInRoom(room) {
+        if (Game.time % 50 == 0) // for case of reboot
+            Memory.cache.intellegence = this.roomInfo;
         this.roomInfo[room.name].lastUpdated = Game.time;
         this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
             filter: (structure) => structure.structureType == STRUCTURE_TOWER ||

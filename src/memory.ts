@@ -2,9 +2,11 @@ export class Mem {
   static init() {
     if (!Memory.masters)
       Memory.masters = {};
-    if (!Memory.log) {
+    if (!Memory.log)
       Memory.log = { spawns: [] };
-    }
+
+    if (!Memory.cache)
+      Memory.cache = { intellegence: {} };
   }
 
   static clean() {
