@@ -3,8 +3,9 @@ export class Mem {
     if (!Memory.masters)
       Memory.masters = {};
     if (!Memory.log)
-      Memory.log = { spawns: [] };
-
+      Memory.log = {
+        spawns: [], hives: {}
+      };
     if (!Memory.cache)
       Memory.cache = { intellegence: {} };
   }
@@ -18,8 +19,11 @@ export class Mem {
       }
     }
 
-    if (Memory.log.spawns.length > 50) {
+    if (Memory.log.spawns.length > 50)
       Memory.log.spawns.splice(0, Memory.log.spawns.length - 10);
-    }
+
+    for (let key in Memory.log.hives)
+      if (Memory.log.hives[key].length > 50)
+        Memory.log.hives[key].splice(0, Memory.log.spawns.length - 10)
   }
 }

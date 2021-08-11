@@ -26,7 +26,7 @@ export class queenMaster extends Master {
       };
 
       // can refill in 2.5 runs
-      order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2.5);
+      order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2);
 
       this.wish(order);
     }

@@ -12,7 +12,7 @@ import { puppetMaster } from "./beeMaster/civil/puppet";
 import { CreepSetup } from "./creepSetups";
 
 // TODO visuals VISUALS_ON
-import { UPDATE_EACH_TICK } from "./settings";
+import { UPDATE_EACH_TICK, LOGGING_CYCLE, PRINT_INFO } from "./settings";
 
 
 export interface SpawnOrder {
@@ -225,22 +225,37 @@ export class Hive {
 
   // add to list a new creep
   wish(order: SpawnOrder) {
-    // add some checks
+    if (PRINT_INFO)
+      console.log(Game.time, "new order from ", order.master, "for", order.amount, order.setup.name);
     this.orderList.push(order);
   }
 
+  updateLog() {
+    if (!Memory.log.hives[this.roomName])
+      Memory.log.hives[this.roomName] = [];
+    Memory.log.hives[this.roomName].push({
+      annexNames: this.annexNames,
+      roomTargets: this.roomTargets,
+      annexesTargets: this.annexesTargets,
+      constructionSites: this.constructionSites.length,
+      emergencyRepairs: this.emergencyRepairs.length,
+      normalRepairs: this.normalRepairs.length,
+      orderList: _.map(this.orderList, (order) => { return { master: order.master, amount: order.amount, } }),
+    });
+  }
+
   update() {
-    if (UPDATE_EACH_TICK || Game.time % 5 == 0) {
+    if (UPDATE_EACH_TICK || Game.time % 10 == 0)
       this.updateRooms();
-    }
-    if (UPDATE_EACH_TICK || Game.time % 5 == 1) {
+    if (UPDATE_EACH_TICK || Game.time % 10 == 1) {
       this.updateConstructionSites();
       this.updateEmeregcyRepairs();
       this.updateNormalRepairs();
     }
-    if (UPDATE_EACH_TICK || Game.time % 5 == 2) {
+    if (UPDATE_EACH_TICK || Game.time % 10 == 2)
       this.findTargets();
-    }
+    if (Game.time % LOGGING_CYCLE == 0)
+      this.updateLog();
 
     _.forEach(this.cells, (cell) => {
       cell.update();

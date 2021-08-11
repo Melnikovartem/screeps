@@ -37,6 +37,20 @@ declare global {
         spawning: string,
         orderedBy: string,
       }[],
+      hives: {
+        [id: string]: {
+          annexNames: string[],
+          roomTargets: boolean,
+          annexesTargets: boolean,
+          constructionSites: number,
+          emergencyRepairs: number,
+          normalRepairs: number,
+          orderList: {
+            master: string,
+            amount: number
+          }[],
+        }[]
+      },
     },
     cache: {
       intellegence: any;

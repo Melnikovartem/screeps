@@ -5,7 +5,7 @@ import { makeId } from "../utils/other";
 
 import { queenMaster } from "../beeMaster/civil/queen";
 
-import { LOGGING } from "../settings";
+import { LOGGING_CYCLE } from "../settings";
 
 export class respawnCell extends Cell {
   spawns: StructureSpawn[];
@@ -63,16 +63,18 @@ export class respawnCell extends Cell {
           }
 
           if (ans == OK) {
-            if (LOGGING)
+            if (LOGGING_CYCLE)
               Memory.log.spawns.push({
                 time: Game.time,
                 spawnRoom: this.hive.roomName,
                 fromSpawn: spawn!.name,
-                spawning: order.setup.name,
+                spawning: name,
                 orderedBy: order.master,
               });
             this.hive.orderList[key].amount -= 1;
           }
+
+          console.log(ans);
         }
       }
 

@@ -25,7 +25,7 @@ export class builderMaster extends Master {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
-        amount: this.targetBeeCount - this.beesAmount,
+        amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 4,
       };
 
