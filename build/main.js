@@ -3557,12 +3557,14 @@ class defenseCell extends Cell {
     // second stage of decision making like where do i need to spawn creeps or do i need
     run() {
         // #TODO better target picking
-        if (this.hive.roomTargets.length) {
-            _.forEach(this.towers, (tower) => {
-                let closest = tower.pos.findClosestByRange(this.hive.roomTargets);
-                if (closest)
-                    tower.attack(closest);
-            });
+        if (this.hive.roomTargets) {
+            let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName);
+            if (roomInfo) // i literally check here for hull wich is never -_-
+                _.forEach(this.towers, (tower) => {
+                    let closest = tower.pos.findClosestByRange(roomInfo.targetCreeps);
+                    if (closest)
+                        tower.attack(closest);
+                });
         }
     }
     ;
@@ -4113,8 +4115,8 @@ class Hive {
         this.rooms = []; //this room and annexes
         this.orderList = [];
         //targets for defense systems
-        this.roomTargets = [];
-        this.annexTargets = [];
+        this.roomTargets = false;
+        this.annexesTargets = false;
         // some structures (aka preprocess of filters)
         this.constructionSites = [];
         this.emergencyRepairs = [];
@@ -4205,10 +4207,17 @@ class Hive {
     }
     // look for targets inside room
     findTargets() {
-        this.roomTargets = _.filter(this.room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
-        this.annexTargets = [];
-        _.forEach(this.annexes, (room) => {
-            this.annexTargets = this.annexTargets.concat(_.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL)));
+        this.roomTargets = this.room.find(FIND_HOSTILE_CREEPS).length ? true : false;
+        _.some(this.annexes, (room) => {
+            let annexTargets = room.find(FIND_HOSTILE_CREEPS);
+            if (annexTargets.length > 0) {
+                if (!Game.flags["defend_" + room.name]) {
+                    new Flag("defend_" + room.name, COLOR_BLUE, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
+                    console.log("new defender flag for " + room.name);
+                }
+                if (!this.annexesTargets)
+                    this.annexesTargets = annexTargets.length > 0;
+            }
         });
     }
     // add to list a new creep
@@ -4344,7 +4353,9 @@ class Intel {
             filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
                 structure.structureType == STRUCTURE_INVADER_CORE
         });
-        this.roomInfo[room.name].targetCreeps = room.find(FIND_HOSTILE_CREEPS);
+        this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
+        if (!this.roomInfo[room.name].targetCreeps.length)
+            this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
         if (!this.roomInfo[room.name].targetBuildings.length)
             this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
                 filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
@@ -4356,6 +4367,7 @@ class Intel {
                 filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
                     structure.structureType == STRUCTURE_EXTENSION
             });
+            this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS));
             this.roomInfo[room.name].safeToDowngrade = true;
         }
     }
@@ -4464,11 +4476,7 @@ class _Apiary {
                 this.hives[roomName] = new Hive(roomName, annexNames);
         });
     }
-    // update phase
-    update() {
-        _.forEach(this.hives, (hive) => {
-            hive.update();
-        });
+    updateFlags() {
         // act upon flags
         if (Object.keys(this.hives).length)
             _.forEach(Game.flags, (flag) => {
@@ -4493,6 +4501,8 @@ class _Apiary {
                     }
                 }
             });
+    }
+    updateBees() {
         // after all the masters where created and retrived if it was needed
         for (const name in Memory.creeps) {
             let creep = Game.creeps[name];
@@ -4519,6 +4529,14 @@ class _Apiary {
             else if (global.bees[name])
                 delete global.bees[name];
         }
+    }
+    // update phase
+    update() {
+        _.forEach(this.hives, (hive) => {
+            hive.update();
+        });
+        this.updateFlags();
+        this.updateBees();
         _.forEach(global.masters, (master) => {
             master.update();
         });

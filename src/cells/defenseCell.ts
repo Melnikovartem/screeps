@@ -22,12 +22,14 @@ export class defenseCell extends Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // #TODO better target picking
-    if (this.hive.roomTargets.length) {
-      _.forEach(this.towers, (tower) => {
-        let closest = tower.pos.findClosestByRange(this.hive.roomTargets);
-        if (closest)
-          tower.attack(closest);
-      });
+    if (this.hive.roomTargets) {
+      let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName);
+      if (roomInfo) // i literally check here for hull wich is never -_-
+        _.forEach(this.towers, (tower) => {
+          let closest = tower.pos.findClosestByRange(roomInfo!.targetCreeps);
+          if (closest)
+            tower.attack(closest);
+        });
     }
   };
 }

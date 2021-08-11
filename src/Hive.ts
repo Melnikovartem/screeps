@@ -89,8 +89,8 @@ export class Hive {
   orderList: spawnOrder[] = [];
 
   //targets for defense systems
-  roomTargets: Creep[] = [];
-  annexTargets: Creep[] = [];
+  roomTargets: boolean = false;
+  annexesTargets: boolean = false;
 
   // some structures (aka preprocess of filters)
   constructionSites: ConstructionSite[] = [];
@@ -212,12 +212,18 @@ export class Hive {
 
   // look for targets inside room
   private findTargets() {
-    this.roomTargets = _.filter(this.room.find(FIND_HOSTILE_CREEPS),
-      (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
-    this.annexTargets = [];
-    _.forEach(this.annexes, (room) => {
-      this.annexTargets = this.annexTargets.concat(
-        _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL)))
+    this.roomTargets = this.room.find(FIND_HOSTILE_CREEPS).length ? true : false;
+    _.some(this.annexes, (room) => {
+      let annexTargets = room.find(FIND_HOSTILE_CREEPS)
+
+      if (annexTargets.length > 0) {
+        if (!Game.flags["defend_" + room.name]) {
+          new Flag("defend_" + room.name, COLOR_BLUE, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
+          console.log("new defender flag for " + room.name);
+        }
+        if (!this.annexesTargets)
+          this.annexesTargets = annexTargets.length > 0;
+      }
     });
   }
 

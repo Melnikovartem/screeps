@@ -13,7 +13,7 @@ export class Intel {
 
   roomInfo: { [id: string]: RoomInfo } = {};
 
-  getInfo(roomName: string): RoomInfo | null {
+  getInfo(roomName: string): RoomInfo {
     if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {
         lastUpdated: 0,
@@ -27,7 +27,7 @@ export class Intel {
 
     let room = Game.rooms[roomName];
     if (!room)
-      return null;
+      return this.roomInfo[roomName];
 
     this.updateRoom(room);
 
@@ -43,7 +43,10 @@ export class Intel {
         structure.structureType == STRUCTURE_INVADER_CORE
     });
 
-    this.roomInfo[room.name].targetCreeps = room.find(FIND_HOSTILE_CREEPS);
+    this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
+
+    if (!this.roomInfo[room.name].targetCreeps.length)
+      this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
 
     if (!this.roomInfo[room.name].targetBuildings.length)
       this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
@@ -58,6 +61,8 @@ export class Intel {
         filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
           structure.structureType == STRUCTURE_EXTENSION
       });
+
+      this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS));
 
       this.roomInfo[room.name].safeToDowngrade = true;
     }

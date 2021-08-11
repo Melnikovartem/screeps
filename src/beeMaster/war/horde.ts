@@ -61,19 +61,18 @@ export class hordeMaster extends SwarmMaster {
 
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
 
-    if (roomInfo != null) {
-      _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
-        enemyTargetingCurrent[enemy.id] = {
-          current: 0,
-          max: enemy.pos.getOpenPositions().length,
-        }
-      });
-    }
+
+    _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
+      enemyTargetingCurrent[enemy.id] = {
+        current: 0,
+        max: enemy.pos.getOpenPositions().length,
+      }
+    });
 
     _.forEach(this.knights, (bee) => {
       if (bee.creep.room.name != this.order.pos.roomName) {
         bee.goTo(this.order.pos);
-      } else if (roomInfo != null) {
+      } else {
         let target: Structure | Creep = <Structure>bee.creep.pos.findClosest(_.filter(roomInfo.targetBuildings,
           (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
 

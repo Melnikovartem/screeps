@@ -45,13 +45,7 @@ export class _Apiary {
     });
   }
 
-  // update phase
-  update() {
-
-    _.forEach(this.hives, (hive) => {
-      hive.update();
-    });
-
+  updateFlags() {
     // act upon flags
     if (Object.keys(this.hives).length)
       _.forEach(Game.flags, (flag) => {
@@ -74,7 +68,9 @@ export class _Apiary {
           }
         }
       });
+  }
 
+  updateBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
       let creep = Game.creeps[name];
@@ -100,6 +96,19 @@ export class _Apiary {
       else if (global.bees[name])
         delete global.bees[name];
     }
+  }
+
+  // update phase
+  update() {
+
+    _.forEach(this.hives, (hive) => {
+      hive.update();
+    });
+
+    this.updateFlags();
+    this.updateBees();
+
+
     _.forEach(global.masters, (master) => {
       master.update();
     });
