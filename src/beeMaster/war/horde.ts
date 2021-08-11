@@ -19,7 +19,7 @@ export class hordeMaster extends SwarmMaster {
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
 
-    this.targetBeeCount = 2;
+    this.targetBeeCount = 1;
   }
 
   newBee(bee: Bee): void {
@@ -38,10 +38,11 @@ export class hordeMaster extends SwarmMaster {
     if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0)
       targetsAlive = false;
 
-    if (targetsAlive && this.destroyTime < Game.time + 500)
-      this.destroyTime = Game.time + 1000;
+    if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns)
+      this.destroyTime = Game.time + CREEP_LIFE_TIME + 1;
 
-    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive && this.spawned < this.maxSpawns) {
+    if (this.knights.length < this.targetBeeCount && !this.waitingForABee &&
+      this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.knight,
@@ -63,6 +64,12 @@ export class hordeMaster extends SwarmMaster {
     // it is cached after first check
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+
+    if (roomInfo.safeToDowngrade) {
+      let room = Game.rooms[this.order.pos.roomName];
+      if (room && room.controller && !room.controller.my && room.controller.owner && !room.controller.pos.lookFor(LOOK_FLAGS).length)
+        room.controller.pos.createFlag("downgrade_" + room.name, COLOR_RED, COLOR_PURPLE);
+    }
 
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
 

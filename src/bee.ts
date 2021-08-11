@@ -75,14 +75,6 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
-  reserveController(target: StructureController): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.reserveController(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
   upgradeController(target: StructureController): number {
     if (this.creep.pos.getRangeTo(target.pos) <= 3)
       return this.creep.upgradeController(target);
@@ -91,8 +83,30 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
+  reserveController(target: StructureController): number {
+    if (this.creep.pos.isNearTo(target))
+      return this.creep.reserveController(target);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
+  attackController(target: StructureController): number {
+    let ans: number = ERR_NOT_IN_RANGE;
+    if (this.creep.pos.isNearTo(target))
+      ans = this.creep.attackController(target);
+    else
+      this.goTo(target);
+    console.log(ans);
+    return ans;
+  }
+
   goTo(target: RoomPosition | RoomObject) {
     this.creep.travelTo(target, {});
+  }
+
+  goToRoom(roomName: string) {
+    this.goTo(new RoomPosition(25, 25, roomName))
   }
 
   /*

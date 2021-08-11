@@ -218,7 +218,7 @@ export class Hive {
 
       if (annexTargets.length > 0) {
         if (!Game.flags["defend_" + room.name]) {
-          new Flag("defend_" + room.name, COLOR_RED, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
+          annexTargets[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
           console.log("new defender flag for " + room.name);
         }
         if (!this.annexesTargets)

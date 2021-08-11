@@ -3,7 +3,7 @@
  * Example: var Traveler = require('Traveler.js');
  */
 
-import { VISUALS_ON } from "../settings";
+import { VISUALS_TRAVELER } from "../settings";
 
 export class Traveler {
 
@@ -218,7 +218,7 @@ export class Traveler {
    */
 
   public static circle(pos: RoomPosition, color: string, opacity?: number) {
-    if (VISUALS_ON)
+    if (VISUALS_TRAVELER)
       new RoomVisual(pos.roomName).circle(pos, {
         radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
       });
@@ -550,7 +550,7 @@ export class Traveler {
     this.circle(startPos, color);
     for (let position of path) {
       if (position.roomName === lastPosition.roomName) {
-        if (VISUALS_ON)
+        if (VISUALS_TRAVELER)
           new RoomVisual(position.roomName)
             .line(position, lastPosition, { color: color, lineStyle: "dashed" });
         serializedPath += lastPosition.getDirectionTo(position);

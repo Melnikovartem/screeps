@@ -4,6 +4,7 @@ import { Bee } from "./bee";
 import { Intel } from "./intelligence";
 
 import { hordeMaster } from "./beeMaster/war/horde";
+import { downgradeMaster } from "./beeMaster/war/downgrader";
 import { SwarmMaster } from "./beeMaster/_SwarmMaster";
 
 import { UPDATE_EACH_TICK } from "./settings";
@@ -15,7 +16,7 @@ export class _Apiary {
   intel: Intel;
 
   constructor() {
-    this.destroyTime = Game.time + 2000;
+    this.destroyTime = Game.time + 4000;
 
     this.intel = new Intel();
 
@@ -45,14 +46,14 @@ export class _Apiary {
     });
   }
 
-  spawnSwarm(order: Flag, swarmMaster: typeof SwarmMaster.constructor) {
+  spawnSwarm<T extends SwarmMaster>(order: Flag, swarmMaster: new (hive: Hive, order: Flag) => T): T {
     let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
     _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
       if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage) {
         homeRoom = <string>exit;
       }
     });
-    swarmMaster(this.hives[homeRoom], order);
+    return new swarmMaster(this.hives[homeRoom], order);
   }
 
   updateFlags() {
@@ -61,14 +62,17 @@ export class _Apiary {
       _.forEach(Game.flags, (flag) => {
         // annex room
         if (flag.color == COLOR_RED) {
-          let master = (<SwarmMaster>global.masters["master_Swarm_" + flag.name]);
+          let master: SwarmMaster = (<SwarmMaster>global.masters["master_Swarm_" + flag.name]);
           if (!master) {
             if (flag.secondaryColor == COLOR_BLUE)
               this.spawnSwarm(flag, hordeMaster);
-            else if (flag.secondaryColor == COLOR_RED)
-              this.spawnSwarm(flag, hordeMaster);
+            else if (flag.secondaryColor == COLOR_RED) {
+              let masterNew = this.spawnSwarm(flag, hordeMaster);
+              masterNew.targetBeeCount = 2;
+              masterNew.maxSpawns = masterNew.targetBeeCount * 2;
+            }
             else if (flag.secondaryColor == COLOR_PURPLE)
-              this.spawnSwarm(flag, hordeMaster);
+              this.spawnSwarm(flag, downgradeMaster);
           } else if (master.destroyTime < Game.time) {
             delete global.masters["master_Swarm_" + flag.name];
             flag.remove();

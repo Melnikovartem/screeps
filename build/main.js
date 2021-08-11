@@ -4212,7 +4212,7 @@ class Hive {
             let annexTargets = room.find(FIND_HOSTILE_CREEPS);
             if (annexTargets.length > 0) {
                 if (!Game.flags["defend_" + room.name]) {
-                    new Flag("defend_" + room.name, COLOR_RED, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
+                    annexTargets[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
                     console.log("new defender flag for " + room.name);
                 }
                 if (!this.annexesTargets)
@@ -4305,13 +4305,6 @@ class Bee {
             this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
-    reserveController(target) {
-        if (this.creep.pos.isNearTo(target))
-            return this.creep.reserveController(target);
-        else
-            this.goTo(target);
-        return ERR_NOT_IN_RANGE;
-    }
     upgradeController(target) {
         if (this.creep.pos.getRangeTo(target.pos) <= 3)
             return this.creep.upgradeController(target);
@@ -4319,8 +4312,27 @@ class Bee {
             this.goTo(target);
         return ERR_NOT_IN_RANGE;
     }
+    reserveController(target) {
+        if (this.creep.pos.isNearTo(target))
+            return this.creep.reserveController(target);
+        else
+            this.goTo(target);
+        return ERR_NOT_IN_RANGE;
+    }
+    attackController(target) {
+        let ans = ERR_NOT_IN_RANGE;
+        if (this.creep.pos.isNearTo(target))
+            ans = this.creep.attackController(target);
+        else
+            this.goTo(target);
+        console.log(ans);
+        return ans;
+    }
     goTo(target) {
         this.creep.travelTo(target, {});
+    }
+    goToRoom(roomName) {
+        this.goTo(new RoomPosition(25, 25, roomName));
     }
 }
 
@@ -4356,7 +4368,7 @@ class Intel {
         this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
         if (!this.roomInfo[room.name].targetCreeps.length)
             this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
-        if (!this.roomInfo[room.name].targetBuildings.length)
+        if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length)
             this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
                 filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
                     structure.structureType == STRUCTURE_POWER_SPAWN
@@ -4377,7 +4389,7 @@ class Intel {
 class SwarmMaster extends Master {
     constructor(hive, order) {
         super(hive, "master_Swarm_" + order.name);
-        this.destroyTime = Game.time + 1000;
+        this.destroyTime = Game.time + 1500;
         this.order = order;
     }
 }
@@ -4391,7 +4403,7 @@ class hordeMaster extends SwarmMaster {
         // failsafe
         this.maxSpawns = 500;
         this.spawned = 0;
-        this.targetBeeCount = 2;
+        this.targetBeeCount = 1;
     }
     newBee(bee) {
         this.knights.push(bee);
@@ -4404,9 +4416,10 @@ class hordeMaster extends SwarmMaster {
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0)
             targetsAlive = false;
-        if (targetsAlive && this.destroyTime < Game.time + 500)
-            this.destroyTime = Game.time + 1000;
-        if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive && this.spawned < this.maxSpawns) {
+        if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns)
+            this.destroyTime = Game.time + CREEP_LIFE_TIME + 1;
+        if (this.knights.length < this.targetBeeCount && !this.waitingForABee &&
+            this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns) {
             let order = {
                 master: this.ref,
                 setup: Setups.knight,
@@ -4423,6 +4436,11 @@ class hordeMaster extends SwarmMaster {
     run() {
         // it is cached after first check
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+        if (roomInfo.safeToDowngrade) {
+            let room = Game.rooms[this.order.pos.roomName];
+            if (room && room.controller && !room.controller.my && room.controller.owner && !room.controller.pos.lookFor(LOOK_FLAGS).length)
+                room.controller.pos.createFlag("downgrade_" + room.name, COLOR_RED, COLOR_PURPLE);
+        }
         let enemyTargetingCurrent = {};
         _.forEach(roomInfo.targetBuildings.concat(roomInfo.targetCreeps), (enemy) => {
             enemyTargetingCurrent[enemy.id] = {
@@ -4451,10 +4469,67 @@ class hordeMaster extends SwarmMaster {
     }
 }
 
+class downgradeMaster extends SwarmMaster {
+    constructor(hive, order) {
+        super(hive, order);
+        this.claimers = [];
+        this.lastSpawned = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+        this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+    }
+    newBee(bee) {
+        this.claimers.push(bee);
+        this.refreshLastSpawned();
+    }
+    refreshLastSpawned() {
+        _.forEach(this.claimers, (bee) => {
+            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : CREEP_LIFE_TIME;
+            if (Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive) >= this.lastSpawned)
+                this.lastSpawned = Game.time - (CREEP_CLAIM_LIFE_TIME - ticksToLive);
+        });
+    }
+    update() {
+        this.claimers = this.clearBees(this.claimers);
+        let room = Game.rooms[this.order.pos.roomName];
+        if (room && room.controller && !room.controller.my && !room.controller.owner)
+            this.destroyTime = Game.time;
+        else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE)
+            this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
+        if (Game.time % 100 == 0)
+            console.log(Game.time, this.lastAttacked - this.lastSpawned, this.lastAttacked);
+        // 5 for random shit
+        if (Game.time >= this.lastSpawned + CONTROLLER_ATTACK_BLOCKED_UPGRADE
+            && this.destroyTime > Game.time + 100) {
+            let order = {
+                master: this.ref,
+                setup: Setups.claimer,
+                amount: 1,
+                priority: 5,
+            };
+            order.setup.bodySetup.patternLimit = 4; //just fucking downgrade this shit
+            this.hive.wish(order);
+            this.lastSpawned = Game.time;
+        }
+    }
+    run() {
+        _.forEach(this.claimers, (bee) => {
+            if (!bee.creep.pos.isNearTo(this.order.pos))
+                bee.goTo(this.order.pos);
+            else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
+                let room = Game.rooms[this.order.pos.roomName];
+                if (room && room.controller && !room.controller.my && room.controller.owner) {
+                    if (bee.attackController(room.controller) == OK) {
+                        this.lastAttacked = Game.time;
+                    }
+                }
+            }
+        });
+    }
+}
+
 class _Apiary {
     constructor() {
         this.hives = {};
-        this.destroyTime = Game.time + 2000;
+        this.destroyTime = Game.time + 4000;
         this.intel = new Intel();
         let myRoomsAnnexes = {};
         _.forEach(Game.rooms, (room) => {
@@ -4485,7 +4560,7 @@ class _Apiary {
                 homeRoom = exit;
             }
         });
-        swarmMaster(this.hives[homeRoom], order);
+        return new swarmMaster(this.hives[homeRoom], order);
     }
     updateFlags() {
         // act upon flags
@@ -4495,10 +4570,15 @@ class _Apiary {
                 if (flag.color == COLOR_RED) {
                     let master = global.masters["master_Swarm_" + flag.name];
                     if (!master) {
-                        if (flag.secondaryColor == COLOR_PURPLE)
-                            console.log("here");
-                        else
+                        if (flag.secondaryColor == COLOR_BLUE)
                             this.spawnSwarm(flag, hordeMaster);
+                        else if (flag.secondaryColor == COLOR_RED) {
+                            let masterNew = this.spawnSwarm(flag, hordeMaster);
+                            masterNew.targetBeeCount = 2;
+                            masterNew.maxSpawns = masterNew.targetBeeCount * 2;
+                        }
+                        else if (flag.secondaryColor == COLOR_PURPLE)
+                            this.spawnSwarm(flag, downgradeMaster);
                     }
                     else if (master.destroyTime < Game.time) {
                         delete global.masters["master_Swarm_" + flag.name];

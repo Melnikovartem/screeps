@@ -48,7 +48,7 @@ export class Intel {
     if (!this.roomInfo[room.name].targetCreeps.length)
       this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
 
-    if (!this.roomInfo[room.name].targetBuildings.length)
+    if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length)
       this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
         filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
           structure.structureType == STRUCTURE_POWER_SPAWN
