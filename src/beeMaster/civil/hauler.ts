@@ -8,7 +8,7 @@ import { Master } from "../_Master";
 export class haulerMaster extends Master {
 
   cell: excavationCell;
-  targetMap: { [id: string]: string | null } = {};
+  targetMap: { [id: string]: string } = {}; // "" is base value
 
   constructor(excavationCell: excavationCell) {
     super(excavationCell.hive, "master_" + excavationCell.ref);
@@ -19,7 +19,7 @@ export class haulerMaster extends Master {
     _.forEach(this.cell.resourceCells, (cell) => {
       let beeForSource = 0;
       if (cell.container) {
-        this.targetMap[cell.container.id] = null;
+        this.targetMap[cell.container.id] = "";
         if (this.hive.stage == 2)
           beeForSource += 0.38;
         else
@@ -36,16 +36,16 @@ export class haulerMaster extends Master {
   update() {
     super.update();
 
-    _.forEach(this.targetMap, (ref, key) => {
-      if (ref && key && !global.bees[ref])
-        this.targetMap[key] = null;
-    });
+    for (let key in this.targetMap) {
+      if (!global.bees[this.targetMap[key]])
+        this.targetMap[key] = "";
+    }
 
-    if (!this.waitingForBees && this.bees.length < this.targetBeeCount) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.hauler,
-        amount: this.targetBeeCount - this.bees.length,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 4,
       };
 
@@ -69,12 +69,12 @@ export class haulerMaster extends Master {
 
           if (!suckerTarget)
             suckerTarget = <StructureContainer>_.filter(this.cell.quitefullContainers,
-              (container) => this.targetMap[container.id] == null)[0];
+              (container) => this.targetMap[container.id] == "")[0];
 
           if (suckerTarget) {
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY)
             if (ans == OK)
-              this.targetMap[suckerTarget.id] = null;
+              this.targetMap[suckerTarget.id] = "";
             else
               this.targetMap[suckerTarget.id] = bee.ref;
           }

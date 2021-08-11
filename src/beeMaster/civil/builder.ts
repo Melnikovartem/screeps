@@ -21,11 +21,11 @@ export class builderMaster extends Master {
       this.targetBeeCount = 1;
     }
 
-    if (!this.waitingForBees && targetsNumber && this.bees.length < this.targetBeeCount) {
+    if (this.checkBees() && targetsNumber) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
-        amount: this.targetBeeCount - this.bees.length,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 4,
       };
 
@@ -48,11 +48,11 @@ export class builderMaster extends Master {
           target = null;
 
         if (!target)
-          target = bee.creep.pos.findClosest(this.hive.emergencyRepairs);
+          target = bee.pos.findClosest(this.hive.emergencyRepairs);
         if (!target)
-          target = bee.creep.pos.findClosest(this.hive.constructionSites);
+          target = bee.pos.findClosest(this.hive.constructionSites);
         if (!target)
-          target = bee.creep.pos.findClosest(this.hive.normalRepairs);
+          target = bee.pos.findClosest(this.hive.normalRepairs);
 
         if (target) {
           if (target instanceof ConstructionSite)

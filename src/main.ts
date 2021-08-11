@@ -28,11 +28,12 @@ function onGlobalReset(): void {
 }
 
 function main() {
-
   if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
     onGlobalReset()
   }
 
+  // Automatically delete memory
+  Mem.clean();
 
   global.Apiary.update();
   global.Apiary.run();
@@ -42,9 +43,6 @@ function main() {
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000) {
     Game.cpu.generatePixel();
   }
-
-  // Automatically delete memory
-  Mem.clean();
 }
 
 // time to wrap things up

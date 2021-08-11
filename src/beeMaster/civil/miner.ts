@@ -12,15 +12,13 @@ export class minerMaster extends Master {
     super(resourceCell.hive, "master_" + resourceCell.ref);
 
     this.cell = resourceCell;
-
-    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
     super.update();
 
     // 5 for random shit
-    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME && (this.cell.link || this.cell.container)) {
+    if (this.checkBees() && (this.cell.link || this.cell.container)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,

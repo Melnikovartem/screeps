@@ -2,13 +2,11 @@
 // we collect data about enemy
 // in this case on battlefield
 
-import { UPDATE_EACH_TICK } from "./settings"
-
 interface RoomInfo {
   lastUpdated: number,
   targetCreeps: Creep[];
   targetBuildings: (Structure)[]
-  safeToDowngrade: boolean,
+  safePlace: boolean,
   ownedByEnemy: boolean,
   safeModeEndTime: number,
 }
@@ -28,27 +26,21 @@ export class Intel {
         lastUpdated: 0,
         targetCreeps: [],
         targetBuildings: [],
-        safeToDowngrade: false,
+        safePlace: true,
         ownedByEnemy: true,
         safeModeEndTime: 0,
       };
     }
 
+    // it is cached after first check
     if (this.roomInfo[roomName].lastUpdated == Game.time)
       return this.roomInfo[roomName];
 
-    if (!(roomName in Game.rooms))
-      if (!UPDATE_EACH_TICK)
-        return this.roomInfo[roomName];
-      else
-        return {
-          lastUpdated: 0,
-          targetCreeps: [],
-          targetBuildings: [],
-          safeToDowngrade: false,
-          ownedByEnemy: true,
-          safeModeEndTime: 0,
-        };
+    if (!(roomName in Game.rooms)) {
+      this.roomInfo[roomName].targetCreeps = [];
+      this.roomInfo[roomName].targetBuildings = [];
+      return this.roomInfo[roomName];
+    }
 
     let room = Game.rooms[roomName];
 
@@ -61,12 +53,14 @@ export class Intel {
         this.roomInfo[room.name].ownedByEnemy = false;
     }
 
+    if (Game.time % 50 == 0) // for case of reboot
+      Memory.cache.intellegence = this.roomInfo;
+
     return this.roomInfo[roomName];
   }
 
   updateEnemiesInRoom(room: Room) {
-    if (Game.time % 50 == 0) // for case of reboot
-      Memory.cache.intellegence = this.roomInfo;
+    this.roomInfo[room.name].safePlace = false;
 
     this.roomInfo[room.name].lastUpdated = Game.time;
 
@@ -80,23 +74,22 @@ export class Intel {
     if (!this.roomInfo[room.name].targetCreeps.length)
       this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
 
-    if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length)
+    if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length) {
+      this.roomInfo[room.name].safePlace = true;
+
       this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
         filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
           structure.structureType == STRUCTURE_POWER_SPAWN
       });
 
-
-    if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length) {
       // time to pillage
-      this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
-        filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
-          structure.structureType == STRUCTURE_EXTENSION
-      });
+      if (!this.roomInfo[room.name].targetBuildings.length)
+        this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+          filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
+            structure.structureType == STRUCTURE_EXTENSION
+        });
 
       this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS));
-
-      this.roomInfo[room.name].safeToDowngrade = true;
     }
   }
 }

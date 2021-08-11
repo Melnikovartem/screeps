@@ -19,8 +19,6 @@ export class managerMaster extends Master {
     super(storageCell.hive, "master_" + storageCell.ref);
 
     this.cell = storageCell;
-
-    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
@@ -48,7 +46,7 @@ export class managerMaster extends Master {
       (<Store<RESOURCE_ENERGY, false>>structure.store).getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     // tragets.length cause dont need a manager for nothing
-    if (!this.waitingForBees && Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME && this.targets.length > 0) {
+    if (this.checkBees() && this.targets.length > 0) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,

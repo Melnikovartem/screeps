@@ -15,7 +15,8 @@ export class puppetMaster extends Master {
     super.update();
 
     // 5 for random shit
-    if (!this.waitingForBees && this.bees.length == 0 && !this.waitingForBees && !Game.rooms[this.target.roomName]) {
+    if (this.checkBees() && !(this.target.roomName in Game.rooms)) {
+      this.print([this.checkBees(), this.beesAmount, this.target.roomName in Game.rooms])
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.puppet,
@@ -33,7 +34,7 @@ export class puppetMaster extends Master {
       global.Apiary.destroyTime = Game.time + 10;
     }
     _.forEach(this.bees, (bee) => {
-      if (bee.creep.pos.getRangeTo(this.target) > 10)
+      if (bee.pos.getRangeTo(this.target) > 10)
         bee.goTo(this.target);
     });
   }

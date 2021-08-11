@@ -6,6 +6,7 @@ export class Bee {
   creep: Creep;
 
   ref: string;
+  pos: RoomPosition;
 
   reusePath: number = 3;
   lifeTime: number = CREEP_LIFE_TIME;
@@ -16,12 +17,18 @@ export class Bee {
     this.master = global.masters[this.creep.memory.refMaster];
 
     this.ref = creep.name;
+    this.pos = creep.pos;
 
     if (creep.getBodyparts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
     global.bees[this.creep.name] = this;
+  }
+
+  update() {
+    this.creep = Game.creeps[this.ref];
+    this.pos = this.creep.pos;
   }
 
   // for future: could path to open position near object for targets that require isNearTo
@@ -96,19 +103,19 @@ export class Bee {
   }
 
   attackController(target: StructureController): number {
-    if (this.creep.pos.isNearTo(target))
+    if (this.pos.isNearTo(target))
       return this.creep.attackController(target);
     else
       this.goTo(target);
     return ERR_NOT_IN_RANGE;
   }
 
-  goTo(target: RoomPosition | RoomObject): number {
-    return this.creep.travelTo(target, {});
-  }
-
   goToRoom(roomName: string): number {
     return this.goTo(new RoomPosition(25, 25, roomName))
+  }
+
+  goTo(target: RoomPosition | RoomObject, opt?: TravelToOptions): number {
+    return this.creep.travelTo(target, opt);
   }
 
   /*

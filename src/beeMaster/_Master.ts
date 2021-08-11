@@ -13,57 +13,60 @@ export abstract class Master {
   waitingForBees: number = 0;
 
   lastSpawns: number[] = [];
-  bees: Bee[] = [];
+  beesAmount: number = 0;
+  bees: { [id: string]: Bee } = {};
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
     this.ref = ref;
+
+    this.lastSpawns.push(-CREEP_LIFE_TIME);
 
     global.masters[this.ref] = this;
   }
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
-    this.bees.push(bee);
+    this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;
 
     _.forEach(this.bees, (bee) => {
       let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
       let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-      if (this.lastSpawns.length < this.targetBeeCount) {
+      if (this.beesAmount < this.targetBeeCount && this.lastSpawns[0] != -CREEP_LIFE_TIME) {
         this.lastSpawns.push();
       } else if (birthTime >= this.lastSpawns[0]) {
         this.lastSpawns.shift();
         this.lastSpawns.push(birthTime);
       }
     });
-  };
+
+    this.beesAmount = Object.keys(this.bees).length;
+  }
+
+  checkBees(spawnCycle?: number): boolean {
+    if (!spawnCycle)
+      spawnCycle = CREEP_LIFE_TIME;
+
+    // 5 for random shit
+    return !this.waitingForBees && (this.beesAmount < this.targetBeeCount || Game.time + 5 >= this.lastSpawns[0] + spawnCycle);
+  }
 
   // first stage of decision making like do i need to spawn new creeps
   update() {
-    this.bees = this.clearBees(this.bees);
+    this.beesAmount = 0; // Object.keys(this.bees).length
+    for (let key in this.bees) {
+      this.beesAmount += 1;
+      if (!global.bees[this.bees[key].ref])
+        delete this.bees[key];
+    }
   }
 
   wish(order: SpawnOrder) {
     this.waitingForBees += order.amount;
     this.hive.wish(order);
     // well he placed an order now just need to catch a creep after a spawn
-  }
-
-  clearBees(beeArray: Bee[]) {
-    // clear non-exisiting bees
-    let deletedBees = false;
-    _.forEach(beeArray, (bee, key) => {
-      if (!global.bees[bee.ref]) {
-        deletedBees = true;
-        delete beeArray[key];
-      }
-    });
-    if (deletedBees)
-      beeArray = _.compact(beeArray);
-
-    return beeArray;
   }
 
   // second stage of decision making like where do i need to move

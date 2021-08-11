@@ -5,6 +5,7 @@ import { Intel } from "./intelligence";
 
 import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
+import { blockerMaster } from "./beeMaster/war/blocker";
 import { SwarmMaster } from "./beeMaster/_SwarmMaster";
 
 import { UPDATE_EACH_TICK } from "./settings";
@@ -47,7 +48,13 @@ export class _Apiary {
   }
 
   spawnSwarm<T extends SwarmMaster>(order: Flag, swarmMaster: new (hive: Hive, order: Flag) => T): T {
-    let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
+    let homeRoom: string;
+
+    if (this.hives[order.pos.roomName])
+      homeRoom = order.pos.roomName;
+    else
+      homeRoom = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
+
     _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
       if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage)
         homeRoom = <string>exit;
@@ -65,6 +72,10 @@ export class _Apiary {
           if (!master) {
             if (flag.secondaryColor == COLOR_BLUE)
               this.spawnSwarm(flag, hordeMaster);
+            else if (flag.secondaryColor == COLOR_PURPLE)
+              this.spawnSwarm(flag, downgradeMaster);
+            else if (flag.secondaryColor == COLOR_YELLOW)
+              this.spawnSwarm(flag, blockerMaster);
             else if (flag.secondaryColor == COLOR_RED) {
               let masterNew = this.spawnSwarm(flag, hordeMaster);
 
@@ -77,8 +88,6 @@ export class _Apiary {
               masterNew.targetBeeCount = 2;
               masterNew.maxSpawns = masterNew.targetBeeCount * 2;
             }
-            else if (flag.secondaryColor == COLOR_PURPLE)
-              this.spawnSwarm(flag, downgradeMaster);
           } else if (master.destroyTime < Game.time) {
             delete global.masters["master_Swarm_" + flag.name];
             flag.remove();
@@ -89,44 +98,42 @@ export class _Apiary {
       });
   }
 
-  updateBees() {
+  i: number = 0;
+
+  findBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
-      let creep = Game.creeps[name];
-      if (creep)
-        if (!global.bees[name]) {
-          if (global.masters[creep.memory.refMaster]) {
-            // not sure if i rly need a global bees hash
-            global.bees[creep.name] = new Bee(creep);
-            global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
-          } else if (creep.memory.refMaster.includes("master_developmentCell_")) {
-            // TODO think of something smart
-            let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
-            creep.memory.refMaster = randomMaster;
+      if (!global.bees[name]) {
+        let creep = Game.creeps[name];
+        if (global.masters[creep.memory.refMaster]) {
+          // not sure if i rly need a global bees hash
+          global.bees[creep.name] = new Bee(creep);
+          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+        } else if (creep.memory.refMaster.includes("master_developmentCell_")) {
+          // TODO think of something smart
+          let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
+          creep.memory.refMaster = randomMaster;
 
-            global.bees[creep.name] = new Bee(creep);
-            global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
-          }
-          // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
-        } else {
-          // i guess it is not gonna be fixed :/
-          global.bees[name].creep = creep;
+          global.bees[creep.name] = new Bee(creep);
+          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
         }
-      else if (global.bees[name])
-        delete global.bees[name];
+        // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+      }
     }
   }
 
   // update phase
   update() {
-
     _.forEach(this.hives, (hive) => {
       hive.update();
     });
 
     this.updateFlags();
-    this.updateBees();
 
+    _.forEach(global.bees, (bee) => {
+      bee.update();
+    });
+    this.findBees();
 
     _.forEach(global.masters, (master) => {
       master.update();

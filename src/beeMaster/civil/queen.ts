@@ -12,15 +12,12 @@ export class queenMaster extends Master {
     super(respawnCell.hive, "master_" + respawnCell.ref);
 
     this.cell = respawnCell;
-
-    this.lastSpawns.push(Game.time - CREEP_LIFE_TIME);
   }
 
   update() {
     super.update();
 
-    // 5 for random shit
-    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_LIFE_TIME) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,
@@ -53,7 +50,7 @@ export class queenMaster extends Master {
         }
 
         if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-          let target = bee.creep.pos.findClosest(targets);
+          let target = bee.pos.findClosest(targets);
           if (target)
             bee.transfer(target, RESOURCE_ENERGY);
         }

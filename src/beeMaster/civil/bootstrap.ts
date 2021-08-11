@@ -1,9 +1,9 @@
 // amanges colony untill storage lvl
 import { developmentCell } from "../../cells/developmentCell";
 
+import { Bee } from "../../Bee";
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
-import { Bee } from "../../Bee";
 import { Master } from "../_Master";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
@@ -54,7 +54,7 @@ export class bootstrapMaster extends Master {
   update() {
     super.update();
 
-    if (!this.waitingForBees && this.bees.length < this.targetBeeCount && this.hive.stage == 0) {
+    if (this.checkBees() && this.hive.stage == 0) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
@@ -64,7 +64,7 @@ export class bootstrapMaster extends Master {
 
       order.setup.bodySetup.patternLimit = maxSize;
 
-      if (this.bees.length < this.targetBeeCount * 0.5)
+      if (this.beesAmount < this.targetBeeCount * 0.5)
         order.priority = 2;
 
       this.wish(order);
@@ -112,10 +112,10 @@ export class bootstrapMaster extends Master {
           // find new source
           // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
           // but that is too much for too little
-          source = <Source>bee.creep.pos.findClosest(
+          source = <Source>bee.pos.findClosest(
             _.filter(this.cell.sources,
               (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                && (source.pos.getOpenPositions().length || bee.creep.pos.isNearTo(source)) && source.energy > 0));
+                && (source.pos.getOpenPositions().length || bee.pos.isNearTo(source)) && source.energy > 0));
           if (source) {
             this.sourceTargeting[source.id].current += 1;
             this.stateMap[bee.ref].target = source.id;
@@ -165,7 +165,7 @@ export class bootstrapMaster extends Master {
           targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
-            target = bee.creep.pos.findClosest(targets);
+            target = bee.pos.findClosest(targets);
             workType = "refill";
           }
         }
@@ -174,7 +174,7 @@ export class bootstrapMaster extends Master {
           let targets: (StructureTower)[] = _.filter(this.hive.cells.defenseCell.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
-            target = bee.creep.pos.findClosest(targets);
+            target = bee.pos.findClosest(targets);
             workType = "refill";
           }
         }
@@ -186,12 +186,12 @@ export class bootstrapMaster extends Master {
 
         if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
           if (!target) {
-            target = <Structure>bee.creep.pos.findClosest(this.hive.emergencyRepairs)
+            target = <Structure>bee.pos.findClosest(this.hive.emergencyRepairs)
             workType = "repair";
           }
 
           if (!target) {
-            target = <ConstructionSite>bee.creep.pos.findClosest(this.hive.constructionSites);
+            target = <ConstructionSite>bee.pos.findClosest(this.hive.constructionSites);
             workType = "build";
           }
         }

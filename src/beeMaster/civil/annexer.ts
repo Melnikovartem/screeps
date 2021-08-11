@@ -8,10 +8,9 @@ export class annexMaster extends Master {
   controller: StructureController; //controllers rly don't age...
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "master_" + "annexerRoom_" + controller.room.name);
+    super(hive, "master_annexerRoom_" + controller.room.name);
 
     this.controller = controller;
-    this.lastSpawns.push(Game.time - CREEP_CLAIM_LIFE_TIME);
   }
 
   update() {
@@ -23,8 +22,7 @@ export class annexMaster extends Master {
         this.controller = controller;
     }
 
-    // 5 for random shit
-    if (!this.waitingForBees && Game.time + 5 >= this.lastSpawns[0] + CREEP_CLAIM_LIFE_TIME) {
+    if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer,
