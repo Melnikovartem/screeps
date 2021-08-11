@@ -5,7 +5,8 @@
 interface RoomInfo {
   lastUpdated: number,
   targetCreeps: Creep[];
-  defenseBuildings: (StructureTower | StructureInvaderCore)[]
+  targetBuildings: (Structure)[]
+  safeToDowngrade: boolean,
 }
 
 export class Intel {
@@ -17,7 +18,8 @@ export class Intel {
       this.roomInfo[roomName] = {
         lastUpdated: 0,
         targetCreeps: [],
-        defenseBuildings: [],
+        targetBuildings: [],
+        safeToDowngrade: false,
       }
 
     if (this.roomInfo[roomName].lastUpdated == Game.time)
@@ -27,12 +29,37 @@ export class Intel {
     if (!room)
       return null;
 
+    this.updateRoom(room);
+
 
     return this.roomInfo[roomName];
   }
 
-  // update all needed rooms
-  update(): void {
+  updateRoom(room: Room) {
+    this.roomInfo[room.name].lastUpdated = Game.time;
 
+    this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+      filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
+        structure.structureType == STRUCTURE_INVADER_CORE
+    });
+
+    this.roomInfo[room.name].targetCreeps = room.find(FIND_HOSTILE_CREEPS);
+
+    if (!this.roomInfo[room.name].targetBuildings.length)
+      this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+        filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
+          structure.structureType == STRUCTURE_POWER_SPAWN
+      });
+
+
+    if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length) {
+      // time to pillage
+      this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+        filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
+          structure.structureType == STRUCTURE_EXTENSION
+      });
+
+      this.roomInfo[room.name].safeToDowngrade = true;
+    }
   }
 }

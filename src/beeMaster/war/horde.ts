@@ -6,13 +6,11 @@ import type { Bee } from "../../Bee";
 import { SwarmMaster } from "../_SwarmMaster";
 
 // most basic of bitches a horde full of wasps
-export class haulerMaster extends SwarmMaster {
+export class hordeMaster extends SwarmMaster {
   knights: Bee[] = [];
 
   targetBeeCount: number;
   waitingForABee: number = 0;
-
-  targetMap: { [id: string]: string | null } = {};
 
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
@@ -29,12 +27,13 @@ export class haulerMaster extends SwarmMaster {
   update() {
     this.knights = this.clearBees(this.knights);
 
-    _.forEach(this.targetMap, (ref, key) => {
-      if (ref && key && !global.bees[ref])
-        this.targetMap[key] = null;
-    });
+    if (this.destroyTime < Game.time + 1000) {
+      let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+      if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) > 0)
+        this.destroyTime = Game.time + 2000;
+    }
 
-    if (this.knights.length < this.targetBeeCount && !this.waitingForABee) {
+    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && this.destroyTime > Game.time + 1000) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.knight,
@@ -52,11 +51,35 @@ export class haulerMaster extends SwarmMaster {
   }
 
   run() {
+    // it is cached after first check
+    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+
+    let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
+
+    if (roomInfo != null) {
+      _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
+        enemyTargetingCurrent[enemy.id] = {
+          current: 0,
+          max: enemy.pos.getOpenPositions().length,
+        }
+      });
+    }
+
     _.forEach(this.knights, (bee) => {
       if (bee.creep.room.name != this.order.pos.roomName) {
         bee.goTo(this.order.pos);
-      } else {
+      } else if (roomInfo != null) {
+        let target: Structure | Creep = <Structure>bee.creep.pos.findClosest(_.filter(roomInfo.targetBuildings,
+          (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
 
+        if (!target)
+          target = <Creep>bee.creep.pos.findClosest(_.filter(roomInfo.targetCreeps,
+            (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
+
+        if (target) {
+          bee.attack(target);
+          enemyTargetingCurrent[target.id].current += 1;
+        }
       }
     });
   }

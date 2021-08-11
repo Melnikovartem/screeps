@@ -1,13 +1,21 @@
 import { Hive } from "./Hive"
 import { Bee } from "./bee"
 
+import { Intel } from "./intelligence";
+
+import { hordeMaster } from "./beeMaster/war/horde"
+import { SwarmMaster } from "./beeMaster/_SwarmMaster"
+
 export class _Apiary {
-  hives: Hive[] = [];
+  hives: { [id: string]: Hive } = {};
   destroyTime: number;
 
+  intel: Intel;
 
   constructor() {
     this.destroyTime = Game.time + 2000;
+
+    this.intel = new Intel();
 
     let myRoomsAnnexes: { [id: string]: string[] } = {};
 
@@ -18,7 +26,7 @@ export class _Apiary {
 
     _.forEach(Game.flags, (flag) => {
       // annex room
-      if (flag.color == 2 && flag.secondaryColor == 2) {
+      if (flag.color == COLOR_PURPLE && flag.secondaryColor == COLOR_PURPLE) {
         _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
           if (exit && myRoomsAnnexes[exit] && !myRoomsAnnexes[exit].includes(flag.pos.roomName)) {
             myRoomsAnnexes[exit].push(flag.pos.roomName);
@@ -31,7 +39,7 @@ export class _Apiary {
 
     _.forEach(myRoomsAnnexes, (annexNames, roomName) => {
       if (roomName)
-        this.hives.push(new Hive(roomName, annexNames));
+        this.hives[roomName] = new Hive(roomName, annexNames);
     });
   }
 
@@ -40,6 +48,28 @@ export class _Apiary {
 
     _.forEach(this.hives, (hive) => {
       hive.update();
+    });
+
+    // act upon flags
+    _.forEach(Game.flags, (flag) => {
+      // annex room
+      if (flag.color == COLOR_BLUE && flag.secondaryColor == COLOR_BLUE) {
+        let master = (<SwarmMaster>global.masters["Swarm_" + flag.name])
+        if (!master) {
+          let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(global.masters).length)];
+          _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
+            if (this.hives[<string>exit] && this.hives[<string>exit].stage > 0) {
+              homeRoom = <string>exit;
+              return true;
+            }
+            return false;
+          });
+          new hordeMaster(this.hives[homeRoom], flag);
+        } else if (master.destroyTime > Game.time) {
+          delete global.masters["Swarm_" + flag.name];
+          flag.remove();
+        }
+      }
     });
 
     // after all the masters where created and retrived if it was needed

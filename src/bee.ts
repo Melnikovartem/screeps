@@ -27,6 +27,14 @@ export class Bee {
     console.log(Game.time, "!", this.creep.name, "?", info);
   }
 
+  attack(target: Creep | Structure | PowerCreep): number {
+    if (this.creep.pos.isNearTo(target))
+      this.creep.attack(target);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
   harvest(target: Source | Mineral): number {
     if (this.creep.pos.isNearTo(target))
       this.creep.harvest(target);

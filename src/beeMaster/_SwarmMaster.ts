@@ -7,10 +7,12 @@ import { Master } from "./_Master";
 export abstract class SwarmMaster extends Master {
 
   order: Flag
+  destroyTime: number;
 
   constructor(hive: Hive, order: Flag) {
     super(hive, "Swarm_" + order.name);
 
+    this.destroyTime = Game.time + 2000;
     this.order = order;
   }
 }
