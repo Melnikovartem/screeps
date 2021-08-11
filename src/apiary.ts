@@ -45,21 +45,30 @@ export class _Apiary {
     });
   }
 
+  spawnSwarm(order: Flag, swarmMaster: typeof SwarmMaster.constructor) {
+    let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
+    _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
+      if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage) {
+        homeRoom = <string>exit;
+      }
+    });
+    swarmMaster(this.hives[homeRoom], order);
+  }
+
   updateFlags() {
     // act upon flags
     if (Object.keys(this.hives).length)
       _.forEach(Game.flags, (flag) => {
         // annex room
-        if (flag.color == COLOR_BLUE && flag.secondaryColor == COLOR_BLUE) {
+        if (flag.color == COLOR_RED) {
           let master = (<SwarmMaster>global.masters["master_Swarm_" + flag.name]);
           if (!master) {
-            let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
-            _.forEach(Game.map.describeExits(flag.pos.roomName), (exit) => {
-              if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage) {
-                homeRoom = <string>exit;
-              }
-            });
-            new hordeMaster(this.hives[homeRoom], flag);
+            if (flag.secondaryColor == COLOR_BLUE)
+              this.spawnSwarm(flag, hordeMaster);
+            else if (flag.secondaryColor == COLOR_RED)
+              this.spawnSwarm(flag, hordeMaster);
+            else if (flag.secondaryColor == COLOR_PURPLE)
+              this.spawnSwarm(flag, hordeMaster);
           } else if (master.destroyTime < Game.time) {
             delete global.masters["master_Swarm_" + flag.name];
             flag.remove();

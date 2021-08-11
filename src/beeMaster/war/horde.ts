@@ -12,6 +12,10 @@ export class hordeMaster extends SwarmMaster {
   targetBeeCount: number;
   waitingForABee: number = 0;
 
+  // failsafe
+  maxSpawns: number = 500;
+  spawned: number = 0;
+
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
 
@@ -37,7 +41,7 @@ export class hordeMaster extends SwarmMaster {
     if (targetsAlive && this.destroyTime < Game.time + 500)
       this.destroyTime = Game.time + 1000;
 
-    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive) {
+    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive && this.spawned < this.maxSpawns) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.knight,
@@ -49,6 +53,7 @@ export class hordeMaster extends SwarmMaster {
         order.priority = 5;
 
       this.waitingForABee += this.targetBeeCount - this.knights.length;
+      this.spawned += this.targetBeeCount - this.knights.length;
 
       this.hive.wish(order);
     }

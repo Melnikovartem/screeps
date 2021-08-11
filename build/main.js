@@ -4212,7 +4212,7 @@ class Hive {
             let annexTargets = room.find(FIND_HOSTILE_CREEPS);
             if (annexTargets.length > 0) {
                 if (!Game.flags["defend_" + room.name]) {
-                    new Flag("defend_" + room.name, COLOR_BLUE, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
+                    new Flag("defend_" + room.name, COLOR_RED, COLOR_BLUE, room.name, annexTargets[0].pos.x, annexTargets[0].pos.y);
                     console.log("new defender flag for " + room.name);
                 }
                 if (!this.annexesTargets)
@@ -4343,7 +4343,7 @@ class Intel {
             return this.roomInfo[roomName];
         let room = Game.rooms[roomName];
         if (!room)
-            return null;
+            return this.roomInfo[roomName];
         this.updateRoom(room);
         return this.roomInfo[roomName];
     }
@@ -4388,6 +4388,9 @@ class hordeMaster extends SwarmMaster {
         super(hive, order);
         this.knights = [];
         this.waitingForABee = 0;
+        // failsafe
+        this.maxSpawns = 500;
+        this.spawned = 0;
         this.targetBeeCount = 2;
     }
     newBee(bee) {
@@ -4403,7 +4406,7 @@ class hordeMaster extends SwarmMaster {
             targetsAlive = false;
         if (targetsAlive && this.destroyTime < Game.time + 500)
             this.destroyTime = Game.time + 1000;
-        if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive) {
+        if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive && this.spawned < this.maxSpawns) {
             let order = {
                 master: this.ref,
                 setup: Setups.knight,
@@ -4413,6 +4416,7 @@ class hordeMaster extends SwarmMaster {
             if (this.targetBeeCount - this.knights.length == 1 && this.targetBeeCount > 1)
                 order.priority = 5;
             this.waitingForABee += this.targetBeeCount - this.knights.length;
+            this.spawned += this.targetBeeCount - this.knights.length;
             this.hive.wish(order);
         }
     }
@@ -4420,19 +4424,17 @@ class hordeMaster extends SwarmMaster {
         // it is cached after first check
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         let enemyTargetingCurrent = {};
-        if (roomInfo != null) {
-            _.forEach(roomInfo.targetBuildings.concat(roomInfo.targetCreeps), (enemy) => {
-                enemyTargetingCurrent[enemy.id] = {
-                    current: 0,
-                    max: enemy.pos.getOpenPositions().length,
-                };
-            });
-        }
+        _.forEach(roomInfo.targetBuildings.concat(roomInfo.targetCreeps), (enemy) => {
+            enemyTargetingCurrent[enemy.id] = {
+                current: 0,
+                max: enemy.pos.getOpenPositions().length,
+            };
+        });
         _.forEach(this.knights, (bee) => {
             if (bee.creep.room.name != this.order.pos.roomName) {
                 bee.goTo(this.order.pos);
             }
-            else if (roomInfo != null) {
+            else {
                 let target = bee.creep.pos.findClosest(_.filter(roomInfo.targetBuildings, (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
                 if (!target)
                     target = bee.creep.pos.findClosest(_.filter(roomInfo.targetCreeps, (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
@@ -4476,21 +4478,27 @@ class _Apiary {
                 this.hives[roomName] = new Hive(roomName, annexNames);
         });
     }
+    spawnSwarm(order, swarmMaster) {
+        let homeRoom = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
+        _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
+            if (this.hives[exit] && this.hives[homeRoom].stage > this.hives[exit].stage) {
+                homeRoom = exit;
+            }
+        });
+        swarmMaster(this.hives[homeRoom], order);
+    }
     updateFlags() {
         // act upon flags
         if (Object.keys(this.hives).length)
             _.forEach(Game.flags, (flag) => {
                 // annex room
-                if (flag.color == COLOR_BLUE && flag.secondaryColor == COLOR_BLUE) {
+                if (flag.color == COLOR_RED) {
                     let master = global.masters["master_Swarm_" + flag.name];
                     if (!master) {
-                        let homeRoom = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
-                        _.forEach(Game.map.describeExits(flag.pos.roomName), (exit) => {
-                            if (this.hives[exit] && this.hives[homeRoom].stage > this.hives[exit].stage) {
-                                homeRoom = exit;
-                            }
-                        });
-                        new hordeMaster(this.hives[homeRoom], flag);
+                        if (flag.secondaryColor == COLOR_PURPLE)
+                            console.log("here");
+                        else
+                            this.spawnSwarm(flag, hordeMaster);
                     }
                     else if (master.destroyTime < Game.time) {
                         delete global.masters["master_Swarm_" + flag.name];
