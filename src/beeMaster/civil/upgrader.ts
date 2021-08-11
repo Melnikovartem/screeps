@@ -28,9 +28,13 @@ export class upgraderMaster extends Master {
   update() {
     this.upgraders = this.clearBees(this.upgraders);
 
-    if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000)
-      this.targetBeeCount = 2; // burn some energy on controller
-    else
+    if (this.hive.cells.storageCell) {
+      // burn some energy on controller
+      if (this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000)
+        this.targetBeeCount = 2;
+      else if (this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+        this.targetBeeCount = 3;
+    } else
       this.targetBeeCount = 1;
 
     if (this.upgraders.length < this.targetBeeCount && !this.waitingForABee) {

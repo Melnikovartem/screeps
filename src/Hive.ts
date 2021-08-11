@@ -217,10 +217,8 @@ export class Hive {
       let annexTargets = room.find(FIND_HOSTILE_CREEPS)
 
       if (annexTargets.length > 0) {
-        if (!Game.flags["defend_" + room.name]) {
+        if (!Game.flags["defend_" + room.name])
           annexTargets[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
-          console.log("new defender flag for " + room.name);
-        }
         if (!this.annexesTargets)
           this.annexesTargets = annexTargets.length > 0;
       }

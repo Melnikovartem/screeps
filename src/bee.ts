@@ -92,13 +92,11 @@ export class Bee {
   }
 
   attackController(target: StructureController): number {
-    let ans: number = ERR_NOT_IN_RANGE;
     if (this.creep.pos.isNearTo(target))
-      ans = this.creep.attackController(target);
+      return this.creep.attackController(target);
     else
       this.goTo(target);
-    console.log(ans);
-    return ans;
+    return ERR_NOT_IN_RANGE;
   }
 
   goTo(target: RoomPosition | RoomObject) {

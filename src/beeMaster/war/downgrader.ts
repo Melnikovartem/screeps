@@ -35,18 +35,22 @@ export class downgradeMaster extends SwarmMaster {
     this.claimers = this.clearBees(this.claimers);
 
     let room = Game.rooms[this.order.pos.roomName];
-    if (room && room.controller && !room.controller.my && !room.controller.owner)
-      this.destroyTime = Game.time;
-    else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE)
-      this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
+    if (room)
+      if (room.controller) {
+        if (!room.controller.my && !room.controller.owner)
+          this.destroyTime = Game.time;
+        else if (room.controller.safeMode) // wait untill safe mode run out
+          this.lastAttacked = Game.time + room.controller.safeMode - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+      } else {
+        this.destroyTime = Game.time;
+      }
 
-    if (Game.time % 100 == 0)
-      console.log(Game.time, this.lastAttacked - this.lastSpawned, this.lastAttacked);
+    if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.destroyTime)
+      this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
 
 
     // 5 for random shit
-    if (Game.time >= this.lastSpawned + CONTROLLER_ATTACK_BLOCKED_UPGRADE
-      && this.destroyTime > Game.time + 100) {
+    if (Game.time - this.lastSpawned >= CONTROLLER_ATTACK_BLOCKED_UPGRADE && this.destroyTime > Game.time + 100) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.claimer,
@@ -54,7 +58,7 @@ export class downgradeMaster extends SwarmMaster {
         priority: 5,
       };
 
-      order.setup.bodySetup.patternLimit = 4; //just fucking downgrade this shit
+      order.setup.bodySetup.patternLimit = 1; //main idea - block upgrading
 
       this.hive.wish(order);
       this.lastSpawned = Game.time;
@@ -68,9 +72,15 @@ export class downgradeMaster extends SwarmMaster {
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
         let room = Game.rooms[this.order.pos.roomName];
         if (room && room.controller && !room.controller.my && room.controller.owner) {
-          if (bee.attackController(room.controller) == OK) {
+          let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+          if (!Game.flags["attack_" + room.name] && roomInfo.targetCreeps.length + roomInfo.targetBuildings.length)
+            roomInfo.targetCreeps[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
+
+          let ans = bee.attackController(room.controller);
+          if (ans == OK)
             this.lastAttacked = Game.time;
-          }
+          else if (ans == ERR_TIRED)
+            this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE / 2; // not sure what to DO if reboot and it is tired
         }
       }
     });

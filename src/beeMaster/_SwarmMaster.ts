@@ -12,7 +12,7 @@ export abstract class SwarmMaster extends Master {
   constructor(hive: Hive, order: Flag) {
     super(hive, "master_Swarm_" + order.name);
 
-    this.destroyTime = Game.time + 1500;
+    this.destroyTime = Game.time + 3000;
     this.order = order;
   }
 }

@@ -16,6 +16,8 @@ export class hordeMaster extends SwarmMaster {
   maxSpawns: number = 500;
   spawned: number = 0;
 
+  tryToDowngrade: boolean = false;
+
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
 
@@ -65,14 +67,18 @@ export class hordeMaster extends SwarmMaster {
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
 
-    if (roomInfo.safeToDowngrade) {
+    if (this.tryToDowngrade && roomInfo.safeToDowngrade && this.order.pos.roomName in Game.rooms) {
       let room = Game.rooms[this.order.pos.roomName];
-      if (room && room.controller && !room.controller.my && room.controller.owner && !room.controller.pos.lookFor(LOOK_FLAGS).length)
-        room.controller.pos.createFlag("downgrade_" + room.name, COLOR_RED, COLOR_PURPLE);
+      if (room.controller && !room.controller.my && room.controller.owner) {
+        if (!room.controller.pos.lookFor(LOOK_FLAGS).length)
+          room.controller.pos.createFlag("downgrade_" + room.name, COLOR_RED, COLOR_PURPLE);
+        this.tryToDowngrade = false;
+      }
     }
 
-    let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
+    this.print(roomInfo);
 
+    let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
 
     _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
       enemyTargetingCurrent[enemy.id] = {

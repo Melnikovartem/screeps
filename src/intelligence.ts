@@ -2,6 +2,8 @@
 // we collect data about enemy
 // in this case on battlefield
 
+import { UPDATE_EACH_TICK } from "./settings"
+
 interface RoomInfo {
   lastUpdated: number,
   targetCreeps: Creep[];
@@ -14,23 +16,32 @@ export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
 
   getInfo(roomName: string): RoomInfo {
-    if (!this.roomInfo[roomName])
+    if (!this.roomInfo[roomName]) {
       this.roomInfo[roomName] = {
         lastUpdated: 0,
         targetCreeps: [],
         targetBuildings: [],
         safeToDowngrade: false,
-      }
+      };
+    }
 
     if (this.roomInfo[roomName].lastUpdated == Game.time)
       return this.roomInfo[roomName];
 
+    if (!(roomName in Game.rooms))
+      if (!UPDATE_EACH_TICK)
+        return this.roomInfo[roomName];
+      else
+        return {
+          lastUpdated: 0,
+          targetCreeps: [],
+          targetBuildings: [],
+          safeToDowngrade: false,
+        };
+
     let room = Game.rooms[roomName];
-    if (!room)
-      return this.roomInfo[roomName];
 
     this.updateRoom(room);
-
 
     return this.roomInfo[roomName];
   }

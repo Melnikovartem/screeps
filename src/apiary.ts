@@ -49,9 +49,8 @@ export class _Apiary {
   spawnSwarm<T extends SwarmMaster>(order: Flag, swarmMaster: new (hive: Hive, order: Flag) => T): T {
     let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
     _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
-      if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage) {
+      if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage)
         homeRoom = <string>exit;
-      }
     });
     return new swarmMaster(this.hives[homeRoom], order);
   }
@@ -68,6 +67,13 @@ export class _Apiary {
               this.spawnSwarm(flag, hordeMaster);
             else if (flag.secondaryColor == COLOR_RED) {
               let masterNew = this.spawnSwarm(flag, hordeMaster);
+
+              // change settings to fit needed parameters
+              _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
+                if (this.hives[<string>exit])
+                  masterNew.tryToDowngrade = true;
+                return masterNew.tryToDowngrade;
+              });
               masterNew.targetBeeCount = 2;
               masterNew.maxSpawns = masterNew.targetBeeCount * 2;
             }
