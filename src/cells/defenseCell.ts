@@ -26,7 +26,7 @@ export class defenseCell extends Cell {
       let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo) // i literally check here for hull wich is never -_-
         _.forEach(this.towers, (tower) => {
-          let closest = tower.pos.findClosestByRange(roomInfo!.targetCreeps);
+          let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
           if (closest)
             tower.attack(closest);
         });

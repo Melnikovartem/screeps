@@ -16,12 +16,10 @@ export class hordeMaster extends SwarmMaster {
 
   update() {
     super.update();
-
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
     // also for miners so not roomInfo.safePlace
-    let targetsAlive: boolean = !(roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0);
 
-    if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME)
+    if (!roomInfo.safePlace && this.destroyTime < Game.time + CREEP_LIFE_TIME)
       this.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
 
     if (this.checkBees() && this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
@@ -54,7 +52,7 @@ export class hordeMaster extends SwarmMaster {
 
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
 
-    _.forEach((<(Structure | Creep)[]>roomInfo.targetBuildings).concat(roomInfo.targetCreeps), (enemy) => {
+    _.forEach(roomInfo.enemies, (enemy) => {
       enemyTargetingCurrent[enemy.id] = {
         current: 0,
         max: enemy.pos.getOpenPositions().length,
@@ -66,12 +64,8 @@ export class hordeMaster extends SwarmMaster {
         if (bee.creep.room.name != this.order.pos.roomName) {
           bee.goTo(this.order.pos);
         } else {
-          let target: Structure | Creep = <Structure>bee.pos.findClosest(_.filter(roomInfo.targetBuildings,
+          let target: Structure | Creep = <Structure | Creep>bee.pos.findClosest(_.filter(roomInfo.enemies,
             (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
-
-          if (!target)
-            target = <Creep>bee.pos.findClosest(_.filter(roomInfo.targetCreeps,
-              (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
 
           if (target) {
             bee.attack(target);

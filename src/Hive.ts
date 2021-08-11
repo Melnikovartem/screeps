@@ -121,8 +121,6 @@ export class Hive {
     this.updateConstructionSites();
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
-
-    this.findTargets();
   }
 
   updateRooms(): void {
@@ -212,15 +210,15 @@ export class Hive {
 
   // look for targets inside room
   private findTargets() {
-    this.roomTargets = this.room.find(FIND_HOSTILE_CREEPS).length ? true : false;
+    let roomInfo = global.Apiary.intel.getInfo(this.roomName);
+    this.roomTargets = roomInfo.enemies.length > 0;
     _.some(this.annexes, (room) => {
-      let annexTargets = room.find(FIND_HOSTILE_CREEPS)
+      let roomInfo = global.Apiary.intel.getInfo(room.name);
 
-      if (annexTargets.length > 0) {
+      if (roomInfo.enemies.length > 0) {
         if (!Game.flags["defend_" + room.name])
-          annexTargets[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
-        if (!this.annexesTargets)
-          this.annexesTargets = annexTargets.length > 0;
+          roomInfo.enemies[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
+        this.annexesTargets = true;
       }
     });
   }

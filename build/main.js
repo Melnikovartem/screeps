@@ -3452,7 +3452,7 @@ class defenseCell extends Cell {
             let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName);
             if (roomInfo) // i literally check here for hull wich is never -_-
                 _.forEach(this.towers, (tower) => {
-                    let closest = tower.pos.findClosestByRange(roomInfo.targetCreeps);
+                    let closest = tower.pos.findClosestByRange(roomInfo.enemies);
                     if (closest)
                         tower.attack(closest);
                 });
@@ -3971,7 +3971,6 @@ class Hive {
         this.updateConstructionSites();
         this.updateEmeregcyRepairs();
         this.updateNormalRepairs();
-        this.findTargets();
     }
     updateRooms() {
         this.room = Game.rooms[this.roomName];
@@ -4042,14 +4041,14 @@ class Hive {
     }
     // look for targets inside room
     findTargets() {
-        this.roomTargets = this.room.find(FIND_HOSTILE_CREEPS).length ? true : false;
+        let roomInfo = global.Apiary.intel.getInfo(this.roomName);
+        this.roomTargets = roomInfo.enemies.length > 0;
         _.some(this.annexes, (room) => {
-            let annexTargets = room.find(FIND_HOSTILE_CREEPS);
-            if (annexTargets.length > 0) {
+            let roomInfo = global.Apiary.intel.getInfo(room.name);
+            if (roomInfo.enemies.length > 0) {
                 if (!Game.flags["defend_" + room.name])
-                    annexTargets[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
-                if (!this.annexesTargets)
-                    this.annexesTargets = annexTargets.length > 0;
+                    roomInfo.enemies[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
+                this.annexesTargets = true;
             }
         });
     }
@@ -4187,8 +4186,7 @@ class Intel {
         if (!this.roomInfo[roomName]) {
             this.roomInfo[roomName] = {
                 lastUpdated: 0,
-                targetCreeps: [],
-                targetBuildings: [],
+                enemies: [],
                 safePlace: true,
                 ownedByEnemy: true,
                 safeModeEndTime: 0,
@@ -4198,8 +4196,7 @@ class Intel {
         if (this.roomInfo[roomName].lastUpdated == Game.time)
             return this.roomInfo[roomName];
         if (!(roomName in Game.rooms)) {
-            this.roomInfo[roomName].targetCreeps = [];
-            this.roomInfo[roomName].targetBuildings = [];
+            this.roomInfo[roomName].enemies = [];
             return this.roomInfo[roomName];
         }
         let room = Game.rooms[roomName];
@@ -4217,26 +4214,28 @@ class Intel {
     updateEnemiesInRoom(room) {
         this.roomInfo[room.name].safePlace = false;
         this.roomInfo[room.name].lastUpdated = Game.time;
-        this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+        this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
             filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
                 structure.structureType == STRUCTURE_INVADER_CORE
         });
-        this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
-        if (!this.roomInfo[room.name].targetCreeps.length)
-            this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
-        if (!this.roomInfo[room.name].targetBuildings.length && !this.roomInfo[room.name].targetCreeps.length) {
+        if (!this.roomInfo[room.name].enemies.length)
+            this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
+        if (!this.roomInfo[room.name].enemies.length)
+            this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
+        if (!this.roomInfo[room.name].enemies.length) {
             this.roomInfo[room.name].safePlace = true;
-            this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+            this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
                 filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
                     structure.structureType == STRUCTURE_POWER_SPAWN
             });
             // time to pillage
-            if (!this.roomInfo[room.name].targetBuildings.length)
-                this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
+            if (!this.roomInfo[room.name].enemies.length)
+                this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
                     filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
                         structure.structureType == STRUCTURE_EXTENSION
                 });
-            this.roomInfo[room.name].targetCreeps = _.filter(room.find(FIND_HOSTILE_CREEPS));
+            if (!this.roomInfo[room.name].enemies.length)
+                this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS));
         }
     }
 }
@@ -4263,8 +4262,7 @@ class hordeMaster extends SwarmMaster {
         super.update();
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         // also for miners so not roomInfo.safePlace
-        let targetsAlive = !(roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0);
-        if (targetsAlive && this.destroyTime < Game.time + CREEP_LIFE_TIME)
+        if (!roomInfo.safePlace && this.destroyTime < Game.time + CREEP_LIFE_TIME)
             this.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
         if (this.checkBees() && this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
             && Game.time >= roomInfo.safeModeEndTime - 100) {
@@ -4289,7 +4287,7 @@ class hordeMaster extends SwarmMaster {
             this.tryToDowngrade = false;
         }
         let enemyTargetingCurrent = {};
-        _.forEach(roomInfo.targetBuildings.concat(roomInfo.targetCreeps), (enemy) => {
+        _.forEach(roomInfo.enemies, (enemy) => {
             enemyTargetingCurrent[enemy.id] = {
                 current: 0,
                 max: enemy.pos.getOpenPositions().length,
@@ -4301,9 +4299,7 @@ class hordeMaster extends SwarmMaster {
                     bee.goTo(this.order.pos);
                 }
                 else {
-                    let target = bee.pos.findClosest(_.filter(roomInfo.targetBuildings, (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
-                    if (!target)
-                        target = bee.pos.findClosest(_.filter(roomInfo.targetCreeps, (creep) => enemyTargetingCurrent[creep.id].current < enemyTargetingCurrent[creep.id].max));
+                    let target = bee.pos.findClosest(_.filter(roomInfo.enemies, (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
                     if (target) {
                         bee.attack(target);
                         enemyTargetingCurrent[target.id].current += 1;
@@ -4355,7 +4351,7 @@ class downgradeMaster extends SwarmMaster {
                 let room = Game.rooms[this.order.pos.roomName];
                 if (room && room.controller && roomInfo.ownedByEnemy) {
                     if (!roomInfo.safePlace && !Game.flags["attack_" + room.name])
-                        roomInfo.targetCreeps[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
+                        roomInfo.enemies[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
                     let ans = bee.attackController(room.controller);
                     if (ans == OK)
                         this.lastAttacked = Game.time;

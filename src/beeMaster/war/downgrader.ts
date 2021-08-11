@@ -49,7 +49,7 @@ export class downgradeMaster extends SwarmMaster {
         let room = Game.rooms[this.order.pos.roomName];
         if (room && room.controller && roomInfo.ownedByEnemy) {
           if (!roomInfo.safePlace && !Game.flags["attack_" + room.name])
-            roomInfo.targetCreeps[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
+            roomInfo.enemies[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
 
           let ans = bee.attackController(room.controller);
           if (ans == OK)
