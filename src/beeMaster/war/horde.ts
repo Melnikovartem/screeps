@@ -27,13 +27,17 @@ export class hordeMaster extends SwarmMaster {
   update() {
     this.knights = this.clearBees(this.knights);
 
-    if (this.destroyTime < Game.time + 1000) {
-      let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-      if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) > 0)
-        this.destroyTime = Game.time + 2000;
-    }
+    let targetsAlive: boolean = true;
 
-    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && this.destroyTime > Game.time + 1000) {
+    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+
+    if (roomInfo && (roomInfo.targetCreeps.length + roomInfo.targetBuildings.length) == 0)
+      targetsAlive = false;
+
+    if (targetsAlive && this.destroyTime < Game.time + 500)
+      this.destroyTime = Game.time + 1000;
+
+    if (this.knights.length < this.targetBeeCount && !this.waitingForABee && targetsAlive) {
       let order: spawnOrder = {
         master: this.ref,
         setup: Setups.knight,
@@ -52,6 +56,7 @@ export class hordeMaster extends SwarmMaster {
 
   run() {
     // it is cached after first check
+
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
 
     let enemyTargetingCurrent: { [id: string]: { current: number, max: number } } = {};
@@ -79,6 +84,9 @@ export class hordeMaster extends SwarmMaster {
         if (target) {
           bee.attack(target);
           enemyTargetingCurrent[target.id].current += 1;
+        } else {
+          if (!bee.creep.pos.isNearTo(this.order.pos))
+            bee.goTo(this.order.pos);
         }
       }
     });

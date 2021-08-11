@@ -103,7 +103,7 @@ export const Setups = {
     pattern: [MOVE],
     patternLimit: 1,
   }),
-  knight: new CreepSetup(SetupsNames.scout, {
+  knight: new CreepSetup(SetupsNames.knight, {
     pattern: [TOUGH, ATTACK, MOVE],
     patternLimit: 10,
   }),

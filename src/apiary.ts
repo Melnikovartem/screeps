@@ -1,10 +1,12 @@
-import { Hive } from "./Hive"
-import { Bee } from "./bee"
+import { Hive } from "./Hive";
+import { Bee } from "./bee";
 
 import { Intel } from "./intelligence";
 
-import { hordeMaster } from "./beeMaster/war/horde"
-import { SwarmMaster } from "./beeMaster/_SwarmMaster"
+import { hordeMaster } from "./beeMaster/war/horde";
+import { SwarmMaster } from "./beeMaster/_SwarmMaster";
+
+import { UPDATE_EACH_TICK } from "./settings";
 
 export class _Apiary {
   hives: { [id: string]: Hive } = {};
@@ -51,26 +53,27 @@ export class _Apiary {
     });
 
     // act upon flags
-    _.forEach(Game.flags, (flag) => {
-      // annex room
-      if (flag.color == COLOR_BLUE && flag.secondaryColor == COLOR_BLUE) {
-        let master = (<SwarmMaster>global.masters["Swarm_" + flag.name])
-        if (!master) {
-          let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(global.masters).length)];
-          _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
-            if (this.hives[<string>exit] && this.hives[<string>exit].stage > 0) {
-              homeRoom = <string>exit;
-              return true;
-            }
-            return false;
-          });
-          new hordeMaster(this.hives[homeRoom], flag);
-        } else if (master.destroyTime > Game.time) {
-          delete global.masters["Swarm_" + flag.name];
-          flag.remove();
+    if (Object.keys(this.hives).length)
+      _.forEach(Game.flags, (flag) => {
+        // annex room
+        if (flag.color == COLOR_BLUE && flag.secondaryColor == COLOR_BLUE) {
+          let master = (<SwarmMaster>global.masters["master_Swarm_" + flag.name]);
+          if (!master) {
+            let homeRoom: string = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
+            _.forEach(Game.map.describeExits(flag.pos.roomName), (exit) => {
+              if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage) {
+                homeRoom = <string>exit;
+              }
+            });
+            new hordeMaster(this.hives[homeRoom], flag);
+          } else if (master.destroyTime < Game.time) {
+            delete global.masters["master_Swarm_" + flag.name];
+            flag.remove();
+          } else if (UPDATE_EACH_TICK || Game.time % 10 == 0) {
+            master.order = flag;
+          }
         }
-      }
-    });
+      });
 
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
@@ -97,7 +100,6 @@ export class _Apiary {
       else if (global.bees[name])
         delete global.bees[name];
     }
-
     _.forEach(global.masters, (master) => {
       master.update();
     });

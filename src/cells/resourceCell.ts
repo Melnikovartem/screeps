@@ -2,11 +2,12 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { minerMaster } from "../beeMaster/civil/miner";
+import { UPDATE_EACH_TICK } from "../settings";
 
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
 
-  source: Source;
+  source: Source | Mineral;
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
 
@@ -29,6 +30,13 @@ export class resourceCell extends Cell {
 
   update() {
     super.update();
+
+    if (UPDATE_EACH_TICK) {
+      let sourceNew = Game.getObjectById(this.source.id);
+      if (sourceNew instanceof Source || sourceNew instanceof Mineral)
+        this.source = sourceNew;
+    }
+
     if (!this.beeMaster)
       this.beeMaster = new minerMaster(this);
   }

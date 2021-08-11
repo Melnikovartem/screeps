@@ -19,7 +19,7 @@ export class excavationCell extends Cell {
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
-    // super.update(); // i update continers in each resourceCell
+    // super.update(); // i update containers in each resourceCell
 
     if (!this.beeMaster)
       this.beeMaster = new haulerMaster(this);
