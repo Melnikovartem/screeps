@@ -9,6 +9,8 @@ interface RoomInfo {
   targetCreeps: Creep[];
   targetBuildings: (Structure)[]
   safeToDowngrade: boolean,
+  ownedByEnemy: boolean,
+  safeModeEndTime: number,
 }
 
 export class Intel {
@@ -22,6 +24,8 @@ export class Intel {
         targetCreeps: [],
         targetBuildings: [],
         safeToDowngrade: false,
+        ownedByEnemy: true,
+        safeModeEndTime: 0,
       };
     }
 
@@ -37,16 +41,25 @@ export class Intel {
           targetCreeps: [],
           targetBuildings: [],
           safeToDowngrade: false,
+          ownedByEnemy: true,
+          safeModeEndTime: 0,
         };
 
     let room = Game.rooms[roomName];
 
-    this.updateRoom(room);
+    this.updateEnemiesInRoom(room);
+
+    if (room.controller) {
+      if (room.controller.safeMode)
+        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode;
+      if (room.controller.my || !room.controller.owner)
+        this.roomInfo[room.name].ownedByEnemy = false;
+    }
 
     return this.roomInfo[roomName];
   }
 
-  updateRoom(room: Room) {
+  updateEnemiesInRoom(room: Room) {
     this.roomInfo[room.name].lastUpdated = Game.time;
 
     this.roomInfo[room.name].targetBuildings = room.find(FIND_HOSTILE_STRUCTURES, {
