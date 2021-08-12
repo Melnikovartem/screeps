@@ -33,23 +33,25 @@ export class minerMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
+
       // any resource
-      if (bee.creep.store.getFreeCapacity() > 0) {
+      if (bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0) {
         if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
           bee.harvest(this.cell.resource);
         if (this.cell.extractor && this.cell.extractor.cooldown == 0)
           bee.harvest(this.cell.resource);
       }
 
-      if (bee.creep.store.getUsedCapacity() >= 25) {
+      if (bee.creep.store.getUsedCapacity(this.cell.resourceType) >= 25) {
         let target: StructureLink | StructureContainer | undefined;
-        if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY) && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
+        if (this.cell.link && this.cell.resourceType == RESOURCE_ENERGY
+          && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
           target = this.cell.link;
-        else if (this.cell.container && this.cell.container.store.getFreeCapacity())
+        else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
           target = this.cell.container;
 
         if (target)
-          bee.transfer(target, <ResourceConstant>Object.keys(bee.store)[0]);
+          bee.transfer(target, this.cell.resourceType);
       }
     });
   }

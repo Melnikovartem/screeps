@@ -63,7 +63,7 @@ export class haulerMaster extends Master {
         let ans;
 
         if (bee.creep.store.getUsedCapacity() == 0) {
-          let suckerTarget = _.filter(this.cell.quitefullContainers,
+          let suckerTarget: StructureContainer = _.filter(this.cell.quitefullContainers,
             (container) => this.targetMap[container.id] == bee.ref)[0];
 
           if (!suckerTarget)
@@ -71,7 +71,12 @@ export class haulerMaster extends Master {
               (container) => this.targetMap[container.id] == "")[0];
 
           if (suckerTarget) {
-            ans = bee.withdraw(suckerTarget, <ResourceConstant>Object.keys(suckerTarget.store)[0])
+            let resource: ResourceConstant = RESOURCE_ENERGY;
+            for (let resourceConstant in suckerTarget.store) {
+              if (suckerTarget.store[<ResourceConstant>resourceConstant] > suckerTarget.store[resource])
+                resource = <ResourceConstant>resourceConstant;
+            }
+            ans = bee.withdraw(suckerTarget, resource)
             if (ans == OK)
               this.targetMap[suckerTarget.id] = "";
             else
@@ -81,7 +86,12 @@ export class haulerMaster extends Master {
         }
 
         if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
-          bee.transfer(target, <ResourceConstant>Object.keys(bee.store)[0]);
+          let resource: ResourceConstant = RESOURCE_ENERGY;
+          for (let resourceConstant in bee.store) {
+            if (bee.store[<ResourceConstant>resourceConstant] > bee.store[RESOURCE_ENERGY])
+              resource = <ResourceConstant>resourceConstant;
+          }
+          bee.transfer(target, resource);
         }
       });
     }

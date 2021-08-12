@@ -101,6 +101,16 @@ export class Hive {
   claimers: annexMaster[] = [];
   puppets: puppetMaster[] = [];
 
+
+  spawns: StructureSpawn[] = [];
+  extensions: StructureExtension[] = [];
+  towers: StructureTower[] = [];
+
+  storage: StructureStorage | undefined;
+
+  sources: Source[] = [];
+  minerals: Mineral[] = [];
+
   idlePos: RoomPosition;
 
   stage: 0 | 1 | 2 = 0;
@@ -112,8 +122,11 @@ export class Hive {
     this.room = Game.rooms[roomName];
     this.updateRooms();
 
-    this.cells = {};
+    this.parseResources();
     this.parseStructures();
+
+    this.cells = {};
+    this.createCells();
 
     this.repairSheet = new repairSheet(this.stage);
 
@@ -151,51 +164,51 @@ export class Hive {
       this.idlePos = flags[0].pos;
   }
 
+  parseResources() {
+    this.sources = [];
+    _.forEach(this.rooms, (room) => {
+      let sources = room.find(FIND_SOURCES);
+      this.sources = this.sources.concat(sources);
+    });
+
+    this.minerals = this.room.find(FIND_MINERALS);
+  }
+
   private parseStructures() {
-    let spawns: StructureSpawn[] = [];
-    let extensions: StructureExtension[] = [];
-    let towers: StructureTower[] = [];
+    this.storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+
+    this.spawns = [];
+    this.extensions = [];
+    this.towers = [];
 
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
       if (structure instanceof StructureSpawn && structure.isActive())
-        spawns.push(structure);
+        this.spawns.push(structure);
       else if (structure instanceof StructureExtension && structure.isActive())
-        extensions.push(structure);
+        this.extensions.push(structure);
       else if (structure instanceof StructureTower && structure.isActive())
-        towers.push(structure);
+        this.towers.push(structure);
     });
+  }
 
-    let storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
+  private createCells() {
+    this.cells.respawnCell = new respawnCell(this, this.spawns, this.extensions);
 
-    let allSources: Source[] = [];
-    _.forEach(this.rooms, (room) => {
-      let sources = room.find(FIND_SOURCES);
-      allSources = allSources.concat(sources);
-    });
+    if (this.storage) {
+      this.cells.storageCell = new storageCell(this, this.storage);
 
-    this.cells.respawnCell = new respawnCell(this, spawns, extensions);
-
-    if (storage) {
-      this.cells.storageCell = new storageCell(this, storage);
-
-      if (storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+      if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
         this.stage = 1;
         this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
-
-        if (allSources.length) {
-          let minerals = this.room.find(FIND_MINERALS);
-          this.cells.excavationCell = new excavationCell(this, allSources, minerals);
-        }
+        this.cells.excavationCell = new excavationCell(this, this.sources, this.minerals);
       }
     }
 
     if (this.stage == 0) {
-      this.cells.developmentCell = new developmentCell(this, this.room.controller!, allSources);
+      this.cells.developmentCell = new developmentCell(this, this.room.controller!, this.sources);
     }
 
-    if (towers.length) {
-      this.cells.defenseCell = new defenseCell(this, towers);
-    }
+    this.cells.defenseCell = new defenseCell(this, this.towers);
   }
 
   private updateConstructionSites() {
@@ -268,6 +281,8 @@ export class Hive {
     }
     if (UPDATE_EACH_TICK || Game.time % 10 == 2)
       this.findTargets();
+    if (Game.time % 50 == 19)
+      this.parseStructures(); //keep em fresh
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
 

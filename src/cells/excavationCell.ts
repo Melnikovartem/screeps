@@ -32,8 +32,9 @@ export class excavationCell extends Cell {
         cell.update();
 
       if (cell.container) {
-        if (cell.container.store.getUsedCapacity() >= 700)
+        if (cell.container.store.getUsedCapacity() >= 700) {
           this.quitefullContainers.push(cell.container);
+        }
       }
     });
     this.quitefullContainers.sort(

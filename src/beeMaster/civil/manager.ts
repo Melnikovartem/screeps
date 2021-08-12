@@ -52,7 +52,7 @@ export class managerMaster extends Master {
     for (let key in this.targetMap) {
       if (!targets.length)
         break;
-      if (this.targetMap[key] != "")
+      if (this.targetMap[key] != "" && this.cell.requests[targets[0]].priority != 0)
         continue;
       let target = targets.pop()!
       this.targetMap[key] = target;
@@ -107,7 +107,7 @@ export class managerMaster extends Master {
           }
         }
 
-        if ((request.amount && request.amount <= 0) || (usedCapFrom == 0 && amount == 0)) {
+        if ((request.amount && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
         }

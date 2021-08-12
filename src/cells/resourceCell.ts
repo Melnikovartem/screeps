@@ -10,6 +10,7 @@ export class resourceCell extends Cell {
 
   perSecondNeeded: number = 5; // aka 3000/300/2 for energy
   resource: Source | Mineral;
+  resourceType: ResourceConstant = RESOURCE_ENERGY;
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
   extractor: StructureExtractor | undefined;
@@ -34,6 +35,7 @@ export class resourceCell extends Cell {
         (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
       this.operational = this.extractor && this.container ? true : false;
       this.perSecondNeeded = Infinity;
+      this.resourceType = this.resource.mineralType;
     }
 
   }

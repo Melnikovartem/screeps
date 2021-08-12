@@ -22,6 +22,7 @@ export class respawnCell extends Cell {
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     super.update();
+
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
     if (!this.beeMaster && this.hive.stage > 0)
