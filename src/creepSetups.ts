@@ -27,7 +27,7 @@ export class CreepSetup {
   getBody(energy: number): BodyPartConstant[] {
     let body: BodyPartConstant[] = [];
     if (this.bodySetup.fixed)
-      body = this.bodySetup.fixed;
+      _.forEach(this.bodySetup.fixed, (s) => body.push(s))
 
     let fixedCosts = _.sum(body, s => BODYPART_COST[s]);
 
@@ -38,6 +38,8 @@ export class CreepSetup {
       limitSegments = this.bodySetup.patternLimit;
 
     let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
+
+    console.log("?", maxSegment, this.name);
 
     _.times(maxSegment, () => {
       if (this.bodySetup.pattern.length + body.length <= 50)
