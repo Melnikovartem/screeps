@@ -44,7 +44,8 @@ export class managerMaster extends Master {
     // assigning the orders
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
-      if (request.to == this.cell.storage || request.from == this.cell.storage)
+      if (request.to.id == this.cell.storage.id || request.from.id == this.cell.storage.id
+        || (this.cell.terminal && (request.to.id == this.cell.terminal.id || request.from.id == this.cell.terminal.id)))
         targets.push(key);
     }
     targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
@@ -54,6 +55,8 @@ export class managerMaster extends Master {
         break;
       if (this.targetMap[key] != "" && this.cell.requests[targets[0]].priority != 0)
         continue;
+
+
       let target = targets.pop()!
       this.targetMap[key] = target;
     }
@@ -68,8 +71,10 @@ export class managerMaster extends Master {
         priority: 3,
       };
 
-      if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+      if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000)
         order.setup.bodySetup.patternLimit = 5; // save energy from burning
+      else
+        order.setup.bodySetup.patternLimit = 10;
 
       this.wish(order);
     }
@@ -86,14 +91,14 @@ export class managerMaster extends Master {
         let amount = bee.store.getUsedCapacity(request.resource);
         if (amount == 0) {
           amount = bee.store.getFreeCapacity();
-          if (request.amount)
+          if (request.amount != undefined)
             amount = Math.min(amount, request.amount);
 
           amount = Math.min(amount, usedCapFrom);
 
-          if (amount >= 0) {
-            if (bee.withdraw(request.from, request.resource, amount) != OK)
-              amount = 0;
+          if (amount > 0) {
+            bee.withdraw(request.from, request.resource, amount);
+            amount = 0;
           }
         }
 
@@ -102,12 +107,13 @@ export class managerMaster extends Master {
           if (bee.transfer(request.to, request.resource, amount) == OK) {
             if (request.amount)
               request.amount -= amount;
-            else if (freeCapTo - amount <= 0)
-              request.amount = 0;
+            else
+              request.amount = freeCapTo - amount;
           }
         }
 
-        if ((request.amount && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
+        if ((request.amount != undefined && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
+          this.print("order done", request.amount, amount, usedCapFrom, freeCapTo);
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
         }

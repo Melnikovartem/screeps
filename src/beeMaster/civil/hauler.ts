@@ -50,9 +50,19 @@ export class haulerMaster extends Master {
 
       if (this.hive.stage < 2)
         order.setup.bodySetup.patternLimit = 10;
-
+      else
+        order.setup.bodySetup.patternLimit = 15;
       this.wish(order);
     }
+  }
+
+  findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
+    let ans: ResourceConstant = RESOURCE_ENERGY;
+    for (let resourceConstant in store) {
+      if (ans != resourceConstant && store[<ResourceConstant>resourceConstant] > store[ans])
+        ans = <ResourceConstant>resourceConstant;
+    }
+    return ans;
   }
 
   run() {
@@ -71,12 +81,7 @@ export class haulerMaster extends Master {
               (container) => this.targetMap[container.id] == "")[0];
 
           if (suckerTarget) {
-            let resource: ResourceConstant = RESOURCE_ENERGY;
-            for (let resourceConstant in suckerTarget.store) {
-              if (suckerTarget.store[<ResourceConstant>resourceConstant] > suckerTarget.store[resource])
-                resource = <ResourceConstant>resourceConstant;
-            }
-            ans = bee.withdraw(suckerTarget, resource)
+            ans = bee.withdraw(suckerTarget, this.findOptimalResource(suckerTarget.store))
             if (ans == OK)
               this.targetMap[suckerTarget.id] = "";
             else
@@ -86,12 +91,7 @@ export class haulerMaster extends Master {
         }
 
         if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
-          let resource: ResourceConstant = RESOURCE_ENERGY;
-          for (let resourceConstant in bee.store) {
-            if (bee.store[<ResourceConstant>resourceConstant] > bee.store[RESOURCE_ENERGY])
-              resource = <ResourceConstant>resourceConstant;
-          }
-          bee.transfer(target, resource);
+          bee.transfer(target, this.findOptimalResource(bee.store));
         }
       });
     }

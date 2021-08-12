@@ -3076,7 +3076,7 @@ class Master {
         this.hive.wish(order);
         // well he placed an order now just need to catch a creep after a spawn
     }
-    print(info) {
+    print(...info) {
         console.log(Game.time, "!", this.ref, "?", info);
     }
 }
@@ -3196,8 +3196,18 @@ class haulerMaster extends Master {
             };
             if (this.hive.stage < 2)
                 order.setup.bodySetup.patternLimit = 10;
+            else
+                order.setup.bodySetup.patternLimit = 15;
             this.wish(order);
         }
+    }
+    findOptimalResource(store) {
+        let ans = RESOURCE_ENERGY;
+        for (let resourceConstant in store) {
+            if (ans != resourceConstant && store[resourceConstant] > store[ans])
+                ans = resourceConstant;
+        }
+        return ans;
     }
     run() {
         // for future might be good to find closest bee for container and not the other way around
@@ -3210,12 +3220,7 @@ class haulerMaster extends Master {
                     if (!suckerTarget)
                         suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == "")[0];
                     if (suckerTarget) {
-                        let resource = RESOURCE_ENERGY;
-                        for (let resourceConstant in suckerTarget.store) {
-                            if (suckerTarget.store[resourceConstant] > suckerTarget.store[resource])
-                                resource = resourceConstant;
-                        }
-                        ans = bee.withdraw(suckerTarget, resource);
+                        ans = bee.withdraw(suckerTarget, this.findOptimalResource(suckerTarget.store));
                         if (ans == OK)
                             this.targetMap[suckerTarget.id] = "";
                         else
@@ -3225,12 +3230,7 @@ class haulerMaster extends Master {
                         bee.goRest(this.hive.idlePos);
                 }
                 if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
-                    let resource = RESOURCE_ENERGY;
-                    for (let resourceConstant in bee.store) {
-                        if (bee.store[resourceConstant] > bee.store[RESOURCE_ENERGY])
-                            resource = resourceConstant;
-                    }
-                    bee.transfer(target, resource);
+                    bee.transfer(target, this.findOptimalResource(bee.store));
                 }
             });
         }
@@ -3300,7 +3300,8 @@ class managerMaster extends Master {
         // assigning the orders
         for (let key in this.cell.requests) {
             let request = this.cell.requests[key];
-            if (request.to == this.cell.storage || request.from == this.cell.storage)
+            if (request.to.id == this.cell.storage.id || request.from.id == this.cell.storage.id
+                || (this.cell.terminal && (request.to.id == this.cell.terminal.id || request.from.id == this.cell.terminal.id)))
                 targets.push(key);
         }
         targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
@@ -3320,8 +3321,10 @@ class managerMaster extends Master {
                 amount: 1,
                 priority: 3,
             };
-            if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+            if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000)
                 order.setup.bodySetup.patternLimit = 5; // save energy from burning
+            else
+                order.setup.bodySetup.patternLimit = 10;
             this.wish(order);
         }
     }
@@ -3336,12 +3339,12 @@ class managerMaster extends Master {
                 let amount = bee.store.getUsedCapacity(request.resource);
                 if (amount == 0) {
                     amount = bee.store.getFreeCapacity();
-                    if (request.amount)
+                    if (request.amount != undefined)
                         amount = Math.min(amount, request.amount);
                     amount = Math.min(amount, usedCapFrom);
-                    if (amount >= 0) {
-                        if (bee.withdraw(request.from, request.resource, amount) != OK)
-                            amount = 0;
+                    if (amount > 0) {
+                        bee.withdraw(request.from, request.resource, amount);
+                        amount = 0;
                     }
                 }
                 if (amount > 0) {
@@ -3349,11 +3352,12 @@ class managerMaster extends Master {
                     if (bee.transfer(request.to, request.resource, amount) == OK) {
                         if (request.amount)
                             request.amount -= amount;
-                        else if (freeCapTo - amount <= 0)
-                            request.amount = 0;
+                        else
+                            request.amount = freeCapTo - amount;
                     }
                 }
-                if ((request.amount && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
+                if ((request.amount != undefined && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
+                    this.print("order done", request.amount, amount, usedCapFrom, freeCapTo);
                     delete this.cell.requests[this.targetMap[bee.ref]];
                     this.targetMap[bee.ref] = "";
                 }
@@ -3374,10 +3378,8 @@ class storageCell extends Cell {
         super(hive, "storageCell_" + hive.room.name);
         this.requests = {};
         this.storage = storage;
-        let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-        if (link instanceof StructureLink) {
-            this.link = link;
-        }
+        this.link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
+        this.terminal = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
     }
     update() {
         super.update();
@@ -3391,31 +3393,36 @@ class storageCell extends Cell {
                     amount: this.link.store.getUsedCapacity(RESOURCE_ENERGY) - LINK_CAPACITY * 0.5,
                     priority: 3,
                 };
-            let key = Object.keys(this.requests)[0];
-            let request = this.requests[key];
+            let key = "";
+            let request;
             for (key in this.requests) {
                 request = this.requests[key];
-                if (request.from == this.link)
+                if (request.from.id == this.link.id)
                     break;
             }
             if (request && request.from.id == this.link.id && request.to instanceof StructureLink) {
-                if (request.amount && request.amount > LINK_CAPACITY)
-                    request.amount = LINK_CAPACITY;
-                let tooBigrequest = request.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < request.amount;
-                if (!tooBigrequest) {
-                    delete this.requests[this.link.id];
-                    if (!this.link.cooldown)
-                        this.link.transferEnergy(request.to, request.amount);
+                if (request.amount == 0) {
                     delete this.requests[key];
                 }
-                else if (tooBigrequest)
-                    this.requests[this.link.id] = {
-                        from: this.storage,
-                        to: this.link,
-                        resource: RESOURCE_ENERGY,
-                        amount: request.amount - this.link.store.getUsedCapacity(RESOURCE_ENERGY),
-                        priority: 3,
-                    };
+                else {
+                    if (request.amount && request.amount > LINK_CAPACITY)
+                        request.amount = LINK_CAPACITY;
+                    let tooBigrequest = request.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < request.amount;
+                    if (!tooBigrequest) {
+                        delete this.requests[this.link.id];
+                        if (!this.link.cooldown)
+                            this.link.transferEnergy(request.to, request.amount);
+                        delete this.requests[key];
+                    }
+                    else
+                        this.requests[this.link.id] = {
+                            from: this.storage,
+                            to: this.link,
+                            resource: RESOURCE_ENERGY,
+                            amount: request.amount - this.link.store.getUsedCapacity(RESOURCE_ENERGY),
+                            priority: 3,
+                        };
+                }
             }
         }
         // check if manager is needed
@@ -3453,6 +3460,8 @@ class upgraderMaster extends Master {
                 order.setup = Setups.upgrader.fast;
                 if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
                     order.setup.bodySetup.patternLimit = 0; // save energy from burning
+                else
+                    order.setup.bodySetup.patternLimit = 5;
             }
             this.wish(order);
         }
@@ -3959,6 +3968,8 @@ class annexMaster extends Master {
             // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
             if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
                 order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
+            else
+                order.setup.bodySetup.patternLimit = 2;
             this.wish(order);
         }
     }
@@ -4602,7 +4613,7 @@ class _Apiary {
         let storageCell = this.hives[roomName].cells.storageCell;
         if (!storageCell)
             return "ERROR: STORAGE NOT FOUND";
-        if (storageCell.terminal)
+        if (!storageCell.terminal)
             return "ERROR: TERMINAL NOT FOUND";
         storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
             from: storageCell.storage,
@@ -4619,7 +4630,24 @@ class _Apiary {
         let storageCell = this.hives[roomName].cells.storageCell;
         if (!storageCell)
             return "ERROR: STORAGE NOT FOUND";
-        if (storageCell.terminal)
+        if (!storageCell.terminal)
+            return "ERROR: TERMINAL NOT FOUND";
+        storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
+            from: storageCell.terminal,
+            to: storageCell.storage,
+            resource: resource,
+            amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
+            priority: 2,
+        });
+        return "OK";
+    }
+    sellOrder(roomName, resource, amount) {
+        if (!(roomName in this.hives))
+            return "ERROR: HIVE NOT FOUND";
+        let storageCell = this.hives[roomName].cells.storageCell;
+        if (!storageCell)
+            return "ERROR: STORAGE NOT FOUND";
+        if (!storageCell.terminal)
             return "ERROR: TERMINAL NOT FOUND";
         storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
             from: storageCell.terminal,

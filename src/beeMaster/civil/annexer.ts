@@ -37,6 +37,8 @@ export class annexMaster extends Master {
       // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
       if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
         order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
+      else
+        order.setup.bodySetup.patternLimit = 2;
 
       this.wish(order);
     }

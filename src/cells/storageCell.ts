@@ -27,10 +27,11 @@ export class storageCell extends Cell {
 
     this.storage = storage;
 
-    let link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-    if (link instanceof StructureLink) {
-      this.link = link;
-    }
+    this.link = <StructureLink>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
+      (structure) => structure.structureType == STRUCTURE_LINK)[0];
+
+    this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
+      (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
   }
 
   update() {
@@ -62,32 +63,36 @@ export class storageCell extends Cell {
         };
 
 
-      let key = Object.keys(this.requests)[0];
-      let request = this.requests[key];
+      let key: string = "";
+      let request;
       for (key in this.requests) {
         request = this.requests[key];
-        if (request.from == this.link)
+        if (request.from.id == this.link.id)
           break;
       }
 
       if (request && request.from.id == this.link.id && request.to instanceof StructureLink) {
-        if (request.amount && request.amount > LINK_CAPACITY)
-          request.amount = LINK_CAPACITY;
-
-        let tooBigrequest = request.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < request.amount;
-        if (!tooBigrequest) {
-          delete this.requests[this.link.id];
-          if (!this.link.cooldown)
-            this.link.transferEnergy(request.to, request.amount);
+        if (request.amount == 0) {
           delete this.requests[key];
-        } else if (tooBigrequest)
-          this.requests[this.link.id] = {
-            from: this.storage,
-            to: this.link,
-            resource: RESOURCE_ENERGY,
-            amount: request.amount! - this.link.store.getUsedCapacity(RESOURCE_ENERGY),
-            priority: 3,
-          };
+        } else {
+          if (request.amount && request.amount > LINK_CAPACITY)
+            request.amount = LINK_CAPACITY;
+
+          let tooBigrequest = request.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < request.amount;
+          if (!tooBigrequest) {
+            delete this.requests[this.link.id];
+            if (!this.link.cooldown)
+              this.link.transferEnergy(request.to, request.amount);
+            delete this.requests[key];
+          } else
+            this.requests[this.link.id] = {
+              from: this.storage,
+              to: this.link,
+              resource: RESOURCE_ENERGY,
+              amount: request.amount! - this.link.store.getUsedCapacity(RESOURCE_ENERGY),
+              priority: 3,
+            };
+        }
       }
     }
 
