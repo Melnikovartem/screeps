@@ -3048,28 +3048,27 @@ class Master {
             this.waitingForBees -= 1;
         let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
         let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-        if (this.beesAmount < this.targetBeeCount && this.targetBeeCount != 1) {
-            this.lastSpawns.push(birthTime);
-        }
-        else if (birthTime >= this.lastSpawns[0]) {
+        this.lastSpawns.push(birthTime);
+        if (this.lastSpawns[0] == 0)
             this.lastSpawns.shift();
-            this.lastSpawns.push(birthTime);
-        }
         this.beesAmount += 1;
     }
     checkBees(spawnCycle) {
         if (!spawnCycle)
             spawnCycle = CREEP_LIFE_TIME;
         // 5 for random shit
-        return !this.waitingForBees && (this.beesAmount < this.targetBeeCount || Game.time + 5 >= this.lastSpawns[0] + spawnCycle);
+        return !this.waitingForBees && (this.beesAmount < this.targetBeeCount
+            || (this.beesAmount == this.targetBeeCount && Game.time + 5 >= this.lastSpawns[0] + spawnCycle));
     }
     // first stage of decision making like do i need to spawn new creeps
     update() {
         this.beesAmount = 0; // Object.keys(this.bees).length
         for (let key in this.bees) {
             this.beesAmount += 1;
-            if (!global.bees[this.bees[key].ref])
+            if (!global.bees[this.bees[key].ref]) {
                 delete this.bees[key];
+                this.lastSpawns.shift();
+            }
         }
     }
     wish(order) {
@@ -3214,8 +3213,8 @@ class haulerMaster extends Master {
                         else
                             this.targetMap[suckerTarget.id] = bee.ref;
                     }
-                    else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
-                        bee.goTo(this.hive.idlePos);
+                    else
+                        bee.goRest(this.hive.idlePos);
                 }
                 if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
                     bee.transfer(target, Object.keys(bee.store)[0]);
@@ -3322,9 +3321,8 @@ class managerMaster extends Master {
                         ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
                 }
             }
-            else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && bee.pos != this.idlePos
-                && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
-                bee.goTo(this.idlePos);
+            else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+                bee.goRest(this.idlePos);
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
                 // i cloud sort this.targets, but this is more convenient
                 let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
@@ -3434,8 +3432,8 @@ class upgraderMaster extends Master {
                     if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
                         ans = bee.upgradeController(this.cell.controller);
                 }
-                else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
-                    bee.goTo(this.hive.idlePos);
+                else
+                    bee.goRest(this.hive.idlePos);
             }
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK)
                 bee.upgradeController(this.cell.controller);
@@ -3557,8 +3555,8 @@ class queenMaster extends Master {
                 && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
                 bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
             }
-            else if (bee.pos != this.idlePos && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
-                bee.goTo(this.idlePos);
+            else
+                bee.goRest(this.idlePos);
         });
     }
 }
@@ -3834,15 +3832,14 @@ class builderMaster extends Master {
     update() {
         super.update();
         // TODO smarter counting of builders needed
-        let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
-        if (targetsNumber > 5 && this.hive.cells.storageCell
-            && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
+        if ((this.hive.emergencyRepairs.length > 10 || this.hive.constructionSites.length > 5) &&
+            this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
             this.targetBeeCount = 2;
         }
         else {
             this.targetBeeCount = 1;
         }
-        if (this.checkBees() && targetsNumber) {
+        if (this.checkBees() && (this.hive.emergencyRepairs.length > 5 || this.hive.constructionSites.length > 0)) {
             let order = {
                 master: this.ref,
                 setup: Setups.builder,
@@ -3876,8 +3873,8 @@ class builderMaster extends Master {
                         bee.repair(target);
                     this.targetCaching[bee.ref] = target.id;
                 }
-                else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
-                    bee.goTo(this.hive.idlePos);
+                else
+                    bee.goRest(this.hive.idlePos);
             }
         });
     }
@@ -4233,6 +4230,13 @@ class Bee {
             return this.creep.attackController(target);
         else
             this.goTo(target);
+        return ERR_NOT_IN_RANGE;
+    }
+    goRest(idlePos) {
+        if (this.pos != idlePos && (!this.pos.isNearTo(idlePos) || idlePos.isFree()))
+            this.goTo(idlePos);
+        else
+            return OK;
         return ERR_NOT_IN_RANGE;
     }
     goToRoom(roomName) {

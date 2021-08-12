@@ -6,7 +6,6 @@ import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class haulerMaster extends Master {
-
   cell: excavationCell;
   targetMap: { [id: string]: string } = {}; // "" is base value
 
@@ -77,8 +76,8 @@ export class haulerMaster extends Master {
               this.targetMap[suckerTarget.id] = "";
             else
               this.targetMap[suckerTarget.id] = bee.ref;
-          } else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
-            bee.goTo(this.hive.idlePos);
+          } else
+            bee.goRest(this.hive.idlePos);
         }
 
         if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {

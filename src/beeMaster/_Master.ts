@@ -33,12 +33,11 @@ export abstract class Master {
 
     let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
     let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-    if (this.beesAmount < this.targetBeeCount && this.targetBeeCount != 1) {
-      this.lastSpawns.push(birthTime);
-    } else if (birthTime >= this.lastSpawns[0]) {
+    this.lastSpawns.push(birthTime);
+
+    if (this.lastSpawns[0] == 0)
       this.lastSpawns.shift();
-      this.lastSpawns.push(birthTime);
-    }
+
     this.beesAmount += 1;
   }
 
@@ -47,7 +46,8 @@ export abstract class Master {
       spawnCycle = CREEP_LIFE_TIME;
 
     // 5 for random shit
-    return !this.waitingForBees && (this.beesAmount < this.targetBeeCount || Game.time + 5 >= this.lastSpawns[0] + spawnCycle);
+    return !this.waitingForBees && (this.beesAmount < this.targetBeeCount
+      || (this.beesAmount == this.targetBeeCount && Game.time + 5 >= this.lastSpawns[0] + spawnCycle));
   }
 
   // first stage of decision making like do i need to spawn new creeps
@@ -55,8 +55,10 @@ export abstract class Master {
     this.beesAmount = 0; // Object.keys(this.bees).length
     for (let key in this.bees) {
       this.beesAmount += 1;
-      if (!global.bees[this.bees[key].ref])
+      if (!global.bees[this.bees[key].ref]) {
         delete this.bees[key];
+        this.lastSpawns.shift();
+      }
     }
   }
 

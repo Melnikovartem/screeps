@@ -66,8 +66,8 @@ export class queenMaster extends Master {
       } else if (this.hive.cells.storageCell && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
         && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
-      } else if (bee.pos != this.idlePos && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
-        bee.goTo(this.idlePos);
+      } else
+        bee.goRest(this.idlePos);
     });
   }
 }

@@ -87,9 +87,8 @@ export class managerMaster extends Master {
           else
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }
-      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && bee.pos != this.idlePos
-        && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
-        bee.goTo(this.idlePos);
+      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+        bee.goRest(this.idlePos);
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
         // i cloud sort this.targets, but this is more convenient

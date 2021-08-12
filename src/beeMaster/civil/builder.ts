@@ -13,15 +13,14 @@ export class builderMaster extends Master {
     super.update();
 
     // TODO smarter counting of builders needed
-    let targetsNumber = this.hive.emergencyRepairs.length + this.hive.constructionSites.length;
-    if (targetsNumber > 5 && this.hive.cells.storageCell
-      && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
+    if ((this.hive.emergencyRepairs.length > 10 || this.hive.constructionSites.length > 5) &&
+      this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
       this.targetBeeCount = 2;
     } else {
       this.targetBeeCount = 1;
     }
 
-    if (this.checkBees() && targetsNumber) {
+    if (this.checkBees() && (this.hive.emergencyRepairs.length > 5 || this.hive.constructionSites.length > 0)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
@@ -46,7 +45,6 @@ export class builderMaster extends Master {
 
         if (target instanceof Structure && target.hits == target.hitsMax)
           target = null;
-
         if (!target)
           target = bee.pos.findClosest(this.hive.emergencyRepairs);
         if (!target)
@@ -59,10 +57,9 @@ export class builderMaster extends Master {
             bee.build(target);
           else if (target instanceof Structure)
             bee.repair(target);
-
           this.targetCaching[bee.ref] = target.id;
-        } else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
-          bee.goTo(this.hive.idlePos);
+        } else
+          bee.goRest(this.hive.idlePos);
       }
     });
   }

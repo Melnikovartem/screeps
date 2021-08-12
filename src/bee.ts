@@ -113,6 +113,14 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
+  goRest(idlePos: RoomPosition): number {
+    if (this.pos != idlePos && (!this.pos.isNearTo(idlePos) || idlePos.isFree()))
+      this.goTo(idlePos)
+    else
+      return OK;
+    return ERR_NOT_IN_RANGE
+  }
+
   goToRoom(roomName: string): number {
     return this.goTo(new RoomPosition(25, 25, roomName))
   }
