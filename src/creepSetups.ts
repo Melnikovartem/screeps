@@ -43,8 +43,6 @@ export class CreepSetup {
 
     return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
   }
-
-
 }
 
 const SetupsNames = {

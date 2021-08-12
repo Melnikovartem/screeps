@@ -7,11 +7,13 @@ import { UPDATE_EACH_TICK } from "../settings";
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
 
-  perSecond: number = 0;
+  perSecondNeeded: number = 5; // aka 3000/300/2 for energy
   resource: Source | Mineral;
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
   extractor: StructureExtractor | undefined;
+
+  operational: boolean = false;
 
 
   constructor(hive: Hive, resource: Source | Mineral) {
@@ -22,39 +24,32 @@ export class resourceCell extends Cell {
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
       (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
 
-    if (this.resource instanceof Source)
+    if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
         (structure) => structure.structureType == STRUCTURE_LINK)[0];
-    else if (this.resource instanceof Mineral)
+      this.operational = this.container || this.link ? true : false;
+    } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(resource.pos.lookFor(LOOK_STRUCTURES),
         (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
-
-    this.updateResourceInfo();
-  }
-
-  updateResourceInfo() {
-    if (this.resource.ticksToRegeneration != 0) {
-      if (this.resource instanceof Mineral) {
-        let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : MINERAL_REGEN_TIME;
-        this.perSecond = this.resource.mineralAmount / ticksToRegeneration;
-      } else if (this.resource instanceof Source) {
-        let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : ENERGY_REGEN_TIME;
-        this.perSecond = this.resource.energy / ticksToRegeneration;
-      }
+      this.operational = this.extractor && this.container ? true : false;
+      this.perSecondNeeded = Infinity;
     }
+
   }
 
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK || Game.time % 50 == 27) {
+    if (UPDATE_EACH_TICK) {
       let resourceNew = Game.getObjectById(this.resource.id);
       if (resourceNew instanceof Source || resourceNew instanceof Mineral)
         this.resource = resourceNew;
-      this.updateResourceInfo();
     }
 
-    if (!this.beeMaster)
+    if (this.resource instanceof Mineral && Game.time % 10 == 0)
+      this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
+
+    if (!this.beeMaster && this.operational)
       this.beeMaster = new minerMaster(this);
   }
 

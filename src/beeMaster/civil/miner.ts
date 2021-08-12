@@ -5,8 +5,8 @@ import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class minerMaster extends Master {
-
   cell: resourceCell;
+  cooldown: number = 0;
 
   constructor(resourceCell: resourceCell) {
     super(resourceCell.hive, "master_" + resourceCell.ref);
@@ -17,8 +17,7 @@ export class minerMaster extends Master {
   update() {
     super.update();
 
-    // 5 for random shit
-    if (this.checkBees() && (this.cell.container || this.cell.link)) {
+    if (this.checkBees() && this.cell.perSecondNeeded > 0) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,
@@ -26,9 +25,10 @@ export class minerMaster extends Master {
         priority: 2,
       };
 
-      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 / 2);
+      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecondNeeded / 2);
 
-      this.print(this.cell.perSecond);
+      if (this.cell.resource instanceof Mineral)
+        order.priority = 3;
 
       this.wish(order);
     }
