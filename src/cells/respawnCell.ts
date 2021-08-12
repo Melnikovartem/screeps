@@ -70,6 +70,7 @@ export class respawnCell extends Cell {
                 fromSpawn: spawn!.name,
                 spawning: name,
                 orderedBy: order.master,
+                priority: order.priority,
               });
             this.hive.orderList[key].amount -= 1;
           }

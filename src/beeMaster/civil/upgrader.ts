@@ -46,19 +46,24 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
+      let ans;
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 
         if (this.cell.link)
           suckerTarget = this.cell.link;
 
-        if (!suckerTarget && this.hive.cells.storageCell)
+        if (!suckerTarget && this.hive.cells.storageCell
+          && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
           suckerTarget = this.hive.cells.storageCell.storage;
 
-        if (suckerTarget)
+        if (suckerTarget) {
           if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
-            bee.upgradeController(this.cell.controller);
-      } else
+            ans = bee.upgradeController(this.cell.controller);
+        } else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+          bee.goTo(this.hive.idlePos);
+      }
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK)
         bee.upgradeController(this.cell.controller);
     });
   }

@@ -77,7 +77,8 @@ export class haulerMaster extends Master {
               this.targetMap[suckerTarget.id] = "";
             else
               this.targetMap[suckerTarget.id] = bee.ref;
-          }
+          } else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+            bee.goTo(this.hive.idlePos);
         }
 
         if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {

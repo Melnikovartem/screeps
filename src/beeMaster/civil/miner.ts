@@ -22,13 +22,10 @@ export class minerMaster extends Master {
         master: this.ref,
         setup: Setups.miner.energy,
         amount: 1,
-        priority: 2,
+        priority: 3,
       };
 
       order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecondNeeded / 2);
-
-      if (this.cell.resource instanceof Mineral)
-        order.priority = 3;
 
       this.wish(order);
     }

@@ -61,7 +61,8 @@ export class builderMaster extends Master {
             bee.repair(target);
 
           this.targetCaching[bee.ref] = target.id;
-        }
+        } else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+          bee.goTo(this.hive.idlePos);
       }
     });
   }

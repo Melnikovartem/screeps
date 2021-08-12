@@ -1,7 +1,8 @@
 interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
-  getOpenPositions(): RoomPosition[];
   getWalkablePositions(): RoomPosition[];
+  getOpenPositions(): RoomPosition[];
+  isFree(): boolean;
   getTimeForPath(roomPos: RoomPosition): number;
   findClosest<Obj extends RoomObject>(structures: Obj[]): Obj | null;
 }
@@ -49,6 +50,22 @@ RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
   });
 
   return freePositions;
+}
+
+RoomPosition.prototype.isFree = function(): boolean {
+  let ans = true;
+
+  if (ans)
+    ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) != TERRAIN_MASK_WALL;
+
+  if (ans)
+    ans = this.lookFor(LOOK_CREEPS).length == 0
+
+  if (ans)
+    ans = _.filter(this.lookFor(LOOK_STRUCTURES), (structure) => structure.structureType != STRUCTURE_ROAD
+      && structure.structureType != STRUCTURE_CONTAINER).length == 0
+
+  return ans;
 }
 
 

@@ -15,10 +15,18 @@ export class managerMaster extends Master {
   targets: (StructureTower | StructureLink | StructureStorage)[] = [];
   suckerTargets: (StructureStorage | StructureLink)[] = [];
 
+  idlePos: RoomPosition;
+
   constructor(storageCell: storageCell) {
     super(storageCell.hive, "master_" + storageCell.ref);
 
     this.cell = storageCell;
+
+    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
+    if (flags.length)
+      this.idlePos = flags[0].pos;
+    else
+      this.idlePos = storageCell.storage.pos;
   }
 
   update() {
@@ -79,9 +87,9 @@ export class managerMaster extends Master {
           else
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }
-      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        bee.goTo(this.cell.storage);
-      }
+      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && bee.pos != this.idlePos
+        && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
+        bee.goTo(this.idlePos);
 
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
         // i cloud sort this.targets, but this is more convenient

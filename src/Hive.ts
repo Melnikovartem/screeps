@@ -101,6 +101,8 @@ export class Hive {
   claimers: annexMaster[] = [];
   puppets: puppetMaster[] = [];
 
+  idlePos: RoomPosition;
+
   stage: 0 | 1 | 2 = 0;
 
   constructor(roomName: string, annexNames: string[]) {
@@ -121,6 +123,14 @@ export class Hive {
     this.updateConstructionSites();
     this.updateEmeregcyRepairs();
     this.updateNormalRepairs();
+
+    let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
+    if (flags.length)
+      this.idlePos = flags[0].pos;
+    else if (this.cells.storageCell)
+      this.idlePos = this.cells.storageCell.storage.pos;
+    else
+      this.idlePos = this.room.controller!.pos;
   }
 
   updateRooms(): void {
@@ -135,10 +145,13 @@ export class Hive {
       return annex;
     }));
     this.rooms = [this.room].concat(this.annexes);
+
+    let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
+    if (flags.length)
+      this.idlePos = flags[0].pos;
   }
 
   private parseStructures() {
-
     let spawns: StructureSpawn[] = [];
     let extensions: StructureExtension[] = [];
     let towers: StructureTower[] = [];

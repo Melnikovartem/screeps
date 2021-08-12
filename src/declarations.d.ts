@@ -36,6 +36,7 @@ declare global {
         fromSpawn: string,
         spawning: string,
         orderedBy: string,
+        priority: number,
       }[],
       hives: {
         [id: string]: {

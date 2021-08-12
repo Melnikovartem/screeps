@@ -8,10 +8,19 @@ import { Master } from "../_Master";
 export class queenMaster extends Master {
   cell: respawnCell;
 
+  idlePos: RoomPosition;
+
   constructor(respawnCell: respawnCell) {
     super(respawnCell.hive, "master_" + respawnCell.ref);
 
     this.cell = respawnCell;
+    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
+    if (flags.length)
+      this.idlePos = flags[0].pos;
+    else if (this.hive.cells.storageCell)
+      this.idlePos = this.hive.cells.storageCell.storage.pos;
+    else
+      this.idlePos = this.hive.idlePos;
   }
 
   update() {
@@ -57,7 +66,8 @@ export class queenMaster extends Master {
       } else if (this.hive.cells.storageCell && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
         && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
-      }
+      } else if (bee.pos != this.idlePos && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
+        bee.goTo(this.idlePos);
     });
   }
 }

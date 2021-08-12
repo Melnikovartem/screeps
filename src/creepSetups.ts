@@ -39,7 +39,10 @@ export class CreepSetup {
 
     let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
 
-    _.times(maxSegment, () => _.forEach(this.bodySetup.pattern, (s) => body.push(s)));
+    _.times(maxSegment, () => {
+      if (this.bodySetup.pattern.length + body.length <= 50)
+        _.forEach(this.bodySetup.pattern, (s) => body.push(s))
+    });
 
     return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
   }

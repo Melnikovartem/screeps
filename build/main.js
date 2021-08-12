@@ -2872,6 +2872,17 @@ RoomPosition.prototype.getOpenPositions = function () {
     });
     return freePositions;
 };
+RoomPosition.prototype.isFree = function () {
+    let ans = true;
+    if (ans)
+        ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) != TERRAIN_MASK_WALL;
+    if (ans)
+        ans = this.lookFor(LOOK_CREEPS).length == 0;
+    if (ans)
+        ans = _.filter(this.lookFor(LOOK_STRUCTURES), (structure) => structure.structureType != STRUCTURE_ROAD
+            && structure.structureType != STRUCTURE_CONTAINER).length == 0;
+    return ans;
+};
 RoomPosition.prototype.getTimeForPath = function (roomPos) {
     let path = this.findPathTo(roomPos, {
         ignoreCreeps: true
@@ -2948,7 +2959,10 @@ class CreepSetup {
         if (this.bodySetup.patternLimit != undefined)
             limitSegments = this.bodySetup.patternLimit;
         let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
-        _.times(maxSegment, () => _.forEach(this.bodySetup.pattern, (s) => body.push(s)));
+        _.times(maxSegment, () => {
+            if (this.bodySetup.pattern.length + body.length <= 50)
+                _.forEach(this.bodySetup.pattern, (s) => body.push(s));
+        });
         return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
     }
 }
@@ -3081,11 +3095,9 @@ class minerMaster extends Master {
                 master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
-                priority: 2,
+                priority: 3,
             };
             order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecondNeeded / 2);
-            if (this.cell.resource instanceof Mineral)
-                order.priority = 3;
             this.wish(order);
         }
     }
@@ -3202,6 +3214,8 @@ class haulerMaster extends Master {
                         else
                             this.targetMap[suckerTarget.id] = bee.ref;
                     }
+                    else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+                        bee.goTo(this.hive.idlePos);
                 }
                 if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
                     bee.transfer(target, Object.keys(bee.store)[0]);
@@ -3255,6 +3269,11 @@ class managerMaster extends Master {
         this.targets = [];
         this.suckerTargets = [];
         this.cell = storageCell;
+        let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
+        if (flags.length)
+            this.idlePos = flags[0].pos;
+        else
+            this.idlePos = storageCell.storage.pos;
     }
     update() {
         super.update();
@@ -3303,9 +3322,9 @@ class managerMaster extends Master {
                         ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
                 }
             }
-            else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-                bee.goTo(this.cell.storage);
-            }
+            else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && bee.pos != this.idlePos
+                && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
+                bee.goTo(this.idlePos);
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
                 // i cloud sort this.targets, but this is more convenient
                 let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
@@ -3403,17 +3422,22 @@ class upgraderMaster extends Master {
     }
     run() {
         _.forEach(this.bees, (bee) => {
+            let ans;
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
                 let suckerTarget;
                 if (this.cell.link)
                     suckerTarget = this.cell.link;
-                if (!suckerTarget && this.hive.cells.storageCell)
+                if (!suckerTarget && this.hive.cells.storageCell
+                    && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
                     suckerTarget = this.hive.cells.storageCell.storage;
-                if (suckerTarget)
+                if (suckerTarget) {
                     if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
-                        bee.upgradeController(this.cell.controller);
+                        ans = bee.upgradeController(this.cell.controller);
+                }
+                else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+                    bee.goTo(this.hive.idlePos);
             }
-            else
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK)
                 bee.upgradeController(this.cell.controller);
         });
     }
@@ -3488,6 +3512,13 @@ class queenMaster extends Master {
     constructor(respawnCell) {
         super(respawnCell.hive, "master_" + respawnCell.ref);
         this.cell = respawnCell;
+        let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
+        if (flags.length)
+            this.idlePos = flags[0].pos;
+        else if (this.hive.cells.storageCell)
+            this.idlePos = this.hive.cells.storageCell.storage.pos;
+        else
+            this.idlePos = this.hive.idlePos;
     }
     update() {
         super.update();
@@ -3526,6 +3557,8 @@ class queenMaster extends Master {
                 && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
                 bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
             }
+            else if (bee.pos != this.idlePos && (!bee.pos.isNearTo(this.idlePos) || this.idlePos.isFree()))
+                bee.goTo(this.idlePos);
         });
     }
 }
@@ -3581,6 +3614,7 @@ class respawnCell extends Cell {
                                 fromSpawn: spawn.name,
                                 spawning: name,
                                 orderedBy: order.master,
+                                priority: order.priority,
                             });
                         this.hive.orderList[key].amount -= 1;
                     }
@@ -3842,6 +3876,8 @@ class builderMaster extends Master {
                         bee.repair(target);
                     this.targetCaching[bee.ref] = target.id;
                 }
+                else if (bee.pos != this.hive.idlePos && (!bee.pos.isNearTo(this.hive.idlePos) || this.hive.idlePos.isFree()))
+                    bee.goTo(this.hive.idlePos);
             }
         });
     }
@@ -3979,6 +4015,13 @@ class Hive {
         this.updateConstructionSites();
         this.updateEmeregcyRepairs();
         this.updateNormalRepairs();
+        let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
+        if (flags.length)
+            this.idlePos = flags[0].pos;
+        else if (this.cells.storageCell)
+            this.idlePos = this.cells.storageCell.storage.pos;
+        else
+            this.idlePos = this.room.controller.pos;
     }
     updateRooms() {
         this.room = Game.rooms[this.roomName];
@@ -3992,6 +4035,9 @@ class Hive {
             return annex;
         }));
         this.rooms = [this.room].concat(this.annexes);
+        let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
+        if (flags.length)
+            this.idlePos = flags[0].pos;
     }
     parseStructures() {
         let spawns = [];
