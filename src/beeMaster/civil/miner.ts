@@ -18,7 +18,7 @@ export class minerMaster extends Master {
     super.update();
 
     // 5 for random shit
-    if (this.checkBees() && (this.cell.link || this.cell.container)) {
+    if (this.checkBees() && (this.cell.container || this.cell.link)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,
@@ -26,7 +26,9 @@ export class minerMaster extends Master {
         priority: 2,
       };
 
-      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 + 0.1);
+      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 / 2);
+
+      this.print(this.cell.perSecond);
 
       this.wish(order);
     }

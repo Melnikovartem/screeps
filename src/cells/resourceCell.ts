@@ -7,7 +7,7 @@ import { UPDATE_EACH_TICK } from "../settings";
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
 
-  perSecond: number = Infinity;
+  perSecond: number = 0;
   resource: Source | Mineral;
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
@@ -22,23 +22,36 @@ export class resourceCell extends Cell {
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
       (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
 
-    if (resource instanceof Source) {
-      this.perSecond = 10 //for energy aka 3000/300
+    if (this.resource instanceof Source)
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
         (structure) => structure.structureType == STRUCTURE_LINK)[0];
-    } else if (resource instanceof Mineral) {
+    else if (this.resource instanceof Mineral)
       this.extractor = <StructureExtractor>_.filter(resource.pos.lookFor(LOOK_STRUCTURES),
         (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
+
+    this.updateResourceInfo();
+  }
+
+  updateResourceInfo() {
+    if (this.resource.ticksToRegeneration != 0) {
+      if (this.resource instanceof Mineral) {
+        let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : MINERAL_REGEN_TIME;
+        this.perSecond = this.resource.mineralAmount / ticksToRegeneration;
+      } else if (this.resource instanceof Source) {
+        let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : ENERGY_REGEN_TIME;
+        this.perSecond = this.resource.energy / ticksToRegeneration;
+      }
     }
   }
 
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK) {
-      let sourceNew = Game.getObjectById(this.resource.id);
-      if (sourceNew instanceof Source || sourceNew instanceof Mineral)
-        this.resource = sourceNew;
+    if (UPDATE_EACH_TICK || Game.time % 50 == 27) {
+      let resourceNew = Game.getObjectById(this.resource.id);
+      if (resourceNew instanceof Source || resourceNew instanceof Mineral)
+        this.resource = resourceNew;
+      this.updateResourceInfo();
     }
 
     if (!this.beeMaster)

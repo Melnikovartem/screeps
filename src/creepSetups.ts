@@ -80,8 +80,9 @@ export const Setups = {
   }),
   miner: {
     energy: new CreepSetup(SetupsNames.miner, {
-      pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
-      patternLimit: 1,
+      fixed: [CARRY],
+      pattern: [WORK, WORK, MOVE],
+      patternLimit: 3,
     })
   },
   upgrader: {

@@ -1,4 +1,4 @@
-const PUBLIC = false;
+const PUBLIC = true;
 
 // turn off on official
 export const UPDATE_EACH_TICK = !PUBLIC;

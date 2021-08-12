@@ -3087,8 +3087,9 @@ const Setups = {
     }),
     miner: {
         energy: new CreepSetup(SetupsNames.miner, {
-            pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
-            patternLimit: 1,
+            fixed: [CARRY],
+            pattern: [WORK, WORK, MOVE],
+            patternLimit: 3,
         })
     },
     upgrader: {
@@ -3179,14 +3180,15 @@ class minerMaster extends Master {
     update() {
         super.update();
         // 5 for random shit
-        if (this.checkBees() && (this.cell.link || this.cell.container)) {
+        if (this.checkBees() && (this.cell.container || this.cell.link)) {
             let order = {
                 master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
                 priority: 2,
             };
-            order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 + 0.1);
+            order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 / 2);
+            this.print(this.cell.perSecond);
             this.wish(order);
         }
     }
@@ -3216,23 +3218,34 @@ class minerMaster extends Master {
 class resourceCell extends Cell {
     constructor(hive, resource) {
         super(hive, "resourceCell_" + resource.id);
-        this.perSecond = Infinity;
+        this.perSecond = 0;
         this.resource = resource;
         this.container = _.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
-        if (resource instanceof Source) {
-            this.perSecond = 10; //for energy aka 3000/300
+        if (this.resource instanceof Source)
             this.link = _.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-        }
-        else if (resource instanceof Mineral) {
+        else if (this.resource instanceof Mineral)
             this.extractor = _.filter(resource.pos.lookFor(LOOK_STRUCTURES), (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
+        this.updateResourceInfo();
+    }
+    updateResourceInfo() {
+        if (this.resource.ticksToRegeneration != 0) {
+            if (this.resource instanceof Mineral) {
+                let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : MINERAL_REGEN_TIME;
+                this.perSecond = this.resource.mineralAmount / ticksToRegeneration;
+            }
+            else if (this.resource instanceof Source) {
+                let ticksToRegeneration = this.resource.ticksToRegeneration ? this.resource.ticksToRegeneration : ENERGY_REGEN_TIME;
+                this.perSecond = this.resource.energy / ticksToRegeneration;
+            }
         }
     }
     update() {
         super.update();
         {
-            let sourceNew = Game.getObjectById(this.resource.id);
-            if (sourceNew instanceof Source || sourceNew instanceof Mineral)
-                this.resource = sourceNew;
+            let resourceNew = Game.getObjectById(this.resource.id);
+            if (resourceNew instanceof Source || resourceNew instanceof Mineral)
+                this.resource = resourceNew;
+            this.updateResourceInfo();
         }
         if (!this.beeMaster)
             this.beeMaster = new minerMaster(this);
