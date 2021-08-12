@@ -4381,10 +4381,9 @@ class blockerMaster extends SwarmMaster {
         });
         this.targetBeeCount = positions.length;
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-        if (!roomInfo.safePlace)
+        // sad cause safeMode saves from this shit
+        if (!roomInfo.safePlace || roomInfo.safeModeEndTime > Game.time)
             this.destroyTime = Game.time;
-        else if (roomInfo.safeModeEndTime > Game.time)
-            this.destroyTime = roomInfo.safeModeEndTime;
         else
             this.destroyTime = Game.time + 2000;
     }
@@ -4394,6 +4393,12 @@ class blockerMaster extends SwarmMaster {
     }
     update() {
         super.update();
+        if (Game.time % 50 == 0) {
+            let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+            // this stupid tatic was countered
+            if (!roomInfo.safePlace)
+                this.destroyTime = Game.time;
+        }
         for (let keyX in this.targetMap)
             for (let keyY in this.targetMap[keyX])
                 if (!global.bees[this.targetMap[keyX][keyY]] || this.targetMap[keyX][keyY] == "") {
