@@ -20,7 +20,7 @@ export abstract class Master {
     this.hive = hive;
     this.ref = ref;
 
-    this.lastSpawns.push(-CREEP_LIFE_TIME);
+    this.lastSpawns.push(0);
 
     global.masters[this.ref] = this;
   }
@@ -31,18 +31,15 @@ export abstract class Master {
     if (this.waitingForBees)
       this.waitingForBees -= 1;
 
-    _.forEach(this.bees, (bee) => {
-      let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
-      let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-      if (this.beesAmount < this.targetBeeCount && this.lastSpawns[0] != -CREEP_LIFE_TIME) {
-        this.lastSpawns.push();
-      } else if (birthTime >= this.lastSpawns[0]) {
-        this.lastSpawns.shift();
-        this.lastSpawns.push(birthTime);
-      }
-    });
-
-    this.beesAmount = Object.keys(this.bees).length;
+    let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
+    let birthTime = Game.time - (bee.lifeTime - ticksToLive);
+    if (this.beesAmount < this.targetBeeCount && this.targetBeeCount != 1) {
+      this.lastSpawns.push(birthTime);
+    } else if (birthTime >= this.lastSpawns[0]) {
+      this.lastSpawns.shift();
+      this.lastSpawns.push(birthTime);
+    }
+    this.beesAmount += 1;
   }
 
   checkBees(spawnCycle?: number): boolean {

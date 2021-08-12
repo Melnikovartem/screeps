@@ -15,7 +15,7 @@ export class haulerMaster extends Master {
 
     this.cell = excavationCell;
 
-    this.targetBeeCount = 0
+    this.targetBeeCount = 0;
     _.forEach(this.cell.resourceCells, (cell) => {
       let beeForSource = 0;
       if (cell.container) {
@@ -63,7 +63,7 @@ export class haulerMaster extends Master {
       _.forEach(this.bees, (bee) => {
         let ans;
 
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        if (bee.creep.store.getUsedCapacity() == 0) {
           let suckerTarget = _.filter(this.cell.quitefullContainers,
             (container) => this.targetMap[container.id] == bee.ref)[0];
 
@@ -72,7 +72,7 @@ export class haulerMaster extends Master {
               (container) => this.targetMap[container.id] == "")[0];
 
           if (suckerTarget) {
-            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY)
+            ans = bee.withdraw(suckerTarget, <ResourceConstant>Object.keys(suckerTarget.store)[0])
             if (ans == OK)
               this.targetMap[suckerTarget.id] = "";
             else
@@ -80,8 +80,8 @@ export class haulerMaster extends Master {
           }
         }
 
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-          bee.transfer(target, RESOURCE_ENERGY);
+        if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
+          bee.transfer(target, <ResourceConstant>Object.keys(bee.store)[0]);
         }
       });
     }

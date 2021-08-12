@@ -8,12 +8,16 @@ export class excavationCell extends Cell {
   resourceCells: resourceCell[];
   quitefullContainers: StructureContainer[] = [];
 
-  constructor(hive: Hive, sources: Source[]) {
+  constructor(hive: Hive, sources: Source[], minerals: Mineral[]) {
     super(hive, "excavationCell_" + hive.room.name);
 
     this.resourceCells = [];
     _.forEach(sources, (source) => {
       this.resourceCells.push(new resourceCell(this.hive, source));
+    });
+
+    _.forEach(minerals, (mineral) => {
+      this.resourceCells.push(new resourceCell(this.hive, mineral));
     });
   }
 
@@ -29,12 +33,12 @@ export class excavationCell extends Cell {
       cell.update();
 
       if (cell.container) {
-        if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 700)
+        if (cell.container.store.getUsedCapacity() >= 700)
           this.quitefullContainers.push(cell.container);
       }
     });
     this.quitefullContainers.sort(
-      (a, b) => a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY));
+      (a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
   };
 
   // second stage of decision making like where do i need to spawn creeps or do i need

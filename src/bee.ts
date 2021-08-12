@@ -7,6 +7,7 @@ export class Bee {
 
   ref: string;
   pos: RoomPosition;
+  store: Store<ResourceConstant, false>;
 
   reusePath: number = 3;
   lifeTime: number = CREEP_LIFE_TIME;
@@ -18,6 +19,7 @@ export class Bee {
 
     this.ref = creep.name;
     this.pos = creep.pos;
+    this.store = creep.store;
 
     if (creep.getBodyparts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
@@ -29,6 +31,7 @@ export class Bee {
   update() {
     this.creep = Game.creeps[this.ref];
     this.pos = this.creep.pos;
+    this.store = this.creep.store;
   }
 
   // for future: could path to open position near object for targets that require isNearTo

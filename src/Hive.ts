@@ -170,7 +170,8 @@ export class Hive {
         this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
 
         if (allSources.length) {
-          this.cells.excavationCell = new excavationCell(this, allSources);
+          let minerals = this.room.find(FIND_MINERALS);
+          this.cells.excavationCell = new excavationCell(this, allSources, minerals);
         }
       }
     }

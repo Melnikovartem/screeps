@@ -98,8 +98,6 @@ export class _Apiary {
       });
   }
 
-  i: number = 0;
-
   findBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {

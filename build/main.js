@@ -1105,7 +1105,7 @@ var ArraySet = arraySet.ArraySet;
 
 var quickSort = quickSort$1.quickSort;
 
-function SourceMapConsumer(aSourceMap, aSourceMapURL) {
+function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
     sourceMap = util.parseSourceMapInput(aSourceMap);
@@ -1116,14 +1116,14 @@ function SourceMapConsumer(aSourceMap, aSourceMapURL) {
     : new BasicSourceMapConsumer(sourceMap, aSourceMapURL);
 }
 
-SourceMapConsumer.fromSourceMap = function(aSourceMap, aSourceMapURL) {
+SourceMapConsumer$1.fromSourceMap = function(aSourceMap, aSourceMapURL) {
   return BasicSourceMapConsumer.fromSourceMap(aSourceMap, aSourceMapURL);
 };
 
 /**
  * The version of the source mapping spec that we are consuming.
  */
-SourceMapConsumer.prototype._version = 3;
+SourceMapConsumer$1.prototype._version = 3;
 
 // `__generatedMappings` and `__originalMappings` are arrays that hold the
 // parsed mapping coordinates from the source map's "mappings" attribute. They
@@ -1155,8 +1155,8 @@ SourceMapConsumer.prototype._version = 3;
 //
 // `_originalMappings` is ordered by the original positions.
 
-SourceMapConsumer.prototype.__generatedMappings = null;
-Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
+SourceMapConsumer$1.prototype.__generatedMappings = null;
+Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1168,8 +1168,8 @@ Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
   }
 });
 
-SourceMapConsumer.prototype.__originalMappings = null;
-Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
+SourceMapConsumer$1.prototype.__originalMappings = null;
+Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1181,7 +1181,7 @@ Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
   }
 });
 
-SourceMapConsumer.prototype._charIsMappingSeparator =
+SourceMapConsumer$1.prototype._charIsMappingSeparator =
   function SourceMapConsumer_charIsMappingSeparator(aStr, index) {
     var c = aStr.charAt(index);
     return c === ";" || c === ",";
@@ -1192,16 +1192,16 @@ SourceMapConsumer.prototype._charIsMappingSeparator =
  * query (the ordered arrays in the `this.__generatedMappings` and
  * `this.__originalMappings` properties).
  */
-SourceMapConsumer.prototype._parseMappings =
+SourceMapConsumer$1.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     throw new Error("Subclasses must implement _parseMappings");
   };
 
-SourceMapConsumer.GENERATED_ORDER = 1;
-SourceMapConsumer.ORIGINAL_ORDER = 2;
+SourceMapConsumer$1.GENERATED_ORDER = 1;
+SourceMapConsumer$1.ORIGINAL_ORDER = 2;
 
-SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
-SourceMapConsumer.LEAST_UPPER_BOUND = 2;
+SourceMapConsumer$1.GREATEST_LOWER_BOUND = 1;
+SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
 
 /**
  * Iterate over each mapping between an original source/line/column and a
@@ -1219,17 +1219,17 @@ SourceMapConsumer.LEAST_UPPER_BOUND = 2;
  *        order or the original's source/line/column order, respectively. Defaults to
  *        `SourceMapConsumer.GENERATED_ORDER`.
  */
-SourceMapConsumer.prototype.eachMapping =
+SourceMapConsumer$1.prototype.eachMapping =
   function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
     var context = aContext || null;
-    var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
+    var order = aOrder || SourceMapConsumer$1.GENERATED_ORDER;
 
     var mappings;
     switch (order) {
-    case SourceMapConsumer.GENERATED_ORDER:
+    case SourceMapConsumer$1.GENERATED_ORDER:
       mappings = this._generatedMappings;
       break;
-    case SourceMapConsumer.ORIGINAL_ORDER:
+    case SourceMapConsumer$1.ORIGINAL_ORDER:
       mappings = this._originalMappings;
       break;
     default:
@@ -1273,7 +1273,7 @@ SourceMapConsumer.prototype.eachMapping =
  *   - column: The column number in the generated source, or null.
  *    The column number is 0-based.
  */
-SourceMapConsumer.prototype.allGeneratedPositionsFor =
+SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
   function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
     var line = util.getArg(aArgs, 'line');
 
@@ -1342,6 +1342,8 @@ SourceMapConsumer.prototype.allGeneratedPositionsFor =
 
     return mappings;
   };
+
+var SourceMapConsumer_1 = SourceMapConsumer$1;
 
 /**
  * A BasicSourceMapConsumer instance represents a parsed source map which we can
@@ -1437,8 +1439,8 @@ function BasicSourceMapConsumer(aSourceMap, aSourceMapURL) {
   this.file = file;
 }
 
-BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
-BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
+BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
+BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer$1;
 
 /**
  * Utility function to find the index of a source.  Returns -1 if not
@@ -1748,7 +1750,7 @@ BasicSourceMapConsumer.prototype.originalPositionFor =
       "generatedLine",
       "generatedColumn",
       util.compareByGeneratedPositionsDeflated,
-      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1893,7 +1895,7 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       "originalLine",
       "originalColumn",
       util.compareByOriginalPositions,
-      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1914,6 +1916,8 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       lastColumn: null
     };
   };
+
+var BasicSourceMapConsumer_1 = BasicSourceMapConsumer;
 
 /**
  * An IndexedSourceMapConsumer instance represents a parsed source map which
@@ -2007,13 +2011,13 @@ function IndexedSourceMapConsumer(aSourceMap, aSourceMapURL) {
         generatedLine: offsetLine + 1,
         generatedColumn: offsetColumn + 1
       },
-      consumer: new SourceMapConsumer(util.getArg(s, 'map'), aSourceMapURL)
+      consumer: new SourceMapConsumer$1(util.getArg(s, 'map'), aSourceMapURL)
     }
   });
 }
 
-IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
-IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
+IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
+IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer$1;
 
 /**
  * The version of the source mapping spec that we are consuming.
@@ -2232,6 +2236,101 @@ IndexedSourceMapConsumer.prototype._parseMappings =
     quickSort(this.__originalMappings, util.compareByOriginalPositions);
   };
 
+var IndexedSourceMapConsumer_1 = IndexedSourceMapConsumer;
+
+var sourceMapConsumer = {
+	SourceMapConsumer: SourceMapConsumer_1,
+	BasicSourceMapConsumer: BasicSourceMapConsumer_1,
+	IndexedSourceMapConsumer: IndexedSourceMapConsumer_1
+};
+
+var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
+
+class ErrorMapper {
+    static get consumer() {
+        if (this._consumer == null) {
+            this._consumer = new SourceMapConsumer(require("main.js.map"));
+        }
+        return this._consumer;
+    }
+    /**
+     * Generates a stack trace using a source map generate original symbol names.
+     *
+     * WARNING - EXTREMELY high CPU cost for first call after reset - >30 CPU! Use sparingly!
+     * (Consecutive calls after a reset are more reasonable, ~0.1 CPU/ea)
+     *
+     * @param {Error | string} error The error or original stack trace
+     * @returns {string} The source-mapped stack trace
+     */
+    static sourceMappedStackTrace(error) {
+        const stack = error instanceof Error ? error.stack : error;
+        if (Object.prototype.hasOwnProperty.call(this.cache, stack)) {
+            return this.cache[stack];
+        }
+        // eslint-disable-next-line no-useless-escape
+        const re = /^\s+at\s+(.+?\s+)?\(?([0-z._\-\\\/]+):(\d+):(\d+)\)?$/gm;
+        let match;
+        let outStack = error.toString();
+        while ((match = re.exec(stack))) {
+            if (match[2] === "main") {
+                const pos = this.consumer.originalPositionFor({
+                    column: parseInt(match[4], 10),
+                    line: parseInt(match[3], 10)
+                });
+                if (pos.line != null) {
+                    if (pos.name) {
+                        outStack += `\n    at ${pos.name} (${pos.source}:${pos.line}:${pos.column})`;
+                    }
+                    else {
+                        if (match[1]) {
+                            // no original source file name known - use file name from given trace
+                            outStack += `\n    at ${match[1]} (${pos.source}:${pos.line}:${pos.column})`;
+                        }
+                        else {
+                            // no original source file name known or in given trace - omit name
+                            outStack += `\n    at ${pos.source}:${pos.line}:${pos.column}`;
+                        }
+                    }
+                }
+                else {
+                    // no known position
+                    break;
+                }
+            }
+            else {
+                // no more parseable lines
+                break;
+            }
+        }
+        this.cache[stack] = outStack;
+        return outStack;
+    }
+    static wrapLoop(loop) {
+        return () => {
+            try {
+                loop();
+            }
+            catch (e) {
+                if (e instanceof Error) {
+                    if ("sim" in Game.rooms) {
+                        const message = `Source maps don't work in the simulator - displaying original error`;
+                        console.log(`<span style='color:red'>${message}<br>${_.escape(e.stack)}</span>`);
+                    }
+                    else {
+                        console.log(`<span style='color:red'>${_.escape(this.sourceMappedStackTrace(e))}</span>`);
+                    }
+                }
+                else {
+                    // can't handle it
+                    throw e;
+                }
+            }
+        };
+    }
+}
+// Cache previously mapped traces to improve performance
+ErrorMapper.cache = {};
+
 class Mem {
     static init() {
         if (!Memory.masters)
@@ -2442,6 +2541,9 @@ class Traveler {
      * @param opacity
      */
     static circle(pos, color, opacity) {
+        new RoomVisual(pos.roomName).circle(pos, {
+                radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
+            });
     }
     /**
      * update memory on whether a room should be avoided based on controller owner
@@ -2733,6 +2835,8 @@ class Traveler {
         this.circle(startPos, color);
         for (let position of path) {
             if (position.roomName === lastPosition.roomName) {
+                new RoomVisual(position.roomName)
+                        .line(position, lastPosition, { color: color, lineStyle: "dashed" });
                 serializedPath += lastPosition.getDirectionTo(position);
             }
             lastPosition = position;
@@ -3023,7 +3127,7 @@ class Master {
         this.bees = {};
         this.hive = hive;
         this.ref = ref;
-        this.lastSpawns.push(-CREEP_LIFE_TIME);
+        this.lastSpawns.push(0);
         global.masters[this.ref] = this;
     }
     // catch a bee after it has requested a master
@@ -3031,18 +3135,16 @@ class Master {
         this.bees[bee.ref] = bee;
         if (this.waitingForBees)
             this.waitingForBees -= 1;
-        _.forEach(this.bees, (bee) => {
-            let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
-            let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-            if (this.beesAmount < this.targetBeeCount && this.lastSpawns[0] != -CREEP_LIFE_TIME) {
-                this.lastSpawns.push();
-            }
-            else if (birthTime >= this.lastSpawns[0]) {
-                this.lastSpawns.shift();
-                this.lastSpawns.push(birthTime);
-            }
-        });
-        this.beesAmount = Object.keys(this.bees).length;
+        let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
+        let birthTime = Game.time - (bee.lifeTime - ticksToLive);
+        if (this.beesAmount < this.targetBeeCount && this.targetBeeCount != 1) {
+            this.lastSpawns.push(birthTime);
+        }
+        else if (birthTime >= this.lastSpawns[0]) {
+            this.lastSpawns.shift();
+            this.lastSpawns.push(birthTime);
+        }
+        this.beesAmount += 1;
     }
     checkBees(spawnCycle) {
         if (!spawnCycle)
@@ -3084,22 +3186,27 @@ class minerMaster extends Master {
                 amount: 1,
                 priority: 2,
             };
+            order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 + 0.1);
             this.wish(order);
         }
     }
     run() {
         _.forEach(this.bees, (bee) => {
-            if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-                bee.harvest(this.cell.source);
+            // any resource
+            if (bee.creep.store.getFreeCapacity() > 0) {
+                if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
+                    bee.harvest(this.cell.resource);
+                if (this.cell.extractor && this.cell.extractor.cooldown == 0)
+                    bee.harvest(this.cell.resource);
             }
-            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
+            if (bee.creep.store.getUsedCapacity() >= 25) {
                 let target;
-                if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY))
+                if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY) && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
                     target = this.cell.link;
-                else if (this.cell.container && this.cell.container.store.getFreeCapacity(RESOURCE_ENERGY))
+                else if (this.cell.container && this.cell.container.store.getFreeCapacity())
                     target = this.cell.container;
                 if (target)
-                    bee.transfer(target, RESOURCE_ENERGY);
+                    bee.transfer(target, Object.keys(bee.store)[0]);
             }
         });
     }
@@ -3107,20 +3214,26 @@ class minerMaster extends Master {
 
 // cell that will extract energy or minerals? from ground
 class resourceCell extends Cell {
-    constructor(hive, source) {
-        super(hive, "resourceCell_" + source.id);
-        this.source = source;
-        let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
-        if (container instanceof StructureContainer) {
-            this.container = container;
+    constructor(hive, resource) {
+        super(hive, "resourceCell_" + resource.id);
+        this.perSecond = Infinity;
+        this.resource = resource;
+        this.container = _.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
+        if (resource instanceof Source) {
+            this.perSecond = 10; //for energy aka 3000/300
+            this.link = _.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         }
-        let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-        if (link instanceof StructureLink) {
-            this.link = link;
+        else if (resource instanceof Mineral) {
+            this.extractor = _.filter(resource.pos.lookFor(LOOK_STRUCTURES), (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
         }
     }
     update() {
         super.update();
+        {
+            let sourceNew = Game.getObjectById(this.resource.id);
+            if (sourceNew instanceof Source || sourceNew instanceof Mineral)
+                this.resource = sourceNew;
+        }
         if (!this.beeMaster)
             this.beeMaster = new minerMaster(this);
     }
@@ -3179,20 +3292,20 @@ class haulerMaster extends Master {
             let target = this.hive.cells.storageCell.storage;
             _.forEach(this.bees, (bee) => {
                 let ans;
-                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+                if (bee.creep.store.getUsedCapacity() == 0) {
                     let suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == bee.ref)[0];
                     if (!suckerTarget)
                         suckerTarget = _.filter(this.cell.quitefullContainers, (container) => this.targetMap[container.id] == "")[0];
                     if (suckerTarget) {
-                        ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+                        ans = bee.withdraw(suckerTarget, Object.keys(suckerTarget.store)[0]);
                         if (ans == OK)
                             this.targetMap[suckerTarget.id] = "";
                         else
                             this.targetMap[suckerTarget.id] = bee.ref;
                     }
                 }
-                if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-                    bee.transfer(target, RESOURCE_ENERGY);
+                if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
+                    bee.transfer(target, Object.keys(bee.store)[0]);
                 }
             });
         }
@@ -3200,12 +3313,15 @@ class haulerMaster extends Master {
 }
 
 class excavationCell extends Cell {
-    constructor(hive, sources) {
+    constructor(hive, sources, minerals) {
         super(hive, "excavationCell_" + hive.room.name);
         this.quitefullContainers = [];
         this.resourceCells = [];
         _.forEach(sources, (source) => {
             this.resourceCells.push(new resourceCell(this.hive, source));
+        });
+        _.forEach(minerals, (mineral) => {
+            this.resourceCells.push(new resourceCell(this.hive, mineral));
         });
     }
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
@@ -3217,11 +3333,11 @@ class excavationCell extends Cell {
         _.forEach(this.resourceCells, (cell) => {
             cell.update();
             if (cell.container) {
-                if (cell.container.store.getUsedCapacity(RESOURCE_ENERGY) >= 700)
+                if (cell.container.store.getUsedCapacity() >= 700)
                     this.quitefullContainers.push(cell.container);
             }
         });
-        this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity(RESOURCE_ENERGY) - b.store.getFreeCapacity(RESOURCE_ENERGY));
+        this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
     }
     ;
     // second stage of decision making like where do i need to spawn creeps or do i need
@@ -3763,8 +3879,7 @@ class developmentCell extends Cell {
     update() {
         super.update();
         // caustom-made update for sources for developmentCell
-        if (Game.time % 5 == 4)
-            _.forEach(this.sources, (source, key) => {
+        _.forEach(this.sources, (source, key) => {
                 let sourceNew = Game.getObjectById(source.id);
                 if (sourceNew instanceof Source)
                     this.sources[key] = sourceNew;
@@ -3838,6 +3953,11 @@ class annexMaster extends Master {
     }
     update() {
         super.update();
+        {
+            let controller = Game.getObjectById(this.controller.id);
+            if (controller)
+                this.controller = controller;
+        }
         if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
             let order = {
                 master: this.ref,
@@ -4002,7 +4122,8 @@ class Hive {
                 this.stage = 1;
                 this.cells.upgradeCell = new upgradeCell(this, this.room.controller);
                 if (allSources.length) {
-                    this.cells.excavationCell = new excavationCell(this, allSources);
+                    let minerals = this.room.find(FIND_MINERALS);
+                    this.cells.excavationCell = new excavationCell(this, allSources, minerals);
                 }
             }
         }
@@ -4046,6 +4167,7 @@ class Hive {
     }
     // add to list a new creep
     wish(order) {
+        console.log(Game.time, "new order from ", order.master, "for", order.amount, order.setup.name);
         this.orderList.push(order);
     }
     updateLog() {
@@ -4062,15 +4184,13 @@ class Hive {
         });
     }
     update() {
-        if (Game.time % 10 == 0)
-            this.updateRooms();
-        if (Game.time % 10 == 1) {
+        this.updateRooms();
+        {
             this.updateConstructionSites();
             this.updateEmeregcyRepairs();
             this.updateNormalRepairs();
         }
-        if (Game.time % 10 == 2)
-            this.findTargets();
+        this.findTargets();
         if (Game.time % LOGGING_CYCLE == 0)
             this.updateLog();
         _.forEach(this.cells, (cell) => {
@@ -4093,6 +4213,7 @@ class Bee {
         this.master = global.masters[this.creep.memory.refMaster];
         this.ref = creep.name;
         this.pos = creep.pos;
+        this.store = creep.store;
         if (creep.getBodyparts(CLAIM))
             this.lifeTime = CREEP_CLAIM_LIFE_TIME;
         // not sure weather i should copy all parameters from creep like body and stuff
@@ -4101,6 +4222,7 @@ class Bee {
     update() {
         this.creep = Game.creeps[this.ref];
         this.pos = this.creep.pos;
+        this.store = this.creep.store;
     }
     // for future: could path to open position near object for targets that require isNearTo
     // but is it worh in terms of CPU?
@@ -4432,7 +4554,6 @@ class blockerMaster extends SwarmMaster {
 class _Apiary {
     constructor() {
         this.hives = {};
-        this.i = 0;
         this.destroyTime = Game.time + 4000;
         this.intel = new Intel();
         let myRoomsAnnexes = {};
@@ -4499,7 +4620,7 @@ class _Apiary {
                         delete global.masters["master_Swarm_" + flag.name];
                         flag.remove();
                     }
-                    else if (Game.time % 100 == 0) {
+                    else {
                         master.order = flag;
                     }
                 }
@@ -4556,6 +4677,7 @@ function onGlobalReset() {
     // check if all memory position were created
     Mem.init();
     Memory.log.reset = Game.time;
+    console.log("Reset? Cool time is", Game.time);
     global.bees = {};
     global.masters = {};
     delete global.Apiary;
@@ -4569,13 +4691,12 @@ function main() {
     Mem.clean();
     global.Apiary.update();
     global.Apiary.run();
-    // only on official
-    if (Game.cpu.bucket == 10000) {
-        Game.cpu.generatePixel();
-    }
 }
 // time to wrap things up
 let _loop = main;
+{
+    _loop = ErrorMapper.wrapLoop(main);
+}
 const loop = _loop;
 onGlobalReset();
 

@@ -7,24 +7,28 @@ import { UPDATE_EACH_TICK } from "../settings";
 // cell that will extract energy or minerals? from ground
 export class resourceCell extends Cell {
 
-  source: Source | Mineral;
+  perSecond: number = Infinity;
+  resource: Source | Mineral;
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
+  extractor: StructureExtractor | undefined;
 
 
-  constructor(hive: Hive, source: Source) {
-    super(hive, "resourceCell_" + source.id);
+  constructor(hive: Hive, resource: Source | Mineral) {
+    super(hive, "resourceCell_" + resource.id);
 
-    this.source = source;
+    this.resource = resource;
 
-    let container = _.filter(this.source.pos.findInRange(FIND_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
-    if (container instanceof StructureContainer) {
-      this.container = container;
-    }
+    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
+      (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
 
-    let link = _.filter(this.source.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-    if (link instanceof StructureLink) {
-      this.link = link;
+    if (resource instanceof Source) {
+      this.perSecond = 10 //for energy aka 3000/300
+      this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
+        (structure) => structure.structureType == STRUCTURE_LINK)[0];
+    } else if (resource instanceof Mineral) {
+      this.extractor = <StructureExtractor>_.filter(resource.pos.lookFor(LOOK_STRUCTURES),
+        (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
     }
   }
 
@@ -32,9 +36,9 @@ export class resourceCell extends Cell {
     super.update();
 
     if (UPDATE_EACH_TICK) {
-      let sourceNew = Game.getObjectById(this.source.id);
+      let sourceNew = Game.getObjectById(this.resource.id);
       if (sourceNew instanceof Source || sourceNew instanceof Mineral)
-        this.source = sourceNew;
+        this.resource = sourceNew;
     }
 
     if (!this.beeMaster)

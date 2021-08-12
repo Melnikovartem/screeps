@@ -26,25 +26,31 @@ export class minerMaster extends Master {
         priority: 2,
       };
 
+      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecond / 2 + 0.1);
+
       this.wish(order);
     }
   }
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        bee.harvest(this.cell.source);
+      // any resource
+      if (bee.creep.store.getFreeCapacity() > 0) {
+        if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
+          bee.harvest(this.cell.resource);
+        if (this.cell.extractor && this.cell.extractor.cooldown == 0)
+          bee.harvest(this.cell.resource);
       }
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) >= 25) {
-        let target: Structure | undefined;
-        if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY))
+      if (bee.creep.store.getUsedCapacity() >= 25) {
+        let target: StructureLink | StructureContainer | undefined;
+        if (this.cell.link && this.cell.link.store.getFreeCapacity(RESOURCE_ENERGY) && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
           target = this.cell.link;
-        else if (this.cell.container && this.cell.container.store.getFreeCapacity(RESOURCE_ENERGY))
+        else if (this.cell.container && this.cell.container.store.getFreeCapacity())
           target = this.cell.container;
 
         if (target)
-          bee.transfer(target, RESOURCE_ENERGY);
+          bee.transfer(target, <ResourceConstant>Object.keys(bee.store)[0]);
       }
     });
   }
