@@ -8,7 +8,9 @@ import "./prototypes/pos"
 
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, ERROR_WRAPPER, LOGGING_CYCLE, PRINT_INFO } from "./settings";
+import { GENERATE_PIXEL, ERROR_WRAPPER, LOGGING_CYCLE, PRINT_INFO, PUBLIC } from "./settings";
+
+console.log("settings are for", PUBLIC ? "public" : "local!!")
 
 // This gets run on each global reset
 function onGlobalReset(): void {

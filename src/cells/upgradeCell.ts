@@ -25,13 +25,18 @@ export class upgradeCell extends Cell {
     if (!this.beeMaster)
       this.beeMaster = new upgraderMaster(this);
 
-    if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > 50 &&
-      this.hive.cells.storageCell) {
-      this.hive.cells.storageCell.linkRequests[this.ref] = {
-        link: this.link,
+    let storageCell = this.hive.cells.storageCell;
+    if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > LINK_CAPACITY / 4
+      && storageCell && storageCell.link && (!storageCell.requests[this.link.id]
+        || this.link.store.getFreeCapacity(RESOURCE_ENERGY) - storageCell.requests[this.link.id].amount! >= 25))
+      storageCell.requests[this.link.id] = {
+        from: storageCell.link,
+        to: this.link,
+        resource: RESOURCE_ENERGY,
         amount: this.link.store.getFreeCapacity(RESOURCE_ENERGY),
+        priority: 4
       }
-    }
+
   }
 
   run() {

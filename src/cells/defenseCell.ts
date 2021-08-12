@@ -14,9 +14,26 @@ export class defenseCell extends Cell {
   update() {
     super.update();
 
-    // oh no towers fell guess time to safe mode
-    //if (!this.towers.length && this.hive.stage > 0)
-    //  this.hive.room.controller!.activateSafeMode();
+    let storageCell = this.hive.cells.storageCell
+    if (storageCell) {
+      _.forEach(this.towers, (tower) => {
+        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
+          storageCell!.requests[tower.id] = {
+            from: storageCell!.storage,
+            to: tower,
+            resource: RESOURCE_ENERGY,
+            priority: 0,
+          };
+        else if (!storageCell!.requests[tower.id] && tower.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+          storageCell!.requests[tower.id] = {
+            from: storageCell!.storage,
+            to: tower,
+            resource: RESOURCE_ENERGY,
+            priority: 5,
+          };
+      });
+    }
+
   };
 
   // second stage of decision making like where do i need to spawn creeps or do i need

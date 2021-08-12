@@ -2,6 +2,7 @@ import { Hive } from "./Hive";
 import { Bee } from "./bee";
 
 import { Intel } from "./intelligence";
+import { makeId } from "./utils/other";
 
 import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
@@ -45,6 +46,43 @@ export class _Apiary {
       if (roomName)
         this.hives[roomName] = new Hive(roomName, annexNames);
     });
+  }
+
+  // next 2 are for hand usage
+  fillTerminal(roomName: string, resource: ResourceConstant, amount?: number): string {
+    if (!(roomName in this.hives))
+      return "ERROR: HIVE NOT FOUND";
+    let storageCell = this.hives[roomName].cells.storageCell
+    if (!storageCell)
+      return "ERROR: STORAGE NOT FOUND";
+    if (storageCell.terminal)
+      return "ERROR: TERMINAL NOT FOUND";
+    storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
+      from: storageCell.storage,
+      to: storageCell.terminal!,
+      resource: resource,
+      amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
+      priority: 2,
+    });
+    return "OK";
+  }
+
+  emptyTerminal(roomName: string, resource: ResourceConstant, amount?: number) {
+    if (!(roomName in this.hives))
+      return "ERROR: HIVE NOT FOUND";
+    let storageCell = this.hives[roomName].cells.storageCell
+    if (!storageCell)
+      return "ERROR: STORAGE NOT FOUND";
+    if (storageCell.terminal)
+      return "ERROR: TERMINAL NOT FOUND";
+    storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
+      from: storageCell.terminal!,
+      to: storageCell.storage,
+      resource: resource,
+      amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
+      priority: 2,
+    });
+    return "OK";
   }
 
   spawnSwarm<T extends SwarmMaster>(order: Flag, swarmMaster: new (hive: Hive, order: Flag) => T): T {

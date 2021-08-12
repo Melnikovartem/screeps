@@ -39,8 +39,6 @@ export class CreepSetup {
 
     let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
 
-    console.log("?", maxSegment, this.name);
-
     _.times(maxSegment, () => {
       if (this.bodySetup.pattern.length + body.length <= 50)
         _.forEach(this.bodySetup.pattern, (s) => body.push(s))

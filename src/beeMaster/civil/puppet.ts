@@ -16,7 +16,6 @@ export class puppetMaster extends Master {
 
     // 5 for random shit
     if (this.checkBees() && !(this.target.roomName in Game.rooms)) {
-      this.print([this.checkBees(), this.beesAmount, this.target.roomName in Game.rooms])
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.puppet,

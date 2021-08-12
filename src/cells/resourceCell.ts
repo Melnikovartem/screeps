@@ -2,6 +2,7 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { minerMaster } from "../beeMaster/civil/miner";
+
 import { UPDATE_EACH_TICK } from "../settings";
 
 // cell that will extract energy or minerals? from ground
@@ -54,10 +55,10 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    if (this.link && this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
-      (this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= this.hive.cells.storageCell.link.store.getCapacity(RESOURCE_ENERGY)
-        - this.hive.cells.storageCell.inLink || this.link.store.getFreeCapacity(RESOURCE_ENERGY) <
-        this.link.store.getCapacity(RESOURCE_ENERGY) * 0.15) && this.link.cooldown == 0) {
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= 100 && this.link.cooldown == 0 &&
+      this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
+      (this.link.store.getUsedCapacity(RESOURCE_ENERGY) <= this.hive.cells.storageCell.link.store.getFreeCapacity(RESOURCE_ENERGY) ||
+        this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= 150)) {
       this.link.transferEnergy(this.hive.cells.storageCell.link);
     }
   }

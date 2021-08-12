@@ -2,18 +2,18 @@
 // like from storage to link or terminal
 // refill towers?
 // refills the respawnCell
-import { storageCell } from "../../cells/storageCell";
+import { storageCell, StorageRequest } from "../../cells/storageCell";
+
+import { Bee } from "../../bee";
 
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 export class managerMaster extends Master {
-
   cell: storageCell;
 
-  targets: (StructureTower | StructureLink | StructureStorage)[] = [];
-  suckerTargets: (StructureStorage | StructureLink)[] = [];
+  targetMap: { [id: string]: string } = {};
 
   idlePos: RoomPosition;
 
@@ -29,32 +29,38 @@ export class managerMaster extends Master {
       this.idlePos = storageCell.storage.pos;
   }
 
+  newBee(bee: Bee) {
+    super.newBee(bee);
+    this.targetMap[bee.ref] = "";
+  }
+
   update() {
     super.update();
+    for (let key in this.targetMap)
+      if (!global.bees[key])
+        delete this.targetMap[key];
 
-    // if order will matter (not a feature rn) i will like to put storage last
-    this.targets = [this.cell.storage];
-    this.suckerTargets = [this.cell.storage];
+    let targets: string[] = [];
+    // assigning the orders
+    for (let key in this.cell.requests) {
+      let request = this.cell.requests[key];
+      if (request.to == this.cell.storage || request.from == this.cell.storage)
+        targets.push(key);
+    }
+    targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
 
-    if (this.hive.cells.defenseCell && this.hive.cells.defenseCell.towers.length)
-      this.targets = this.targets.concat(this.hive.cells.defenseCell.towers);
-
-    //if you don't need to withdraw => then it is not enough
-    if (this.cell.link) {
-      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink >= 25) {
-        this.suckerTargets.push(this.cell.link);
-      }
-      else if ((this.cell.inLink - this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= 25
-        || this.cell.inLink == this.cell.link.store.getCapacity(RESOURCE_ENERGY)))
-        this.targets.push(this.cell.link);
+    for (let key in this.targetMap) {
+      if (!targets.length)
+        break;
+      if (this.targetMap[key] != "")
+        continue;
+      let target = targets.pop()!
+      this.targetMap[key] = target;
     }
 
-    // the >> is made by beatify cause >_> is better
-    this.targets = _.filter(this.targets, (structure) =>
-      (<Store<RESOURCE_ENERGY, false>>structure.store).getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     // tragets.length cause dont need a manager for nothing
-    if (this.checkBees() && this.targets.length > 0) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,
@@ -73,43 +79,44 @@ export class managerMaster extends Master {
     // TODO smarter choosing of target
     // aka draw energy if there is a target and otherwise put it back
     _.forEach(this.bees, (bee) => {
-      let ans;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && (this.targets.length > 1 || this.suckerTargets.length > 1)) {
-        let suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
+      let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
+      if (request) {
+        let usedCapFrom = (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource);
+        let freeCapTo = (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource);
+        let amount = bee.store.getUsedCapacity(request.resource);
+        if (amount == 0) {
+          amount = bee.store.getFreeCapacity();
+          if (request.amount)
+            amount = Math.min(amount, request.amount);
 
-        if (!suckerTarget)
-          suckerTarget = _.filter(this.suckerTargets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0];
+          amount = Math.min(amount, usedCapFrom);
 
-        if (suckerTarget) {
-          if (suckerTarget instanceof StructureLink)
-            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY, Math.min(bee.creep.store.getFreeCapacity(RESOURCE_ENERGY),
-              suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) - this.cell.inLink));
-          else
-            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+          if (amount >= 0) {
+            if (bee.withdraw(request.from, request.resource, amount) != OK)
+              amount = 0;
+          }
         }
-      } else if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
-        bee.goRest(this.idlePos);
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
-        // i cloud sort this.targets, but this is more convenient
-        let target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER &&
-          structure.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= structure.store.getUsedCapacity(RESOURCE_ENERGY))[0];
+        if (amount > 0) {
+          amount = Math.min(bee.store.getUsedCapacity(request.resource), freeCapTo);
+          if (bee.transfer(request.to, request.resource, amount) == OK) {
+            if (request.amount)
+              request.amount -= amount;
+            else if (freeCapTo - amount <= 0)
+              request.amount = 0;
+          }
+        }
 
-        if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_LINK)[0];
-
-        if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_TOWER)[0];
-
-        if (!target)
-          target = _.filter(this.targets, (structure) => structure.structureType == STRUCTURE_STORAGE)[0]
-
-        if (target)
-          if (target instanceof StructureLink)
-            ans = bee.transfer(target, RESOURCE_ENERGY, Math.min(bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
-              this.cell.inLink - target.store.getUsedCapacity(RESOURCE_ENERGY)));
-          else
-            bee.transfer(target, RESOURCE_ENERGY);
+        if ((request.amount && request.amount <= 0) || (usedCapFrom == 0 && amount == 0)) {
+          delete this.cell.requests[this.targetMap[bee.ref]];
+          this.targetMap[bee.ref] = "";
+        }
+      } else {
+        this.targetMap[bee.ref] = "";
+        if (bee.creep.store.getUsedCapacity() > 0)
+          bee.transfer(this.cell.storage, <ResourceConstant>Object.keys(bee.store)[0]);
+        else
+          bee.goRest(this.idlePos);
       }
     });
   }

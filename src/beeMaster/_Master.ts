@@ -46,7 +46,7 @@ export abstract class Master {
       spawnCycle = CREEP_LIFE_TIME;
 
     // 5 for random shit
-    return !this.waitingForBees && (this.beesAmount < this.targetBeeCount
+    return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
       || (this.beesAmount == this.targetBeeCount && Game.time + 5 >= this.lastSpawns[0] + spawnCycle));
   }
 
