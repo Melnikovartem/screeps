@@ -1,4 +1,4 @@
-export const PUBLIC = true;
+export const PUBLIC = false;
 
 // turn off on official
 export const UPDATE_EACH_TICK = !PUBLIC;
@@ -12,4 +12,4 @@ export const VISUALS_ON = true;
 export const SAFE_DEV = true;
 
 // turn on on official
-export const GENERATE_PIXEL = PUBLIC;
+export const GENERATE_PIXEL = true;

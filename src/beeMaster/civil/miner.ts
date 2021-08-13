@@ -45,7 +45,7 @@ export class minerMaster extends Master {
         let harvest: boolean = false;
         if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
           harvest = true;
-        if (this.cell.extractor && this.cell.extractor.cooldown == 0)
+        else if (this.cell.extractor && this.cell.extractor.cooldown == 0 && this.cell.perSecondNeeded > 0)
           harvest = true;
 
         if (harvest)

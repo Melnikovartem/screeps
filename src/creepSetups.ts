@@ -27,7 +27,7 @@ export class CreepSetup {
     this.bodySetup = bodySetup;
   }
 
-  getBody(energy: number): BodyPartConstant[] {
+  getBody(energy: number): { body: BodyPartConstant[], cost: number } {
     let body: BodyPartConstant[] = [];
     if (this.bodySetup.fixed)
       _.forEach(this.bodySetup.fixed, (s) => body.push(s))
@@ -47,7 +47,10 @@ export class CreepSetup {
         _.forEach(this.bodySetup.pattern, (s) => body.push(s))
     });
 
-    return body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
+    return {
+      body: body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b)),
+      cost: fixedCosts + segmentCost * maxSegment,
+    };
   }
 }
 
@@ -96,8 +99,8 @@ export const Setups = {
       patternLimit: 1,
     }),
     minerals: new CreepSetup(SetupsNames.miner, {
-      fixed: [CARRY],
-      pattern: [WORK, WORK, MOVE],
+      fixed: [WORK, WORK, WORK, WORK, CARRY, MOVE],
+      pattern: [WORK, WORK, WORK, WORK, WORK, MOVE],
     })
   },
   upgrader: {
@@ -106,9 +109,9 @@ export const Setups = {
       patternLimit: 10,
     }),
     fast: new CreepSetup(SetupsNames.upgrader, {
-      fixed: [WORK, WORK, CARRY, MOVE],
-      pattern: [WORK, WORK, MOVE],
-      patternLimit: 5,
+      fixed: [WORK, WORK, WORK, WORK, CARRY, MOVE],
+      pattern: [WORK, WORK, WORK, WORK, WORK, MOVE],
+      patternLimit: 2,
     }),
   },
   builder: new CreepSetup(SetupsNames.builder, {

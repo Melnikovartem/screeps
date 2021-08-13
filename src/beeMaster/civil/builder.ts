@@ -15,16 +15,18 @@ export class builderMaster extends Master {
     super.update();
 
     // TODO smarter counting of builders needed
-    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 16) &&
+    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 20) &&
       this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 200000)
       this.targetBeeCount = 3;
     else if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 6) &&
       this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 100000)
       this.targetBeeCount = 2;
-    else
+    else if (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 1.5)
       this.targetBeeCount = 1;
+    else
+      this.targetBeeCount = 0;
 
-    if (this.checkBees() && (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 1)) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,

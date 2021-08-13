@@ -42,8 +42,8 @@ function main() {
   global.Apiary.update();
   global.Apiary.run();
 
-  // only on official
-  if (GENERATE_PIXEL && Game.cpu.bucket == 10000) {
+  // now it checks itself!! i am genius
+  if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel) {
     Game.cpu.generatePixel();
   }
 }

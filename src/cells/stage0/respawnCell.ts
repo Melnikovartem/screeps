@@ -35,6 +35,7 @@ export class respawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let remove: any[] = [];
+    let energyAvailable = this.hive.room.energyAvailable;
     this.hive.orderList.sort((a, b) => a.priority - b.priority);
 
     _.some(this.hive.orderList, (order, key) => {
@@ -44,15 +45,15 @@ export class respawnCell extends Cell {
       if (order.amount <= 0 || !global.masters[order.master]) {
         remove.push(key);
       } else {
-        let body;
+        let setup;
         if (order.priority < 4)
-          body = order.setup.getBody(this.hive.room.energyAvailable);
+          setup = order.setup.getBody(energyAvailable);
         else
-          body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
+          setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
 
         // if we were able to get a body :/
-        if (body.length) {
-          let spawn = this.freeSpawns.pop();
+        if (setup.body.length) {
+          let spawn = this.freeSpawns.pop()!;
 
           let name = order.setup.name + " " + makeId(4);
           let memory: CreepMemory = {
@@ -60,13 +61,10 @@ export class respawnCell extends Cell {
             born: Game.time,
           };
 
-          let ans = spawn!.spawnCreep(body, name, { memory: memory });
-
-          if (ans == ERR_NOT_ENOUGH_RESOURCES) {
-            return true;
-          }
+          let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 
           if (ans == OK) {
+            energyAvailable -= setup.cost;
             if (LOGGING_CYCLE) Memory.log.spawns[name] = {
               time: Game.time,
               spawnRoom: this.hive.roomName,
