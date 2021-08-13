@@ -109,6 +109,8 @@ export class drainerMaster extends SwarmMaster {
       if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
         this.target = this.tank.creep.room.name;
 
+      let healed = false;
+
       if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
         if (VISUALS_ON && !this.healing) {
           this.tank.creep.say("🏥");
@@ -125,10 +127,23 @@ export class drainerMaster extends SwarmMaster {
           }
         }
 
-        if (this.healer.pos.isNearTo(this.tank))
+        if (this.healer.pos.isNearTo(this.tank)) {
+          healed = true;
           this.healer.heal(this.tank);
-        else if (this.healer.pos.getRangeTo(this.tank) <= 3)
+        }
+        else if (this.healer.pos.getRangeTo(this.tank) <= 3) {
+          healed = true;
           this.healer.rangedHeal(this.tank);
+        }
+      }
+
+      if (!healed) {
+        let healingTargets = _.filter(this.healer.pos.findInRange(FIND_MY_CREEPS, 3), (creep) => creep.hits < creep.hitsMax);
+        let closeTarget = _.filter(healingTargets, (creep) => this.healer!.pos.isNearTo(creep));
+        if (closeTarget.length)
+          this.healer.heal(closeTarget[0]);
+        else if (healingTargets.length)
+          this.healer.rangedHeal(healingTargets[0]);
       }
 
       if (!this.healing) {
