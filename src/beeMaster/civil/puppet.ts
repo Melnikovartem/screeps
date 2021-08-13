@@ -1,7 +1,9 @@
 import { Setups } from "../../creepSetups"
 import type { SpawnOrder, Hive } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class puppetMaster extends Master {
   target: RoomPosition; //controllers rly don't age...
 

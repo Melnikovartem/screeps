@@ -1,6 +1,8 @@
 import { Hive } from "../Hive";
 import { Master } from "../beeMaster/_Master";
+import { profile } from "../profiler/decorator";
 
+@profile
 export abstract class Cell {
 
   hive: Hive;

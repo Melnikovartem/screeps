@@ -1,5 +1,7 @@
 import { Master } from "beeMaster/_Master";
+import { profile } from "./profiler/decorator";
 
+@profile
 export class Bee {
 
   master: Master;

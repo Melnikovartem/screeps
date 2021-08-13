@@ -1,6 +1,7 @@
 // same as goverment intelligence
 // we collect data about enemy
 // in this case on battlefield
+import { profile } from "./profiler/decorator";
 
 interface RoomInfo {
   lastUpdated: number,
@@ -10,6 +11,7 @@ interface RoomInfo {
   safeModeEndTime: number,
 }
 
+@profile
 export class Intel {
 
   roomInfo: { [id: string]: RoomInfo } = {};

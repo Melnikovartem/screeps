@@ -1,5 +1,7 @@
 // body generating idea from overmind kinda
 // i think i dont need custom ordered creeps
+import { profile } from "./profiler/decorator";
+
 interface BodySetup {
   fixed?: BodyPartConstant[];
   pattern: BodyPartConstant[];
@@ -8,6 +10,7 @@ interface BodySetup {
 
 const partsImportance = [TOUGH, MOVE, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL]
 
+@profile
 export class CreepSetup {
   name: string;
   bodySetup: BodySetup;

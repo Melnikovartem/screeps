@@ -5,11 +5,13 @@ import { Bee } from "../../Bee";
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
 
 import { VISUALS_ON } from "../../settings";
 
+@profile
 export class bootstrapMaster extends Master {
   cell: developmentCell;
 

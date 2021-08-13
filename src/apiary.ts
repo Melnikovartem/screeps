@@ -6,7 +6,9 @@ import { Order } from "./order";
 import { makeId } from "./utils/other";
 
 import { UPDATE_EACH_TICK, PRINT_INFO } from "./settings";
+import { profile } from "./profiler/decorator";
 
+@profile
 export class _Apiary {
   hives: { [id: string]: Hive } = {};
   destroyTime: number;

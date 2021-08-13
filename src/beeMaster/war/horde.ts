@@ -2,8 +2,10 @@ import { Setups } from "../../creepSetups";
 import type { SpawnOrder, Hive } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
+import { profile } from "../../profiler/decorator";
 
 // most basic of bitches a horde full of wasps
+@profile
 export class hordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 500;

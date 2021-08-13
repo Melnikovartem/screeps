@@ -3,7 +3,9 @@ import { Hive } from "../Hive";
 
 import { bootstrapMaster } from "../beeMaster/civil/bootstrap";
 import { UPDATE_EACH_TICK } from "../settings";
+import { profile } from "../profiler/decorator";
 
+@profile
 export class developmentCell extends Cell {
 
   controller: StructureController;

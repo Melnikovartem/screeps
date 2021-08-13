@@ -4,7 +4,9 @@ import { excavationCell } from "../../cells/excavationCell";
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class haulerMaster extends Master {
   cell: excavationCell;
   targetMap: { [id: string]: string } = {}; // "" is base value

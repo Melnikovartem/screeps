@@ -5,8 +5,10 @@ import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { VISUALS_ON } from "../../settings"
+import { profile } from "../../profiler/decorator";
 
-// my first tandem
+//first tandem btw
+@profile
 export class drainerMaster extends SwarmMaster {
   healer: Bee | undefined;
   tank: Bee | undefined;

@@ -3,8 +3,9 @@ import { upgradeCell } from "../../cells/upgradeCell";
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
-
+@profile
 export class upgraderMaster extends Master {
   cell: upgradeCell;
 

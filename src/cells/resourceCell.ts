@@ -2,10 +2,11 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { minerMaster } from "../beeMaster/civil/miner";
-
 import { UPDATE_EACH_TICK } from "../settings";
+import { profile } from "../profiler/decorator";
 
-// cell that will extract energy or minerals? from ground
+// cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
+@profile
 export class resourceCell extends Cell {
 
   perSecondNeeded: number = 5; // aka 3000/300/2 for energy

@@ -3,7 +3,9 @@ import { Hive } from "../Hive";
 
 import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../beeMaster/civil/hauler";
+import { profile } from "../profiler/decorator";
 
+@profile
 export class excavationCell extends Cell {
   resourceCells: resourceCell[];
   quitefullContainers: StructureContainer[] = [];

@@ -3,7 +3,9 @@ import { resourceCell } from "../../cells/resourceCell";
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class minerMaster extends Master {
   cell: resourceCell;
   cooldown: number = 0;

@@ -3,7 +3,9 @@ import { SpawnOrder, Hive } from "../../Hive";
 import { Master } from "../_Master";
 
 import { UPDATE_EACH_TICK } from "../../settings";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class annexMaster extends Master {
   controller: StructureController; //controllers rly don't age...
 

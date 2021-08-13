@@ -2,8 +2,8 @@ import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
 
 import { managerMaster } from "../beeMaster/civil/manager";
-
 import { UPDATE_EACH_TICK } from "../settings";
+import { profile } from "../profiler/decorator";
 
 export interface StorageRequest {
   from: StructureLink | StructureTerminal | StructureStorage;
@@ -13,6 +13,7 @@ export interface StorageRequest {
   priority: 0 | 1 | 2 | 3 | 4 | 5,
 }
 
+@profile
 export class storageCell extends Cell {
 
   storage: StructureStorage;

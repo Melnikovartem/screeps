@@ -8,7 +8,9 @@ import { Bee } from "../../bee";
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class managerMaster extends Master {
   cell: storageCell;
 

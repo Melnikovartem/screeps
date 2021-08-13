@@ -1,7 +1,9 @@
 import { Setups } from "../../creepSetups";
 import { SpawnOrder, Hive } from "../../Hive";
 import { Master } from "../_Master";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class builderMaster extends Master {
   targetCaching: { [id: string]: string } = {};
 

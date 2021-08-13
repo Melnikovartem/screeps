@@ -5,7 +5,9 @@ import { drainerMaster } from "./beeMaster/war/drainer";
 import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
+import { profile } from "./profiler/decorator";
 
+@profile
 export class Order {
   ref: string;
   flag: Flag;

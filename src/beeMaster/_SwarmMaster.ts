@@ -5,7 +5,9 @@ import type { Hive } from "../Hive";
 import { Master } from "./_Master";
 
 import { Order } from "../order";
+import { profile } from "../profiler/decorator";
 
+@profile
 export abstract class SwarmMaster extends Master {
 
   order: Order;

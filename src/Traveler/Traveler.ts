@@ -2,9 +2,10 @@
  * To start using Traveler, require it in main.js:
  * Example: var Traveler = require('Traveler.js');
  */
-
 import { VISUALS_TRAVELER } from "../settings";
+import { profile } from "../profiler/decorator";
 
+@profile
 export class Traveler {
 
   private static structureMatrixCache: { [roomName: string]: CostMatrix } = {};

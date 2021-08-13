@@ -2,7 +2,9 @@ import { Setups } from "../../creepSetups"
 import type { SpawnOrder, Hive } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
+import { profile } from "../../profiler/decorator";
 
+@profile
 export class downgradeMaster extends SwarmMaster {
   lastAttacked: number;
 

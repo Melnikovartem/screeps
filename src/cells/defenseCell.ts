@@ -1,6 +1,8 @@
 import { Cell } from "./_Cell";
 import { Hive } from "../Hive";
+import { profile } from "../profiler/decorator";
 
+@profile
 export class defenseCell extends Cell {
   towers: StructureTower[];
 

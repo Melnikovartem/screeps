@@ -9,6 +9,8 @@ import { builderMaster } from "./beeMaster/civil/builder";
 import { annexMaster } from "./beeMaster/civil/annexer";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 
+import { profile } from "./profiler/decorator";
+
 import { CreepSetup } from "./creepSetups";
 
 // TODO visuals VISUALS_ON
@@ -31,6 +33,7 @@ interface hiveCells {
   defenseCell?: defenseCell;
 }
 
+@profile
 class repairSheet {
   [STRUCTURE_RAMPART]: number = 200000;
   [STRUCTURE_WALL]: number = 200000;
@@ -74,7 +77,7 @@ class repairSheet {
   }
 }
 
-
+@profile
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
   roomName: string;
@@ -134,8 +137,7 @@ export class Hive {
       this.builder = new builderMaster(this);
 
     this.updateConstructionSites();
-    this.updateEmeregcyRepairs();
-    this.updateNormalRepairs();
+    this.updateRepairs();
 
     let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
     if (flags.length)
@@ -218,20 +220,16 @@ export class Hive {
     });
   }
 
-
-  private updateEmeregcyRepairs() {
+  private updateRepairs() {
+    this.normalRepairs = [];
     this.emergencyRepairs = [];
     _.forEach(this.rooms, (room) => {
-      this.emergencyRepairs = this.emergencyRepairs.concat(
-        _.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnEmergency(structure)))
-    });
-  }
-
-  private updateNormalRepairs() {
-    this.normalRepairs = [];
-    _.forEach(this.rooms, (room) => {
-      this.normalRepairs = this.normalRepairs.concat(
-        _.filter(room.find(FIND_STRUCTURES), (structure) => this.repairSheet.isAnRepairCase(structure)))
+      _.forEach(room.find(FIND_STRUCTURES), (structure) => {
+        if (this.repairSheet.isAnEmergency(structure))
+          this.emergencyRepairs.push(structure);
+        else if (this.repairSheet.isAnRepairCase(structure))
+          this.normalRepairs.push(structure);
+      });
     });
   }
 
@@ -276,8 +274,7 @@ export class Hive {
       this.updateRooms();
     if (UPDATE_EACH_TICK || Game.time % 10 == 1) {
       this.updateConstructionSites();
-      this.updateEmeregcyRepairs();
-      this.updateNormalRepairs();
+      this.updateRepairs();
     }
     if (UPDATE_EACH_TICK || Game.time % 10 == 2)
       this.findTargets();

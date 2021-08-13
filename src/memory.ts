@@ -1,3 +1,6 @@
+import { profile } from "./profiler/decorator";
+
+@profile
 export class Mem {
   static init() {
     if (!Memory.masters)
