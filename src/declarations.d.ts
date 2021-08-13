@@ -1,15 +1,7 @@
-import { _Apiary } from "./Apiary";
-
-// Syntax for adding proprties to `global` (ex "global.log")
+import type { _Apiary } from "./Apiary";
 
 declare global {
-  namespace NodeJS {
-    interface Global {
-      Apiary: _Apiary;
-    }
-  }
-
-  let Apiary: _Apiary;
+  var Apiary: _Apiary;
 
   interface RoomMemory {
     // for TRAVELER

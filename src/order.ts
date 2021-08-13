@@ -43,16 +43,16 @@ export class Order {
   findHive(): Hive {
     let homeRoom: string;
 
-    if (global.Apiary.hives[this.pos.roomName])
+    if (Apiary.hives[this.pos.roomName])
       homeRoom = this.pos.roomName;
     else
-      homeRoom = Object.keys(global.Apiary.hives)[Math.floor(Math.random() * Object.keys(global.Apiary.hives).length)];
+      homeRoom = Object.keys(Apiary.hives)[Math.floor(Math.random() * Object.keys(Apiary.hives).length)];
 
     _.forEach(Game.map.describeExits(this.pos.roomName), (exit) => {
-      if (global.Apiary.hives[<string>exit] && global.Apiary.hives[homeRoom].stage > global.Apiary.hives[<string>exit].stage)
+      if (Apiary.hives[<string>exit] && Apiary.hives[homeRoom].stage > Apiary.hives[<string>exit].stage)
         homeRoom = <string>exit;
     });
-    return global.Apiary.hives[homeRoom];
+    return Apiary.hives[homeRoom];
   }
 
   getMaster() {

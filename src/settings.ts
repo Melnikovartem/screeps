@@ -1,9 +1,9 @@
-export const PUBLIC = false;
+export const DEVELOPING = false;
 
 // turn off on official
-export const UPDATE_EACH_TICK = !PUBLIC;
-export const VISUALS_TRAVELER = !PUBLIC;
-export const PRINT_INFO = !PUBLIC;
+export const UPDATE_EACH_TICK = !DEVELOPING;
+export const VISUALS_TRAVELER = !DEVELOPING;
+export const PRINT_INFO = !DEVELOPING;
 
 // think about on official
 export const PROFILER = false;

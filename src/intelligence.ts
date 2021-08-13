@@ -21,7 +21,6 @@ export class Intel {
     this.roomInfo = <{ [id: string]: RoomInfo }>Memory.cache.intellegence;
   }
 
-
   getInfo(roomName: string, lag?: number): RoomInfo {
     if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {

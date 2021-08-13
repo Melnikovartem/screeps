@@ -19,10 +19,9 @@ export class _Apiary {
   orders: { [id: string]: Order } = {};
 
   constructor() {
-    this.destroyTime = Game.time + 4000;
-
     if (PRINT_INFO) console.log(Game.time, "creating new apiary");
 
+    this.destroyTime = Game.time + 4000;
     this.intel = new Intel();
   }
 

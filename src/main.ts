@@ -7,18 +7,12 @@ import "./Traveler/Traveler";
 import "./prototypes/creeps";
 import "./prototypes/pos";
 
-
-
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, LOGGING_CYCLE, PRINT_INFO, PUBLIC, PROFILER } from "./settings";
+import { GENERATE_PIXEL, LOGGING_CYCLE, PRINT_INFO, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
 
-console.log("settings are for", PUBLIC ? "public" : "local!!");
-
-Apiary = global.Apiary;
-
-// Mem.wipe()
+// Mem.wipe();
 
 // This gets run on each global reset
 function onGlobalReset(): void {
@@ -31,15 +25,14 @@ function onGlobalReset(): void {
 
   delete global.Apiary;
   global.Apiary = new _Apiary();
+  Apiary.init();
 }
-
-Apiary = global.Apiary;
-
 
 function main() {
   if (!Apiary || Game.time >= Apiary.destroyTime) {
     delete global.Apiary;
     global.Apiary = new _Apiary();
+    Apiary.init();
   }
 
   // Automatically delete memory
@@ -65,4 +58,4 @@ if (PROFILER) {
 
 export const loop = _loop;
 
-onGlobalReset();
+onGlobalReset()
