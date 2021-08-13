@@ -68,17 +68,14 @@ export class Order {
         this.master = new puppetMaster(this.findHive(), this.pos.roomName, this);
       else if (this.flag.secondaryColor == COLOR_RED) {
         let newMaster = new hordeMaster(this.findHive(), this);
-
         if (this.ref.includes("controller"))
           newMaster.tryToDowngrade = true;
         let matches = this.ref.match(/\d+/g);
         if (matches != null) //F?
           newMaster.targetBeeCount = +matches[0];
         else
-          newMaster.targetBeeCount = 2;
-        newMaster.maxSpawns = newMaster.targetBeeCount * 2;
+          newMaster.targetBeeCount = 1;
         newMaster.priority = 4;
-
         this.master = newMaster;
       }
     }

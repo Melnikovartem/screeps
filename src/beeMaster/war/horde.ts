@@ -12,7 +12,6 @@ export class hordeMaster extends SwarmMaster {
   spawned: number = 0;
 
   tryToDowngrade: boolean = false;
-
   priority: 1 | 4 = 1; // how fast do we need to put out the enemy
 
   constructor(hive: Hive, order: Order) {
@@ -27,7 +26,6 @@ export class hordeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-
 
     if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
       this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;

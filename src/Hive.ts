@@ -126,8 +126,8 @@ export class Hive {
     this.parseStructures();
 
     this.cells = {
-      respawnCell: new respawnCell(this, this.spawns, this.extensions),
-      defenseCell: new defenseCell(this, this.towers),
+      respawnCell: new respawnCell(this),
+      defenseCell: new defenseCell(this),
     };
     this.createCells();
 
@@ -194,10 +194,11 @@ export class Hive {
   }
 
   private createCells() {
+    // well for naming purpuses i think i need to recreate this cells
     if (this.cells.respawnCell.time != Game.time)
-      this.cells.respawnCell = new respawnCell(this, this.spawns, this.extensions);
+      this.cells.respawnCell = new respawnCell(this);
     if (this.cells.respawnCell.time != Game.time)
-      this.cells.defenseCell = new defenseCell(this, this.towers);
+      this.cells.defenseCell = new defenseCell(this);
 
     if (this.storage) {
       this.cells.storageCell = new storageCell(this, this.storage);
@@ -259,8 +260,8 @@ export class Hive {
       this.updateConstructionSites();
       this.updateRepairs();
     }
-    if (Game.time % 50 == 19)
-      this.parseStructures(); //keep em fresh
+    if (UPDATE_EACH_TICK || Game.time % 50 == 19)
+      this.parseStructures();
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
 

@@ -22,7 +22,7 @@ export class upgraderMaster extends Master {
       // burn some energy on controller
       if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 150000)
         this.targetBeeCount = 2;
-      else if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 900000)
+      else if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 700000)
         this.targetBeeCount = 3;
     } else
       this.targetBeeCount = 1;

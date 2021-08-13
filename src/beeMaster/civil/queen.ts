@@ -36,8 +36,8 @@ export class queenMaster extends Master {
   }
 
   run() {
-    let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
-    targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    let targets: (StructureSpawn | StructureExtension)[] = this.hive.spawns;
+    targets = _.filter(targets.concat(this.hive.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.bees, (bee) => {
       if (targets.length) {
