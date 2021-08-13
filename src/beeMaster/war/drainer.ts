@@ -93,12 +93,8 @@ export class drainerMaster extends SwarmMaster {
 
   run() {
     if (this.phase == "meeting") {
-      if (this.tank && !this.tank.pos.isNearTo(this.meetingPoint)) {
-        if (this.meetingPoint.roomName in Game.rooms)
-          this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
-        else
-          this.tank.goTo(this.meetingPoint.getWalkablePositions()[0]);
-      }
+      if (this.tank && !this.tank.pos.isNearTo(this.meetingPoint))
+        this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
       if (this.healer && (this.healer.pos.x != this.meetingPoint.x || this.healer.pos.y != this.meetingPoint.y))
         this.healer.goTo(this.meetingPoint);
       if (this.tank && this.healer && this.tank.pos.isNearTo(this.meetingPoint) &&

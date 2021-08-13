@@ -75,8 +75,6 @@ export class managerMaster extends Master {
   }
 
   run() {
-    // TODO smarter choosing of target
-    // aka draw energy if there is a target and otherwise put it back
     _.forEach(this.bees, (bee) => {
       let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
       if (request) {
@@ -112,9 +110,10 @@ export class managerMaster extends Master {
         }
       } else {
         this.targetMap[bee.ref] = "";
+        let ans;
         if (bee.creep.store.getUsedCapacity() > 0)
-          bee.transfer(this.cell.storage, <ResourceConstant>Object.keys(bee.store)[0]);
-        else
+          ans = bee.transfer(this.cell.storage, <ResourceConstant>Object.keys(bee.store)[0]);
+        if (bee.creep.store.getUsedCapacity() == 0 || ans == OK)
           bee.goRest(this.cell.pos);
       }
     });

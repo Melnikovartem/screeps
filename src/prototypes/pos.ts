@@ -1,6 +1,5 @@
 interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
-  getWalkablePositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
   isFree(): boolean;
   getTimeForPath(roomPos: RoomPosition): number;
@@ -22,34 +21,20 @@ RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
   return positions
 };
 
-RoomPosition.prototype.getWalkablePositions = function(): RoomPosition[] {
+RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
   let nearbyPositions: RoomPosition[] = this.getNearbyPositions();
-
   let terrain = Game.map.getRoomTerrain(this.roomName);
-  switch (terrain.get(this.x, this.y)) {
-    case TERRAIN_MASK_WALL:
-      break;
-    case TERRAIN_MASK_SWAMP:
-      break;
-    case 0:
-      break;
-  }
 
-  let walkablePositions = _.filter(nearbyPositions, function(pos) {
+  let openPositions = _.filter(nearbyPositions, function(pos) {
     return terrain.get(pos.x, pos.y) != TERRAIN_MASK_WALL;
   });
 
-  return walkablePositions;
-};
+  if (this.roomName in Game.rooms)
+    openPositions = _.filter(openPositions, function(pos) {
+      return !pos.lookFor(LOOK_CREEPS).length
+    });
 
-RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
-  let walkablePositions: RoomPosition[] = this.getWalkablePositions();
-
-  let freePositions = _.filter(walkablePositions, function(pos) {
-    return !pos.lookFor(LOOK_CREEPS).length
-  });
-
-  return freePositions;
+  return openPositions;
 }
 
 RoomPosition.prototype.isFree = function(): boolean {
@@ -58,12 +43,15 @@ RoomPosition.prototype.isFree = function(): boolean {
   if (ans)
     ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) != TERRAIN_MASK_WALL;
 
-  if (ans)
-    ans = this.lookFor(LOOK_CREEPS).length == 0
+  if (this.roomName in Game.rooms) {
+    if (ans)
+      ans = this.lookFor(LOOK_CREEPS).length == 0
 
-  if (ans)
-    ans = _.filter(this.lookFor(LOOK_STRUCTURES), (structure) => structure.structureType != STRUCTURE_ROAD
-      && structure.structureType != STRUCTURE_CONTAINER).length == 0
+    if (ans)
+      ans = _.filter(this.lookFor(LOOK_STRUCTURES), (structure) => !(structure instanceof StructureRoad)
+        && !(structure instanceof StructureContainer)
+        && !(structure instanceof StructureRampart && structure.my)).length == 0
+  }
 
   return ans;
 }

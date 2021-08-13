@@ -39,7 +39,7 @@ export class Bee {
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
 
-  print(info: any) {
+  print(...info: any) {
     console.log(Game.time, "!", this.creep.name, "?", info);
   }
 
@@ -135,12 +135,12 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
-  goRest(idlePos: RoomPosition): number {
-    if (this.pos != idlePos && (!this.pos.isNearTo(idlePos) || idlePos.isFree()))
-      this.goTo(idlePos)
+  goRest(pos: RoomPosition): number {
+    if ((this.pos.x != pos.x || this.pos.y != pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()))
+      this.goTo(pos)
     else
       return OK;
-    return ERR_NOT_IN_RANGE
+    return ERR_NOT_IN_RANGE;
   }
 
   goToRoom(roomName: string): number {
