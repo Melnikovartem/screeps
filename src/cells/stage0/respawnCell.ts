@@ -42,7 +42,7 @@ export class respawnCell extends Cell {
       if (!this.freeSpawns.length)
         return true;
 
-      if (order.amount <= 0 || !global.masters[order.master]) {
+      if (order.amount <= 0 || !Apiary.masters[order.master]) {
         remove.push(key);
       } else {
         let setup;

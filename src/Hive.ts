@@ -17,9 +17,6 @@ import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
 
 import { CreepSetup } from "./creepSetups";
 
-
-
-
 export interface SpawnOrder {
   master: string;
   amount: number;
@@ -88,7 +85,7 @@ class repairSheet {
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
   roomName: string;
-  annexNames: string[];
+  annexNames: string[] = [];
 
   room: Room;
   annexes: Room[] = []; // this room and annexes
@@ -111,12 +108,11 @@ export class Hive {
 
   stage: 0 | 1 | 2;
   // 0 up to storage tech
-  // 1 storage-7lvl
+  // 1 storage - 7lvl
   // max
 
-  constructor(roomName: string, annexNames: string[]) {
+  constructor(roomName: string) {
     this.roomName = roomName;
-    this.annexNames = annexNames;
 
     this.room = Game.rooms[roomName];
     this.updateRooms();
@@ -169,14 +165,19 @@ export class Hive {
       this.pos = this.room.controller!.pos;
   }
 
+  addAnex(annexName: string) {
+    this.annexNames.push(annexName);
+
+  }
+
   updateRooms(): void {
     this.room = Game.rooms[this.roomName];
     this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
       let annex = Game.rooms[annexName];
-      if (!annex && !global.masters["masterPuppet_" + annexName])
+      if (!annex && !Apiary.masters["masterPuppet_" + annexName])
         this.puppets.push(new puppetMaster(this, annexName));
       else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
-        && !global.masters["masterAnnexer_" + annexName])
+        && !Apiary.masters["masterAnnexer_" + annexName])
         this.claimers.push(new annexMaster(this, annex.controller));
       return annex;
     }));

@@ -38,7 +38,7 @@ export class managerMaster extends Master {
   update() {
     super.update();
     for (let key in this.targetMap)
-      if (!global.bees[key])
+      if (!Apiary.bees[key])
         delete this.targetMap[key];
 
     let targets: string[] = [];

@@ -38,7 +38,7 @@ export class haulerMaster extends Master {
     super.update();
 
     for (let key in this.targetMap) {
-      if (!global.bees[this.targetMap[key]])
+      if (!Apiary.bees[this.targetMap[key]])
         this.targetMap[key] = "";
     }
 

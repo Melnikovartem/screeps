@@ -2,10 +2,12 @@
 
 import { Mem } from "./memory";
 
-import "./Traveler/Traveler"
+import "./Traveler/Traveler";
 
-import "./prototypes/creeps"
-import "./prototypes/pos"
+import "./prototypes/creeps";
+import "./prototypes/pos";
+
+
 
 import { _Apiary } from "./Apiary";
 
@@ -13,6 +15,8 @@ import { GENERATE_PIXEL, LOGGING_CYCLE, PRINT_INFO, PUBLIC, PROFILER } from "./s
 import profiler from 'screeps-profiler';
 
 console.log("settings are for", PUBLIC ? "public" : "local!!");
+
+Apiary = global.Apiary;
 
 // Mem.wipe()
 
@@ -29,9 +33,11 @@ function onGlobalReset(): void {
   global.Apiary = new _Apiary();
 }
 
+Apiary = global.Apiary;
+
 
 function main() {
-  if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+  if (!Apiary || Game.time >= Apiary.destroyTime) {
     delete global.Apiary;
     global.Apiary = new _Apiary();
   }
@@ -39,8 +45,8 @@ function main() {
   // Automatically delete memory
   Mem.clean();
 
-  global.Apiary.update();
-  global.Apiary.run();
+  Apiary.update();
+  Apiary.run();
 
   // now it checks itself!! i am genius
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel) {

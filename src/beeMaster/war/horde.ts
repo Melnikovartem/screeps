@@ -17,7 +17,7 @@ export class hordeMaster extends SwarmMaster {
   constructor(hive: Hive, order: Order) {
     super(hive, order);
 
-    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
     if (roomInfo.safeModeEndTime > this.order.destroyTime)
       this.order.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
   }
@@ -25,7 +25,7 @@ export class hordeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
     if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
       this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
@@ -49,7 +49,7 @@ export class hordeMaster extends SwarmMaster {
   }
 
   run() {
-    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
     if (this.tryToDowngrade && roomInfo.safePlace && roomInfo.ownedByEnemy && this.order.pos.roomName in Game.rooms) {
       let controller = Game.rooms[this.order.pos.roomName].controller;

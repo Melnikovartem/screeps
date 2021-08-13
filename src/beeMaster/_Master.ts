@@ -24,7 +24,7 @@ export abstract class Master {
 
     this.lastSpawns = [-1];
 
-    global.masters[this.ref] = this;
+    Apiary.masters[this.ref] = this;
   }
 
   // catch a bee after it has requested a master
@@ -57,7 +57,7 @@ export abstract class Master {
     let deletedBees = false;
     for (let key in this.bees) {
       this.beesAmount += 1;
-      if (!global.bees[this.bees[key].ref]) {
+      if (!Apiary.bees[this.bees[key].ref]) {
         delete this.bees[key];
         deletedBees = true;
       }

@@ -41,13 +41,13 @@ export class drainerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.tank && !global.bees[this.tank.ref]) {
+    if (this.tank && !Apiary.bees[this.tank.ref]) {
       delete this.tank;
       if (VISUALS_ON && this.healer)
         this.healer.creep.say("😢");
     }
 
-    if (this.healer && !global.bees[this.healer.ref]) {
+    if (this.healer && !Apiary.bees[this.healer.ref]) {
       delete this.healer;
       if (VISUALS_ON && this.tank)
         this.tank.creep.say("😢");
@@ -156,7 +156,7 @@ export class drainerMaster extends SwarmMaster {
           if (this.tank.pos.roomName != this.target)
             this.tank.goToRoom(this.target);
           else {
-            let roomInfo = global.Apiary.intel.getInfo(this.target);
+            let roomInfo = Apiary.intel.getInfo(this.target);
 
             // not sure what to do if there will be smart towers
             if (roomInfo.enemies.length)

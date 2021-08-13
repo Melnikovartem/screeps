@@ -1,8 +1,8 @@
-import { Hive } from "./Hive";
 import { Bee } from "./bee";
-
-import { Intel } from "./intelligence";
+import { Master } from "./beeMaster/_Master";
+import { Hive } from "./Hive";
 import { Order } from "./order";
+import { Intel } from "./intelligence";
 
 import { makeId, safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
@@ -10,47 +10,32 @@ import { PRINT_INFO } from "./settings";
 
 @profile
 export class _Apiary {
-  hives: { [id: string]: Hive } = {};
   destroyTime: number;
-
-  orders: { [id: string]: Order } = {};
-
   intel: Intel;
+
+  bees: { [id: string]: Bee } = {};
+  hives: { [id: string]: Hive } = {};
+  masters: { [id: string]: Master } = {};
+  orders: { [id: string]: Order } = {};
 
   constructor() {
     this.destroyTime = Game.time + 4000;
 
     if (PRINT_INFO) console.log(Game.time, "creating new apiary");
 
-    global.bees = {};
-    global.masters = {};
-
     this.intel = new Intel();
+  }
 
-    let myRoomsAnnexes: { [id: string]: string[] } = {};
-
+  init() {
     _.forEach(Game.rooms, (room) => {
       if (room.controller && room.controller.my)
-        myRoomsAnnexes[room.name] = [];
+        this.hives[room.name] = new Hive(room.name);
     });
 
     _.forEach(Game.flags, (flag) => {
-      // annex room
-      if (flag.color == COLOR_PURPLE && flag.secondaryColor == COLOR_PURPLE) {
-        _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
-          if (exit && myRoomsAnnexes[exit] && !myRoomsAnnexes[exit].includes(flag.pos.roomName)) {
-            myRoomsAnnexes[exit].push(flag.pos.roomName);
-            return true;
-          }
-          return false;
-        });
-      }
+      safeWrap(() => this.checkFlag(flag), flag.name)
     });
-
-    _.forEach(myRoomsAnnexes, (annexNames, roomName) => {
-      if (roomName)
-        this.hives[roomName] = new Hive(roomName, annexNames);
-    });
+    this.findBees();
   }
 
   // next 2 are for hand usage
@@ -111,26 +96,26 @@ export class _Apiary {
   findBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
-      if (!global.bees[name]) {
+      if (!this.bees[name]) {
         let creep = Game.creeps[name];
-        if (global.masters[creep.memory.refMaster]) {
+        if (this.masters[creep.memory.refMaster]) {
           // not sure if i rly need a global bees hash
-          global.bees[creep.name] = new Bee(creep);
-          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+          this.bees[creep.name] = new Bee(creep);
+          this.masters[creep.memory.refMaster].newBee(this.bees[creep.name]);
         } else if (creep.memory.refMaster.includes("masterDevelopmentCell_")) {
           // TODO think of something smart
-          let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
+          let randomMaster = Object.keys(this.masters)[Math.floor(Math.random() * Object.keys(this.masters).length)];
           creep.memory.refMaster = randomMaster;
 
-          global.bees[creep.name] = new Bee(creep);
-          global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
+          this.bees[creep.name] = new Bee(creep);
+          this.masters[creep.memory.refMaster].newBee(this.bees[creep.name]);
         }
         // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
       }
     }
   }
 
-  updateFlag(flag: Flag) {
+  checkFlag(flag: Flag) {
     if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
       let ref = flag.name;
       if (!this.orders[ref])
@@ -149,15 +134,15 @@ export class _Apiary {
     });
 
     _.forEach(Game.flags, (flag) => {
-      safeWrap(() => this.updateFlag(flag), flag.name)
+      safeWrap(() => this.checkFlag(flag), flag.name)
     });
 
-    _.forEach(global.bees, (bee) => {
+    _.forEach(this.bees, (bee) => {
       bee.update();
     });
     this.findBees();
 
-    _.forEach(global.masters, (master) => {
+    _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.ref);
     });
   }
@@ -167,7 +152,7 @@ export class _Apiary {
     _.forEach(this.hives, (hive) => {
       safeWrap(() => hive.run(), hive.roomName);
     });
-    _.forEach(global.masters, (master) => {
+    _.forEach(this.masters, (master) => {
       safeWrap(() => master.run(), master.ref);
     });
   }

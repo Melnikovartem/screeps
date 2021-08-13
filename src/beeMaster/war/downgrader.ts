@@ -17,7 +17,7 @@ export class downgradeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
     if (!roomInfo.ownedByEnemy)
       this.order.destroyTime = Game.time;
     if (roomInfo.safeModeEndTime)
@@ -40,7 +40,7 @@ export class downgradeMaster extends SwarmMaster {
   }
 
   run() {
-    let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
     _.forEach(this.bees, (bee) => {
       if (!bee.pos.isNearTo(this.order.pos))

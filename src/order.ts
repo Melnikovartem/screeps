@@ -89,7 +89,7 @@ export class Order {
 
     if (this.destroyTime < Game.time) {
       if (this.master)
-        delete global.masters[this.master.ref];
+        delete Apiary.masters[this.master.ref];
 
       if (this.flag.memory.repeat > 0) {
         if (PRINT_INFO) console.log("repeated" + this.ref);

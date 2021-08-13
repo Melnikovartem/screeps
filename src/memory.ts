@@ -20,7 +20,7 @@ export class Mem {
     for (const name in Memory.creeps)
       if (!(name in Game.creeps)) {
         delete Memory.creeps[name];
-        if (global.bees[name]) delete global.bees[name];
+        if (Apiary.bees[name]) delete Apiary.bees[name];
       }
 
     for (const name in Memory.flags)

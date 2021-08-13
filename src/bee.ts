@@ -17,7 +17,7 @@ export class Bee {
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
-    this.master = global.masters[this.creep.memory.refMaster];
+    this.master = Apiary.masters[this.creep.memory.refMaster];
 
     this.ref = creep.name;
     this.pos = creep.pos;
@@ -27,7 +27,7 @@ export class Bee {
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
-    global.bees[this.creep.name] = this;
+    Apiary.bees[this.creep.name] = this;
   }
 
   update() {

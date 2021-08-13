@@ -15,7 +15,7 @@ export class defenseCell extends Cell {
     super.update();
 
     _.forEach(this.hive.annexNames, (annexName) => {
-      let roomInfo = global.Apiary.intel.getInfo(annexName, 10);
+      let roomInfo = Apiary.intel.getInfo(annexName, 10);
       if (roomInfo.enemies.length > 0 && !Game.flags["defend_" + this.hive.roomName])
         roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
     });
@@ -43,7 +43,7 @@ export class defenseCell extends Cell {
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
-    let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName, 5);
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
     if (roomInfo.enemies.length)
       if (this.towers.length == 0) {
         if (this.hive.stage < 2)
