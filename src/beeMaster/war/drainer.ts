@@ -39,6 +39,9 @@ export class drainerMaster extends SwarmMaster {
   update() {
     super.update();
 
+    if (this.phase == "draining" && (!this.tank || !this.healer))
+      this.order.destroyTime = Game.time;
+
     if (this.meetingPoint != this.order.pos) {
       this.phase = "meeting";
       this.exit = undefined;
@@ -84,7 +87,7 @@ export class drainerMaster extends SwarmMaster {
       if (this.phase == "meeting") {
         this.tank.goTo(this.meetingPoint);
         this.healer.goTo(this.meetingPoint);
-        if (this.healer.pos.isNearTo(this.meetingPoint)) {
+        if (this.healer.pos.isNearTo(this.meetingPoint) && this.tank.pos.isNearTo(this.meetingPoint)) {
           if (VISUALS_ON) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
@@ -97,7 +100,7 @@ export class drainerMaster extends SwarmMaster {
         if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
           this.target = this.tank.creep.room.name;
 
-        if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.6 || this.healing) {
+        if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.65 || this.healing) {
           if (VISUALS_ON && !this.healing) {
             this.tank.creep.say("🏥");
             this.healer.creep.say("🏥");
@@ -120,8 +123,16 @@ export class drainerMaster extends SwarmMaster {
         }
 
         if (!this.healing) {
-          if (this.target)
-            this.tank.goToRoom(this.target);
+          if (this.target) {
+            if (this.tank.pos.roomName != this.target)
+              this.tank.goToRoom(this.target);
+            else {
+              let roomInfo = global.Apiary.intel.getInfo(this.target);
+
+              if (roomInfo.enemies.length)
+                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
+            }
+          }
           else if (this.exit)
             this.tank.goTo(this.exit);
         }

@@ -18,7 +18,7 @@ export class Order {
     this.flag = flag;
     this.pos = flag.pos;
 
-    this.destroyTime = Game.time + 3000;
+    this.destroyTime = Game.time + 2000;
     this.getMaster();
   }
 

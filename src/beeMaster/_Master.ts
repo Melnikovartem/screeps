@@ -12,7 +12,7 @@ export abstract class Master {
   targetBeeCount: number = 1;
   waitingForBees: number = 0;
 
-  lastSpawns: number[] = [];
+  lastSpawns: number[];
   beesAmount: number = 0;
   bees: { [id: string]: Bee } = {};
 
@@ -20,7 +20,7 @@ export abstract class Master {
     this.hive = hive;
     this.ref = "master" + ref;
 
-    this.lastSpawns.push(-1);
+    this.lastSpawns = [-1];
 
     global.masters[this.ref] = this;
   }
@@ -38,6 +38,7 @@ export abstract class Master {
       this.lastSpawns.shift();
 
     this.beesAmount += 1;
+    this.lastSpawns.sort();
   }
 
   checkBees(spawnCycle?: number): boolean {
@@ -51,12 +52,20 @@ export abstract class Master {
   // first stage of decision making like do i need to spawn new creeps
   update() {
     this.beesAmount = 0; // Object.keys(this.bees).length
+    let deletedBees = false;
     for (let key in this.bees) {
       this.beesAmount += 1;
       if (!global.bees[this.bees[key].ref]) {
         delete this.bees[key];
-        this.lastSpawns.shift();
+        deletedBees = true;
       }
+    }
+    if (deletedBees) {
+      this.lastSpawns = [];
+      _.forEach(this.bees, (bee) => {
+        this.lastSpawns.push(bee.creep.memory.born);
+      });
+      this.lastSpawns.sort();
     }
   }
 

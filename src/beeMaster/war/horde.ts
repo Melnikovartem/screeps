@@ -24,10 +24,13 @@ export class hordeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-    // also for miners so not roomInfo.safePlace
+
 
     if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
       this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
+
+    if (this.spawned == this.maxSpawns)
+      this.order.destroyTime = Game.time
 
     if (this.checkBees() && this.order.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
       && Game.time >= roomInfo.safeModeEndTime - 100) {

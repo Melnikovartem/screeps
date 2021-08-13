@@ -150,10 +150,10 @@ export class Hive {
     this.room = Game.rooms[this.roomName];
     this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
       let annex = Game.rooms[annexName];
-      if (!annex && !global.masters["master_puppetFor_" + annexName])
+      if (!annex && !global.masters["masterPuppet_" + annexName])
         this.puppets.push(new puppetMaster(this, annexName));
       else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
-        && !global.masters["master_annexerRoom_" + annexName])
+        && !global.masters["masterAnnexer_" + annexName])
         this.claimers.push(new annexMaster(this, annex.controller));
       return annex;
     }));
@@ -253,7 +253,7 @@ export class Hive {
   // add to list a new creep
   wish(order: SpawnOrder) {
     if (PRINT_INFO)
-      console.log(Game.time, "new order from ", order.master, "for", order.amount, order.setup.name);
+      console.log(Game.time, this.roomName, "new order from", order.master, "for", order.amount, order.setup.name);
     this.orderList.push(order);
   }
 

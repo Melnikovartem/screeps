@@ -3160,12 +3160,11 @@ class Master {
     constructor(hive, ref) {
         this.targetBeeCount = 1;
         this.waitingForBees = 0;
-        this.lastSpawns = [];
         this.beesAmount = 0;
         this.bees = {};
         this.hive = hive;
         this.ref = "master" + ref;
-        this.lastSpawns.push(-1);
+        this.lastSpawns = [-1];
         global.masters[this.ref] = this;
     }
     // catch a bee after it has requested a master
@@ -3178,6 +3177,7 @@ class Master {
         if (this.lastSpawns[0] == -1)
             this.lastSpawns.shift();
         this.beesAmount += 1;
+        this.lastSpawns.sort();
     }
     checkBees(spawnCycle) {
         if (!spawnCycle)
@@ -3188,12 +3188,20 @@ class Master {
     // first stage of decision making like do i need to spawn new creeps
     update() {
         this.beesAmount = 0; // Object.keys(this.bees).length
+        let deletedBees = false;
         for (let key in this.bees) {
             this.beesAmount += 1;
             if (!global.bees[this.bees[key].ref]) {
                 delete this.bees[key];
-                this.lastSpawns.shift();
+                deletedBees = true;
             }
+        }
+        if (deletedBees) {
+            this.lastSpawns = [];
+            _.forEach(this.bees, (bee) => {
+                this.lastSpawns.push(bee.creep.memory.born);
+            });
+            this.lastSpawns.sort();
         }
     }
     wish(order) {
@@ -3799,8 +3807,9 @@ class respawnCell extends Cell {
             }
             else {
                 let body;
-                if (order.priority < 3 && (this.beeMaster
-                    && this.beeMaster.lastSpawns[this.beeMaster.lastSpawns.length - 1] + CREEP_LIFE_TIME - 80 < Game.time))
+                if (order.priority < 3 && ((this.beeMaster
+                    && this.beeMaster.lastSpawns[this.beeMaster.lastSpawns.length - 1] + CREEP_LIFE_TIME - 80 < Game.time) ||
+                    this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] < 100000))
                     body = order.setup.getBody(this.hive.room.energyAvailable);
                 else
                     body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
@@ -4131,7 +4140,7 @@ class annexMaster extends Master {
 
 class puppetMaster extends Master {
     constructor(hive, annexName) {
-        super(hive, "puppetFor_" + annexName);
+        super(hive, "Puppet_" + annexName);
         this.target = new RoomPosition(25, 25, annexName);
     }
     update() {
@@ -4249,10 +4258,10 @@ class Hive {
         this.room = Game.rooms[this.roomName];
         this.annexes = _.compact(_.map(this.annexNames, (annexName) => {
             let annex = Game.rooms[annexName];
-            if (!annex && !global.masters["master_puppetFor_" + annexName])
+            if (!annex && !global.masters["masterPuppet_" + annexName])
                 this.puppets.push(new puppetMaster(this, annexName));
             else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
-                && !global.masters["master_annexerRoom_" + annexName])
+                && !global.masters["masterAnnexer_" + annexName])
                 this.claimers.push(new annexMaster(this, annex.controller));
             return annex;
         }));
@@ -4331,7 +4340,7 @@ class Hive {
     }
     // add to list a new creep
     wish(order) {
-        console.log(Game.time, "new order from ", order.master, "for", order.amount, order.setup.name);
+        console.log(Game.time, this.roomName, "new order from", order.master, "for", order.amount, order.setup.name);
         this.orderList.push(order);
     }
     updateLog() {
@@ -4580,9 +4589,10 @@ class hordeMaster extends SwarmMaster {
     update() {
         super.update();
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-        // also for miners so not roomInfo.safePlace
         if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
             this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
+        if (this.spawned == this.maxSpawns)
+            this.order.destroyTime = Game.time;
         if (this.checkBees() && this.order.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
             && Game.time >= roomInfo.safeModeEndTime - 100) {
             let order = {
@@ -4702,6 +4712,8 @@ class drainerMaster extends SwarmMaster {
     }
     update() {
         super.update();
+        if (this.phase == "draining" && (!this.tank || !this.healer))
+            this.order.destroyTime = Game.time;
         if (this.meetingPoint != this.order.pos) {
             this.phase = "meeting";
             this.exit = undefined;
@@ -4743,7 +4755,7 @@ class drainerMaster extends SwarmMaster {
             if (this.phase == "meeting") {
                 this.tank.goTo(this.meetingPoint);
                 this.healer.goTo(this.meetingPoint);
-                if (this.healer.pos.isNearTo(this.meetingPoint)) {
+                if (this.healer.pos.isNearTo(this.meetingPoint) && this.tank.pos.isNearTo(this.meetingPoint)) {
                     {
                         this.tank.creep.say("⚡");
                         this.healer.creep.say("⚡");
@@ -4756,7 +4768,7 @@ class drainerMaster extends SwarmMaster {
                     this.exit = this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
                 if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
                     this.target = this.tank.creep.room.name;
-                if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.6 || this.healing) {
+                if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.65 || this.healing) {
                     if (!this.healing) {
                         this.tank.creep.say("🏥");
                         this.healer.creep.say("🏥");
@@ -4777,8 +4789,15 @@ class drainerMaster extends SwarmMaster {
                         this.healer.rangedHeal(this.tank);
                 }
                 if (!this.healing) {
-                    if (this.target)
-                        this.tank.goToRoom(this.target);
+                    if (this.target) {
+                        if (this.tank.pos.roomName != this.target)
+                            this.tank.goToRoom(this.target);
+                        else {
+                            let roomInfo = global.Apiary.intel.getInfo(this.target);
+                            if (roomInfo.enemies.length)
+                                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies));
+                        }
+                    }
                     else if (this.exit)
                         this.tank.goTo(this.exit);
                 }
@@ -4791,7 +4810,7 @@ class Order {
         this.ref = flag.name;
         this.flag = flag;
         this.pos = flag.pos;
-        this.destroyTime = Game.time + 3000;
+        this.destroyTime = Game.time + 2000;
         this.getMaster();
     }
     findHive() {
