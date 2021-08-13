@@ -83,9 +83,8 @@ export class hordeMaster extends SwarmMaster {
               bee.goTo(this.order.pos);
           }
         }
-      else if (bee.creep.room.name != this.hive.roomName) {
-        bee.goToRoom(this.hive.roomName);
-      }
+      else
+        bee.goRest(this.hive.pos);
     });
   }
 }

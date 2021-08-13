@@ -122,13 +122,6 @@ export class Hive {
     if (this.room.controller!.level == 8)
       this.stage = 2;
 
-    let sourcesAll: Source[] = [];
-    _.forEach(this.rooms, (room) => {
-      sourcesAll = sourcesAll.concat(room.find(FIND_SOURCES));
-    });
-
-    let minerals = this.room.find(FIND_MINERALS);
-
     // create your own fun hive with this cool brand new cells
     this.cells = {
       respawnCell: new respawnCell(this),
@@ -136,11 +129,11 @@ export class Hive {
     };
 
     if (this.stage == 0)
-      this.cells.developmentCell = new developmentCell(this, this.room.controller!, sourcesAll);
+      this.cells.developmentCell = new developmentCell(this, this.room.controller!, this.room.find(FIND_SOURCES));
     else {
       this.cells.storageCell = new storageCell(this, this.room.storage!);
       this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
-      this.cells.excavationCell = new excavationCell(this, sourcesAll, minerals);
+      this.cells.excavationCell = new excavationCell(this, this.room.find(FIND_SOURCES), this.room.find(FIND_MINERALS));
       this.builder = new builderMaster(this);
       if (this.stage == 2) {
         // TODO cause i haven' reached yet
@@ -214,21 +207,21 @@ export class Hive {
   private updateRepairs() {
     this.normalRepairs = [];
     this.emergencyRepairs = [];
-    _.forEach(this.rooms, (room) => {
+    _.forEach(this.room.find(FIND_STRUCTURES), (structure) => {
+      if (this.repairSheet.isAnEmergency(structure))
+        this.emergencyRepairs.push(structure);
+      else if (this.repairSheet.isAnRepairCase(structure))
+        this.normalRepairs.push(structure);
+    });
+    _.forEach(this.annexes, (room) => {
       _.forEach(room.find(FIND_STRUCTURES), (structure) => {
-        if (this.repairSheet.isAnEmergency(structure))
-          this.emergencyRepairs.push(structure);
-        else if (this.repairSheet.isAnRepairCase(structure))
-          this.normalRepairs.push(structure);
+        if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER)
+          if (this.repairSheet.isAnEmergency(structure))
+            this.emergencyRepairs.push(structure);
+          else if (this.repairSheet.isAnRepairCase(structure))
+            this.normalRepairs.push(structure);
       });
     });
-    this.sortRepairs();
-  }
-
-  sortRepairs() {
-    let gP = (a: number, b: number) => Math.ceil(a * 1000) / Math.ceil(b * 1000);
-    this.emergencyRepairs.sort((a, b) => gP(a.hits, a.hitsMax) - gP(b.hits, b.hitsMax));
-    // this.normalRepairs.sort((a, b) => gP(a.hits, a.hitsMax) - gP(b.hits, b.hitsMax)); // TOO costly!!
   }
 
   updateLog() {
@@ -244,9 +237,8 @@ export class Hive {
   }
 
   update() {
-    if (UPDATE_EACH_TICK || Game.time % 10 == 0)
-      this.updateRooms();
     if (UPDATE_EACH_TICK || Game.time % 10 == 1) {
+      this.updateRooms();
       this.updateConstructionSites();
       this.updateRepairs();
     }

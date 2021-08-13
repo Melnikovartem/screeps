@@ -52,22 +52,12 @@ export class builderMaster extends Master {
         if (target instanceof Structure && target.hits == target.hitsMax)
           target = null;
 
-        if (this.hive.emergencyRepairs.length) {
-          if (!target)
-            target = _.filter(this.hive.emergencyRepairs, (structure) => structure.pos.getRangeTo(bee.pos) < 10)[0];
-          if (!target)
-            target = bee.pos.findClosest(this.hive.emergencyRepairs);
-        }
-
+        if (!target)
+          target = bee.pos.findClosest(this.hive.emergencyRepairs);
         if (!target)
           target = bee.pos.findClosest(this.hive.constructionSites);
-
-        if (this.hive.normalRepairs) {
-          if (!target)
-            target = _.filter(this.hive.normalRepairs, (structure) => structure.pos.getRangeTo(bee.pos) < 10)[0];
-          if (!target)
-            target = bee.pos.findClosest(this.hive.normalRepairs);
-        }
+        if (!target)
+          target = bee.pos.findClosest(this.hive.normalRepairs);
 
         if (target) {
           if (target instanceof ConstructionSite)

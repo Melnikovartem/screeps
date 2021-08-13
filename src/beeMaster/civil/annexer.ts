@@ -38,7 +38,7 @@ export class annexMaster extends Master {
         this.controller = controller;
 
       // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-      if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd < 4200) {
+      if (this.controller && (!this.controller.reservation || this.controller.reservation.ticksToEnd < 4200)) {
         order.setup = Setups.claimer.double
       }
 

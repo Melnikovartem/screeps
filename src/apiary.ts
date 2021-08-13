@@ -121,12 +121,12 @@ export class _Apiary {
 
   // update phase
   update() {
-    _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.update(), hive.roomName);
-    });
-
     _.forEach(Game.flags, (flag) => {
       safeWrap(() => this.checkFlag(flag), flag.name)
+    });
+
+    _.forEach(this.hives, (hive) => {
+      safeWrap(() => hive.update(), hive.roomName);
     });
 
     _.forEach(this.bees, (bee) => {
