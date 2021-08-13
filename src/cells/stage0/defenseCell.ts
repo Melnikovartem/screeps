@@ -1,9 +1,11 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
-import { profile } from "../profiler/decorator";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
+import { profile } from "../../profiler/decorator";
 
 @profile
 export class defenseCell extends Cell {
+  towers: StructureTower[] = [];
+
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
   }
@@ -18,7 +20,7 @@ export class defenseCell extends Cell {
 
     let storageCell = this.hive.cells.storageCell
     if (storageCell) {
-      _.forEach(this.hive.towers, (tower) => {
+      _.forEach(this.towers, (tower) => {
         if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
           storageCell!.requests[tower.id] = {
             from: storageCell!.storage,
@@ -41,10 +43,10 @@ export class defenseCell extends Cell {
   run() {
     let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName, 5);
     if (roomInfo.enemies.length)
-      if (this.hive.towers.length == 0)
+      if (this.towers.length == 0)
         this.pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
       else
-        _.forEach(this.hive.towers, (tower) => {
+        _.forEach(this.towers, (tower) => {
           let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
           if (closest)
             tower.attack(closest);

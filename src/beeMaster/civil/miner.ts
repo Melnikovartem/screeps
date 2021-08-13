@@ -1,4 +1,4 @@
-import { resourceCell } from "../../cells/resourceCell";
+import { resourceCell } from "../../cells/stage1/resourceCell";
 
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";

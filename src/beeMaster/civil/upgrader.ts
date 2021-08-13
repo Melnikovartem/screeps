@@ -1,4 +1,4 @@
-import { upgradeCell } from "../../cells/upgradeCell";
+import { upgradeCell } from "../../cells/stage1/upgradeCell";
 
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";

@@ -1,5 +1,5 @@
 // refills the respawnCell
-import { excavationCell } from "../../cells/excavationCell";
+import { excavationCell } from "../../cells/stage1/excavationCell";
 
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";

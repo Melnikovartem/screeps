@@ -1,9 +1,9 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
-import { haulerMaster } from "../beeMaster/civil/hauler";
-import { profile } from "../profiler/decorator";
+import { haulerMaster } from "../../beeMaster/civil/hauler";
+import { profile } from "../../profiler/decorator";
 
 @profile
 export class excavationCell extends Cell {
@@ -23,7 +23,6 @@ export class excavationCell extends Cell {
     });
   }
 
-  // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     if (!this.beeMaster)
       this.beeMaster = new haulerMaster(this);
@@ -43,7 +42,6 @@ export class excavationCell extends Cell {
       (a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
   };
 
-  // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)

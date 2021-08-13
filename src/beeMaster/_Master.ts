@@ -73,7 +73,7 @@ export abstract class Master {
 
   wish(order: SpawnOrder) {
     this.waitingForBees += order.amount;
-    this.hive.wish(order);
+    this.hive.orderList.push(order);
     // well he placed an order now just need to catch a creep after a spawn
   }
 

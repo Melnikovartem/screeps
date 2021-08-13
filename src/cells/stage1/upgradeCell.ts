@@ -1,8 +1,8 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
 
-import { upgraderMaster } from "../beeMaster/civil/upgrader";
-import { profile } from "../profiler/decorator";
+import { upgraderMaster } from "../../beeMaster/civil/upgrader";
+import { profile } from "../../profiler/decorator";
 
 @profile
 export class upgradeCell extends Cell {

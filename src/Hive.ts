@@ -1,9 +1,10 @@
-import { excavationCell } from "./cells/excavationCell";
-import { storageCell } from "./cells/storageCell";
-import { upgradeCell } from "./cells/upgradeCell";
-import { defenseCell } from "./cells/defenseCell";
-import { respawnCell } from "./cells/respawnCell";
-import { developmentCell } from "./cells/developmentCell";
+import { respawnCell } from "./cells/stage0/respawnCell";
+import { defenseCell } from "./cells/stage0/defenseCell";
+import { developmentCell } from "./cells/stage0/developmentCell";
+
+import { storageCell } from "./cells/stage1/storageCell";
+import { upgradeCell } from "./cells/stage1/upgradeCell";
+import { excavationCell } from "./cells/stage1/excavationCell";
 
 import { builderMaster } from "./beeMaster/civil/builder";
 import { annexMaster } from "./beeMaster/civil/annexer";
@@ -21,16 +22,16 @@ export interface SpawnOrder {
   master: string;
   amount: number;
   setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this spawn
+  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this creep
 }
 
 interface hiveCells {
   defenseCell: defenseCell;
-  developmentCell?: developmentCell;
   respawnCell: respawnCell;
   storageCell?: storageCell;
   upgradeCell?: upgradeCell;
   excavationCell?: excavationCell;
+  developmentCell?: developmentCell;
 }
 
 @profile
@@ -100,19 +101,12 @@ export class Hive {
   claimers: annexMaster[] = [];
   puppets: puppetMaster[] = [];
 
-  controller: StructureController;
-  spawns: StructureSpawn[] = [];
-  extensions: StructureExtension[] = [];
-  towers: StructureTower[] = [];
-
-  storage: StructureStorage | undefined;
-
-  sources: Source[] = [];
-  minerals: Mineral[] = [];
-
   pos: RoomPosition; // aka idle pos for creeps
 
-  stage: 0 | 1 | 2 = 0;
+  stage: 0 | 1 | 2;
+  // 0 up to storage tech
+  // 1 storage-7lvl
+  // max
 
   constructor(roomName: string, annexNames: string[]) {
     this.roomName = roomName;
@@ -120,22 +114,43 @@ export class Hive {
 
     this.room = Game.rooms[roomName];
     this.updateRooms();
-    this.controller = this.room.controller!;
 
-    this.parseResources();
-    this.parseStructures();
+    this.stage = 0
+    if (this.room.storage)
+      this.stage = 1;
 
+    if (this.room.controller!.level == 8)
+      this.stage = 2;
+
+    let sourcesAll: Source[] = [];
+    _.forEach(this.rooms, (room) => {
+      sourcesAll = sourcesAll.concat(room.find(FIND_SOURCES));
+    });
+
+    let minerals = this.room.find(FIND_MINERALS);
+
+    // create your own fun hive with this cool brand new cells
     this.cells = {
       respawnCell: new respawnCell(this),
       defenseCell: new defenseCell(this),
     };
-    this.createCells();
+
+    if (this.stage == 0)
+      this.cells.developmentCell = new developmentCell(this, this.room.controller!, sourcesAll);
+    else {
+      this.cells.storageCell = new storageCell(this, this.room.storage!);
+      this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
+      this.cells.excavationCell = new excavationCell(this, sourcesAll, minerals);
+      this.builder = new builderMaster(this);
+      if (this.stage == 2) {
+        // TODO cause i haven' reached yet
+      }
+    }
+
+    //look for new structures for those wich need them
+    this.updateCellData();
 
     this.repairSheet = new repairSheet(this.stage);
-
-    if (this.stage > 0)
-      this.builder = new builderMaster(this);
-
     this.updateConstructionSites();
     this.updateRepairs();
 
@@ -145,7 +160,7 @@ export class Hive {
     else if (this.cells.storageCell)
       this.pos = this.cells.storageCell.storage.pos;
     else
-      this.pos = this.controller.pos;
+      this.pos = this.room.controller!.pos;
   }
 
   updateRooms(): void {
@@ -166,54 +181,19 @@ export class Hive {
       this.pos = flags[0].pos;
   }
 
-  parseResources() {
-    this.sources = [];
-    _.forEach(this.rooms, (room) => {
-      let sources = room.find(FIND_SOURCES);
-      this.sources = this.sources.concat(sources);
-    });
-
-    this.minerals = this.room.find(FIND_MINERALS);
-  }
-
-  private parseStructures() {
-    this.storage = this.room.storage && this.room.storage.isActive() ? this.room.storage : undefined;
-
-    this.spawns = [];
-    this.extensions = [];
-    this.towers = [];
+  private updateCellData() {
+    this.cells.respawnCell.spawns = [];
+    this.cells.respawnCell.extensions = [];
+    this.cells.defenseCell.towers = [];
 
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (structure instanceof StructureSpawn && structure.isActive())
-        this.spawns.push(structure);
-      else if (structure instanceof StructureExtension && structure.isActive())
-        this.extensions.push(structure);
+      if (structure instanceof StructureExtension && structure.isActive())
+        this.cells.respawnCell.extensions.push(structure);
+      else if (structure instanceof StructureSpawn && structure.isActive())
+        this.cells.respawnCell.spawns.push(structure);
       else if (structure instanceof StructureTower && structure.isActive())
-        this.towers.push(structure);
+        this.cells.defenseCell.towers.push(structure);
     });
-  }
-
-  private createCells() {
-    // well for naming purpuses i think i need to recreate this cells
-    if (this.cells.respawnCell.time != Game.time)
-      this.cells.respawnCell = new respawnCell(this);
-    if (this.cells.respawnCell.time != Game.time)
-      this.cells.defenseCell = new defenseCell(this);
-
-    if (this.storage) {
-      this.cells.storageCell = new storageCell(this, this.storage);
-
-      if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
-        this.stage = 1;
-        this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
-        this.cells.excavationCell = new excavationCell(this, this.sources, this.minerals);
-      }
-    }
-
-    if (this.stage == 0) {
-      this.cells.developmentCell = new developmentCell(this, this.room.controller!, this.sources);
-    }
-
   }
 
   private updateConstructionSites() {
@@ -236,11 +216,6 @@ export class Hive {
     });
   }
 
-  // add to list a new creep
-  wish(order: SpawnOrder) {
-    this.orderList.push(order);
-  }
-
   updateLog() {
     if (!Memory.log.hives[this.roomName])
       Memory.log.hives[this.roomName] = {};
@@ -260,8 +235,8 @@ export class Hive {
       this.updateConstructionSites();
       this.updateRepairs();
     }
-    if (UPDATE_EACH_TICK || Game.time % 50 == 19)
-      this.parseStructures();
+    if (Game.time % 50 == 29)
+      this.updateCellData()
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
 

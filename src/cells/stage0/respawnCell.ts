@@ -1,14 +1,17 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
 
-import { makeId } from "../utils/other";
-import { queenMaster } from "../beeMaster/civil/queen";
-import { LOGGING_CYCLE } from "../settings";
-import { profile } from "../profiler/decorator";
+import { makeId } from "../../utils/other";
+import { queenMaster } from "../../beeMaster/civil/queen";
+import { LOGGING_CYCLE } from "../../settings";
+import { profile } from "../../profiler/decorator";
 
 @profile
 export class respawnCell extends Cell {
+  spawns: StructureSpawn[] = [];
   freeSpawns: StructureSpawn[] = [];
+  extensions: StructureExtension[] = [];
+
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
@@ -16,21 +19,19 @@ export class respawnCell extends Cell {
     let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
     if (flags.length)
       this.pos = flags[0].pos;
-    else if (this.hive.storage)
-      this.pos = this.hive.storage.pos;
+    else if (this.hive.cells.storageCell)
+      this.pos = this.hive.cells.storageCell.pos;
   }
 
-  // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     super.update();
 
     // find free spawners
-    this.freeSpawns = _.filter(this.hive.spawns, (structure) => structure.spawning == null);
+    this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
     if (!this.beeMaster && this.hive.stage > 0)
       this.beeMaster = new queenMaster(this);
   };
 
-  // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     // generate the queue and start spawning
     let remove: any[] = [];

@@ -2,7 +2,7 @@
 // like from storage to link or terminal
 // refill towers?
 // refills the respawnCell
-import { storageCell, StorageRequest } from "../../cells/storageCell";
+import { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
 import { Bee } from "../../bee";
 import { Setups, CreepSetup } from "../../creepSetups";

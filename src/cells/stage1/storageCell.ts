@@ -1,9 +1,9 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
 
-import { managerMaster } from "../beeMaster/civil/manager";
-import { UPDATE_EACH_TICK } from "../settings";
-import { profile } from "../profiler/decorator";
+import { managerMaster } from "../../beeMaster/civil/manager";
+import { UPDATE_EACH_TICK } from "../../settings";
+import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {
   from: StructureLink | StructureTerminal | StructureStorage;
@@ -97,8 +97,7 @@ export class storageCell extends Cell {
       }
     }
 
-    // check if manager is needed
-    if (!this.beeMaster && this.hive.stage > 0 && (this.link || this.hive.cells.defenseCell))
+    if (!this.beeMaster)
       this.beeMaster = new managerMaster(this);
   }
 

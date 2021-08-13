@@ -1,9 +1,8 @@
-import { Cell } from "./_Cell";
-import { Hive } from "../Hive";
+import { Cell } from "../_Cell";
+import { Hive } from "../../Hive";
 
-import { minerMaster } from "../beeMaster/civil/miner";
-import { UPDATE_EACH_TICK } from "../settings";
-import { profile } from "../profiler/decorator";
+import { minerMaster } from "../../beeMaster/civil/miner";
+import { profile } from "../../profiler/decorator";
 
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
@@ -44,12 +43,6 @@ export class resourceCell extends Cell {
 
   update() {
     super.update();
-
-    if (UPDATE_EACH_TICK) {
-      let resourceNew = Game.getObjectById(this.resource.id);
-      if (resourceNew instanceof Source || resourceNew instanceof Mineral)
-        this.resource = resourceNew;
-    }
 
     if (this.resource instanceof Mineral && Game.time % 10 == 0)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;

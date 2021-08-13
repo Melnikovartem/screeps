@@ -1,5 +1,5 @@
 // amanges colony untill storage lvl
-import { developmentCell } from "../../cells/developmentCell";
+import { developmentCell } from "../../cells/stage0/developmentCell";
 
 import { Bee } from "../../Bee";
 import { Setups } from "../../creepSetups";
@@ -161,8 +161,8 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target) {
-          let targets: (StructureSpawn | StructureExtension)[] = this.hive.spawns;
-          targets = _.filter(targets.concat(this.hive.extensions),
+          let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.respawnCell.spawns;
+          targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
             target = bee.pos.findClosest(targets);
@@ -171,7 +171,7 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target) {
-          let targets: (StructureTower)[] = _.filter(this.hive.towers,
+          let targets: (StructureTower)[] = _.filter(this.hive.cells.defenseCell.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
             target = bee.pos.findClosest(targets);
@@ -179,8 +179,9 @@ export class bootstrapMaster extends Master {
           }
         }
 
-        if (!target && this.hive.cells.storageCell) {
-          target = this.hive.cells.storageCell.storage;
+        if (!target && this.hive.room.storage) {
+          // if build the storage, but it is not yet recreated into stage 1 hive
+          target = this.hive.room.storage;
           workType = "refill";
         }
 
