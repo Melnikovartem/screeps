@@ -13,7 +13,7 @@ export class hordeMaster extends SwarmMaster {
 
   tryToDowngrade: boolean = false;
 
-  priority: 1 | 3 = 1; // how fast do we need to put out the enemy
+  priority: 1 | 4 = 1; // how fast do we need to put out the enemy
 
   constructor(hive: Hive, order: Order) {
     super(hive, order);

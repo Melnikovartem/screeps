@@ -61,7 +61,7 @@ export class bootstrapMaster extends Master {
         master: this.ref,
         setup: Setups.bootstrap,
         amount: 1,
-        priority: 5, // same as non-important army
+        priority: 9,
       };
 
       if (this.beesAmount < this.targetBeeCount * 0.5)

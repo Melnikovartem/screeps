@@ -33,7 +33,7 @@ export class puppetMaster extends Master {
         master: this.ref,
         setup: Setups.puppet,
         amount: 1,
-        priority: 1, // well it is cheap -_-
+        priority: 2, // well it is cheap -_-
       };
 
       this.wish(order);

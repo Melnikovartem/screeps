@@ -69,7 +69,7 @@ export class managerMaster extends Master {
         master: this.ref,
         setup: Setups.manager,
         amount: 1,
-        priority: 3,
+        priority: 6,
       };
 
       if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {

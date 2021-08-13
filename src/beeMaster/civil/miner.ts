@@ -29,7 +29,7 @@ export class minerMaster extends Master {
 
       if (this.cell.resourceType != RESOURCE_ENERGY) {
         order.setup = Setups.miner.minerals;
-        order.priority = 3;
+        order.priority = 5;
       }
 
       this.wish(order);

@@ -47,7 +47,7 @@ export class haulerMaster extends Master {
         master: this.ref,
         setup: Setups.hauler,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
-        priority: 4,
+        priority: 6,
       };
 
       if (this.hive.stage < 2) {

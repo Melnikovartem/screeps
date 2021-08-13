@@ -21,7 +21,7 @@ export interface SpawnOrder {
   master: string;
   amount: number;
   setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5; // how urgent is this spawn
+  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this spawn
 }
 
 interface hiveCells {
@@ -263,7 +263,7 @@ export class Hive {
       constructionSites: this.constructionSites.length,
       emergencyRepairs: this.emergencyRepairs.length,
       normalRepairs: this.normalRepairs.length,
-      orderList: _.map(this.orderList, (order) => { return { master: order.master, amount: order.amount, } }),
+      orderList: _.map(this.orderList, (order) => { return { master: order.master, amount: order.amount, priority: order.priority } }),
     };
   }
 

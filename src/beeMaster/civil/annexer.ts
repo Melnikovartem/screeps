@@ -29,7 +29,7 @@ export class annexMaster extends Master {
         master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
-        priority: 3,
+        priority: 6,
       };
 
       let controller = Game.getObjectById(this.controller.id);

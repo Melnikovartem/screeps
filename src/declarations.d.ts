@@ -43,7 +43,6 @@ declare global {
           spawnRoom: string,
           fromSpawn: string,
           orderedBy: string,
-          priority: number,
         }
       },
       hives: {
@@ -57,7 +56,8 @@ declare global {
             normalRepairs: number,
             orderList: {
               master: string,
-              amount: number
+              amount: number,
+              priority: number,
             }[],
           }
         }

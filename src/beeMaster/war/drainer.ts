@@ -41,11 +41,17 @@ export class drainerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.tank && !global.bees[this.tank.ref])
+    if (this.tank && !global.bees[this.tank.ref]) {
       delete this.tank;
+      if (VISUALS_ON && this.healer)
+        this.healer.creep.say("😢");
+    }
 
-    if (this.healer && !global.bees[this.healer.ref])
-      delete this.tank;
+    if (this.healer && !global.bees[this.healer.ref]) {
+      delete this.healer;
+      if (VISUALS_ON && this.tank)
+        this.tank.creep.say("😢");
+    }
 
     if (this.phase == "spawning") {
       this.phase = "meeting";
@@ -54,7 +60,7 @@ export class drainerMaster extends SwarmMaster {
           master: this.ref,
           setup: Setups.tank,
           amount: 1,
-          priority: 1,
+          priority: 4,
         };
         this.wish(tankOrder);
       }
@@ -63,7 +69,7 @@ export class drainerMaster extends SwarmMaster {
           master: this.ref,
           setup: Setups.healer,
           amount: 1,
-          priority: 1,
+          priority: 4,
         };
         this.wish(healerOrder);
       }
@@ -87,13 +93,13 @@ export class drainerMaster extends SwarmMaster {
 
   run() {
     if (this.phase == "meeting") {
-      if (this.tank) {
+      if (this.tank && !this.tank.pos.isNearTo(this.meetingPoint)) {
         if (this.meetingPoint.roomName in Game.rooms)
           this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
         else
           this.tank.goTo(this.meetingPoint.getWalkablePositions()[0]);
       }
-      if (this.healer)
+      if (this.healer && (this.healer.pos.x != this.meetingPoint.x || this.healer.pos.y != this.meetingPoint.y))
         this.healer.goTo(this.meetingPoint);
       if (this.tank && this.healer && this.tank.pos.isNearTo(this.meetingPoint) &&
         this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y) {
@@ -137,12 +143,6 @@ export class drainerMaster extends SwarmMaster {
       }
 
       if (!healed) {
-        let healingTargets = _.filter(this.healer.pos.findInRange(FIND_MY_CREEPS, 3), (creep) => creep.hits < creep.hitsMax);
-        let closeTarget = _.filter(healingTargets, (creep) => this.healer!.pos.isNearTo(creep));
-        if (closeTarget.length)
-          this.healer.heal(closeTarget[0]);
-        else if (healingTargets.length)
-          this.healer.rangedHeal(healingTargets[0]);
       }
 
       if (!this.healing) {

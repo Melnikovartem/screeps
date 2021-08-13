@@ -33,7 +33,7 @@ export class upgraderMaster extends Master {
         master: this.ref,
         setup: Setups.upgrader.manual,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
-        priority: 4,
+        priority: 7,
       };
 
       if (this.cell.link || (this.hive.cells.storageCell

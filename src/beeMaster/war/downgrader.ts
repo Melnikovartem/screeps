@@ -33,7 +33,7 @@ export class downgradeMaster extends SwarmMaster {
         master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
-        priority: 5,
+        priority: 9,
       };
 
       this.wish(order);

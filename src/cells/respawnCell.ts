@@ -43,7 +43,7 @@ export class respawnCell extends Cell {
         remove.push(key);
       } else {
         let body;
-        if (order.priority < 3)
+        if (order.priority < 4)
           body = order.setup.getBody(this.hive.room.energyAvailable);
         else
           body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
@@ -70,7 +70,6 @@ export class respawnCell extends Cell {
               spawnRoom: this.hive.roomName,
               fromSpawn: spawn!.name,
               orderedBy: order.master,
-              priority: order.priority,
             };
 
             this.hive.orderList[key].amount -= 1;
