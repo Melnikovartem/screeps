@@ -128,8 +128,8 @@ export const Setups = {
     patternLimit: 10,
   }),
   tank: new CreepSetup(SetupsNames.tank, {
-    fixed: [ATTACK, ATTACK, MOVE],
-    pattern: [TOUGH, TOUGH, MOVE],
+    fixed: [ATTACK, TOUGH, TOUGH, TOUGH, MOVE],
+    pattern: [TOUGH, TOUGH, TOUGH, TOUGH, MOVE],
   }),
   healer: new CreepSetup(SetupsNames.healer, {
     pattern: [HEAL, HEAL, MOVE],

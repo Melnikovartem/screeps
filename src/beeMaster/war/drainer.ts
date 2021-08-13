@@ -104,7 +104,7 @@ export class drainerMaster extends SwarmMaster {
         if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
           this.target = this.tank.creep.room.name;
 
-        if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.65 || this.healing) {
+        if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
           if (VISUALS_ON && !this.healing) {
             this.tank.creep.say("🏥");
             this.healer.creep.say("🏥");
@@ -133,9 +133,13 @@ export class drainerMaster extends SwarmMaster {
             else {
               let roomInfo = global.Apiary.intel.getInfo(this.target);
 
+              // not sure what to do if there will be smart towers
               if (roomInfo.enemies.length)
-                if (!(roomInfo.enemies[0] instanceof StructureTower)) // not sure what to do if there will be smart towers
-                  this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
+                if (roomInfo.enemies[0] instanceof StructureTower && roomInfo.enemies[0].store[RESOURCE_ENERGY] > 0) {
+                  if (this.tank.pos.x == 0 || this.tank.pos.x == 49 || this.tank.pos.y == 0 || this.tank.pos.y == 49)
+                    this.tank.goToRoom(this.target);
+                } else
+                  this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!)
             }
           }
           else if (this.exit)
