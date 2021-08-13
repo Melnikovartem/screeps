@@ -41,19 +41,20 @@ class repairSheet {
   [STRUCTURE_RAMPART]: number = 200000;
   [STRUCTURE_WALL]: number = 200000;
   other: number = 1;
-  collapse: number = 0.5;
+  collapse: number = 0.75;
+  road_collapse: number = 0.5;
 
   constructor(hiveStage: 0 | 1 | 2) {
     if (hiveStage == 0) {
       this[STRUCTURE_RAMPART] = 20000;
       this[STRUCTURE_WALL] = 20000;
       this.other = 0.7;
-      this.collapse = 0.3;
+      this.collapse = 0.5;
     } else if (hiveStage == 2) {
       this[STRUCTURE_RAMPART] = 2000000;
       this[STRUCTURE_WALL] = 2000000;
       this.other = 1;
-      this.collapse = 0.7;
+      this.collapse = 0.86;
     }
   }
 
@@ -61,6 +62,9 @@ class repairSheet {
     switch (structure.structureType) {
       case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
         return structure.hits < this[structure.structureType] * this.collapse;
+      }
+      case STRUCTURE_ROAD: {
+        return structure.hits < structure.hitsMax * this.other * this.road_collapse;
       }
       default: {
         return structure.hits < structure.hitsMax * this.other * this.collapse;

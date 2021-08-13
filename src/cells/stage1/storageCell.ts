@@ -79,7 +79,8 @@ export class storageCell extends Cell {
           if (request.amount && request.amount > LINK_CAPACITY)
             request.amount = LINK_CAPACITY;
 
-          let tooBigrequest = request.amount && this.link.store[RESOURCE_ENERGY] < request.amount;
+          let tooBigrequest = request.amount && this.link.store[RESOURCE_ENERGY] < request.amount &&
+            this.link.store[RESOURCE_ENERGY] - request.amount >= 25; // man i won't move any shit for less than that
           if (!tooBigrequest) {
             delete this.requests[this.link.id];
             if (!this.link.cooldown)

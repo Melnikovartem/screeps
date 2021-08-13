@@ -45,7 +45,8 @@ export class managerMaster extends Master {
     // assigning the orders
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
-      if (request.to.id == this.cell.storage.id || request.from.id == this.cell.storage.id
+      if ((request.amount == undefined || request.amount >= 25)
+        && request.to.id == this.cell.storage.id || request.from.id == this.cell.storage.id
         || (this.cell.terminal && (request.to.id == this.cell.terminal.id || request.from.id == this.cell.terminal.id)))
         targets.push(key);
     }

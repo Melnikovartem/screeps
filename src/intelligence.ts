@@ -2,6 +2,7 @@
 // we collect data about enemy
 // in this case on battlefield
 import { profile } from "./profiler/decorator";
+import { UPDATE_EACH_TICK } from "./settings";
 
 interface RoomInfo {
   lastUpdated: number,
@@ -33,6 +34,7 @@ export class Intel {
 
     // it is cached after first check
     lag = lag ? lag : 0;
+    if (UPDATE_EACH_TICK) lag = 0;
     if (this.roomInfo[roomName].lastUpdated + lag >= Game.time)
       return this.roomInfo[roomName];
 

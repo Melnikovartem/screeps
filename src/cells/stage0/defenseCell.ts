@@ -45,9 +45,12 @@ export class defenseCell extends Cell {
   run() {
     let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName, 5);
     if (roomInfo.enemies.length)
-      if (this.towers.length == 0)
-        this.pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
-      else
+      if (this.towers.length == 0) {
+        if (this.hive.stage < 2)
+          this.pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
+        else
+          this.hive.room.controller!.activateSafeMode(); // red button
+      } else
         _.forEach(this.towers, (tower) => {
           let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
           if (closest)
