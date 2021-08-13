@@ -133,7 +133,7 @@ export class _Apiary {
   updateFlags() {
     _.forEach(Game.flags, (flag) => {
       if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
-        let ref = flag.name
+        let ref = flag.name;
         if (!this.orders[ref])
           this.orders[ref] = new Order(flag);
         else if (this.orders[ref].update(flag) == 0) { // if killsig

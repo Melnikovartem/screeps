@@ -40,7 +40,7 @@ export class Mem {
         if (Object.keys(Memory.log.hives[key]).length > 20) {
           let j = Object.keys(Memory.log.hives[key]).length - 18;
           for (let i in Memory.log.hives[key]) {
-            if (<number><unknown>key + LOGGING_CYCLE * 3 > Game.time) continue;
+            if (+key + LOGGING_CYCLE * 3 > Game.time) continue;
             delete Memory.log.hives[key][i];
             if (--j == 0) break;
           }

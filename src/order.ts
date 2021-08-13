@@ -18,26 +18,14 @@ export class Order {
   master?: Master;
 
   constructor(flag: Flag) {
-    this.ref = flag.name.split("&")[0];
+    this.ref = flag.name;
     this.flag = flag;
     this.pos = flag.pos;
 
-    let settings = flag.name.split("&")[1];
-
     this.flag.memory = {
-      repeat: 0,
+      repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
     }
 
-    if (settings) {
-      _.forEach(settings.split("&"), (str) => {
-        let name = str.split(":")[0];
-        if (name == "repeat") {
-          let matches = str.split(":")[1].match(/\d+/g);
-          if (matches)
-            this.flag.memory.repeat = <number><unknown>matches;
-        }
-      });
-    }
     this.destroyTime = Game.time + 2000;
     this.getMaster();
 
@@ -85,7 +73,7 @@ export class Order {
           newMaster.tryToDowngrade = true;
         let matches = this.ref.match(/\d+/g);
         if (matches != null) //F?
-          newMaster.targetBeeCount = <number><unknown>matches[0];
+          newMaster.targetBeeCount = +matches[0];
         else
           newMaster.targetBeeCount = 2;
         newMaster.maxSpawns = newMaster.targetBeeCount * 2;

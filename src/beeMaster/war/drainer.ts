@@ -47,21 +47,6 @@ export class drainerMaster extends SwarmMaster {
     if (this.healer && !global.bees[this.healer.ref])
       delete this.tank;
 
-    if (this.phase != "spawning" && (!this.tank || !this.healer))
-      this.order.destroyTime = Game.time;
-
-    if (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y) {
-      this.meetingPoint = this.order.pos;
-      this.phase = "meeting";
-      this.exit = undefined;
-      this.healing = false;
-      this.target = undefined;
-      if (this.tank && this.healer && VISUALS_ON) {
-        this.tank.creep.say("➡️");
-        this.healer.creep.say("➡️");
-      }
-    }
-
     if (this.phase == "spawning") {
       this.phase = "meeting";
       if (!this.tank) {
@@ -83,68 +68,88 @@ export class drainerMaster extends SwarmMaster {
         this.wish(healerOrder);
       }
     }
+
+    if (!this.waitingForBees && (!this.tank || !this.healer))
+      this.order.destroyTime = Game.time;
+
+    if (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y) {
+      this.meetingPoint = this.order.pos;
+      this.phase = "meeting";
+      this.exit = undefined;
+      this.healing = false;
+      this.target = undefined;
+      if (this.tank && this.healer && VISUALS_ON) {
+        this.tank.creep.say("➡️");
+        this.healer.creep.say("➡️");
+      }
+    }
   }
 
   run() {
-    if (this.tank && this.healer)
-      if (this.phase == "meeting") {
+    if (this.phase == "meeting") {
+      if (this.tank) {
+        if (this.meetingPoint.roomName in Game.rooms)
+          this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
+        else
+          this.tank.goTo(this.meetingPoint.getWalkablePositions()[0]);
+      }
+      if (this.healer)
         this.healer.goTo(this.meetingPoint);
-        this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
-        if (this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y
-          && this.tank.pos.isNearTo(this.meetingPoint)) {
-          this.phase = "draining";
+      if (this.tank && this.healer && this.tank.pos.isNearTo(this.meetingPoint) &&
+        this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y) {
+        this.phase = "draining";
+        if (VISUALS_ON) {
+          this.tank.creep.say("⚡");
+          this.healer.creep.say("⚡");
+        }
+      }
+    } else if (this.phase == "draining" && this.tank && this.healer) {
+      if (!this.exit)
+        this.exit = <RoomPosition>this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
+      if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
+        this.target = this.tank.creep.room.name;
+
+      if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
+        if (VISUALS_ON && !this.healing) {
+          this.tank.creep.say("🏥");
+          this.healer.creep.say("🏥");
+        }
+        this.healing = true;
+        if (!this.tank.pos.isNearTo(this.healer))
+          this.tank.goTo(this.healer.pos);
+        if (this.tank.creep.hits == this.tank.creep.hitsMax) {
+          this.healing = false;
           if (VISUALS_ON) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
           }
         }
-      } else if (this.phase == "draining") {
-        if (!this.exit)
-          this.exit = <RoomPosition>this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
-        if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
-          this.target = this.tank.creep.room.name;
 
-        if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
-          if (VISUALS_ON && !this.healing) {
-            this.tank.creep.say("🏥");
-            this.healer.creep.say("🏥");
-          }
-          this.healing = true;
-          if (!this.tank.pos.isNearTo(this.healer))
-            this.tank.goTo(this.healer.pos);
-          if (this.tank.creep.hits == this.tank.creep.hitsMax) {
-            this.healing = false;
-            if (VISUALS_ON) {
-              this.tank.creep.say("⚡");
-              this.healer.creep.say("⚡");
-            }
-          }
-
-          if (this.healer.pos.isNearTo(this.tank))
-            this.healer.heal(this.tank);
-          else if (this.healer.pos.getRangeTo(this.tank) <= 3)
-            this.healer.rangedHeal(this.tank);
-        }
-
-        if (!this.healing) {
-          if (this.target) {
-            if (this.tank.pos.roomName != this.target)
-              this.tank.goToRoom(this.target);
-            else {
-              let roomInfo = global.Apiary.intel.getInfo(this.target);
-
-              // not sure what to do if there will be smart towers
-              if (roomInfo.enemies.length)
-                if (roomInfo.enemies[0] instanceof StructureTower && roomInfo.enemies[0].store[RESOURCE_ENERGY] > 0) {
-                  if (this.tank.pos.x == 0 || this.tank.pos.x == 49 || this.tank.pos.y == 0 || this.tank.pos.y == 49)
-                    this.tank.goToRoom(this.target);
-                } else
-                  this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!)
-            }
-          }
-          else if (this.exit)
-            this.tank.goTo(this.exit);
-        }
+        if (this.healer.pos.isNearTo(this.tank))
+          this.healer.heal(this.tank);
+        else if (this.healer.pos.getRangeTo(this.tank) <= 3)
+          this.healer.rangedHeal(this.tank);
       }
+
+      if (!this.healing) {
+        if (this.target) {
+          if (this.tank.pos.roomName != this.target)
+            this.tank.goToRoom(this.target);
+          else {
+            let roomInfo = global.Apiary.intel.getInfo(this.target);
+
+            // not sure what to do if there will be smart towers
+            if (roomInfo.enemies.length)
+              if (roomInfo.enemies[0] instanceof StructureTower && roomInfo.enemies[0].store[RESOURCE_ENERGY] > 0) {
+                if (this.tank.pos.x == 0 || this.tank.pos.x == 49 || this.tank.pos.y == 0 || this.tank.pos.y == 49)
+                  this.tank.goToRoom(this.target);
+              } else
+                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
+          }
+        }
+        else if (this.exit)
+          this.tank.goTo(this.exit);
+      }
+    }
   }
 }
