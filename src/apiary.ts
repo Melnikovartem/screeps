@@ -5,7 +5,7 @@ import { Intel } from "./intelligence";
 import { Order } from "./order";
 import { makeId } from "./utils/other";
 
-import { UPDATE_EACH_TICK } from "./settings";
+import { UPDATE_EACH_TICK, PRINT_INFO } from "./settings";
 
 export class _Apiary {
   hives: { [id: string]: Hive } = {};
@@ -17,6 +17,11 @@ export class _Apiary {
 
   constructor() {
     this.destroyTime = Game.time + 4000;
+
+    if (PRINT_INFO) console.log(Game.time, "creating new apiary");
+
+    global.bees = {};
+    global.masters = {};
 
     this.intel = new Intel();
 

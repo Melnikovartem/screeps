@@ -2358,7 +2358,6 @@ class Mem {
     }
 }
 
-// think about on official
 const VISUALS_ON = true;
 const LOGGING_CYCLE = 50;
 
@@ -4870,6 +4869,9 @@ class _Apiary {
         this.hives = {};
         this.orders = {};
         this.destroyTime = Game.time + 4000;
+        console.log(Game.time, "creating new apiary");
+        global.bees = {};
+        global.masters = {};
         this.intel = new Intel();
         let myRoomsAnnexes = {};
         _.forEach(Game.rooms, (room) => {
@@ -4999,30 +5001,157 @@ class _Apiary {
     }
 }
 
+const Profiler = {
+  printProfile() {
+    console.log(Profiler.output());
+  },
+
+  emailProfile() {
+    Game.notify(Profiler.output(1000));
+  },
+
+  output(passedOutputLengthLimit) {
+    const outputLengthLimit = passedOutputLengthLimit || 1000;
+    if (!Memory.profiler || !Memory.profiler.enabledTick) {
+      return 'Profiler not active.';
+    }
+
+    const endTick = Math.min(Memory.profiler.disableTick || Game.time, Game.time);
+    const startTick = Memory.profiler.enabledTick + 1;
+    const elapsedTicks = endTick - startTick;
+    const header = 'calls\t\ttime\t\tavg\t\tfunction';
+    const footer = [
+      `Avg: ${(Memory.profiler.totalTime / elapsedTicks).toFixed(2)}`,
+      `Total: ${Memory.profiler.totalTime.toFixed(2)}`,
+      `Ticks: ${elapsedTicks}`,
+    ].join('\t');
+
+    const lines = [header];
+    let currentLength = header.length + 1 + footer.length;
+    const allLines = Profiler.lines();
+    let done = false;
+    while (!done && allLines.length) {
+      const line = allLines.shift();
+      // each line added adds the line length plus a new line character.
+      if (currentLength + line.length + 1 < outputLengthLimit) {
+        lines.push(line);
+        currentLength += line.length + 1;
+      } else {
+        done = true;
+      }
+    }
+    lines.push(footer);
+    return lines.join('\n');
+  },
+
+  lines() {
+    const stats = Object.keys(Memory.profiler.map).map(functionName => {
+      const functionCalls = Memory.profiler.map[functionName];
+      return {
+        name: functionName,
+        calls: functionCalls.calls,
+        totalTime: functionCalls.time,
+        averageTime: functionCalls.time / functionCalls.calls,
+      };
+    }).sort((val1, val2) => {
+      return val2.totalTime - val1.totalTime;
+    });
+
+    const lines = stats.map(data => {
+      return [
+        data.calls,
+        data.totalTime.toFixed(1),
+        data.averageTime.toFixed(3),
+        data.name,
+      ].join('\t\t');
+    });
+
+    return lines;
+  },
+
+  prototypes: [
+    { name: 'Game', val: Game },
+    { name: 'Room', val: Room },
+    { name: 'Structure', val: Structure },
+    { name: 'Spawn', val: Spawn },
+    { name: 'Creep', val: Creep },
+    { name: 'RoomPosition', val: RoomPosition },
+    { name: 'Source', val: Source },
+    { name: 'Flag', val: Flag },
+  ],
+
+  record(functionName, time) {
+    if (!Memory.profiler.map[functionName]) {
+      Memory.profiler.map[functionName] = {
+        time: 0,
+        calls: 0,
+      };
+    }
+    Memory.profiler.map[functionName].calls++;
+    Memory.profiler.map[functionName].time += time;
+  },
+
+  endTick() {
+    if (Game.time >= Memory.profiler.enabledTick) {
+      const cpuUsed = Game.cpu.getUsed();
+      Memory.profiler.totalTime += cpuUsed;
+      Profiler.report();
+    }
+  },
+
+  report() {
+    if (Profiler.shouldPrint()) {
+      Profiler.printProfile();
+    } else if (Profiler.shouldEmail()) {
+      Profiler.emailProfile();
+    }
+  },
+
+  isProfiling() {
+    {
+      return false;
+    }
+  },
+
+  type() {
+    return Memory.profiler.type;
+  },
+
+  shouldPrint() {
+    const streaming = Profiler.type() === 'stream';
+    const profiling = Profiler.type() === 'profile';
+    const onEndingTick = Memory.profiler.disableTick === Game.time;
+    return streaming || (profiling && onEndingTick);
+  },
+
+  shouldEmail() {
+    return Profiler.type() === 'email' && Memory.profiler.disableTick === Game.time;
+  },
+};
+
 console.log("settings are for", "local!!");
 // This gets run on each global reset
 function onGlobalReset() {
     // check if all memory position were created
     Mem.init();
-    Memory.log.reset = Game.time;
     console.log("Reset? Cool time is", Game.time);
-    global.bees = {};
-    global.masters = {};
+    Memory.log.reset = Game.time;
     delete global.Apiary;
     global.Apiary = new _Apiary();
 }
 function main() {
-    if (Game.time % 20 == 0)
-        if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-            onGlobalReset();
-        }
+    if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+        console.log("here?42");
+        delete global.Apiary;
+        global.Apiary = new _Apiary();
+    }
     // Automatically delete memory
     Mem.clean();
     global.Apiary.update();
     global.Apiary.run();
 }
 // time to wrap things up
-let _loop = main;
+let _loop;
 {
     _loop = ErrorMapper.wrapLoop(main);
 }
