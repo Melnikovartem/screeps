@@ -1,3 +1,4 @@
+import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups"
 import type { SpawnOrder, Hive } from "../../Hive";
 import { Order } from "../../order";
@@ -19,6 +20,11 @@ export class puppetMaster extends Master {
       this.target = order.pos;
     else
       this.target = new RoomPosition(25, 25, roomName);
+  }
+
+  newBee(bee: Bee) {
+    super.newBee(bee);
+    bee.creep.notifyWhenAttacked(false);
   }
 
   update() {

@@ -22,9 +22,9 @@ export class haulerMaster extends Master {
       if (cell.container) {
         this.targetMap[cell.container.id] = "";
         if (this.hive.stage == 2)
-          beeForSource += 0.38;
+          beeForSource += 0.3;
         else
-          beeForSource += 0.55;
+          beeForSource += 0.5;
       }
       if (cell.link)
         beeForSource = 0;

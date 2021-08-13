@@ -1,5 +1,5 @@
-import { Bee } from "../../bee"
-import { Setups } from "../../creepSetups"
+import { Bee } from "../../bee";
+import { Setups } from "../../creepSetups";
 import type { SpawnOrder, Hive } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
@@ -143,6 +143,12 @@ export class drainerMaster extends SwarmMaster {
       }
 
       if (!healed) {
+        let healingTargets = _.filter(this.healer.pos.findInRange(FIND_MY_CREEPS, 3), (creep) => creep.hits < creep.hitsMax);
+        let closeTarget = _.filter(healingTargets, (creep) => this.healer!.pos.isNearTo(creep));
+        if (closeTarget.length)
+          this.healer.heal(closeTarget[0]);
+        else if (healingTargets.length)
+          this.healer.rangedHeal(healingTargets[0]);
       }
 
       if (!this.healing) {
@@ -158,7 +164,7 @@ export class drainerMaster extends SwarmMaster {
                 if (this.tank.pos.x == 0 || this.tank.pos.x == 49 || this.tank.pos.y == 0 || this.tank.pos.y == 49)
                   this.tank.goToRoom(this.target);
               } else
-                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
+                console.log(this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!));
           }
         } else if (this.exit)
           this.tank.goTo(this.exit);
