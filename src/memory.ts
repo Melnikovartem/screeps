@@ -56,9 +56,8 @@ export class Mem {
       }
 
       if (Object.keys(Memory.log.crashes).length > 100) {
-        let j = Object.keys(Memory.log.orders).length - 50;
+        let j = Object.keys(Memory.log.crashes).length - 50;
         for (let key in Memory.log.crashes) {
-          if (+key + LOGGING_CYCLE * 3 > Game.time) continue;
           delete Memory.log.crashes[key];
           if (--j == 0) break;
         }

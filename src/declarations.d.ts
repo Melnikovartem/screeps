@@ -61,7 +61,8 @@ declare global {
         }
       },
       crashes: {
-        [id: number]: {
+        [id: string]: {
+          time: number,
           context: string,
           message: string,
         }

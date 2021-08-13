@@ -156,10 +156,7 @@ export class Hive {
     this.updateConstructionSites();
     this.updateRepairs();
 
-    let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
-    if (flags.length)
-      this.pos = flags[0].pos;
-    else if (this.cells.storageCell)
+    if (this.cells.storageCell)
       this.pos = this.cells.storageCell.storage.pos;
     else
       this.pos = this.room.controller!.pos;
@@ -182,10 +179,6 @@ export class Hive {
       return annex;
     }));
     this.rooms = [this.room].concat(this.annexes);
-
-    let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
-    if (flags.length)
-      this.pos = flags[0].pos;
   }
 
   private updateCellData() {

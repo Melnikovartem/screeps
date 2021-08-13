@@ -16,18 +16,20 @@ export class Order {
   pos: RoomPosition;
   destroyTime: number
   master?: Master;
+  checkTime: number;
 
   constructor(flag: Flag) {
     this.ref = flag.name;
     this.flag = flag;
     this.pos = flag.pos;
+    this.checkTime = 1;
 
     this.flag.memory = {
       repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
     }
 
-    this.destroyTime = Game.time + 2000;
-    this.getMaster();
+    this.destroyTime = -1;
+    this.actUpon();
 
     if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
       time: Game.time,
@@ -55,7 +57,7 @@ export class Order {
     return Apiary.hives[homeRoom];
   }
 
-  getMaster() {
+  actUpon() {
     // annex room
     if (this.flag.color == COLOR_RED) {
       if (this.flag.secondaryColor == COLOR_BLUE)
@@ -78,16 +80,44 @@ export class Order {
         newMaster.priority = 4;
         this.master = newMaster;
       }
+    } else if (this.flag.color == COLOR_PURPLE) {
+      this.checkTime = 50;
+      if (this.flag.secondaryColor == COLOR_PURPLE)
+        this.findHive().addAnex(this.pos.roomName);
+    } else if (this.flag.color == COLOR_CYAN) {
+      this.checkTime = 200;
+      let hive = Apiary.hives[this.pos.roomName]
+      if (hive) {
+        if (this.flag.secondaryColor == COLOR_CYAN) {
+          hive.pos = this.pos;
+          if (hive.cells.excavationCell)
+            hive.cells.excavationCell.pos = this.pos;
+        } else if (this.flag.secondaryColor == COLOR_GREEN) {
+          if (hive)
+            hive.cells.respawnCell.pos = this.pos;
+        } else if (this.flag.secondaryColor == COLOR_YELLOW) {
+          if (hive.cells.storageCell)
+            hive.cells.storageCell.pos = this.pos;
+        }
+      }
+    } else if (this.flag.color == COLOR_GREY) {
+      this.checkTime = 50;
+      if (this.flag.secondaryColor == COLOR_RED) {
+        if (this.pos.lookFor(LOOK_STRUCTURES).length == 0)
+          this.destroyTime = Game.time;
+      }
     }
   }
 
   update(flag: Flag) {
-    this.flag = flag;
-    this.pos = flag.pos;
-    if (!this.master)
-      this.getMaster();
+    if (Game.time % this.checkTime == 0) {
+      this.flag = flag;
+      this.pos = flag.pos;
+      if (this.master)
+        this.actUpon();
+    }
 
-    if (this.destroyTime < Game.time) {
+    if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
       if (this.master)
         delete Apiary.masters[this.master.ref];
 
@@ -95,13 +125,13 @@ export class Order {
         if (PRINT_INFO) console.log("repeated" + this.ref);
         this.destroyTime = Game.time + 2000;
         this.flag.memory.repeat -= 1;
-        this.getMaster();
+        this.actUpon();
       } else {
         if (LOGGING_CYCLE) {
           Memory.log.orders[this.ref].destroyTime = Game.time;
           Memory.log.orders[this.ref].pos = this.flag.pos;
         }
-        return 0; //killsig}
+        return 0; //killsig
       }
     }
     return 1;

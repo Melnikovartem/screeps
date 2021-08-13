@@ -15,12 +15,6 @@ export class respawnCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
-
-    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
-    if (flags.length)
-      this.pos = flags[0].pos;
-    else if (this.hive.cells.storageCell)
-      this.pos = this.hive.cells.storageCell.pos;
   }
 
   update() {

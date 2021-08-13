@@ -34,11 +34,7 @@ export class storageCell extends Cell {
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
       (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
 
-    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
-    if (flags.length)
-      this.pos = flags[0].pos;
-    else
-      this.pos = this.storage.pos;
+    this.pos = this.storage.pos;
   }
 
   update() {

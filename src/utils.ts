@@ -18,7 +18,8 @@ export function safeWrap(cycle: () => void, context: string): void {
     try { cycle(); }
     catch (e) {
       if (PRINT_INFO) console.log("ERROR in:", context, Game.time, "\n", e.message);
-      if (LOGGING_CYCLE) Memory.log.crashes[Game.time] = { context: context, message: e.message };
+      console.log(e);
+      if (LOGGING_CYCLE) Memory.log.crashes[context] = { time: Game.time, context: context, message: e.message };
     }
   } else
     cycle();

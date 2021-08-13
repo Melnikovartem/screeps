@@ -16,9 +16,10 @@ export class puppetMaster extends Master {
     super(hive, "Puppet_" + roomName);
 
     this.order = order;
-    if (order)
+    if (order) {
       this.target = order.pos;
-    else
+      order.destroyTime = Game.time + CREEP_LIFE_TIME + 3;
+    } else
       this.target = new RoomPosition(25, 25, roomName);
   }
 
