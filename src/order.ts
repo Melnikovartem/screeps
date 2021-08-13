@@ -77,6 +77,7 @@ export class Order {
         else
           newMaster.targetBeeCount = 2;
         newMaster.maxSpawns = newMaster.targetBeeCount * 2;
+        newMaster.priority = 3;
 
         this.master = newMaster;
       }

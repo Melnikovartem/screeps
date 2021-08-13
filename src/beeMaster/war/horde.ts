@@ -13,6 +13,8 @@ export class hordeMaster extends SwarmMaster {
 
   tryToDowngrade: boolean = false;
 
+  priority: 1 | 3 = 1; // how fast do we need to put out the enemy
+
   constructor(hive: Hive, order: Order) {
     super(hive, order);
 
@@ -40,11 +42,8 @@ export class hordeMaster extends SwarmMaster {
         master: this.ref,
         setup: Setups.knight,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: 1,
+        priority: this.priority,
       };
-
-      if (order.amount == 1 && this.targetBeeCount > 1)
-        order.priority = 5; // 5 for not important army
 
       this.spawned += order.amount;
 

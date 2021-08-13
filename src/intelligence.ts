@@ -22,7 +22,7 @@ export class Intel {
 
 
   getInfo(roomName: string): RoomInfo {
-    if (!this.roomInfo[roomName]) {
+    if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {
         lastUpdated: 0,
         enemies: [],
@@ -30,7 +30,6 @@ export class Intel {
         ownedByEnemy: true,
         safeModeEndTime: 0,
       };
-    }
 
     // it is cached after first check
     if (this.roomInfo[roomName].lastUpdated == Game.time)
@@ -60,13 +59,19 @@ export class Intel {
 
   updateEnemiesInRoom(room: Room) {
     this.roomInfo[room.name].safePlace = false;
-
     this.roomInfo[room.name].lastUpdated = Game.time;
 
-    this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
-      filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
-        structure.structureType == STRUCTURE_INVADER_CORE
-    });
+    this.roomInfo[room.name].enemies = [];
+
+    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
+    if (targetFlags.length)
+      this.roomInfo[room.name].enemies = _.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
+
+    if (!this.roomInfo[room.name].enemies.length)
+      this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
+        filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
+          structure.structureType == STRUCTURE_INVADER_CORE
+      });
 
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));

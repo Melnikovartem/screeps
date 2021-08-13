@@ -130,8 +130,7 @@ export class drainerMaster extends SwarmMaster {
         if (this.healer.pos.isNearTo(this.tank)) {
           healed = true;
           this.healer.heal(this.tank);
-        }
-        else if (this.healer.pos.getRangeTo(this.tank) <= 3) {
+        } else if (this.healer.pos.getRangeTo(this.tank) <= 3) {
           healed = true;
           this.healer.rangedHeal(this.tank);
         }
@@ -161,8 +160,7 @@ export class drainerMaster extends SwarmMaster {
               } else
                 this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
           }
-        }
-        else if (this.exit)
+        } else if (this.exit)
           this.tank.goTo(this.exit);
       }
     }
