@@ -33,6 +33,12 @@ export class storageCell extends Cell {
 
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
       (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
+
+    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
+    if (flags.length)
+      this.pos = flags[0].pos;
+    else
+      this.pos = this.storage.pos;
   }
 
   update() {
@@ -53,7 +59,6 @@ export class storageCell extends Cell {
 
     if (this.link) {
       // link requests
-
       if (this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
         this.requests[this.link.id] = {
           from: this.link,
@@ -83,8 +88,10 @@ export class storageCell extends Cell {
             this.link.store[RESOURCE_ENERGY] - request.amount >= 25; // man i won't move any shit for less than that
           if (!tooBigrequest) {
             delete this.requests[this.link.id];
-            if (!this.link.cooldown)
-              this.link.transferEnergy(request.to, request.amount);
+            if (!this.link.cooldown) {
+              let amount = request.amount ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
+              this.link.transferEnergy(request.to, Math.min(amount, this.link.store[RESOURCE_ENERGY]));
+            }
             delete this.requests[key];
           } else
             this.requests[this.link.id] = {

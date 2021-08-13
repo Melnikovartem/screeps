@@ -17,6 +17,7 @@ export abstract class SwarmMaster extends Master {
     super(hive, "Swarm_" + order.ref);
 
     this.order = order;
+    this.order.destroyTime = Game.time + CREEP_LIFE_TIME * 2;
   }
 
   newBee(bee: Bee) {

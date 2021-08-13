@@ -16,18 +16,10 @@ export class managerMaster extends Master {
 
   targetMap: { [id: string]: string } = {};
 
-  idlePos: RoomPosition;
-
   constructor(storageCell: storageCell) {
     super(storageCell.hive, storageCell.ref);
 
     this.cell = storageCell;
-
-    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
-    if (flags.length)
-      this.idlePos = flags[0].pos;
-    else
-      this.idlePos = storageCell.storage.pos;
   }
 
   newBee(bee: Bee) {
@@ -123,7 +115,7 @@ export class managerMaster extends Master {
         if (bee.creep.store.getUsedCapacity() > 0)
           bee.transfer(this.cell.storage, <ResourceConstant>Object.keys(bee.store)[0]);
         else
-          bee.goRest(this.idlePos);
+          bee.goRest(this.cell.pos);
       }
     });
   }

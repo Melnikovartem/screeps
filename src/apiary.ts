@@ -30,11 +30,6 @@ export class _Apiary {
       if (room.controller && room.controller.my)
         this.hives[room.name] = new Hive(room.name);
     });
-
-    _.forEach(Game.flags, (flag) => {
-      safeWrap(() => this.checkFlag(flag), flag.name)
-    });
-    this.findBees();
   }
 
   // next 2 are for hand usage
