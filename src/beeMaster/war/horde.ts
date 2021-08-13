@@ -1,5 +1,6 @@
 import { Setups } from "../../creepSetups";
 import type { SpawnOrder, Hive } from "../../Hive";
+import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
 // most basic of bitches a horde full of wasps
@@ -10,13 +11,13 @@ export class hordeMaster extends SwarmMaster {
 
   tryToDowngrade: boolean = false;
 
-  constructor(hive: Hive, order: Flag) {
+  constructor(hive: Hive, order: Order) {
     super(hive, order);
 
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-    if (roomInfo.safeModeEndTime > this.destroyTime)
-      this.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
+    if (roomInfo.safeModeEndTime > this.order.destroyTime)
+      this.order.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
   }
 
   update() {
@@ -24,10 +25,10 @@ export class hordeMaster extends SwarmMaster {
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
     // also for miners so not roomInfo.safePlace
 
-    if (!roomInfo.safePlace && this.destroyTime < Game.time + CREEP_LIFE_TIME)
-      this.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
+    if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
+      this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
 
-    if (this.checkBees() && this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
+    if (this.checkBees() && this.order.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
       && Game.time >= roomInfo.safeModeEndTime - 100) {
       let order: SpawnOrder = {
         master: this.ref,

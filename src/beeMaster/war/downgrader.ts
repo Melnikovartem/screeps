@@ -1,11 +1,12 @@
 import { Setups } from "../../creepSetups"
 import type { SpawnOrder, Hive } from "../../Hive";
+import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
 export class downgradeMaster extends SwarmMaster {
   lastAttacked: number;
 
-  constructor(hive: Hive, order: Flag) {
+  constructor(hive: Hive, order: Order) {
     super(hive, order);
 
     this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
@@ -16,16 +17,16 @@ export class downgradeMaster extends SwarmMaster {
 
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
     if (!roomInfo.ownedByEnemy)
-      this.destroyTime = Game.time;
+      this.order.destroyTime = Game.time;
     if (roomInfo.safeModeEndTime) // wait untill safe mode run out
       this.lastAttacked = Game.time + roomInfo.safeModeEndTime - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
 
-    if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.destroyTime)
-      this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
+    if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.order.destroyTime)
+      this.order.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
 
 
     // 5 for random shit
-    if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.destroyTime > Game.time + 100) {
+    if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.order.destroyTime > Game.time + 100) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer,

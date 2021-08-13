@@ -1,7 +1,7 @@
 import { Bee } from "../../bee"
-
 import { Setups } from "../../creepSetups"
 import type { SpawnOrder, Hive } from "../../Hive";
+import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { VISUALS_ON } from "../../settings"
@@ -18,12 +18,12 @@ export class drainerMaster extends SwarmMaster {
   target: string | undefined;
   healing: boolean = false;
 
-  constructor(hive: Hive, order: Flag) {
+  constructor(hive: Hive, order: Order) {
     super(hive, order);
 
     this.meetingPoint = order.pos;
     // sad cause safeMode saves from this shit
-    this.destroyTime = Game.time + CREEP_LIFE_TIME;
+    this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
     this.targetBeeCount = 2;
   }
 
@@ -33,7 +33,7 @@ export class drainerMaster extends SwarmMaster {
       this.healer = bee;
     else
       this.tank = bee;
-    this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+    this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
 
   update() {
@@ -55,7 +55,7 @@ export class drainerMaster extends SwarmMaster {
 
       // this stupid tatic was countered
       if (!roomInfo.safePlace)
-        this.destroyTime = Game.time;
+        this.order.destroyTime = Game.time;
     }
 
     if (this.phase == "spawning") {

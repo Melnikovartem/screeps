@@ -4,15 +4,15 @@
 import type { Hive } from "../Hive";
 import { Master } from "./_Master";
 
+import { Order } from "../order";
+
 export abstract class SwarmMaster extends Master {
 
-  order: Flag
-  destroyTime: number;
+  order: Order;
 
-  constructor(hive: Hive, order: Flag) {
-    super(hive, "master_Swarm_" + order.name);
+  constructor(hive: Hive, order: Order) {
+    super(hive, "masterSwarm_" + order.ref);
 
-    this.destroyTime = Game.time + 3000;
     this.order = order;
   }
 }

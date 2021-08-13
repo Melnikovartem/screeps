@@ -1,7 +1,7 @@
-import { Bee } from "../../bee"
-
-import { Setups } from "../../creepSetups"
+import { Bee } from "../../bee";
+import { Setups } from "../../creepSetups";
 import type { SpawnOrder, Hive } from "../../Hive";
+import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
 // lowlevel harass
@@ -10,7 +10,7 @@ export class blockerMaster extends SwarmMaster {
   freeBees: Bee[] = [];
   runToDeath: boolean = false;
 
-  constructor(hive: Hive, order: Flag) {
+  constructor(hive: Hive, order: Order) {
     super(hive, order);
 
     let positions = order.pos.getWalkablePositions()
@@ -26,11 +26,11 @@ export class blockerMaster extends SwarmMaster {
 
     // sad cause safeMode saves from this shit
     if (roomInfo.safeModeEndTime > Game.time)
-      this.destroyTime = Game.time;
+      this.order.destroyTime = Game.time;
     if (!this.runToDeath && !roomInfo.safePlace)
-      this.destroyTime = Game.time;
+      this.order.destroyTime = Game.time;
     else
-      this.destroyTime = Game.time + 2000;
+      this.order.destroyTime = Game.time + 2000;
   }
 
   newBee(bee: Bee) {
@@ -46,7 +46,7 @@ export class blockerMaster extends SwarmMaster {
 
       // this stupid tatic was countered
       if (!roomInfo.safePlace)
-        this.destroyTime = Game.time;
+        this.order.destroyTime = Game.time;
     }
 
     for (let keyX in this.targetMap)
@@ -56,7 +56,7 @@ export class blockerMaster extends SwarmMaster {
             this.targetMap[keyX][keyY] = this.freeBees.pop()!.ref;
         }
 
-    if (this.checkBees() && this.destroyTime > Game.time + 200) {
+    if (this.checkBees() && this.order.destroyTime > Game.time + 200) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.puppet,

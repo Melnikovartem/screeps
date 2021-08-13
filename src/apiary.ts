@@ -2,18 +2,16 @@ import { Hive } from "./Hive";
 import { Bee } from "./bee";
 
 import { Intel } from "./intelligence";
+import { Order } from "./order";
 import { makeId } from "./utils/other";
-
-import { hordeMaster } from "./beeMaster/war/horde";
-import { downgradeMaster } from "./beeMaster/war/downgrader";
-import { drainerMaster } from "./beeMaster/war/drainer";
-import { SwarmMaster } from "./beeMaster/_SwarmMaster";
 
 import { UPDATE_EACH_TICK } from "./settings";
 
 export class _Apiary {
   hives: { [id: string]: Hive } = {};
   destroyTime: number;
+
+  orders: { [id: string]: Order } = {};
 
   intel: Intel;
 
@@ -103,54 +101,11 @@ export class _Apiary {
     return "OK";
   }
 
-  spawnSwarm<T extends SwarmMaster>(order: Flag, swarmMaster: new (hive: Hive, order: Flag) => T): T {
-    let homeRoom: string;
-
-    if (this.hives[order.pos.roomName])
-      homeRoom = order.pos.roomName;
-    else
-      homeRoom = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
-
-    _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
-      if (this.hives[<string>exit] && this.hives[homeRoom].stage > this.hives[<string>exit].stage)
-        homeRoom = <string>exit;
-    });
-    return new swarmMaster(this.hives[homeRoom], order);
-  }
-
   updateFlags() {
     // act upon flags
     if (Object.keys(this.hives).length)
       _.forEach(Game.flags, (flag) => {
-        // annex room
-        if (flag.color == COLOR_RED) {
-          let master: SwarmMaster = (<SwarmMaster>global.masters["master_Swarm_" + flag.name]);
-          if (!master) {
-            if (flag.secondaryColor == COLOR_BLUE)
-              this.spawnSwarm(flag, hordeMaster);
-            else if (flag.secondaryColor == COLOR_PURPLE)
-              this.spawnSwarm(flag, downgradeMaster);
-            else if (flag.secondaryColor == COLOR_YELLOW)
-              this.spawnSwarm(flag, drainerMaster);
-            else if (flag.secondaryColor == COLOR_RED) {
-              let masterNew = this.spawnSwarm(flag, hordeMaster);
 
-              // change settings to fit needed parameters
-              _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
-                if (this.hives[<string>exit])
-                  masterNew.tryToDowngrade = true;
-                return masterNew.tryToDowngrade;
-              });
-              masterNew.targetBeeCount = 2;
-              masterNew.maxSpawns = masterNew.targetBeeCount * 2;
-            }
-          } else if (master.destroyTime < Game.time) {
-            delete global.masters["master_Swarm_" + flag.name];
-            flag.remove();
-          } else if (UPDATE_EACH_TICK || Game.time % 10 == 0) {
-            master.order = flag;
-          }
-        }
       });
   }
 

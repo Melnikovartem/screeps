@@ -5,7 +5,6 @@
 import { storageCell, StorageRequest } from "../../cells/storageCell";
 
 import { Bee } from "../../bee";
-
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
