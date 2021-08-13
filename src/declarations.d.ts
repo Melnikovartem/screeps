@@ -30,30 +30,46 @@ declare global {
     profiler?: any;
   }
 
+  interface FlagMemory {
+    repeat: number;
+  }
+
   interface Memory {
     log: {
       reset?: number,
       spawns: {
-        time: number,
-        spawnRoom: string,
-        fromSpawn: string,
-        spawning: string,
-        orderedBy: string,
-        priority: number,
-      }[],
+        [id: string]: {
+          time: number,
+          spawnRoom: string,
+          fromSpawn: string,
+          orderedBy: string,
+          priority: number,
+        }
+      },
       hives: {
         [id: string]: {
-          annexNames: string[],
-          roomTargets: boolean,
-          annexesTargets: boolean,
-          constructionSites: number,
-          emergencyRepairs: number,
-          normalRepairs: number,
-          orderList: {
-            master: string,
-            amount: number
-          }[],
-        }[]
+          [id: string]: {
+            annexNames: string[],
+            roomTargets: boolean,
+            annexesTargets: boolean,
+            constructionSites: number,
+            emergencyRepairs: number,
+            normalRepairs: number,
+            orderList: {
+              master: string,
+              amount: number
+            }[],
+          }
+        }
+      },
+      orders: {
+        [id: string]: {
+          color: number,
+          secondaryColor: number,
+          name: string,
+          repeat: number,
+          destroyTime: number,
+        }
       },
     },
     cache: {

@@ -11,10 +11,11 @@ import "./prototypes/pos"
 import { _Apiary } from "./Apiary";
 
 import { GENERATE_PIXEL, ERROR_WRAPPER, LOGGING_CYCLE, PRINT_INFO, PUBLIC, PROFILER } from "./settings";
+import profiler from 'screeps-profiler';
 
 console.log("settings are for", PUBLIC ? "public" : "local!!");
 
-import profiler from 'screeps-profiler';
+// Mem.wipe()
 
 // This gets run on each global reset
 function onGlobalReset(): void {

@@ -7,6 +7,8 @@ import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 import { profile } from "./profiler/decorator";
 
+import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
+
 @profile
 export class Order {
   ref: string;
@@ -16,12 +18,36 @@ export class Order {
   master?: Master;
 
   constructor(flag: Flag) {
-    this.ref = flag.name;
+    this.ref = flag.name.split("&")[0];
     this.flag = flag;
     this.pos = flag.pos;
 
+    let settings = flag.name.split("&")[1];
+
+    this.flag.memory = {
+      repeat: 0,
+    }
+
+    if (settings) {
+      _.forEach(settings.split("&"), (str) => {
+        let name = str.split(":")[0];
+        if (name == "repeat") {
+          let matches = str.split(":")[1].match(/\d+/g);
+          if (matches)
+            this.flag.memory.repeat = <number><unknown>matches;
+        }
+      });
+    }
     this.destroyTime = Game.time + 2000;
     this.getMaster();
+
+    if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
+      color: this.flag.color,
+      secondaryColor: this.flag.color,
+      name: this.flag.name,
+      repeat: this.flag.memory.repeat,
+      destroyTime: -1,
+    }
   }
 
   findHive(): Hive {
@@ -79,7 +105,16 @@ export class Order {
     if (this.destroyTime < Game.time) {
       if (this.master)
         delete global.masters[this.master.ref];
-      return 0; //killsig
+
+      if (this.flag.memory.repeat > 0) {
+        if (PRINT_INFO) console.log("repeated" + this.ref);
+        this.destroyTime = Game.time + 2000;
+        this.flag.memory.repeat -= 1;
+        this.getMaster();
+      } else {
+        if (LOGGING_CYCLE) Memory.log.orders[this.ref].destroyTime = Game.time;
+        return 0; //killsig}
+      }
     }
     return 1;
   }

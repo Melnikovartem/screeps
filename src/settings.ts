@@ -9,7 +9,7 @@ export const PRINT_INFO = true;
 // think about on official
 export const PROFILER = false;
 export const VISUALS_ON = true;
-export const LOGGING_CYCLE = 50;
+export const LOGGING_CYCLE = 1;
 
 // turn on on official
 export const GENERATE_PIXEL = PUBLIC;

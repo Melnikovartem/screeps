@@ -257,8 +257,8 @@ export class Hive {
 
   updateLog() {
     if (!Memory.log.hives[this.roomName])
-      Memory.log.hives[this.roomName] = [];
-    Memory.log.hives[this.roomName].push({
+      Memory.log.hives[this.roomName] = {};
+    Memory.log.hives[this.roomName][Game.time] = {
       annexNames: this.annexNames,
       roomTargets: this.roomTargets,
       annexesTargets: this.annexesTargets,
@@ -266,7 +266,7 @@ export class Hive {
       emergencyRepairs: this.emergencyRepairs.length,
       normalRepairs: this.normalRepairs.length,
       orderList: _.map(this.orderList, (order) => { return { master: order.master, amount: order.amount, } }),
-    });
+    };
   }
 
   update() {
@@ -280,7 +280,7 @@ export class Hive {
       this.findTargets();
     if (Game.time % 50 == 19)
       this.parseStructures(); //keep em fresh
-    if (Game.time % LOGGING_CYCLE == 0)
+    if (Game.time % (LOGGING_CYCLE * 3) == 0)
       this.updateLog();
 
     _.forEach(this.cells, (cell) => {

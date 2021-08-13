@@ -65,15 +65,14 @@ export class respawnCell extends Cell {
           }
 
           if (ans == OK) {
-            if (LOGGING_CYCLE)
-              Memory.log.spawns.push({
-                time: Game.time,
-                spawnRoom: this.hive.roomName,
-                fromSpawn: spawn!.name,
-                spawning: name,
-                orderedBy: order.master,
-                priority: order.priority,
-              });
+            if (LOGGING_CYCLE) Memory.log.spawns[name] = {
+              time: Game.time,
+              spawnRoom: this.hive.roomName,
+              fromSpawn: spawn!.name,
+              orderedBy: order.master,
+              priority: order.priority,
+            };
+
             this.hive.orderList[key].amount -= 1;
           }
         }
