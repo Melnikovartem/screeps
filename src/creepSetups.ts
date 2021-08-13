@@ -68,10 +68,16 @@ export const Setups = {
   starter: new CreepSetup(SetupsNames.starter, {
     pattern: [WORK, CARRY, MOVE],
   }),
-  claimer: new CreepSetup(SetupsNames.claimer, {
-    pattern: [CLAIM, MOVE],
-    patternLimit: 1,
-  }),
+  claimer: {
+    normal: new CreepSetup(SetupsNames.claimer, {
+      pattern: [CLAIM, MOVE],
+      patternLimit: 1,
+    }),
+    double: new CreepSetup(SetupsNames.claimer, {
+      pattern: [CLAIM, MOVE],
+      patternLimit: 2,
+    }),
+  },
   manager: new CreepSetup(SetupsNames.manager, {
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 7,
@@ -82,9 +88,12 @@ export const Setups = {
   }),
   miner: {
     energy: new CreepSetup(SetupsNames.miner, {
+      pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+      patternLimit: 1,
+    }),
+    minerals: new CreepSetup(SetupsNames.miner, {
       fixed: [CARRY],
       pattern: [WORK, WORK, MOVE],
-      patternLimit: 3,
     })
   },
   upgrader: {
@@ -101,6 +110,10 @@ export const Setups = {
   builder: new CreepSetup(SetupsNames.builder, {
     pattern: [WORK, CARRY, MOVE],
     patternLimit: 10, // not sure if you need anyone bigger than that
+  }),
+  bootstrap: new CreepSetup(SetupsNames.builder, {
+    pattern: [WORK, CARRY, MOVE],
+    patternLimit: 6,
   }),
   puppet: new CreepSetup(SetupsNames.scout, {
     pattern: [MOVE],

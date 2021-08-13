@@ -71,7 +71,7 @@ export class managerMaster extends Master {
       };
 
       if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {
-        order.setup = <CreepSetup>{ ...Setups.manager };
+        order.setup = new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup });
         order.setup.bodySetup.patternLimit = 5; // save energy from burning
       }
 

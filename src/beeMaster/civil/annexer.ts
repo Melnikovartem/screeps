@@ -1,4 +1,4 @@
-import { Setups, CreepSetup } from "../../creepSetups";
+import { Setups } from "../../creepSetups";
 import { SpawnOrder, Hive } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -25,7 +25,7 @@ export class annexMaster extends Master {
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: Setups.claimer,
+        setup: Setups.claimer.normal,
         amount: 1,
         priority: 3,
       };
@@ -36,8 +36,7 @@ export class annexMaster extends Master {
 
       // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
       if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd < 4200) {
-        order.setup = <CreepSetup>{ ...Setups.claimer }; // copy cause gonna change limit
-        order.setup.bodySetup.patternLimit = 2; //make bigger if not needed
+        order.setup = Setups.claimer.double
       }
 
       this.wish(order);

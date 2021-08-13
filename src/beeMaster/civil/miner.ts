@@ -1,6 +1,6 @@
 import { resourceCell } from "../../cells/resourceCell";
 
-import { Setups, CreepSetup } from "../../creepSetups";
+import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -20,12 +20,14 @@ export class minerMaster extends Master {
     if (this.checkBees() && this.cell.perSecondNeeded > 0) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: <CreepSetup>{ ...Setups.miner.energy },
+        setup: Setups.miner.energy,
         amount: 1,
         priority: 3,
       };
 
-      order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecondNeeded / 2);
+      if (this.cell.resourceType != RESOURCE_ENERGY) {
+        order.setup = Setups.miner.minerals;
+      }
 
       this.wish(order);
     }
@@ -36,9 +38,13 @@ export class minerMaster extends Master {
 
       // any resource
       if (bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0) {
+        let harvest: boolean = false;
         if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
-          bee.harvest(this.cell.resource);
+          harvest = true;
         if (this.cell.extractor && this.cell.extractor.cooldown == 0)
+          harvest = true;
+
+        if (harvest)
           bee.harvest(this.cell.resource);
       }
 

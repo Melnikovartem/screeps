@@ -49,7 +49,7 @@ export class haulerMaster extends Master {
       };
 
       if (this.hive.stage < 2) {
-        order.setup = <CreepSetup>{ ...Setups.hauler }; // copy cause gonna change limit
+        order.setup = new CreepSetup(Setups.hauler.name, { ...Setups.hauler.bodySetup }); // copy cause gonna change limit
         order.setup.bodySetup.patternLimit = 10;
       }
       this.wish(order);

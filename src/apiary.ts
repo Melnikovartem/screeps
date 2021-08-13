@@ -101,14 +101,6 @@ export class _Apiary {
     return "OK";
   }
 
-  updateFlags() {
-    // act upon flags
-    if (Object.keys(this.hives).length)
-      _.forEach(Game.flags, (flag) => {
-
-      });
-  }
-
   findBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
@@ -137,7 +129,14 @@ export class _Apiary {
       hive.update();
     });
 
-    this.updateFlags();
+    if (UPDATE_EACH_TICK || Game.time % 20 == 9)
+      _.forEach(Game.flags, (flag) => {
+        let ref = flag.name
+        if (!this.orders[ref])
+          this.orders[ref] = new Order(flag);
+        else if (this.orders[ref].update(flag) == 0)
+          delete this.orders[ref];
+      });
 
     _.forEach(global.bees, (bee) => {
       bee.update();

@@ -3090,10 +3090,16 @@ const Setups = {
     starter: new CreepSetup(SetupsNames.starter, {
         pattern: [WORK, CARRY, MOVE],
     }),
-    claimer: new CreepSetup(SetupsNames.claimer, {
-        pattern: [CLAIM, MOVE],
-        patternLimit: 1,
-    }),
+    claimer: {
+        normal: new CreepSetup(SetupsNames.claimer, {
+            pattern: [CLAIM, MOVE],
+            patternLimit: 1,
+        }),
+        double: new CreepSetup(SetupsNames.claimer, {
+            pattern: [CLAIM, MOVE],
+            patternLimit: 2,
+        }),
+    },
     manager: new CreepSetup(SetupsNames.manager, {
         pattern: [CARRY, CARRY, MOVE],
         patternLimit: 7,
@@ -3104,9 +3110,12 @@ const Setups = {
     }),
     miner: {
         energy: new CreepSetup(SetupsNames.miner, {
+            pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+            patternLimit: 1,
+        }),
+        minerals: new CreepSetup(SetupsNames.miner, {
             fixed: [CARRY],
             pattern: [WORK, WORK, MOVE],
-            patternLimit: 3,
         })
     },
     upgrader: {
@@ -3123,6 +3132,10 @@ const Setups = {
     builder: new CreepSetup(SetupsNames.builder, {
         pattern: [WORK, CARRY, MOVE],
         patternLimit: 10,
+    }),
+    bootstrap: new CreepSetup(SetupsNames.builder, {
+        pattern: [WORK, CARRY, MOVE],
+        patternLimit: 6,
     }),
     puppet: new CreepSetup(SetupsNames.scout, {
         pattern: [MOVE],
@@ -3206,11 +3219,13 @@ class minerMaster extends Master {
         if (this.checkBees() && this.cell.perSecondNeeded > 0) {
             let order = {
                 master: this.ref,
-                setup: Object.assign({}, Setups.miner.energy),
+                setup: Setups.miner.energy,
                 amount: 1,
                 priority: 3,
             };
-            order.setup.bodySetup.patternLimit = Math.ceil(this.cell.perSecondNeeded / 2);
+            if (this.cell.resourceType != RESOURCE_ENERGY) {
+                order.setup = Setups.miner.minerals;
+            }
             this.wish(order);
         }
     }
@@ -3314,7 +3329,7 @@ class haulerMaster extends Master {
                 priority: 4,
             };
             if (this.hive.stage < 2) {
-                order.setup = Object.assign({}, Setups.hauler); // copy cause gonna change limit
+                order.setup = new CreepSetup(Setups.hauler.name, Object.assign({}, Setups.hauler.bodySetup)); // copy cause gonna change limit
                 order.setup.bodySetup.patternLimit = 10;
             }
             this.wish(order);
@@ -3441,7 +3456,7 @@ class managerMaster extends Master {
                 priority: 3,
             };
             if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {
-                order.setup = Object.assign({}, Setups.manager);
+                order.setup = new CreepSetup(Setups.manager.name, Object.assign({}, Setups.manager.bodySetup));
                 order.setup.bodySetup.patternLimit = 5; // save energy from burning
             }
             this.wish(order);
@@ -3715,7 +3730,7 @@ class queenMaster extends Master {
         if (this.checkBees(CREEP_LIFE_TIME - 100)) {
             let order = {
                 master: this.ref,
-                setup: Object.assign({}, Setups.manager),
+                setup: new CreepSetup(Setups.manager.name, Object.assign({}, Setups.manager.bodySetup)),
                 amount: 1,
                 priority: 0,
             };
@@ -3823,7 +3838,6 @@ class respawnCell extends Cell {
     ;
 }
 
-let maxSize = 6;
 class bootstrapMaster extends Master {
     constructor(developmentCell) {
         super(developmentCell.hive, "master_" + developmentCell.ref);
@@ -3831,7 +3845,9 @@ class bootstrapMaster extends Master {
         this.stateMap = {};
         this.sourceTargeting = {};
         this.cell = developmentCell;
-        let workBodyParts = Math.min(maxSize, Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3));
+        let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
+        if (Setups.bootstrap.bodySetup.patternLimit)
+            workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
         _.forEach(this.cell.sources, (source) => {
             let walkablePositions = source.pos.getWalkablePositions().length;
             // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
@@ -3860,11 +3876,10 @@ class bootstrapMaster extends Master {
         if (this.checkBees() && this.hive.stage == 0) {
             let order = {
                 master: this.ref,
-                setup: Object.assign({}, Setups.builder),
+                setup: Setups.bootstrap,
                 amount: 1,
                 priority: 5,
             };
-            order.setup.bodySetup.patternLimit = maxSize;
             if (this.beesAmount < this.targetBeeCount * 0.5)
                 order.priority = 2;
             this.wish(order);
@@ -4092,7 +4107,7 @@ class annexMaster extends Master {
         if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
             let order = {
                 master: this.ref,
-                setup: Setups.claimer,
+                setup: Setups.claimer.normal,
                 amount: 1,
                 priority: 3,
             };
@@ -4101,8 +4116,7 @@ class annexMaster extends Master {
                 this.controller = controller;
             // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
             if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd < 4200) {
-                order.setup = Object.assign({}, Setups.claimer); // copy cause gonna change limit
-                order.setup.bodySetup.patternLimit = 2; //make bigger if not needed
+                order.setup = Setups.claimer.double;
             }
             this.wish(order);
         }
@@ -4545,8 +4559,7 @@ class Intel {
 // new fancy war ai master
 class SwarmMaster extends Master {
     constructor(hive, order) {
-        super(hive, "master_Swarm_" + order.name);
-        this.destroyTime = Game.time + 3000;
+        super(hive, "masterSwarm_" + order.ref);
         this.order = order;
     }
 }
@@ -4560,16 +4573,16 @@ class hordeMaster extends SwarmMaster {
         this.spawned = 0;
         this.tryToDowngrade = false;
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-        if (roomInfo.safeModeEndTime > this.destroyTime)
-            this.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
+        if (roomInfo.safeModeEndTime > this.order.destroyTime)
+            this.order.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
     }
     update() {
         super.update();
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         // also for miners so not roomInfo.safePlace
-        if (!roomInfo.safePlace && this.destroyTime < Game.time + CREEP_LIFE_TIME)
-            this.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
-        if (this.checkBees() && this.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
+        if (!roomInfo.safePlace && this.order.destroyTime < Game.time + CREEP_LIFE_TIME)
+            this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
+        if (this.checkBees() && this.order.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
             && Game.time >= roomInfo.safeModeEndTime - 100) {
             let order = {
                 master: this.ref,
@@ -4630,16 +4643,16 @@ class downgradeMaster extends SwarmMaster {
         super.update();
         let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
         if (!roomInfo.ownedByEnemy)
-            this.destroyTime = Game.time;
+            this.order.destroyTime = Game.time;
         if (roomInfo.safeModeEndTime) // wait untill safe mode run out
             this.lastAttacked = Game.time + roomInfo.safeModeEndTime - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-        if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.destroyTime)
-            this.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
+        if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.order.destroyTime)
+            this.order.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE; // if no need to destroy i will add time
         // 5 for random shit
-        if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.destroyTime > Game.time + 100) {
+        if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.order.destroyTime > Game.time + 100) {
             let order = {
                 master: this.ref,
-                setup: Setups.claimer,
+                setup: Setups.claimer.normal,
                 amount: 1,
                 priority: 5,
             };
@@ -4675,7 +4688,7 @@ class drainerMaster extends SwarmMaster {
         this.healing = false;
         this.meetingPoint = order.pos;
         // sad cause safeMode saves from this shit
-        this.destroyTime = Game.time + CREEP_LIFE_TIME;
+        this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
         this.targetBeeCount = 2;
     }
     newBee(bee) {
@@ -4684,7 +4697,7 @@ class drainerMaster extends SwarmMaster {
             this.healer = bee;
         else
             this.tank = bee;
-        this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+        this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
     }
     update() {
         super.update();
@@ -4702,7 +4715,7 @@ class drainerMaster extends SwarmMaster {
             let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
             // this stupid tatic was countered
             if (!roomInfo.safePlace)
-                this.destroyTime = Game.time;
+                this.order.destroyTime = Game.time;
         }
         if (this.phase == "spawning") {
             this.phase = "meeting";
@@ -4772,9 +4785,69 @@ class drainerMaster extends SwarmMaster {
     }
 }
 
+class Order {
+    constructor(flag) {
+        this.ref = flag.name;
+        this.flag = flag;
+        this.pos = flag.pos;
+        this.destroyTime = Game.time + 3000;
+        this.getMaster();
+    }
+    findHive() {
+        let homeRoom;
+        if (global.Apiary.hives[this.pos.roomName])
+            homeRoom = this.pos.roomName;
+        else
+            homeRoom = Object.keys(global.Apiary.hives)[Math.floor(Math.random() * Object.keys(global.Apiary.hives).length)];
+        _.forEach(Game.map.describeExits(this.pos.roomName), (exit) => {
+            if (global.Apiary.hives[exit] && global.Apiary.hives[homeRoom].stage > global.Apiary.hives[exit].stage)
+                homeRoom = exit;
+        });
+        return global.Apiary.hives[homeRoom];
+    }
+    getMaster() {
+        // annex room
+        if (this.flag.color == COLOR_RED) {
+            if (this.flag.secondaryColor == COLOR_BLUE)
+                this.master = new hordeMaster(this.findHive(), this);
+            else if (this.flag.secondaryColor == COLOR_PURPLE)
+                this.master = new downgradeMaster(this.findHive(), this);
+            else if (this.flag.secondaryColor == COLOR_YELLOW)
+                this.master = new drainerMaster(this.findHive(), this);
+            else if (this.flag.secondaryColor == COLOR_GREY)
+                this.master = new puppetMaster(this.findHive(), this.pos.roomName);
+            else if (this.flag.secondaryColor == COLOR_RED) {
+                let horde = new hordeMaster(this.findHive(), this);
+                if (this.ref.includes("controller"))
+                    horde.tryToDowngrade = true;
+                let matches = this.ref.match(/\d+/g);
+                if (matches != null) //F?
+                    horde.targetBeeCount = matches[0];
+                else
+                    horde.targetBeeCount = 2;
+                horde.maxSpawns = horde.targetBeeCount * 2;
+                this.master = horde;
+            }
+        }
+    }
+    update(flag) {
+        this.flag = flag;
+        this.pos = flag.pos;
+        if (!this.master)
+            this.getMaster();
+        if (this.destroyTime > Game.time) {
+            if (this.master)
+                delete global.masters[this.master.ref];
+            return 0; //killsig
+        }
+        return 1;
+    }
+}
+
 class _Apiary {
     constructor() {
         this.hives = {};
+        this.orders = {};
         this.destroyTime = Game.time + 4000;
         this.intel = new Intel();
         let myRoomsAnnexes = {};
@@ -4851,54 +4924,6 @@ class _Apiary {
         });
         return "OK";
     }
-    spawnSwarm(order, swarmMaster) {
-        let homeRoom;
-        if (this.hives[order.pos.roomName])
-            homeRoom = order.pos.roomName;
-        else
-            homeRoom = Object.keys(this.hives)[Math.floor(Math.random() * Object.keys(this.hives).length)];
-        _.forEach(Game.map.describeExits(order.pos.roomName), (exit) => {
-            if (this.hives[exit] && this.hives[homeRoom].stage > this.hives[exit].stage)
-                homeRoom = exit;
-        });
-        return new swarmMaster(this.hives[homeRoom], order);
-    }
-    updateFlags() {
-        // act upon flags
-        if (Object.keys(this.hives).length)
-            _.forEach(Game.flags, (flag) => {
-                // annex room
-                if (flag.color == COLOR_RED) {
-                    let master = global.masters["master_Swarm_" + flag.name];
-                    if (!master) {
-                        if (flag.secondaryColor == COLOR_BLUE)
-                            this.spawnSwarm(flag, hordeMaster);
-                        else if (flag.secondaryColor == COLOR_PURPLE)
-                            this.spawnSwarm(flag, downgradeMaster);
-                        else if (flag.secondaryColor == COLOR_YELLOW)
-                            this.spawnSwarm(flag, drainerMaster);
-                        else if (flag.secondaryColor == COLOR_RED) {
-                            let masterNew = this.spawnSwarm(flag, hordeMaster);
-                            // change settings to fit needed parameters
-                            _.some(Game.map.describeExits(flag.pos.roomName), (exit) => {
-                                if (this.hives[exit])
-                                    masterNew.tryToDowngrade = true;
-                                return masterNew.tryToDowngrade;
-                            });
-                            masterNew.targetBeeCount = 2;
-                            masterNew.maxSpawns = masterNew.targetBeeCount * 2;
-                        }
-                    }
-                    else if (master.destroyTime < Game.time) {
-                        delete global.masters["master_Swarm_" + flag.name];
-                        flag.remove();
-                    }
-                    else {
-                        master.order = flag;
-                    }
-                }
-            });
-    }
     findBees() {
         // after all the masters where created and retrived if it was needed
         for (const name in Memory.creeps) {
@@ -4925,7 +4950,13 @@ class _Apiary {
         _.forEach(this.hives, (hive) => {
             hive.update();
         });
-        this.updateFlags();
+        _.forEach(Game.flags, (flag) => {
+                let ref = flag.name;
+                if (!this.orders[ref])
+                    this.orders[ref] = new Order(flag);
+                else if (this.orders[ref].update(flag) == 0)
+                    delete this.orders[ref];
+            });
         _.forEach(global.bees, (bee) => {
             bee.update();
         });

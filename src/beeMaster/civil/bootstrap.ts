@@ -2,15 +2,13 @@
 import { developmentCell } from "../../cells/developmentCell";
 
 import { Bee } from "../../Bee";
-import { Setups, CreepSetup } from "../../creepSetups";
+import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
 
 import { VISUALS_ON } from "../../settings";
-
-let maxSize = 6;
 
 export class bootstrapMaster extends Master {
   cell: developmentCell;
@@ -24,7 +22,9 @@ export class bootstrapMaster extends Master {
 
     this.cell = developmentCell;
 
-    let workBodyParts = Math.min(maxSize, Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3));
+    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
+    if (Setups.bootstrap.bodySetup.patternLimit)
+      workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getWalkablePositions().length;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
@@ -57,12 +57,10 @@ export class bootstrapMaster extends Master {
     if (this.checkBees() && this.hive.stage == 0) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: <CreepSetup>{ ...Setups.builder },
+        setup: Setups.bootstrap,
         amount: 1,
         priority: 5, // same as non-important army
       };
-
-      order.setup.bodySetup.patternLimit = maxSize;
 
       if (this.beesAmount < this.targetBeeCount * 0.5)
         order.priority = 2;
