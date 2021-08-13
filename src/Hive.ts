@@ -243,13 +243,13 @@ export class Hive {
       this.updateLog();
 
     _.forEach(this.cells, (cell) => {
-      safeWrap(cell.update, cell.ref);
+      safeWrap(() => cell.update(), cell.ref);
     });
   }
 
   run() {
     _.forEach(this.cells, (cell) => {
-      safeWrap(cell.run, cell.ref);
+      safeWrap(() => cell.run(), cell.ref);
     });
   }
 }

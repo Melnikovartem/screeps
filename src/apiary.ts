@@ -145,11 +145,11 @@ export class _Apiary {
   // update phase
   update() {
     _.forEach(this.hives, (hive) => {
-      safeWrap(hive.update, hive.roomName);
+      safeWrap(() => hive.update(), hive.roomName);
     });
 
     _.forEach(Game.flags, (flag) => {
-      safeWrap(() => { this.updateFlag(flag) }, flag.name)
+      safeWrap(() => this.updateFlag(flag), flag.name)
     });
 
     _.forEach(global.bees, (bee) => {
@@ -158,17 +158,17 @@ export class _Apiary {
     this.findBees();
 
     _.forEach(global.masters, (master) => {
-      safeWrap(master.update, master.ref);
+      safeWrap(() => master.update(), master.ref);
     });
   }
 
   // run phase
   run() {
     _.forEach(this.hives, (hive) => {
-      safeWrap(hive.run, hive.roomName);
+      safeWrap(() => hive.run(), hive.roomName);
     });
     _.forEach(global.masters, (master) => {
-      safeWrap(master.run, master.ref);
+      safeWrap(() => master.run(), master.ref);
     });
   }
 }

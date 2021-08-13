@@ -16,7 +16,7 @@ export function makeId(length: number): string {
 export function safeWrap(cycle: () => void, context: string): void {
   if (SAFE_DEV) {
     try { cycle(); }
-    catch { console.log("ERROR in:", context, Game.time); }
+    catch (e) { console.log("ERROR in:", context, Game.time, "\n", e); }
   } else
     cycle();
 }
