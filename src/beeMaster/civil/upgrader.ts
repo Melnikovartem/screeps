@@ -4,6 +4,7 @@ import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
+
 export class upgraderMaster extends Master {
   cell: upgradeCell;
 

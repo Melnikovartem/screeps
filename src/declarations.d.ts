@@ -26,6 +26,8 @@ declare global {
     //for TRAVELER
     _trav?: any;
     _travel?: any;
+    //for Profiler
+    profiler?: any;
   }
 
   interface Memory {

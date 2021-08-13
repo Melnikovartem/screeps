@@ -43,9 +43,7 @@ export class respawnCell extends Cell {
         remove.push(key);
       } else {
         let body;
-        if (order.priority < 3 && ((this.beeMaster
-          && this.beeMaster.lastSpawns[this.beeMaster.lastSpawns.length - 1] + CREEP_LIFE_TIME - 80 < Game.time) ||
-          this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] < 100000))
+        if (order.priority < 3)
           body = order.setup.getBody(this.hive.room.energyAvailable);
         else
           body = order.setup.getBody(this.hive.room.energyCapacityAvailable);

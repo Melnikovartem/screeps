@@ -2,8 +2,10 @@
 
 import { SpawnOrder, Hive } from "../Hive";
 import { Bee } from "../bee";
+import { profile } from "../profiler/decorator";
 
 // i will need to do something so i can build up structure from memory
+@profile
 export abstract class Master {
 
   hive: Hive;

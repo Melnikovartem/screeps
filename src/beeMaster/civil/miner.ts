@@ -22,11 +22,12 @@ export class minerMaster extends Master {
         master: this.ref,
         setup: Setups.miner.energy,
         amount: 1,
-        priority: 3,
+        priority: 2,
       };
 
       if (this.cell.resourceType != RESOURCE_ENERGY) {
         order.setup = Setups.miner.minerals;
+        order.priority = 3;
       }
 
       this.wish(order);

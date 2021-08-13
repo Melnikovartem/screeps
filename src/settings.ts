@@ -7,7 +7,7 @@ export const ERROR_WRAPPER = !PUBLIC;
 export const PRINT_INFO = !PUBLIC;
 
 // think about on official
-export const PROFILER = false;
+export const PROFILER = true;
 export const VISUALS_ON = true;
 export const LOGGING_CYCLE = 50;
 

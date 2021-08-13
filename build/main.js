@@ -221,6 +221,8 @@ var base64Vlq = {
 	decode: decode
 };
 
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -1105,7 +1107,7 @@ var ArraySet = arraySet.ArraySet;
 
 var quickSort = quickSort$1.quickSort;
 
-function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
+function SourceMapConsumer(aSourceMap, aSourceMapURL) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
     sourceMap = util.parseSourceMapInput(aSourceMap);
@@ -1116,14 +1118,14 @@ function SourceMapConsumer$1(aSourceMap, aSourceMapURL) {
     : new BasicSourceMapConsumer(sourceMap, aSourceMapURL);
 }
 
-SourceMapConsumer$1.fromSourceMap = function(aSourceMap, aSourceMapURL) {
+SourceMapConsumer.fromSourceMap = function(aSourceMap, aSourceMapURL) {
   return BasicSourceMapConsumer.fromSourceMap(aSourceMap, aSourceMapURL);
 };
 
 /**
  * The version of the source mapping spec that we are consuming.
  */
-SourceMapConsumer$1.prototype._version = 3;
+SourceMapConsumer.prototype._version = 3;
 
 // `__generatedMappings` and `__originalMappings` are arrays that hold the
 // parsed mapping coordinates from the source map's "mappings" attribute. They
@@ -1155,8 +1157,8 @@ SourceMapConsumer$1.prototype._version = 3;
 //
 // `_originalMappings` is ordered by the original positions.
 
-SourceMapConsumer$1.prototype.__generatedMappings = null;
-Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
+SourceMapConsumer.prototype.__generatedMappings = null;
+Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1168,8 +1170,8 @@ Object.defineProperty(SourceMapConsumer$1.prototype, '_generatedMappings', {
   }
 });
 
-SourceMapConsumer$1.prototype.__originalMappings = null;
-Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
+SourceMapConsumer.prototype.__originalMappings = null;
+Object.defineProperty(SourceMapConsumer.prototype, '_originalMappings', {
   configurable: true,
   enumerable: true,
   get: function () {
@@ -1181,7 +1183,7 @@ Object.defineProperty(SourceMapConsumer$1.prototype, '_originalMappings', {
   }
 });
 
-SourceMapConsumer$1.prototype._charIsMappingSeparator =
+SourceMapConsumer.prototype._charIsMappingSeparator =
   function SourceMapConsumer_charIsMappingSeparator(aStr, index) {
     var c = aStr.charAt(index);
     return c === ";" || c === ",";
@@ -1192,16 +1194,16 @@ SourceMapConsumer$1.prototype._charIsMappingSeparator =
  * query (the ordered arrays in the `this.__generatedMappings` and
  * `this.__originalMappings` properties).
  */
-SourceMapConsumer$1.prototype._parseMappings =
+SourceMapConsumer.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     throw new Error("Subclasses must implement _parseMappings");
   };
 
-SourceMapConsumer$1.GENERATED_ORDER = 1;
-SourceMapConsumer$1.ORIGINAL_ORDER = 2;
+SourceMapConsumer.GENERATED_ORDER = 1;
+SourceMapConsumer.ORIGINAL_ORDER = 2;
 
-SourceMapConsumer$1.GREATEST_LOWER_BOUND = 1;
-SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
+SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
+SourceMapConsumer.LEAST_UPPER_BOUND = 2;
 
 /**
  * Iterate over each mapping between an original source/line/column and a
@@ -1219,17 +1221,17 @@ SourceMapConsumer$1.LEAST_UPPER_BOUND = 2;
  *        order or the original's source/line/column order, respectively. Defaults to
  *        `SourceMapConsumer.GENERATED_ORDER`.
  */
-SourceMapConsumer$1.prototype.eachMapping =
+SourceMapConsumer.prototype.eachMapping =
   function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
     var context = aContext || null;
-    var order = aOrder || SourceMapConsumer$1.GENERATED_ORDER;
+    var order = aOrder || SourceMapConsumer.GENERATED_ORDER;
 
     var mappings;
     switch (order) {
-    case SourceMapConsumer$1.GENERATED_ORDER:
+    case SourceMapConsumer.GENERATED_ORDER:
       mappings = this._generatedMappings;
       break;
-    case SourceMapConsumer$1.ORIGINAL_ORDER:
+    case SourceMapConsumer.ORIGINAL_ORDER:
       mappings = this._originalMappings;
       break;
     default:
@@ -1273,7 +1275,7 @@ SourceMapConsumer$1.prototype.eachMapping =
  *   - column: The column number in the generated source, or null.
  *    The column number is 0-based.
  */
-SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
+SourceMapConsumer.prototype.allGeneratedPositionsFor =
   function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
     var line = util.getArg(aArgs, 'line');
 
@@ -1342,8 +1344,6 @@ SourceMapConsumer$1.prototype.allGeneratedPositionsFor =
 
     return mappings;
   };
-
-var SourceMapConsumer_1 = SourceMapConsumer$1;
 
 /**
  * A BasicSourceMapConsumer instance represents a parsed source map which we can
@@ -1439,8 +1439,8 @@ function BasicSourceMapConsumer(aSourceMap, aSourceMapURL) {
   this.file = file;
 }
 
-BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
-BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer$1;
+BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
 
 /**
  * Utility function to find the index of a source.  Returns -1 if not
@@ -1750,7 +1750,7 @@ BasicSourceMapConsumer.prototype.originalPositionFor =
       "generatedLine",
       "generatedColumn",
       util.compareByGeneratedPositionsDeflated,
-      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1895,7 +1895,7 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       "originalLine",
       "originalColumn",
       util.compareByOriginalPositions,
-      util.getArg(aArgs, 'bias', SourceMapConsumer$1.GREATEST_LOWER_BOUND)
+      util.getArg(aArgs, 'bias', SourceMapConsumer.GREATEST_LOWER_BOUND)
     );
 
     if (index >= 0) {
@@ -1916,8 +1916,6 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
       lastColumn: null
     };
   };
-
-var BasicSourceMapConsumer_1 = BasicSourceMapConsumer;
 
 /**
  * An IndexedSourceMapConsumer instance represents a parsed source map which
@@ -2011,13 +2009,13 @@ function IndexedSourceMapConsumer(aSourceMap, aSourceMapURL) {
         generatedLine: offsetLine + 1,
         generatedColumn: offsetColumn + 1
       },
-      consumer: new SourceMapConsumer$1(util.getArg(s, 'map'), aSourceMapURL)
+      consumer: new SourceMapConsumer(util.getArg(s, 'map'), aSourceMapURL)
     }
   });
 }
 
-IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer$1.prototype);
-IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer$1;
+IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
+IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
 
 /**
  * The version of the source mapping spec that we are consuming.
@@ -2235,101 +2233,6 @@ IndexedSourceMapConsumer.prototype._parseMappings =
     quickSort(this.__generatedMappings, util.compareByGeneratedPositionsDeflated);
     quickSort(this.__originalMappings, util.compareByOriginalPositions);
   };
-
-var IndexedSourceMapConsumer_1 = IndexedSourceMapConsumer;
-
-var sourceMapConsumer = {
-	SourceMapConsumer: SourceMapConsumer_1,
-	BasicSourceMapConsumer: BasicSourceMapConsumer_1,
-	IndexedSourceMapConsumer: IndexedSourceMapConsumer_1
-};
-
-var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
-
-class ErrorMapper {
-    static get consumer() {
-        if (this._consumer == null) {
-            this._consumer = new SourceMapConsumer(require("main.js.map"));
-        }
-        return this._consumer;
-    }
-    /**
-     * Generates a stack trace using a source map generate original symbol names.
-     *
-     * WARNING - EXTREMELY high CPU cost for first call after reset - >30 CPU! Use sparingly!
-     * (Consecutive calls after a reset are more reasonable, ~0.1 CPU/ea)
-     *
-     * @param {Error | string} error The error or original stack trace
-     * @returns {string} The source-mapped stack trace
-     */
-    static sourceMappedStackTrace(error) {
-        const stack = error instanceof Error ? error.stack : error;
-        if (Object.prototype.hasOwnProperty.call(this.cache, stack)) {
-            return this.cache[stack];
-        }
-        // eslint-disable-next-line no-useless-escape
-        const re = /^\s+at\s+(.+?\s+)?\(?([0-z._\-\\\/]+):(\d+):(\d+)\)?$/gm;
-        let match;
-        let outStack = error.toString();
-        while ((match = re.exec(stack))) {
-            if (match[2] === "main") {
-                const pos = this.consumer.originalPositionFor({
-                    column: parseInt(match[4], 10),
-                    line: parseInt(match[3], 10)
-                });
-                if (pos.line != null) {
-                    if (pos.name) {
-                        outStack += `\n    at ${pos.name} (${pos.source}:${pos.line}:${pos.column})`;
-                    }
-                    else {
-                        if (match[1]) {
-                            // no original source file name known - use file name from given trace
-                            outStack += `\n    at ${match[1]} (${pos.source}:${pos.line}:${pos.column})`;
-                        }
-                        else {
-                            // no original source file name known or in given trace - omit name
-                            outStack += `\n    at ${pos.source}:${pos.line}:${pos.column}`;
-                        }
-                    }
-                }
-                else {
-                    // no known position
-                    break;
-                }
-            }
-            else {
-                // no more parseable lines
-                break;
-            }
-        }
-        this.cache[stack] = outStack;
-        return outStack;
-    }
-    static wrapLoop(loop) {
-        return () => {
-            try {
-                loop();
-            }
-            catch (e) {
-                if (e instanceof Error) {
-                    if ("sim" in Game.rooms) {
-                        const message = `Source maps don't work in the simulator - displaying original error`;
-                        console.log(`<span style='color:red'>${message}<br>${_.escape(e.stack)}</span>`);
-                    }
-                    else {
-                        console.log(`<span style='color:red'>${_.escape(this.sourceMappedStackTrace(e))}</span>`);
-                    }
-                }
-                else {
-                    // can't handle it
-                    throw e;
-                }
-            }
-        };
-    }
-}
-// Cache previously mapped traces to improve performance
-ErrorMapper.cache = {};
 
 class Mem {
     static init() {
@@ -3226,10 +3129,11 @@ class minerMaster extends Master {
                 master: this.ref,
                 setup: Setups.miner.energy,
                 amount: 1,
-                priority: 3,
+                priority: 2,
             };
             if (this.cell.resourceType != RESOURCE_ENERGY) {
                 order.setup = Setups.miner.minerals;
+                order.priority = 3;
             }
             this.wish(order);
         }
@@ -3806,9 +3710,7 @@ class respawnCell extends Cell {
             }
             else {
                 let body;
-                if (order.priority < 3 && ((this.beeMaster
-                    && this.beeMaster.lastSpawns[this.beeMaster.lastSpawns.length - 1] + CREEP_LIFE_TIME - 80 < Game.time) ||
-                    this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] < 100000))
+                if (order.priority < 3)
                     body = order.setup.getBody(this.hive.room.energyAvailable);
                 else
                     body = order.setup.getBody(this.hive.room.energyCapacityAvailable);
@@ -5001,132 +4903,478 @@ class _Apiary {
     }
 }
 
+// Overwritten: This is a modified version of screeps-profiler taken from https://github.com/samogot/screeps-profiler
+// This is a *not yet modified* version of screeps-profiler taken from https://github.com/bencbartlett/Overmind
+
+let usedOnStart = 0;
+let enabled = false;
+let depth = 0;
+let parentFn = '(tick)';
+
+function AlreadyWrappedError() {
+    this.name = 'AlreadyWrappedError';
+    this.message = 'Error attempted to double wrap a function.';
+    this.stack = ((new Error())).stack;
+}
+
+function setupProfiler() {
+    depth = 0; // reset depth, this needs to be done each tick.
+    parentFn = '(tick)';
+    Game.profiler = {
+        stream(duration, filter) {
+            setupMemory('stream', duration || 10, filter);
+        },
+        email(duration, filter) {
+            setupMemory('email', duration || 100, filter);
+        },
+        profile(duration, filter) {
+            setupMemory('profile', duration || 100, filter);
+        },
+        background(filter) {
+            setupMemory('background', false, filter);
+        },
+        callgrind() {
+            const id = `id${Math.random()}`;
+            /* eslint-disable */
+            const download = `
+<script>
+  var element = document.getElementById('${id}');
+  if (!element) {
+    element = document.createElement('a');
+    element.setAttribute('id', '${id}');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,${encodeURIComponent(Profiler.callgrind())}');
+    element.setAttribute('download', 'callgrind.out.${Game.time}');
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+  }
+</script>
+      `;
+            /* eslint-enable */
+            console.log(download.split('\n').map((s) => s.trim()).join(''));
+        },
+        restart() {
+            if (Profiler.isProfiling()) {
+                const filter = Memory.profiler.filter;
+                let duration = false;
+                if (!!Memory.profiler.disableTick) {
+                    // Calculate the original duration, profile is enabled on the tick after the first call,
+                    // so add 1.
+                    duration = Memory.profiler.disableTick - Memory.profiler.enabledTick + 1;
+                }
+                const type = Memory.profiler.type;
+                setupMemory(type, duration, filter);
+            }
+        },
+        reset: resetMemory,
+        output: Profiler.output,
+    };
+
+    overloadCPUCalc();
+}
+
+function setupMemory(profileType, duration, filter) {
+    resetMemory();
+    const disableTick = Number.isInteger(duration) ? Game.time + duration : false;
+    if (!Memory.profiler) {
+        Memory.profiler = {
+            map: {},
+            totalTime: 0,
+            enabledTick: Game.time + 1,
+            disableTick,
+            type: profileType,
+            filter,
+        };
+    }
+}
+
+function resetMemory() {
+    Memory.profiler = null;
+}
+
+function overloadCPUCalc() {
+    if (Game.rooms.sim) {
+        usedOnStart = 0; // This needs to be reset, but only in the sim.
+        Game.cpu.getUsed = function getUsed() {
+            return performance.now() - usedOnStart;
+        };
+    }
+}
+
+function getFilter() {
+    return Memory.profiler.filter;
+}
+
+const functionBlackList = [
+    'getUsed', // Let's avoid wrapping this... may lead to recursion issues and should be inexpensive.
+    'constructor', // es6 class constructors need to be called with `new`
+];
+
+const commonProperties = ['length', 'name', 'arguments', 'caller', 'prototype'];
+
+function wrapFunction(name, originalFunction) {
+    if (originalFunction.profilerWrapped) {
+        throw new AlreadyWrappedError();
+    }
+
+    function wrappedFunction() {
+        if (Profiler.isProfiling()) {
+            const nameMatchesFilter = name === getFilter();
+            const start = Game.cpu.getUsed();
+            if (nameMatchesFilter) {
+                depth++;
+            }
+            const curParent = parentFn;
+            parentFn = name;
+            let result;
+            if (this && this.constructor === wrappedFunction) {
+                // eslint-disable-next-line new-cap
+                result = new originalFunction(...arguments);
+            } else {
+                result = originalFunction.apply(this, arguments);
+            }
+            parentFn = curParent;
+            if (depth > 0 || !getFilter()) {
+                const end = Game.cpu.getUsed();
+                Profiler.record(name, end - start, parentFn);
+            }
+            if (nameMatchesFilter) {
+                depth--;
+            }
+            return result;
+        }
+
+        if (this && this.constructor === wrappedFunction) {
+            // eslint-disable-next-line new-cap
+            return new originalFunction(...arguments);
+        }
+        return originalFunction.apply(this, arguments);
+    }
+
+    wrappedFunction.profilerWrapped = true;
+    wrappedFunction.toString = () =>
+        `// screeps-profiler wrapped function:\n${originalFunction.toString()}`;
+
+    Object.getOwnPropertyNames(originalFunction).forEach(property => {
+        if (!commonProperties.includes(property)) {
+            wrappedFunction[property] = originalFunction[property];
+        }
+    });
+
+    return wrappedFunction;
+}
+
+function hookUpPrototypes() {
+    Profiler.prototypes.forEach(proto => {
+        profileObjectFunctions(proto.val, proto.name);
+    });
+}
+
+function profileObjectFunctions(object, label) {
+    if (object.prototype) {
+        profileObjectFunctions(object.prototype, label);
+    }
+    const objectToWrap = object;
+
+    Object.getOwnPropertyNames(objectToWrap).forEach(functionName => {
+        const extendedLabel = `${label}.${functionName}`;
+
+        const isBlackListed = functionBlackList.indexOf(functionName) !== -1;
+        if (isBlackListed) {
+            return;
+        }
+
+        const descriptor = Object.getOwnPropertyDescriptor(objectToWrap, functionName);
+        if (!descriptor) {
+            return;
+        }
+
+        const hasAccessor = descriptor.get || descriptor.set;
+        if (hasAccessor) {
+            const configurable = descriptor.configurable;
+            if (!configurable) {
+                return;
+            }
+
+            const profileDescriptor = {};
+
+            if (descriptor.get) {
+                const extendedLabelGet = `${extendedLabel}:get`;
+                profileDescriptor.get = profileFunction(descriptor.get, extendedLabelGet);
+            }
+
+            if (descriptor.set) {
+                const extendedLabelSet = `${extendedLabel}:set`;
+                profileDescriptor.set = profileFunction(descriptor.set, extendedLabelSet);
+            }
+
+            Object.defineProperty(objectToWrap, functionName, profileDescriptor);
+            return;
+        }
+
+        const isFunction = typeof descriptor.value === 'function';
+        if (!isFunction || !descriptor.writable) {
+            return;
+        }
+        const originalFunction = objectToWrap[functionName];
+        objectToWrap[functionName] = profileFunction(originalFunction, extendedLabel);
+    });
+
+    return objectToWrap;
+}
+
+function profileFunction(fn, functionName) {
+    const fnName = functionName || fn.name;
+    if (!fnName) {
+        console.log('Couldn\'t find a function name for - ', fn);
+        console.log('Will not profile this function.');
+        return fn;
+    }
+
+    return wrapFunction(fnName, fn);
+}
+
 const Profiler = {
-  printProfile() {
-    console.log(Profiler.output());
-  },
+    printProfile() {
+        console.log(Profiler.output());
+    },
 
-  emailProfile() {
-    Game.notify(Profiler.output(1000));
-  },
+    emailProfile() {
+        Game.notify(Profiler.output(1000));
+    },
 
-  output(passedOutputLengthLimit) {
-    const outputLengthLimit = passedOutputLengthLimit || 1000;
-    if (!Memory.profiler || !Memory.profiler.enabledTick) {
-      return 'Profiler not active.';
-    }
+    callgrind() {
+        const elapsedTicks = Game.time - Memory.profiler.enabledTick + 1;
+        Memory.profiler.map['(tick)'].calls = elapsedTicks;
+        Memory.profiler.map['(tick)'].time = Memory.profiler.totalTime;
+        Profiler.checkMapItem('(root)');
+        Memory.profiler.map['(root)'].calls = 1;
+        Memory.profiler.map['(root)'].time = Memory.profiler.totalTime;
+        Profiler.checkMapItem('(tick)', Memory.profiler.map['(root)'].subs);
+        Memory.profiler.map['(root)'].subs['(tick)'].calls = elapsedTicks;
+        Memory.profiler.map['(root)'].subs['(tick)'].time = Memory.profiler.totalTime;
+        let body = `events: ns\nsummary: ${Math.round(Memory.profiler.totalTime * 1000000)}\n`;
+        for (const fnName of Object.keys(Memory.profiler.map)) {
+            const fn = Memory.profiler.map[fnName];
+            let callsBody = '';
+            let callsTime = 0;
+            for (const callName of Object.keys(fn.subs)) {
+                const call = fn.subs[callName];
+                const ns = Math.round(call.time * 1000000);
+                callsBody += `cfn=${callName}\ncalls=${call.calls} 1\n1 ${ns}\n`;
+                callsTime += call.time;
+            }
+            body += `\nfn=${fnName}\n1 ${Math.round((fn.time - callsTime) * 1000000)}\n${callsBody}`;
+        }
+        return body;
+    },
 
-    const endTick = Math.min(Memory.profiler.disableTick || Game.time, Game.time);
-    const startTick = Memory.profiler.enabledTick + 1;
-    const elapsedTicks = endTick - startTick;
-    const header = 'calls\t\ttime\t\tavg\t\tfunction';
-    const footer = [
-      `Avg: ${(Memory.profiler.totalTime / elapsedTicks).toFixed(2)}`,
-      `Total: ${Memory.profiler.totalTime.toFixed(2)}`,
-      `Ticks: ${elapsedTicks}`,
-    ].join('\t');
+    output(passedOutputLengthLimit) {
+        const outputLengthLimit = passedOutputLengthLimit || 1000;
+        if (!Memory.profiler || !Memory.profiler.enabledTick) {
+            return 'Profiler not active.';
+        }
 
-    const lines = [header];
-    let currentLength = header.length + 1 + footer.length;
-    const allLines = Profiler.lines();
-    let done = false;
-    while (!done && allLines.length) {
-      const line = allLines.shift();
-      // each line added adds the line length plus a new line character.
-      if (currentLength + line.length + 1 < outputLengthLimit) {
-        lines.push(line);
-        currentLength += line.length + 1;
-      } else {
-        done = true;
-      }
-    }
-    lines.push(footer);
-    return lines.join('\n');
-  },
+        const endTick = Math.min(Memory.profiler.disableTick || Game.time, Game.time);
+        const startTick = Memory.profiler.enabledTick + 1;
+        const elapsedTicks = endTick - startTick;
+        const header = 'calls\t\ttime\t\tavg\t\tfunction';
+        const footer = [
+            `Avg: ${(Memory.profiler.totalTime / elapsedTicks).toFixed(2)}`,
+            `Total: ${Memory.profiler.totalTime.toFixed(2)}`,
+            `Ticks: ${elapsedTicks}`,
+        ].join('\t');
 
-  lines() {
-    const stats = Object.keys(Memory.profiler.map).map(functionName => {
-      const functionCalls = Memory.profiler.map[functionName];
-      return {
-        name: functionName,
-        calls: functionCalls.calls,
-        totalTime: functionCalls.time,
-        averageTime: functionCalls.time / functionCalls.calls,
-      };
-    }).sort((val1, val2) => {
-      return val2.totalTime - val1.totalTime;
-    });
+        const lines = [header];
+        let currentLength = header.length + 1 + footer.length;
+        const allLines = Profiler.lines();
+        let done = false;
+        while (!done && allLines.length) {
+            const line = allLines.shift();
+            // each line added adds the line length plus a new line character.
+            if (currentLength + line.length + 1 < outputLengthLimit) {
+                lines.push(line);
+                currentLength += line.length + 1;
+            } else {
+                done = true;
+            }
+        }
+        lines.push(footer);
+        return lines.join('\n');
+    },
 
-    const lines = stats.map(data => {
-      return [
-        data.calls,
-        data.totalTime.toFixed(1),
-        data.averageTime.toFixed(3),
-        data.name,
-      ].join('\t\t');
-    });
+    lines() {
+        const stats = Object.keys(Memory.profiler.map).map(functionName => {
+            const functionCalls = Memory.profiler.map[functionName];
+            return {
+                name: functionName,
+                calls: functionCalls.calls,
+                totalTime: functionCalls.time,
+                averageTime: functionCalls.time / functionCalls.calls,
+            };
+        }).sort((val1, val2) => {
+            return val2.totalTime - val1.totalTime;
+        });
 
-    return lines;
-  },
+        const lines = stats.map(data => {
+            return [
+                data.calls,
+                data.totalTime.toFixed(1),
+                data.averageTime.toFixed(3),
+                data.name,
+            ].join('\t\t');
+        });
 
-  prototypes: [
-    { name: 'Game', val: Game },
-    { name: 'Room', val: Room },
-    { name: 'Structure', val: Structure },
-    { name: 'Spawn', val: Spawn },
-    { name: 'Creep', val: Creep },
-    { name: 'RoomPosition', val: RoomPosition },
-    { name: 'Source', val: Source },
-    { name: 'Flag', val: Flag },
-  ],
+        return lines;
+    },
 
-  record(functionName, time) {
-    if (!Memory.profiler.map[functionName]) {
-      Memory.profiler.map[functionName] = {
-        time: 0,
-        calls: 0,
-      };
-    }
-    Memory.profiler.map[functionName].calls++;
-    Memory.profiler.map[functionName].time += time;
-  },
+    prototypes: [
+        {name: 'Game', val: commonjsGlobal.Game},
+        {name: 'Map', val: commonjsGlobal.Game.map},
+        {name: 'Market', val: commonjsGlobal.Game.market},
+        {name: 'PathFinder', val: commonjsGlobal.PathFinder},
+        {name: 'RawMemory', val: commonjsGlobal.RawMemory},
+        {name: 'ConstructionSite', val: commonjsGlobal.ConstructionSite},
+        {name: 'Creep', val: commonjsGlobal.Creep},
+        {name: 'Flag', val: commonjsGlobal.Flag},
+        {name: 'Mineral', val: commonjsGlobal.Mineral},
+        {name: 'Nuke', val: commonjsGlobal.Nuke},
+        {name: 'OwnedStructure', val: commonjsGlobal.OwnedStructure},
+        {name: 'CostMatrix', val: commonjsGlobal.PathFinder.CostMatrix},
+        {name: 'Resource', val: commonjsGlobal.Resource},
+        {name: 'Room', val: commonjsGlobal.Room},
+        {name: 'RoomObject', val: commonjsGlobal.RoomObject},
+        {name: 'RoomPosition', val: commonjsGlobal.RoomPosition},
+        {name: 'RoomVisual', val: commonjsGlobal.RoomVisual},
+        {name: 'Source', val: commonjsGlobal.Source},
+        {name: 'Structure', val: commonjsGlobal.Structure},
+        {name: 'StructureContainer', val: commonjsGlobal.StructureContainer},
+        {name: 'StructureController', val: commonjsGlobal.StructureController},
+        {name: 'StructureExtension', val: commonjsGlobal.StructureExtension},
+        {name: 'StructureExtractor', val: commonjsGlobal.StructureExtractor},
+        {name: 'StructureKeeperLair', val: commonjsGlobal.StructureKeeperLair},
+        {name: 'StructureLab', val: commonjsGlobal.StructureLab},
+        {name: 'StructureLink', val: commonjsGlobal.StructureLink},
+        {name: 'StructureNuker', val: commonjsGlobal.StructureNuker},
+        {name: 'StructureObserver', val: commonjsGlobal.StructureObserver},
+        {name: 'StructurePowerBank', val: commonjsGlobal.StructurePowerBank},
+        {name: 'StructurePowerSpawn', val: commonjsGlobal.StructurePowerSpawn},
+        {name: 'StructurePortal', val: commonjsGlobal.StructurePortal},
+        {name: 'StructureRampart', val: commonjsGlobal.StructureRampart},
+        {name: 'StructureRoad', val: commonjsGlobal.StructureRoad},
+        {name: 'StructureSpawn', val: commonjsGlobal.StructureSpawn},
+        {name: 'StructureStorage', val: commonjsGlobal.StructureStorage},
+        {name: 'StructureTerminal', val: commonjsGlobal.StructureTerminal},
+        {name: 'StructureTower', val: commonjsGlobal.StructureTower},
+        {name: 'StructureWall', val: commonjsGlobal.StructureWall},
+    ],
 
-  endTick() {
-    if (Game.time >= Memory.profiler.enabledTick) {
-      const cpuUsed = Game.cpu.getUsed();
-      Memory.profiler.totalTime += cpuUsed;
-      Profiler.report();
-    }
-  },
+    checkMapItem(functionName, map = Memory.profiler.map) {
+        if (!map[functionName]) {
+            // eslint-disable-next-line no-param-reassign
+            map[functionName] = {
+                time: 0,
+                calls: 0,
+                subs: {},
+            };
+        }
+    },
 
-  report() {
-    if (Profiler.shouldPrint()) {
-      Profiler.printProfile();
-    } else if (Profiler.shouldEmail()) {
-      Profiler.emailProfile();
-    }
-  },
+    record(functionName, time, parent) {
+        this.checkMapItem(functionName);
+        Memory.profiler.map[functionName].calls++;
+        Memory.profiler.map[functionName].time += time;
+        if (parent) {
+            this.checkMapItem(parent);
+            this.checkMapItem(functionName, Memory.profiler.map[parent].subs);
+            Memory.profiler.map[parent].subs[functionName].calls++;
+            Memory.profiler.map[parent].subs[functionName].time += time;
+        }
+    },
 
-  isProfiling() {
-    {
-      return false;
-    }
-  },
+    endTick() {
+        if (Game.time >= Memory.profiler.enabledTick) {
+            const cpuUsed = Game.cpu.getUsed();
+            Memory.profiler.totalTime += cpuUsed;
+            Profiler.report();
+        }
+    },
 
-  type() {
-    return Memory.profiler.type;
-  },
+    report() {
+        if (Profiler.shouldPrint()) {
+            Profiler.printProfile();
+        } else if (Profiler.shouldEmail()) {
+            Profiler.emailProfile();
+        }
+    },
 
-  shouldPrint() {
-    const streaming = Profiler.type() === 'stream';
-    const profiling = Profiler.type() === 'profile';
-    const onEndingTick = Memory.profiler.disableTick === Game.time;
-    return streaming || (profiling && onEndingTick);
-  },
+    isProfiling() {
+        if (!enabled || !Memory.profiler) {
+            return false;
+        }
+        if (!Game)
+          return false;
+        return !Memory.profiler.disableTick || Game.time <= Memory.profiler.disableTick;
+    },
 
-  shouldEmail() {
-    return Profiler.type() === 'email' && Memory.profiler.disableTick === Game.time;
-  },
+    type() {
+        return Memory.profiler.type;
+    },
+
+    shouldPrint() {
+        const streaming = Profiler.type() === 'stream';
+        const profiling = Profiler.type() === 'profile';
+        const onEndingTick = Memory.profiler.disableTick === Game.time;
+        return streaming || (profiling && onEndingTick);
+    },
+
+    shouldEmail() {
+        return Profiler.type() === 'email' && Memory.profiler.disableTick === Game.time;
+    },
+};
+
+var screepsProfiler = {
+    wrap(callback) {
+        if (enabled) {
+            setupProfiler();
+        }
+
+        if (Profiler.isProfiling()) {
+            usedOnStart = Game.cpu.getUsed();
+
+            // Commented lines are part of an on going experiment to keep the profiler
+            // performant, and measure certain types of overhead.
+
+            // var callbackStart = Game.cpu.getUsed();
+            const returnVal = callback();
+            // var callbackEnd = Game.cpu.getUsed();
+            Profiler.endTick();
+            // var end = Game.cpu.getUsed();
+
+            // var profilerTime = (end - start) - (callbackEnd - callbackStart);
+            // var callbackTime = callbackEnd - callbackStart;
+            // var unaccounted = end - profilerTime - callbackTime;
+            // console.log('total-', end, 'profiler-', profilerTime, 'callbacktime-',
+            // callbackTime, 'start-', start, 'unaccounted', unaccounted);
+            return returnVal;
+        }
+
+        return callback();
+    },
+
+    enable() {
+        enabled = true;
+        hookUpPrototypes();
+    },
+
+    output: Profiler.output,
+    callgrind: Profiler.callgrind,
+
+    registerObject: profileObjectFunctions,
+    registerFN: profileFunction,
+    registerClass: profileObjectFunctions,
 };
 
 console.log("settings are for", "local!!");
@@ -5136,6 +5384,7 @@ function onGlobalReset() {
     Mem.init();
     console.log("Reset? Cool time is", Game.time);
     Memory.log.reset = Game.time;
+    screepsProfiler.enable();
     delete global.Apiary;
     global.Apiary = new _Apiary();
 }
@@ -5153,7 +5402,7 @@ function main() {
 // time to wrap things up
 let _loop;
 {
-    _loop = ErrorMapper.wrapLoop(main);
+    _loop = () => screepsProfiler.wrap(main);
 }
 const loop = _loop;
 onGlobalReset();
