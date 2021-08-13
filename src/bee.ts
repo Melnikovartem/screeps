@@ -49,6 +49,26 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
+  heal(target: Creep | PowerCreep | Bee) {
+    if (target instanceof Bee)
+      target = target.creep;
+    if (this.creep.pos.isNearTo(target))
+      return this.creep.heal(target);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
+  rangedHeal(target: Creep | PowerCreep | Bee) {
+    if (target instanceof Bee)
+      target = target.creep;
+    if (this.creep.pos.getRangeTo(target.pos) <= 3)
+      return this.creep.rangedHeal(target);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
   harvest(target: Source | Mineral): number {
     if (this.creep.pos.isNearTo(target))
       return this.creep.harvest(target);

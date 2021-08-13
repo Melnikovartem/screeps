@@ -34,7 +34,7 @@ export class resourceCell extends Cell {
       this.extractor = <StructureExtractor>_.filter(resource.pos.lookFor(LOOK_STRUCTURES),
         (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
       this.operational = this.extractor && this.container ? true : false;
-      this.perSecondNeeded = Infinity;
+      this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
       this.resourceType = this.resource.mineralType;
     }
 
@@ -57,9 +57,9 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= 100 && this.link.cooldown == 0 &&
+    if (this.link && this.link.store[RESOURCE_ENERGY] >= 100 && this.link.cooldown == 0 &&
       this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
-      (this.link.store.getUsedCapacity(RESOURCE_ENERGY) <= this.hive.cells.storageCell.link.store.getFreeCapacity(RESOURCE_ENERGY) ||
+      (this.link.store[RESOURCE_ENERGY] <= this.hive.cells.storageCell.link.store.getFreeCapacity(RESOURCE_ENERGY) ||
         this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= 150)) {
       this.link.transferEnergy(this.hive.cells.storageCell.link);
     }

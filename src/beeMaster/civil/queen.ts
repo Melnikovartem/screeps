@@ -26,7 +26,7 @@ export class queenMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees()) {
+    if (this.checkBees(CREEP_LIFE_TIME - 100)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.manager,
@@ -48,7 +48,7 @@ export class queenMaster extends Master {
     _.forEach(this.bees, (bee) => {
       if (targets.length) {
         let ans;
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+        if (bee.creep.store[RESOURCE_ENERGY] == 0) {
           let suckerTarget;
 
           if (!suckerTarget && this.hive.cells.storageCell)
@@ -58,12 +58,12 @@ export class queenMaster extends Master {
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         }
 
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+        if (bee.creep.store[RESOURCE_ENERGY] > 0 || ans == OK) {
           let target = bee.pos.findClosest(targets);
           if (target)
             bee.transfer(target, RESOURCE_ENERGY);
         }
-      } else if (this.hive.cells.storageCell && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      } else if (this.hive.cells.storageCell && bee.creep.store[RESOURCE_ENERGY] > 0
         && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
       } else

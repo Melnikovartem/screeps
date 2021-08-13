@@ -17,7 +17,7 @@ export class defenseCell extends Cell {
     let storageCell = this.hive.cells.storageCell
     if (storageCell) {
       _.forEach(this.towers, (tower) => {
-        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
+        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
           storageCell!.requests[tower.id] = {
             from: storageCell!.storage,
             to: tower,

@@ -18,12 +18,13 @@ export class upgraderMaster extends Master {
 
     if (this.hive.cells.storageCell) {
       // burn some energy on controller
-      if (this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000)
+      if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 150000)
         this.targetBeeCount = 2;
-      else if (this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+      else if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 900000)
         this.targetBeeCount = 3;
     } else
       this.targetBeeCount = 1;
+
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
@@ -36,7 +37,7 @@ export class upgraderMaster extends Master {
       if (this.cell.link || (this.hive.cells.storageCell
         && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5)) {
         order.setup = Setups.upgrader.fast;
-        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
+        if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] < 50000)
           order.setup.bodySetup.patternLimit = 0; // save energy from burning
         else
           order.setup.bodySetup.patternLimit = 5;

@@ -6,7 +6,7 @@ import { makeId } from "./utils/other";
 
 import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
-import { blockerMaster } from "./beeMaster/war/blocker";
+import { drainerMaster } from "./beeMaster/war/drainer";
 import { SwarmMaster } from "./beeMaster/_SwarmMaster";
 
 import { UPDATE_EACH_TICK } from "./settings";
@@ -131,7 +131,7 @@ export class _Apiary {
             else if (flag.secondaryColor == COLOR_PURPLE)
               this.spawnSwarm(flag, downgradeMaster);
             else if (flag.secondaryColor == COLOR_YELLOW)
-              this.spawnSwarm(flag, blockerMaster);
+              this.spawnSwarm(flag, drainerMaster);
             else if (flag.secondaryColor == COLOR_RED) {
               let masterNew = this.spawnSwarm(flag, hordeMaster);
 

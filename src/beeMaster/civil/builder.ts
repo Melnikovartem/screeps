@@ -13,12 +13,14 @@ export class builderMaster extends Master {
     super.update();
 
     // TODO smarter counting of builders needed
-    if ((this.hive.emergencyRepairs.length > 10 || this.hive.constructionSites.length > 5) &&
-      this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000) {
+    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 16) &&
+      this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 200000)
+      this.targetBeeCount = 3;
+    else if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 6) &&
+      this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 100000)
       this.targetBeeCount = 2;
-    } else {
+    else
       this.targetBeeCount = 1;
-    }
 
     if (this.checkBees() && (this.hive.emergencyRepairs.length > 5 || this.hive.constructionSites.length > 0)) {
       let order: SpawnOrder = {
@@ -35,12 +37,12 @@ export class builderMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       let ans: number = ERR_FULL;
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0 && this.hive.cells.storageCell) {
+      if (bee.creep.store[RESOURCE_ENERGY] == 0 && this.hive.cells.storageCell) {
         ans = bee.withdraw(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
         this.targetCaching[bee.ref] = "";
       }
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK) {
+      if (bee.creep.store[RESOURCE_ENERGY] > 0 || ans == OK) {
         let target: Structure | ConstructionSite | null = Game.getObjectById(this.targetCaching[bee.ref]);
 
         if (target instanceof Structure && target.hits == target.hitsMax)

@@ -17,6 +17,8 @@ export class minerMaster extends Master {
   update() {
     super.update();
 
+    if (Game.time % 30 == 0)
+      this.print(this.lastSpawns[0], Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME);
     if (this.checkBees() && this.cell.perSecondNeeded > 0) {
       let order: SpawnOrder = {
         master: this.ref,
@@ -42,7 +44,7 @@ export class minerMaster extends Master {
           bee.harvest(this.cell.resource);
       }
 
-      if (bee.creep.store.getUsedCapacity(this.cell.resourceType) >= 25) {
+      if (bee.creep.store[this.cell.resourceType] >= 25) {
         let target: StructureLink | StructureContainer | undefined;
         if (this.cell.link && this.cell.resourceType == RESOURCE_ENERGY
           && this.cell.link.store.getFreeCapacity(this.cell.resourceType))

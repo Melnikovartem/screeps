@@ -86,9 +86,9 @@ export class managerMaster extends Master {
     _.forEach(this.bees, (bee) => {
       let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
       if (request) {
-        let usedCapFrom = (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource);
+        let usedCapFrom = (<Store<ResourceConstant, false>>request.from.store)[request.resource];
         let freeCapTo = (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource);
-        let amount = bee.store.getUsedCapacity(request.resource);
+        let amount = bee.store[request.resource];
         if (amount == 0) {
           amount = bee.store.getFreeCapacity();
           if (request.amount != undefined)
@@ -103,7 +103,7 @@ export class managerMaster extends Master {
         }
 
         if (amount > 0) {
-          amount = Math.min(bee.store.getUsedCapacity(request.resource), freeCapTo);
+          amount = Math.min(bee.store[request.resource], freeCapTo);
           if (bee.transfer(request.to, request.resource, amount) == OK) {
             if (request.amount)
               request.amount -= amount;
@@ -113,7 +113,6 @@ export class managerMaster extends Master {
         }
 
         if ((request.amount != undefined && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
-          this.print("order done", request.amount, amount, usedCapFrom, freeCapTo);
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
         }

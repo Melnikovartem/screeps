@@ -87,7 +87,7 @@ export class bootstrapMaster extends Master {
 
     _.forEach(this.bees, (bee) => {
 
-      if (this.stateMap[bee.ref].type != "mining" && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+      if (this.stateMap[bee.ref].type != "mining" && bee.creep.store[RESOURCE_ENERGY] == 0) {
         this.stateMap[bee.ref] = {
           type: "mining",
           target: "",

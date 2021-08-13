@@ -4,7 +4,7 @@ interface RoomPosition {
   getOpenPositions(): RoomPosition[];
   isFree(): boolean;
   getTimeForPath(roomPos: RoomPosition): number;
-  findClosest<Obj extends RoomObject>(structures: Obj[]): Obj | null;
+  findClosest<Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null;
 }
 
 RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
@@ -79,7 +79,7 @@ RoomPosition.prototype.getTimeForPath = function(roomPos: RoomPosition): number 
 };
 
 // TODO different class types to forget casting in and out
-RoomPosition.prototype.findClosest = function <Obj extends RoomObject>(structures: Obj[]): Obj | null {
+RoomPosition.prototype.findClosest = function <Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null {
   if (structures.length == 0)
     return null;
 

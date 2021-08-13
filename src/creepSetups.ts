@@ -60,6 +60,7 @@ const SetupsNames = {
   scout: 'Stenotritidae',
   // War
   knight: 'European hornet',
+  tank: 'Dolichovespula arenaria',
 }
 
 
@@ -108,5 +109,12 @@ export const Setups = {
   knight: new CreepSetup(SetupsNames.knight, {
     pattern: [TOUGH, ATTACK, MOVE],
     patternLimit: 10,
+  }),
+  tank: new CreepSetup(SetupsNames.tank, {
+    fixed: [ATTACK, ATTACK, MOVE],
+    pattern: [TOUGH, TOUGH, MOVE],
+  }),
+  healer: new CreepSetup(SetupsNames.tank, {
+    pattern: [HEAL, HEAL, MOVE],
   }),
 }

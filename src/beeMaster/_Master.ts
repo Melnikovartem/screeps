@@ -45,9 +45,8 @@ export abstract class Master {
     if (!spawnCycle)
       spawnCycle = CREEP_LIFE_TIME;
 
-    // 5 for random shit
     return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
-      || (this.beesAmount == this.targetBeeCount && Game.time + 5 >= this.lastSpawns[0] + spawnCycle));
+      || (this.beesAmount == this.targetBeeCount && Game.time >= this.lastSpawns[0] + spawnCycle));
   }
 
   // first stage of decision making like do i need to spawn new creeps

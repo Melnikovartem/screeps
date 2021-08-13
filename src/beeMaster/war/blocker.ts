@@ -8,6 +8,7 @@ import { SwarmMaster } from "../_SwarmMaster";
 export class blockerMaster extends SwarmMaster {
   targetMap: { [id: number]: { [id: number]: string } } = {};
   freeBees: Bee[] = [];
+  runToDeath: boolean = false;
 
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
@@ -24,7 +25,9 @@ export class blockerMaster extends SwarmMaster {
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
 
     // sad cause safeMode saves from this shit
-    if (!roomInfo.safePlace || roomInfo.safeModeEndTime > Game.time)
+    if (roomInfo.safeModeEndTime > Game.time)
+      this.destroyTime = Game.time;
+    if (!this.runToDeath && !roomInfo.safePlace)
       this.destroyTime = Game.time;
     else
       this.destroyTime = Game.time + 2000;

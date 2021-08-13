@@ -53,12 +53,12 @@ export class storageCell extends Cell {
     if (this.link) {
       // link requests
 
-      if (this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
+      if (this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
         this.requests[this.link.id] = {
           from: this.link,
           to: this.storage,
           resource: RESOURCE_ENERGY,
-          amount: this.link.store.getUsedCapacity(RESOURCE_ENERGY) - LINK_CAPACITY * 0.5,
+          amount: this.link.store[RESOURCE_ENERGY] - LINK_CAPACITY * 0.5,
           priority: 3,
         };
 
@@ -78,7 +78,7 @@ export class storageCell extends Cell {
           if (request.amount && request.amount > LINK_CAPACITY)
             request.amount = LINK_CAPACITY;
 
-          let tooBigrequest = request.amount && this.link.store.getUsedCapacity(RESOURCE_ENERGY) < request.amount;
+          let tooBigrequest = request.amount && this.link.store[RESOURCE_ENERGY] < request.amount;
           if (!tooBigrequest) {
             delete this.requests[this.link.id];
             if (!this.link.cooldown)
@@ -89,7 +89,7 @@ export class storageCell extends Cell {
               from: this.storage,
               to: this.link,
               resource: RESOURCE_ENERGY,
-              amount: request.amount! - this.link.store.getUsedCapacity(RESOURCE_ENERGY),
+              amount: request.amount! - this.link.store[RESOURCE_ENERGY],
               priority: 3,
             };
         }
