@@ -76,12 +76,15 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomObject | RoomPosi
 
   // TODO smarter room-to-room distance
 
-  _.forEach(structures, (structure) => {
+  _.some(structures, (structure) => {
     let newDistance = this.getRangeTo(structure)
     if (newDistance < distance) {
       ans = structure;
       distance = newDistance;
     }
+    if (distance == 1)
+      return true;
+    return false;
   });
 
   return ans;

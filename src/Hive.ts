@@ -113,11 +113,9 @@ export class Hive {
 
   constructor(roomName: string) {
     this.roomName = roomName;
-
     this.room = Game.rooms[roomName];
-    this.updateRooms();
 
-    this.stage = 0
+    this.stage = 0;
     if (this.room.storage)
       this.stage = 1;
 
@@ -163,8 +161,10 @@ export class Hive {
   }
 
   addAnex(annexName: string) {
-    this.annexNames.push(annexName);
-
+    if (!this.annexNames.includes(annexName)) {
+      this.annexNames.push(annexName);
+      this.updateRooms();
+    }
   }
 
   updateRooms(): void {
@@ -179,6 +179,14 @@ export class Hive {
       return annex;
     }));
     this.rooms = [this.room].concat(this.annexes);
+
+    if (this.cells.excavationCell) {
+      _.forEach(this.annexes, (room) => {
+        _.forEach(room.find(FIND_SOURCES), (source) => {
+          this.cells.excavationCell!.addResource(source);
+        });
+      });
+    }
   }
 
   private updateCellData() {
@@ -199,7 +207,7 @@ export class Hive {
   private updateConstructionSites() {
     this.constructionSites = [];
     _.forEach(this.rooms, (room) => {
-      this.constructionSites = this.constructionSites.concat(room.find(FIND_CONSTRUCTION_SITES));
+      this.constructionSites = this.constructionSites.concat(_.filter(room.find(FIND_CONSTRUCTION_SITES), (site) => site.my));
     });
   }
 
@@ -214,6 +222,13 @@ export class Hive {
           this.normalRepairs.push(structure);
       });
     });
+    this.sortRepairs();
+  }
+
+  sortRepairs() {
+    let gP = (a: number, b: number) => Math.ceil(a * 1000) / Math.ceil(b * 1000);
+    this.emergencyRepairs.sort((a, b) => gP(a.hits, a.hitsMax) - gP(b.hits, b.hitsMax));
+    // this.normalRepairs.sort((a, b) => gP(a.hits, a.hitsMax) - gP(b.hits, b.hitsMax)); // TOO costly!!
   }
 
   updateLog() {
@@ -236,7 +251,7 @@ export class Hive {
       this.updateRepairs();
     }
     if (Game.time % 50 == 29)
-      this.updateCellData()
+      this.updateCellData();
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
 

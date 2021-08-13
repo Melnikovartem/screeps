@@ -139,12 +139,14 @@ export class drainerMaster extends SwarmMaster {
       }
 
       if (!healed) {
-        let healingTargets = _.filter(this.healer.pos.findInRange(FIND_MY_CREEPS, 3), (creep) => creep.hits < creep.hitsMax);
-        let closeTarget = _.filter(healingTargets, (creep) => this.healer!.pos.isNearTo(creep));
-        if (closeTarget.length)
-          this.healer.heal(closeTarget[0]);
-        else if (healingTargets.length)
-          this.healer.rangedHeal(healingTargets[0]);
+        let healingTarget = this.healer.pos.findClosest(_.filter(this.healer.pos.findInRange(FIND_MY_CREEPS, 3),
+          (creep) => creep.hits < creep.hitsMax));
+        if (healingTarget) {
+          if (this.healer.pos.isNearTo(healingTarget))
+            this.healer.heal(healingTarget);
+          else
+            this.healer.rangedHeal(healingTarget);
+        }
       }
 
       if (!this.healing) {

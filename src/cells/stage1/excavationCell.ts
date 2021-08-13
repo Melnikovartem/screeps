@@ -3,31 +3,36 @@ import { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../../beeMaster/civil/hauler";
+import { safeWrap } from "../../utils";
 import { profile } from "../../profiler/decorator";
-
 @profile
 export class excavationCell extends Cell {
-  resourceCells: resourceCell[];
+  resourceCells: { [id: string]: resourceCell };
   quitefullContainers: StructureContainer[] = [];
 
   constructor(hive: Hive, sources: Source[], minerals: Mineral[]) {
     super(hive, "ExcavationCell_" + hive.room.name);
 
-    this.resourceCells = [];
+    this.resourceCells = {};
     _.forEach(sources, (source) => {
-      this.resourceCells.push(new resourceCell(this.hive, source));
+      this.addResource(source);
     });
 
     _.forEach(minerals, (mineral) => {
-      this.resourceCells.push(new resourceCell(this.hive, mineral));
+      this.addResource(mineral);
     });
+  }
+
+  addResource(resource: Source | Mineral) {
+    if (!this.resourceCells[resource.id])
+      this.resourceCells[resource.id] = new resourceCell(this.hive, resource);
   }
 
   update() {
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)
-        cell.update();
+        safeWrap(() => { cell.update() }, cell.ref);
 
       if (cell.container) {
         if (cell.container.store.getUsedCapacity() >= 700) {
@@ -47,7 +52,7 @@ export class excavationCell extends Cell {
   run() {
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)
-        cell.run();
+        safeWrap(() => { cell.run() }, cell.ref);
     });
   };
 }

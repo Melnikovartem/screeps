@@ -20,11 +20,10 @@ export class downgradeMaster extends SwarmMaster {
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
     if (!roomInfo.ownedByEnemy)
       this.order.destroyTime = Game.time;
+    else if (Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE >= this.order.destroyTime)
+      this.order.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE;
     if (roomInfo.safeModeEndTime)
       this.lastAttacked = Game.time + roomInfo.safeModeEndTime - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-
-    if (Game.time > this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE && Game.time != this.order.destroyTime)
-      this.order.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE;
 
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.order.destroyTime > Game.time + 100
       && Game.time + CREEP_CLAIM_LIFE_TIME >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {

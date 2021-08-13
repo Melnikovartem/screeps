@@ -7,7 +7,7 @@ import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 import { profile } from "./profiler/decorator";
 
-import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
+import { UPDATE_EACH_TICK, PRINT_INFO, LOGGING_CYCLE } from "./settings";
 
 @profile
 export class Order {
@@ -110,10 +110,10 @@ export class Order {
   }
 
   update(flag: Flag) {
-    if (Game.time % this.checkTime == 0) {
+    if (UPDATE_EACH_TICK || Game.time % this.checkTime == 0) {
       this.flag = flag;
       this.pos = flag.pos;
-      if (this.master)
+      if (!this.master)
         this.actUpon();
     }
 

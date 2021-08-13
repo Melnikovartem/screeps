@@ -15,13 +15,13 @@ export class builderMaster extends Master {
     super.update();
 
     // TODO smarter counting of builders needed
-    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 20) &&
+    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 20) &&
       this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 200000)
       this.targetBeeCount = 3;
-    else if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 6) &&
+    else if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 6) &&
       this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 100000)
       this.targetBeeCount = 2;
-    else if (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 1.5)
+    else if (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 1.5)
       this.targetBeeCount = 1;
     else
       this.targetBeeCount = 0;
@@ -51,12 +51,23 @@ export class builderMaster extends Master {
 
         if (target instanceof Structure && target.hits == target.hitsMax)
           target = null;
-        if (!target)
-          target = bee.pos.findClosest(this.hive.emergencyRepairs);
+
+        if (this.hive.emergencyRepairs.length) {
+          if (!target)
+            target = _.filter(this.hive.emergencyRepairs, (structure) => structure.pos.getRangeTo(bee.pos) < 10)[0];
+          if (!target)
+            target = bee.pos.findClosest(this.hive.emergencyRepairs);
+        }
+
         if (!target)
           target = bee.pos.findClosest(this.hive.constructionSites);
-        if (!target)
-          target = bee.pos.findClosest(this.hive.normalRepairs);
+
+        if (this.hive.normalRepairs) {
+          if (!target)
+            target = _.filter(this.hive.normalRepairs, (structure) => structure.pos.getRangeTo(bee.pos) < 10)[0];
+          if (!target)
+            target = bee.pos.findClosest(this.hive.normalRepairs);
+        }
 
         if (target) {
           if (target instanceof ConstructionSite)
