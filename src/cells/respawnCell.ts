@@ -55,7 +55,8 @@ export class respawnCell extends Cell {
 
           let name = order.setup.name + " " + makeId(4);
           let memory: CreepMemory = {
-            refMaster: order.master
+            refMaster: order.master,
+            born: Game.time,
           };
 
           let ans = spawn!.spawnCreep(body, name, { memory: memory });

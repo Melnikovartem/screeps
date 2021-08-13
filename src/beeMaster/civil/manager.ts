@@ -6,7 +6,7 @@ import { storageCell, StorageRequest } from "../../cells/storageCell";
 
 import { Bee } from "../../bee";
 
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -71,10 +71,10 @@ export class managerMaster extends Master {
         priority: 3,
       };
 
-      if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000)
+      if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {
+        order.setup = <CreepSetup>{ ...Setups.manager };
         order.setup.bodySetup.patternLimit = 5; // save energy from burning
-      else
-        order.setup.bodySetup.patternLimit = 10;
+      }
 
       this.wish(order);
     }

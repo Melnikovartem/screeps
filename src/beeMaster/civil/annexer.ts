@@ -1,4 +1,4 @@
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder, Hive } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -35,10 +35,10 @@ export class annexMaster extends Master {
         this.controller = controller;
 
       // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-      if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
-        order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
-      else
-        order.setup.bodySetup.patternLimit = 2;
+      if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd < 4200) {
+        order.setup = <CreepSetup>{ ...Setups.claimer }; // copy cause gonna change limit
+        order.setup.bodySetup.patternLimit = 2; //make bigger if not needed
+      }
 
       this.wish(order);
     }

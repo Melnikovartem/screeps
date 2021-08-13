@@ -29,10 +29,13 @@ function onGlobalReset(): void {
   global.Apiary = new _Apiary();
 }
 
+
 function main() {
-  if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-    onGlobalReset()
-  }
+  if (Game.time % 20 == 0)
+
+    if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+      onGlobalReset()
+    }
 
   // Automatically delete memory
   Mem.clean();

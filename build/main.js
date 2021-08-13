@@ -2358,6 +2358,8 @@ class Mem {
     }
 }
 
+// think about on official
+const VISUALS_ON = true;
 const LOGGING_CYCLE = 50;
 
 /**
@@ -3090,11 +3092,11 @@ const Setups = {
     }),
     claimer: new CreepSetup(SetupsNames.claimer, {
         pattern: [CLAIM, MOVE],
-        patternLimit: 2,
+        patternLimit: 1,
     }),
     manager: new CreepSetup(SetupsNames.manager, {
         pattern: [CARRY, CARRY, MOVE],
-        patternLimit: 6,
+        patternLimit: 7,
     }),
     hauler: new CreepSetup(SetupsNames.hauler, {
         pattern: [CARRY, CARRY, MOVE],
@@ -3150,7 +3152,7 @@ class Master {
         this.bees = {};
         this.hive = hive;
         this.ref = ref;
-        this.lastSpawns.push(0);
+        this.lastSpawns.push(-1);
         global.masters[this.ref] = this;
     }
     // catch a bee after it has requested a master
@@ -3158,10 +3160,11 @@ class Master {
         this.bees[bee.ref] = bee;
         if (this.waitingForBees)
             this.waitingForBees -= 1;
-        let ticksToLive = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
-        let birthTime = Game.time - (bee.lifeTime - ticksToLive);
+        let birthTime = bee.creep.memory.born;
+        if (!birthTime)
+            birthTime = Game.time - (bee.lifeTime - (bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime));
         this.lastSpawns.push(birthTime);
-        if (this.lastSpawns[0] == 0)
+        if (this.lastSpawns[0] == -1)
             this.lastSpawns.shift();
         this.beesAmount += 1;
     }
@@ -3200,12 +3203,10 @@ class minerMaster extends Master {
     }
     update() {
         super.update();
-        if (Game.time % 30 == 0)
-            this.print(this.lastSpawns[0], Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME);
         if (this.checkBees() && this.cell.perSecondNeeded > 0) {
             let order = {
                 master: this.ref,
-                setup: Setups.miner.energy,
+                setup: Object.assign({}, Setups.miner.energy),
                 amount: 1,
                 priority: 3,
             };
@@ -3312,10 +3313,10 @@ class haulerMaster extends Master {
                 amount: Math.max(1, this.targetBeeCount - this.beesAmount),
                 priority: 4,
             };
-            if (this.hive.stage < 2)
+            if (this.hive.stage < 2) {
+                order.setup = Object.assign({}, Setups.hauler); // copy cause gonna change limit
                 order.setup.bodySetup.patternLimit = 10;
-            else
-                order.setup.bodySetup.patternLimit = 15;
+            }
             this.wish(order);
         }
     }
@@ -3439,10 +3440,10 @@ class managerMaster extends Master {
                 amount: 1,
                 priority: 3,
             };
-            if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000)
+            if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {
+                order.setup = Object.assign({}, Setups.manager);
                 order.setup.bodySetup.patternLimit = 5; // save energy from burning
-            else
-                order.setup.bodySetup.patternLimit = 10;
+            }
             this.wish(order);
         }
     }
@@ -3585,10 +3586,6 @@ class upgraderMaster extends Master {
             if (this.cell.link || (this.hive.cells.storageCell
                 && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 5)) {
                 order.setup = Setups.upgrader.fast;
-                if (this.hive.cells.storageCell && this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] < 50000)
-                    order.setup.bodySetup.patternLimit = 0; // save energy from burning
-                else
-                    order.setup.bodySetup.patternLimit = 5;
             }
             this.wish(order);
         }
@@ -3718,11 +3715,12 @@ class queenMaster extends Master {
         if (this.checkBees(CREEP_LIFE_TIME - 100)) {
             let order = {
                 master: this.ref,
-                setup: Setups.manager,
+                setup: Object.assign({}, Setups.manager),
                 amount: 1,
                 priority: 0,
             };
             // can refill in 2.5 runs
+            order.setup.name = "Bee Queen"; // well if i coppy may as well change the name
             order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2);
             this.wish(order);
         }
@@ -3795,7 +3793,8 @@ class respawnCell extends Cell {
                     let spawn = this.freeSpawns.pop();
                     let name = order.setup.name + " " + makeId(4);
                     let memory = {
-                        refMaster: order.master
+                        refMaster: order.master,
+                        born: Game.time,
                     };
                     let ans = spawn.spawnCreep(body, name, { memory: memory });
                     if (ans == ERR_NOT_ENOUGH_RESOURCES) {
@@ -3861,7 +3860,7 @@ class bootstrapMaster extends Master {
         if (this.checkBees() && this.hive.stage == 0) {
             let order = {
                 master: this.ref,
-                setup: Setups.builder,
+                setup: Object.assign({}, Setups.builder),
                 amount: 1,
                 priority: 5,
             };
@@ -3888,12 +3887,14 @@ class bootstrapMaster extends Master {
                     type: "mining",
                     target: "",
                 };
+                bee.creep.say('🔄');
             }
             if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
                 this.stateMap[bee.ref] = {
                     type: "working",
                     target: "",
                 };
+                bee.creep.say('🛠️');
             }
             if (this.stateMap[bee.ref].type == "mining") {
                 let source;
@@ -4099,10 +4100,10 @@ class annexMaster extends Master {
             if (controller)
                 this.controller = controller;
             // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-            if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd >= 4200)
-                order.setup.bodySetup.patternLimit = 1; //make smaller if not needed
-            else
-                order.setup.bodySetup.patternLimit = 2;
+            if (this.controller && this.controller.reservation && this.controller.reservation.ticksToEnd < 4200) {
+                order.setup = Object.assign({}, Setups.claimer); // copy cause gonna change limit
+                order.setup.bodySetup.patternLimit = 2; //make bigger if not needed
+            }
             this.wish(order);
         }
     }
@@ -4642,7 +4643,6 @@ class downgradeMaster extends SwarmMaster {
                 amount: 1,
                 priority: 5,
             };
-            order.setup.bodySetup.patternLimit = 1; //main idea - block upgrading
             this.wish(order);
         }
     }
@@ -4672,9 +4672,8 @@ class drainerMaster extends SwarmMaster {
     constructor(hive, order) {
         super(hive, order);
         this.phase = "spawning";
-        // for last stage
-        this.exit = null;
         this.healing = false;
+        this.meetingPoint = order.pos;
         // sad cause safeMode saves from this shit
         this.destroyTime = Game.time + CREEP_LIFE_TIME;
         this.targetBeeCount = 2;
@@ -4685,10 +4684,20 @@ class drainerMaster extends SwarmMaster {
             this.healer = bee;
         else
             this.tank = bee;
-        this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME);
+        this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
     }
     update() {
         super.update();
+        if (this.meetingPoint != this.order.pos) {
+            this.phase = "meeting";
+            this.exit = undefined;
+            this.healing = false;
+            this.target = undefined;
+            if (this.tank && this.healer && VISUALS_ON) {
+                this.tank.creep.say("➡️");
+                this.healer.creep.say("➡️");
+            }
+        }
         if (Game.time % 50 == 0) {
             let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
             // this stupid tatic was countered
@@ -4718,22 +4727,34 @@ class drainerMaster extends SwarmMaster {
     run() {
         if (this.tank && this.healer)
             if (this.phase == "meeting") {
-                this.tank.goTo(this.order.pos);
-                this.healer.goTo(this.tank.pos);
-                if (this.healer.pos.isNearTo(this.order.pos)) {
+                this.tank.goTo(this.meetingPoint);
+                this.healer.goTo(this.meetingPoint);
+                if (this.healer.pos.isNearTo(this.meetingPoint)) {
+                    {
+                        this.tank.creep.say("⚡");
+                        this.healer.creep.say("⚡");
+                    }
                     this.phase = "draining";
                 }
             }
-            else if (this.phase = "draining") {
+            else if (this.phase == "draining") {
                 if (!this.exit)
                     this.exit = this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
                 if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
                     this.target = this.tank.creep.room.name;
                 if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.6 || this.healing) {
+                    if (!this.healing) {
+                        this.tank.creep.say("🏥");
+                        this.healer.creep.say("🏥");
+                    }
                     this.healing = true;
                     if (!this.tank.pos.isNearTo(this.healer))
                         this.tank.goTo(this.healer.pos);
                     if (this.tank.creep.hits == this.tank.creep.hitsMax) {
+                        {
+                            this.tank.creep.say("⚡");
+                            this.healer.creep.say("⚡");
+                        }
                         this.healing = false;
                     }
                     if (this.healer.pos.isNearTo(this.tank))
@@ -4937,9 +4958,10 @@ function onGlobalReset() {
     global.Apiary = new _Apiary();
 }
 function main() {
-    if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-        onGlobalReset();
-    }
+    if (Game.time % 20 == 0)
+        if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
+            onGlobalReset();
+        }
     // Automatically delete memory
     Mem.clean();
     global.Apiary.update();

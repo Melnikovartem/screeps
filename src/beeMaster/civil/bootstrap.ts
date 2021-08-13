@@ -2,7 +2,7 @@
 import { developmentCell } from "../../cells/developmentCell";
 
 import { Bee } from "../../Bee";
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -57,7 +57,7 @@ export class bootstrapMaster extends Master {
     if (this.checkBees() && this.hive.stage == 0) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: Setups.builder,
+        setup: <CreepSetup>{ ...Setups.builder },
         amount: 1,
         priority: 5, // same as non-important army
       };

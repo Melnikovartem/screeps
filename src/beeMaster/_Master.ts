@@ -20,7 +20,7 @@ export abstract class Master {
     this.hive = hive;
     this.ref = ref;
 
-    this.lastSpawns.push(0);
+    this.lastSpawns.push(-1);
 
     global.masters[this.ref] = this;
   }
@@ -31,11 +31,12 @@ export abstract class Master {
     if (this.waitingForBees)
       this.waitingForBees -= 1;
 
-    let ticksToLive: number = bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime;
-    let birthTime = Game.time - (bee.lifeTime - ticksToLive);
-    this.lastSpawns.push(birthTime);
+    let birthTime = bee.creep.memory.born;
+    if (!birthTime)
+      birthTime = Game.time - (bee.lifeTime - (bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime));
 
-    if (this.lastSpawns[0] == 0)
+    this.lastSpawns.push(birthTime);
+    if (this.lastSpawns[0] == -1)
       this.lastSpawns.shift();
 
     this.beesAmount += 1;

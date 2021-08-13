@@ -33,8 +33,6 @@ export class downgradeMaster extends SwarmMaster {
         priority: 5,
       };
 
-      order.setup.bodySetup.patternLimit = 1; //main idea - block upgrading
-
       this.wish(order);
     }
   }

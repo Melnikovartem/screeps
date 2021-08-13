@@ -13,13 +13,15 @@ export class drainerMaster extends SwarmMaster {
   phase: "spawning" | "meeting" | "draining" = "spawning";
 
   // for last stage
-  exit: RoomPosition | null = null;
+  meetingPoint: RoomPosition;
+  exit: RoomPosition | undefined;
   target: string | undefined;
   healing: boolean = false;
 
   constructor(hive: Hive, order: Flag) {
     super(hive, order);
 
+    this.meetingPoint = order.pos;
     // sad cause safeMode saves from this shit
     this.destroyTime = Game.time + CREEP_LIFE_TIME;
     this.targetBeeCount = 2;
@@ -31,11 +33,22 @@ export class drainerMaster extends SwarmMaster {
       this.healer = bee;
     else
       this.tank = bee;
-    this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME);
+    this.destroyTime = Math.max(this.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
 
   update() {
     super.update();
+
+    if (this.meetingPoint != this.order.pos) {
+      this.phase = "meeting";
+      this.exit = undefined;
+      this.healing = false;
+      this.target = undefined;
+      if (this.tank && this.healer && VISUALS_ON) {
+        this.tank.creep.say("➡️");
+        this.healer.creep.say("➡️");
+      }
+    }
 
     if (Game.time % 50 == 0) {
       let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
@@ -69,18 +82,18 @@ export class drainerMaster extends SwarmMaster {
   run() {
     if (this.tank && this.healer)
       if (this.phase == "meeting") {
-        this.tank.goTo(this.order.pos);
-        this.healer.goTo(this.tank.pos);
-        if (this.healer.pos.isNearTo(this.order.pos)) {
+        this.tank.goTo(this.meetingPoint);
+        this.healer.goTo(this.meetingPoint);
+        if (this.healer.pos.isNearTo(this.meetingPoint)) {
           if (VISUALS_ON) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
           }
           this.phase = "draining";
         }
-      } else if (this.phase = "draining") {
+      } else if (this.phase == "draining") {
         if (!this.exit)
-          this.exit = this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
+          this.exit = <RoomPosition>this.tank.pos.findClosest(this.tank.creep.room.find(FIND_EXIT));
         if (!this.target && this.tank.creep.room.name != this.order.pos.roomName)
           this.target = this.tank.creep.room.name;
 

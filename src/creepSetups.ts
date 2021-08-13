@@ -70,11 +70,11 @@ export const Setups = {
   }),
   claimer: new CreepSetup(SetupsNames.claimer, {
     pattern: [CLAIM, MOVE],
-    patternLimit: 2,
+    patternLimit: 1,
   }),
   manager: new CreepSetup(SetupsNames.manager, {
     pattern: [CARRY, CARRY, MOVE],
-    patternLimit: 6,
+    patternLimit: 7,
   }),
   hauler: new CreepSetup(SetupsNames.hauler, {
     pattern: [CARRY, CARRY, MOVE],

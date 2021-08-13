@@ -1,7 +1,7 @@
 // refills the respawnCell
 import { respawnCell } from "../../cells/respawnCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -29,12 +29,13 @@ export class queenMaster extends Master {
     if (this.checkBees(CREEP_LIFE_TIME - 100)) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: Setups.manager,
+        setup: <CreepSetup>{ ...Setups.manager },
         amount: 1,
         priority: 0,
       };
 
       // can refill in 2.5 runs
+      order.setup.name = "Bee Queen"; // well if i coppy may as well change the name
       order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2);
 
       this.wish(order);

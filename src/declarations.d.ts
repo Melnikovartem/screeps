@@ -21,6 +21,7 @@ declare global {
 
   interface CreepMemory {
     refMaster: string;
+    born: number;
 
     //for TRAVELER
     _trav?: any;

@@ -1,6 +1,6 @@
 import { resourceCell } from "../../cells/resourceCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -17,12 +17,10 @@ export class minerMaster extends Master {
   update() {
     super.update();
 
-    if (Game.time % 30 == 0)
-      this.print(this.lastSpawns[0], Game.time >= this.lastSpawns[0] + CREEP_LIFE_TIME);
     if (this.checkBees() && this.cell.perSecondNeeded > 0) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: Setups.miner.energy,
+        setup: <CreepSetup>{ ...Setups.miner.energy },
         amount: 1,
         priority: 3,
       };

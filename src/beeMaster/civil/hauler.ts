@@ -1,7 +1,7 @@
 // refills the respawnCell
 import { excavationCell } from "../../cells/excavationCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 
@@ -48,10 +48,10 @@ export class haulerMaster extends Master {
         priority: 4,
       };
 
-      if (this.hive.stage < 2)
+      if (this.hive.stage < 2) {
+        order.setup = <CreepSetup>{ ...Setups.hauler }; // copy cause gonna change limit
         order.setup.bodySetup.patternLimit = 10;
-      else
-        order.setup.bodySetup.patternLimit = 15;
+      }
       this.wish(order);
     }
   }
