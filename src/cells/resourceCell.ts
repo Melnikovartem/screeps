@@ -19,7 +19,7 @@ export class resourceCell extends Cell {
 
 
   constructor(hive: Hive, resource: Source | Mineral) {
-    super(hive, "resourceCell_" + resource.id);
+    super(hive, "ResourceCell_" + resource.id);
 
     this.resource = resource;
 

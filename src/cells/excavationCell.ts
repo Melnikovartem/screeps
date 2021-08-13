@@ -9,7 +9,7 @@ export class excavationCell extends Cell {
   quitefullContainers: StructureContainer[] = [];
 
   constructor(hive: Hive, sources: Source[], minerals: Mineral[]) {
-    super(hive, "excavationCell_" + hive.room.name);
+    super(hive, "ExcavationCell_" + hive.room.name);
 
     this.resourceCells = [];
     _.forEach(sources, (source) => {

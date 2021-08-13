@@ -71,9 +71,10 @@ export class Order {
     if (!this.master)
       this.getMaster();
 
-    if (this.destroyTime > Game.time) {
+    if (this.destroyTime < Game.time) {
+      this.flag.remove();
       if (this.master)
-        delete global.masters[this.master.ref]
+        delete global.masters[this.master.ref];
       return 0; //killsig
     }
     return 1;

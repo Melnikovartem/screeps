@@ -18,7 +18,7 @@ export class bootstrapMaster extends Master {
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
 
   constructor(developmentCell: developmentCell) {
-    super(developmentCell.hive, "master_" + developmentCell.ref);
+    super(developmentCell.hive, developmentCell.ref);
 
     this.cell = developmentCell;
 

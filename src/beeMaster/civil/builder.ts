@@ -6,7 +6,7 @@ export class builderMaster extends Master {
   targetCaching: { [id: string]: string } = {};
 
   constructor(hive: Hive) {
-    super(hive, "master_" + "builderHive_" + hive.room.name);
+    super(hive, "BuilderHive_" + hive.room.name);
   }
 
   update() {

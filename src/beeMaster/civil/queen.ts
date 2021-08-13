@@ -11,7 +11,7 @@ export class queenMaster extends Master {
   idlePos: RoomPosition;
 
   constructor(respawnCell: respawnCell) {
-    super(respawnCell.hive, "master_" + respawnCell.ref);
+    super(respawnCell.hive, respawnCell.ref);
 
     this.cell = respawnCell;
     let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);

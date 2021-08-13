@@ -11,7 +11,7 @@ export abstract class SwarmMaster extends Master {
   order: Order;
 
   constructor(hive: Hive, order: Order) {
-    super(hive, "masterSwarm_" + order.ref);
+    super(hive, "Swarm_" + order.ref);
 
     this.order = order;
   }

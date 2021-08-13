@@ -22,6 +22,7 @@ export class hordeMaster extends SwarmMaster {
 
   update() {
     super.update();
+
     let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
     // also for miners so not roomInfo.safePlace
 

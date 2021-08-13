@@ -13,7 +13,7 @@ export class respawnCell extends Cell {
   extensions: StructureExtension[];
 
   constructor(hive: Hive, spawns: StructureSpawn[], extensions: StructureExtension[]) {
-    super(hive, "respawnCell_" + hive.room.name);
+    super(hive, "RespawnCell_" + hive.room.name);
 
     this.spawns = spawns;
     this.extensions = extensions;

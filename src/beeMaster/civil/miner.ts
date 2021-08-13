@@ -9,7 +9,7 @@ export class minerMaster extends Master {
   cooldown: number = 0;
 
   constructor(resourceCell: resourceCell) {
-    super(resourceCell.hive, "master_" + resourceCell.ref);
+    super(resourceCell.hive, resourceCell.ref);
 
     this.cell = resourceCell;
   }

@@ -5,7 +5,7 @@ export class defenseCell extends Cell {
   towers: StructureTower[];
 
   constructor(hive: Hive, towers: StructureTower[]) {
-    super(hive, "defenseCell_" + hive.room.name);
+    super(hive, "DefenseCell_" + hive.room.name);
 
     this.towers = towers;
   }

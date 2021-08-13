@@ -110,7 +110,7 @@ export class _Apiary {
           // not sure if i rly need a global bees hash
           global.bees[creep.name] = new Bee(creep);
           global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
-        } else if (creep.memory.refMaster.includes("master_developmentCell_")) {
+        } else if (creep.memory.refMaster.includes("masterDevelopmentCell_")) {
           // TODO think of something smart
           let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
           creep.memory.refMaster = randomMaster;
@@ -131,11 +131,13 @@ export class _Apiary {
 
     if (UPDATE_EACH_TICK || Game.time % 20 == 9)
       _.forEach(Game.flags, (flag) => {
-        let ref = flag.name
-        if (!this.orders[ref])
-          this.orders[ref] = new Order(flag);
-        else if (this.orders[ref].update(flag) == 0)
-          delete this.orders[ref];
+        if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
+          let ref = flag.name
+          if (!this.orders[ref])
+            this.orders[ref] = new Order(flag);
+          else if (this.orders[ref].update(flag) == 0)
+            delete this.orders[ref];
+        }
       });
 
     _.forEach(global.bees, (bee) => {

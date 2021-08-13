@@ -18,7 +18,7 @@ export abstract class Master {
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
-    this.ref = ref;
+    this.ref = "master" + ref;
 
     this.lastSpawns.push(-1);
 
@@ -32,8 +32,6 @@ export abstract class Master {
       this.waitingForBees -= 1;
 
     let birthTime = bee.creep.memory.born;
-    if (!birthTime)
-      birthTime = Game.time - (bee.lifeTime - (bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime));
 
     this.lastSpawns.push(birthTime);
     if (this.lastSpawns[0] == -1)

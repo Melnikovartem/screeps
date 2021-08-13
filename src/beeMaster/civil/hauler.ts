@@ -10,7 +10,7 @@ export class haulerMaster extends Master {
   targetMap: { [id: string]: string } = {}; // "" is base value
 
   constructor(excavationCell: excavationCell) {
-    super(excavationCell.hive, "master_" + excavationCell.ref);
+    super(excavationCell.hive, excavationCell.ref);
 
     this.cell = excavationCell;
 

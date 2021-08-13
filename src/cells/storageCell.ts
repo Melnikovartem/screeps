@@ -23,7 +23,7 @@ export class storageCell extends Cell {
 
 
   constructor(hive: Hive, storage: StructureStorage) {
-    super(hive, "storageCell_" + hive.room.name);
+    super(hive, "StorageCell_" + hive.room.name);
 
     this.storage = storage;
 

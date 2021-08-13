@@ -3164,7 +3164,7 @@ class Master {
         this.beesAmount = 0;
         this.bees = {};
         this.hive = hive;
-        this.ref = ref;
+        this.ref = "master" + ref;
         this.lastSpawns.push(-1);
         global.masters[this.ref] = this;
     }
@@ -3174,8 +3174,6 @@ class Master {
         if (this.waitingForBees)
             this.waitingForBees -= 1;
         let birthTime = bee.creep.memory.born;
-        if (!birthTime)
-            birthTime = Game.time - (bee.lifeTime - (bee.creep.ticksToLive ? bee.creep.ticksToLive : bee.lifeTime));
         this.lastSpawns.push(birthTime);
         if (this.lastSpawns[0] == -1)
             this.lastSpawns.shift();
@@ -3210,7 +3208,7 @@ class Master {
 
 class minerMaster extends Master {
     constructor(resourceCell) {
-        super(resourceCell.hive, "master_" + resourceCell.ref);
+        super(resourceCell.hive, resourceCell.ref);
         this.cooldown = 0;
         this.cell = resourceCell;
     }
@@ -3233,9 +3231,12 @@ class minerMaster extends Master {
         _.forEach(this.bees, (bee) => {
             // any resource
             if (bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0) {
+                let harvest = false;
                 if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
-                    bee.harvest(this.cell.resource);
+                    harvest = true;
                 if (this.cell.extractor && this.cell.extractor.cooldown == 0)
+                    harvest = true;
+                if (harvest)
                     bee.harvest(this.cell.resource);
             }
             if (bee.creep.store[this.cell.resourceType] >= 25) {
@@ -3255,7 +3256,7 @@ class minerMaster extends Master {
 // cell that will extract energy or minerals? from ground
 class resourceCell extends Cell {
     constructor(hive, resource) {
-        super(hive, "resourceCell_" + resource.id);
+        super(hive, "ResourceCell_" + resource.id);
         this.perSecondNeeded = 5; // aka 3000/300/2 for energy
         this.resourceType = RESOURCE_ENERGY;
         this.operational = false;
@@ -3296,7 +3297,7 @@ class resourceCell extends Cell {
 
 class haulerMaster extends Master {
     constructor(excavationCell) {
-        super(excavationCell.hive, "master_" + excavationCell.ref);
+        super(excavationCell.hive, excavationCell.ref);
         this.targetMap = {}; // "" is base value
         this.cell = excavationCell;
         this.targetBeeCount = 0;
@@ -3373,7 +3374,7 @@ class haulerMaster extends Master {
 
 class excavationCell extends Cell {
     constructor(hive, sources, minerals) {
-        super(hive, "excavationCell_" + hive.room.name);
+        super(hive, "ExcavationCell_" + hive.room.name);
         this.quitefullContainers = [];
         this.resourceCells = [];
         _.forEach(sources, (source) => {
@@ -3412,7 +3413,7 @@ class excavationCell extends Cell {
 
 class managerMaster extends Master {
     constructor(storageCell) {
-        super(storageCell.hive, "master_" + storageCell.ref);
+        super(storageCell.hive, storageCell.ref);
         this.targetMap = {};
         this.cell = storageCell;
         let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_YELLOW);
@@ -3508,7 +3509,7 @@ class managerMaster extends Master {
 
 class storageCell extends Cell {
     constructor(hive, storage) {
-        super(hive, "storageCell_" + hive.room.name);
+        super(hive, "StorageCell_" + hive.room.name);
         this.requests = {};
         this.storage = storage;
         this.link = _.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2), (structure) => structure.structureType == STRUCTURE_LINK)[0];
@@ -3577,7 +3578,7 @@ class storageCell extends Cell {
 
 class upgraderMaster extends Master {
     constructor(upgradeCell) {
-        super(upgradeCell.hive, "master_" + upgradeCell.ref);
+        super(upgradeCell.hive, upgradeCell.ref);
         this.cell = upgradeCell;
     }
     update() {
@@ -3630,7 +3631,7 @@ class upgraderMaster extends Master {
 
 class upgradeCell extends Cell {
     constructor(hive, controller) {
-        super(hive, "upgradeCell_" + hive.room.name);
+        super(hive, "UpgradeCell_" + hive.room.name);
         this.controller = controller;
         let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
         if (link instanceof StructureLink) {
@@ -3659,7 +3660,7 @@ class upgradeCell extends Cell {
 
 class defenseCell extends Cell {
     constructor(hive, towers) {
-        super(hive, "defenseCell_" + hive.room.name);
+        super(hive, "DefenseCell_" + hive.room.name);
         this.towers = towers;
     }
     // first stage of decision making like do i a logistic transfer do i need more beeMasters
@@ -3715,7 +3716,7 @@ function makeId(length) {
 
 class queenMaster extends Master {
     constructor(respawnCell) {
-        super(respawnCell.hive, "master_" + respawnCell.ref);
+        super(respawnCell.hive, respawnCell.ref);
         this.cell = respawnCell;
         let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
         if (flags.length)
@@ -3771,7 +3772,7 @@ class queenMaster extends Master {
 
 class respawnCell extends Cell {
     constructor(hive, spawns, extensions) {
-        super(hive, "respawnCell_" + hive.room.name);
+        super(hive, "RespawnCell_" + hive.room.name);
         this.freeSpawns = [];
         this.spawns = spawns;
         this.extensions = extensions;
@@ -3840,7 +3841,7 @@ class respawnCell extends Cell {
 
 class bootstrapMaster extends Master {
     constructor(developmentCell) {
-        super(developmentCell.hive, "master_" + developmentCell.ref);
+        super(developmentCell.hive, developmentCell.ref);
         // some small caching. I just couldn't resist
         this.stateMap = {};
         this.sourceTargeting = {};
@@ -4016,7 +4017,7 @@ class bootstrapMaster extends Master {
 
 class developmentCell extends Cell {
     constructor(hive, controller, sources) {
-        super(hive, "developmentCell_" + hive.room.name);
+        super(hive, "DevelopmentCell_" + hive.room.name);
         this.controller = controller;
         this.sources = sources;
     }
@@ -4037,7 +4038,7 @@ class developmentCell extends Cell {
 
 class builderMaster extends Master {
     constructor(hive) {
-        super(hive, "master_" + "builderHive_" + hive.room.name);
+        super(hive, "BuilderHive_" + hive.room.name);
         this.targetCaching = {};
     }
     update() {
@@ -4094,7 +4095,7 @@ class builderMaster extends Master {
 
 class annexMaster extends Master {
     constructor(hive, controller) {
-        super(hive, "master_annexerRoom_" + controller.room.name);
+        super(hive, "Annexer_" + controller.room.name);
         this.controller = controller;
     }
     update() {
@@ -4130,7 +4131,7 @@ class annexMaster extends Master {
 
 class puppetMaster extends Master {
     constructor(hive, annexName) {
-        super(hive, "master_" + "puppetFor_" + annexName);
+        super(hive, "puppetFor_" + annexName);
         this.target = new RoomPosition(25, 25, annexName);
     }
     update() {
@@ -4559,7 +4560,7 @@ class Intel {
 // new fancy war ai master
 class SwarmMaster extends Master {
     constructor(hive, order) {
-        super(hive, "masterSwarm_" + order.ref);
+        super(hive, "Swarm_" + order.ref);
         this.order = order;
     }
 }
@@ -4835,7 +4836,8 @@ class Order {
         this.pos = flag.pos;
         if (!this.master)
             this.getMaster();
-        if (this.destroyTime > Game.time) {
+        if (this.destroyTime < Game.time) {
+            this.flag.remove();
             if (this.master)
                 delete global.masters[this.master.ref];
             return 0; //killsig
@@ -4934,7 +4936,7 @@ class _Apiary {
                     global.bees[creep.name] = new Bee(creep);
                     global.masters[creep.memory.refMaster].newBee(global.bees[creep.name]);
                 }
-                else if (creep.memory.refMaster.includes("master_developmentCell_")) {
+                else if (creep.memory.refMaster.includes("masterDevelopmentCell_")) {
                     // TODO think of something smart
                     let randomMaster = Object.keys(global.masters)[Math.floor(Math.random() * Object.keys(global.masters).length)];
                     creep.memory.refMaster = randomMaster;
@@ -4951,11 +4953,13 @@ class _Apiary {
             hive.update();
         });
         _.forEach(Game.flags, (flag) => {
-                let ref = flag.name;
-                if (!this.orders[ref])
-                    this.orders[ref] = new Order(flag);
-                else if (this.orders[ref].update(flag) == 0)
-                    delete this.orders[ref];
+                if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
+                    let ref = flag.name;
+                    if (!this.orders[ref])
+                        this.orders[ref] = new Order(flag);
+                    else if (this.orders[ref].update(flag) == 0)
+                        delete this.orders[ref];
+                }
             });
         _.forEach(global.bees, (bee) => {
             bee.update();

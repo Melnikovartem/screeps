@@ -6,7 +6,7 @@ export class puppetMaster extends Master {
   target: RoomPosition; //controllers rly don't age...
 
   constructor(hive: Hive, annexName: string) {
-    super(hive, "master_" + "puppetFor_" + annexName);
+    super(hive, "puppetFor_" + annexName);
 
     this.target = new RoomPosition(25, 25, annexName);
   }

@@ -17,7 +17,7 @@ export class managerMaster extends Master {
   idlePos: RoomPosition;
 
   constructor(storageCell: storageCell) {
-    super(storageCell.hive, "master_" + storageCell.ref);
+    super(storageCell.hive, storageCell.ref);
 
     this.cell = storageCell;
 

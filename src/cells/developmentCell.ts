@@ -11,7 +11,7 @@ export class developmentCell extends Cell {
 
 
   constructor(hive: Hive, controller: StructureController, sources: Source[]) {
-    super(hive, "developmentCell_" + hive.room.name);
+    super(hive, "DevelopmentCell_" + hive.room.name);
 
     this.controller = controller;
     this.sources = sources;

@@ -8,7 +8,7 @@ export class annexMaster extends Master {
   controller: StructureController; //controllers rly don't age...
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "master_annexerRoom_" + controller.room.name);
+    super(hive, "Annexer_" + controller.room.name);
 
     this.controller = controller;
   }

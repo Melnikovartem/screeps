@@ -8,7 +8,7 @@ export class upgraderMaster extends Master {
   cell: upgradeCell;
 
   constructor(upgradeCell: upgradeCell) {
-    super(upgradeCell.hive, "master_" + upgradeCell.ref);
+    super(upgradeCell.hive, upgradeCell.ref);
 
     this.cell = upgradeCell;
   }
