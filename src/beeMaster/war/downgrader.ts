@@ -23,7 +23,7 @@ export class downgradeMaster extends SwarmMaster {
     else if (Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE >= this.order.destroyTime)
       this.order.destroyTime = Game.time + CONTROLLER_ATTACK_BLOCKED_UPGRADE;
     if (roomInfo.safeModeEndTime)
-      this.lastAttacked = Game.time + roomInfo.safeModeEndTime - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+      this.lastAttacked = roomInfo.safeModeEndTime - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
 
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.order.destroyTime > Game.time + 100
       && Game.time + CREEP_CLAIM_LIFE_TIME >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {

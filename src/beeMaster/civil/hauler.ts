@@ -19,7 +19,7 @@ export class haulerMaster extends Master {
     this.targetBeeCount = 0;
     _.forEach(this.cell.resourceCells, (cell) => {
       let beeForSource = 0;
-      if (cell.container) {
+      if (cell.container && cell.operational) {
         this.targetMap[cell.container.id] = "";
         if (this.hive.stage == 2)
           beeForSource += 0.3;

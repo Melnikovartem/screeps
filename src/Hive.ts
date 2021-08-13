@@ -114,6 +114,7 @@ export class Hive {
   constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
+    this.pos = this.room.controller!.pos;
 
     this.stage = 0;
     if (this.room.storage)
@@ -146,11 +147,6 @@ export class Hive {
     this.repairSheet = new repairSheet(this.stage);
     this.updateConstructionSites();
     this.updateRepairs();
-
-    if (this.cells.storageCell)
-      this.pos = this.cells.storageCell.storage.pos;
-    else
-      this.pos = this.room.controller!.pos;
   }
 
   addAnex(annexName: string) {

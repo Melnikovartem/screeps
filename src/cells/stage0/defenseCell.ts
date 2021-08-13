@@ -16,7 +16,7 @@ export class defenseCell extends Cell {
 
     _.forEach(this.hive.annexNames, (annexName) => {
       let roomInfo = Apiary.intel.getInfo(annexName, 10);
-      if (roomInfo.enemies.length > 0 && !Game.flags["defend_" + this.hive.roomName])
+      if (roomInfo.enemies.length > 0 && !roomInfo.safePlace && !Game.flags["defend_" + this.hive.roomName])
         roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
     });
 

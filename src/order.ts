@@ -103,7 +103,7 @@ export class Order {
     } else if (this.flag.color == COLOR_GREY) {
       this.checkTime = 50;
       if (this.flag.secondaryColor == COLOR_RED) {
-        if (this.pos.lookFor(LOOK_STRUCTURES).length == 0)
+        if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
           this.destroyTime = Game.time;
       }
     }

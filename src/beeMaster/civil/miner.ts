@@ -31,7 +31,8 @@ export class minerMaster extends Master {
       if (this.cell.resourceType != RESOURCE_ENERGY) {
         order.setup = Setups.miner.minerals;
         order.priority = 5;
-      }
+      } else if (this.cell.pos.roomName != this.hive.roomName)
+        order.priority = 5;
 
       this.wish(order);
     }
@@ -39,20 +40,25 @@ export class minerMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
+      let harvest: boolean = false;
+      if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
+        harvest = true;
+      else if (this.cell.extractor && this.cell.extractor.cooldown == 0 && this.cell.perSecondNeeded > 0)
+        harvest = true;
 
       // any resource
       if (bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0) {
-        let harvest: boolean = false;
-        if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
-          harvest = true;
-        else if (this.cell.extractor && this.cell.extractor.cooldown == 0 && this.cell.perSecondNeeded > 0)
-          harvest = true;
-
         if (harvest)
           bee.harvest(this.cell.resource);
+        else if (this.cell.resourceType == RESOURCE_ENERGY && this.cell.container && this.cell.container.hits < this.cell.container.hitsMax) {
+          if (bee.store[RESOURCE_ENERGY] > 0)
+            bee.repair(this.cell.container);
+          if (bee.store[RESOURCE_ENERGY] < 24)
+            bee.withdraw(this.cell.container, RESOURCE_ENERGY, 18);
+        }
       }
 
-      if (bee.creep.store[this.cell.resourceType] >= 25) {
+      if (bee.creep.store[this.cell.resourceType] >= 25 && harvest) {
         let target: StructureLink | StructureContainer | undefined;
         if (this.cell.link && this.cell.resourceType == RESOURCE_ENERGY
           && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
