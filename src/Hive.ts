@@ -10,12 +10,14 @@ import { builderMaster } from "./beeMaster/civil/builder";
 import { annexMaster } from "./beeMaster/civil/annexer";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 
+
+import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
+import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
 
 import { CreepSetup } from "./creepSetups";
 
-// TODO visuals VISUALS_ON
-import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
+
 
 
 export interface SpawnOrder {
@@ -241,13 +243,13 @@ export class Hive {
       this.updateLog();
 
     _.forEach(this.cells, (cell) => {
-      cell.update();
+      safeWrap(cell.update, cell.ref);
     });
   }
 
   run() {
     _.forEach(this.cells, (cell) => {
-      cell.run();
+      safeWrap(cell.run, cell.ref);
     });
   }
 }

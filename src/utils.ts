@@ -1,3 +1,5 @@
+import { SAFE_DEV } from "./settings";
+
 export function makeId(length: number): string {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -7,4 +9,14 @@ export function makeId(length: number): string {
       charactersLength));
   }
   return result;
+}
+
+// wrap run or update functions
+// not to get colony wide blackout cause i missed something in some master
+export function safeWrap(cycle: () => void, context: string): void {
+  if (SAFE_DEV) {
+    try { cycle(); }
+    catch { console.log("ERROR in:", context, Game.time); }
+  } else
+    cycle();
 }

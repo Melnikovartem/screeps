@@ -23,11 +23,12 @@ export abstract class Cell {
     // updating structure object to actual data
     _.forEach(Object.keys(this), (key: K) => {
       let data = this[key];
-      if (data instanceof Structure) {
+      if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
         let gameObject = Game.getObjectById(data.id)
         if (gameObject)
           this[key] = <typeof data>gameObject;
-      } else if (Array.isArray(data) && data[0] instanceof Structure) {
+      } else if (Array.isArray(data)
+        && (data[0] instanceof Structure || data[0] instanceof Source || data[0] instanceof Mineral)) {
         let new_data: (typeof data[0])[] = [];
 
         _.forEach(data, (structure) => {

@@ -1,6 +1,5 @@
 'use strict'
 
-import { ErrorMapper } from "utils/ErrorMapper";
 import { Mem } from "./memory";
 
 import "./Traveler/Traveler"
@@ -10,7 +9,7 @@ import "./prototypes/pos"
 
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, ERROR_WRAPPER, LOGGING_CYCLE, PRINT_INFO, PUBLIC, PROFILER } from "./settings";
+import { GENERATE_PIXEL, LOGGING_CYCLE, PRINT_INFO, PUBLIC, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
 
 console.log("settings are for", PUBLIC ? "public" : "local!!");
@@ -54,8 +53,6 @@ let _loop: () => void;
 
 if (PROFILER) {
   _loop = () => profiler.wrap(main);
-} else if (ERROR_WRAPPER) {
-  _loop = ErrorMapper.wrapLoop(main);
 } else {
   _loop = main;
 }

@@ -12,6 +12,8 @@ export class defenseCell extends Cell {
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
+    super.update();
+
     _.forEach(this.hive.annexNames, (annexName) => {
       let roomInfo = global.Apiary.intel.getInfo(annexName, 10);
       if (roomInfo.enemies.length > 0 && !Game.flags["defend_" + this.hive.roomName])

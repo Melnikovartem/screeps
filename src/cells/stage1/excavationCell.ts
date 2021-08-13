@@ -24,9 +24,6 @@ export class excavationCell extends Cell {
   }
 
   update() {
-    if (!this.beeMaster)
-      this.beeMaster = new haulerMaster(this);
-
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)
@@ -40,6 +37,9 @@ export class excavationCell extends Cell {
     });
     this.quitefullContainers.sort(
       (a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
+
+    if (!this.beeMaster)
+      this.beeMaster = new haulerMaster(this);
   };
 
   run() {
