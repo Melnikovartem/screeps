@@ -1,4 +1,4 @@
-import { SAFE_DEV } from "./settings";
+import { SAFE_DEV, PRINT_INFO, LOGGING_CYCLE } from "./settings";
 
 export function makeId(length: number): string {
   var result = '';
@@ -16,7 +16,10 @@ export function makeId(length: number): string {
 export function safeWrap(cycle: () => void, context: string): void {
   if (SAFE_DEV) {
     try { cycle(); }
-    catch (e) { console.log("ERROR in:", context, Game.time, "\n", e); }
+    catch (e) {
+      if (PRINT_INFO) console.log("ERROR in:", context, Game.time, "\n", e.message);
+      if (LOGGING_CYCLE) Memory.log.crashes[Game.time] = { context: context, message: e.message };
+    }
   } else
     cycle();
 }

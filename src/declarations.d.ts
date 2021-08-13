@@ -71,6 +71,12 @@ declare global {
           destroyTime: number,
         }
       },
+      crashes: {
+        [id: number]: {
+          context: string,
+          message: string,
+        }
+      }
     },
     cache: {
       intellegence: any;

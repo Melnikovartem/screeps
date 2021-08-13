@@ -5,14 +5,14 @@ import { LOGGING_CYCLE } from "./settings";
 export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
-    if (!Memory.log) Memory.log = { spawns: {}, hives: {}, orders: {} };
+    if (!Memory.log) Memory.log = { spawns: {}, hives: {}, orders: {}, crashes: {} };
     if (!Memory.cache) Memory.cache = { intellegence: {} };
   }
 
   static wipe() {
-    console.log("Memory wipe!");
+    console.log("> > Memory wipe!");
     Memory.masters = {};
-    Memory.log = { spawns: {}, hives: {}, orders: {} };
+    Memory.log = { spawns: {}, hives: {}, orders: {}, crashes: {} };
     Memory.cache = { intellegence: {} };
   }
 
@@ -51,6 +51,15 @@ export class Mem {
         for (let i in Memory.log.orders) {
           if (Memory.log.orders[i].time + LOGGING_CYCLE * 3 > Game.time || Memory.log.orders[i].destroyTime == -1) continue;
           delete Memory.log.orders[i];
+          if (--j == 0) break;
+        }
+      }
+
+      if (Object.keys(Memory.log.crashes).length > 100) {
+        let j = Object.keys(Memory.log.orders).length - 50;
+        for (let key in Memory.log.crashes) {
+          if (+key + LOGGING_CYCLE * 3 > Game.time) continue;
+          delete Memory.log.crashes[key];
           if (--j == 0) break;
         }
       }
