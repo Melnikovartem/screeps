@@ -5,7 +5,7 @@ import { Intel } from "./intelligence";
 import { Order } from "./order";
 import { makeId } from "./utils/other";
 
-import { UPDATE_EACH_TICK, PRINT_INFO } from "./settings";
+import { PRINT_INFO } from "./settings";
 import { profile } from "./profiler/decorator";
 
 @profile
@@ -130,22 +130,27 @@ export class _Apiary {
     }
   }
 
+  updateFlags() {
+    _.forEach(Game.flags, (flag) => {
+      if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
+        let ref = flag.name
+        if (!this.orders[ref])
+          this.orders[ref] = new Order(flag);
+        else if (this.orders[ref].update(flag) == 0) { // if killsig
+          flag.remove();
+          delete this.orders[ref];
+        }
+      }
+    });
+  }
+
   // update phase
   update() {
     _.forEach(this.hives, (hive) => {
       hive.update();
     });
 
-    if (UPDATE_EACH_TICK || Game.time % 20 == 9)
-      _.forEach(Game.flags, (flag) => {
-        if (flag.color == COLOR_RED || flag.color == COLOR_ORANGE) {
-          let ref = flag.name
-          if (!this.orders[ref])
-            this.orders[ref] = new Order(flag);
-          else if (this.orders[ref].update(flag) == 0)
-            delete this.orders[ref];
-        }
-      });
+    this.updateFlags();
 
     _.forEach(global.bees, (bee) => {
       bee.update();

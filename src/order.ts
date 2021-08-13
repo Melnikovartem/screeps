@@ -48,21 +48,24 @@ export class Order {
         this.master = new downgradeMaster(this.findHive(), this);
       else if (this.flag.secondaryColor == COLOR_YELLOW)
         this.master = new drainerMaster(this.findHive(), this);
-      else if (this.flag.secondaryColor == COLOR_GREY)
-        this.master = new puppetMaster(this.findHive(), this.pos.roomName)
+      else if (this.flag.secondaryColor == COLOR_GREY) {
+        let newMaster = new puppetMaster(this.findHive(), this.pos.roomName, this);
+        newMaster.maxSpawns = 1;
+        this.master = newMaster;
+      }
       else if (this.flag.secondaryColor == COLOR_RED) {
-        let horde = new hordeMaster(this.findHive(), this);
+        let newMaster = new hordeMaster(this.findHive(), this);
 
         if (this.ref.includes("controller"))
-          horde.tryToDowngrade = true;
+          newMaster.tryToDowngrade = true;
         let matches = this.ref.match(/\d+/g);
         if (matches != null) //F?
-          horde.targetBeeCount = <number><unknown>matches[0];
+          newMaster.targetBeeCount = <number><unknown>matches[0];
         else
-          horde.targetBeeCount = 2;
-        horde.maxSpawns = horde.targetBeeCount * 2;
+          newMaster.targetBeeCount = 2;
+        newMaster.maxSpawns = newMaster.targetBeeCount * 2;
 
-        this.master = horde;
+        this.master = newMaster;
       }
     }
   }
@@ -74,7 +77,6 @@ export class Order {
       this.getMaster();
 
     if (this.destroyTime < Game.time) {
-      this.flag.remove();
       if (this.master)
         delete global.masters[this.master.ref];
       return 0; //killsig

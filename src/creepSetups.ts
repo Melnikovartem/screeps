@@ -64,6 +64,7 @@ const SetupsNames = {
   // War
   knight: 'European hornet',
   tank: 'Dolichovespula arenaria',
+  healer: 'Bald-faced hornet',
 }
 
 
@@ -130,7 +131,7 @@ export const Setups = {
     fixed: [ATTACK, ATTACK, MOVE],
     pattern: [TOUGH, TOUGH, MOVE],
   }),
-  healer: new CreepSetup(SetupsNames.tank, {
+  healer: new CreepSetup(SetupsNames.healer, {
     pattern: [HEAL, HEAL, MOVE],
   }),
 }

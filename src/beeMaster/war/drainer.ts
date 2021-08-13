@@ -41,10 +41,17 @@ export class drainerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.phase == "draining" && (!this.tank || !this.healer))
+    if (this.tank && !global.bees[this.tank.ref])
+      delete this.tank;
+
+    if (this.healer && !global.bees[this.healer.ref])
+      delete this.tank;
+
+    if (this.phase != "spawning" && (!this.tank || !this.healer))
       this.order.destroyTime = Game.time;
 
-    if (this.meetingPoint != this.order.pos) {
+    if (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y) {
+      this.meetingPoint = this.order.pos;
       this.phase = "meeting";
       this.exit = undefined;
       this.healing = false;
@@ -55,17 +62,9 @@ export class drainerMaster extends SwarmMaster {
       }
     }
 
-    if (Game.time % 50 == 0) {
-      let roomInfo = global.Apiary.intel.getInfo(this.order.pos.roomName);
-
-      // this stupid tatic was countered
-      if (!roomInfo.safePlace)
-        this.order.destroyTime = Game.time;
-    }
-
     if (this.phase == "spawning") {
       this.phase = "meeting";
-      if (!this.tank && !this.healer) {
+      if (!this.tank) {
         let tankOrder: SpawnOrder = {
           master: this.ref,
           setup: Setups.tank,
@@ -73,6 +72,8 @@ export class drainerMaster extends SwarmMaster {
           priority: 1,
         };
         this.wish(tankOrder);
+      }
+      if (!this.healer) {
         let healerOrder: SpawnOrder = {
           master: this.ref,
           setup: Setups.healer,
@@ -87,14 +88,15 @@ export class drainerMaster extends SwarmMaster {
   run() {
     if (this.tank && this.healer)
       if (this.phase == "meeting") {
-        this.tank.goTo(this.meetingPoint);
         this.healer.goTo(this.meetingPoint);
-        if (this.healer.pos.isNearTo(this.meetingPoint) && this.tank.pos.isNearTo(this.meetingPoint)) {
+        this.tank.goTo(this.meetingPoint.getOpenPositions()[0]);
+        if (this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y
+          && this.tank.pos.isNearTo(this.meetingPoint)) {
+          this.phase = "draining";
           if (VISUALS_ON) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
           }
-          this.phase = "draining";
         }
       } else if (this.phase == "draining") {
         if (!this.exit)
@@ -111,11 +113,11 @@ export class drainerMaster extends SwarmMaster {
           if (!this.tank.pos.isNearTo(this.healer))
             this.tank.goTo(this.healer.pos);
           if (this.tank.creep.hits == this.tank.creep.hitsMax) {
+            this.healing = false;
             if (VISUALS_ON) {
               this.tank.creep.say("⚡");
               this.healer.creep.say("⚡");
             }
-            this.healing = false;
           }
 
           if (this.healer.pos.isNearTo(this.tank))
@@ -132,7 +134,8 @@ export class drainerMaster extends SwarmMaster {
               let roomInfo = global.Apiary.intel.getInfo(this.target);
 
               if (roomInfo.enemies.length)
-                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
+                if (!(roomInfo.enemies[0] instanceof StructureTower)) // not sure what to do if there will be smart towers
+                  this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
             }
           }
           else if (this.exit)

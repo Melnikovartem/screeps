@@ -32,7 +32,6 @@ function onGlobalReset(): void {
 
 function main() {
   if (!global.Apiary || Game.time >= global.Apiary.destroyTime) {
-    console.log("here?42");
     delete global.Apiary;
     global.Apiary = new _Apiary();
   }

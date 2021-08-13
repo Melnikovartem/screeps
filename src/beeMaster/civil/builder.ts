@@ -24,11 +24,11 @@ export class builderMaster extends Master {
     else
       this.targetBeeCount = 1;
 
-    if (this.checkBees() && (this.hive.emergencyRepairs.length > 5 || this.hive.constructionSites.length > 0)) {
+    if (this.checkBees() && (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length > 1)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.builder,
-        amount: Math.max(1, this.targetBeeCount - this.beesAmount),
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 4,
       };
 
