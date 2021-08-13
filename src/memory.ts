@@ -27,30 +27,31 @@ export class Mem {
       if (!(name in Game.flags)) delete Memory.flags[name];
 
     if (Game.time % LOGGING_CYCLE == 0) {
-      if (Object.keys(Memory.log.spawns).length > 50) {
+      if (Object.keys(Memory.log.spawns).length > 25) {
         let j = Object.keys(Memory.log.spawns).length - 10;
         for (let i in Memory.log.spawns) {
+          if (Memory.log.spawns[i].time + LOGGING_CYCLE * 3 > Game.time) continue;
           delete Memory.log.spawns[i];
-          if (++j == 0) break;
+          if (--j == 0) break;
         }
       }
 
       for (let key in Memory.log.hives)
-        if (Object.keys(Memory.log.hives[key]).length > 18) {
+        if (Object.keys(Memory.log.hives[key]).length > 20) {
           let j = Object.keys(Memory.log.hives[key]).length - 18;
           for (let i in Memory.log.hives[key]) {
+            if (<number><unknown>key + LOGGING_CYCLE * 3 > Game.time) continue;
             delete Memory.log.hives[key][i];
-            if (++j == 0) break;
+            if (--j == 0) break;
           }
         }
 
-      if (Object.keys(Memory.log.orders).length > 3) {
-        let j = Object.keys(Memory.log.orders).length - 1;
+      if (Object.keys(Memory.log.orders).length > 25) {
+        let j = Object.keys(Memory.log.orders).length - 10;
         for (let i in Memory.log.orders) {
-          if (Memory.log.orders[i].destroyTime == -1) break;
-          console.log(">", i);
+          if (Memory.log.orders[i].time + LOGGING_CYCLE * 3 > Game.time || Memory.log.orders[i].destroyTime == -1) continue;
           delete Memory.log.orders[i];
-          if (++j == 0) break;
+          if (--j == 0) break;
         }
       }
     }

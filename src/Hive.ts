@@ -14,7 +14,7 @@ import { profile } from "./profiler/decorator";
 import { CreepSetup } from "./creepSetups";
 
 // TODO visuals VISUALS_ON
-import { UPDATE_EACH_TICK, LOGGING_CYCLE, PRINT_INFO } from "./settings";
+import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
 
 
 export interface SpawnOrder {
@@ -250,8 +250,6 @@ export class Hive {
 
   // add to list a new creep
   wish(order: SpawnOrder) {
-    if (PRINT_INFO)
-      console.log(Game.time, this.roomName, "new order from", order.master, "for", order.amount, order.setup.name);
     this.orderList.push(order);
   }
 
@@ -280,7 +278,7 @@ export class Hive {
       this.findTargets();
     if (Game.time % 50 == 19)
       this.parseStructures(); //keep em fresh
-    if (Game.time % (LOGGING_CYCLE * 3) == 0)
+    if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
 
     _.forEach(this.cells, (cell) => {

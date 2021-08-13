@@ -42,10 +42,12 @@ export class Order {
     this.getMaster();
 
     if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
+      time: Game.time,
       color: this.flag.color,
       secondaryColor: this.flag.color,
       name: this.flag.name,
       repeat: this.flag.memory.repeat,
+      pos: this.flag.pos,
       destroyTime: -1,
     }
   }
@@ -74,11 +76,8 @@ export class Order {
         this.master = new downgradeMaster(this.findHive(), this);
       else if (this.flag.secondaryColor == COLOR_YELLOW)
         this.master = new drainerMaster(this.findHive(), this);
-      else if (this.flag.secondaryColor == COLOR_GREY) {
-        let newMaster = new puppetMaster(this.findHive(), this.pos.roomName, this);
-        newMaster.maxSpawns = 1;
-        this.master = newMaster;
-      }
+      else if (this.flag.secondaryColor == COLOR_GREY)
+        this.master = new puppetMaster(this.findHive(), this.pos.roomName, this);
       else if (this.flag.secondaryColor == COLOR_RED) {
         let newMaster = new hordeMaster(this.findHive(), this);
 
@@ -112,7 +111,10 @@ export class Order {
         this.flag.memory.repeat -= 1;
         this.getMaster();
       } else {
-        if (LOGGING_CYCLE) Memory.log.orders[this.ref].destroyTime = Game.time;
+        if (LOGGING_CYCLE) {
+          Memory.log.orders[this.ref].destroyTime = Game.time;
+          Memory.log.orders[this.ref].pos = this.flag.pos;
+        }
         return 0; //killsig}
       }
     }

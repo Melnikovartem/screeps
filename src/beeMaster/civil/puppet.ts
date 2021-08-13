@@ -7,22 +7,26 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class puppetMaster extends Master {
   target: RoomPosition;
-  maxSpawns: number = 500;
+  maxSpawns: number = 1;
   spawned: number = 0;
   order?: Order;
 
-  constructor(hive: Hive, annexName: string, order?: Order) {
-    super(hive, "Puppet_" + annexName);
+  constructor(hive: Hive, roomName: string, order?: Order) {
+    super(hive, "Puppet_" + roomName);
 
     this.order = order;
-    this.target = new RoomPosition(25, 25, annexName);
+    if (order)
+      this.target = order.pos;
+    else
+      this.target = new RoomPosition(25, 25, roomName);
   }
 
   update() {
     super.update();
 
-    if (this.beesAmount == 0 && this.spawned == this.maxSpawns && this.order)
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.order) {
       this.order.destroyTime = Game.time;
+    }
 
     if (this.checkBees() && !(this.target.roomName in Game.rooms) && this.spawned < this.maxSpawns) {
       let order: SpawnOrder = {
@@ -39,10 +43,6 @@ export class puppetMaster extends Master {
   }
 
   run() {
-    if (Game.rooms[this.target.roomName]) {
-      // for now will recreate everything
-      global.Apiary.destroyTime = Game.time + 10;
-    }
     _.forEach(this.bees, (bee) => {
       if (bee.pos.getRangeTo(this.target) > 10)
         bee.goTo(this.target);

@@ -48,7 +48,7 @@ declare global {
       },
       hives: {
         [id: string]: {
-          [id: string]: {
+          [id: number]: {
             annexNames: string[],
             roomTargets: boolean,
             annexesTargets: boolean,
@@ -64,8 +64,10 @@ declare global {
       },
       orders: {
         [id: string]: {
+          time: number,
           color: number,
           secondaryColor: number,
+          pos: RoomPosition,
           name: string,
           repeat: number,
           destroyTime: number,
