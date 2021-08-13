@@ -8,10 +8,14 @@ export abstract class Cell {
   hive: Hive;
   ref: string;
   beeMaster: Master | undefined;
+  time: number;
+  pos: RoomPosition;
 
   constructor(hive: Hive, cellName: string) {
     this.hive = hive;
     this.ref = cellName;
+    this.time = Game.time;
+    this.pos = hive.pos;
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters

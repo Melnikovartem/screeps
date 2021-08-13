@@ -18,13 +18,14 @@ export class annexMaster extends Master {
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK) {
+    if (UPDATE_EACH_TICK || Game.time % 50 == 29) {
       let controller = Game.getObjectById(this.controller.id);
       if (controller)
         this.controller = controller;
     }
 
-    if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
+    let roomInfo = global.Apiary.intel.getInfo(this.controller.pos.roomName, 10);
+    if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && roomInfo.safePlace) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer.normal,

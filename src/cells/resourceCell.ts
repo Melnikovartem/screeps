@@ -38,6 +38,8 @@ export class resourceCell extends Cell {
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
       this.resourceType = this.resource.mineralType;
     }
+
+    this.pos = this.resource.pos;
   }
 
   update() {

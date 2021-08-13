@@ -62,7 +62,7 @@ export class upgraderMaster extends Master {
           if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
             ans = bee.upgradeController(this.cell.controller);
         } else
-          bee.goRest(this.hive.idlePos);
+          bee.goRest(this.cell.pos);
       }
       if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK)
         bee.upgradeController(this.cell.controller);

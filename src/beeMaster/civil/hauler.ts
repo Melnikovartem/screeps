@@ -70,7 +70,7 @@ export class haulerMaster extends Master {
   run() {
     // for future might be good to find closest bee for container and not the other way around
     if (this.hive.cells.storageCell) {
-      let target = this.hive.cells.storageCell.storage;
+      let storage = this.hive.cells.storageCell.storage;
       _.forEach(this.bees, (bee) => {
         let ans;
 
@@ -89,11 +89,14 @@ export class haulerMaster extends Master {
             else
               this.targetMap[suckerTarget.id] = bee.ref;
           } else
-            bee.goRest(this.hive.idlePos);
+            bee.goRest(this.cell.pos);
         }
 
-        if (bee.creep.store.getUsedCapacity() > 0 || ans == OK) {
-          bee.transfer(target, this.findOptimalResource(bee.store));
+        if ((bee.creep.store.getUsedCapacity() > 0 || ans == OK)) {
+          if (storage.store.getFreeCapacity() > 0)
+            bee.transfer(storage, this.findOptimalResource(bee.store));
+          else
+            bee.goRest(this.cell.pos);
         }
       });
     }

@@ -14,7 +14,16 @@ export class defenseCell extends Cell {
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
+    if (this.towers != this.hive.towers)
+      console.log("AAAAAAAAAAA");
+
     super.update();
+
+    _.forEach(this.hive.annexNames, (annexName) => {
+      let roomInfo = global.Apiary.intel.getInfo(annexName, 10);
+      if (roomInfo.enemies.length > 0 && !Game.flags["defend_" + this.hive.roomName])
+        roomInfo.enemies[0].pos.createFlag("defend_" + this.hive.roomName, COLOR_RED, COLOR_BLUE);
+    });
 
     let storageCell = this.hive.cells.storageCell
     if (storageCell) {
@@ -40,15 +49,12 @@ export class defenseCell extends Cell {
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
-    // #TODO better target picking
-    if (this.hive.roomTargets) {
-      let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName);
-      if (roomInfo) // i literally check here for hull wich is never -_-
-        _.forEach(this.towers, (tower) => {
-          let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
-          if (closest)
-            tower.attack(closest);
-        });
-    }
+    let roomInfo = global.Apiary.intel.getInfo(this.hive.roomName, 5);
+    if (roomInfo.enemies.length)
+      _.forEach(this.towers, (tower) => {
+        let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
+        if (closest)
+          tower.attack(closest);
+      });
   };
 }

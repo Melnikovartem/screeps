@@ -25,12 +25,12 @@ export interface SpawnOrder {
 }
 
 interface hiveCells {
-  respawnCell?: respawnCell;
-  excavationCell?: excavationCell;
+  defenseCell: defenseCell;
+  developmentCell?: developmentCell;
+  respawnCell: respawnCell;
   storageCell?: storageCell;
   upgradeCell?: upgradeCell;
-  developmentCell?: developmentCell;
-  defenseCell?: defenseCell;
+  excavationCell?: excavationCell;
 }
 
 @profile
@@ -91,10 +91,6 @@ export class Hive {
 
   orderList: SpawnOrder[] = [];
 
-  //targets for defense systems
-  roomTargets: boolean = false;
-  annexesTargets: boolean = false;
-
   // some structures (aka preprocess of filters)
   constructionSites: ConstructionSite[] = [];
   emergencyRepairs: Structure[] = [];
@@ -104,7 +100,7 @@ export class Hive {
   claimers: annexMaster[] = [];
   puppets: puppetMaster[] = [];
 
-
+  controller: StructureController;
   spawns: StructureSpawn[] = [];
   extensions: StructureExtension[] = [];
   towers: StructureTower[] = [];
@@ -114,7 +110,7 @@ export class Hive {
   sources: Source[] = [];
   minerals: Mineral[] = [];
 
-  idlePos: RoomPosition;
+  pos: RoomPosition; // aka idle pos for creeps
 
   stage: 0 | 1 | 2 = 0;
 
@@ -124,11 +120,15 @@ export class Hive {
 
     this.room = Game.rooms[roomName];
     this.updateRooms();
+    this.controller = this.room.controller!;
 
     this.parseResources();
     this.parseStructures();
 
-    this.cells = {};
+    this.cells = {
+      respawnCell: new respawnCell(this, this.spawns, this.extensions),
+      defenseCell: new defenseCell(this, this.towers),
+    };
     this.createCells();
 
     this.repairSheet = new repairSheet(this.stage);
@@ -141,11 +141,11 @@ export class Hive {
 
     let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
     if (flags.length)
-      this.idlePos = flags[0].pos;
+      this.pos = flags[0].pos;
     else if (this.cells.storageCell)
-      this.idlePos = this.cells.storageCell.storage.pos;
+      this.pos = this.cells.storageCell.storage.pos;
     else
-      this.idlePos = this.room.controller!.pos;
+      this.pos = this.controller.pos;
   }
 
   updateRooms(): void {
@@ -163,7 +163,7 @@ export class Hive {
 
     let flags = _.filter(this.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_CYAN);
     if (flags.length)
-      this.idlePos = flags[0].pos;
+      this.pos = flags[0].pos;
   }
 
   parseResources() {
@@ -194,7 +194,10 @@ export class Hive {
   }
 
   private createCells() {
-    this.cells.respawnCell = new respawnCell(this, this.spawns, this.extensions);
+    if (this.cells.respawnCell.time != Game.time)
+      this.cells.respawnCell = new respawnCell(this, this.spawns, this.extensions);
+    if (this.cells.respawnCell.time != Game.time)
+      this.cells.defenseCell = new defenseCell(this, this.towers);
 
     if (this.storage) {
       this.cells.storageCell = new storageCell(this, this.storage);
@@ -210,7 +213,6 @@ export class Hive {
       this.cells.developmentCell = new developmentCell(this, this.room.controller!, this.sources);
     }
 
-    this.cells.defenseCell = new defenseCell(this, this.towers);
   }
 
   private updateConstructionSites() {
@@ -233,21 +235,6 @@ export class Hive {
     });
   }
 
-  // look for targets inside room
-  private findTargets() {
-    let roomInfo = global.Apiary.intel.getInfo(this.roomName);
-    this.roomTargets = roomInfo.enemies.length > 0;
-    _.some(this.annexes, (room) => {
-      let roomInfo = global.Apiary.intel.getInfo(room.name);
-
-      if (roomInfo.enemies.length > 0) {
-        if (!Game.flags["defend_" + room.name])
-          roomInfo.enemies[0].pos.createFlag("defend_" + room.name, COLOR_RED, COLOR_BLUE);
-        this.annexesTargets = true;
-      }
-    });
-  }
-
   // add to list a new creep
   wish(order: SpawnOrder) {
     this.orderList.push(order);
@@ -258,8 +245,6 @@ export class Hive {
       Memory.log.hives[this.roomName] = {};
     Memory.log.hives[this.roomName][Game.time] = {
       annexNames: this.annexNames,
-      roomTargets: this.roomTargets,
-      annexesTargets: this.annexesTargets,
       constructionSites: this.constructionSites.length,
       emergencyRepairs: this.emergencyRepairs.length,
       normalRepairs: this.normalRepairs.length,
@@ -274,8 +259,6 @@ export class Hive {
       this.updateConstructionSites();
       this.updateRepairs();
     }
-    if (UPDATE_EACH_TICK || Game.time % 10 == 2)
-      this.findTargets();
     if (Game.time % 50 == 19)
       this.parseStructures(); //keep em fresh
     if (Game.time % LOGGING_CYCLE == 0)

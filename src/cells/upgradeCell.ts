@@ -10,7 +10,6 @@ export class upgradeCell extends Cell {
   controller: StructureController;
   link: StructureLink | undefined;
 
-
   constructor(hive: Hive, controller: StructureController) {
     super(hive, "UpgradeCell_" + hive.room.name);
 
@@ -20,6 +19,11 @@ export class upgradeCell extends Cell {
     if (link instanceof StructureLink) {
       this.link = link;
     }
+
+    if (this.link)
+      this.pos = this.link.pos;
+    else
+      this.pos = this.controller.pos;
   }
 
   update() {
@@ -38,9 +42,7 @@ export class upgradeCell extends Cell {
         amount: this.link.store.getFreeCapacity(RESOURCE_ENERGY),
         priority: 4
       }
-
   }
 
-  run() {
-  }
+  run() { }
 }

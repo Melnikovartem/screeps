@@ -10,19 +10,10 @@ import { profile } from "../../profiler/decorator";
 export class queenMaster extends Master {
   cell: respawnCell;
 
-  idlePos: RoomPosition;
-
   constructor(respawnCell: respawnCell) {
     super(respawnCell.hive, respawnCell.ref);
 
     this.cell = respawnCell;
-    let flags = _.filter(this.hive.room.find(FIND_FLAGS), (flag) => flag.color == COLOR_CYAN && flag.secondaryColor == COLOR_GREEN);
-    if (flags.length)
-      this.idlePos = flags[0].pos;
-    else if (this.hive.cells.storageCell)
-      this.idlePos = this.hive.cells.storageCell.storage.pos;
-    else
-      this.idlePos = this.hive.idlePos;
   }
 
   update() {
@@ -70,7 +61,7 @@ export class queenMaster extends Master {
         && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
       } else
-        bee.goRest(this.idlePos);
+        bee.goRest(this.cell.pos);
     });
   }
 }

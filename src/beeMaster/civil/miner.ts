@@ -19,7 +19,8 @@ export class minerMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees() && this.cell.perSecondNeeded > 0) {
+    let roomInfo = global.Apiary.intel.getInfo(this.cell.pos.roomName, 10);
+    if (this.checkBees() && this.cell.perSecondNeeded > 0 && roomInfo.safePlace) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.miner.energy,

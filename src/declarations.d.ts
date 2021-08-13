@@ -49,8 +49,6 @@ declare global {
         [id: string]: {
           [id: number]: {
             annexNames: string[],
-            roomTargets: boolean,
-            annexesTargets: boolean,
             constructionSites: number,
             emergencyRepairs: number,
             normalRepairs: number,

@@ -21,7 +21,7 @@ export class Intel {
   }
 
 
-  getInfo(roomName: string): RoomInfo {
+  getInfo(roomName: string, lag?: number): RoomInfo {
     if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {
         lastUpdated: 0,
@@ -32,7 +32,8 @@ export class Intel {
       };
 
     // it is cached after first check
-    if (this.roomInfo[roomName].lastUpdated == Game.time)
+    lag = lag ? lag : 0;
+    if (this.roomInfo[roomName].lastUpdated + lag >= Game.time)
       return this.roomInfo[roomName];
 
     if (!(roomName in Game.rooms)) {
