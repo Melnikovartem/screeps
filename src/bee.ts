@@ -151,9 +151,7 @@ export class Bee {
     return this.creep.travelTo(target, opt);
   }
 
-  /*
-    getBodyparts(partType: BodyPartConstant): number {
-      return _.filter(this.body, (part: BodyPartDefinition) => part.type == partType).length;
-    }
-  */
+  getBodyparts(partType: BodyPartConstant): number {
+    return _.filter(this.creep.body, (part: BodyPartDefinition) => part.type == partType).length;
+  }
 }

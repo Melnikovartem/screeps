@@ -38,8 +38,8 @@ export class managerMaster extends Master {
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
       if ((request.amount == undefined || request.amount >= 25)
-        && request.to.id == this.cell.storage.id || request.from.id == this.cell.storage.id
-        || (this.cell.terminal && (request.to.id == this.cell.terminal.id || request.from.id == this.cell.terminal.id)))
+        && this.cell.storage.store[request.resource] >= (request.amount ? request.amount : 0)
+        && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
     targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
@@ -78,30 +78,34 @@ export class managerMaster extends Master {
     _.forEach(this.bees, (bee) => {
       let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
       if (request) {
-        let usedCapFrom = (<Store<ResourceConstant, false>>request.from.store)[request.resource];
-        let freeCapTo = (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource);
+        let usedCapFrom = (<Store<ResourceConstant, false>>request.from[0].store)[request.resource];
+        let freeCapTo = (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource);
         let amountBee = bee.store[request.resource];
         request.amount = request.amount != undefined ? request.amount : freeCapTo;
         request.amount = Math.min(freeCapTo, request.amount);
 
-        if (amountBee > 0) {
-          let ans = bee.transfer(request.to, request.resource, Math.min(request.amount, amountBee));
+        if (amountBee > 0 && (request.from.length == 1 || !bee.store.getFreeCapacity())) {
+          let ans = bee.transfer(request.to[0], request.resource, Math.min(request.amount, amountBee));
           if (ans == OK)
-            request.amount -= amountBee;
+            request.amount -= Math.min(request.amount, amountBee);
         }
 
         if (amountBee == 0 && request.amount > 0) {
           amountBee = Math.min(bee.store.getFreeCapacity(), request.amount);
           amountBee = Math.min(amountBee, usedCapFrom);
 
-          if (amountBee > 0)
-            bee.withdraw(request.from, request.resource, amountBee);
+          if (amountBee > 0) {
+            bee.withdraw(request.from[0], request.resource, amountBee);
+            if (request.from.length > 1 && usedCapFrom - amountBee == 0)
+              request.from.shift();
+          }
         }
 
-        if (request.amount <= 0 || (usedCapFrom == 0 && amountBee == 0)) {
+        if (request.amount == 0) {
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
-        }
+        } else if ((usedCapFrom == 0 && amountBee == 0))
+          this.targetMap[bee.ref] = "";
       } else {
         this.targetMap[bee.ref] = "";
         let ans;

@@ -32,8 +32,8 @@ export class upgradeCell extends Cell {
     let storageCell = this.hive.cells.storage;
     if (this.link && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {
       storageCell.requests[this.link.id] = {
-        from: storageCell.link,
-        to: this.link,
+        from: [storageCell.link],
+        to: [this.link],
         resource: RESOURCE_ENERGY,
         priority: 4,
       }

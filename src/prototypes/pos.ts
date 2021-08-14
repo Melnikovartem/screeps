@@ -1,7 +1,7 @@
 interface RoomPosition {
+  isFree(): boolean;
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
-  isFree(): boolean;
   getTimeForPath(pos: RoomObject | RoomPosition): number
   findClosest<Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null;
 }
@@ -19,22 +19,12 @@ RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
   }
 
   return positions
-};
+}
 
 RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
   let nearbyPositions: RoomPosition[] = this.getNearbyPositions();
-  let terrain = Game.map.getRoomTerrain(this.roomName);
 
-  let openPositions = _.filter(nearbyPositions, function(pos) {
-    return terrain.get(pos.x, pos.y) != TERRAIN_MASK_WALL;
-  });
-
-  if (this.roomName in Game.rooms)
-    openPositions = _.filter(openPositions, function(pos) {
-      return !pos.lookFor(LOOK_CREEPS).length
-    });
-
-  return openPositions;
+  return _.filter(nearbyPositions, (pos) => pos.isFree());
 }
 
 RoomPosition.prototype.isFree = function(): boolean {
@@ -71,7 +61,7 @@ RoomPosition.prototype.getTimeForPath = function(target: RoomObject | RoomPositi
     len += pos.findPathTo(this, { ignoreCreeps: true }).length;
 
   return len
-};
+}
 
 // TODO different class types to forget casting in and out
 RoomPosition.prototype.findClosest = function <Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null {

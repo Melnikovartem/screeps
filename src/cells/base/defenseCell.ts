@@ -19,24 +19,12 @@ export class defenseCell extends Cell {
         roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
     });
 
-    let storageCell = this.hive.cells.storage
+    let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      _.forEach(this.towers, (tower) => {
-        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
-          storageCell!.requests[tower.id] = {
-            from: storageCell!.storage,
-            to: tower,
-            resource: RESOURCE_ENERGY,
-            priority: 0,
-          };
-        else if (!storageCell!.requests[tower.id] && tower.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
-          storageCell!.requests[tower.id] = {
-            from: storageCell!.storage,
-            to: tower,
-            resource: RESOURCE_ENERGY,
-            priority: 5,
-          };
-      });
+      storageCell.requestFromStorage(this.ref,
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY]), 0);
+      storageCell.requestFromStorage(this.ref,
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) >= tower.store[RESOURCE_ENERGY]), 0);
     }
   };
 

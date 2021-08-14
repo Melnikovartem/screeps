@@ -1,3 +1,4 @@
+import { Cell } from "./cells/_Cell";
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
 import { laboratoryCell } from "./cells/base/laboratoryCell";
@@ -27,10 +28,10 @@ export interface SpawnOrder {
 }
 
 interface hiveCells {
+  storage?: storageCell;
   defense: defenseCell;
   spawn: respawnCell;
   lab: laboratoryCell;
-  storage?: storageCell;
   upgrade?: upgradeCell;
   excavation?: excavationCell;
   dev?: developmentCell;
@@ -183,19 +184,19 @@ export class Hive {
   }
 
   private updateCellData() {
-    let spawns = this.cells.spawn.spawns;
     let extensions = this.cells.spawn.extensions;
+    let spawns = this.cells.spawn.spawns;
     let towers = this.cells.defense.towers;
     let laboratories = this.cells.lab.laboratories;
 
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (structure instanceof StructureExtension && structure.isActive())
+      if (structure instanceof StructureExtension && structure.isActive() && !extensions.includes(structure))
         extensions.push(structure);
-      else if (structure instanceof StructureSpawn && structure.isActive())
+      else if (structure instanceof StructureSpawn && structure.isActive() && !spawns.includes(structure))
         spawns.push(structure);
-      else if (structure instanceof StructureTower && structure.isActive())
+      else if (structure instanceof StructureTower && structure.isActive() && !towers.includes(structure))
         towers.push(structure);
-      else if (structure instanceof StructureLab && structure.isActive())
+      else if (structure instanceof StructureLab && structure.isActive() && !laboratories.includes(structure))
         laboratories.push(structure);
     });
   }
@@ -249,6 +250,9 @@ export class Hive {
       this.updateCellData();
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();
+
+    if (UPDATE_EACH_TICK)
+      _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });
 
     _.forEach(this.cells, (cell) => {
       safeWrap(() => cell.update(), cell.ref);

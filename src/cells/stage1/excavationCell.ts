@@ -42,8 +42,7 @@ export class excavationCell extends Cell {
         }
       }
     });
-    this.quitefullContainers.sort(
-      (a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
+    this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
 
     if (!this.beeMaster)
       this.beeMaster = new haulerMaster(this);

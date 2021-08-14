@@ -6,8 +6,8 @@ import { UPDATE_EACH_TICK } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {
-  from: StructureLink | StructureTerminal | StructureStorage;
-  to: StructureLink | StructureTerminal | StructureStorage | StructureTower;
+  from: (StructureLink | StructureTerminal | StructureStorage | StructureLab)[];
+  to: (StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab)[];
   resource: ResourceConstant;
   amount?: number;
   priority: 0 | 1 | 2 | 3 | 4 | 5,
@@ -37,26 +37,52 @@ export class storageCell extends Cell {
     this.pos = this.storage.pos;
   }
 
+  requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"],
+    amount?: number, resource?: ResourceConstant): number {
+    resource = resource ? resource : RESOURCE_ENERGY;
+    if (to.length == 0)
+      return ERR_INVALID_ARGS;
+    if (this.storage.store.getUsedCapacity(resource) == 0)
+      return ERR_NOT_ENOUGH_RESOURCES;
+    if (amount && amount == 0)
+      return ERR_INVALID_ARGS;
+    if (amount)
+      amount = Math.min(this.storage.store.getUsedCapacity(resource), amount);
+
+    this.requests[ref] = {
+      from: [this.storage],
+      to: to.sort((a, b) => a.pos.getRangeTo(this.storage) - b.pos.getRangeTo(this.storage)),
+      resource: resource,
+      priority: priority,
+      amount: amount,
+    };
+    return amount ? amount : OK;
+  }
+
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK)
+    if (UPDATE_EACH_TICK || Game.time % 30 == 8)
       for (let key in this.requests) {
-        let from = this.requests[key].from;
-        from = <typeof from>Game.getObjectById(this.requests[key].from.id);
-        if (from)
-          this.requests[key].from = from;
+        for (let fromKey in this.requests[key].from) {
+          let from = this.requests[key].from[fromKey];
+          from = <typeof from>Game.getObjectById(from.id);
+          if (from)
+            this.requests[key].from[fromKey] = from;
+        }
 
-        let to = this.requests[key].from;
-        to = <typeof to>Game.getObjectById(this.requests[key].to.id);
-        if (to)
-          this.requests[key].to = to;
+        for (let toKey in this.requests[key].from) {
+          let to = this.requests[key].to[toKey];
+          to = <typeof to>Game.getObjectById(to.id);
+          if (to)
+            this.requests[key].to[toKey] = to;
+        }
       }
 
     if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
       this.requests[this.link.id] = {
-        from: this.link,
-        to: this.storage,
+        from: [this.link],
+        to: [this.storage],
         resource: RESOURCE_ENERGY,
         amount: this.link.store[RESOURCE_ENERGY] - LINK_CAPACITY * 0.5,
         priority: 3,
@@ -73,8 +99,8 @@ export class storageCell extends Cell {
       let request;
       for (key in this.requests) {
         let req = this.requests[key];
-        if (req.from.id == this.link.id && req.to instanceof StructureLink) {
-          let amount = req.amount != undefined ? req.amount : req.to.store.getFreeCapacity(RESOURCE_ENERGY);
+        if (req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
+          let amount = req.amount != undefined ? req.amount : req.to[0].store.getFreeCapacity(RESOURCE_ENERGY);
           if (amount >= LINK_CAPACITY / 4) {
             request = this.requests[key];
             break;
@@ -82,11 +108,11 @@ export class storageCell extends Cell {
         }
       }
 
-      if (request && request.from.id == this.link.id && request.to instanceof StructureLink) {
+      if (request && request.from[0].id == this.link.id && request.to[0] instanceof StructureLink) {
         if (request.amount == 0) {
           delete this.requests[key];
         } else {
-          let amount = request.amount != undefined ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
+          let amount = request.amount != undefined ? request.amount : request.to[0].store.getFreeCapacity(RESOURCE_ENERGY);
           if (amount > LINK_CAPACITY)
             amount = LINK_CAPACITY;
 
@@ -94,17 +120,11 @@ export class storageCell extends Cell {
             if (this.requests[this.link.id])
               this.requests[this.link.id].amount = Math.max(0, this.link.store[RESOURCE_ENERGY] - amount * 1.2);
             if (!this.link.cooldown) {
-              this.link.transferEnergy(request.to, Math.min(amount, this.link.store[RESOURCE_ENERGY]));
+              this.link.transferEnergy(request.to[0], Math.min(amount, this.link.store[RESOURCE_ENERGY]));
               delete this.requests[key];
             }
           } else
-            this.requests[this.link.id] = {
-              from: this.storage,
-              to: this.link,
-              resource: RESOURCE_ENERGY,
-              amount: amount - this.link.store[RESOURCE_ENERGY],
-              priority: 3,
-            };
+            this.requestFromStorage(this.link.id, [this.link], 3, amount - this.link.store[RESOURCE_ENERGY]);
         }
       }
     }
