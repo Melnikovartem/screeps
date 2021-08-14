@@ -24,7 +24,7 @@ export class defenseCell extends Cell {
       storageCell.requestFromStorage(this.ref,
         _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY]), 0);
       storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) >= tower.store[RESOURCE_ENERGY]), 0);
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY]), 0);
     }
   };
 

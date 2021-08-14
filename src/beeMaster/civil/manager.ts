@@ -38,7 +38,7 @@ export class managerMaster extends Master {
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
       if ((request.amount == undefined || request.amount >= 25)
-        && this.cell.storage.store[request.resource] >= (request.amount ? request.amount : 0)
+        && _.filter(request.from, (structure) => structure.store[request.resource] >= (request.amount ? request.amount : 0)).length > 0
         && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
@@ -104,7 +104,7 @@ export class managerMaster extends Master {
         if (request.amount == 0) {
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
-        } else if ((usedCapFrom == 0 && amountBee == 0))
+        } else if (amountBee == 0 && usedCapFrom == 0 && _.sum(request.from, (s) => s.store[request.resource]) == 0)
           this.targetMap[bee.ref] = "";
       } else {
         this.targetMap[bee.ref] = "";

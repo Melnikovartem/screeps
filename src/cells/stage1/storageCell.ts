@@ -62,7 +62,7 @@ export class storageCell extends Cell {
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK || Game.time % 30 == 8)
+    if (UPDATE_EACH_TICK || Game.time % 10 == 8)
       for (let key in this.requests) {
         for (let fromKey in this.requests[key].from) {
           let from = this.requests[key].from[fromKey];
@@ -118,13 +118,13 @@ export class storageCell extends Cell {
 
           if (this.link.store[RESOURCE_ENERGY] >= amount || amount - this.link.store[RESOURCE_ENERGY] < 25) {
             if (this.requests[this.link.id])
-              this.requests[this.link.id].amount = Math.max(0, this.link.store[RESOURCE_ENERGY] - amount * 1.2);
+              this.requests[this.link.id].amount = Math.max(0, this.link.store[RESOURCE_ENERGY] - amount * 1.4);
             if (!this.link.cooldown) {
               this.link.transferEnergy(request.to[0], Math.min(amount, this.link.store[RESOURCE_ENERGY]));
               delete this.requests[key];
             }
           } else
-            this.requestFromStorage(this.link.id, [this.link], 3, amount - this.link.store[RESOURCE_ENERGY]);
+            this.requestFromStorage(this.link.id, [this.link], 3, amount * 1.2 - this.link.store[RESOURCE_ENERGY]);
         }
       }
     }

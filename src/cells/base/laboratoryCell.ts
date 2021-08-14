@@ -32,7 +32,7 @@ for (let res1 in REACTIONS) {
       res2: <BaseMineral | ReactionConstant>res2,
     };
 }
-const baseMinerals = ["H", "O", "Z", "L", "K", "U"];
+
 //reaction map done
 
 interface SynthesizeRequest {
@@ -45,20 +45,53 @@ interface SynthesizeRequest {
 export class laboratoryCell extends Cell {
   laboratories: StructureLab[] = [];
   // inLab id - ResourceConstant
-  inLab: { [id: string]: number } = {};
+  inLab: { [id: string]: { resource: BaseMineral | ReactionConstant | "", amount: number } } = {};
   boostRequests: { bee: Bee, amount: number, resource: ResourceConstant }[] = [];
   synthesizeRequests: { [id: string]: SynthesizeRequest } = {};
 
   constructor(hive: Hive) {
     super(hive, "LaboratoryCell_" + hive.room.name);
-
-    for (let reaction in reactionMap)
-      this.inLab[reaction] = 0;
-    for (let mineral in baseMinerals)
-      this.inLab[mineral] = 0;
   }
 
-  newsynthesizeRequest(resource: ReactionConstant, amount?: number) {
+  getAmount(resource: BaseMineral | ReactionConstant) {
+    let amount = 0;
+    _.forEach(this.inLab, (labData) => {
+      if (labData.resource == resource)
+        amount += labData.amount;
+    });
+    return amount;
+  }
+
+  changeAmount(lab: StructureLab, resource: BaseMineral | ReactionConstant, amount: number) {
+    if (!this.inLab[lab.id])
+      this.inLab[lab.id] = {
+        resource: "",
+        amount: 0,
+      }
+    if (lab.store.getFreeCapacity(resource) == null) {
+      console.log("i fucked up")
+      return; // TODO print and log and maybe crash
+    }
+    if (resource != this.inLab[lab.id].resource)
+      this.inLab[lab.id] = {
+        resource: resource,
+        amount: lab.store.getUsedCapacity(resource),
+      }
+    this.inLab[lab.id].amount += amount;
+    if (this.inLab[lab.id].amount <= 0)
+      this.inLab[lab.id] = {
+        resource: "",
+        amount: 0,
+      }
+  }
+
+  getLabs(resource: BaseMineral | ReactionConstant, amount?: number): StructureLab[] {
+    return _.filter(this.laboratories, (lab) => lab.store.getFreeCapacity(resource) >= (amount ? amount : 1)
+      && (this.inLab[lab.id].resource == resource || this.inLab[lab.id].resource == "")).sort(
+        (a, b) => b.store.getFreeCapacity(resource) - a.store.getFreeCapacity(resource));
+  }
+
+  newSynthesizeRequest(resource: ReactionConstant, amount?: number): number {
     if (!amount) {
       amount = 0;
       let mainStore = this.hive.cells.storage && this.hive.cells.storage.storage.store;
@@ -66,7 +99,7 @@ export class laboratoryCell extends Cell {
         let res1 = reactionMap[resource]!.res1;
         let res2 = reactionMap[resource]!.res2;
 
-        amount = Math.min(mainStore[res1], mainStore[res2]);
+        amount = Math.min(mainStore[res1] * 5, mainStore[res2] * 5);
       }
     }
     if (amount > 0)
@@ -75,19 +108,27 @@ export class laboratoryCell extends Cell {
         amount: amount,
         resource: resource,
       };
+    return amount;
   }
 
   toStorage(res: ReactionConstant, amount: number, ref?: string) {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
+      let sum = 0
+      let labs = _.filter(this.laboratories, (lab) => {
+        if (lab.store.getUsedCapacity(res) > 0) {
+          sum += Math.min(lab.store.getUsedCapacity(res), amount - sum);
+          this.inLab[lab.id].amount -= Math.min(lab.store.getUsedCapacity(res), amount - sum);
+        }
+        return lab.store.getUsedCapacity(res) > 0 && sum < amount;
+      });
       storageCell.requests[ref ? ref : makeId(6)] = {
         to: [storageCell.storage],
-        from: this.laboratories,
+        from: labs,
         resource: res,
         amount: amount,
         priority: 3,
       }
-      this.inLab[res] = amount ? this.inLab[res] - amount : 0;
     }
   }
 
@@ -95,13 +136,17 @@ export class laboratoryCell extends Cell {
     super.update();
 
     if (this.laboratories.length) {
+      // fix fuckups and reboots
       if (Game.time % 100 == 29 || this.time == Game.time)
         _.forEach(this.laboratories, (lab) => {
-          for (let res in lab.store) {
-            let inStore = lab.store[<BaseMineral | ReactionConstant>res];
-            if (inStore && this.inLab[res] < inStore)
-              this.inLab[res] = inStore;
-          }
+          for (let res in lab.store)
+            if (res != RESOURCE_ENERGY) {
+              let resource: BaseMineral | ReactionConstant = <BaseMineral | ReactionConstant>res;
+              if (!this.inLab[lab.id] || this.inLab[lab.id].resource != res)
+                this.changeAmount(lab, resource, lab.store[resource]);
+              else if (lab.store[resource] && this.inLab[lab.id].amount < lab.store[resource])
+                this.changeAmount(lab, resource, lab.store[resource] - this.inLab[lab.id].amount);
+            }
         });
 
       let storageCell = this.hive.cells.storage;
@@ -113,21 +158,28 @@ export class laboratoryCell extends Cell {
           let amount = Math.ceil(this.synthesizeRequests[key].amount / 5);
           let res1 = reactionMap[this.synthesizeRequests[key].resource]!.res1;
           let res2 = reactionMap[this.synthesizeRequests[key].resource]!.res2;
+          //Apiary.hives["E21S57"].cells.lab.newSynthesizeRequest("OH", 10)
+          this.print(JSON.stringify(this.synthesizeRequests[key]))
 
-          if ((storageCell.storage.store[res1] < amount && this.inLab[res1] < amount)
-            || (storageCell.storage.store[res2] < amount && this.inLab[res2] < amount))
-            delete this.synthesizeRequests[key];
-          else {
-            if (this.inLab[res1] < amount) {
-              if (!storageRequests[res1])
-                storageRequests[res1] = 0;
-              storageRequests[res1] += amount;
-            }
+          let res1Amount = this.getAmount(res1);
+          let res2Amount = this.getAmount(res2);
 
-            if (this.inLab[res2] < amount) {
-              if (!storageRequests[res2])
-                storageRequests[res2] = 0;
-              storageRequests[res2] += amount;
+          if (res1Amount < amount || res2Amount < amount) {
+            if (res1Amount + storageCell.storage.store[res1] < amount
+              || res2Amount + storageCell.storage.store[res2] < amount)
+              delete this.synthesizeRequests[key];
+            else {
+              if (res1Amount < amount) {
+                if (!storageRequests[res1])
+                  storageRequests[res1] = 0;
+                storageRequests[res1] += amount;
+              }
+
+              if (res2Amount < amount) {
+                if (!storageRequests[res2])
+                  storageRequests[res2] = 0;
+                storageRequests[res2] += amount;
+              }
             }
           }
         }
@@ -137,16 +189,18 @@ export class laboratoryCell extends Cell {
 
         for (let res in storageRequests) {
           let resource: ReactionConstant = <ReactionConstant>res;
+          let labs: StructureLab[] = [];
+          let allAmount = 0;
           while (storageRequests[resource] > 0) {
             let amount = Math.min(storageRequests[resource], LAB_MINERAL_CAPACITY);
-            storageRequests[resource] -= LAB_MINERAL_CAPACITY;
-            let lab = _.filter(this.laboratories, (lab) => lab.store.getFreeCapacity(resource) >= amount)[0];
+            let lab = this.getLabs(resource, amount)[0];
             if (lab) {
-              amount = storageCell.requestFromStorage(this.ref + "_" + resource, [lab], 5, amount, resource);
-              if (amount > 0)
-                this.inLab[resource] += amount;
-            }
+              this.inLab[lab.id].amount += amount;
+              allAmount += amount;
+            } else
+              storageRequests[resource] = 0;
           }
+          storageCell.requestFromStorage(this.ref + "_" + resource, labs, 5, allAmount, resource);
         }
 
         let energySum = 0;
@@ -174,11 +228,11 @@ export class laboratoryCell extends Cell {
           let lab2 = _.filter(this.laboratories, (lab) => lab.store[res2] > 1)[0];
 
           if (lab1 && lab2) {
-            let lab = _.filter(this.laboratories, (lab) => !lab.cooldown && lab.store.getFreeCapacity(request.resource) > 5)[0];
+            let lab = _.filter(this.getLabs(request.resource), (lab) => !lab.cooldown)[0];
             if (lab && lab.runReaction(lab1, lab2) == OK) {
-              this.inLab[res1] -= 1;
-              this.inLab[res1] -= 1;
-              this.inLab[request.resource] += 5;
+              this.changeAmount(lab1, res1, -1);
+              this.changeAmount(lab2, res2, -1);
+              this.changeAmount(lab2, request.resource, 5);
               request.amount -= 5;
             }
           }

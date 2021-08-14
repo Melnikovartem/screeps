@@ -71,7 +71,7 @@ export class _Apiary {
     return `OK \nRESOURCE ${resource}: ${amount}`;
   }
 
-  sellCompleteOrder(roomName: string, orderId: string, amount?: number) {
+  completeOrder(roomName: string, orderId: string, amount?: number) {
     if (!(roomName in this.hives))
       return "ERROR: HIVE NOT FOUND";
     let storageCell = this.hives[roomName].cells.storage
@@ -84,18 +84,19 @@ export class _Apiary {
     let order = Game.market.getOrderById(orderId);
     if (!order)
       return "ORDER NOT FOUND";
-    let resource = order.resourceType;
-    if (!Object.keys(storageCell.storage.store).includes(resource))
-      return "NO RESOURCE IN TERMINAL";
     if (!order.roomName)
       return "THIS FUNCTION FOR ROOM TO ROOM TRADE";
     amount = amount ? amount : order.remainingAmount;
-    amount = Math.min(amount, storageCell.terminal.store[<ResourceConstant>resource]);
+    let resource = <ResourceConstant>order.resourceType
+    if (resource && order.type == ORDER_BUY)
+      amount = Math.min(amount, storageCell.terminal.store[resource]);
     let ans = Game.market.deal(orderId, amount, roomName);
     if (ans == OK)
-      return `OK \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`
+      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
     else if (ans == ERR_NOT_ENOUGH_RESOURCES)
-      return `NOT ENOUGHT RESOURSES \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`
+      return `NOT ENOUGHT RESOURSES \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`;
+    else if (ans == ERR_INVALID_ARGS)
+      return `orderId: ${orderId}\n amount: ${amount}\n roomName: ${roomName}`;
     return ans;
   }
 
@@ -134,11 +135,11 @@ export class _Apiary {
   // update phase
   update() {
     _.forEach(Game.flags, (flag) => {
-      safeWrap(() => this.checkFlag(flag), flag.name)
+      safeWrap(() => this.checkFlag(flag), "update " + flag.name)
     });
 
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.update(), hive.roomName);
+      safeWrap(() => hive.update(), "update " + hive.roomName);
     });
 
     _.forEach(this.bees, (bee) => {
@@ -147,17 +148,17 @@ export class _Apiary {
     this.findBees();
 
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.update(), master.ref);
+      safeWrap(() => master.update(), "update " + master.ref);
     });
   }
 
   // run phase
   run() {
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.run(), hive.roomName);
+      safeWrap(() => hive.run(), "run " + hive.roomName);
     });
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.run(), master.ref);
+      safeWrap(() => master.run(), "run " + master.ref);
     });
   }
 }
