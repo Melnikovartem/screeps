@@ -53,18 +53,22 @@ export class storageCell extends Cell {
           this.requests[key].to = to;
       }
 
+    if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
+      this.requests[this.link.id] = {
+        from: this.link,
+        to: this.storage,
+        resource: RESOURCE_ENERGY,
+        amount: this.link.store[RESOURCE_ENERGY] - LINK_CAPACITY * 0.5,
+        priority: 3,
+      };
+
+    if (!this.beeMaster)
+      this.beeMaster = new managerMaster(this);
+  }
+
+  run() {
+    // operate link if any request to send
     if (this.link) {
-      // link requests
-      if (this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
-        this.requests[this.link.id] = {
-          from: this.link,
-          to: this.storage,
-          resource: RESOURCE_ENERGY,
-          amount: this.link.store[RESOURCE_ENERGY] - LINK_CAPACITY * 0.5,
-          priority: 3,
-        };
-
-
       let key: string = "";
       let request;
       for (key in this.requests) {
@@ -79,16 +83,15 @@ export class storageCell extends Cell {
         if (request.amount == 0) {
           delete this.requests[key];
         } else {
-          if (request.amount && request.amount > LINK_CAPACITY)
-            request.amount = LINK_CAPACITY;
 
-          let tooBigrequest = request.amount && this.link.store[RESOURCE_ENERGY] < request.amount &&
-            request.amount - this.link.store[RESOURCE_ENERGY] >= 25; // man i won't move any shit for less than that
+          let amount = request.amount != undefined ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
+          if (amount > LINK_CAPACITY)
+            amount = LINK_CAPACITY;
 
-          if (!tooBigrequest) {
-            delete this.requests[this.link.id];
+          if (this.link.store[RESOURCE_ENERGY] >= amount || amount - this.link.store[RESOURCE_ENERGY] < 25) {
+            if (this.requests[this.link.id])
+              this.requests[this.link.id].amount = Math.max(0, this.link.store[RESOURCE_ENERGY] - amount * 1.2);
             if (!this.link.cooldown) {
-              let amount = request.amount ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
               this.link.transferEnergy(request.to, Math.min(amount, this.link.store[RESOURCE_ENERGY]));
               delete this.requests[key];
             }
@@ -97,16 +100,11 @@ export class storageCell extends Cell {
               from: this.storage,
               to: this.link,
               resource: RESOURCE_ENERGY,
-              amount: request.amount! - this.link.store[RESOURCE_ENERGY],
+              amount: amount - this.link.store[RESOURCE_ENERGY],
               priority: 3,
             };
         }
       }
     }
-
-    if (!this.beeMaster)
-      this.beeMaster = new managerMaster(this);
   }
-
-  run() { }
 }

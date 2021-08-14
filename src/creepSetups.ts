@@ -91,7 +91,7 @@ export const Setups = {
   }),
   hauler: new CreepSetup(SetupsNames.hauler, {
     pattern: [CARRY, CARRY, MOVE],
-    patternLimit: 15,
+    patternLimit: 18,
   }),
   miner: {
     energy: new CreepSetup(SetupsNames.miner, {

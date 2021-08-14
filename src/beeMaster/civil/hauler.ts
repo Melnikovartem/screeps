@@ -1,7 +1,7 @@
 // refills the respawnCell
 import { excavationCell } from "../../cells/stage1/excavationCell";
 
-import { Setups, CreepSetup } from "../../creepSetups";
+import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master } from "../_Master";
 import { profile } from "../../profiler/decorator";
@@ -16,22 +16,19 @@ export class haulerMaster extends Master {
 
     this.cell = excavationCell;
 
-    this.targetBeeCount = 0;
-    _.forEach(this.cell.resourceCells, (cell) => {
-      let beeForSource = 0;
-      if (cell.container && cell.operational) {
-        this.targetMap[cell.container.id] = "";
-        if (this.hive.stage == 2)
-          beeForSource += 0.3;
-        else
-          beeForSource += 0.5;
-      }
-      if (cell.link)
-        beeForSource = 0;
-      this.targetBeeCount += beeForSource;
-    });
-
-    this.targetBeeCount = Math.ceil(this.targetBeeCount);
+    let accumRoadTime = 0; // roadTime * minePotential
+    if (this.hive.cells.storageCell)
+      _.forEach(this.cell.resourceCells, (cell) => {
+        if (cell.container && cell.operational && !cell.link) {
+          this.targetMap[cell.container.id] = "";
+          let coef = 10;
+          if (cell.resourceType != RESOURCE_ENERGY)
+            // max mineral mining based on current miner setup aka ((CAP * 550)*5)/5 - work parts/MINING_COOLDOWN
+            coef = Math.floor(this.hive.room.energyCapacityAvailable / 550);
+          accumRoadTime += this.hive.cells.storageCell!.storage.pos.getTimeForPath(cell.container.pos) * coef;
+        }
+      });
+    this.targetBeeCount = Math.ceil(accumRoadTime / 800); // 1600/2 - desired time for 1 hauler
   }
 
   update() {
@@ -50,10 +47,6 @@ export class haulerMaster extends Master {
         priority: 6,
       };
 
-      if (this.hive.stage < 2) {
-        order.setup = new CreepSetup(Setups.hauler.name, { ...Setups.hauler.bodySetup }); // copy cause gonna change limit
-        order.setup.bodySetup.patternLimit = 10;
-      }
       this.wish(order);
     }
   }

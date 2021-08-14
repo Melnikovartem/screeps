@@ -2,7 +2,7 @@ interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
   isFree(): boolean;
-  getTimeForPath(roomPos: RoomPosition): number;
+  getTimeForPath(pos: RoomObject | RoomPosition): number
   findClosest<Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null;
 }
 
@@ -57,13 +57,20 @@ RoomPosition.prototype.isFree = function(): boolean {
 }
 
 
-RoomPosition.prototype.getTimeForPath = function(roomPos: RoomPosition): number {
-  let path = this.findPathTo(roomPos, {
-    ignoreCreeps: true
-  });
+RoomPosition.prototype.getTimeForPath = function(target: RoomObject | RoomPosition): number {
+  let pos: RoomPosition;
+  if (target instanceof RoomObject)
+    pos = target.pos;
+  else
+    pos = target;
 
-  //for future i need to iterate and check for roads
-  return path.length
+  // need to write something smarter
+  let len = this.findPathTo(pos, { ignoreCreeps: true }).length;
+
+  if (pos.roomName != this.roomName)
+    len += pos.findPathTo(this, { ignoreCreeps: true }).length;
+
+  return len
 };
 
 // TODO different class types to forget casting in and out

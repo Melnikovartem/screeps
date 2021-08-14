@@ -16,6 +16,9 @@ export abstract class Cell {
     this.ref = cellName;
     this.time = Game.time;
     this.pos = hive.pos;
+
+    if (Apiary.masters["master" + this.ref])
+      this.beeMaster = Apiary.masters["master" + this.ref];
   }
 
   // first stage of decision making like do i a logistic transfer do i need more beeMasters

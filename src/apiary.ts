@@ -41,14 +41,15 @@ export class _Apiary {
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
+    amount = Math.min(amount ? amount : 100000, storageCell.storage.store[resource]);
     storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
       from: storageCell.storage,
       to: storageCell.terminal,
       resource: resource,
-      amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
+      amount: amount,
       priority: 2,
     });
-    return "OK";
+    return `OK \nRESOURCE ${resource}: ${amount}`;
   }
 
   emptyTerminal(roomName: string, resource: ResourceConstant, amount?: number) {
@@ -59,17 +60,18 @@ export class _Apiary {
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
+    amount = Math.min(amount ? amount : 100000, storageCell.terminal.store[resource]);
     storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
       from: storageCell.terminal,
       to: storageCell.storage,
       resource: resource,
-      amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
+      amount: amount,
       priority: 2,
     });
-    return "OK";
+    return `OK \nRESOURCE ${resource}: ${amount}`;
   }
 
-  sellOrder(roomName: string, resource: ResourceConstant, amount?: number) {
+  sellCompleteOrder(roomName: string, orderId: string, amount?: number) {
     if (!(roomName in this.hives))
       return "ERROR: HIVE NOT FOUND";
     let storageCell = this.hives[roomName].cells.storageCell
@@ -77,14 +79,24 @@ export class _Apiary {
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
-    storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
-      from: storageCell.terminal,
-      to: storageCell.storage,
-      resource: resource,
-      amount: amount ? amount : Math.min(100000, storageCell.storage.store[resource]),
-      priority: 2,
-    });
-    return "OK";
+    if (storageCell.terminal.cooldown)
+      return "TERMINAL COOLDOWN";
+    let order = Game.market.getOrderById(orderId);
+    if (!order)
+      return "ORDER NOT FOUND";
+    let resource = order.resourceType;
+    if (!Object.keys(storageCell.storage.store).includes(resource))
+      return "NO RESOURCE IN TERMINAL";
+    if (!order.roomName)
+      return "THIS FUNCTION FOR ROOM TO ROOM TRADE";
+    amount = amount ? amount : order.remainingAmount;
+    amount = Math.min(amount, storageCell.terminal.store[<ResourceConstant>resource]);
+    let ans = Game.market.deal(orderId, amount, roomName);
+    if (ans == OK)
+      return `OK \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`
+    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
+      return `NOT ENOUGHT RESOURSES \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`
+    return ans;
   }
 
   findBees() {
