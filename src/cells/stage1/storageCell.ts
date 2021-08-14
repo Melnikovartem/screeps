@@ -10,7 +10,8 @@ export interface StorageRequest {
   to: (StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab)[];
   resource: ResourceConstant;
   amount?: number;
-  priority: 0 | 1 | 2 | 3 | 4 | 5,
+  priority: 0 | 1 | 2 | 3 | 4 | 5;
+  multipleFrom?: boolean;
 }
 
 @profile
@@ -66,14 +67,12 @@ export class storageCell extends Cell {
       for (let key in this.requests) {
         for (let fromKey in this.requests[key].from) {
           let from = this.requests[key].from[fromKey];
-          from = <typeof from>Game.getObjectById(from.id);
           if (from)
             this.requests[key].from[fromKey] = from;
         }
 
         for (let toKey in this.requests[key].to) {
           let to = this.requests[key].to[toKey];
-          to = <typeof to>Game.getObjectById(to.id);
           if (to)
             this.requests[key].to[toKey] = to;
         }
@@ -99,7 +98,7 @@ export class storageCell extends Cell {
       let request;
       for (key in this.requests) {
         let req = this.requests[key];
-        if (req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
+        if (req.from[0] && req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
           let amount = req.amount != undefined ? req.amount : req.to[0].store.getFreeCapacity(RESOURCE_ENERGY);
           if (amount >= LINK_CAPACITY / 4) {
             request = this.requests[key];

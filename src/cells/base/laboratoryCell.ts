@@ -54,12 +54,7 @@ export class laboratoryCell extends Cell {
   }
 
   getAmount(resource: BaseMineral | ReactionConstant) {
-    let amount = 0;
-    _.forEach(this.inLab, (labData) => {
-      if (labData.resource == resource)
-        amount += labData.amount;
-    });
-    return amount;
+    return _.sum(this.inLab, (labData) => labData.resource == resource ? labData.amount : 0);
   }
 
   changeAmount(lab: StructureLab, resource: BaseMineral | ReactionConstant | null, amount: number) {
@@ -85,13 +80,14 @@ export class laboratoryCell extends Cell {
     let labs: StructureLab[]
     if (promised)
       labs = _.filter(this.laboratories, (lab) => lab.store.getFreeCapacity(resource) > (amount ? amount : 0)
-        && (!this.inLab[lab.id].resource || this.inLab[lab.id].resource == resource));
+        && (!this.inLab[lab.id].resource || this.inLab[lab.id].resource == resource)
+        && (!lab.mineralType || resource == lab.mineralType));
     else
       labs = _.filter(this.laboratories, (lab) => lab.store.getFreeCapacity(resource) > (amount ? amount : 0)
         && (!lab.mineralType || resource == lab.mineralType));
 
     if (sorted)
-      labs.sort((a, b) => b.store.getFreeCapacity(resource) - a.store.getFreeCapacity(resource));
+      labs.sort((a, b) => a.store.getFreeCapacity(resource) - b.store.getFreeCapacity(resource)); //most full
 
     return labs;
   }
@@ -100,7 +96,7 @@ export class laboratoryCell extends Cell {
     let labs = _.filter(this.laboratories, (lab) => lab.store.getUsedCapacity(resource) > (amount ? amount : 0)
       && resource == lab.mineralType);
     if (sorted)
-      labs.sort((a, b) => b.store.getFreeCapacity(resource) - a.store.getFreeCapacity(resource));
+      labs.sort((a, b) => b.store.getFreeCapacity(resource) - a.store.getFreeCapacity(resource)); // least full
     return labs;
   }
 
@@ -135,16 +131,18 @@ export class laboratoryCell extends Cell {
         labs.push(lab);
         return sum == amount;
       });
-      ref = ref ? ref : makeId(6)
-      storageCell.requests[ref] = {
-        to: [storageCell.storage],
-        from: labs,
-        resource: res,
-        amount: amount,
-        priority: 3,
+      if (labs.length) {
+        ref = ref ? ref : makeId(6);
+        storageCell.requests[ref] = {
+          to: [storageCell.storage],
+          from: labs,
+          resource: res,
+          amount: amount,
+          priority: 3,
+          multipleFrom: true,
+        }
+        return sum;
       }
-      this.print(ref + ": " + sum + " ? " + amount + " " + res);
-      return sum;
     }
     return -1;
   }
@@ -168,7 +166,7 @@ export class laboratoryCell extends Cell {
 
         // bring to synthesize
         for (let key in this.synthesizeRequests) {
-          let amount = Math.ceil(this.synthesizeRequests[key].amount * 5);
+          let amount = Math.ceil(this.synthesizeRequests[key].amount / 5);
           let res1 = reactionMap[this.synthesizeRequests[key].resource]!.res1;
           let res2 = reactionMap[this.synthesizeRequests[key].resource]!.res2;
 
@@ -177,7 +175,6 @@ export class laboratoryCell extends Cell {
           let res2Amount = this.getAmount(res2);
 
           if (res1Amount < amount || res2Amount < amount) {
-
             if (res1Amount + (storageCell.storage.store[res1] ? storageCell.storage.store[res1] : 0) < amount
               || res2Amount + (storageCell.storage.store[res2] ? storageCell.storage.store[res2] : 0) < amount)
               delete this.synthesizeRequests[key];
@@ -244,7 +241,6 @@ export class laboratoryCell extends Cell {
           if (lab1 && lab2) {
             let lab = _.filter(this.getLabsFree(request.resource), (lab) => lab.cooldown == 0)[0];
             if (lab && lab.runReaction(lab1, lab2) == OK) {
-              console.log(res1, "+", res2, '=>', request.resource);
               this.changeAmount(lab1, res1, -1);
               this.changeAmount(lab2, res2, -1);
               this.changeAmount(lab2, request.resource, 5);

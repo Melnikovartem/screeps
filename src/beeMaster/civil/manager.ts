@@ -38,7 +38,7 @@ export class managerMaster extends Master {
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
       if ((request.amount == undefined || request.amount >= 25 || request.resource != RESOURCE_ENERGY)
-        && _.sum(request.from, (s) => s.store[request.resource]) >= 0
+        && _.sum(request.from, (s) => s.store[request.resource]) >= (request.amount ? request.amount : 0)
         && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
@@ -78,51 +78,57 @@ export class managerMaster extends Master {
     _.forEach(this.bees, (bee) => {
       let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
       if (request) {
-        let usedCapFrom = (<Store<ResourceConstant, false>>request.from[0].store)[request.resource];
+        let ans;
+        let usedCapFrom = 0;
+        if (request.from[0])
+          usedCapFrom = request.from[0].store[request.resource];
         let freeCapTo = (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource);
         let amountBee = bee.store[request.resource];
         request.amount = request.amount != undefined ? request.amount : freeCapTo;
-        if (request.from.length == 1)
-          request.amount = Math.min(freeCapTo, request.amount);
 
-        if (request.resource != RESOURCE_ENERGY)
-          bee.print(usedCapFrom, freeCapTo, amountBee, request.amount);
-
-        if (amountBee > 0 && (request.from.length == 1 || bee.store.getFreeCapacity() == request.amount)) {
-          amountBee = Math.min(request.amount, amountBee);
-          amountBee = Math.min(freeCapTo, amountBee);
-          let ans = bee.transfer(request.to[0], request.resource, amountBee);
-          if (ans == OK) {
-            request.amount -= amountBee;
-            if (ans == OK && request.to.length > 1 && freeCapTo - amountBee == 0)
-              request.to.shift();
-          }
-          amountBee = 0;
-        }
-
-        if (amountBee == 0 && request.amount > 0) {
+        if (amountBee == 0 || (request.multipleFrom && amountBee < request.amount && bee.store.getFreeCapacity() > 0)) {
           amountBee = Math.min(bee.store.getFreeCapacity(request.resource), request.amount);
           amountBee = Math.min(amountBee, usedCapFrom);
 
-          if (amountBee > 0) {
-            let ans = bee.withdraw(request.from[0], request.resource, amountBee);
-            if (ans == OK && request.from.length > 1 && usedCapFrom - amountBee == 0)
-              request.from.shift();
-          }
+          if (amountBee > 0)
+            ans = bee.withdraw(request.from[0], request.resource, amountBee);
+
+          if (usedCapFrom == 0 || (ans == OK && usedCapFrom - amountBee == 0))
+            request.from.shift();
+
+          if (request.from.length == 0 && amountBee == 0)
+            delete this.cell.requests[this.targetMap[bee.ref]];
+
+          amountBee = 0;
         }
 
-        if (request.amount == 0) {
+        if (amountBee > 0) {
+          amountBee = Math.min(request.amount, amountBee);
+          amountBee = Math.min(freeCapTo, amountBee);
+
+          ans = bee.transfer(request.to[0], request.resource, amountBee);
+
+          if (ans == OK)
+            request.amount -= amountBee;
+
+          if (freeCapTo == 0 || (ans == OK && freeCapTo - amountBee == 0))
+            request.to.shift();
+        }
+
+        if (request.amount == 0)
           delete this.cell.requests[this.targetMap[bee.ref]];
-          this.targetMap[bee.ref] = "";
-        } else if (amountBee == 0 && usedCapFrom == 0 && _.sum(request.from, (s) => s.store[request.resource]) == 0)
+        if (request.to.length == 0)
+          delete this.cell.requests[this.targetMap[bee.ref]];
+
+        if (!this.cell.requests[this.targetMap[bee.ref]])
           this.targetMap[bee.ref] = "";
       } else {
-        this.targetMap[bee.ref] = "";
         let ans;
         if (bee.creep.store.getUsedCapacity() > 0)
           ans = bee.transfer(this.cell.storage, <ResourceConstant>Object.keys(bee.store)[0]);
         if (bee.creep.store.getUsedCapacity() == 0 || ans == OK)
           bee.goRest(this.cell.pos);
+        this.targetMap[bee.ref] = "";
       }
     });
   }
