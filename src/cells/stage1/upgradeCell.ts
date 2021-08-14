@@ -29,7 +29,7 @@ export class upgradeCell extends Cell {
   update() {
     super.update();
 
-    let storageCell = this.hive.cells.storageCell;
+    let storageCell = this.hive.cells.storage;
     if (this.link && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {
       storageCell.requests[this.link.id] = {
         from: storageCell.link,

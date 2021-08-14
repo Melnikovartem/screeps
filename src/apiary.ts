@@ -36,7 +36,7 @@ export class _Apiary {
   fillTerminal(roomName: string, resource: ResourceConstant, amount?: number): string {
     if (!(roomName in this.hives))
       return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storageCell
+    let storageCell = this.hives[roomName].cells.storage
     if (!storageCell)
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)
@@ -55,7 +55,7 @@ export class _Apiary {
   emptyTerminal(roomName: string, resource: ResourceConstant, amount?: number) {
     if (!(roomName in this.hives))
       return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storageCell
+    let storageCell = this.hives[roomName].cells.storage
     if (!storageCell)
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)
@@ -74,7 +74,7 @@ export class _Apiary {
   sellCompleteOrder(roomName: string, orderId: string, amount?: number) {
     if (!(roomName in this.hives))
       return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storageCell
+    let storageCell = this.hives[roomName].cells.storage
     if (!storageCell)
       return "ERROR: STORAGE NOT FOUND";
     if (!storageCell.terminal)

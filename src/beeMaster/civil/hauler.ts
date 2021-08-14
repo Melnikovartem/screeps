@@ -18,14 +18,14 @@ export class haulerMaster extends Master {
 
     let accumRoadTime = 0; // roadTime * minePotential
     let energyCap = this.hive.room.energyCapacityAvailable
-    if (this.hive.cells.storageCell)
+    if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && cell.operational && !cell.link) {
           this.targetMap[cell.container.id] = "";
           let coef = 10;
           if (cell.resourceType != RESOURCE_ENERGY)
             coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup
-          accumRoadTime += this.hive.cells.storageCell!.storage.pos.getTimeForPath(cell.container.pos) * coef;
+          accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef;
         }
       });
 
@@ -64,8 +64,8 @@ export class haulerMaster extends Master {
 
   run() {
     // for future might be good to find closest bee for container and not the other way around
-    if (this.hive.cells.storageCell) {
-      let storage = this.hive.cells.storageCell.storage;
+    if (this.hive.cells.storage) {
+      let storage = this.hive.cells.storage.storage;
       _.forEach(this.bees, (bee) => {
         let ans;
 

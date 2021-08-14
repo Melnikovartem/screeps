@@ -1,5 +1,5 @@
 // refills the respawnCell
-import { respawnCell } from "../../cells/stage0/respawnCell";
+import { respawnCell } from "../../cells/base/respawnCell";
 
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
@@ -36,6 +36,7 @@ export class queenMaster extends Master {
   }
 
   run() {
+    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
@@ -45,8 +46,8 @@ export class queenMaster extends Master {
         if (bee.creep.store[RESOURCE_ENERGY] == 0) {
           let suckerTarget;
 
-          if (!suckerTarget && this.hive.cells.storageCell)
-            suckerTarget = this.hive.cells.storageCell.storage;
+          if (!suckerTarget && storage)
+            suckerTarget = storage;
 
           if (suckerTarget)
             ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
@@ -57,9 +58,9 @@ export class queenMaster extends Master {
           if (target)
             bee.transfer(target, RESOURCE_ENERGY);
         }
-      } else if (this.hive.cells.storageCell && bee.creep.store[RESOURCE_ENERGY] > 0
-        && this.hive.cells.storageCell.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        bee.transfer(this.hive.cells.storageCell.storage, RESOURCE_ENERGY);
+      } else if (this.hive.cells.storage && bee.creep.store[RESOURCE_ENERGY] > 0
+        && this.hive.cells.storage.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        bee.transfer(this.hive.cells.storage.storage, RESOURCE_ENERGY);
       } else
         bee.goRest(this.cell.pos);
     });

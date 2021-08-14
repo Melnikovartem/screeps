@@ -1,5 +1,7 @@
-import { respawnCell } from "./cells/stage0/respawnCell";
-import { defenseCell } from "./cells/stage0/defenseCell";
+import { respawnCell } from "./cells/base/respawnCell";
+import { defenseCell } from "./cells/base/defenseCell";
+import { laboratoryCell } from "./cells/base/laboratoryCell";
+
 import { developmentCell } from "./cells/stage0/developmentCell";
 
 import { storageCell } from "./cells/stage1/storageCell";
@@ -25,12 +27,13 @@ export interface SpawnOrder {
 }
 
 interface hiveCells {
-  defenseCell: defenseCell;
-  respawnCell: respawnCell;
-  storageCell?: storageCell;
-  upgradeCell?: upgradeCell;
-  excavationCell?: excavationCell;
-  developmentCell?: developmentCell;
+  defense: defenseCell;
+  spawn: respawnCell;
+  lab: laboratoryCell;
+  storage?: storageCell;
+  upgrade?: upgradeCell;
+  excavation?: excavationCell;
+  dev?: developmentCell;
 }
 
 @profile
@@ -125,16 +128,17 @@ export class Hive {
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
-      respawnCell: new respawnCell(this),
-      defenseCell: new defenseCell(this),
+      lab: new laboratoryCell(this),
+      spawn: new respawnCell(this),
+      defense: new defenseCell(this),
     };
 
     if (this.stage == 0)
-      this.cells.developmentCell = new developmentCell(this, this.room.controller!, this.room.find(FIND_SOURCES));
+      this.cells.dev = new developmentCell(this, this.room.controller!, this.room.find(FIND_SOURCES));
     else {
-      this.cells.storageCell = new storageCell(this, this.room.storage!);
-      this.cells.upgradeCell = new upgradeCell(this, this.room.controller!);
-      this.cells.excavationCell = new excavationCell(this, this.room.find(FIND_SOURCES), this.room.find(FIND_MINERALS));
+      this.cells.storage = new storageCell(this, this.room.storage!);
+      this.cells.upgrade = new upgradeCell(this, this.room.controller!);
+      this.cells.excavation = new excavationCell(this, this.room.find(FIND_SOURCES), this.room.find(FIND_MINERALS));
       this.builder = new builderMaster(this);
       if (this.stage == 2) {
         // TODO cause i haven' reached yet
@@ -169,27 +173,30 @@ export class Hive {
     }));
     this.rooms = [this.room].concat(this.annexes);
 
-    if (this.cells.excavationCell) {
+    if (this.cells.excavation) {
       _.forEach(this.annexes, (room) => {
         _.forEach(room.find(FIND_SOURCES), (source) => {
-          this.cells.excavationCell!.addResource(source);
+          this.cells.excavation!.addResource(source);
         });
       });
     }
   }
 
   private updateCellData() {
-    this.cells.respawnCell.spawns = [];
-    this.cells.respawnCell.extensions = [];
-    this.cells.defenseCell.towers = [];
+    let spawns = this.cells.spawn.spawns;
+    let extensions = this.cells.spawn.extensions;
+    let towers = this.cells.defense.towers;
+    let laboratories = this.cells.lab.laboratories;
 
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
       if (structure instanceof StructureExtension && structure.isActive())
-        this.cells.respawnCell.extensions.push(structure);
+        extensions.push(structure);
       else if (structure instanceof StructureSpawn && structure.isActive())
-        this.cells.respawnCell.spawns.push(structure);
+        spawns.push(structure);
       else if (structure instanceof StructureTower && structure.isActive())
-        this.cells.defenseCell.towers.push(structure);
+        towers.push(structure);
+      else if (structure instanceof StructureLab && structure.isActive())
+        laboratories.push(structure);
     });
   }
 
@@ -238,7 +245,7 @@ export class Hive {
       this.updateConstructionSites();
       this.updateRepairs();
     }
-    if (Game.time % 50 == 29)
+    if (Game.time % 100 == 29)
       this.updateCellData();
     if (Game.time % LOGGING_CYCLE == 0)
       this.updateLog();

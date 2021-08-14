@@ -90,14 +90,14 @@ export class Order {
       if (hive) {
         if (this.flag.secondaryColor == COLOR_CYAN) {
           hive.pos = this.pos;
-          if (hive.cells.excavationCell)
-            hive.cells.excavationCell.pos = this.pos;
+          if (hive.cells.excavation)
+            hive.cells.excavation.pos = this.pos;
         } else if (this.flag.secondaryColor == COLOR_GREEN) {
           if (hive)
-            hive.cells.respawnCell.pos = this.pos;
+            hive.cells.spawn.pos = this.pos;
         } else if (this.flag.secondaryColor == COLOR_YELLOW) {
-          if (hive.cells.storageCell)
-            hive.cells.storageCell.pos = this.pos;
+          if (hive.cells.storage)
+            hive.cells.storage.pos = this.pos;
         }
       }
     } else if (this.flag.color == COLOR_GREY) {

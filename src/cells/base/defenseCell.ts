@@ -10,7 +10,6 @@ export class defenseCell extends Cell {
     super(hive, "DefenseCell_" + hive.room.name);
   }
 
-  // first stage of decision making like do i a logistic transfer do i need more beeMasters
   update() {
     super.update();
 
@@ -20,7 +19,7 @@ export class defenseCell extends Cell {
         roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
     });
 
-    let storageCell = this.hive.cells.storageCell
+    let storageCell = this.hive.cells.storage
     if (storageCell) {
       _.forEach(this.towers, (tower) => {
         if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
@@ -41,7 +40,6 @@ export class defenseCell extends Cell {
     }
   };
 
-  // second stage of decision making like where do i need to spawn creeps or do i need
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
     if (roomInfo.enemies.length)

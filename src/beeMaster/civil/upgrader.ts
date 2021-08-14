@@ -15,7 +15,7 @@ export class upgraderMaster extends Master {
 
     this.cell = upgradeCell;
     if (this.cell.link
-      || (this.hive.cells.storageCell && this.cell.controller.pos.getRangeTo(this.hive.cells.storageCell.storage) < 4))
+      || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
       this.fastMode = true;
   }
 
@@ -23,8 +23,8 @@ export class upgraderMaster extends Master {
     super.update();
 
     this.targetBeeCount = 1;
-    if (this.hive.cells.storageCell) {
-      if (this.hive.cells.storageCell.storage.store[RESOURCE_ENERGY] > 500000)
+    if (this.hive.cells.storage) {
+      if (this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 500000)
         this.targetBeeCount = 2;
     }
 
@@ -53,9 +53,12 @@ export class upgraderMaster extends Master {
         if (this.cell.link)
           suckerTarget = this.cell.link;
 
-        if (!suckerTarget && this.hive.cells.storageCell
-          && this.hive.cells.storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
-          suckerTarget = this.hive.cells.storageCell.storage;
+
+        if (!suckerTarget) {
+          let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
+          if (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
+            suckerTarget = storage;
+        }
 
         if (suckerTarget) {
           if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)

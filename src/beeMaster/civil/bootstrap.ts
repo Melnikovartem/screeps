@@ -161,8 +161,8 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target) {
-          let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.respawnCell.spawns;
-          targets = _.filter(targets.concat(this.hive.cells.respawnCell.extensions),
+          let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.spawn.spawns;
+          targets = _.filter(targets.concat(this.hive.cells.spawn.extensions),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
             target = bee.pos.findClosest(targets);
@@ -171,7 +171,7 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target) {
-          let targets: (StructureTower)[] = _.filter(this.hive.cells.defenseCell.towers,
+          let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           if (targets.length) {
             target = bee.pos.findClosest(targets);
