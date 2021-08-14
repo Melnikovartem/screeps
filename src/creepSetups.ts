@@ -119,7 +119,7 @@ export const Setups = {
     patternLimit: 10, // not sure if you need anyone bigger than that
   }),
   bootstrap: new CreepSetup(SetupsNames.builder, {
-    pattern: [WORK, CARRY, MOVE],
+    pattern: [WORK, CARRY, CARRY, MOVE],
     patternLimit: 6,
   }),
   puppet: new CreepSetup(SetupsNames.scout, {

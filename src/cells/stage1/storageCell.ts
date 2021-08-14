@@ -68,9 +68,11 @@ export class storageCell extends Cell {
       let key: string = "";
       let request;
       for (key in this.requests) {
-        request = this.requests[key];
-        if (request.from.id == this.link.id)
+        if (this.requests[key].from.id == this.link.id
+          && (this.requests[key].amount == undefined || this.requests[key].amount! >= LINK_CAPACITY / 4)) {
+          request = this.requests[key];
           break;
+        }
       }
 
       if (request && request.from.id == this.link.id && request.to instanceof StructureLink) {
@@ -82,13 +84,14 @@ export class storageCell extends Cell {
 
           let tooBigrequest = request.amount && this.link.store[RESOURCE_ENERGY] < request.amount &&
             request.amount - this.link.store[RESOURCE_ENERGY] >= 25; // man i won't move any shit for less than that
+
           if (!tooBigrequest) {
             delete this.requests[this.link.id];
             if (!this.link.cooldown) {
               let amount = request.amount ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
               this.link.transferEnergy(request.to, Math.min(amount, this.link.store[RESOURCE_ENERGY]));
+              delete this.requests[key];
             }
-            delete this.requests[key];
           } else
             this.requests[this.link.id] = {
               from: this.storage,

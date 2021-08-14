@@ -18,7 +18,7 @@ export class annexMaster extends Master {
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK || Game.time % 50 == 29) {
+    if (UPDATE_EACH_TICK) {
       let controller = Game.getObjectById(this.controller.id);
       if (controller)
         this.controller = controller;
