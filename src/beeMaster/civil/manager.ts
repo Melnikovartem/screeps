@@ -80,31 +80,25 @@ export class managerMaster extends Master {
       if (request) {
         let usedCapFrom = (<Store<ResourceConstant, false>>request.from.store)[request.resource];
         let freeCapTo = (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource);
-        let amount = bee.store[request.resource];
-        if (amount == 0) {
-          amount = bee.store.getFreeCapacity();
-          if (request.amount != undefined)
-            amount = Math.min(amount, request.amount);
+        let amountBee = bee.store[request.resource];
+        request.amount = request.amount != undefined ? request.amount : freeCapTo;
+        request.amount = Math.min(freeCapTo, request.amount);
 
-          amount = Math.min(amount, usedCapFrom);
-
-          if (amount > 0) {
-            bee.withdraw(request.from, request.resource, amount);
-            amount = 0;
-          }
+        if (amountBee > 0) {
+          let ans = bee.transfer(request.to, request.resource, Math.min(request.amount, amountBee));
+          if (ans == OK)
+            request.amount -= amountBee;
         }
 
-        if (amount > 0) {
-          amount = Math.min(bee.store[request.resource], freeCapTo);
-          if (bee.transfer(request.to, request.resource, amount) == OK) {
-            if (request.amount)
-              request.amount -= amount;
-            else
-              request.amount = freeCapTo - amount;
-          }
+        if (amountBee == 0 && request.amount > 0) {
+          amountBee = Math.min(bee.store.getFreeCapacity(), request.amount);
+          amountBee = Math.min(amountBee, usedCapFrom);
+
+          if (amountBee > 0)
+            bee.withdraw(request.from, request.resource, amountBee);
         }
 
-        if ((request.amount != undefined && request.amount <= 0) || (usedCapFrom == 0 && amount == 0) || freeCapTo == 0) {
+        if (request.amount <= 0 || (usedCapFrom == 0 && amountBee == 0)) {
           delete this.cell.requests[this.targetMap[bee.ref]];
           this.targetMap[bee.ref] = "";
         }

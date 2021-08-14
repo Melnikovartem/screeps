@@ -17,18 +17,20 @@ export class haulerMaster extends Master {
     this.cell = excavationCell;
 
     let accumRoadTime = 0; // roadTime * minePotential
+    let energyCap = this.hive.room.energyCapacityAvailable
     if (this.hive.cells.storageCell)
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && cell.operational && !cell.link) {
           this.targetMap[cell.container.id] = "";
           let coef = 10;
           if (cell.resourceType != RESOURCE_ENERGY)
-            // max mineral mining based on current miner setup aka ((CAP * 550)*5)/5 - work parts/MINING_COOLDOWN
-            coef = Math.floor(this.hive.room.energyCapacityAvailable / 550);
+            coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup
           accumRoadTime += this.hive.cells.storageCell!.storage.pos.getTimeForPath(cell.container.pos) * coef;
         }
       });
-    this.targetBeeCount = Math.ceil(accumRoadTime / 800); // 1600/2 - desired time for 1 hauler
+
+    //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
+    this.targetBeeCount = Math.ceil(accumRoadTime / (Math.min(Math.ceil(energyCap / 150) * 100, 1600) / 2));
   }
 
   update() {

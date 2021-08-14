@@ -72,10 +72,13 @@ export class storageCell extends Cell {
       let key: string = "";
       let request;
       for (key in this.requests) {
-        if (this.requests[key].from.id == this.link.id
-          && (this.requests[key].amount == undefined || this.requests[key].amount! >= LINK_CAPACITY / 4)) {
-          request = this.requests[key];
-          break;
+        let req = this.requests[key];
+        if (req.from.id == this.link.id && req.to instanceof StructureLink) {
+          let amount = req.amount != undefined ? req.amount : req.to.store.getFreeCapacity(RESOURCE_ENERGY);
+          if (amount >= LINK_CAPACITY / 4) {
+            request = this.requests[key];
+            break;
+          }
         }
       }
 
@@ -83,7 +86,6 @@ export class storageCell extends Cell {
         if (request.amount == 0) {
           delete this.requests[key];
         } else {
-
           let amount = request.amount != undefined ? request.amount : request.to.store.getFreeCapacity(RESOURCE_ENERGY);
           if (amount > LINK_CAPACITY)
             amount = LINK_CAPACITY;

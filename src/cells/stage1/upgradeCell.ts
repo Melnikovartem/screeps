@@ -30,13 +30,12 @@ export class upgradeCell extends Cell {
     super.update();
 
     let storageCell = this.hive.cells.storageCell;
-    if (this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY) > LINK_CAPACITY / 4
-      && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {
+    if (this.link && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {
       storageCell.requests[this.link.id] = {
         from: storageCell.link,
         to: this.link,
         resource: RESOURCE_ENERGY,
-        priority: 4
+        priority: 4,
       }
     }
 

@@ -63,11 +63,11 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    if (this.link && this.link.store[RESOURCE_ENERGY] >= 100 && this.link.cooldown == 0 &&
-      this.hive.cells.storageCell && this.hive.cells.storageCell.link &&
-      (this.link.store[RESOURCE_ENERGY] <= this.hive.cells.storageCell.link.store.getFreeCapacity(RESOURCE_ENERGY) ||
-        this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= 150)) {
-      this.link.transferEnergy(this.hive.cells.storageCell.link);
+    let storageLink = this.hive.cells.storageCell && this.hive.cells.storageCell.link;
+    if (this.link && this.link.store[RESOURCE_ENERGY] >= LINK_CAPACITY / 8 && this.link.cooldown == 0 && storageLink
+      && (this.link.store[RESOURCE_ENERGY] <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY)
+        || this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= LINK_CAPACITY / 8)) {
+      this.link.transferEnergy(storageLink);
     }
   }
 }
