@@ -37,8 +37,8 @@ export class managerMaster extends Master {
     // assigning the orders
     for (let key in this.cell.requests) {
       let request = this.cell.requests[key];
-      if ((request.amount == undefined || request.amount >= 25)
-        && _.filter(request.from, (structure) => structure.store[request.resource] >= (request.amount ? request.amount : 0)).length > 0
+      if ((request.amount == undefined || request.amount >= 25 || request.resource != RESOURCE_ENERGY)
+        && _.sum(request.from, (s) => s.store[request.resource]) >= 0
         && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
@@ -82,21 +82,31 @@ export class managerMaster extends Master {
         let freeCapTo = (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource);
         let amountBee = bee.store[request.resource];
         request.amount = request.amount != undefined ? request.amount : freeCapTo;
-        request.amount = Math.min(freeCapTo, request.amount);
+        if (request.from.length == 1)
+          request.amount = Math.min(freeCapTo, request.amount);
 
-        if (amountBee > 0 && (request.from.length == 1 || !bee.store.getFreeCapacity())) {
-          let ans = bee.transfer(request.to[0], request.resource, Math.min(request.amount, amountBee));
-          if (ans == OK)
-            request.amount -= Math.min(request.amount, amountBee);
+        if (request.resource != RESOURCE_ENERGY)
+          bee.print(usedCapFrom, freeCapTo, amountBee, request.amount);
+
+        if (amountBee > 0 && (request.from.length == 1 || bee.store.getFreeCapacity() == request.amount)) {
+          amountBee = Math.min(request.amount, amountBee);
+          amountBee = Math.min(freeCapTo, amountBee);
+          let ans = bee.transfer(request.to[0], request.resource, amountBee);
+          if (ans == OK) {
+            request.amount -= amountBee;
+            if (ans == OK && request.to.length > 1 && freeCapTo - amountBee == 0)
+              request.to.shift();
+          }
+          amountBee = 0;
         }
 
         if (amountBee == 0 && request.amount > 0) {
-          amountBee = Math.min(bee.store.getFreeCapacity(), request.amount);
+          amountBee = Math.min(bee.store.getFreeCapacity(request.resource), request.amount);
           amountBee = Math.min(amountBee, usedCapFrom);
 
           if (amountBee > 0) {
-            bee.withdraw(request.from[0], request.resource, amountBee);
-            if (request.from.length > 1 && usedCapFrom - amountBee == 0)
+            let ans = bee.withdraw(request.from[0], request.resource, amountBee);
+            if (ans == OK && request.from.length > 1 && usedCapFrom - amountBee == 0)
               request.from.shift();
           }
         }

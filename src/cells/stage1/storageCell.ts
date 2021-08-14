@@ -71,7 +71,7 @@ export class storageCell extends Cell {
             this.requests[key].from[fromKey] = from;
         }
 
-        for (let toKey in this.requests[key].from) {
+        for (let toKey in this.requests[key].to) {
           let to = this.requests[key].to[toKey];
           to = <typeof to>Game.getObjectById(to.id);
           if (to)
@@ -124,7 +124,7 @@ export class storageCell extends Cell {
               delete this.requests[key];
             }
           } else
-            this.requestFromStorage(this.link.id, [this.link], 3, amount * 1.2 - this.link.store[RESOURCE_ENERGY]);
+            this.requestFromStorage(this.link.id, [this.link], 3, Math.ceil(amount * 1.2) - this.link.store[RESOURCE_ENERGY]);
         }
       }
     }
