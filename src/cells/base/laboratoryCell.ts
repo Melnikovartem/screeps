@@ -20,7 +20,7 @@ for (let key in s)
 console.log(ss);
 */
 
-type ReactionConstant = "H" | "O" | "Z" | "L" | "K" | "U" | "G" | "OH" | "X" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
+export type ReactionConstant = "H" | "O" | "Z" | "L" | "K" | "U" | "G" | "OH" | "X" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 
 const reactionMap: { [key in ReactionConstant]?: { res1: ReactionConstant, res2: ReactionConstant } } = {};
 for (let res1 in REACTIONS) {
@@ -37,6 +37,8 @@ interface SynthesizeRequest {
   plan: number,
   current: number,
   resource: ReactionConstant,
+  res1: ReactionConstant,
+  res2: ReactionConstant,
 };
 
 @profile
@@ -70,7 +72,10 @@ export class laboratoryCell extends Cell {
         let res1 = reactionMap[resource]!.res1;
         let res2 = reactionMap[resource]!.res2;
 
-        amount = Math.min(mainStore[res1] * 5, mainStore[res2] * 5);
+        let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
+        let res2Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res2]);
+
+        amount = Math.min(res1Amount * 5, res2Amount * 5);
       }
     }
 
@@ -78,6 +83,8 @@ export class laboratoryCell extends Cell {
       plan: amount,
       current: amount,
       resource: resource,
+      res1: reactionMap[resource]!.res1,
+      res2: reactionMap[resource]!.res2,
     });
 
     return amount;
@@ -111,7 +118,7 @@ export class laboratoryCell extends Cell {
       }
       return ERR_NOT_FOUND;
     }
-    return ERR_INVALID_ARGS;
+    return ERR_NOT_FOUND;
   }
 
   fflushAll() {
@@ -131,17 +138,16 @@ export class laboratoryCell extends Cell {
     super.update();
     let storageCell = this.hive.cells.storage;
     if (storageCell && this.laboratories.length) {
-      let request = this.currentRequest;
-      if (request) {
-        let res1 = reactionMap[request.resource]!.res1;
-        let res2 = reactionMap[request.resource]!.res2;
+      if (this.currentRequest) {
+        let res1 = this.currentRequest.res1;
+        let res2 = this.currentRequest.res2;
         if (this.lab1 && this.lab2) {
-          let amount = Math.ceil(request.plan / 5);
+          let amount = Math.ceil(this.currentRequest.plan / 5);
 
-          if (this.lab1.store[res1] + storageCell.storage.store[res1] < request.plan
-            || this.lab2.store[res2] + storageCell.storage.store[res2] < request.plan) {
-            request.plan = Math.min(this.lab1.store[res1] + storageCell.storage.store[res1], this.lab2.store[res2] + storageCell.storage.store[res2]);
-            request.current = Math.min(request.plan, request.current);
+          if (this.lab1.store[res1] + storageCell.storage.store[res1] < this.currentRequest.plan
+            || this.lab2.store[res2] + storageCell.storage.store[res2] < this.currentRequest.plan) {
+            this.currentRequest.plan = Math.min(this.lab1.store[res1] + storageCell.storage.store[res1], this.lab2.store[res2] + storageCell.storage.store[res2]);
+            this.currentRequest.current = Math.min(this.currentRequest.plan, this.currentRequest.current);
           }
 
           if (this.lab1.store[res1] < amount && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
@@ -151,14 +157,14 @@ export class laboratoryCell extends Cell {
             storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
 
 
-          if (request.plan - request.current > 1000) {
-            this.fflush(request.resource, request.plan - request.current);
-            request.plan -= request.current;
-          } else if (request.current == 0) {
-            this.fflush(request.resource);
+          if (this.currentRequest.plan - this.currentRequest.current > 300) {
+            this.fflush(this.currentRequest.resource);
+            this.currentRequest.plan -= this.currentRequest.current;
+          } else if (this.currentRequest.current == 0) {
             this.currentRequest = undefined;
             this.lab1 = undefined;
             this.lab2 = undefined;
+            this.fflushAll();
           }
         }
       }
@@ -166,12 +172,14 @@ export class laboratoryCell extends Cell {
       if (!this.currentRequest) {
         this.currentRequest = this.synthesizeRequests.shift();
         if (this.currentRequest) {
-          this.lab1 = this.getLabsFree(reactionMap[this.currentRequest.resource]!.res1, 0)[0];
-          this.lab2 = this.getLabsFree(reactionMap[this.currentRequest.resource]!.res2, 0)[0];
-          if (reactionMap[this.currentRequest.resource]!.res1 != res1)
-            this.fflush(res1);
-          if (reactionMap[this.currentRequest.resource]!.res2 != res2)
-            this.fflush(res2);
+          this.lab1 = this.getLabsFree(this.currentRequest.res1, 0)[0];
+          this.lab2 = this.getLabsFree(this.currentRequest.res2, 0)[0];
+          if (!this.lab1 || !this.lab2) {
+            this.currentRequest = undefined;
+            this.lab1 = undefined;
+            this.lab2 = undefined;
+          }
+          this.fflushAll();
         }
       }
 

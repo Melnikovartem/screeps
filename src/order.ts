@@ -2,6 +2,8 @@ import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
 import { drainerMaster } from "./beeMaster/war/drainer";
 
+import { ReactionConstant } from "./cells/base/laboratoryCell";
+
 import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
@@ -100,7 +102,13 @@ export class Order {
             hive.cells.storage.pos = this.pos;
         } else if (this.flag.secondaryColor == COLOR_BROWN) {
           if (hive.cells.lab)
-            hive.cells.lab.newSynthesizeRequest("OH");
+            if (!hive.cells.lab.currentRequest) {
+              _.forEach(this.flag.name.split("-"), (res) => {
+                // important not to fuck it up
+                if (Object.keys(REACTION_TIME).includes(res))
+                  hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
+              });
+            }
         }
       }
     } else if (this.flag.color == COLOR_GREY) {
