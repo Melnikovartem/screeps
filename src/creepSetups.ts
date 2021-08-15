@@ -111,7 +111,7 @@ export const Setups = {
     fast: new CreepSetup(SetupsNames.upgrader, {
       fixed: [WORK, WORK, WORK, WORK, CARRY, MOVE],
       pattern: [WORK, WORK, WORK, WORK, WORK, MOVE],
-      patternLimit: 2,
+      patternLimit: 5,
     }),
   },
   builder: new CreepSetup(SetupsNames.builder, {

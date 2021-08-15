@@ -241,7 +241,7 @@ export class Hive {
   }
 
   update() {
-    if (UPDATE_EACH_TICK || Game.time % 10 == 1) {
+    if (UPDATE_EACH_TICK || Game.time % 10 == 8) {
       this.updateRooms();
       this.updateConstructionSites();
       this.updateRepairs();

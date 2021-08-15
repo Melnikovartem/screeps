@@ -93,7 +93,7 @@ export class laboratoryCell extends Cell {
   fflush(res: ReactionConstant, amount?: number): number {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      if (storageCell.requests[this.ref + "_" + res])
+      if (storageCell.requests[this.ref + "_" + res] && storageCell.requests[this.ref + "_" + res].to[0].id == storageCell.storage.id)
         return ERR_TIRED;
       let sum = 0;
       let labs: StructureLab[] = [];
@@ -124,9 +124,8 @@ export class laboratoryCell extends Cell {
   fflushAll() {
     let resources: ReactionConstant[] = [];
     _.forEach(this.laboratories, (lab) => {
-      if (lab.mineralType && !resources.includes(lab.mineralType)
-        && (!this.lab1 || lab.id != this.lab1.id)
-        && (!this.lab2 || lab.id != this.lab2.id))
+      if (lab.mineralType && !resources.includes(lab.mineralType) && (!this.currentRequest
+        || (this.currentRequest.res1 != lab.mineralType && this.currentRequest.res2 != lab.mineralType)))
         resources.push(lab.mineralType)
     });
     _.forEach(resources, (res) => {

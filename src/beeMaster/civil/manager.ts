@@ -39,7 +39,7 @@ export class managerMaster extends Master {
       let request = this.cell.requests[key];
       if ((request.amount == undefined || request.amount >= 25 || request.resource != RESOURCE_ENERGY)
         && _.sum(request.from, (s) => s.store[request.resource]) >= (request.amount ? request.amount : 0)
-        && request.to[0].id == this.cell.storage.id || !request.from[0] || request.from[0].id == this.cell.storage.id)
+        && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
     targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
@@ -75,11 +75,9 @@ export class managerMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       let request: StorageRequest = this.cell.requests[this.targetMap[bee.ref]];
-      if (request) {
+      if (request && bee.store[request.resource] + bee.store.getFreeCapacity(request.resource) > 100) {
         let ans;
-        let usedCapFrom = 0;
-        if (request.from[0])
-          usedCapFrom = request.from[0].store[request.resource];
+        let usedCapFrom = request.from[0].store[request.resource];
         let freeCapTo = (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource);
         let amountBee = bee.store[request.resource];
         request.amount = request.amount != undefined ? request.amount : freeCapTo;
@@ -91,10 +89,10 @@ export class managerMaster extends Master {
           if (amountBee > 0)
             ans = bee.withdraw(request.from[0], request.resource, amountBee);
 
-          if (usedCapFrom == 0 || (ans == OK && usedCapFrom - amountBee == 0))
+          if (request.from.length > 1 && ans == OK && usedCapFrom - amountBee <= 0)
             request.from.shift();
 
-          if (request.from.length == 0 && amountBee == 0)
+          if (request.from.length == 1 && usedCapFrom == 0 && bee.store[request.resource] == 0)
             delete this.cell.requests[this.targetMap[bee.ref]];
 
           amountBee = 0;
@@ -109,11 +107,14 @@ export class managerMaster extends Master {
           if (ans == OK)
             request.amount -= amountBee;
 
-          if (freeCapTo == 0 || (ans == OK && freeCapTo - amountBee == 0))
+          if (request.from.length > 1 && ans == OK && freeCapTo - amountBee <= 0)
+            request.from.shift();
+
+          if (request.from.length == 1 && freeCapTo == 0)
             delete this.cell.requests[this.targetMap[bee.ref]];
         }
 
-        if (request.amount == 0)
+        if (request.amount <= 0)
           delete this.cell.requests[this.targetMap[bee.ref]];
 
         if (!this.cell.requests[this.targetMap[bee.ref]])

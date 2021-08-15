@@ -104,9 +104,10 @@ export class Order {
           if (hive.cells.lab)
             if (!hive.cells.lab.currentRequest) {
               _.forEach(this.flag.name.split("-"), (res) => {
-                // important not to fuck it up
+                let ans: number = ERR_INVALID_ARGS;
                 if (Object.keys(REACTION_TIME).includes(res))
-                  hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
+                  ans = hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
+                if (PRINT_INFO) console.log(`new Reqest for ${res}: ${ans}`);
               });
             }
         }

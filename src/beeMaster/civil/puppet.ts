@@ -51,6 +51,7 @@ export class puppetMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
+      Apiary.intel.getInfo(bee.pos.roomName, 50); // get intel for stuff
       if (bee.pos.getRangeTo(this.target) > 10)
         bee.goTo(this.target);
     });

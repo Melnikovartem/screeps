@@ -9,6 +9,7 @@ import { profile } from "../../profiler/decorator";
 export class minerMaster extends Master {
   cell: resourceCell;
   cooldown: number = 0;
+  state: "harvesting" | "full" | "break" = "harvesting";
 
   constructor(resourceCell: resourceCell) {
     super(resourceCell.hive, resourceCell.ref);
@@ -40,25 +41,18 @@ export class minerMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      let harvest: boolean = false;
-      if (this.cell.resource instanceof Source && this.cell.resource.energy > 0)
-        harvest = true;
-      else if (this.cell.extractor && this.cell.extractor.cooldown == 0 && this.cell.perSecondNeeded > 0)
-        harvest = true;
+      this.state = "harvesting";
+      if (this.cell.resource instanceof Source && this.cell.resource.energy == 0)
+        this.state = "break";
+      else if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded == 0))
+        this.state = "break";
 
       // any resource
-      if (bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0) {
-        if (harvest)
-          bee.harvest(this.cell.resource);
-        else if (this.cell.resourceType == RESOURCE_ENERGY && this.cell.container && this.cell.container.hits < this.cell.container.hitsMax) {
-          if (bee.store[RESOURCE_ENERGY] > 0)
-            bee.repair(this.cell.container);
-          if (bee.store[RESOURCE_ENERGY] < 24 && this.cell.container.store[RESOURCE_ENERGY] >= 18)
-            bee.withdraw(this.cell.container, RESOURCE_ENERGY, 18);
-        }
-      }
+      if (this.state == "harvesting" && bee.creep.store.getFreeCapacity(this.cell.resourceType) > 0)
+        bee.harvest(this.cell.resource);
 
-      if (bee.creep.store[this.cell.resourceType] >= 25 && harvest) {
+
+      if (this.state == "harvesting" && bee.creep.store[this.cell.resourceType] >= 25) {
         let target: StructureLink | StructureContainer | undefined;
         if (this.cell.link && this.cell.resourceType == RESOURCE_ENERGY
           && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
@@ -68,6 +62,16 @@ export class minerMaster extends Master {
 
         if (target)
           bee.transfer(target, this.cell.resourceType);
+        else
+          this.state = "full";
+      }
+
+      if (this.state != "harvesting" && this.cell.resourceType == RESOURCE_ENERGY
+        && this.cell.container && this.cell.container.hits < this.cell.container.hitsMax) {
+        if (bee.store[RESOURCE_ENERGY] > 0)
+          bee.repair(this.cell.container);
+        if (bee.store[RESOURCE_ENERGY] < 24 && this.cell.container.store[RESOURCE_ENERGY] >= 18)
+          bee.withdraw(this.cell.container, RESOURCE_ENERGY, 18);
       }
     });
   }
