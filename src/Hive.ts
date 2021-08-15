@@ -11,7 +11,6 @@ import { excavationCell } from "./cells/stage1/excavationCell";
 
 import { builderMaster } from "./beeMaster/economy/builder";
 
-
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
 import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
@@ -136,6 +135,8 @@ export class Hive {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
       this.cells.excavation = new excavationCell(this);
+      this.markResources();
+
       this.builder = new builderMaster(this);
       if (this.stage == 2) {
         // TODO cause i haven' reached yet
@@ -154,6 +155,8 @@ export class Hive {
     if (!this.annexNames.includes(annexName)) {
       this.annexNames.push(annexName);
       this.updateRooms();
+      if (this.stage > 0)
+        this.markResources();
     }
   }
 
@@ -164,6 +167,27 @@ export class Hive {
       return annex;
     }));
     this.rooms = [this.room].concat(this.annexes);
+  }
+
+  // actually needs to be done only once, but well couple times each reboot is not worst scenario
+  markResources() {
+    _.forEach(this.rooms, (room) => {
+      _.forEach(room.find(FIND_SOURCES), (s) => {
+        if (!Game.flags["mine_" + s.id]) {
+          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+          if (typeof flag == "string")
+            Game.flags[flag].memory.hive = this.roomName;
+        }
+      });
+    });
+
+    _.forEach(this.room.find(FIND_MINERALS), (s) => {
+      if (!Game.flags["mine_" + s.id]) {
+        let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+        if (typeof flag == "string")
+          Game.flags[flag].memory.hive = this.roomName;
+      }
+    });
   }
 
   private updateCellData() {

@@ -27,7 +27,7 @@ export class Intel {
         lastUpdated: -1,
         enemies: [],
         safePlace: true,
-        ownedByEnemy: true,
+        ownedByEnemy: false,
         safeModeEndTime: -1,
       };
 

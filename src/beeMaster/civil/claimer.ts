@@ -41,11 +41,11 @@ export class claimerMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       if (bee.pos.roomName != this.order.pos.roomName)
-        bee.goToRoom(this.order.pos.roomName);
+        bee.goTo(this.order.pos);
       else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner)
-          console.log("i try to claim"); //bee.claimController(controller);
+          bee.claimController(controller);
         else
           this.order.destroyTime = 0;
       }

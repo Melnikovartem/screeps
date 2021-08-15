@@ -15,7 +15,10 @@ export class haulerMaster extends Master {
     super(excavationCell.hive, excavationCell.ref);
 
     this.cell = excavationCell;
+    this.recalculateTargetBee();
+  }
 
+  recalculateTargetBee() {
     let accumRoadTime = 0; // roadTime * minePotential
     let energyCap = this.hive.room.energyCapacityAvailable
     if (this.hive.cells.storage)

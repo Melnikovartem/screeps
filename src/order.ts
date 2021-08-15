@@ -9,8 +9,8 @@ import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 import { annexMaster } from "./beeMaster/civil/annexer";
 import { claimerMaster } from "./beeMaster/civil/claimer";
-import { profile } from "./profiler/decorator";
 
+import { profile } from "./profiler/decorator";
 import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
 
 @profile
@@ -21,6 +21,7 @@ export class Order {
   destroyTime: number
   master?: Master;
   hive: Hive;
+  acted: boolean = false;
 
   constructor(flag: Flag) {
     this.ref = flag.name;
@@ -80,6 +81,8 @@ export class Order {
   }
 
   act() {
+    // for now for all flags waybe in future some flags will repeat
+    this.acted = true;
     // annex room
     if (this.flag.color == COLOR_RED) {
       if (this.flag.secondaryColor == COLOR_BLUE)
@@ -105,7 +108,6 @@ export class Order {
         newMaster.priority = 4;
         this.master = newMaster;
       }
-
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
         if (this.hive.room.energyCapacityAvailable >= 650) {
@@ -143,6 +145,18 @@ export class Order {
         if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
           this.destroyTime = Game.time;
       }
+    } else if (this.flag.color == COLOR_YELLOW) {
+      if (this.flag.secondaryColor == COLOR_YELLOW) {
+        if (this.hive.cells.excavation) {
+          let resource: Source | Mineral = this.pos.lookFor(LOOK_SOURCES)[0];
+          if (!resource)
+            resource = this.pos.lookFor(LOOK_MINERALS)[0];
+          if (resource)
+            this.hive.cells.excavation.addResource(resource);
+          else
+            this.destroyTime = Game.time;
+        }
+      }
     }
   }
 
@@ -155,9 +169,11 @@ export class Order {
   }
 
   update(flag: Flag) {
+    if (flag.pos.x != this.pos.x || flag.pos.y != this.pos.y)
+      this.acted = false;
     this.flag = flag;
     this.pos = flag.pos;
-    if (!this.master)
+    if (!this.acted)
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
