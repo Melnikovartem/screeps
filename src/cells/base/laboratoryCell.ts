@@ -19,15 +19,15 @@ for (let key in s)
   ss += " | " + '"' + s[key] + '"';
 console.log(ss);
 */
+type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X"
+export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 
-export type ReactionConstant = "H" | "O" | "Z" | "L" | "K" | "U" | "G" | "OH" | "X" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
-
-const reactionMap: { [key in ReactionConstant]?: { res1: ReactionConstant, res2: ReactionConstant } } = {};
+const reactionMap: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
 for (let res1 in REACTIONS) {
   for (let res2 in REACTIONS[res1])
-    reactionMap[<ReactionConstant>REACTIONS[res1][res2]] = {
-      res1: <ReactionConstant>res1,
-      res2: <ReactionConstant>res2,
+    reactionMap[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {
+      res1: <ReactionConstant | BaseMineral>res1,
+      res2: <ReactionConstant | BaseMineral>res2,
     };
 }
 
@@ -36,9 +36,10 @@ for (let res1 in REACTIONS) {
 interface SynthesizeRequest {
   plan: number,
   current: number,
-  resource: ReactionConstant,
-  res1: ReactionConstant,
-  res2: ReactionConstant,
+  resource: ReactionConstant | BaseMineral,
+  res1: ReactionConstant | BaseMineral,
+  res2: ReactionConstant | BaseMineral,
+  cooldown: number,
 };
 
 @profile
@@ -55,7 +56,7 @@ export class laboratoryCell extends Cell {
     super(hive, "LaboratoryCell_" + hive.room.name);
   }
 
-  getLabsFree(resource: ReactionConstant, amount?: number): StructureLab[] {
+  getLabsFree(resource: ReactionConstant | BaseMineral, amount?: number): StructureLab[] {
     let labs = _.filter(this.laboratories, (lab) =>
       lab.store.getFreeCapacity(resource) >= (amount != undefined ? amount : 1)
       && !lab.mineralType || lab.mineralType == resource
@@ -64,7 +65,10 @@ export class laboratoryCell extends Cell {
     return labs;
   }
 
-  newSynthesizeRequest(resource: ReactionConstant, amount?: number): number {
+  newSynthesizeRequest(resource: ReactionConstant, amount?: number, coef?: number): number {
+    if (!Object.keys(REACTION_TIME).includes(resource))
+      return ERR_INVALID_ARGS;
+
     if (!amount) {
       amount = 0;
       let mainStore = this.hive.cells.storage && this.hive.cells.storage.storage.store;
@@ -75,22 +79,27 @@ export class laboratoryCell extends Cell {
         let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
         let res2Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res2]);
 
-        amount = Math.min(res1Amount * 5, res2Amount * 5);
+        amount = Math.min(res1Amount, res2Amount);
       }
     }
 
+    amount -= amount % 5;
+
+    if (coef)
+      amount *= coef;
     this.synthesizeRequests.push({
       plan: amount,
       current: amount,
       resource: resource,
       res1: reactionMap[resource]!.res1,
       res2: reactionMap[resource]!.res2,
+      cooldown: REACTION_TIME[resource],
     });
 
     return amount;
   }
 
-  fflush(res: ReactionConstant, amount?: number): number {
+  fflush(res: ReactionConstant | BaseMineral, amount?: number): number {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
       if (storageCell.requests[this.ref + "_" + res] && storageCell.requests[this.ref + "_" + res].to[0].id == storageCell.storage.id)
@@ -123,7 +132,7 @@ export class laboratoryCell extends Cell {
   }
 
   fflushAll() {
-    let resources: ReactionConstant[] = [];
+    let resources: (ReactionConstant | BaseMineral)[] = [];
     _.forEach(this.laboratories, (lab) => {
       if (lab.mineralType && !resources.includes(lab.mineralType) && (!this.currentRequest
         || (this.currentRequest.res1 != lab.mineralType && this.currentRequest.res2 != lab.mineralType)))
@@ -141,7 +150,6 @@ export class laboratoryCell extends Cell {
       if (this.currentRequest && this.lab1 && this.lab2) {
         let res1 = this.currentRequest.res1;
         let res2 = this.currentRequest.res2;
-        let amount = Math.ceil(this.currentRequest.plan / 5);
 
         if (this.lab1.store[res1] + storageCell.storage.store[res1] < this.currentRequest.plan
           || this.lab2.store[res2] + storageCell.storage.store[res2] < this.currentRequest.plan) {
@@ -149,10 +157,10 @@ export class laboratoryCell extends Cell {
           this.currentRequest.current = Math.min(this.currentRequest.plan, this.currentRequest.current);
         }
 
-        if (this.lab1.store[res1] < amount && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
+        if (this.lab1.store[res1] < this.currentRequest.current && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
           storageCell.requestFromStorage(this.lab1.id + "_" + res1, [this.lab1], 3, undefined, res1);
 
-        if (this.lab2.store[res2] < amount && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
+        if (this.lab2.store[res2] < this.currentRequest.current && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
           storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
 
 
@@ -197,11 +205,12 @@ export class laboratoryCell extends Cell {
 
   run() {
     if (this.currentRequest && this.currentRequest.current > 0) {
-      if (this.lab1 && this.lab2) {
+      if (this.lab1 && this.lab1.store[this.currentRequest.res1] > 5
+        && this.lab2 && this.lab2.store[this.currentRequest.res2] > 5) {
         let labs = this.getLabsFree(this.currentRequest.resource, 5);
         for (let k in _.filter(labs, (lab) => !lab.cooldown))
           if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
-            this.currentRequest!.current -= 1;
+            this.currentRequest!.current -= 5;
         if (labs.length == 0)
           this.fflushAll();
       }

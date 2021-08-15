@@ -68,12 +68,14 @@ export class storageCell extends Cell {
       for (let key in this.requests) {
         for (let fromKey in this.requests[key].from) {
           let from = this.requests[key].from[fromKey];
+          from = <typeof from>Game.getObjectById(from.id);
           if (from)
             this.requests[key].from[fromKey] = from;
         }
 
         for (let toKey in this.requests[key].to) {
           let to = this.requests[key].to[toKey];
+          to = <typeof to>Game.getObjectById(to.id);
           if (to)
             this.requests[key].to[toKey] = to;
         }

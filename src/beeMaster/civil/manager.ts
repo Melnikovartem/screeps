@@ -61,9 +61,8 @@ export class managerMaster extends Master {
             this.state = "from";
         } else
           delete this.cell.requests[this.target];
-        console.log(this.manager.creep, this.target, request.amount, request.resource, this.state, "\nfrom", request.from, "\nto", request.to);
+        // console.log(this.manager.creep, this.target, request.amount, request.resource, this.state, "\nfrom", request.from, "\nto", request.to);
       }
-
     }
 
     if (this.checkBees()) {
@@ -88,7 +87,6 @@ export class managerMaster extends Master {
       if (this.cell.requests[this.target] && this.state != "chill") {
         let request: StorageRequest = this.cell.requests[this.target];
         request.amount = request.amount != undefined ? request.amount : _.sum(request.to, (s) => s.store[request.resource]);
-
         if (this.state == "from") {
           let ans;
           let usedCapFrom = request.from[0].store[request.resource];
@@ -97,8 +95,9 @@ export class managerMaster extends Master {
             usedCapFrom = request.from[0].store[request.resource];
           }
 
-          let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource), request.amount - this.manager.store[request.resource]);
-          amountBee = Math.min(amountBee, usedCapFrom);
+          // prob should add some
+          let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource),
+            usedCapFrom, request.amount - this.manager.store[request.resource]);
 
           if (amountBee > 0)
             ans = this.manager.withdraw(request.from[0], request.resource, amountBee);
@@ -112,8 +111,11 @@ export class managerMaster extends Master {
           if (this.manager.store.getFreeCapacity(request.resource) == 0)
             this.state = "to";
 
-          if (this.manager.store[request.resource] == request.amount)
+          if (this.manager.store[request.resource] >= request.amount)
             this.state = "to";
+
+          if (this.manager.store[request.resource] == 0 && this.manager.store.getFreeCapacity(request.resource) == 0)
+            this.state = "chill";
 
           if (request.from.length == 1 && usedCapFrom == 0 && this.state == "from")
             delete this.cell.requests[this.target];
@@ -127,8 +129,7 @@ export class managerMaster extends Master {
             freeCapTo = (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource);
           }
 
-          let amountBee = Math.min(request.amount, this.manager.store[request.resource]);
-          amountBee = Math.min(freeCapTo, amountBee);
+          let amountBee = Math.min(request.amount, this.manager.store[request.resource], freeCapTo);
 
           if (amountBee > 0)
             ans = this.manager.transfer(request.to[0], request.resource, amountBee);

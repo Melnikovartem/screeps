@@ -136,7 +136,7 @@ export class Bee {
   }
 
   goRest(pos: RoomPosition): number {
-    if ((this.pos.x != pos.x || this.pos.y != pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()))
+    if ((this.pos.x != pos.x || this.pos.y != pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName != pos.roomName)
       this.goTo(pos)
     else
       return OK;

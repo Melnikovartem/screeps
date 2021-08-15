@@ -244,8 +244,10 @@ export class Hive {
     if (UPDATE_EACH_TICK || Game.time % 10 == 8) {
       this.updateRooms();
       this.updateConstructionSites();
-      this.updateRepairs();
+      if (UPDATE_EACH_TICK || Game.time % 30 == 8)
+        this.updateRepairs(); // cause costly
     }
+
     if (Game.time % 100 == 29)
       this.updateCellData();
     if (Game.time % LOGGING_CYCLE == 0)

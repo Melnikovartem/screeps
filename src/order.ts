@@ -68,8 +68,11 @@ export class Order {
         this.master = new downgradeMaster(this.findHive(), this);
       else if (this.flag.secondaryColor == COLOR_YELLOW)
         this.master = new drainerMaster(this.findHive(), this);
-      else if (this.flag.secondaryColor == COLOR_GREY)
-        this.master = new puppetMaster(this.findHive(), this.pos.roomName, this);
+      else if (this.flag.secondaryColor == COLOR_GREY) {
+        let newMaster = new puppetMaster(this.findHive(), this.pos.roomName, this);
+        newMaster.force = true;
+        this.master = newMaster;
+      }
       else if (this.flag.secondaryColor == COLOR_RED) {
         let newMaster = new hordeMaster(this.findHive(), this);
         if (this.ref.includes("controller"))
@@ -104,9 +107,7 @@ export class Order {
           if (hive.cells.lab)
             if (!hive.cells.lab.currentRequest) {
               _.forEach(this.flag.name.split("-"), (res) => {
-                let ans: number = ERR_INVALID_ARGS;
-                if (Object.keys(REACTION_TIME).includes(res))
-                  ans = hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
+                let ans = hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
                 if (PRINT_INFO) console.log(`new Reqest for ${res}: ${ans}`);
               });
             }
