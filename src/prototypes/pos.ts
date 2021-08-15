@@ -2,8 +2,8 @@ interface RoomPosition {
   getRoomCoorinates(): number[];
   getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition }): number;
   getNearbyPositions(): RoomPosition[];
-  getOpenPositions(): RoomPosition[];
-  isFree(): boolean;
+  getOpenPositions(ignoreCreeps?: boolean): RoomPosition[];
+  isFree(ignoreCreeps?: boolean): boolean;
   getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number
   findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
 }
@@ -48,20 +48,20 @@ RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
   return positions
 }
 
-RoomPosition.prototype.getOpenPositions = function(): RoomPosition[] {
+RoomPosition.prototype.getOpenPositions = function(ignoreCreeps?: boolean): RoomPosition[] {
   let nearbyPositions: RoomPosition[] = this.getNearbyPositions();
 
-  return _.filter(nearbyPositions, (pos) => pos.isFree());
+  return _.filter(nearbyPositions, (pos) => pos.isFree(ignoreCreeps));
 }
 
-RoomPosition.prototype.isFree = function(): boolean {
+RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
   let ans = true;
 
   if (ans)
     ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) != TERRAIN_MASK_WALL;
 
   if (this.roomName in Game.rooms) {
-    if (ans)
+    if (ans && !ignoreCreeps)
       ans = this.lookFor(LOOK_CREEPS).length == 0
 
     if (ans)

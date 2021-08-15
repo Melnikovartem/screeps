@@ -39,8 +39,6 @@ export class Order {
     };
 
     this.destroyTime = -1;
-    this.act();
-
     if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
       time: Game.time,
       color: this.flag.color,
@@ -50,21 +48,22 @@ export class Order {
       pos: this.flag.pos,
       destroyTime: -1,
     }
+
+    this.act();
   }
 
   findHive(stage?: 0 | 1 | 2): Hive {
-    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage > (stage ? stage : 0))
+    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage ? stage : 0))
       return Apiary.hives[this.pos.roomName];
-
 
     for (let k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage > (stage ? stage : 0))
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage ? stage : 0))
         return Apiary.hives[exit];
     }
 
     // well time to look for faraway boys
-    let validHives = _.filter(Apiary.hives, (h) => h.stage > (stage ? stage : 0));
+    let validHives = _.filter(Apiary.hives, (h) => h.stage >= (stage ? stage : 0));
     if (!validHives.length)
       validHives = _.map(Apiary.hives, (h) => h);
 
@@ -112,10 +111,15 @@ export class Order {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
         if (this.hive.room.energyCapacityAvailable >= 650) {
           this.master = new annexMaster(this);
-          this.hive.addAnex(this.pos.roomName);
         }
-      } else if (this.flag.secondaryColor == COLOR_GREY) {
+        this.hive.addAnex(this.pos.roomName);
+      } else if (this.flag.secondaryColor == COLOR_GREY)
         this.master = new claimerMaster(this);
+      else if (this.flag.secondaryColor == COLOR_WHITE) {
+        if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0 && this.pos.roomName != this.hive.roomName)
+          Apiary.hives[this.pos.roomName].bassboost = this.hive;
+        else
+          this.delete();
       }
     } else if (this.flag.color == COLOR_CYAN) {
       let hive = Apiary.hives[this.pos.roomName]
@@ -143,7 +147,7 @@ export class Order {
     } else if (this.flag.color == COLOR_GREY) {
       if (this.flag.secondaryColor == COLOR_RED) {
         if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
-          this.destroyTime = Game.time;
+          this.delete();
       }
     } else if (this.flag.color == COLOR_YELLOW) {
       if (this.flag.secondaryColor == COLOR_YELLOW) {
@@ -154,7 +158,7 @@ export class Order {
           if (resource)
             this.hive.cells.excavation.addResource(resource);
           else
-            this.destroyTime = Game.time;
+            this.delete();
         }
       }
     }
@@ -162,6 +166,10 @@ export class Order {
 
   // what to do when delete if something neede
   delete() {
+    if (LOGGING_CYCLE) {
+      Memory.log.orders[this.ref].destroyTime = Game.time;
+      Memory.log.orders[this.ref].pos = this.flag.pos;
+    }
     if (this.master)
       delete Apiary.masters[this.master.ref];
     this.flag.remove();
@@ -177,19 +185,13 @@ export class Order {
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
-
       if (this.flag.memory.repeat > 0) {
         if (PRINT_INFO) console.log("repeated" + this.ref);
         this.destroyTime = -1;
         this.flag.memory.repeat -= 1;
         this.act();
-      } else {
-        if (LOGGING_CYCLE) {
-          Memory.log.orders[this.ref].destroyTime = Game.time;
-          Memory.log.orders[this.ref].pos = this.flag.pos;
-        }
+      } else
         this.delete();
-      }
     }
   }
 }

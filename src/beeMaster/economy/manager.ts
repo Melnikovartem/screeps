@@ -83,6 +83,8 @@ export class managerMaster extends Master {
 
   run() {
     if (this.manager) {
+      if (this.manager.creep.ticksToLive && this.manager.creep.ticksToLive < 15)
+        this.state = "fflush";
       if (this.cell.requests[this.target]) {
         let request: StorageRequest = this.cell.requests[this.target];
         request.amount = request.amount != undefined ? request.amount :

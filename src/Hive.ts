@@ -110,6 +110,9 @@ export class Hive {
   // 1 storage - 7lvl
   // max
 
+  bassboost: Hive | null = null;
+  // help grow creeps from other colony
+
   constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];

@@ -28,7 +28,7 @@ export class bootstrapMaster extends Master {
     if (Setups.bootstrap.bodySetup.patternLimit)
       workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
     _.forEach(this.cell.sources, (source) => {
-      let walkablePositions = source.pos.getOpenPositions().length;
+      let walkablePositions = source.pos.getOpenPositions(true).length;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
       if (source.room.name == this.hive.roomName)
