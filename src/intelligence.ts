@@ -24,11 +24,11 @@ export class Intel {
   getInfo(roomName: string, lag?: number): RoomInfo {
     if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {
-        lastUpdated: 0,
+        lastUpdated: -1,
         enemies: [],
         safePlace: true,
         ownedByEnemy: true,
-        safeModeEndTime: 0,
+        safeModeEndTime: -1,
       };
 
     // it is cached after first check

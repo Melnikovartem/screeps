@@ -241,6 +241,8 @@ export class Hive {
   }
 
   update() {
+    // if failed the hive is doomed
+    this.room = Game.rooms[this.roomName];
     if (UPDATE_EACH_TICK || Game.time % 10 == 8) {
       this.updateRooms();
       this.updateConstructionSites();

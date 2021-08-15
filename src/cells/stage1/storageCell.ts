@@ -2,7 +2,6 @@ import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
 import { managerMaster } from "../../beeMaster/civil/manager";
-import { UPDATE_EACH_TICK } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {
@@ -64,22 +63,21 @@ export class storageCell extends Cell {
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK || Game.time % 10 == 8)
-      for (let key in this.requests) {
-        for (let fromKey in this.requests[key].from) {
-          let from = this.requests[key].from[fromKey];
-          from = <typeof from>Game.getObjectById(from.id);
-          if (from)
-            this.requests[key].from[fromKey] = from;
-        }
-
-        for (let toKey in this.requests[key].to) {
-          let to = this.requests[key].to[toKey];
-          to = <typeof to>Game.getObjectById(to.id);
-          if (to)
-            this.requests[key].to[toKey] = to;
-        }
+    for (let key in this.requests) {
+      for (let fromKey in this.requests[key].from) {
+        let from = this.requests[key].from[fromKey];
+        from = <typeof from>Game.getObjectById(from.id);
+        if (from)
+          this.requests[key].from[fromKey] = from;
       }
+
+      for (let toKey in this.requests[key].to) {
+        let to = this.requests[key].to[toKey];
+        to = <typeof to>Game.getObjectById(to.id);
+        if (to)
+          this.requests[key].to[toKey] = to;
+      }
+    }
 
     if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
       this.requests[this.link.id] = {
