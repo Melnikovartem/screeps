@@ -97,21 +97,22 @@ export class laboratoryCell extends Cell {
         return ERR_TIRED;
       let sum = 0;
       let labs: StructureLab[] = [];
+      amount = amount ? amount : Infinity;
       _.some(this.laboratories, (lab) => {
         if (lab.mineralType == res) {
-          if (amount)
-            sum += Math.min(lab.store.getUsedCapacity(res), amount - sum);
+          sum += Math.min(lab.store.getUsedCapacity(res), amount! - sum);
           labs.push(lab);
         }
         return sum == amount;
       });
       if (labs.length) {
         storageCell.requests[this.ref + "_" + res] = {
+          ref: this.ref + "_" + res,
           to: [storageCell.storage],
           from: labs,
           resource: res,
-          amount: amount,
           priority: 3,
+          amount: sum,
           multipleFrom: true,
         }
         return sum;
@@ -137,49 +138,46 @@ export class laboratoryCell extends Cell {
     super.update();
     let storageCell = this.hive.cells.storage;
     if (storageCell && this.laboratories.length) {
-      if (this.currentRequest) {
+      if (this.currentRequest && this.lab1 && this.lab2) {
         let res1 = this.currentRequest.res1;
         let res2 = this.currentRequest.res2;
-        if (this.lab1 && this.lab2) {
-          let amount = Math.ceil(this.currentRequest.plan / 5);
+        let amount = Math.ceil(this.currentRequest.plan / 5);
 
-          if (this.lab1.store[res1] + storageCell.storage.store[res1] < this.currentRequest.plan
-            || this.lab2.store[res2] + storageCell.storage.store[res2] < this.currentRequest.plan) {
-            this.currentRequest.plan = Math.min(this.lab1.store[res1] + storageCell.storage.store[res1], this.lab2.store[res2] + storageCell.storage.store[res2]);
-            this.currentRequest.current = Math.min(this.currentRequest.plan, this.currentRequest.current);
-          }
+        if (this.lab1.store[res1] + storageCell.storage.store[res1] < this.currentRequest.plan
+          || this.lab2.store[res2] + storageCell.storage.store[res2] < this.currentRequest.plan) {
+          this.currentRequest.plan = Math.min(this.lab1.store[res1] + storageCell.storage.store[res1], this.lab2.store[res2] + storageCell.storage.store[res2]);
+          this.currentRequest.current = Math.min(this.currentRequest.plan, this.currentRequest.current);
+        }
 
-          if (this.lab1.store[res1] < amount && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
-            storageCell.requestFromStorage(this.lab1.id + "_" + res1, [this.lab1], 3, undefined, res1);
+        if (this.lab1.store[res1] < amount && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
+          storageCell.requestFromStorage(this.lab1.id + "_" + res1, [this.lab1], 3, undefined, res1);
 
-          if (this.lab2.store[res2] < amount && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
-            storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
+        if (this.lab2.store[res2] < amount && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
+          storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
 
 
-          if (this.currentRequest.plan - this.currentRequest.current > 300) {
-            this.fflush(this.currentRequest.resource);
-            this.currentRequest.plan -= this.currentRequest.current;
-          } else if (this.currentRequest.current == 0) {
-            this.currentRequest = undefined;
-            this.lab1 = undefined;
-            this.lab2 = undefined;
-            this.fflushAll();
-          }
+        if (this.currentRequest.plan - this.currentRequest.current > 300) {
+          this.fflush(this.currentRequest.resource);
+          this.currentRequest.plan -= this.currentRequest.current;
+        } else if (this.currentRequest.current == 0) {
+          this.currentRequest = undefined;
+          this.lab1 = undefined;
+          this.lab2 = undefined;
+          this.fflushAll();
         }
       }
 
       if (!this.currentRequest) {
         this.currentRequest = this.synthesizeRequests.shift();
-        if (this.currentRequest) {
-          this.lab1 = this.getLabsFree(this.currentRequest.res1, 0)[0];
-          this.lab2 = this.getLabsFree(this.currentRequest.res2, 0)[0];
-          if (!this.lab1 || !this.lab2) {
-            this.currentRequest = undefined;
-            this.lab1 = undefined;
-            this.lab2 = undefined;
-          }
-          this.fflushAll();
+      }
+      if (this.currentRequest && (!this.lab1 || !this.lab2)) {
+        this.lab1 = this.getLabsFree(this.currentRequest.res1, 0).sort((a, b) => b.store.getUsedCapacity(this.currentRequest!.res1) - a.store.getUsedCapacity(this.currentRequest!.res1))[0];
+        this.lab2 = this.getLabsFree(this.currentRequest.res2, 0).sort((a, b) => b.store.getUsedCapacity(this.currentRequest!.res2) - a.store.getUsedCapacity(this.currentRequest!.res2))[0];
+        if (!this.lab1 || !this.lab2) {
+          this.lab1 = undefined;
+          this.lab2 = undefined;
         }
+        this.fflushAll();
       }
 
       // bring to boost

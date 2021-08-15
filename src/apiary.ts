@@ -42,7 +42,9 @@ export class _Apiary {
     if (!storageCell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
     amount = Math.min(amount ? amount : 100000, storageCell.storage.store[resource]);
-    storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
+    let ref = "!USER_REQUEST " + makeId(4);
+    storageCell.requests[ref] = ({
+      ref: ref,
       from: [storageCell.storage],
       to: [storageCell.terminal],
       resource: resource,
@@ -61,7 +63,9 @@ export class _Apiary {
     if (!storageCell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
     amount = Math.min(amount ? amount : 100000, storageCell.terminal.store[resource]);
-    storageCell.requests["!USER_REQUEST " + makeId(4)] = ({
+    let ref = "!USER_REQUEST " + makeId(4);
+    storageCell.requests[ref] = ({
+      ref: ref,
       from: [storageCell.terminal],
       to: [storageCell.storage],
       resource: resource,

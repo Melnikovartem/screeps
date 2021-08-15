@@ -6,6 +6,7 @@ import { UPDATE_EACH_TICK } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {
+  ref: string;
   from: (StructureLink | StructureTerminal | StructureStorage | StructureLab)[];
   to: (StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab)[];
   resource: ResourceConstant;
@@ -49,8 +50,8 @@ export class storageCell extends Cell {
       return ERR_INVALID_ARGS;
     if (amount)
       amount = Math.min(this.storage.store.getUsedCapacity(resource), amount);
-
     this.requests[ref] = {
+      ref: ref,
       from: [this.storage],
       to: to.sort((a, b) => a.pos.getRangeTo(this.storage) - b.pos.getRangeTo(this.storage)),
       resource: resource,
@@ -80,6 +81,7 @@ export class storageCell extends Cell {
 
     if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
       this.requests[this.link.id] = {
+        ref: this.link.id,
         from: [this.link],
         to: [this.storage],
         resource: RESOURCE_ENERGY,
@@ -98,7 +100,7 @@ export class storageCell extends Cell {
       let request;
       for (key in this.requests) {
         let req = this.requests[key];
-        if (req.from[0] && req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
+        if (req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
           let amount = req.amount != undefined ? req.amount : req.to[0].store.getFreeCapacity(RESOURCE_ENERGY);
           if (amount >= LINK_CAPACITY / 4) {
             request = this.requests[key];
@@ -115,7 +117,7 @@ export class storageCell extends Cell {
           if (amount > LINK_CAPACITY)
             amount = LINK_CAPACITY;
 
-          if (this.link.store[RESOURCE_ENERGY] >= amount || amount - this.link.store[RESOURCE_ENERGY] < 25) {
+          if (this.link.store[RESOURCE_ENERGY] + 25 >= amount) {
             if (this.requests[this.link.id])
               this.requests[this.link.id].amount = Math.max(0, this.link.store[RESOURCE_ENERGY] - amount * 1.4);
             if (!this.link.cooldown) {
@@ -123,7 +125,7 @@ export class storageCell extends Cell {
               delete this.requests[key];
             }
           } else
-            this.requestFromStorage(this.link.id, [this.link], 3, Math.ceil(amount * 1.2) - this.link.store[RESOURCE_ENERGY]);
+            this.requestFromStorage(this.link.id, [this.link], 3, Math.min(Math.ceil(amount * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]);
         }
       }
     }

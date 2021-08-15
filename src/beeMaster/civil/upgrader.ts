@@ -21,13 +21,13 @@ export class upgraderMaster extends Master {
 
   update() {
     super.update();
-
-    this.targetBeeCount = 1;
-    if (this.hive.cells.storage) {
-      if (this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 500000)
-        this.targetBeeCount = 2;
-    }
-
+    /*
+        this.targetBeeCount = 1;
+        if (this.hive.cells.storage) {
+          if (this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 500000)
+            this.targetBeeCount = 2;
+        }
+    */
     if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
