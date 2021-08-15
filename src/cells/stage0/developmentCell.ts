@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { bootstrapMaster } from "../../beeMaster/civil/bootstrap";
+import { bootstrapMaster } from "../../beeMaster/economy/bootstrap";
 import { profile } from "../../profiler/decorator";
 
 @profile

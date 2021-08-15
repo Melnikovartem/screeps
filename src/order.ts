@@ -7,9 +7,10 @@ import { ReactionConstant } from "./cells/base/laboratoryCell";
 import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
+import { annexMaster } from "./beeMaster/civil/annexer";
 import { profile } from "./profiler/decorator";
 
-import { UPDATE_EACH_TICK, PRINT_INFO, LOGGING_CYCLE } from "./settings";
+import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
 
 @profile
 export class Order {
@@ -18,20 +19,22 @@ export class Order {
   pos: RoomPosition;
   destroyTime: number
   master?: Master;
-  checkTime: number;
+  hive: Hive;
 
   constructor(flag: Flag) {
     this.ref = flag.name;
     this.flag = flag;
     this.pos = flag.pos;
-    this.checkTime = 1;
+
+    this.hive = this.findHive();
 
     this.flag.memory = {
       repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
+      hive: this.hive.roomName,
     }
 
     this.destroyTime = -1;
-    this.actUpon();
+    this.act();
 
     if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
       time: Game.time,
@@ -44,37 +47,50 @@ export class Order {
     }
   }
 
-  findHive(): Hive {
-    let homeRoom: string;
+  findHive(stage?: 0 | 1 | 2): Hive {
+    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage > (stage ? stage : 0))
+      return Apiary.hives[this.pos.roomName];
 
-    if (Apiary.hives[this.pos.roomName])
-      homeRoom = this.pos.roomName;
-    else
-      homeRoom = Object.keys(Apiary.hives)[Math.floor(Math.random() * Object.keys(Apiary.hives).length)];
 
-    _.forEach(Game.map.describeExits(this.pos.roomName), (exit) => {
-      if (Apiary.hives[<string>exit] && Apiary.hives[homeRoom].stage > Apiary.hives[<string>exit].stage)
-        homeRoom = <string>exit;
+    for (let k in Game.map.describeExits(this.pos.roomName)) {
+      let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage > (stage ? stage : 0))
+        return Apiary.hives[exit];
+    }
+
+    // well time to look for faraway boys
+    let validHives = _.filter(Apiary.hives, (h) => h.stage > (stage ? stage : 0));
+    if (!validHives.length)
+      validHives = _.map(Apiary.hives, (h) => h);
+
+    let bestHive = validHives.pop()!; // if i don't have a single hive wtf am i doing
+    let dist = this.pos.getRoomRangeTo(bestHive);
+    _.forEach(validHives, (h) => {
+      let newDist = this.pos.getRoomRangeTo(h)
+      if (newDist < dist) {
+        dist = newDist;
+        bestHive = h;
+      }
     });
-    return Apiary.hives[homeRoom];
+    return bestHive;
   }
 
-  actUpon() {
+  act() {
     // annex room
     if (this.flag.color == COLOR_RED) {
       if (this.flag.secondaryColor == COLOR_BLUE)
-        this.master = new hordeMaster(this.findHive(), this);
+        this.master = new hordeMaster(this);
       else if (this.flag.secondaryColor == COLOR_PURPLE)
-        this.master = new downgradeMaster(this.findHive(), this);
+        this.master = new downgradeMaster(this);
       else if (this.flag.secondaryColor == COLOR_YELLOW)
-        this.master = new drainerMaster(this.findHive(), this);
+        this.master = new drainerMaster(this);
       else if (this.flag.secondaryColor == COLOR_GREY) {
-        let newMaster = new puppetMaster(this.findHive(), this.pos.roomName, this);
+        let newMaster = new puppetMaster(this);
         newMaster.force = true;
         this.master = newMaster;
       }
       else if (this.flag.secondaryColor == COLOR_RED) {
-        let newMaster = new hordeMaster(this.findHive(), this);
+        let newMaster = new hordeMaster(this);
         if (this.ref.includes("controller"))
           newMaster.tryToDowngrade = true;
         let matches = this.ref.match(/\d+/g);
@@ -85,12 +101,16 @@ export class Order {
         newMaster.priority = 4;
         this.master = newMaster;
       }
+
     } else if (this.flag.color == COLOR_PURPLE) {
-      this.checkTime = 50;
-      if (this.flag.secondaryColor == COLOR_PURPLE)
-        this.findHive().addAnex(this.pos.roomName);
+      if (this.flag.secondaryColor == COLOR_PURPLE) {
+        if (this.hive.room.energyCapacityAvailable >= 650) {
+          this.master = new annexMaster(this);
+          this.hive.addAnex(this.pos.roomName);
+        }
+      }
+
     } else if (this.flag.color == COLOR_CYAN) {
-      this.checkTime = 200;
       let hive = Apiary.hives[this.pos.roomName]
       if (hive) {
         if (this.flag.secondaryColor == COLOR_CYAN) {
@@ -114,7 +134,6 @@ export class Order {
         }
       }
     } else if (this.flag.color == COLOR_GREY) {
-      this.checkTime = 50;
       if (this.flag.secondaryColor == COLOR_RED) {
         if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
           this.destroyTime = Game.time;
@@ -122,24 +141,28 @@ export class Order {
     }
   }
 
+  // what to do when delete if something neede
+  delete() {
+    if (this.master)
+      delete Apiary.masters[this.master.ref];
+  }
+
   update(flag: Flag) {
-    if (UPDATE_EACH_TICK || Game.time % this.checkTime == 0) {
-      this.flag = flag;
-      this.pos = flag.pos;
-      if (!this.master)
-        this.actUpon();
-    }
+    this.flag = flag;
+    this.pos = flag.pos;
+    if (!this.master)
+      this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
-      if (this.master)
-        delete Apiary.masters[this.master.ref];
+      this.delete(); // clean shit
 
       if (this.flag.memory.repeat > 0) {
         if (PRINT_INFO) console.log("repeated" + this.ref);
-        this.destroyTime = Game.time + 2000;
+        this.destroyTime = -1;
         this.flag.memory.repeat -= 1;
-        this.actUpon();
+        this.act();
       } else {
+        this.flag.remove();
         if (LOGGING_CYCLE) {
           Memory.log.orders[this.ref].destroyTime = Game.time;
           Memory.log.orders[this.ref].pos = this.flag.pos;

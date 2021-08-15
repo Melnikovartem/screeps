@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { managerMaster } from "../../beeMaster/civil/manager";
+import { managerMaster } from "../../beeMaster/economy/manager";
 import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {

@@ -1,30 +1,24 @@
 import { Setups } from "../../creepSetups";
-import { SpawnOrder, Hive } from "../../Hive";
+import { SpawnOrder } from "../../Hive";
+import { Order } from "../../order";
 import { Master } from "../_Master";
 
-import { UPDATE_EACH_TICK } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class annexMaster extends Master {
-  controller: StructureController; //controllers rly don't age...
+  order: Order;
 
-  constructor(hive: Hive, controller: StructureController) {
-    super(hive, "Annexer_" + controller.room.name);
+  constructor(order: Order) {
+    super(order.hive, "Annexer_" + order.ref);
 
-    this.controller = controller;
+    this.order = order;
   }
 
   update() {
     super.update();
 
-    if (UPDATE_EACH_TICK) {
-      let controller = Game.getObjectById(this.controller.id);
-      if (controller)
-        this.controller = controller;
-    }
-
-    let roomInfo = Apiary.intel.getInfo(this.controller.pos.roomName, 10);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && roomInfo.safePlace && !roomInfo.ownedByEnemy) {
       let order: SpawnOrder = {
         master: this.ref,
@@ -33,12 +27,10 @@ export class annexMaster extends Master {
         priority: 6,
       };
 
-      let controller = Game.getObjectById(this.controller.id);
-      if (controller)
-        this.controller = controller;
+      let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
 
       // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-      if (this.controller && (!this.controller.reservation || this.controller.reservation.ticksToEnd < 4200)) {
+      if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200)) {
         order.setup = Setups.claimer.double
       }
 
@@ -48,7 +40,15 @@ export class annexMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      bee.reserveController(this.controller);
+      if (!bee.pos.isNearTo(this.order.pos))
+        bee.goTo(this.order.pos)
+      else {
+        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
+        if (controller)
+          bee.reserveController(controller);
+        else
+          this.order.destroyTime = 0;
+      }
     });
   }
 }

@@ -1,6 +1,6 @@
 import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
-import type { SpawnOrder, Hive } from "../../Hive";
+import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
@@ -20,8 +20,8 @@ export class drainerMaster extends SwarmMaster {
   target: string | undefined;
   healing: boolean = false;
 
-  constructor(hive: Hive, order: Order) {
-    super(hive, order);
+  constructor(order: Order) {
+    super(order.hive, order);
 
     this.meetingPoint = order.pos;
     // sad cause safeMode saves from this shit

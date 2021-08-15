@@ -36,10 +36,9 @@ for (let res1 in REACTIONS) {
 interface SynthesizeRequest {
   plan: number,
   current: number,
-  resource: ReactionConstant | BaseMineral,
+  res: ReactionConstant,
   res1: ReactionConstant | BaseMineral,
   res2: ReactionConstant | BaseMineral,
-  cooldown: number,
 };
 
 @profile
@@ -51,6 +50,7 @@ export class laboratoryCell extends Cell {
   currentRequest?: SynthesizeRequest;
   lab1: StructureLab | undefined; // with res1
   lab2: StructureLab | undefined; // with res2
+  cycle: number = 1;
 
   constructor(hive: Hive) {
     super(hive, "LaboratoryCell_" + hive.room.name);
@@ -92,10 +92,9 @@ export class laboratoryCell extends Cell {
     this.synthesizeRequests.push({
       plan: amount,
       current: amount,
-      resource: resource,
+      res: resource,
       res1: reactionMap[resource]!.res1,
       res2: reactionMap[resource]!.res2,
-      cooldown: REACTION_TIME[resource],
     });
 
     return amount;
@@ -160,7 +159,7 @@ export class laboratoryCell extends Cell {
           storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
 
         if (this.currentRequest.plan - this.currentRequest.current > 300) {
-          this.fflush(this.currentRequest.resource);
+          this.fflush(this.currentRequest.res);
           this.currentRequest.plan -= this.currentRequest.current;
         } else if (this.currentRequest.current == 0) {
           this.currentRequest = undefined;
@@ -173,6 +172,7 @@ export class laboratoryCell extends Cell {
           this.currentRequest = this.synthesizeRequests.shift();
 
         if (this.currentRequest && (!this.lab1 || !this.lab2)) {
+          this.cycle = 1;
           this.lab1 = this.getLabsFree(this.currentRequest.res1, 0, true)[0];
           this.lab2 = this.getLabsFree(this.currentRequest.res2, 0, true)[0];
           if (!this.lab1 || !this.lab2) {
@@ -199,10 +199,13 @@ export class laboratoryCell extends Cell {
   }
 
   run() {
-    if (this.currentRequest && this.currentRequest.current > 0 && Game.time % this.currentRequest.cooldown == 0) {
+    if (this.currentRequest && this.currentRequest.current > 0 && Game.time % this.cycle == 0) {
       if (this.lab1 && this.lab1.store[this.currentRequest.res1] > 5
         && this.lab2 && this.lab2.store[this.currentRequest.res2] > 5) {
-        let labs = this.getLabsFree(this.currentRequest.resource, 5);
+        if (this.cycle == 1)
+          this.cycle = REACTION_TIME[this.currentRequest.res];
+
+        let labs = this.getLabsFree(this.currentRequest.res, 5);
         for (let k in _.filter(labs, (lab) => !lab.cooldown))
           if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
             this.currentRequest.current -= 5;

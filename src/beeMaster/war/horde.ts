@@ -1,5 +1,5 @@
 import { Setups } from "../../creepSetups";
-import type { SpawnOrder, Hive } from "../../Hive";
+import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 import { profile } from "../../profiler/decorator";
@@ -14,8 +14,8 @@ export class hordeMaster extends SwarmMaster {
   tryToDowngrade: boolean = false;
   priority: 1 | 4 = 1; // how fast do we need to put out the enemy
 
-  constructor(hive: Hive, order: Order) {
-    super(hive, order);
+  constructor(order: Order) {
+    super(order.hive, order);
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
     if (roomInfo.safeModeEndTime > this.order.destroyTime)

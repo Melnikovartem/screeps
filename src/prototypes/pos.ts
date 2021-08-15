@@ -1,9 +1,36 @@
 interface RoomPosition {
-  isFree(): boolean;
+  getRoomCoorinates(): number[];
+  getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition }): number;
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(): RoomPosition[];
-  getTimeForPath(pos: RoomObject | RoomPosition): number
-  findClosest<Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null;
+  isFree(): boolean;
+  getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number
+  findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
+}
+
+// i wanted to do in in linear math, but then i remebered: FUCKING exits
+function getRoomCoorinates(roomName: string): number[] {
+  let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+  let x = 0;
+  let y = 0;
+  if (parsed) {
+    x = <number><unknown>parsed[2] * (parsed[1] == "W" ? -1 : 0);
+    y = <number><unknown>parsed[4] * (parsed[3] == "s" ? -1 : 0);
+  }
+  return [x, y];
+}
+
+RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition }): number {
+  let ans;
+  if (pos instanceof Room)
+    ans = Game.map.findRoute(this.roomName, pos.name);
+  else if (pos instanceof RoomPosition)
+    ans = Game.map.findRoute(this.roomName, pos.roomName);
+  else
+    ans = Game.map.findRoute(this.roomName, pos.pos.roomName);
+  if (typeof ans != "number")
+    ans = ans.length;
+  return ans == -2 ? Infinity : ans;
 }
 
 RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
@@ -64,7 +91,7 @@ RoomPosition.prototype.getTimeForPath = function(target: RoomObject | RoomPositi
 }
 
 // TODO different class types to forget casting in and out
-RoomPosition.prototype.findClosest = function <Obj extends RoomObject | RoomPosition>(structures: Obj[]): Obj | null {
+RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null {
   if (structures.length == 0)
     return null;
 

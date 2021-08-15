@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { upgraderMaster } from "../../beeMaster/civil/upgrader";
+import { upgraderMaster } from "../../beeMaster/economy/upgrader";
 import { profile } from "../../profiler/decorator";
 
 @profile

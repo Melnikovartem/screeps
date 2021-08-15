@@ -2,25 +2,16 @@ import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
-import { haulerMaster } from "../../beeMaster/civil/hauler";
+import { haulerMaster } from "../../beeMaster/economy/hauler";
 import { safeWrap } from "../../utils";
 import { profile } from "../../profiler/decorator";
 @profile
 export class excavationCell extends Cell {
-  resourceCells: { [id: string]: resourceCell };
+  resourceCells: { [id: string]: resourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
 
-  constructor(hive: Hive, sources: Source[], minerals: Mineral[]) {
+  constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
-
-    this.resourceCells = {};
-    _.forEach(sources, (source) => {
-      this.addResource(source);
-    });
-
-    _.forEach(minerals, (mineral) => {
-      this.addResource(mineral);
-    });
   }
 
   addResource(resource: Source | Mineral) {

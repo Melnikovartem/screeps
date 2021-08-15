@@ -88,7 +88,6 @@ export class managerMaster extends Master {
         request.amount = request.amount != undefined ? request.amount :
           Math.min(_.sum(request.to, (s) => (<Store<ResourceConstant, false>>s.store).getFreeCapacity(request.resource)),
             _.sum(request.from, (s) => s.store[request.resource])) + this.manager.store[request.resource];
-        let prevState = this.state;
         if (this.state == "from") {
           while (request.from.length > 1 && request.from[0].store[request.resource] == 0)
             request.from.shift();

@@ -1,6 +1,6 @@
 import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups"
-import type { SpawnOrder, Hive } from "../../Hive";
+import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { Master } from "../_Master";
 import { profile } from "../../profiler/decorator";
@@ -11,16 +11,13 @@ export class puppetMaster extends Master {
   maxSpawns: number = 1;
   spawned: number = 0;
   force: boolean = false;
-  order?: Order;
+  order: Order;
 
-  constructor(hive: Hive, roomName: string, order?: Order) {
-    super(hive, "Puppet_" + roomName);
+  constructor(order: Order) {
+    super(order.hive, "Puppet_" + order.pos.roomName);
 
     this.order = order;
-    if (order)
-      this.target = order.pos;
-    else
-      this.target = new RoomPosition(25, 25, roomName);
+    this.target = order.pos;
   }
 
   newBee(bee: Bee) {
@@ -32,12 +29,9 @@ export class puppetMaster extends Master {
 
   update() {
     super.update();
+    this.target = this.order.pos;
 
-
-    if (this.order)
-      this.target = this.order.pos;
-
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.order)
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.order && this.force)
       this.order.destroyTime = Game.time;
 
     if (this.checkBees() && this.spawned < this.maxSpawns && (!(this.target.roomName in Game.rooms) || this.force)) {
@@ -57,7 +51,7 @@ export class puppetMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       Apiary.intel.getInfo(bee.pos.roomName, 50); // get intel for stuff
-      bee.goRest(this.target);
+      bee.goRest(this.order.pos);
     });
   }
 }

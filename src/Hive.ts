@@ -9,9 +9,7 @@ import { storageCell } from "./cells/stage1/storageCell";
 import { upgradeCell } from "./cells/stage1/upgradeCell";
 import { excavationCell } from "./cells/stage1/excavationCell";
 
-import { builderMaster } from "./beeMaster/civil/builder";
-import { annexMaster } from "./beeMaster/civil/annexer";
-import { puppetMaster } from "./beeMaster/civil/puppet";
+import { builderMaster } from "./beeMaster/economy/builder";
 
 
 import { safeWrap } from "./utils";
@@ -105,8 +103,6 @@ export class Hive {
   normalRepairs: Structure[] = [];
 
   builder?: builderMaster;
-  claimers: annexMaster[] = [];
-  puppets: puppetMaster[] = [];
 
   pos: RoomPosition; // aka idle pos for creeps
 
@@ -139,7 +135,7 @@ export class Hive {
     else {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
-      this.cells.excavation = new excavationCell(this, this.room.find(FIND_SOURCES), this.room.find(FIND_MINERALS));
+      this.cells.excavation = new excavationCell(this);
       this.builder = new builderMaster(this);
       if (this.stage == 2) {
         // TODO cause i haven' reached yet
@@ -165,22 +161,9 @@ export class Hive {
     this.room = Game.rooms[this.roomName];
     this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
       let annex = Game.rooms[annexName];
-      if (!annex && !Apiary.masters["masterPuppet_" + annexName])
-        this.puppets.push(new puppetMaster(this, annexName));
-      else if (annex && annex.controller && this.room.energyCapacityAvailable >= 650
-        && !Apiary.masters["masterAnnexer_" + annexName])
-        this.claimers.push(new annexMaster(this, annex.controller));
       return annex;
     }));
     this.rooms = [this.room].concat(this.annexes);
-
-    if (this.cells.excavation) {
-      _.forEach(this.annexes, (room) => {
-        _.forEach(room.find(FIND_SOURCES), (source) => {
-          this.cells.excavation!.addResource(source);
-        });
-      });
-    }
   }
 
   private updateCellData() {

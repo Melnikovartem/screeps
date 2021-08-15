@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { minerMaster } from "../../beeMaster/civil/miner";
+import { minerMaster } from "../../beeMaster/economy/miner";
 import { profile } from "../../profiler/decorator";
 
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am

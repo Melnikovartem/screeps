@@ -1,5 +1,5 @@
 import { Setups } from "../../creepSetups"
-import type { SpawnOrder, Hive } from "../../Hive";
+import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 import { profile } from "../../profiler/decorator";
@@ -8,8 +8,8 @@ import { profile } from "../../profiler/decorator";
 export class downgradeMaster extends SwarmMaster {
   lastAttacked: number;
 
-  constructor(hive: Hive, order: Order) {
-    super(hive, order);
+  constructor(order: Order) {
+    super(order.hive, order);
 
     this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
   }

@@ -126,20 +126,18 @@ export class _Apiary {
     }
   }
 
-  checkFlag(flag: Flag) {
+  updateOrder(flag: Flag) {
     let ref = flag.name;
     if (!this.orders[ref])
       this.orders[ref] = new Order(flag);
-    else if (this.orders[ref].update(flag) == 0) { // if killsig
-      flag.remove();
+    else if (this.orders[ref].update(flag) == 0) // if killsig
       delete this.orders[ref];
-    }
   }
 
   // update phase
   update() {
     _.forEach(Game.flags, (flag) => {
-      safeWrap(() => this.checkFlag(flag), "update " + flag.name)
+      safeWrap(() => this.updateOrder(flag), "update " + flag.name)
     });
 
     _.forEach(this.hives, (hive) => {

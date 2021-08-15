@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
 import { makeId } from "../../utils";
-import { queenMaster } from "../../beeMaster/civil/queen";
+import { queenMaster } from "../../beeMaster/economy/queen";
 import { LOGGING_CYCLE } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
