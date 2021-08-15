@@ -39,7 +39,7 @@ export class managerMaster extends Master {
       let request = this.cell.requests[key];
       if ((request.amount == undefined || request.amount >= 25 || request.resource != RESOURCE_ENERGY)
         && _.sum(request.from, (s) => s.store[request.resource]) >= (request.amount ? request.amount : 0)
-        && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
+        && request.to[0].id == this.cell.storage.id || !request.from || request.from[0].id == this.cell.storage.id)
         targets.push(key);
     }
     targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority);
@@ -50,11 +50,9 @@ export class managerMaster extends Master {
       if (this.targetMap[key] != "" && this.cell.requests[targets[0]].priority != 0)
         continue;
 
-
       let target = targets.pop()!
       this.targetMap[key] = target;
     }
-
 
     // tragets.length cause dont need a manager for nothing
     if (this.checkBees()) {
@@ -96,7 +94,7 @@ export class managerMaster extends Master {
           if (usedCapFrom == 0 || (ans == OK && usedCapFrom - amountBee == 0))
             request.from.shift();
 
-          if (request.from.length == 0 && amountBee == 0)
+          if (request.from.length == 0 && bee.store[request.resource] == 0 && amountBee == 0)
             delete this.cell.requests[this.targetMap[bee.ref]];
 
           amountBee = 0;
@@ -112,12 +110,10 @@ export class managerMaster extends Master {
             request.amount -= amountBee;
 
           if (freeCapTo == 0 || (ans == OK && freeCapTo - amountBee == 0))
-            request.to.shift();
+            delete this.cell.requests[this.targetMap[bee.ref]];
         }
 
         if (request.amount == 0)
-          delete this.cell.requests[this.targetMap[bee.ref]];
-        if (request.to.length == 0)
           delete this.cell.requests[this.targetMap[bee.ref]];
 
         if (!this.cell.requests[this.targetMap[bee.ref]])

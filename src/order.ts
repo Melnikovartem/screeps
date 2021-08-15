@@ -98,6 +98,9 @@ export class Order {
         } else if (this.flag.secondaryColor == COLOR_YELLOW) {
           if (hive.cells.storage)
             hive.cells.storage.pos = this.pos;
+        } else if (this.flag.secondaryColor == COLOR_BROWN) {
+          if (hive.cells.lab)
+            hive.cells.lab.newSynthesizeRequest("OH");
         }
       }
     } else if (this.flag.color == COLOR_GREY) {

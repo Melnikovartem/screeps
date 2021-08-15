@@ -94,7 +94,7 @@ export class _Apiary {
     if (ans == OK)
       return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
     else if (ans == ERR_NOT_ENOUGH_RESOURCES)
-      return `NOT ENOUGHT RESOURSES \nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}\nRESOURCE ${order.resourceType}: ${amount}`;
+      return `NOT ENOUGHT RESOURSES\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
     else if (ans == ERR_INVALID_ARGS)
       return `orderId: ${orderId}\n amount: ${amount}\n roomName: ${roomName}`;
     return ans;
