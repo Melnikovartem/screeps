@@ -127,6 +127,14 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
+  claimController(target: StructureController): number {
+    if (this.creep.pos.isNearTo(target))
+      return this.creep.claimController(target);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
   attackController(target: StructureController): number {
     if (this.pos.isNearTo(target))
       return this.creep.attackController(target);

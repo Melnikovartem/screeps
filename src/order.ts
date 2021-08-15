@@ -8,6 +8,7 @@ import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 import { annexMaster } from "./beeMaster/civil/annexer";
+import { claimerMaster } from "./beeMaster/civil/claimer";
 import { profile } from "./profiler/decorator";
 
 import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
@@ -26,12 +27,15 @@ export class Order {
     this.flag = flag;
     this.pos = flag.pos;
 
-    this.hive = this.findHive();
+    if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive])
+      this.hive = Apiary.hives[this.flag.memory.hive];
+    else
+      this.hive = this.findHive(1);
 
     this.flag.memory = {
       repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
       hive: this.hive.roomName,
-    }
+    };
 
     this.destroyTime = -1;
     this.act();
@@ -108,8 +112,9 @@ export class Order {
           this.master = new annexMaster(this);
           this.hive.addAnex(this.pos.roomName);
         }
+      } else if (this.flag.secondaryColor == COLOR_GREY) {
+        this.master = new claimerMaster(this);
       }
-
     } else if (this.flag.color == COLOR_CYAN) {
       let hive = Apiary.hives[this.pos.roomName]
       if (hive) {
@@ -145,6 +150,8 @@ export class Order {
   delete() {
     if (this.master)
       delete Apiary.masters[this.master.ref];
+    this.flag.remove();
+    delete Apiary.orders[this.ref];
   }
 
   update(flag: Flag) {
@@ -154,7 +161,6 @@ export class Order {
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
-      this.delete(); // clean shit
 
       if (this.flag.memory.repeat > 0) {
         if (PRINT_INFO) console.log("repeated" + this.ref);
@@ -162,14 +168,12 @@ export class Order {
         this.flag.memory.repeat -= 1;
         this.act();
       } else {
-        this.flag.remove();
         if (LOGGING_CYCLE) {
           Memory.log.orders[this.ref].destroyTime = Game.time;
           Memory.log.orders[this.ref].pos = this.flag.pos;
         }
-        return 0; //killsig
+        this.delete();
       }
     }
-    return 1;
   }
 }

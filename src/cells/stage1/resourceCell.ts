@@ -22,16 +22,13 @@ export class resourceCell extends Cell {
     super(hive, "ResourceCell_" + resource.id);
 
     this.resource = resource;
-
-    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
-      (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
-
-
     this.pos = this.resource.pos;
     this.updateStructure();
   }
 
   updateStructure() {
+    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
+      (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
         (structure) => structure.structureType == STRUCTURE_LINK)[0];
@@ -52,7 +49,7 @@ export class resourceCell extends Cell {
   update() {
     super.update();
 
-    if (Game.time % 20 == 7 && !this.operational)
+    if (!this.operational)
       this.updateStructure();
 
     if (this.resource instanceof Mineral && Game.time % 10 == 0)

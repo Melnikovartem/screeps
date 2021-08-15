@@ -117,7 +117,6 @@ export class _Apiary {
           // TODO think of something smart
           let randomMaster = Object.keys(this.masters)[Math.floor(Math.random() * Object.keys(this.masters).length)];
           creep.memory.refMaster = randomMaster;
-
           this.bees[creep.name] = new Bee(creep);
           this.masters[creep.memory.refMaster].newBee(this.bees[creep.name]);
         }
@@ -130,8 +129,8 @@ export class _Apiary {
     let ref = flag.name;
     if (!this.orders[ref])
       this.orders[ref] = new Order(flag);
-    else if (this.orders[ref].update(flag) == 0) // if killsig
-      delete this.orders[ref];
+    else
+      this.orders[ref].update(flag);
   }
 
   // update phase
