@@ -111,8 +111,8 @@ export class Hive {
   // max
 
   shouldRecalc: boolean;
-
   bassboost: Hive | null = null;
+
   // help grow creeps from other colony
 
   constructor(roomName: string) {
@@ -192,8 +192,6 @@ export class Hive {
           Game.flags[flag].memory.hive = this.roomName;
       }
     });
-
-    console.log("here");
   }
 
   private updateCellData() {

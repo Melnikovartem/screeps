@@ -8,6 +8,8 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class claimerMaster extends Master {
   order: Order;
+  maxSpawns: number = 1;
+  spawned: number = 0;
 
   constructor(order: Order) {
     super(order.hive, "Claimer_" + order.ref);
@@ -18,8 +20,10 @@ export class claimerMaster extends Master {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
-    if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && roomInfo.safePlace && !roomInfo.ownedByEnemy) {
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
+      this.order.destroyTime = Game.time;
+
+    if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.claimer.normal,
@@ -27,14 +31,8 @@ export class claimerMaster extends Master {
         priority: 6,
       };
 
-      let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
-
-      // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-      if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200)) {
-        order.setup = Setups.claimer.double
-      }
-
       this.wish(order);
+      this.spawned += 1;
     }
   }
 

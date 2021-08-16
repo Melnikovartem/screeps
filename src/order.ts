@@ -80,8 +80,9 @@ export class Order {
   }
 
   act() {
-    // annex room
+    // dont forget to this.acted = true otherwise you will get new master each tick
     if (this.flag.color == COLOR_RED) {
+      this.acted = true;
       if (this.flag.secondaryColor == COLOR_BLUE)
         this.master = new hordeMaster(this);
       else if (this.flag.secondaryColor == COLOR_PURPLE)
@@ -107,12 +108,14 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
-        if (this.hive.room.energyCapacityAvailable >= 650)
+        if (!this.master)
           this.master = new annexMaster(this);
         if (this.hive.addAnex(this.pos.roomName) == OK)
           this.acted = true;
-      } else if (this.flag.secondaryColor == COLOR_GREY)
+      } else if (this.flag.secondaryColor == COLOR_GREY) {
+        this.acted = true;
         this.master = new claimerMaster(this);
+      }
       else if (this.flag.secondaryColor == COLOR_WHITE) {
         this.acted = true;
         if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0 && this.pos.roomName != this.hive.roomName)
@@ -192,7 +195,7 @@ export class Order {
     this.flag = flag;
     this.pos = flag.pos;
     // either act based or master based order
-    if (!this.acted && !this.master)
+    if (!this.acted)
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {

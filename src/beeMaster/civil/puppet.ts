@@ -31,7 +31,7 @@ export class puppetMaster extends Master {
     super.update();
     this.target = this.order.pos;
 
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.order && this.force)
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.force)
       this.order.destroyTime = Game.time;
 
     if (this.checkBees() && this.spawned < this.maxSpawns && (!(this.target.roomName in Game.rooms) || this.force)) {
