@@ -1,9 +1,8 @@
-export const DEVELOPING = true;
+export const DEVELOPING = false;
 
 // turn off on official
 export const UPDATE_EACH_TICK = DEVELOPING;
 export const VISUALS_TRAVELER = DEVELOPING;
-export const PRINT_INFO = DEVELOPING;
 
 // think about on official
 export const PROFILER = DEVELOPING;

@@ -5,14 +5,27 @@ import { LOGGING_CYCLE } from "./settings";
 export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
-    if (!Memory.log) Memory.log = { spawns: {}, hives: {}, orders: {}, crashes: {} };
+    if (!Memory.log.crashes)
+      Memory.log.crashes = {};
+    if (!Memory.log.orders)
+      Memory.log.orders = {};
+    if (!Memory.log.spawns)
+      Memory.log.spawns = {};
+    if (!Memory.log.hives)
+      Memory.log.hives = {};
+    if (!Memory.log.enemies)
+      Memory.log.enemies = {};
     if (!Memory.cache) Memory.cache = { intellegence: {} };
   }
 
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = {};
-    Memory.log = { spawns: {}, hives: {}, orders: {}, crashes: {} };
+    Memory.log = {
+      reset: -1,
+      apiary: -1,
+      spawns: {}, hives: {}, orders: {}, crashes: {}, enemies: {}
+    };
     Memory.cache = { intellegence: {} };
   }
 

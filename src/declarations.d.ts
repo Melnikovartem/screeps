@@ -27,8 +27,18 @@ declare global {
   }
 
   interface Memory {
+    cache: {
+      intellegence: any;
+    },
+    masters: { [id: string]: any };
+
+    // for TRAVELER
+    empire?: any;
+
+    // my giant log
     log: {
-      reset?: number,
+      reset: number,
+      apiary: number,
       spawns: {
         [id: string]: {
           time: number,
@@ -45,22 +55,21 @@ declare global {
             emergencyRepairs: number,
             normalRepairs: number,
             orderList: {
-              master: string,
-              amount: number,
-              priority: number,
-            }[],
+              [id: string]: {
+                amount: number,
+                priority: number,
+              }
+            },
           }
         }
       },
       orders: {
         [id: string]: {
           time: number,
-          color: number,
-          secondaryColor: number,
           pos: RoomPosition,
           name: string,
-          repeat: number,
           destroyTime: number,
+          acted: boolean,
         }
       },
       crashes: {
@@ -69,14 +78,10 @@ declare global {
           context: string,
           message: string,
         }
+      },
+      enemies: {
+        [id: string]: any,
       }
     },
-    cache: {
-      intellegence: any;
-    },
-    masters: { [id: string]: any };
-
-    // for TRAVELER
-    empire?: any;
   }
 }

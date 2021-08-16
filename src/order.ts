@@ -11,7 +11,7 @@ import { annexMaster } from "./beeMaster/civil/annexer";
 import { claimerMaster } from "./beeMaster/civil/claimer";
 
 import { profile } from "./profiler/decorator";
-import { PRINT_INFO, LOGGING_CYCLE } from "./settings";
+import { LOGGING_CYCLE } from "./settings";
 
 @profile
 export class Order {
@@ -41,12 +41,10 @@ export class Order {
     this.destroyTime = -1;
     if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
       time: Game.time,
-      color: this.flag.color,
-      secondaryColor: this.flag.color,
       name: this.flag.name,
-      repeat: this.flag.memory.repeat,
       pos: this.flag.pos,
       destroyTime: -1,
+      acted: false,
     }
   }
 
@@ -140,10 +138,12 @@ export class Order {
         } else if (this.flag.secondaryColor == COLOR_BROWN) {
           if (hive.cells.lab)
             if (!hive.cells.lab.currentRequest) {
+              let sum = 0;
               _.forEach(this.flag.name.split("-"), (res) => {
-                let ans = hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
-                if (PRINT_INFO) console.log(`new Reqest for ${res}: ${ans}`);
+                sum += hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
               });
+              if (sum == 0)
+                this.delete();
             }
         }
       } else
@@ -199,7 +199,6 @@ export class Order {
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
       if (this.flag.memory.repeat > 0) {
-        if (PRINT_INFO) console.log("repeated" + this.ref);
         this.destroyTime = -1;
         this.flag.memory.repeat -= 1;
         this.act();

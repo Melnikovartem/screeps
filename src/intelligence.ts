@@ -2,7 +2,7 @@
 // we collect data about enemy
 // in this case on battlefield
 import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK } from "./settings";
+import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
 
 interface RoomInfo {
   lastUpdated: number,
@@ -14,21 +14,16 @@ interface RoomInfo {
 
 @profile
 export class Intel {
-
   roomInfo: { [id: string]: RoomInfo } = {};
-
-  constructor() {
-    this.roomInfo = <{ [id: string]: RoomInfo }>Memory.cache.intellegence;
-  }
 
   getInfo(roomName: string, lag?: number): RoomInfo {
     if (!this.roomInfo[roomName])
       this.roomInfo[roomName] = {
-        lastUpdated: -1,
+        lastUpdated: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].lastUpdated : -1,
         enemies: [],
-        safePlace: true,
-        ownedByEnemy: false,
-        safeModeEndTime: -1,
+        safePlace: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].safePlace : true,
+        ownedByEnemy: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].ownedByEnemy : false,
+        safeModeEndTime: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].safeModeEndTime : -1,
       };
 
     // it is cached after first check
@@ -53,10 +48,23 @@ export class Intel {
         this.roomInfo[room.name].ownedByEnemy = false;
     }
 
-    if (Game.time % 50 == 0) // for case of reboot
-      Memory.cache.intellegence = this.roomInfo;
+    if (Game.time % 50 == 0)
+      this.toCache();
 
+    if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace)
+      Memory.log.enemies[room.name + "_" + Game.time] = this.roomInfo[room.name].enemies;
     return this.roomInfo[roomName];
+  }
+
+  // will soon remove in favor for lib
+  toCache() {
+    for (const roomName in this.roomInfo) {
+      Memory.cache.intellegence[roomName] = {
+        safePlace: this.roomInfo[roomName].safePlace,
+        ownedByEnemy: this.roomInfo[roomName].ownedByEnemy,
+        safeModeEndTime: this.roomInfo[roomName].safeModeEndTime,
+      }
+    }
   }
 
   updateEnemiesInRoom(room: Room) {

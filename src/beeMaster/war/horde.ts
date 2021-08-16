@@ -16,10 +16,6 @@ export class hordeMaster extends SwarmMaster {
 
   constructor(order: Order) {
     super(order.hive, order);
-
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-    if (roomInfo.safeModeEndTime > this.order.destroyTime)
-      this.order.destroyTime = roomInfo.safeModeEndTime + CREEP_LIFE_TIME;
   }
 
   update() {

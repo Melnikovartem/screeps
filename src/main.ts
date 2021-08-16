@@ -10,17 +10,15 @@ import "./prototypes/pos";
 
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, LOGGING_CYCLE, PRINT_INFO, PROFILER } from "./settings";
+import { GENERATE_PIXEL, LOGGING_CYCLE, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
-
-// Mem.wipe();
 
 // This gets run on each global reset
 function onGlobalReset(): void {
   // check if all memory position were created
   Mem.init();
 
-  if (PRINT_INFO) console.log("Reset? Cool time is", Game.time);
+  console.log("Reset? Cool time is", Game.time);
   if (LOGGING_CYCLE) Memory.log.reset = Game.time;
   if (PROFILER) profiler.enable();
 

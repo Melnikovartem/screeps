@@ -246,14 +246,19 @@ export class Hive {
   }
 
   updateLog() {
-    if (!Memory.log.hives[this.roomName])
-      Memory.log.hives[this.roomName] = {};
+    let orderMap: { [id: string]: { amount: number, priority: number } } = {};
+    _.forEach(this.orderList, (order) => {
+      orderMap[order.master] = {
+        amount: order.amount,
+        priority: order.priority,
+      };
+    });
     Memory.log.hives[this.roomName][Game.time] = {
       annexNames: this.annexNames,
       constructionSites: this.constructionSites.length,
       emergencyRepairs: this.emergencyRepairs.length,
       normalRepairs: this.normalRepairs.length,
-      orderList: _.map(this.orderList, (order) => { return { master: order.master, amount: order.amount, priority: order.priority } }),
+      orderList: orderMap,
     };
   }
 

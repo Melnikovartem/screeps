@@ -6,7 +6,7 @@ import { Intel } from "./intelligence";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { PRINT_INFO } from "./settings";
+import { LOGGING_CYCLE } from "./settings";
 
 @profile
 export class _Apiary {
@@ -19,7 +19,7 @@ export class _Apiary {
   orders: { [id: string]: Order } = {};
 
   constructor() {
-    if (PRINT_INFO) console.log(Game.time, "creating new apiary");
+    if (LOGGING_CYCLE) Memory.log.apiary = Game.time;
 
     this.destroyTime = Game.time + 4000;
     this.intel = new Intel();
