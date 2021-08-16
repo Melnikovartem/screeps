@@ -63,6 +63,8 @@ export class resourceCell extends Cell {
   }
 
   run() {
+    if (!this.operational)
+      console.log(this.print);
     let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
     if (this.link && this.link.store[RESOURCE_ENERGY] >= LINK_CAPACITY / 8 && this.link.cooldown == 0 && storageLink
       && (this.link.store[RESOURCE_ENERGY] <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY)

@@ -31,7 +31,7 @@ export class minerMaster extends Master {
 
       if (this.cell.resourceType != RESOURCE_ENERGY) {
         order.setup = Setups.miner.minerals;
-        order.priority = 5;
+        order.priority = 6;
       } else if (this.cell.pos.roomName != this.hive.roomName)
         order.priority = 5;
 

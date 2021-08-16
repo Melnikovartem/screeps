@@ -32,7 +32,7 @@ export class builderMaster extends Master {
         master: this.ref,
         setup: Setups.builder,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
-        priority: 7,
+        priority: 8,
       };
 
       this.wish(order);

@@ -34,7 +34,7 @@ export class upgraderMaster extends Master {
         master: this.ref,
         setup: Setups.upgrader.manual,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
-        priority: 7,
+        priority: 8,
       };
 
       if (!this.fastMode)
@@ -43,6 +43,13 @@ export class upgraderMaster extends Master {
 
       if (this.fastMode)
         order.setup = Setups.upgrader.fast;
+
+
+      if (this.cell.controller.ticksToDowngrade < 1500) {
+        // idk how but we failed miserably
+        order.priority = 2;
+        order.setup = Setups.upgrader.manual;
+      }
 
       this.wish(order);
     }

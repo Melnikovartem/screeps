@@ -212,6 +212,6 @@ export class Order {
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref}]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref} ${this.acted ? "+" : "-"}]</a>`;
   }
 }

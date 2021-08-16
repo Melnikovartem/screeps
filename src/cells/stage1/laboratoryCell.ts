@@ -22,10 +22,10 @@ console.log(ss);
 type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X"
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 
-const reactionMap: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
+const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
 for (let res1 in REACTIONS) {
   for (let res2 in REACTIONS[res1])
-    reactionMap[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {
+    REACTION_MAP[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {
       res1: <ReactionConstant | BaseMineral>res1,
       res2: <ReactionConstant | BaseMineral>res2,
     };
@@ -39,6 +39,7 @@ interface SynthesizeRequest {
   res: ReactionConstant,
   res1: ReactionConstant | BaseMineral,
   res2: ReactionConstant | BaseMineral,
+  cooldown: number,
 };
 
 @profile
@@ -50,7 +51,6 @@ export class laboratoryCell extends Cell {
   currentRequest?: SynthesizeRequest;
   lab1: StructureLab | undefined; // with res1
   lab2: StructureLab | undefined; // with res2
-  cycle: number = 1;
 
   constructor(hive: Hive) {
     super(hive, "LaboratoryCell_" + hive.room.name);
@@ -75,8 +75,8 @@ export class laboratoryCell extends Cell {
       amount = 0;
       let mainStore = this.hive.cells.storage && this.hive.cells.storage.storage.store;
       if (mainStore) {
-        let res1 = reactionMap[resource]!.res1;
-        let res2 = reactionMap[resource]!.res2;
+        let res1 = REACTION_MAP[resource]!.res1;
+        let res2 = REACTION_MAP[resource]!.res2;
 
         let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
         let res2Amount = mainStore[res2] + _.sum(this.laboratories, (lab) => lab.store[res2]);
@@ -93,8 +93,9 @@ export class laboratoryCell extends Cell {
       plan: amount,
       current: amount,
       res: resource,
-      res1: reactionMap[resource]!.res1,
-      res2: reactionMap[resource]!.res2,
+      res1: REACTION_MAP[resource]!.res1,
+      res2: REACTION_MAP[resource]!.res2,
+      cooldown: REACTION_TIME[resource],
     });
 
     return amount;
@@ -172,7 +173,6 @@ export class laboratoryCell extends Cell {
           this.currentRequest = this.synthesizeRequests.shift();
 
         if (this.currentRequest && (!this.lab1 || !this.lab2)) {
-          this.cycle = 1;
           this.lab1 = this.getLabsFree(this.currentRequest.res1, 0, true)[0];
           this.lab2 = this.getLabsFree(this.currentRequest.res2, 0, true)[0];
           if (!this.lab1 || !this.lab2) {
@@ -199,12 +199,9 @@ export class laboratoryCell extends Cell {
   }
 
   run() {
-    if (this.currentRequest && this.currentRequest.current > 0 && Game.time % this.cycle == 0) {
+    if (this.currentRequest && Game.time % this.currentRequest.cooldown == 0 && this.currentRequest.current > 0) {
       if (this.lab1 && this.lab1.store[this.currentRequest.res1] >= 5
         && this.lab2 && this.lab2.store[this.currentRequest.res2] >= 5) {
-        if (this.cycle == 1)
-          this.cycle = REACTION_TIME[this.currentRequest.res];
-
         let labs = this.getLabsFree(this.currentRequest.res, 5);
         for (let k in _.filter(labs, (lab) => !lab.cooldown))
           if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
