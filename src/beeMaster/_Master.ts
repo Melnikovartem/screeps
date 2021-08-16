@@ -84,8 +84,10 @@ export abstract class Master {
   // second stage of decision making like where do i need to move
   abstract run(): void;
 
-  print(...info: any) {
-    console.log(Game.time, "!", this.ref, "?", info);
+  get print(): string {
+    if (this.bees.length)
+      return `<a href=#!/room/${Game.shard.name}/${this.bees[0].pos.roomName}>[${this.ref}]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.hive.roomName}>[${this.ref}]</a>`;
   }
 
   /*

@@ -39,105 +39,9 @@ export class Bee {
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
 
-  print(...info: any) {
-    console.log(Game.time, "!", this.creep.name, "?", info);
-  }
-
-  attack(target: Creep | Structure | PowerCreep): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.attack(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  heal(target: Creep | PowerCreep | Bee) {
-    if (target instanceof Bee)
-      target = target.creep;
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.heal(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  rangedHeal(target: Creep | PowerCreep | Bee) {
-    if (target instanceof Bee)
-      target = target.creep;
-    if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      return this.creep.rangedHeal(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  harvest(target: Source | Mineral): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.harvest(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.transfer(target, resourceType, amount);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.withdraw(target, resourceType, amount);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  build(target: ConstructionSite): number {
-    if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      return this.creep.build(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  repair(target: Structure): number {
-    if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      return this.creep.repair(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  upgradeController(target: StructureController): number {
-    if (this.creep.pos.getRangeTo(target.pos) <= 3)
-      return this.creep.upgradeController(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  reserveController(target: StructureController): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.reserveController(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  claimController(target: StructureController): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.claimController(target);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
-  }
-
-  attackController(target: StructureController): number {
-    if (this.pos.isNearTo(target))
-      return this.creep.attackController(target);
+  actionWrap<Obj extends RoomObject | RoomPosition>(target: Obj, action: () => number, range?: number): number {
+    if (this.creep.pos.inRangeTo(target, range ? range : 1))
+      return action();
     else
       this.goTo(target);
     return ERR_NOT_IN_RANGE;
@@ -161,5 +65,72 @@ export class Bee {
 
   getBodyparts(partType: BodyPartConstant): number {
     return _.filter(this.creep.body, (part: BodyPartDefinition) => part.type == partType).length;
+  }
+
+  // aliases from creep
+
+  transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
+    if (this.creep.pos.isNearTo(target))
+      return this.creep.transfer(target, resourceType, amount);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
+  withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
+    if (this.creep.pos.isNearTo(target))
+      return this.creep.withdraw(target, resourceType, amount);
+    else
+      this.goTo(target);
+    return ERR_NOT_IN_RANGE;
+  }
+
+  attack(t: Creep | Structure | PowerCreep): number {
+    return this.actionWrap(t, () => this.creep.attack(t));
+  }
+
+  heal(t: Creep | PowerCreep | Bee) {
+    if (t instanceof Bee)
+      t = t.creep;
+    return this.actionWrap(t, () => this.creep.heal(<Creep | PowerCreep>t));
+  }
+
+  rangedHeal(t: Creep | PowerCreep | Bee) {
+    if (t instanceof Bee)
+      t = t.creep;
+    return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), 3);
+  }
+
+  harvest(t: Source | Mineral): number {
+    return this.actionWrap(t, () => this.creep.harvest(t));
+  }
+
+
+  build(t: ConstructionSite): number {
+    return this.actionWrap(t, () => this.creep.build(t));
+  }
+
+  repair(t: Structure): number {
+    return this.actionWrap(t, () => this.creep.repair(t), 3);
+  }
+
+  upgradeController(t: StructureController): number {
+    return this.actionWrap(t, () => this.creep.upgradeController(t), 3);
+  }
+
+  reserveController(t: StructureController): number {
+    return this.actionWrap(t, () => this.creep.reserveController(t));
+  }
+
+  claimController(t: StructureController): number {
+    return this.actionWrap(t, () => this.creep.claimController(t));
+  }
+
+  attackController(t: StructureController): number {
+    return this.actionWrap(t, () => this.creep.attackController(t));
+  }
+
+  get print(): string {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[${this.ref}]</a>`;
   }
 }

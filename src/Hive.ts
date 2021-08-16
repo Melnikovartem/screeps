@@ -280,13 +280,17 @@ export class Hive {
       _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });
 
     _.forEach(this.cells, (cell) => {
-      safeWrap(() => cell.update(), "update " + cell.ref);
+      safeWrap(() => cell.update(), "update " + cell.print);
     });
   }
 
   run() {
     _.forEach(this.cells, (cell) => {
-      safeWrap(() => cell.run(), "run " + cell.ref);
+      safeWrap(() => cell.run(), "run " + cell.print);
     });
+  }
+
+  get print(): string {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Hive ${this.roomName}]</a>`;
   }
 }

@@ -208,4 +208,8 @@ export class Order {
         this.delete();
     }
   }
+
+  get print(): string {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref}]</a>`;
+  }
 }

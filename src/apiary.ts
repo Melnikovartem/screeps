@@ -32,78 +32,6 @@ export class _Apiary {
     });
   }
 
-  // next 2 are for hand usage
-  fillTerminal(roomName: string, resource: ResourceConstant, amount?: number): string {
-    if (!(roomName in this.hives))
-      return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storage
-    if (!storageCell)
-      return "ERROR: STORAGE NOT FOUND";
-    if (!storageCell.terminal)
-      return "ERROR: TERMINAL NOT FOUND";
-    amount = Math.min(amount ? amount : 100000, storageCell.storage.store[resource]);
-    let ref = "!USER_REQUEST " + makeId(4);
-    storageCell.requests[ref] = ({
-      ref: ref,
-      from: [storageCell.storage],
-      to: [storageCell.terminal],
-      resource: resource,
-      amount: amount,
-      priority: 2,
-    });
-    return `OK \nRESOURCE ${resource}: ${amount}`;
-  }
-
-  emptyTerminal(roomName: string, resource: ResourceConstant, amount?: number) {
-    if (!(roomName in this.hives))
-      return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storage
-    if (!storageCell)
-      return "ERROR: STORAGE NOT FOUND";
-    if (!storageCell.terminal)
-      return "ERROR: TERMINAL NOT FOUND";
-    amount = Math.min(amount ? amount : 100000, storageCell.terminal.store[resource]);
-    let ref = "!USER_REQUEST " + makeId(4);
-    storageCell.requests[ref] = ({
-      ref: ref,
-      from: [storageCell.terminal],
-      to: [storageCell.storage],
-      resource: resource,
-      amount: amount,
-      priority: 2,
-    });
-    return `OK \nRESOURCE ${resource}: ${amount}`;
-  }
-
-  completeOrder(roomName: string, orderId: string, amount?: number) {
-    if (!(roomName in this.hives))
-      return "ERROR: HIVE NOT FOUND";
-    let storageCell = this.hives[roomName].cells.storage
-    if (!storageCell)
-      return "ERROR: STORAGE NOT FOUND";
-    if (!storageCell.terminal)
-      return "ERROR: TERMINAL NOT FOUND";
-    if (storageCell.terminal.cooldown)
-      return "TERMINAL COOLDOWN";
-    let order = Game.market.getOrderById(orderId);
-    if (!order)
-      return "ORDER NOT FOUND";
-    if (!order.roomName)
-      return "THIS FUNCTION FOR ROOM TO ROOM TRADE";
-    amount = amount ? amount : order.remainingAmount;
-    let resource = <ResourceConstant>order.resourceType
-    if (resource && order.type == ORDER_BUY)
-      amount = Math.min(amount, storageCell.terminal.store[resource]);
-    let ans = Game.market.deal(orderId, amount, roomName);
-    if (ans == OK)
-      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
-    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
-      return `NOT ENOUGHT RESOURSES\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
-    else if (ans == ERR_INVALID_ARGS)
-      return `orderId: ${orderId}\n amount: ${amount}\n roomName: ${roomName}`;
-    return ans;
-  }
-
   findBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Memory.creeps) {
@@ -140,7 +68,7 @@ export class _Apiary {
     });
 
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.update(), "update " + hive.roomName);
+      safeWrap(() => hive.update(), "update " + hive.print);
     });
 
     _.forEach(this.bees, (bee) => {
@@ -149,17 +77,84 @@ export class _Apiary {
     this.findBees();
 
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.update(), "update " + master.ref);
+      safeWrap(() => master.update(), "update " + master.print);
     });
   }
 
   // run phase
   run() {
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.run(), "run " + hive.roomName);
+      safeWrap(() => hive.run(), "run " + hive.print);
     });
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.run(), "run " + master.ref);
+      safeWrap(() => master.run(), "run " + master.print);
     });
+  }
+
+  // some hand used functions
+  terminal(roomName: string, resource: ResourceConstant, amount?: number): string {
+    if (!(roomName in this.hives))
+      return "ERROR: HIVE NOT FOUND";
+    let storageCell = this.hives[roomName].cells.storage
+    if (!storageCell)
+      return "ERROR: STORAGE NOT FOUND";
+    if (!storageCell.terminal)
+      return "ERROR: TERMINAL NOT FOUND";
+    amount = Math.min(amount ? amount : 100000, storageCell.storage.store[resource]);
+    let ref = "!USER_REQUEST " + makeId(4);
+    storageCell.requests[ref] = ({
+      ref: ref,
+      from: [storageCell.storage],
+      to: [storageCell.terminal],
+      resource: resource,
+      amount: amount,
+      priority: 2,
+    });
+    return `OK \nRESOURCE ${resource}: ${amount}`;
+  }
+
+  completeOrder(roomName: string, orderId: string, amount?: number) {
+    if (!(roomName in this.hives))
+      return "ERROR: HIVE NOT FOUND";
+    let storageCell = this.hives[roomName].cells.storage
+    if (!storageCell)
+      return "ERROR: STORAGE NOT FOUND";
+    if (!storageCell.terminal)
+      return "ERROR: TERMINAL NOT FOUND";
+    if (storageCell.terminal.cooldown)
+      return "TERMINAL COOLDOWN";
+    let order = Game.market.getOrderById(orderId);
+    if (!order)
+      return "ORDER NOT FOUND";
+    if (!order.roomName)
+      return "THIS FUNCTION FOR ROOM TO ROOM TRADE";
+    amount = amount ? amount : order.remainingAmount;
+    let resource = <ResourceConstant>order.resourceType
+    if (resource && order.type == ORDER_BUY)
+      amount = Math.min(amount, storageCell.terminal.store[resource]);
+    let ans = Game.market.deal(orderId, amount, roomName);
+    if (ans == OK)
+      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
+    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
+      return `NOT ENOUGHT RESOURSES\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${Game.market.calcTransactionCost(amount, roomName, order.roomName)}`;
+    else if (ans == ERR_INVALID_ARGS)
+      return `orderId: ${orderId}\n amount: ${amount}\n roomName: ${roomName}`;
+    return ans;
+  }
+
+  printHives() {
+    console.log(_.map(this.hives, (o) => o.print).join('\n'));
+  }
+
+  printMasters(hiveName?: string) {
+    console.log(_.map(_.filter(this.masters, (m) => m.hive.roomName == hiveName), (o) => o.print).join('\n'));
+  }
+
+  printOrders(hiveName?: string) {
+    console.log(_.map(_.filter(this.orders, (o) => o.hive.roomName == hiveName), (o) => o.print).join('\n'));
+  }
+
+  printBees(masterName?: string) {
+    console.log(_.map(_.filter(this.bees, (b) => b.creep.memory.refMaster == masterName), (b) => b.print).join('\n'));
   }
 }
