@@ -55,7 +55,7 @@ export abstract class Master {
   update() {
     this.beesAmount = 0; // Object.keys(this.bees).length
     let deletedBees = false;
-    for (let key in this.bees) {
+    for (const key in this.bees) {
       this.beesAmount += 1;
       if (!Apiary.bees[this.bees[key].ref]) {
         delete this.bees[key];
@@ -74,6 +74,7 @@ export abstract class Master {
   wish(order: SpawnOrder) {
     this.waitingForBees += order.amount;
     // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
+    order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost && this.hive.bassboost.orderList.length < 5)
       this.hive.bassboost.orderList.push(order);
     else
@@ -119,7 +120,7 @@ export abstract class Master {
     static fromCash(ref: string): Master | null {
 
       console.log("V----");
-      for (let key in Memory.masters[ref]) {
+      for (const key in Memory.masters[ref]) {
         let value = Memory.masters[ref][key];
 
         if (value.id) {

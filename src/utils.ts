@@ -18,7 +18,10 @@ export function safeWrap(cycle: () => void, context: string): void {
     try { cycle(); }
     catch (e) {
       if (PRINT_INFO) console.log(`ERROR in: ${context}\n${e.message}`);
-      if (LOGGING_CYCLE) Memory.log.crashes[context] = { time: Game.time, context: context, message: e.message };
+      if (LOGGING_CYCLE) {
+        let regex = /\[(.*)\]/.exec(context);
+        Memory.log.crashes[regex ? regex[0] : context] = { time: Game.time, context: context, message: e.message }
+      }
     }
   } else
     cycle();

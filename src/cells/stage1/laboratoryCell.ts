@@ -23,8 +23,8 @@ type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X"
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 
 const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
-for (let res1 in REACTIONS) {
-  for (let res2 in REACTIONS[res1])
+for (const res1 in REACTIONS) {
+  for (const res2 in REACTIONS[res1])
     REACTION_MAP[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {
       res1: <ReactionConstant | BaseMineral>res1,
       res2: <ReactionConstant | BaseMineral>res2,
@@ -203,7 +203,7 @@ export class laboratoryCell extends Cell {
       if (this.lab1 && this.lab1.store[this.currentRequest.res1] >= 5
         && this.lab2 && this.lab2.store[this.currentRequest.res2] >= 5) {
         let labs = this.getLabsFree(this.currentRequest.res, 5);
-        for (let k in _.filter(labs, (lab) => !lab.cooldown))
+        for (const k in _.filter(labs, (lab) => !lab.cooldown))
           if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
             this.currentRequest.current -= 5;
         if (labs.length == 0)

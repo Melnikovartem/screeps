@@ -1,6 +1,7 @@
 'use strict'
 
 import { Mem } from "./memory";
+import { CustomConsole } from "./console";
 
 import "./Traveler/Traveler";
 
@@ -26,6 +27,8 @@ function onGlobalReset(): void {
   delete global.Apiary;
   global.Apiary = new _Apiary();
   Apiary.init();
+
+  global.A = new CustomConsole();
 }
 
 function main() {
@@ -42,9 +45,8 @@ function main() {
   Apiary.run();
 
   // now it checks itself!! i am genius
-  if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel) {
+  if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel)
     Game.cpu.generatePixel();
-  }
 }
 
 // time to wrap things up

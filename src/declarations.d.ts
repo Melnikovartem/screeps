@@ -1,7 +1,9 @@
 import type { _Apiary } from "./Apiary";
+import type { CustomConsole } from "./console";
 
 declare global {
   var Apiary: _Apiary;
+  var A: CustomConsole;
 
   interface RoomMemory {
     // for TRAVELER

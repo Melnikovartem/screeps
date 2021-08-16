@@ -1,4 +1,4 @@
-export const DEVELOPING = false;
+export const DEVELOPING = true;
 
 // turn off on official
 export const UPDATE_EACH_TICK = DEVELOPING;
@@ -9,7 +9,7 @@ export const PRINT_INFO = DEVELOPING;
 export const PROFILER = DEVELOPING;
 export const LOGGING_CYCLE = 100;
 export const VISUALS_ON = true;
-export const SAFE_DEV = true;
+export const SAFE_DEV = !DEVELOPING;
 
 // turn on on official
 export const GENERATE_PIXEL = true;

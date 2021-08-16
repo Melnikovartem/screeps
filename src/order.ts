@@ -48,15 +48,13 @@ export class Order {
       pos: this.flag.pos,
       destroyTime: -1,
     }
-
-    this.act();
   }
 
   findHive(stage?: 0 | 1 | 2): Hive {
     if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage ? stage : 0))
       return Apiary.hives[this.pos.roomName];
 
-    for (let k in Game.map.describeExits(this.pos.roomName)) {
+    for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
       if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage ? stage : 0))
         return Apiary.hives[exit];
@@ -191,12 +189,11 @@ export class Order {
     delete Apiary.orders[this.ref];
   }
 
-  update(flag: Flag) {
-    if (flag.pos.x != this.pos.x || flag.pos.y != this.pos.y)
+  update() {
+    this.flag = Game.flags[this.ref];
+    if (this.flag.pos.x != this.pos.x || this.flag.pos.y != this.pos.y)
       this.acted = false;
-    this.flag = flag;
-    this.pos = flag.pos;
-    // either act based or master based order
+    this.pos = this.flag.pos;
     if (!this.acted)
       this.act();
 
@@ -209,6 +206,12 @@ export class Order {
       } else
         this.delete();
     }
+  }
+
+  static checkFlags() {
+    for (const name in Game.flags)
+      if (!Apiary.orders[name])
+        Apiary.orders[name] = new this(Game.flags[name]);
   }
 
   get print(): string {

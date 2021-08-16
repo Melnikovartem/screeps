@@ -130,6 +130,25 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.attackController(t));
   }
 
+  static checkBees() {
+    // after all the masters where created and retrived if it was needed
+    for (const name in Game.creeps) {
+      if (!Apiary.bees[name]) {
+        let creep = Game.creeps[name];
+        if (Apiary.masters[creep.memory.refMaster]) {
+          Apiary.bees[creep.name] = new Bee(creep);
+          Apiary.masters[creep.memory.refMaster].newBee(Apiary.bees[creep.name]);
+        } else if (creep.memory.refMaster.includes("masterDevelopmentCell_")) {
+          let randomMaster = Object.keys(Apiary.masters)[Math.floor(Math.random() * Object.keys(Apiary.masters).length)];
+          creep.memory.refMaster = randomMaster;
+          Apiary.bees[creep.name] = new Bee(creep);
+          Apiary.masters[creep.memory.refMaster].newBee(Apiary.bees[creep.name]);
+        }
+        // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+      }
+    }
+  }
+
   get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[${this.ref}]</a>`;
   }
