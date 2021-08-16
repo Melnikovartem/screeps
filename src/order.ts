@@ -80,8 +80,6 @@ export class Order {
   }
 
   act() {
-    // for now for all flags waybe in future some flags will repeat
-    this.acted = true;
     // annex room
     if (this.flag.color == COLOR_RED) {
       if (this.flag.secondaryColor == COLOR_BLUE)
@@ -109,19 +107,21 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
-        if (this.hive.room.energyCapacityAvailable >= 650) {
+        if (this.hive.room.energyCapacityAvailable >= 650)
           this.master = new annexMaster(this);
-        }
-        this.hive.addAnex(this.pos.roomName);
+        if (this.hive.addAnex(this.pos.roomName) == OK)
+          this.acted = true;
       } else if (this.flag.secondaryColor == COLOR_GREY)
         this.master = new claimerMaster(this);
       else if (this.flag.secondaryColor == COLOR_WHITE) {
+        this.acted = true;
         if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0 && this.pos.roomName != this.hive.roomName)
           Apiary.hives[this.pos.roomName].bassboost = this.hive;
         else
           this.delete();
       }
     } else if (this.flag.color == COLOR_CYAN) {
+      this.acted = true;
       let hive = Apiary.hives[this.pos.roomName]
       if (hive) {
         if (this.flag.secondaryColor == COLOR_CYAN) {
@@ -143,29 +143,33 @@ export class Order {
               });
             }
         }
-      }
+      } else
+        this.delete();
     } else if (this.flag.color == COLOR_GREY) {
       if (this.flag.secondaryColor == COLOR_RED) {
         if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
           this.delete();
       }
     } else if (this.flag.color == COLOR_YELLOW) {
-      if (this.flag.secondaryColor == COLOR_YELLOW) {
-        let resource: Source | undefined = this.pos.lookFor(LOOK_SOURCES)[0];
-        if (resource) {
-          if (this.hive.cells.excavation)
-            this.hive.cells.excavation.addResource(resource);
-          else if (this.hive.cells.dev)
-            this.hive.cells.dev.addResource(resource)
-        } else
-          this.delete();
-      } else if (this.flag.secondaryColor == COLOR_CYAN) {
-        let resource: Mineral | undefined = this.pos.lookFor(LOOK_MINERALS)[0];
-        if (resource) {
-          if (this.hive.cells.excavation)
-            this.hive.cells.excavation.addResource(resource)
-        } else
-          this.delete();
+      if (this.pos.roomName in Game.rooms) {
+        this.acted = true;
+        if (this.flag.secondaryColor == COLOR_YELLOW) {
+          let resource: Source | undefined = this.pos.lookFor(LOOK_SOURCES)[0];
+          if (resource) {
+            if (this.hive.cells.excavation)
+              this.hive.cells.excavation.addResource(resource);
+            else if (this.hive.cells.dev)
+              this.hive.cells.dev.addResource(resource)
+          } else
+            this.delete();
+        } else if (this.flag.secondaryColor == COLOR_CYAN) {
+          let resource: Mineral | undefined = this.pos.lookFor(LOOK_MINERALS)[0];
+          if (resource) {
+            if (this.hive.cells.excavation)
+              this.hive.cells.excavation.addResource(resource)
+          } else
+            this.delete();
+        }
       }
     }
   }
@@ -187,6 +191,7 @@ export class Order {
       this.acted = false;
     this.flag = flag;
     this.pos = flag.pos;
+    // either act based or master based order
     if (!this.acted && !this.master)
       this.act();
 

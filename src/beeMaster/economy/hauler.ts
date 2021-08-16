@@ -23,7 +23,7 @@ export class haulerMaster extends Master {
     let energyCap = this.hive.room.energyCapacityAvailable
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
-        if (cell.container && cell.operational && !cell.link) {
+        if (cell.container && !cell.link) {
           this.targetMap[cell.container.id] = "";
           let coef = 10;
           if (cell.resourceType != RESOURCE_ENERGY)

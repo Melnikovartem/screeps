@@ -9,6 +9,7 @@ import { profile } from "../../profiler/decorator";
 export class excavationCell extends Cell {
   resourceCells: { [id: string]: resourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
+  shouldRecalc = true;
 
   constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
@@ -28,7 +29,7 @@ export class excavationCell extends Cell {
       if (cell.operational)
         safeWrap(() => { cell.update() }, "update " + cell.ref);
 
-      if (cell.container) {
+      if (cell.container && cell.operational) {
         if (cell.container.store.getUsedCapacity() >= 700) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace)

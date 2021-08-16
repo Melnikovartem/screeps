@@ -29,19 +29,23 @@ export class defenseCell extends Cell {
   };
 
   run() {
-    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
-    if (roomInfo.enemies.length > 0)
-      if (this.towers.length == 0) {
-        if (this.hive.stage < 2) {
-          if (!Game.flags["defend_" + this.hive.roomName])
-            roomInfo.enemies[0].pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    if (!roomInfo.safePlace) {
+      roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+      if (roomInfo.enemies.length > 0) {
+        if (this.towers.length == 0) {
+          if (this.hive.stage < 2) {
+            if (!Game.flags["defend_" + this.hive.roomName])
+              roomInfo.enemies[0].pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
+          } else
+            this.hive.room.controller!.activateSafeMode(); // red button
         } else
-          this.hive.room.controller!.activateSafeMode(); // red button
-      } else
-        _.forEach(this.towers, (tower) => {
-          let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
-          if (closest)
-            tower.attack(closest);
-        });
+          _.forEach(this.towers, (tower) => {
+            let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
+            if (closest)
+              tower.attack(closest);
+          });
+      }
+    }
   };
 }

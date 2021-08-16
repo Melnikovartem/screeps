@@ -110,6 +110,8 @@ export class Hive {
   // 1 storage - 7lvl
   // max
 
+  shouldRecalc: boolean;
+
   bassboost: Hive | null = null;
   // help grow creeps from other colony
 
@@ -138,7 +140,6 @@ export class Hive {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
       this.cells.excavation = new excavationCell(this);
-      this.markResources();
 
       this.builder = new builderMaster(this);
       if (this.stage == 2) {
@@ -148,18 +149,19 @@ export class Hive {
 
     //look for new structures for those wich need them
     this.updateCellData();
-
     this.repairSheet = new repairSheet(this.stage);
-    this.updateConstructionSites();
-    this.updateRepairs();
+    this.shouldRecalc = true;
   }
 
   addAnex(annexName: string) {
     if (!this.annexNames.includes(annexName)) {
       this.annexNames.push(annexName);
-      this.updateRooms();
-      this.markResources();
     }
+    if (annexName in Game.rooms) {
+      this.shouldRecalc = true;
+      return OK;
+    } else
+      return ERR_NOT_FOUND;
   }
 
   updateRooms(): void {
@@ -190,6 +192,8 @@ export class Hive {
           Game.flags[flag].memory.hive = this.roomName;
       }
     });
+
+    console.log("here");
   }
 
   private updateCellData() {
@@ -210,9 +214,9 @@ export class Hive {
     });
   }
 
-  private updateConstructionSites() {
+  private updateConstructionSites(rooms?: Room[]) {
     this.constructionSites = [];
-    _.forEach(this.rooms, (room) => {
+    _.forEach(rooms ? rooms : this.rooms, (room) => {
       this.constructionSites = this.constructionSites.concat(_.filter(room.find(FIND_CONSTRUCTION_SITES), (site) => site.my));
     });
   }
@@ -252,11 +256,15 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (UPDATE_EACH_TICK || Game.time % 10 == 8) {
+    if (UPDATE_EACH_TICK || Game.time % 10 == 8 || this.shouldRecalc) {
       this.updateRooms();
       this.updateConstructionSites();
-      if (UPDATE_EACH_TICK || Game.time % 30 == 8)
+      if (UPDATE_EACH_TICK || Game.time % 30 == 8 || this.shouldRecalc)
         this.updateRepairs(); // cause costly
+      if (this.shouldRecalc) {
+        this.markResources();
+        this.shouldRecalc = false;
+      }
     }
 
     if (Game.time % 100 == 29)

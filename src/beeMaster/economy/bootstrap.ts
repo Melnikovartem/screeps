@@ -28,17 +28,24 @@ export class bootstrapMaster extends Master {
 
   recalculateTargetBee() {
     this.targetBeeCount = 0;
-    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
+    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200);
+    if (this.hive.bassboost)
+      workBodyParts = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
     if (Setups.bootstrap.bodySetup.patternLimit)
       workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
+
+    // theoretically i should count road from minerals to controller, but this is good enough
+    let magicNumber = [0.5, 0.666];
+    if (workBodyParts > 3)
+      magicNumber = [0.35, 0.45]; // more upgrading less mining
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getOpenPositions(true).length;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
       if (source.room.name == this.hive.roomName)
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.5;
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[0];
       else
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.666; // they need to walk more;
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[1]; // they need to walk more;
 
       if (!this.sourceTargeting[source.id])
         this.sourceTargeting[source.id] = {
