@@ -14,20 +14,21 @@ export class upgraderMaster extends Master {
     super(upgradeCell.hive, upgradeCell.ref);
 
     this.cell = upgradeCell;
-    if (this.cell.link
-      || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
+    if (this.cell.link || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
       this.fastMode = true;
   }
 
   update() {
     super.update();
-    /*
-        this.targetBeeCount = 1;
-        if (this.hive.cells.storage) {
-          if (this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 500000)
-            this.targetBeeCount = 2;
-        }
-    */
+
+    this.targetBeeCount = 1;
+    if (this.hive.cells.storage) {
+      if (this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 500000)
+        this.targetBeeCount = 2;
+      if (!this.fastMode && this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 100000)
+        this.targetBeeCount = 3;
+    }
+
     if (this.checkBees()) {
       let order: SpawnOrder = {
         master: this.ref,
@@ -35,6 +36,10 @@ export class upgraderMaster extends Master {
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 7,
       };
+
+      if (!this.fastMode)
+        if (this.cell.link || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
+          this.fastMode = true;
 
       if (this.fastMode)
         order.setup = Setups.upgrader.fast;
@@ -46,13 +51,13 @@ export class upgraderMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       let ans;
-      if ((this.fastMode && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 25)
-        || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+
+      if ((this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25)
+        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
         let suckerTarget;
 
         if (this.cell.link)
           suckerTarget = this.cell.link;
-
 
         if (!suckerTarget) {
           let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
@@ -61,8 +66,7 @@ export class upgraderMaster extends Master {
         }
 
         if (suckerTarget) {
-          if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
-            ans = bee.upgradeController(this.cell.controller);
+          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         } else
           bee.goRest(this.cell.pos);
       }

@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class hordeMaster extends SwarmMaster {
   // failsafe
-  maxSpawns: number = 500;
+  maxSpawns: number = 100;
   spawned: number = 0;
 
   tryToDowngrade: boolean = false;

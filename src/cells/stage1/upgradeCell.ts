@@ -15,10 +15,7 @@ export class upgradeCell extends Cell {
 
     this.controller = controller;
 
-    let link = _.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
-    if (link instanceof StructureLink) {
-      this.link = link;
-    }
+    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
     if (this.link)
       this.pos = this.link.pos;
@@ -28,6 +25,9 @@ export class upgradeCell extends Cell {
 
   update() {
     super.update();
+
+    if (!this.link && Game.time % 30 == 7)
+      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
     let storageCell = this.hive.cells.storage;
     if (this.link && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {

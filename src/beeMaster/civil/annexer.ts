@@ -24,7 +24,7 @@ export class annexMaster extends Master {
         master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
-        priority: 6,
+        priority: 5,
       };
 
       if (this.order.pos.roomName in Game.rooms) {

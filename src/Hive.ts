@@ -1,13 +1,13 @@
 import { Cell } from "./cells/_Cell";
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
-import { laboratoryCell } from "./cells/base/laboratoryCell";
 
 import { developmentCell } from "./cells/stage0/developmentCell";
 
 import { storageCell } from "./cells/stage1/storageCell";
 import { upgradeCell } from "./cells/stage1/upgradeCell";
 import { excavationCell } from "./cells/stage1/excavationCell";
+import { laboratoryCell } from "./cells/stage1/laboratoryCell";
 
 import { builderMaster } from "./beeMaster/economy/builder";
 
@@ -28,10 +28,10 @@ interface hiveCells {
   storage?: storageCell;
   defense: defenseCell;
   spawn: respawnCell;
-  lab: laboratoryCell;
   upgrade?: upgradeCell;
   excavation?: excavationCell;
   dev?: developmentCell;
+  lab?: laboratoryCell;
 }
 
 @profile
@@ -198,7 +198,9 @@ export class Hive {
     let extensions = this.cells.spawn.extensions;
     let spawns = this.cells.spawn.spawns;
     let towers = this.cells.defense.towers;
-    let laboratories = this.cells.lab.laboratories;
+    let laboratories: StructureLab[] | undefined;
+    if (this.cells.lab)
+      laboratories = this.cells.lab.laboratories;
 
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
       if (structure instanceof StructureExtension && structure.isActive() && !extensions.includes(structure))
@@ -207,7 +209,7 @@ export class Hive {
         spawns.push(structure);
       else if (structure instanceof StructureTower && structure.isActive() && !towers.includes(structure))
         towers.push(structure);
-      else if (structure instanceof StructureLab && structure.isActive() && !laboratories.includes(structure))
+      else if (laboratories && structure instanceof StructureLab && structure.isActive() && !laboratories.includes(structure))
         laboratories.push(structure);
     });
   }
@@ -215,7 +217,9 @@ export class Hive {
   private updateConstructionSites(rooms?: Room[]) {
     this.constructionSites = [];
     _.forEach(rooms ? rooms : this.rooms, (room) => {
-      this.constructionSites = this.constructionSites.concat(_.filter(room.find(FIND_CONSTRUCTION_SITES), (site) => site.my));
+      let roomInfo = Apiary.intel.getInfo(room.name, 10);
+      if (roomInfo.safePlace)
+        this.constructionSites = this.constructionSites.concat(_.filter(room.find(FIND_CONSTRUCTION_SITES), (site) => site.my));
     });
   }
 
@@ -229,13 +233,15 @@ export class Hive {
         this.normalRepairs.push(structure);
     });
     _.forEach(this.annexes, (room) => {
-      _.forEach(room.find(FIND_STRUCTURES), (structure) => {
-        if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER)
-          if (this.repairSheet.isAnEmergency(structure))
-            this.emergencyRepairs.push(structure);
-          else if (this.repairSheet.isAnRepairCase(structure))
-            this.normalRepairs.push(structure);
-      });
+      let roomInfo = Apiary.intel.getInfo(room.name, 10);
+      if (roomInfo.safePlace)
+        _.forEach(room.find(FIND_STRUCTURES), (structure) => {
+          if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER)
+            if (this.repairSheet.isAnEmergency(structure))
+              this.emergencyRepairs.push(structure);
+            else if (this.repairSheet.isAnRepairCase(structure))
+              this.normalRepairs.push(structure);
+        });
     });
   }
 

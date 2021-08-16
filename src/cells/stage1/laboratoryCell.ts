@@ -158,7 +158,7 @@ export class laboratoryCell extends Cell {
         if (this.lab2.store[res2] < this.currentRequest.current && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
           storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
 
-        if (this.currentRequest.plan - this.currentRequest.current > 300) {
+        if (this.currentRequest.plan - this.currentRequest.current > 1000) {
           this.fflush(this.currentRequest.res);
           this.currentRequest.plan -= this.currentRequest.current;
         } else if (this.currentRequest.current == 0) {
@@ -200,8 +200,8 @@ export class laboratoryCell extends Cell {
 
   run() {
     if (this.currentRequest && this.currentRequest.current > 0 && Game.time % this.cycle == 0) {
-      if (this.lab1 && this.lab1.store[this.currentRequest.res1] > 5
-        && this.lab2 && this.lab2.store[this.currentRequest.res2] > 5) {
+      if (this.lab1 && this.lab1.store[this.currentRequest.res1] >= 5
+        && this.lab2 && this.lab2.store[this.currentRequest.res2] >= 5) {
         if (this.cycle == 1)
           this.cycle = REACTION_TIME[this.currentRequest.res];
 

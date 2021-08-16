@@ -2,7 +2,7 @@ import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
 import { drainerMaster } from "./beeMaster/war/drainer";
 
-import { ReactionConstant } from "./cells/base/laboratoryCell";
+import { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
 import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
@@ -141,7 +141,7 @@ export class Order {
           if (hive.cells.lab)
             if (!hive.cells.lab.currentRequest) {
               _.forEach(this.flag.name.split("-"), (res) => {
-                let ans = hive.cells.lab.newSynthesizeRequest(<ReactionConstant>res);
+                let ans = hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
                 if (PRINT_INFO) console.log(`new Reqest for ${res}: ${ans}`);
               });
             }
