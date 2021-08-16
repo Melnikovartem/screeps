@@ -30,11 +30,12 @@ export class defenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
-    if (roomInfo.enemies.length)
+    if (roomInfo.enemies.length > 0)
       if (this.towers.length == 0) {
-        if (this.hive.stage < 2)
-          this.pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
-        else
+        if (this.hive.stage < 2) {
+          if (!Game.flags["defend_" + this.hive.roomName])
+            roomInfo.enemies[0].pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
+        } else
           this.hive.room.controller!.activateSafeMode(); // red button
       } else
         _.forEach(this.towers, (tower) => {

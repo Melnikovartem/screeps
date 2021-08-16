@@ -34,7 +34,7 @@ export class hordeMaster extends SwarmMaster {
       this.order.destroyTime = Game.time
 
     if (this.checkBees() && this.order.destroyTime > Game.time + CREEP_LIFE_TIME && this.spawned < this.maxSpawns
-      && Game.time >= roomInfo.safeModeEndTime - 100) {
+      && (Game.time >= roomInfo.safeModeEndTime - 100)) {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.knight,
@@ -68,7 +68,7 @@ export class hordeMaster extends SwarmMaster {
     });
 
     _.forEach(this.bees, (bee) => {
-      if (roomInfo.safeModeEndTime < Game.time)
+      if (roomInfo.safeModeEndTime < Game.time || !roomInfo.ownedByEnemy)
         if (bee.creep.room.name != this.order.pos.roomName) {
           bee.goTo(this.order.pos);
         } else {
@@ -78,10 +78,8 @@ export class hordeMaster extends SwarmMaster {
           if (target) {
             bee.attack(target);
             enemyTargetingCurrent[target.id].current += 1;
-          } else {
-            if (!bee.pos.isNearTo(this.order.pos))
-              bee.goTo(this.order.pos);
-          }
+          } else if (!bee.pos.isNearTo(this.order.pos))
+            bee.goTo(this.order.pos);
         }
       else
         bee.goRest(this.hive.pos);

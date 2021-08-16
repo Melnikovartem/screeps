@@ -151,15 +151,21 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_YELLOW) {
       if (this.flag.secondaryColor == COLOR_YELLOW) {
-        if (this.hive.cells.excavation) {
-          let resource: Source | Mineral = this.pos.lookFor(LOOK_SOURCES)[0];
-          if (!resource)
-            resource = this.pos.lookFor(LOOK_MINERALS)[0];
-          if (resource)
+        let resource: Source | undefined = this.pos.lookFor(LOOK_SOURCES)[0];
+        if (resource) {
+          if (this.hive.cells.excavation)
             this.hive.cells.excavation.addResource(resource);
-          else
-            this.delete();
-        }
+          else if (this.hive.cells.dev)
+            this.hive.cells.dev.addResource(resource)
+        } else
+          this.delete();
+      } else if (this.flag.secondaryColor == COLOR_CYAN) {
+        let resource: Mineral | undefined = this.pos.lookFor(LOOK_MINERALS)[0];
+        if (resource) {
+          if (this.hive.cells.excavation)
+            this.hive.cells.excavation.addResource(resource)
+        } else
+          this.delete();
       }
     }
   }
@@ -181,7 +187,7 @@ export class Order {
       this.acted = false;
     this.flag = flag;
     this.pos = flag.pos;
-    if (!this.acted)
+    if (!this.acted && !this.master)
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {

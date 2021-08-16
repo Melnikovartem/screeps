@@ -73,7 +73,7 @@ export abstract class Master {
 
   wish(order: SpawnOrder) {
     this.waitingForBees += order.amount;
-    this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
+    // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
     if (this.hive.bassboost)
       this.hive.bassboost.orderList.push(order);
     else

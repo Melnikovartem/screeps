@@ -158,8 +158,7 @@ export class Hive {
     if (!this.annexNames.includes(annexName)) {
       this.annexNames.push(annexName);
       this.updateRooms();
-      if (this.stage > 0)
-        this.markResources();
+      this.markResources();
     }
   }
 
@@ -186,7 +185,7 @@ export class Hive {
 
     _.forEach(this.room.find(FIND_MINERALS), (s) => {
       if (!Game.flags["mine_" + s.id]) {
-        let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+        let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
         if (typeof flag == "string")
           Game.flags[flag].memory.hive = this.roomName;
       }

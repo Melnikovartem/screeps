@@ -15,8 +15,11 @@ export class excavationCell extends Cell {
   }
 
   addResource(resource: Source | Mineral) {
-    if (!this.resourceCells[resource.id])
+    if (!this.resourceCells[resource.id]) {
       this.resourceCells[resource.id] = new resourceCell(this.hive, resource);
+      if (this.beeMaster)
+        (<haulerMaster>this.beeMaster).recalculateTargetBee();
+    }
   }
 
   update() {

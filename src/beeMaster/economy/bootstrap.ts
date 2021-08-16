@@ -23,7 +23,11 @@ export class bootstrapMaster extends Master {
     super(developmentCell.hive, developmentCell.ref);
 
     this.cell = developmentCell;
+    this.recalculateTargetBee();
+  }
 
+  recalculateTargetBee() {
+    this.targetBeeCount = 0;
     let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200 / 3);
     if (Setups.bootstrap.bodySetup.patternLimit)
       workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
@@ -36,10 +40,11 @@ export class bootstrapMaster extends Master {
       else
         this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / 0.666; // they need to walk more;
 
-      this.sourceTargeting[source.id] = {
-        max: walkablePositions,
-        current: 0,
-      };
+      if (!this.sourceTargeting[source.id])
+        this.sourceTargeting[source.id] = {
+          max: walkablePositions,
+          current: 0,
+        };
     });
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
   }
@@ -55,6 +60,9 @@ export class bootstrapMaster extends Master {
 
   update() {
     super.update();
+
+    if (Game.time % 100 == 97)
+      this.recalculateTargetBee(); // just to check if expansions are done
 
     if (this.checkBees() && this.hive.stage == 0) {
       let order: SpawnOrder = {
@@ -131,7 +139,8 @@ export class bootstrapMaster extends Master {
             bee.harvest(source);
             sourceTargetingCurrent[source.id] += 1;
           }
-        }
+        } else
+          bee.goRest(this.hive.pos);
       } else {
         let target: Structure | ConstructionSite | null = Game.getObjectById(this.stateMap[bee.ref].target);
         let workType: workTypes = this.stateMap[bee.ref].type;

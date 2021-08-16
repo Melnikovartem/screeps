@@ -17,6 +17,14 @@ export class developmentCell extends Cell {
     this.sources = sources;
   }
 
+  addResource(resource: Source) {
+    if (!this.sources.includes(resource)) {
+      this.sources.push(resource);
+      if (this.beeMaster)
+        (<bootstrapMaster>this.beeMaster).recalculateTargetBee();
+    }
+  }
+
   update() {
     super.update();
     if (!this.beeMaster)

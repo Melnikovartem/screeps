@@ -143,16 +143,16 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
-  goRest(pos: RoomPosition): number {
+  goRest(pos: RoomPosition, opt?: TravelToOptions): number {
     if ((this.pos.x != pos.x || this.pos.y != pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName != pos.roomName)
-      this.goTo(pos)
+      this.goTo(pos, opt);
     else
       return OK;
     return ERR_NOT_IN_RANGE;
   }
 
-  goToRoom(roomName: string): number {
-    return this.goTo(new RoomPosition(25, 25, roomName))
+  goToRoom(roomName: string, opt?: TravelToOptions): number {
+    return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
   goTo(target: RoomPosition | RoomObject, opt?: TravelToOptions): number {
