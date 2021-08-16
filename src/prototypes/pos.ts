@@ -4,7 +4,8 @@ interface RoomPosition {
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(ignoreCreeps?: boolean): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
-  getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number
+  getEnteranceToRoom(): RoomPosition | null;
+  getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number;
   findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
 }
 
@@ -73,39 +74,105 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
   return ans;
 }
 
-
-RoomPosition.prototype.getTimeForPath = function(target: RoomObject | RoomPosition): number {
-  let pos: RoomPosition;
-  if (target instanceof RoomObject)
-    pos = target.pos;
-  else
-    pos = target;
-
-  // need to write something smarter
-  let len = this.findPathTo(pos, { ignoreCreeps: true }).length;
-
-  if (pos.roomName != this.roomName)
-    len += pos.findPathTo(this, { ignoreCreeps: true }).length;
-
-  return len
+const oppositeExit = {
+  [FIND_EXIT_TOP]: FIND_EXIT_BOTTOM,
+  [FIND_EXIT_RIGHT]: FIND_EXIT_LEFT,
+  [FIND_EXIT_BOTTOM]: FIND_EXIT_TOP,
+  [FIND_EXIT_LEFT]: FIND_EXIT_RIGHT,
 }
 
-// TODO different class types to forget casting in and out
-RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null {
-  if (structures.length == 0)
+RoomPosition.prototype.getEnteranceToRoom = function(): RoomPosition | null {
+  let exits = Game.map.describeExits(this.roomName);
+  if (exits[FIND_EXIT_TOP] && this.y == 0)
+    return new RoomPosition(this.x, 49, exits[FIND_EXIT_TOP]!);
+  else if (exits[FIND_EXIT_BOTTOM] && this.y == 49)
+    return new RoomPosition(this.x, 0, exits[FIND_EXIT_BOTTOM]!);
+  else if (exits[FIND_EXIT_LEFT] && this.x == 0)
+    return new RoomPosition(49, this.y, exits[FIND_EXIT_LEFT]!);
+  else if (exits[FIND_EXIT_RIGHT] && this.x == 49)
+    return new RoomPosition(0, this.y, exits[FIND_EXIT_RIGHT]!);
+  return null;
+}
+
+// costly be careful
+RoomPosition.prototype.getTimeForPath = function(target: RoomPosition | { pos: RoomPosition }): number {
+  let pos: RoomPosition;
+  if (target instanceof RoomPosition)
+    pos = target;
+  else
+    pos = target.pos;
+
+  // ignore terrain cost cause it depends on creep
+  let len = 0;
+  let route = Game.map.findRoute(this.roomName, pos.roomName);
+  let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
+  let currentRoom = this.roomName;
+
+  if (route != -2)
+    for (let i in route) {
+      let room = Game.rooms[currentRoom];
+      let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
+      if (room) {
+        if (!(enterance instanceof RoomPosition))
+          enterance = room.find(enterance)[0];
+        // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
+        let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByPath(room.find(route[i].exit));
+
+        if (exit) {
+          len += enterance.findPathTo(exit, { ignoreCreeps: true }).length;
+          newEnterance = exit.getEnteranceToRoom();
+        }
+      } else
+        len += 15;
+
+
+      if (!newEnterance)
+        newEnterance = oppositeExit[route[i].exit];
+      enterance = newEnterance;
+      currentRoom = route[i].room;
+    }
+
+  // last currentRoom == pos.roomName
+  if (pos.roomName in Game.rooms) {
+    if (!(enterance instanceof RoomPosition))
+      enterance = Game.rooms[pos.roomName].find(enterance)[0];
+    len += enterance.findPathTo(pos, { ignoreCreeps: true }).length;
+  }
+
+  return len;
+}
+
+// couple of optimizations to make usability of getClosestByRange, but better
+RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos: RoomPosition }>(objects: Obj[]): Obj | null {
+  if (objects.length == 0)
     return null;
 
-  let ans: Obj = structures[0];
+  let ans: Obj = objects[0];
   let distance = Infinity;
 
-  // TODO smarter room-to-room distance
+  _.some(objects, (object: Obj) => {
+    let pos: RoomPosition;
+    if (object instanceof RoomPosition)
+      pos = object;
+    else
+      pos = (<{ pos: RoomPosition }>object).pos;
 
-  _.some(structures, (structure) => {
-    let newDistance = this.getRangeTo(structure)
+    let newDistance = 0;
+    if (this.roomName == pos.roomName)
+      newDistance = this.getRangeTo(pos); // aka Math.min(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
+    else
+      newDistance += this.getRangeTo(pos) + pos.getRangeTo(this) + (this.getRoomRangeTo(pos) - 1) * 25;
+
     if (newDistance < distance) {
-      ans = structure;
+      ans = object;
       distance = newDistance;
+    } else if (newDistance == distance) {
+      // i thought of linear dist but it is not good at all in this world
+      if (Math.random() > 0.8)
+        ans = object; // just a random chance to invalidate this object (so getClosest wouldn't prefer the top left ones)
+      //i didn't rly calculate the E of this ans, but surely it is satisfactory
     }
+
     if (distance == 1)
       return true;
     return false;

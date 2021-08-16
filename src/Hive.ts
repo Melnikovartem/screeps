@@ -280,13 +280,13 @@ export class Hive {
       _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });
 
     _.forEach(this.cells, (cell) => {
-      safeWrap(() => cell.update(), "update " + cell.print);
+      safeWrap(() => cell.update(), cell.print + " update");
     });
   }
 
   run() {
     _.forEach(this.cells, (cell) => {
-      safeWrap(() => cell.run(), "run " + cell.print);
+      safeWrap(() => cell.run(), cell.print + " run");
     });
   }
 

@@ -58,17 +58,17 @@ export class _Apiary {
     if (!this.orders[ref])
       this.orders[ref] = new Order(flag);
     else
-      this.orders[ref].update(flag);
+      safeWrap(() => this.orders[ref].update(flag), this.orders[ref].print + " update");
   }
 
   // update phase
   update() {
     _.forEach(Game.flags, (flag) => {
-      safeWrap(() => this.updateOrder(flag), "update " + flag.name)
+      this.updateOrder(flag);
     });
 
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.update(), "update " + hive.print);
+      safeWrap(() => hive.update(), hive.print + " update");
     });
 
     _.forEach(this.bees, (bee) => {
@@ -77,17 +77,17 @@ export class _Apiary {
     this.findBees();
 
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.update(), "update " + master.print);
+      safeWrap(() => master.update(), master.print + " update");
     });
   }
 
   // run phase
   run() {
     _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.run(), "run " + hive.print);
+      safeWrap(() => hive.run(), hive.print + " run");
     });
     _.forEach(this.masters, (master) => {
-      safeWrap(() => master.run(), "run " + master.print);
+      safeWrap(() => master.run(), master.print + " run");
     });
   }
 

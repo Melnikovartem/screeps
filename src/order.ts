@@ -90,9 +90,7 @@ export class Order {
       else if (this.flag.secondaryColor == COLOR_YELLOW)
         this.master = new drainerMaster(this);
       else if (this.flag.secondaryColor == COLOR_GREY) {
-        let newMaster = new puppetMaster(this);
-        newMaster.force = true;
-        this.master = newMaster;
+        this.master = new puppetMaster(this);
       }
       else if (this.flag.secondaryColor == COLOR_RED) {
         let newMaster = new hordeMaster(this);
@@ -113,12 +111,16 @@ export class Order {
         if (this.hive.addAnex(this.pos.roomName) == OK)
           this.acted = true;
       } else if (this.flag.secondaryColor == COLOR_GREY) {
-        this.acted = true;
-        this.master = new claimerMaster(this);
+        if (Object.keys(Apiary.hives).length < Game.gcl.level) {
+          this.acted = true;
+          this.master = new claimerMaster(this);
+        } else
+          this.delete();
       }
       else if (this.flag.secondaryColor == COLOR_WHITE) {
         this.acted = true;
-        if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0 && this.pos.roomName != this.hive.roomName)
+        if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0
+          && this.pos.roomName != this.hive.roomName)
           Apiary.hives[this.pos.roomName].bassboost = this.hive;
         else
           this.delete();

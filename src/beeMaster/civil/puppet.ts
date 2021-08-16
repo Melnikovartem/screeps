@@ -10,11 +10,10 @@ export class puppetMaster extends Master {
   target: RoomPosition;
   maxSpawns: number = 1;
   spawned: number = 0;
-  force: boolean = false;
   order: Order;
 
   constructor(order: Order) {
-    super(order.hive, "Puppet_" + order.pos.roomName);
+    super(order.hive, "Puppet_" + order.ref);
 
     this.order = order;
     this.target = order.pos;
@@ -31,10 +30,11 @@ export class puppetMaster extends Master {
     super.update();
     this.target = this.order.pos;
 
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns && this.force)
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
       this.order.destroyTime = Game.time;
 
-    if (this.checkBees() && this.spawned < this.maxSpawns && (!(this.target.roomName in Game.rooms) || this.force)) {
+    if (this.checkBees() && this.spawned < this.maxSpawns) {
+      console.log("A", this.beesAmount);
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.puppet,

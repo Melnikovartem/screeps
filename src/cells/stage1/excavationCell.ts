@@ -27,7 +27,7 @@ export class excavationCell extends Cell {
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)
-        safeWrap(() => { cell.update() }, "update " + cell.print);
+        safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational) {
         if (cell.container.store.getUsedCapacity() >= 700) {
@@ -46,7 +46,7 @@ export class excavationCell extends Cell {
   run() {
     _.forEach(this.resourceCells, (cell) => {
       if (cell.operational)
-        safeWrap(() => { cell.run() }, "run " + cell.print);
+        safeWrap(() => { cell.run() }, cell.print + " run");
     });
   };
 }
