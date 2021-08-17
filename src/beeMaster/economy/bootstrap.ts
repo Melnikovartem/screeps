@@ -75,12 +75,14 @@ export class bootstrapMaster extends Master {
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.bootstrap,
-        amount: 1,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 9,
       };
 
-      if (this.beesAmount < this.targetBeeCount * 0.5)
+      if (this.beesAmount < this.targetBeeCount * 0.5) {
         order.priority = 2;
+        order.amount = Math.ceil(this.targetBeeCount / 2 - this.beesAmount);
+      }
 
       this.wish(order);
     }

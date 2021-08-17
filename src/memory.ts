@@ -37,8 +37,10 @@ export class Mem {
       }
 
     for (const name in Memory.flags)
-      if (!(name in Game.flags))
+      if (!(name in Game.flags)) {
         delete Memory.flags[name];
+        if (Apiary.orders[name]) Apiary.orders[name].delete();
+      }
 
     if (Game.time % LOGGING_CYCLE == 0) {
       if (Object.keys(Memory.log.spawns).length > 25) {

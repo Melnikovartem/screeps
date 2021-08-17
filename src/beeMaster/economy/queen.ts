@@ -22,13 +22,12 @@ export class queenMaster extends Master {
     if (this.checkBees(CREEP_LIFE_TIME)) {
       let order: SpawnOrder = {
         master: this.ref,
-        setup: new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup }),
+        setup: new CreepSetup(Setups.queen.name, { ...Setups.queen.bodySetup }),
         amount: 1,
         priority: 0,
       };
 
       // can refill in 2.5 runs
-      order.setup.name = "Bee Queen"; // well if i coppy may as well change the name
       order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50 / 2);
 
       this.wish(order);

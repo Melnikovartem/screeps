@@ -9,6 +9,7 @@ import { Hive } from "./Hive";
 import { puppetMaster } from "./beeMaster/civil/puppet";
 import { annexMaster } from "./beeMaster/civil/annexer";
 import { claimerMaster } from "./beeMaster/civil/claimer";
+import { bootstrapMaster } from "./beeMaster/economy/bootstrap";
 
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
@@ -115,10 +116,15 @@ export class Order {
       }
       else if (this.flag.secondaryColor == COLOR_WHITE) {
         this.acted = true;
-        if (this.pos.roomName in Apiary.hives && Apiary.hives[this.pos.roomName].stage == 0
-          && this.pos.roomName != this.hive.roomName)
-          Apiary.hives[this.pos.roomName].bassboost = this.hive;
-        else
+        let hiveToBoos = Apiary.hives[this.pos.roomName];
+        if (hiveToBoos && hiveToBoos.stage == 0 && this.pos.roomName != this.hive.roomName) {
+          hiveToBoos.bassboost = this.hive;
+          hiveToBoos.orderList = [];
+          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.beeMaster) {
+            hiveToBoos.cells.dev.beeMaster.waitingForBees = 0;
+            (<bootstrapMaster>hiveToBoos.cells.dev.beeMaster).recalculateTargetBee();
+          }
+        } else
           this.delete();
       }
     } else if (this.flag.color == COLOR_CYAN) {
@@ -139,7 +145,7 @@ export class Order {
           if (hive.cells.lab)
             if (!hive.cells.lab.currentRequest) {
               let sum = 0;
-              _.forEach(this.flag.name.split("-"), (res) => {
+              _.forEach(this.flag.name.split("_"), (res) => {
                 sum += hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
               });
               if (sum == 0)
@@ -185,6 +191,17 @@ export class Order {
     }
     if (this.master)
       delete Apiary.masters[this.master.ref];
+    if (this.flag.color == COLOR_PURPLE) {
+      if (this.flag.secondaryColor == COLOR_WHITE) {
+        let hiveBoosted = Apiary.hives[this.pos.roomName];
+        if (hiveBoosted) {
+          hiveBoosted.bassboost = null;
+          if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.beeMaster)
+            (<bootstrapMaster>hiveBoosted.cells.dev.beeMaster).recalculateTargetBee();
+          console.log(hiveBoosted.cells.dev!.beeMaster!.targetBeeCount);
+        }
+      }
+    }
     this.flag.remove();
     delete Apiary.orders[this.ref];
   }

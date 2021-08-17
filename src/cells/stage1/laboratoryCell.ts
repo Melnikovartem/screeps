@@ -69,7 +69,7 @@ export class laboratoryCell extends Cell {
 
   newSynthesizeRequest(resource: ReactionConstant, amount?: number, coef?: number): number {
     if (!Object.keys(REACTION_TIME).includes(resource))
-      return ERR_INVALID_ARGS;
+      return 0;
 
     if (!amount) {
       amount = 0;
@@ -89,14 +89,16 @@ export class laboratoryCell extends Cell {
 
     if (coef)
       amount *= coef;
-    this.synthesizeRequests.push({
-      plan: amount,
-      current: amount,
-      res: resource,
-      res1: REACTION_MAP[resource]!.res1,
-      res2: REACTION_MAP[resource]!.res2,
-      cooldown: REACTION_TIME[resource],
-    });
+
+    if (amount > 0)
+      this.synthesizeRequests.push({
+        plan: amount,
+        current: amount,
+        res: resource,
+        res1: REACTION_MAP[resource]!.res1,
+        res2: REACTION_MAP[resource]!.res2,
+        cooldown: REACTION_TIME[resource],
+      });
 
     return amount;
   }

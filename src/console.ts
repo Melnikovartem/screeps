@@ -86,11 +86,11 @@ export class CustomConsole {
     }
 
     if (ans == OK)
-      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType}: ${amount}\n
-      MONEY: ${amount * order.price}\nENERGY: ${energy}`;
+      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType
+        }: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${energy}`;
     else if (ans == ERR_NOT_ENOUGH_RESOURCES)
-      return `NOT ENOUGHT RESOURSES TO ${order.type == ORDER_SELL ? "BUY" : "SELL"}\n
-      RESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${energy}`;
+      return `NOT ENOUGHT RESOURSES TO ${order.type == ORDER_SELL ? "BUY" : "SELL"
+        }\nRESOURCE ${order.resourceType}: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${energy}`;
     return ans;
   }
 
@@ -108,5 +108,10 @@ export class CustomConsole {
 
   printBees(masterName?: string) {
     return _.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster == masterName), (b) => b.print).join('\n');
+  }
+
+  printOrderList(hiveName?: string) {
+    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName == hiveName), (h) => `${h.print
+      }:\n${_.map(h.orderList, (o) => `${o.priority} ${o.master}: ${o.setup.name} ${o.amount}`).join('\n')}\n`).join('\n');
   }
 }

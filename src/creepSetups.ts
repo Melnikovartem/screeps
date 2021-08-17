@@ -54,7 +54,7 @@ export class CreepSetup {
   }
 }
 
-const SetupsNames = {
+export const SetupsNames = {
   // Civilian
   starter: 'Just a bee',
   claimer: 'Bee Drone',
@@ -64,6 +64,8 @@ const SetupsNames = {
   upgrader: 'Honey bee',
   builder: 'Colletidae',
   scout: 'Stenotritidae',
+  bootstrap: 'Bee Larva',
+  queen: 'Bee Queen',
   // War
   knight: 'European hornet',
   tank: 'Dolichovespula arenaria',
@@ -85,6 +87,9 @@ export const Setups = {
       patternLimit: 2,
     }),
   },
+  queen: new CreepSetup(SetupsNames.queen, {
+    pattern: [CARRY, CARRY, MOVE],
+  }),
   manager: new CreepSetup(SetupsNames.manager, {
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 15,
@@ -118,7 +123,7 @@ export const Setups = {
     pattern: [WORK, CARRY, MOVE],
     patternLimit: 10, // not sure if you need anyone bigger than that
   }),
-  bootstrap: new CreepSetup(SetupsNames.builder, {
+  bootstrap: new CreepSetup(SetupsNames.bootstrap, {
     pattern: [WORK, CARRY, MOVE],
     patternLimit: 6,
   }),

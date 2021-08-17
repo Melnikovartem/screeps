@@ -138,7 +138,7 @@ export class Bee {
         if (Apiary.masters[creep.memory.refMaster]) {
           Apiary.bees[creep.name] = new Bee(creep);
           Apiary.masters[creep.memory.refMaster].newBee(Apiary.bees[creep.name]);
-        } else if (creep.memory.refMaster.includes("masterDevelopmentCell_")) {
+        } else if (/^masterDevelopmentCell/.exec(creep.memory.refMaster)) {
           let randomMaster = Object.keys(Apiary.masters)[Math.floor(Math.random() * Object.keys(Apiary.masters).length)];
           creep.memory.refMaster = randomMaster;
           Apiary.bees[creep.name] = new Bee(creep);
