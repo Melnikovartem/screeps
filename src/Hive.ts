@@ -53,6 +53,7 @@ class repairSheet {
       this[STRUCTURE_WALL] = 2000000;
       this.other = 1;
       this.collapse = 0.86;
+      this.road_collapse = 0.25;
     }
   }
 

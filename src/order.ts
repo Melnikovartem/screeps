@@ -189,8 +189,10 @@ export class Order {
       Memory.log.orders[this.ref].destroyTime = Game.time;
       Memory.log.orders[this.ref].pos = this.pos;
     }
+
     if (this.master)
-      delete Apiary.masters[this.master.ref];
+      Apiary.masters[this.master.ref].delete();
+
     if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_WHITE) {
         let hiveBoosted = Apiary.hives[this.pos.roomName];

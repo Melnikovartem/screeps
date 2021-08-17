@@ -35,31 +35,30 @@ export class queenMaster extends Master {
   }
 
   run() {
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.bees, (bee) => {
       if (bee.creep.store[RESOURCE_ENERGY] == 0) {
-        if (targets)
+        if (targets.length)
           bee.state = states.refill;
         else
           bee.state = states.chill;
       } else {
-        if (targets)
+        if (targets.length)
           bee.state = states.work;
         else
           bee.state = states.fflush;
       }
 
-      if (bee.state == states.refill && bee.withdraw(storage, RESOURCE_ENERGY) == OK)
+      if (bee.state == states.refill && bee.withdraw(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY) == OK)
         bee.state = states.work;
 
       if (bee.state == states.work && targets.length)
         bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
 
-      if (bee.state == states.fflush && storage)
-        bee.transfer(storage, RESOURCE_ENERGY);
+      if (bee.state == states.fflush)
+        bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY);
 
       if (bee.state == states.chill)
         bee.goRest(this.cell.pos);

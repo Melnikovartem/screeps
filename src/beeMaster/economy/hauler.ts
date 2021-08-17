@@ -3,13 +3,13 @@ import { excavationCell } from "../../cells/stage1/excavationCell";
 
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
-import { Master } from "../_Master";
+import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class haulerMaster extends Master {
   cell: excavationCell;
-  targetMap: { [id: string]: string } = {}; // "" is base value
+  targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
 
   constructor(excavationCell: excavationCell) {
     super(excavationCell.hive, excavationCell.ref);
@@ -24,7 +24,6 @@ export class haulerMaster extends Master {
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && !cell.link) {
-          this.targetMap[cell.container.id] = "";
           let coef = 12; // mineral production
           if (cell.resourceType != RESOURCE_ENERGY)
             coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
@@ -38,11 +37,6 @@ export class haulerMaster extends Master {
 
   update() {
     super.update();
-
-    for (let key in this.targetMap) {
-      if (!Apiary.bees[this.targetMap[key]])
-        this.targetMap[key] = "";
-    }
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
@@ -66,37 +60,50 @@ export class haulerMaster extends Master {
   }
 
   run() {
-    // for future might be good to find closest bee for container and not the other way around
-    if (this.hive.cells.storage) {
-      let storage = this.hive.cells.storage.storage;
-      _.forEach(this.bees, (bee) => {
-        let ans;
+    _.forEach(this.cell.quitefullContainers, (container) => {
+      let target = this.targetMap[container.id];
+      if (target && !Apiary.bees[target.beeRef])
+        return;
 
-        if (bee.creep.store.getUsedCapacity() == 0) {
-          let suckerTarget: StructureContainer = _.filter(this.cell.quitefullContainers,
-            (container) => this.targetMap[container.id] == bee.ref)[0];
+      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill));
+      if (bee) {
+        bee.state = states.refill;
+        bee.target = container.id;
+        this.targetMap[container.id] = {
+          beeRef: bee.ref,
+          resource: this.findOptimalResource(container.store),
+        };
+      }
+    });
 
-          if (!suckerTarget)
-            suckerTarget = <StructureContainer>_.filter(this.cell.quitefullContainers,
-              (container) => this.targetMap[container.id] == "")[0];
+    _.forEach(this.bees, (bee) => {
+      if (bee.state == states.refill && bee.store.getFreeCapacity() == 0)
+        bee.state = states.work;
+      if (bee.state == states.chill && bee.store.getUsedCapacity() > 0)
+        bee.state = states.work;
 
-          if (suckerTarget) {
-            ans = bee.withdraw(suckerTarget, this.findOptimalResource(suckerTarget.store))
-            if (ans == OK)
-              this.targetMap[suckerTarget.id] = "";
-            else
-              this.targetMap[suckerTarget.id] = bee.ref;
-          } else
-            bee.goRest(this.cell.pos);
-        }
+      if (bee.state == states.work) {
+        if (bee.store[RESOURCE_ENERGY] > 0)
+          bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+        bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, <ResourceConstant>Object.keys(bee.store)[0]);
+        if (bee.store.getUsedCapacity() == 0)
+          bee.state = states.chill;
+      }
 
-        if ((bee.creep.store.getUsedCapacity() > 0 || ans == OK)) {
-          if (storage.store.getFreeCapacity() > 0)
-            bee.transfer(storage, this.findOptimalResource(bee.store));
-          else
-            bee.goRest(this.cell.pos);
-        }
-      });
-    }
+      if (bee.state == states.refill) {
+        if (bee.target && this.targetMap[bee.target]) {
+          let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
+          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { ignoreRoads: true }) == OK) {
+            this.targetMap[bee.target] = undefined;
+            bee.target = null;
+            bee.state = states.work;
+          }
+        } else
+          bee.state = states.chill; //failsafe
+      }
+
+      if (bee.state == states.chill)
+        bee.goRest(this.cell.pos);
+    });
   }
 }

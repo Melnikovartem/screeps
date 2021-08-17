@@ -49,14 +49,15 @@ export class Bee {
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
 
-  actionWrap<Obj extends RoomObject | RoomPosition | undefined>(target: Obj, action: () => number, range?: number): number {
+  actionWrap<Obj extends RoomObject | RoomPosition | undefined>(target: Obj, action: () => number, opt: TravelToOptions = {}, range: number = 1): number {
     if (!target)
-      return ERR_INVALID_ARGS;
-
-    if (this.creep.pos.inRangeTo(target!, range ? range : 1))
+      return ERR_NOT_FOUND;
+    if (this.creep.pos.inRangeTo(target!, range))
       return action();
-    else
-      this.goTo(target!);
+    else {
+      opt.range = range;
+      this.goTo(target!, opt);
+    }
     return ERR_NOT_IN_RANGE;
   }
 
@@ -80,59 +81,57 @@ export class Bee {
     return _.filter(this.creep.body, (part: BodyPartDefinition) => part.type == partType).length;
   }
 
-  // aliases from creep
-
-  transfer(t: Structure | undefined, resourceType: ResourceConstant, amount?: number): number {
-    return this.actionWrap(t, () => this.creep.transfer(<Structure>t, resourceType, amount));
+  transfer(t: Structure | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.transfer(<Structure>t, resourceType, amount), opt);
   }
 
-  withdraw(t: Structure | undefined, resourceType: ResourceConstant, amount?: number): number {
-    return this.actionWrap(t, () => this.creep.withdraw(<Structure>t, resourceType, amount));
+  withdraw(t: Structure | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.withdraw(<Structure>t, resourceType, amount), opt);
   }
 
-  attack(t: Creep | Structure | PowerCreep | undefined): number {
-    return this.actionWrap(t, () => this.creep.attack(<Creep | Structure | PowerCreep>t));
+  attack(t: Creep | Structure | PowerCreep | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.attack(<Creep | Structure | PowerCreep>t), opt);
   }
 
-  heal(t: Creep | PowerCreep | Bee | undefined) {
+  heal(t: Creep | PowerCreep | Bee | undefined, opt?: TravelToOptions) {
     if (t instanceof Bee)
       t = t.creep;
-    return this.actionWrap(t, () => this.creep.heal(<Creep | PowerCreep>t));
+    return this.actionWrap(t, () => this.creep.heal(<Creep | PowerCreep>t), opt);
   }
 
-  rangedHeal(t: Creep | PowerCreep | Bee | undefined) {
+  rangedHeal(t: Creep | PowerCreep | Bee | undefined, opt?: TravelToOptions) {
     if (t instanceof Bee)
       t = t.creep;
-    return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), 3);
+    return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), opt, 3);
   }
 
-  harvest(t: Source | Mineral | undefined): number {
-    return this.actionWrap(t, () => this.creep.harvest(<Source | Mineral>t));
+  harvest(t: Source | Mineral | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.harvest(<Source | Mineral>t), opt);
   }
 
 
-  build(t: ConstructionSite | undefined): number {
-    return this.actionWrap(t, () => this.creep.build(<ConstructionSite>t));
+  build(t: ConstructionSite | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.build(<ConstructionSite>t), opt);
   }
 
-  repair(t: Structure | undefined): number {
-    return this.actionWrap(t, () => this.creep.repair(<Structure>t), 3);
+  repair(t: Structure | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.repair(<Structure>t), opt, 3);
   }
 
-  upgradeController(t: StructureController | undefined): number {
-    return this.actionWrap(t, () => this.creep.upgradeController(<StructureController>t), 3);
+  upgradeController(t: StructureController | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.upgradeController(<StructureController>t), opt, 3);
   }
 
-  reserveController(t: StructureController | undefined): number {
-    return this.actionWrap(t, () => this.creep.reserveController(<StructureController>t));
+  reserveController(t: StructureController | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.reserveController(<StructureController>t), opt);
   }
 
-  claimController(t: StructureController | undefined): number {
-    return this.actionWrap(t, () => this.creep.claimController(<StructureController>t));
+  claimController(t: StructureController | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.claimController(<StructureController>t), opt);
   }
 
-  attackController(t: StructureController | undefined): number {
-    return this.actionWrap(t, () => this.creep.attackController(<StructureController>t));
+  attackController(t: StructureController | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.attackController(<StructureController>t), opt);
   }
 
   static checkBees() {

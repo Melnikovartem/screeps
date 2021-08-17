@@ -65,13 +65,18 @@ export class builderMaster extends Master {
           target = bee.pos.findClosest(this.hive.normalRepairs);
 
         if (target) {
+          let ans;
           if (target instanceof ConstructionSite)
-            bee.build(target);
+            ans = bee.build(target);
           else if (target instanceof Structure)
-            bee.repair(target);
+            ans = bee.repair(target);
           bee.target = target.id;
-        } else
+          if (ans == ERR_NOT_IN_RANGE)
+            bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+        } else {
+          bee.target = null;
           bee.state = states.chill;
+        }
       }
 
       if (bee.state == states.chill)

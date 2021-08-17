@@ -91,6 +91,7 @@ export const Setups = {
     patternLimit: 15,
   }),
   hauler: new CreepSetup(SetupsNames.hauler, {
+    fixed: [WORK, CARRY, MOVE],
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 18,
   }),
