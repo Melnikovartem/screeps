@@ -37,8 +37,10 @@ export abstract class Cell {
 
         _.forEach(data, (structure) => {
           let gameObject = Game.getObjectById(structure.id)
-          if (gameObject || UPDATE_EACH_TICK)
+          if (gameObject)
             new_data.push(gameObject);
+          else if (!UPDATE_EACH_TICK)
+            new_data.push(structure);
         });
 
         this[key] = <typeof data>new_data;

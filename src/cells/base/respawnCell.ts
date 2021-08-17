@@ -73,9 +73,10 @@ export class respawnCell extends Cell {
       return false;
     });
 
-    if (remove.length)
+    if (remove.length) {
       _.forEach(remove.reverse(), (key) => {
         this.hive.orderList.splice(key, 1);
       });
+    }
   };
 }

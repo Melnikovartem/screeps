@@ -1,4 +1,4 @@
-export const DEVELOPING = true;
+export const DEVELOPING = false;
 
 // turn off on official
 export const UPDATE_EACH_TICK = DEVELOPING;

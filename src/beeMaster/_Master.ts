@@ -72,7 +72,6 @@ export abstract class Master {
   }
 
   wish(order: SpawnOrder) {
-    this.waitingForBees += order.amount;
     // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
@@ -81,6 +80,7 @@ export abstract class Master {
         Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
       this.hive.orderList.push(order);
+    this.waitingForBees += order.amount;
     // well he placed an order now just need to catch a creep after a spawn
   }
 

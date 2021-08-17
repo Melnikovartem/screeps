@@ -56,7 +56,7 @@ export class laboratoryCell extends Cell {
     super(hive, "LaboratoryCell_" + hive.room.name);
   }
 
-  getLabsFree(resource: ReactionConstant | BaseMineral, amount?: number, sorted?: boolean): StructureLab[] {
+  getFreeLabs(resource: ReactionConstant | BaseMineral, amount?: number, sorted?: boolean): StructureLab[] {
     let labs = _.filter(this.laboratories, (lab) =>
       lab.store.getFreeCapacity(resource) >= (amount != undefined ? amount : 1)
       && (!lab.mineralType || lab.mineralType == resource)
@@ -175,8 +175,8 @@ export class laboratoryCell extends Cell {
           this.currentRequest = this.synthesizeRequests.shift();
 
         if (this.currentRequest && (!this.lab1 || !this.lab2)) {
-          this.lab1 = this.getLabsFree(this.currentRequest.res1, 0, true)[0];
-          this.lab2 = this.getLabsFree(this.currentRequest.res2, 0, true)[0];
+          this.lab1 = this.getFreeLabs(this.currentRequest.res1, 0, true)[0];
+          this.lab2 = this.getFreeLabs(this.currentRequest.res2, 0, true)[0];
           if (!this.lab1 || !this.lab2) {
             this.lab1 = undefined;
             this.lab2 = undefined;
@@ -204,7 +204,7 @@ export class laboratoryCell extends Cell {
     if (this.currentRequest && Game.time % this.currentRequest.cooldown == 0 && this.currentRequest.current > 0) {
       if (this.lab1 && this.lab1.store[this.currentRequest.res1] >= 5
         && this.lab2 && this.lab2.store[this.currentRequest.res2] >= 5) {
-        let labs = this.getLabsFree(this.currentRequest.res, 5);
+        let labs = this.getFreeLabs(this.currentRequest.res, 5);
         for (const k in _.filter(labs, (lab) => !lab.cooldown))
           if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
             this.currentRequest.current -= 5;

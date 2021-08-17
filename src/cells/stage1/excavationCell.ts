@@ -30,7 +30,7 @@ export class excavationCell extends Cell {
         safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational) {
-        if (cell.container.store.getUsedCapacity() >= 700) {
+        if (cell.container.store.getUsedCapacity() >= 1000) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace)
             this.quitefullContainers.push(cell.container);
