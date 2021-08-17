@@ -9,8 +9,6 @@ import { profile } from "../../profiler/decorator";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
 
-import { VISUALS } from "../../settings";
-
 @profile
 export class bootstrapMaster extends Master {
   cell: developmentCell;
@@ -109,7 +107,7 @@ export class bootstrapMaster extends Master {
           type: "mining",
           target: "",
         };
-        if (VISUALS)
+        if (Memory.settings.visuals)
           bee.creep.say('🔄');
       }
 
@@ -118,7 +116,7 @@ export class bootstrapMaster extends Master {
           type: "working",
           target: "",
         };
-        if (VISUALS)
+        if (Memory.settings.visuals)
           bee.creep.say('🛠️');
       }
 

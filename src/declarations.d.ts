@@ -32,6 +32,11 @@ declare global {
     },
     masters: { [id: string]: any };
 
+    // some setting that i wan't to be able to change dynamically
+    settings: {
+      visuals: boolean,
+    }
+
     // for TRAVELER
     empire?: any;
 

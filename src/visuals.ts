@@ -7,10 +7,14 @@ const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 @profile
 export class Visuals {
 
+  caching: { [id: string]: string } | null = null;
+
   create() {
-    for (const name in Apiary.hives) {
-      _.forEach(Apiary.hives[name].annexNames.concat([name]), (annex) => {
-        let pos = new RoomPosition(1, 1, annex);
+    if (Game.time % 10 == 0 || !this.caching) {
+      if (!this.caching)
+        this.caching = {};
+      for (const name in Apiary.hives) {
+        let pos = new RoomPosition(1, 1, name);
         let ans = this.table(this.statsHives(name), pos);
         pos.y = Math.ceil(ans.y) + 0.2;
 
@@ -20,21 +24,32 @@ export class Visuals {
             pos, (1 - (labReuest.current / labReuest.plan)));
           pos.y = Math.ceil(ans.y) + 0.2;
         }
-      });
-    }
+        this.caching[name] = new RoomVisual(name).export();
+        _.forEach(Apiary.hives[name].annexNames, (annex) => {
+          new RoomVisual(annex).import(this.caching![name]);
+          this.caching![annex] = this.caching![name];
+        });
+      }
+    } else
+      for (const name in this.caching)
+        new RoomVisual(name).import(this.caching[name]);
   }
 
   statsHives(hiveName: string): string[][] {
-    let ans: string[][] = [[hiveName]];
     let hive = Apiary.hives[hiveName];
+    let ans: string[][] = [[hiveName]];
     let cell;
     cell = hive.cells.spawn;
     if (cell) {
       let ss = ["spawn"];
-      ss.push(hive.orderList.length ? ` ${hive.orderList.length}` : "");
-      if (cell.beeMaster)
-        ss.push(` : ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      if (hive.bassboost)
+        ss.push(hive.bassboost.roomName);
+      else {
+        ss.push(hive.orderList.length ? ` ${hive.orderList.length}` : "");
+        if (cell.beeMaster)
+          ss.push(` : ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
+            "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      }
       ans.push(ss);
     }
     cell = hive.cells.storage;
@@ -72,7 +87,7 @@ export class Visuals {
       _.forEach(cell.resourceCells, (rcell) => {
         all += 1;
         operational += rcell.operational ? 1 : 0;
-        if (rcell.beeMaster) {
+        if (rcell.beeMaster && rcell.perSecondNeeded) {
           beesAmount += rcell.beeMaster.beesAmount;
           waitingForBees += rcell.beeMaster.waitingForBees;
           targetBeeCount += rcell.beeMaster.targetBeeCount;

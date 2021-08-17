@@ -3,11 +3,10 @@ import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";
-import { Visuals } from "./visuals";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { LOGGING_CYCLE, VISUALS } from "./settings";
+import { LOGGING_CYCLE } from "./settings";
 
 @profile
 export class _Apiary {
@@ -57,8 +56,6 @@ export class _Apiary {
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.print + " update");
     });
-
-    if (VISUALS) new Visuals().create();
   }
 
   // run phase

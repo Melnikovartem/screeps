@@ -75,7 +75,12 @@ export abstract class Master {
     // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
-      this.hive.bassboost.orderList.push(order);
+      if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyAvailable ||
+        this.hive.bassboost.orderList.length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0) {
+        order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
+        this.hive.orderList.push(order);
+      } else
+        this.hive.bassboost.orderList.push(order);
       if (this.hive.room.energyCapacityAvailable >= 1000 && Apiary.orders["boost_" + this.hive.roomName])
         Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
@@ -88,6 +93,9 @@ export abstract class Master {
   abstract run(): void;
 
   get print(): string {
+    let firstBee = this.bees[Object.keys(this.bees)[0]];
+    if (firstBee && firstBee.pos)
+      return `<a href=#!/room/${Game.shard.name}/${firstBee.pos.roomName}>[${this.ref} ${this.beesAmount}/${this.targetBeeCount}]</a>`;
     return `<a href=#!/room/${Game.shard.name}/${this.hive.roomName}>[${this.ref} ${this.beesAmount}/${this.targetBeeCount}]</a>`;
   }
 

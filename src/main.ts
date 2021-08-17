@@ -1,6 +1,7 @@
 'use strict'
 
 import { Mem } from "./memory";
+import { Visuals } from "./visuals";
 import { CustomConsole } from "./console";
 
 import "./Traveler/Traveler";
@@ -12,6 +13,8 @@ import { _Apiary } from "./Apiary";
 
 import { GENERATE_PIXEL, LOGGING_CYCLE, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
+
+let visuals: Visuals | undefined;
 
 // This gets run on each global reset
 function onGlobalReset(): void {
@@ -41,6 +44,13 @@ function main() {
 
   Apiary.update();
   Apiary.run();
+
+  if (Memory.settings.visuals) {
+    if (!visuals)
+      visuals = new Visuals();
+    visuals.create();
+  } else if (visuals)
+    visuals = undefined;
 
   // now it checks itself!! i am genius
   if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel)
