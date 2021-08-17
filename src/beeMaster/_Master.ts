@@ -4,6 +4,15 @@ import { SpawnOrder, Hive } from "../Hive";
 import { Bee } from "../bee";
 import { profile } from "../profiler/decorator";
 
+// some states that masters can use in different ways
+export enum states {
+  idle = 0,
+  chill = 1,
+  work = 2,
+  fflush = 3,
+  refill = 4,
+}
+
 // i will need to do something so i can build up structure from memory
 @profile
 export abstract class Master {
@@ -29,6 +38,7 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
+    bee.state = states.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;
@@ -91,6 +101,15 @@ export abstract class Master {
 
   // second stage of decision making like where do i need to move
   abstract run(): void;
+
+  delete() {
+    for (const key in this.bees) {
+      this.bees[key].master = undefined;
+      this.bees[key].state = states.idle;
+      this.bees[key].target = null;
+    }
+    delete Apiary.masters[this.ref];
+  }
 
   get print(): string {
     let firstBee = this.bees[Object.keys(this.bees)[0]];

@@ -1,27 +1,32 @@
-import { Master } from "beeMaster/_Master";
+import { Master, states } from "beeMaster/_Master";
 import { profile } from "./profiler/decorator";
 
 @profile
 export class Bee {
 
-  master: Master;
+  master: Master | undefined;
   creep: Creep;
 
   ref: string;
   pos: RoomPosition;
   store: Store<ResourceConstant, false>;
+  memory: CreepMemory;
 
   reusePath: number = 3;
   lifeTime: number = CREEP_LIFE_TIME;
 
+  // target caching and states to have some tools to work with in masters
+  state: states = states.idle;
+  target: string | null = null;
+
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
-    this.master = Apiary.masters[this.creep.memory.refMaster];
 
     this.ref = creep.name;
     this.pos = creep.pos;
     this.store = creep.store;
+    this.memory = creep.memory;
 
     if (creep.getBodyparts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
@@ -34,16 +39,24 @@ export class Bee {
     this.creep = Game.creeps[this.ref];
     this.pos = this.creep.pos;
     this.store = this.creep.store;
+    this.memory = this.creep.memory;
+    if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
+      this.master = Apiary.masters[this.creep.memory.refMaster];
+      this.master.newBee(this);
+    }
   }
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
 
-  actionWrap<Obj extends RoomObject | RoomPosition>(target: Obj, action: () => number, range?: number): number {
-    if (this.creep.pos.inRangeTo(target, range ? range : 1))
+  actionWrap<Obj extends RoomObject | RoomPosition | undefined>(target: Obj, action: () => number, range?: number): number {
+    if (!target)
+      return ERR_INVALID_ARGS;
+
+    if (this.creep.pos.inRangeTo(target!, range ? range : 1))
       return action();
     else
-      this.goTo(target);
+      this.goTo(target!);
     return ERR_NOT_IN_RANGE;
   }
 
@@ -69,65 +82,57 @@ export class Bee {
 
   // aliases from creep
 
-  transfer(target: Structure, resourceType: ResourceConstant, amount?: number): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.transfer(target, resourceType, amount);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
+  transfer(t: Structure | undefined, resourceType: ResourceConstant, amount?: number): number {
+    return this.actionWrap(t, () => this.creep.transfer(<Structure>t, resourceType, amount));
   }
 
-  withdraw(target: Structure, resourceType: ResourceConstant, amount?: number): number {
-    if (this.creep.pos.isNearTo(target))
-      return this.creep.withdraw(target, resourceType, amount);
-    else
-      this.goTo(target);
-    return ERR_NOT_IN_RANGE;
+  withdraw(t: Structure | undefined, resourceType: ResourceConstant, amount?: number): number {
+    return this.actionWrap(t, () => this.creep.withdraw(<Structure>t, resourceType, amount));
   }
 
-  attack(t: Creep | Structure | PowerCreep): number {
-    return this.actionWrap(t, () => this.creep.attack(t));
+  attack(t: Creep | Structure | PowerCreep | undefined): number {
+    return this.actionWrap(t, () => this.creep.attack(<Creep | Structure | PowerCreep>t));
   }
 
-  heal(t: Creep | PowerCreep | Bee) {
+  heal(t: Creep | PowerCreep | Bee | undefined) {
     if (t instanceof Bee)
       t = t.creep;
     return this.actionWrap(t, () => this.creep.heal(<Creep | PowerCreep>t));
   }
 
-  rangedHeal(t: Creep | PowerCreep | Bee) {
+  rangedHeal(t: Creep | PowerCreep | Bee | undefined) {
     if (t instanceof Bee)
       t = t.creep;
     return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), 3);
   }
 
-  harvest(t: Source | Mineral): number {
-    return this.actionWrap(t, () => this.creep.harvest(t));
+  harvest(t: Source | Mineral | undefined): number {
+    return this.actionWrap(t, () => this.creep.harvest(<Source | Mineral>t));
   }
 
 
-  build(t: ConstructionSite): number {
-    return this.actionWrap(t, () => this.creep.build(t));
+  build(t: ConstructionSite | undefined): number {
+    return this.actionWrap(t, () => this.creep.build(<ConstructionSite>t));
   }
 
-  repair(t: Structure): number {
-    return this.actionWrap(t, () => this.creep.repair(t), 3);
+  repair(t: Structure | undefined): number {
+    return this.actionWrap(t, () => this.creep.repair(<Structure>t), 3);
   }
 
-  upgradeController(t: StructureController): number {
-    return this.actionWrap(t, () => this.creep.upgradeController(t), 3);
+  upgradeController(t: StructureController | undefined): number {
+    return this.actionWrap(t, () => this.creep.upgradeController(<StructureController>t), 3);
   }
 
-  reserveController(t: StructureController): number {
-    return this.actionWrap(t, () => this.creep.reserveController(t));
+  reserveController(t: StructureController | undefined): number {
+    return this.actionWrap(t, () => this.creep.reserveController(<StructureController>t));
   }
 
-  claimController(t: StructureController): number {
-    return this.actionWrap(t, () => this.creep.claimController(t));
+  claimController(t: StructureController | undefined): number {
+    return this.actionWrap(t, () => this.creep.claimController(<StructureController>t));
   }
 
-  attackController(t: StructureController): number {
-    return this.actionWrap(t, () => this.creep.attackController(t));
+  attackController(t: StructureController | undefined): number {
+    return this.actionWrap(t, () => this.creep.attackController(<StructureController>t));
   }
 
   static checkBees() {

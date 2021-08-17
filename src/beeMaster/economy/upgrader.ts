@@ -2,7 +2,7 @@ import { upgradeCell } from "../../cells/stage1/upgradeCell";
 
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
-import { Master } from "../_Master";
+import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -52,10 +52,12 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      let ans;
+      if (this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+        bee.state = states.refill;
+      else
+        bee.state = states.work;
 
-      if ((this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25)
-        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+      if (bee.state == states.refill) {
         let suckerTarget;
 
         if (this.cell.link)
@@ -67,14 +69,18 @@ export class upgraderMaster extends Master {
             suckerTarget = storage;
         }
 
-        if (suckerTarget) {
-          ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-        } else
-          bee.goRest(this.cell.pos);
+        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
+          bee.state = states.work;
+
+        if (!suckerTarget)
+          bee.state = states.chill;
       }
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || ans == OK)
+      if (bee.state == states.work)
         bee.upgradeController(this.cell.controller);
+
+      if (bee.state == states.chill)
+        bee.goRest(this.cell.pos);
     });
   }
 }

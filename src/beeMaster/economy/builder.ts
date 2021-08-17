@@ -1,11 +1,10 @@
 import { Setups } from "../../creepSetups";
 import { SpawnOrder, Hive } from "../../Hive";
-import { Master } from "../_Master";
+import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class builderMaster extends Master {
-  targetCaching: { [id: string]: string } = {};
 
   constructor(hive: Hive) {
     super(hive, "BuilderHive_" + hive.room.name);
@@ -14,7 +13,6 @@ export class builderMaster extends Master {
   update() {
     super.update();
 
-    // TODO smarter counting of builders needed
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 22)
       && storage && storage.store[RESOURCE_ENERGY] > 200000)
@@ -40,19 +38,24 @@ export class builderMaster extends Master {
   }
 
   run() {
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     _.forEach(this.bees, (bee) => {
-      let ans: number = ERR_FULL;
-      if (bee.creep.store[RESOURCE_ENERGY] == 0 && storage) {
-        ans = bee.withdraw(storage, RESOURCE_ENERGY);
-        this.targetCaching[bee.ref] = "";
-      }
+      if (bee.creep.store[RESOURCE_ENERGY] == 0)
+        bee.state = states.refill;
+      else
+        bee.state = states.work;
 
-      if (bee.creep.store[RESOURCE_ENERGY] > 0 || ans == OK) {
-        let target: Structure | ConstructionSite | null = Game.getObjectById(this.targetCaching[bee.ref]);
+      if (bee.state == states.refill
+        && bee.withdraw(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY) == OK)
+        bee.state = states.work;
 
-        if (target instanceof Structure && target.hits == target.hitsMax)
-          target = null;
+      if (bee.state == states.work) {
+        let target: Structure | ConstructionSite | null = null;
+
+        if (bee.target) {
+          target = Game.getObjectById(bee.target);
+          if (target instanceof Structure && target.hits == target.hitsMax)
+            target = null;
+        }
 
         if (!target)
           target = bee.pos.findClosest(this.hive.emergencyRepairs);
@@ -66,10 +69,13 @@ export class builderMaster extends Master {
             bee.build(target);
           else if (target instanceof Structure)
             bee.repair(target);
-          this.targetCaching[bee.ref] = target.id;
+          bee.target = target.id;
         } else
-          bee.goRest(this.hive.pos);
+          bee.state = states.chill;
       }
+
+      if (bee.state == states.chill)
+        bee.goRest(this.hive.pos);
     });
   }
 }

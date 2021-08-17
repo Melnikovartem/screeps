@@ -4,7 +4,7 @@ import { developmentCell } from "../../cells/stage0/developmentCell";
 import { Bee } from "../../Bee";
 import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
-import { Master } from "../_Master";
+import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
@@ -12,9 +12,6 @@ type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working
 @profile
 export class bootstrapMaster extends Master {
   cell: developmentCell;
-
-  // some small caching. I just couldn't resist
-  stateMap: { [id: string]: { type: workTypes, target: string } } = {};
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
 
   constructor(developmentCell: developmentCell) {
@@ -57,10 +54,6 @@ export class bootstrapMaster extends Master {
   newBee(bee: Bee): void {
     super.newBee(bee);
     bee.reusePath = 1;
-    this.stateMap[bee.ref] = {
-      type: "working",
-      target: "",
-    };
   }
 
   update() {
@@ -102,29 +95,15 @@ export class bootstrapMaster extends Master {
 
     _.forEach(this.bees, (bee) => {
 
-      if (this.stateMap[bee.ref].type != "mining" && bee.creep.store[RESOURCE_ENERGY] == 0) {
-        this.stateMap[bee.ref] = {
-          type: "mining",
-          target: "",
-        };
-        if (Memory.settings.visuals)
-          bee.creep.say('🔄');
-      }
+      if (bee.creep.store[RESOURCE_ENERGY] == 0)
+        bee.state = states.refill;
 
-      if (this.stateMap[bee.ref].type == "mining" && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
-        this.stateMap[bee.ref] = {
-          type: "working",
-          target: "",
-        };
-        if (Memory.settings.visuals)
-          bee.creep.say('🛠️');
-      }
+      if (bee.state == states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
+        bee.state = states.work;
 
-      if (this.stateMap[bee.ref].type == "mining") {
+      if (bee.state == states.refill) {
         let source: Source | null;
-
-        if (this.stateMap[bee.ref].target == "") {
-          // find new source
+        if (!bee.target) {
           // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
           // but that is too much for too little
           source = <Source>bee.pos.findClosest(
@@ -133,43 +112,43 @@ export class bootstrapMaster extends Master {
                 && (source.pos.getOpenPositions().length || bee.pos.isNearTo(source)) && source.energy > 0));
           if (source) {
             this.sourceTargeting[source.id].current += 1;
-            this.stateMap[bee.ref].target = source.id;
+            bee.target = source.id;
           }
-        } else {
-          source = Game.getObjectById(this.stateMap[bee.ref].target);
-        }
+        } else
+          source = Game.getObjectById(bee.target);
 
         if (source) {
           if (source.energy == 0)
-            this.stateMap[bee.ref].target = "";
+            bee.target = null;
           else {
             bee.harvest(source);
             sourceTargetingCurrent[source.id] += 1;
           }
         } else
-          bee.goRest(this.hive.pos);
-      } else {
-        let target: Structure | ConstructionSite | null = Game.getObjectById(this.stateMap[bee.ref].target);
-        let workType: workTypes = this.stateMap[bee.ref].type;
+          bee.state = states.chill;
+      }
 
-        // checking if target is valid
-        if (workType == "refill") {
-          workType = "working";
-          if ((target instanceof StructureSpawn || target instanceof StructureExtension || target instanceof StructureTower)
-            && target.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
-            workType = "refill";
+      if (bee.state == states.work) {
+        let target: Structure | ConstructionSite | null = null;
+        let workType: workTypes = "working";
 
-          // idk why it wont let me mesh it all in 1 if i guess couse storage can have more then energy
-          if ((target instanceof StructureStorage) && target.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
-            workType = "refill";
-
-        } else if (workType == "repair") {
-          if (!(target instanceof Structure) || target.hits == target.hitsMax)
-            workType = "working";
+        if (bee.target) {
+          target = Game.getObjectById(bee.target);
+          if (target) {
+            if (target instanceof ConstructionSite)
+              workType = "build";
+            else if (target.structureType == STRUCTURE_CONTROLLER)
+              workType = "upgrade";
+            else if ((target.structureType == STRUCTURE_SPAWN || target.structureType == STRUCTURE_EXTENSION
+              || target.structureType == STRUCTURE_STORAGE || target.structureType == STRUCTURE_TOWER)
+              && (<StructureSpawn | StructureExtension | StructureTower>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+              workType = "refill"; // also can be StructureStorage, but if i cast that it will be sad (different type of <Store>)
+            else if (target.hits < target.hitsMax)
+              workType = "repair";
+            else
+              target = null;
+          }
         }
-
-        if (workType == "working")
-          target = null;
 
         if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] == 0) {
           target = this.cell.controller;
@@ -180,35 +159,30 @@ export class bootstrapMaster extends Master {
           let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.spawn.spawns;
           targets = _.filter(targets.concat(this.hive.cells.spawn.extensions),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-          if (targets.length) {
-            target = bee.pos.findClosest(targets);
-            workType = "refill";
-          }
+          target = bee.pos.findClosest(targets);
+          workType = "refill";
         }
 
         if (!target) {
           let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-          if (targets.length) {
-            target = bee.pos.findClosest(targets);
-            workType = "refill";
-          }
+          target = bee.pos.findClosest(targets);
+          workType = "refill";
         }
 
         if (!target && this.hive.room.storage) {
-          // if build the storage, but it is not yet recreated into stage 1 hive
           target = this.hive.room.storage;
           workType = "refill";
         }
 
         if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
           if (!target) {
-            target = <Structure>bee.pos.findClosest(this.hive.emergencyRepairs)
+            target = bee.pos.findClosest(this.hive.emergencyRepairs)
             workType = "repair";
           }
 
           if (!target) {
-            target = <ConstructionSite>bee.pos.findClosest(this.hive.constructionSites);
+            target = bee.pos.findClosest(this.hive.constructionSites);
             workType = "build";
           }
         }
@@ -218,26 +192,24 @@ export class bootstrapMaster extends Master {
           workType = "upgrade";
         }
 
-        //second check is kinda useless one, but sure
-        if (workType == "build" && target instanceof ConstructionSite)
-          bee.build(target);
-        else if (workType == "repair" && target instanceof Structure)
-          bee.repair(target);
-        else if (workType == "refill" && target instanceof Structure)
-          bee.transfer(target, RESOURCE_ENERGY);
-        else if (workType == "upgrade" && target instanceof StructureController)
-          bee.upgradeController(target);
-        else
-          workType = "working";
+        if (workType == "repair")
+          bee.repair(<Structure>target);
+        else if (workType == "build")
+          bee.build(<ConstructionSite>target);
+        else if (workType == "refill")
+          bee.transfer(<Structure>target, RESOURCE_ENERGY);
+        else if (workType == "upgrade")
+          bee.upgradeController(<StructureController>target);
 
         count[workType] += 1;
-        this.stateMap[bee.ref].type = workType;
-        this.stateMap[bee.ref].target = target.id;
+        bee.target = target.id;
       }
+
+      if (bee.state == states.chill)
+        bee.goRest(this.hive.pos);
     });
 
-    _.forEach(sourceTargetingCurrent, (current, sourceId) => {
-      this.sourceTargeting[<string>sourceId].current = current;
-    });
+    for (const sourceId in sourceTargetingCurrent)
+      this.sourceTargeting[sourceId].current = sourceTargetingCurrent[sourceId];
   }
 }

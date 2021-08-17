@@ -3,7 +3,7 @@ import { respawnCell } from "../../cells/base/respawnCell";
 
 import { Setups, CreepSetup } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
-import { Master } from "../_Master";
+import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -40,27 +40,28 @@ export class queenMaster extends Master {
     targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.bees, (bee) => {
-      if (targets.length) {
-        let ans;
-        if (bee.creep.store[RESOURCE_ENERGY] == 0) {
-          let suckerTarget;
+      if (bee.creep.store[RESOURCE_ENERGY] == 0) {
+        if (targets)
+          bee.state = states.refill;
+        else
+          bee.state = states.chill;
+      } else {
+        if (targets)
+          bee.state = states.work;
+        else
+          bee.state = states.fflush;
+      }
 
-          if (!suckerTarget && storage)
-            suckerTarget = storage;
+      if (bee.state == states.refill && bee.withdraw(storage, RESOURCE_ENERGY) == OK)
+        bee.state = states.work;
 
-          if (suckerTarget)
-            ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-        }
+      if (bee.state == states.work && targets.length)
+        bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
 
-        if (bee.creep.store[RESOURCE_ENERGY] > 0 || ans == OK) {
-          let target = bee.pos.findClosest(targets);
-          if (target)
-            bee.transfer(target, RESOURCE_ENERGY);
-        }
-      } else if (this.hive.cells.storage && bee.creep.store[RESOURCE_ENERGY] > 0
-        && this.hive.cells.storage.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        bee.transfer(this.hive.cells.storage.storage, RESOURCE_ENERGY);
-      } else
+      if (bee.state == states.fflush && storage)
+        bee.transfer(storage, RESOURCE_ENERGY);
+
+      if (bee.state == states.chill)
         bee.goRest(this.cell.pos);
     });
   }
