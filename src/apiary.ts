@@ -3,26 +3,32 @@ import { Master } from "./beeMaster/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";
+import { Visuals } from "./visuals";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { LOGGING_CYCLE } from "./settings";
+import { LOGGING_CYCLE, VISUALS } from "./settings";
 
 @profile
 export class _Apiary {
   destroyTime: number;
   intel: Intel;
 
-  bees: { [id: string]: Bee } = {};
-  hives: { [id: string]: Hive } = {};
-  masters: { [id: string]: Master } = {};
-  orders: { [id: string]: Order } = {};
+  bees: { [id: string]: Bee };
+  hives: { [id: string]: Hive };
+  masters: { [id: string]: Master };
+  orders: { [id: string]: Order };
 
   constructor() {
     if (LOGGING_CYCLE) Memory.log.apiary = Game.time;
 
     this.destroyTime = Game.time + 4000;
     this.intel = new Intel();
+
+    this.bees = {};
+    this.hives = {};
+    this.orders = {};
+    this.masters = {};
   }
 
   init() {
@@ -51,6 +57,8 @@ export class _Apiary {
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.print + " update");
     });
+
+    if (VISUALS) new Visuals().create();
   }
 
   // run phase

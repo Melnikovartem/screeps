@@ -4,7 +4,7 @@ import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { VISUALS_ON } from "../../settings"
+import { VISUALS } from "../../settings"
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
@@ -43,13 +43,13 @@ export class drainerMaster extends SwarmMaster {
 
     if (this.tank && !Apiary.bees[this.tank.ref]) {
       delete this.tank;
-      if (VISUALS_ON && this.healer)
+      if (VISUALS && this.healer)
         this.healer.creep.say("😢");
     }
 
     if (this.healer && !Apiary.bees[this.healer.ref]) {
       delete this.healer;
-      if (VISUALS_ON && this.tank)
+      if (VISUALS && this.tank)
         this.tank.creep.say("😢");
     }
 
@@ -84,7 +84,7 @@ export class drainerMaster extends SwarmMaster {
       this.exit = undefined;
       this.healing = false;
       this.target = undefined;
-      if (this.tank && this.healer && VISUALS_ON) {
+      if (this.tank && this.healer && VISUALS) {
         this.tank.creep.say("➡️");
         this.healer.creep.say("➡️");
       }
@@ -100,7 +100,7 @@ export class drainerMaster extends SwarmMaster {
       if (this.tank && this.healer && this.tank.pos.isNearTo(this.meetingPoint) &&
         this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y) {
         this.phase = "draining";
-        if (VISUALS_ON) {
+        if (VISUALS) {
           this.tank.creep.say("⚡");
           this.healer.creep.say("⚡");
         }
@@ -114,7 +114,7 @@ export class drainerMaster extends SwarmMaster {
       let healed = false;
 
       if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
-        if (VISUALS_ON && !this.healing) {
+        if (VISUALS && !this.healing) {
           this.tank.creep.say("🏥");
           this.healer.creep.say("🏥");
         }
@@ -123,7 +123,7 @@ export class drainerMaster extends SwarmMaster {
           this.tank.goTo(this.healer.pos);
         if (this.tank.creep.hits == this.tank.creep.hitsMax) {
           this.healing = false;
-          if (VISUALS_ON) {
+          if (VISUALS) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
           }

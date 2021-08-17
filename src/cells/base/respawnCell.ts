@@ -39,17 +39,16 @@ export class respawnCell extends Cell {
       if (order.amount <= 0 || !Apiary.masters[order.master]) {
         remove.push(key);
       } else {
+        let spawn = this.freeSpawns.pop()!;
+
         let setup;
         if (order.priority < 4)
           setup = order.setup.getBody(energyAvailable);
         else
           setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
 
-        // if we were able to get a body :/
         if (setup.body.length) {
-          let spawn = this.freeSpawns.pop()!;
-
-          let name = order.setup.name + " " + makeId(4);
+          let name = order.setup.name + "_" + makeId(4);
           let memory: CreepMemory = {
             refMaster: order.master,
             born: Game.time,

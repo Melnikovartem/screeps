@@ -1,4 +1,4 @@
-export const DEVELOPING = false;
+export const DEVELOPING = true;
 
 // turn off on official
 export const UPDATE_EACH_TICK = DEVELOPING;
@@ -7,7 +7,7 @@ export const VISUALS_TRAVELER = DEVELOPING;
 // think about on official
 export const PROFILER = DEVELOPING;
 export const LOGGING_CYCLE = 100;
-export const VISUALS_ON = true;
+export const VISUALS = true;
 export const SAFE_DEV = !DEVELOPING;
 
 // turn on on official

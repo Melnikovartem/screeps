@@ -246,6 +246,8 @@ export class Hive {
   }
 
   updateLog() {
+    if (!Memory.log.hives[this.roomName])
+      Memory.log.hives[this.roomName] = {};
     let orderMap: { [id: string]: { amount: number, priority: number } } = {};
     _.forEach(this.orderList, (order) => {
       orderMap[order.master] = {

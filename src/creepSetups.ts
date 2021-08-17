@@ -56,27 +56,23 @@ export class CreepSetup {
 
 export const SetupsNames = {
   // Civilian
-  starter: 'Just a bee',
-  claimer: 'Bee Drone',
-  manager: 'Stingless bee',
+  claimer: 'BeeDrone',
+  manager: 'StinglessBee',
   hauler: 'Bumblebee',
   miner: 'Andrena',
-  upgrader: 'Honey bee',
+  upgrader: 'HoneyBee',
   builder: 'Colletidae',
   scout: 'Stenotritidae',
-  bootstrap: 'Bee Larva',
-  queen: 'Bee Queen',
+  bootstrap: 'BeeLarva',
+  queen: 'BeeQueen',
   // War
-  knight: 'European hornet',
-  tank: 'Dolichovespula arenaria',
-  healer: 'Bald-faced hornet',
+  knight: 'EuropeanHornet',
+  tank: 'DolichovespulaArenaria',
+  healer: 'Bald-facedHornet',
 }
 
 
 export const Setups = {
-  starter: new CreepSetup(SetupsNames.starter, {
-    pattern: [WORK, CARRY, MOVE],
-  }),
   claimer: {
     normal: new CreepSetup(SetupsNames.claimer, {
       pattern: [CLAIM, MOVE],
