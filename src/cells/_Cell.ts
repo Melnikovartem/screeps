@@ -1,6 +1,7 @@
 import { Hive } from "../Hive";
 import { Master } from "../beeMaster/_Master";
 import { profile } from "../profiler/decorator";
+import { UPDATE_EACH_TICK } from "../settings";
 
 @profile
 export abstract class Cell {
@@ -28,14 +29,16 @@ export abstract class Cell {
       let data = this[key];
       if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
         let gameObject = Game.getObjectById(data.id)
-        this[key] = <typeof data>gameObject;
+        if (gameObject || UPDATE_EACH_TICK)
+          this[key] = <typeof data>gameObject;
       } else if (Array.isArray(data)
         && (data[0] instanceof Structure || data[0] instanceof Source || data[0] instanceof Mineral)) {
         let new_data: any[] = [];
 
         _.forEach(data, (structure) => {
           let gameObject = Game.getObjectById(structure.id)
-          new_data.push(gameObject);
+          if (gameObject || UPDATE_EACH_TICK)
+            new_data.push(gameObject);
         });
 
         this[key] = <typeof data>new_data;

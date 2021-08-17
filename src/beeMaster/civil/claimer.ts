@@ -43,9 +43,11 @@ export class claimerMaster extends Master {
       else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner)
-          bee.claimController(controller);
-        else
-          this.order.destroyTime = 0;
+          if (bee.claimController(controller) == OK) {
+            bee.pos.createFlag("boost_" + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
+            Apiary.destroyTime = Game.time; // create new hive
+          } else
+            this.order.destroyTime = 0;
       }
     });
   }

@@ -187,7 +187,7 @@ export class Order {
   delete() {
     if (LOGGING_CYCLE) {
       Memory.log.orders[this.ref].destroyTime = Game.time;
-      Memory.log.orders[this.ref].pos = this.flag.pos;
+      Memory.log.orders[this.ref].pos = this.pos;
     }
     if (this.master)
       delete Apiary.masters[this.master.ref];

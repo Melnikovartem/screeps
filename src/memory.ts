@@ -78,6 +78,14 @@ export class Mem {
           if (--j == 0) break;
         }
       }
+
+      if (Object.keys(Memory.log.enemies).length > 50) {
+        let j = Object.keys(Memory.log.enemies).length - 35;
+        for (let key in Memory.log.enemies) {
+          delete Memory.log.enemies[key];
+          if (--j == 0) break;
+        }
+      }
     }
   }
 }

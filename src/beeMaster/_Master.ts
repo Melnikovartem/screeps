@@ -88,8 +88,8 @@ export abstract class Master {
   abstract run(): void;
 
   get print(): string {
-    if (this.bees.length)
-      return `<a href=#!/room/${Game.shard.name}/${this.bees[0].pos.roomName}>[${this.ref}]</a>`;
+    if (Object.keys(this.bees).length)
+      return `<a href=#!/room/${Game.shard.name}/${this.bees[Object.keys(this.bees)[0]].pos.roomName}>[${this.ref}]</a>`;
     return `<a href=#!/room/${Game.shard.name}/${this.hive.roomName}>[${this.ref}]</a>`;
   }
 

@@ -34,7 +34,6 @@ export class puppetMaster extends Master {
       this.order.destroyTime = Game.time;
 
     if (this.checkBees() && this.spawned < this.maxSpawns) {
-      console.log("A", this.beesAmount);
       let order: SpawnOrder = {
         master: this.ref,
         setup: Setups.puppet,
