@@ -42,13 +42,13 @@ export class drainerMaster extends SwarmMaster {
 
     if (this.tank && !Apiary.bees[this.tank.ref]) {
       delete this.tank;
-      if (Memory.settings.visuals && this.healer)
+      if (Memory.settings.framerate && this.healer)
         this.healer.creep.say("😢");
     }
 
     if (this.healer && !Apiary.bees[this.healer.ref]) {
       delete this.healer;
-      if (Memory.settings.visuals && this.tank)
+      if (Memory.settings.framerate && this.tank)
         this.tank.creep.say("😢");
     }
 
@@ -83,7 +83,7 @@ export class drainerMaster extends SwarmMaster {
       this.exit = undefined;
       this.healing = false;
       this.target = undefined;
-      if (this.tank && this.healer && Memory.settings.visuals) {
+      if (this.tank && this.healer && Memory.settings.framerate) {
         this.tank.creep.say("➡️");
         this.healer.creep.say("➡️");
       }
@@ -99,7 +99,7 @@ export class drainerMaster extends SwarmMaster {
       if (this.tank && this.healer && this.tank.pos.isNearTo(this.meetingPoint) &&
         this.healer.pos.x == this.meetingPoint.x && this.healer.pos.y == this.meetingPoint.y) {
         this.phase = "draining";
-        if (Memory.settings.visuals) {
+        if (Memory.settings.framerate) {
           this.tank.creep.say("⚡");
           this.healer.creep.say("⚡");
         }
@@ -113,7 +113,7 @@ export class drainerMaster extends SwarmMaster {
       let healed = false;
 
       if (this.tank.creep.hits <= this.tank.creep.hitsMax * 0.5 || this.healing) {
-        if (Memory.settings.visuals && !this.healing) {
+        if (Memory.settings.framerate && !this.healing) {
           this.tank.creep.say("🏥");
           this.healer.creep.say("🏥");
         }
@@ -122,7 +122,7 @@ export class drainerMaster extends SwarmMaster {
           this.tank.goTo(this.healer.pos);
         if (this.tank.creep.hits == this.tank.creep.hitsMax) {
           this.healing = false;
-          if (Memory.settings.visuals) {
+          if (Memory.settings.framerate) {
             this.tank.creep.say("⚡");
             this.healer.creep.say("⚡");
           }
@@ -161,7 +161,7 @@ export class drainerMaster extends SwarmMaster {
                 if (this.tank.pos.x == 0 || this.tank.pos.x == 49 || this.tank.pos.y == 0 || this.tank.pos.y == 49)
                   this.tank.goToRoom(this.target);
               } else
-                console.log(this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!));
+                this.tank.attack(this.tank.pos.findClosest(roomInfo.enemies)!);
           }
         } else if (this.exit)
           this.tank.goTo(this.exit);

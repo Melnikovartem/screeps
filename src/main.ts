@@ -14,6 +14,8 @@ import { _Apiary } from "./Apiary";
 import { GENERATE_PIXEL, LOGGING_CYCLE, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
 
+// Mem.wipe();
+
 let visuals: Visuals | undefined;
 
 // This gets run on each global reset
@@ -45,7 +47,7 @@ function main() {
   Apiary.update();
   Apiary.run();
 
-  if (Memory.settings.visuals) {
+  if (Memory.settings.framerate) {
     if (!visuals)
       visuals = new Visuals();
     visuals.create();

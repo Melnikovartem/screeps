@@ -98,10 +98,12 @@ export class bootstrapMaster extends Master {
       if (bee.creep.store[RESOURCE_ENERGY] == 0)
         bee.state = states.refill;
 
-      if (bee.state == states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
+      if (bee.state == states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+        bee.target = null;
         bee.state = states.work;
+      }
 
-      if (bee.state == states.refill) {
+      if (bee.state == states.refill || bee.state == states.chill) {
         let source: Source | null;
         if (!bee.target) {
           // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
@@ -117,7 +119,9 @@ export class bootstrapMaster extends Master {
         } else
           source = Game.getObjectById(bee.target);
 
+
         if (source) {
+          bee.state = states.refill;
           if (source.energy == 0)
             bee.target = null;
           else {
@@ -192,14 +196,17 @@ export class bootstrapMaster extends Master {
           workType = "upgrade";
         }
 
+        let ans;
         if (workType == "repair")
-          bee.repair(<Structure>target);
+          ans = bee.repair(<Structure>target);
         else if (workType == "build")
-          bee.build(<ConstructionSite>target);
+          ans = bee.build(<ConstructionSite>target);
         else if (workType == "refill")
-          bee.transfer(<Structure>target, RESOURCE_ENERGY);
+          ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
         else if (workType == "upgrade")
-          bee.upgradeController(<StructureController>target);
+          ans = bee.upgradeController(<StructureController>target);
+        if (ans == ERR_NOT_IN_RANGE)
+          bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
 
         count[workType] += 1;
         bee.target = target.id;

@@ -11,25 +11,29 @@ export class Visuals {
   caching: { [id: string]: string } | null = null;
 
   create() {
-    if (Game.time % 10 == 0 || !this.caching || UPDATE_EACH_TICK) {
+    if (Game.time % Memory.settings.framerate == 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
 
       let ans: { x: number, y: number, roomName: undefined | string } = { x: 42, y: 1, roomName: undefined };
-      let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
-      if (heapStat) {
-        ans = this.progressbar("HEAP", ans, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
-        ans.x = 42;
-        ans.y += + 0.2;
-      }
       ans = this.progressbar("CPU", ans, Game.cpu.getUsed() / 20, { align: "right" }, 6);
       ans.x = 42;
       ans.y += + 0.2;
       ans = this.progressbar("BUCKET", ans, Game.cpu.bucket / 10000, { align: "right" }, 6);
       ans.x = 42;
       ans.y += + 0.2;
+      ans = this.progressbar("GCL " + Game.gcl.level + "→" + (Game.gcl.level + 1), ans, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
+      ans.x = 42;
+      ans.y += + 0.2;
+      let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
+      if (heapStat) {
+        ans = this.progressbar("HEAP", ans, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
+        ans.x = 42;
+        ans.y += + 0.2;
+      }
 
-      this.caching["global"] = new RoomVisual().export();
+      if (Memory.settings.framerate > 1)
+        this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
         let minSize = 0;
@@ -44,15 +48,17 @@ export class Visuals {
         let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest;
         if (labReuest && labReuest.plan) {
           ans = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
-            ans, (1 - (labReuest.current / labReuest.plan)), undefined, minSize);
+            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize);
           minSize = Math.max(minSize, ans.x - 1);
           ans.x = 1;
           ans.y += + 0.2;
         }
+
         this.caching[name] = new RoomVisual(name).export();
         _.forEach(Apiary.hives[name].annexNames, (annex) => {
           new RoomVisual(annex).import(this.caching![name]);
-          this.caching![annex] = this.caching![name];
+          if (Memory.settings.framerate > 1)
+            this.caching![annex] = this.caching![name];
         });
       }
     } else {

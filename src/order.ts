@@ -200,7 +200,6 @@ export class Order {
           hiveBoosted.bassboost = null;
           if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.beeMaster)
             (<bootstrapMaster>hiveBoosted.cells.dev.beeMaster).recalculateTargetBee();
-          console.log(hiveBoosted.cells.dev!.beeMaster!.targetBeeCount);
         }
       }
     }

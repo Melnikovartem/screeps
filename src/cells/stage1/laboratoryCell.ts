@@ -124,7 +124,7 @@ export class laboratoryCell extends Cell {
           to: [storageCell.storage],
           from: labs,
           resource: res,
-          priority: 3,
+          priority: sum > LAB_MINERAL_CAPACITY / 4 ? 3 : 5,
           amount: sum,
           multipleFrom: true,
         }

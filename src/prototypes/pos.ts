@@ -159,7 +159,7 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
 
     let newDistance = 0;
     if (this.roomName == pos.roomName)
-      newDistance = this.getRangeTo(pos); // aka Math.min(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
+      newDistance = this.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
     else
       newDistance += this.getRangeTo(pos) + pos.getRangeTo(this) + (this.getRoomRangeTo(pos) - 1) * 25;
 

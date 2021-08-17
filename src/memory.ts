@@ -16,7 +16,7 @@ export class Mem {
     if (!Memory.log.enemies)
       Memory.log.enemies = {};
     if (!Memory.cache) Memory.cache = { intellegence: {} };
-    if (!Memory.settings) Memory.settings = { visuals: true };
+    if (!Memory.settings) Memory.settings = { framerate: 10 };
   }
 
   static wipe() {
@@ -28,7 +28,7 @@ export class Mem {
       spawns: {}, hives: {}, orders: {}, crashes: {}, enemies: {}
     };
     Memory.cache = { intellegence: {} };
-    Memory.settings = { visuals: true };
+    Memory.settings = { framerate: 10 };
   }
 
   static clean() {

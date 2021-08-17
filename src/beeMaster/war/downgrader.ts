@@ -53,7 +53,7 @@ export class downgradeMaster extends SwarmMaster {
           let ans = bee.attackController(room.controller);
           if (ans == OK) {
             this.lastAttacked = Game.time;
-            if (Memory.settings.visuals)
+            if (Memory.settings.framerate)
               bee.creep.say("💥");
           }
           else if (ans == ERR_TIRED)

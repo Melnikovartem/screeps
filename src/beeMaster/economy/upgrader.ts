@@ -16,13 +16,14 @@ export class upgraderMaster extends Master {
     this.cell = upgradeCell;
     if (this.cell.link || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
       this.fastMode = true;
+
+    let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
+    if (this.cell.link && storageLink)
+      this.targetBeeCount = Math.round(780 / this.cell.link.pos.getRangeTo(storageLink) / Math.floor(this.hive.room.energyCapacityAvailable / 550 * 5));
   }
 
   update() {
     super.update();
-
-    if (this.targetBeeCount > 1 && this.hive.cells.storage && this.hive.cells.storage.storage.store[RESOURCE_ENERGY] < 100000)
-      this.targetBeeCount = 1;
 
     if (this.checkBees()) {
       let order: SpawnOrder = {

@@ -48,7 +48,6 @@ export class Bee {
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
-
   actionWrap<Obj extends RoomObject | RoomPosition | undefined>(target: Obj, action: () => number, opt: TravelToOptions = {}, range: number = 1): number {
     if (!target)
       return ERR_NOT_FOUND;
@@ -137,23 +136,18 @@ export class Bee {
   static checkBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Game.creeps) {
-      if (!Apiary.bees[name]) {
-        let creep = Game.creeps[name];
-        if (Apiary.masters[creep.memory.refMaster]) {
-          Apiary.bees[creep.name] = new Bee(creep);
-          Apiary.masters[creep.memory.refMaster].newBee(Apiary.bees[creep.name]);
-        } else if (/^masterDevelopmentCell/.exec(creep.memory.refMaster)) {
-          let randomMaster = Object.keys(Apiary.masters)[Math.floor(Math.random() * Object.keys(Apiary.masters).length)];
-          creep.memory.refMaster = randomMaster;
-          Apiary.bees[creep.name] = new Bee(creep);
-          Apiary.masters[creep.memory.refMaster].newBee(Apiary.bees[creep.name]);
-        }
-        // idk what to do if i lost a master to the bee. I guess the bee is just FUCKED for now
+      let bee = Apiary.bees[name];
+      if (!bee)
+        Apiary.bees[name] = new Bee(Game.creeps[name]);
+      else if (bee.state == states.idle && /^masterDevelopmentCell/.exec(bee.memory.refMaster)) {
+        let randomMaster = Object.keys(Apiary.masters)[Math.floor(Math.random() * Object.keys(Apiary.masters).length)];
+        bee.memory.refMaster = randomMaster;
+        Apiary.masters[randomMaster].newBee(bee);
       }
     }
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[${this.ref}]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[${this.ref} ${this.state}]</a>`;
   }
 }

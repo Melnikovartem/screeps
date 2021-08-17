@@ -43,7 +43,7 @@ export class haulerMaster extends Master {
         master: this.ref,
         setup: Setups.hauler,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
-        priority: 7,
+        priority: 6,
       };
 
       this.wish(order);
