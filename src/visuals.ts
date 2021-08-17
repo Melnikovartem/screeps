@@ -9,17 +9,18 @@ export class Visuals {
 
   create() {
     for (const name in Apiary.hives) {
-      let pos = new RoomPosition(1, 1, name);
-      pos = this.table(this.statsHives(name), pos);
-      pos.x = 1;
-      pos.y += 0.2;
+      _.forEach(Apiary.hives[name].annexNames.concat([name]), (annex) => {
+        let pos = new RoomPosition(1, 1, annex);
+        let ans = this.table(this.statsHives(name), pos);
+        pos.y = Math.ceil(ans.y) + 0.2;
 
-      let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest
-      if (labReuest) {
-        pos = this.progressbar(` ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.current}/${labReuest.plan}`, pos, 0);
-        pos.x = 1;
-        pos.y += 0.2;
-      }
+        let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest
+        if (labReuest && labReuest.plan) {
+          ans = this.progressbar(` ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
+            pos, (1 - (labReuest.current / labReuest.plan)));
+          pos.y = Math.ceil(ans.y) + 0.2;
+        }
+      });
     }
   }
 
@@ -39,7 +40,7 @@ export class Visuals {
     cell = hive.cells.storage;
     if (cell) {
       let ss = ["storage"];
-      ss.push(cell.requests.length ? ` ${Object.keys(cell.requests).length}` : "");
+      ss.push(Object.keys(cell.requests).length ? ` ${Object.keys(cell.requests).length}` : "");
       if (cell.beeMaster)
         ss.push(` : ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
           "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
@@ -56,7 +57,7 @@ export class Visuals {
     }
     cell = hive.cells.excavation;
     if (cell) {
-      let ss = ["exacv"];
+      let ss = ["exacav"];
       ss.push(` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`)
       if (cell.beeMaster)
         ss.push(` : ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
@@ -98,18 +99,35 @@ export class Visuals {
     });
   }
 
-  progressbar(label: string, pos: RoomPosition, progress: number) {
+  label(label: string, pos: { x: number, y: number, roomName: string }): { x: number, y: number } {
     let vis = new RoomVisual(pos.roomName);
     let xMax = pos.x + label.length * TEXT_WIDTH + 0.4;
     let yMax = pos.y + TEXT_HEIGHT + 0.5;
-    vis.text(label, pos.x + 0.25, pos.y + 0.2 + TEXT_HEIGHT, this.textStyle());
+    vis.text(label, pos.x + 0.25, pos.y + 0.15 + TEXT_HEIGHT, this.textStyle());
     vis.poly([[pos.x, pos.y], [pos.x, yMax], [xMax, yMax], [xMax, pos.y], [pos.x, pos.y]]);
-    return new RoomPosition(Math.ceil(xMax), Math.ceil(yMax), pos.roomName);
+    return { x: xMax, y: yMax };
   }
 
-  table(strings: string[][], pos: RoomPosition) {
+  progressbar(label: string, pos: { x: number, y: number, roomName: string }, progress: number = 1): { x: number, y: number } {
+    let vis = new RoomVisual(pos.roomName);
+    let lab = this.label(label, pos);
+    let xMax = (pos.x - lab.x) * progress + pos.x
+    vis.poly([[pos.x, pos.y], [pos.x, lab.y], [xMax, lab.y], [xMax, pos.y], [pos.x, pos.y]], {
+      fill: "#ffdd80",
+      stroke: undefined,
+      opacity: 0.3,
+    });
+    return lab;
+  }
+
+  table(strings: string[][], pos: { x: number, y: number, roomName: string }): { x: number, y: number } {
     let vis = new RoomVisual(pos.roomName);
     let pad = 0.2;
+
+    let label;
+    if (strings.length > 0 && strings[0].length == 1)
+      label = strings.shift()![0];
+
     let widths: number[] = [];
     _.forEach(strings, (s) => {
       for (let i = 0; i < s.length; ++i) {
@@ -118,7 +136,7 @@ export class Visuals {
         widths[i] = Math.max(widths[i], s[i].length * TEXT_WIDTH + 0.4);
       }
     });
-    let height = pos.y + pad + TEXT_HEIGHT;
+    let height = pos.y + TEXT_HEIGHT + pad + (label ? TEXT_HEIGHT + pad : 0);
     _.forEach(strings, (s) => {
       let tab = pad;
       for (const i in s) {
@@ -129,7 +147,15 @@ export class Visuals {
     });
     let xMax = pos.x + _.sum(widths) + pad * 2;
     let yMax = height - TEXT_HEIGHT + pad;
+    if (label) {
+      vis.text(label, pos.x + (xMax - pos.x) / 2, pos.y + TEXT_HEIGHT, this.textStyle({ align: "center" }));
+      vis.poly([[pos.x, pos.y], [pos.x, pos.y + TEXT_HEIGHT + pad], [xMax, pos.y + TEXT_HEIGHT + pad], [xMax, pos.y], [pos.x, pos.y]], {
+        fill: "#ffdd80",
+        stroke: undefined,
+        opacity: 0.3,
+      });
+    }
     vis.poly([[pos.x, pos.y], [pos.x, yMax], [xMax, yMax], [xMax, pos.y], [pos.x, pos.y]]);
-    return new RoomPosition(Math.ceil(xMax), Math.ceil(yMax), pos.roomName);
+    return { x: xMax, y: yMax };
   }
 }

@@ -101,7 +101,7 @@ export class managerMaster extends Master {
             this.state = "to";
 
           if (this.manager.store.getFreeCapacity(request.resource) == 0 && this.manager.store[request.resource] == 0)
-            this.state = "chill";
+            this.state = "fflush";
 
           if (request.from[0].store[request.resource] == 0 && this.manager.store[request.resource] == 0 && this.state == "from")
             delete this.cell.requests[this.target];
