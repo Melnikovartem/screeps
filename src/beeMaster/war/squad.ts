@@ -53,7 +53,6 @@ export class squadMaster extends SwarmMaster {
           master: this.ref,
         };
         this.wish(tankOrder, this.ref + "_knight");
-        console.log(2 - this.knights.length);
       }
       if (this.healers.length == 0 || (this.healers.length == 1
         && (!this.healers[0].creep.ticksToLive || this.healers[0].creep.ticksToLive > 1000))) {
@@ -87,14 +86,10 @@ export class squadMaster extends SwarmMaster {
     if (!knight1)
       knight1 = knight2;
 
-    if (knight1 && knight1.state == states.chill)
-      knight1.goRest(this.meetingPoint);
-    if (knight2 && knight2.state == states.chill)
-      knight2.goRest(this.meetingPoint);
-    if (healer1 && healer1.state == states.chill)
-      healer1.goRest(this.meetingPoint);
-    if (healer2 && healer2.state == states.chill)
-      healer2.goRest(this.meetingPoint);
+    _.forEach(this.bees, (bee) => {
+      if (bee.state == states.chill)
+        bee.goRest(this.meetingPoint);
+    });
 
 
     if (knight1 && knight2 && healer1 && healer2) {
@@ -147,17 +142,33 @@ export class squadMaster extends SwarmMaster {
 
       if (needsHealing)
         if (knight1.creep.hits < knight1.creep.hitsMax * 0.50) {
-          healer1.heal(knight1);
-          healer2.heal(knight1);
+          _.forEach(this.healers, (healer) => {
+            if (healer.pos.isNearTo(knight1!))
+              healer.heal(knight1);
+            else
+              healer.rangedHeal(knight1);
+          });
         } else if (knight2.creep.hits < knight2.creep.hitsMax * 0.50) {
-          healer1.heal(knight2);
-          healer2.heal(knight2);
+          _.forEach(this.healers, (healer) => {
+            if (healer.pos.isNearTo(knight2!))
+              healer.heal(knight2);
+            else
+              healer.rangedHeal(knight2);
+          });
         } else if (knight1.creep.hits < knight1.creep.hitsMax) {
-          healer1.heal(knight1);
-          healer2.heal(knight1);
+          _.forEach(this.healers, (healer) => {
+            if (healer.pos.isNearTo(knight1!))
+              healer.heal(knight1);
+            else
+              healer.rangedHeal(knight1);
+          });
         } else if (knight2.creep.hits < knight2.creep.hitsMax) {
-          healer1.heal(knight2);
-          healer2.heal(knight2);
+          _.forEach(this.healers, (healer) => {
+            if (healer.pos.isNearTo(knight2!))
+              healer.heal(knight2);
+            else
+              healer.rangedHeal(knight2);
+          });
         }
     }
   }

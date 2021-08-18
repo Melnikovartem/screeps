@@ -1,6 +1,6 @@
 import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
-import { drainerMaster } from "./beeMaster/war/drainer";
+import { dismantlerMaster } from "./beeMaster/war/dismantler";
 import { dupletMaster } from "./beeMaster/war/duplet";
 import { squadMaster } from "./beeMaster/war/squad";
 
@@ -96,7 +96,7 @@ export class Order {
         } else if (this.flag.secondaryColor == COLOR_PURPLE)
           this.master = new downgradeMaster(this);
         else if (this.flag.secondaryColor == COLOR_YELLOW)
-          this.master = new drainerMaster(this);
+          this.master = new dismantlerMaster(this);
         else if (this.flag.secondaryColor == COLOR_GREY)
           this.master = new puppetMaster(this);
         else if (this.flag.secondaryColor == COLOR_RED)

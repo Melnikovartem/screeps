@@ -104,6 +104,10 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), opt, 3);
   }
 
+  dismantle(t: Structure | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.dismantle(<Structure>t), opt);
+  }
+
   harvest(t: Source | Mineral | undefined, opt?: TravelToOptions): number {
     return this.actionWrap(t, () => this.creep.harvest(<Source | Mineral>t), opt);
   }

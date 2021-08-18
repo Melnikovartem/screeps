@@ -8,7 +8,7 @@ interface BodySetup {
   patternLimit?: number;
 }
 
-const partsImportance = [TOUGH, MOVE, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL]
+const partsImportance = [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK, HEAL]
 
 @profile
 export class CreepSetup {
@@ -67,7 +67,7 @@ export const SetupsNames = {
   queen: 'BeeQueen',
   // War
   knight: 'EuropeanHornet',
-  tank: 'DolichovespulaArenaria',
+  dismantler: 'DolichovespulaArenaria',
   healer: 'Bald-facedHornet',
   defender: 'VespaAffinis',
 }
@@ -136,9 +136,8 @@ export const Setups = {
   knight: new CreepSetup(SetupsNames.knight, {
     pattern: [TOUGH, ATTACK, MOVE],
   }),
-  tank: new CreepSetup(SetupsNames.tank, {
-    fixed: [ATTACK, TOUGH, MOVE],
-    pattern: [TOUGH, TOUGH, MOVE],
+  dismantler: new CreepSetup(SetupsNames.dismantler, {
+    pattern: [WORK, TOUGH, MOVE],
   }),
   healer: new CreepSetup(SetupsNames.healer, {
     pattern: [HEAL, HEAL, MOVE, MOVE],
