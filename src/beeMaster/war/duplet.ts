@@ -1,5 +1,5 @@
 import { Bee } from "../../bee";
-import { Setups } from "../../creepSetups";
+import { Setups, CreepSetup } from "../../creepSetups";
 import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
@@ -50,19 +50,23 @@ export class dupletMaster extends SwarmMaster {
     if (!this.spawned) {
       this.spawned = true;
       if (!this.knight) {
-        let tankOrder: SpawnOrder = {
-          setup: Setups.knight,
+        let knightOrder: SpawnOrder = {
+          setup: new CreepSetup(Setups.knight.name, { ...Setups.knight.bodySetup }),
           amount: 1,
           priority: 4,
+          master: this.ref,
         };
-        this.wish(tankOrder, this.ref + "_knight");
+        knightOrder.setup.bodySetup.patternLimit = 10;
+        this.wish(knightOrder, this.ref + "_knight");
       }
       if (!this.healer) {
         let healerOrder: SpawnOrder = {
-          setup: Setups.healer,
+          setup: new CreepSetup(Setups.healer.name, { ...Setups.healer.bodySetup }),
           amount: 1,
           priority: 4,
+          master: this.ref,
         };
+        healerOrder.setup.bodySetup.patternLimit = 2;
         this.wish(healerOrder, this.ref + "_healer");
       }
     }

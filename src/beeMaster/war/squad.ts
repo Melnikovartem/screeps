@@ -106,26 +106,38 @@ export class squadMaster extends SwarmMaster {
 
     if (knight1 && knight1.state == states.work && !this.waitingForBees) {
       // try to fix formation if broken
-      if (knight2 && !knight2.pos.isNearTo(knight1))
-        knight2.goTo(knight1.pos, { movingTarget: true });
-      if (healer1 && !healer1.pos.isNearTo(knight1))
-        healer1.goTo(knight1.pos, { movingTarget: true });
-      if (healer2 && !healer2.pos.isNearTo(knight2 ? knight2.pos : knight1))
-        healer2.goTo(knight2 ? knight2.pos : knight1.pos, { movingTarget: true });
-      else if (healer2 && healer1 && !healer2.pos.isNearTo(healer1))
+      if (healer2 && healer1 && !healer2.pos.isNearTo(healer1))
         healer2.goTo(healer1.pos, { movingTarget: true });
 
       let roomInfo = Apiary.intel.getInfo(knight1.pos.roomName);
       let target: Structure | Creep = <Structure | Creep>knight1.pos.findClosest(roomInfo.enemies);
+      let nextPos: any = {};
+      let newPos: RoomPosition | undefined;
       let ans1, ans2;
+      let needsHealing = knight1.creep.hits < knight1.creep.hitsMax || (knight2 && knight2.creep.hits < knight2.creep.hitsMax);
       if (target) {
         ans1 = knight1.attack(target);
-        if (knight2)
-          ans2 = knight2.attack(target);
-      } else {
-        ans1 = knight1.goRest(this.order.pos);
-        if (knight2)
-          ans2 = knight2.goRest(this.order.pos);
+        if (knight2) {
+          if (nextPos.nextPos)
+            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => knight2!.pos.isNearTo(p))[0];
+          if (newPos) {
+            ans2 = ERR_NOT_IN_RANGE;
+            knight2.creep.move(knight2.pos.getDirectionTo(newPos));
+          }
+          if (knight2.pos.isNearTo(target) || !newPos)
+            ans2 = knight2.attack(target, { returnData: nextPos });
+        }
+      } else if (!needsHealing) {
+        ans1 = knight1.goRest(this.order.pos, { returnData: nextPos });
+        if (knight2) {
+          if (nextPos.nextPos)
+            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => knight2!.pos.isNearTo(p))[0];
+          if (newPos) {
+            ans2 = ERR_NOT_IN_RANGE;
+            knight2.creep.move(knight2.pos.getDirectionTo(newPos));
+          } else
+            ans2 = knight2.goRest(this.order.pos);
+        }
       }
 
       if (ans1 == ERR_NOT_IN_RANGE && healer1)
@@ -133,19 +145,20 @@ export class squadMaster extends SwarmMaster {
       if ((ans2 == ERR_NOT_IN_RANGE || (ans2 == undefined && ans1 == ERR_NOT_IN_RANGE)) && healer2)
         healer2.creep.move(healer2.pos.getDirectionTo(knight2 ? knight2.pos : knight1));
 
-      if (knight1.creep.hits < knight1.creep.hitsMax * 0.50) {
-        healer1.heal(knight1);
-        healer2.heal(knight1);
-      } else if (knight2.creep.hits < knight2.creep.hitsMax * 0.50) {
-        healer1.heal(knight2);
-        healer2.heal(knight2);
-      } else if (knight1.creep.hits < knight1.creep.hitsMax) {
-        healer1.heal(knight1);
-        healer2.heal(knight1);
-      } else if (knight2.creep.hits < knight2.creep.hitsMax) {
-        healer1.heal(knight2);
-        healer2.heal(knight2);
-      }
+      if (needsHealing)
+        if (knight1.creep.hits < knight1.creep.hitsMax * 0.50) {
+          healer1.heal(knight1);
+          healer2.heal(knight1);
+        } else if (knight2.creep.hits < knight2.creep.hitsMax * 0.50) {
+          healer1.heal(knight2);
+          healer2.heal(knight2);
+        } else if (knight1.creep.hits < knight1.creep.hitsMax) {
+          healer1.heal(knight1);
+          healer2.heal(knight1);
+        } else if (knight2.creep.hits < knight2.creep.hitsMax) {
+          healer1.heal(knight2);
+          healer2.heal(knight2);
+        }
     }
   }
 }

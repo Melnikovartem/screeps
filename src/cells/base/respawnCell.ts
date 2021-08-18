@@ -33,7 +33,7 @@ export class respawnCell extends Cell {
     let sortedOrders = _.map(this.hive.spawOrders,
       (order, ref) => { return { order: order, master: order.master ? order.master : ref! } })
       .sort((a, b) => a.order.priority - b.order.priority);
-    for (const key in sortedOrders) {
+    for (let key = 0; key < sortedOrders.length; ++key) {
       if (!this.freeSpawns.length)
         break;
 
