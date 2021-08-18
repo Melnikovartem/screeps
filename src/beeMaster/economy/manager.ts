@@ -104,7 +104,9 @@ export class managerMaster extends Master {
               delete this.cell.requests[this.manager.target];
             else if (this.manager.state == states.refill)
               this.manager.state = states.work;
-          } else if (this.manager.state == states.work) {
+          }
+
+          if (this.manager.state == states.work) {
             while (request.to.length > 1 && (<Store<ResourceConstant, false>>request.to[0].store).getFreeCapacity(request.resource) == 0)
               request.to.shift();
 

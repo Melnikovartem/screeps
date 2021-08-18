@@ -1,6 +1,8 @@
 import { hordeMaster } from "./beeMaster/war/horde";
 import { downgradeMaster } from "./beeMaster/war/downgrader";
 import { drainerMaster } from "./beeMaster/war/drainer";
+import { dupletMaster } from "./beeMaster/war/duplet";
+import { squadMaster } from "./beeMaster/war/squad";
 
 import { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
@@ -95,21 +97,13 @@ export class Order {
           this.master = new downgradeMaster(this);
         else if (this.flag.secondaryColor == COLOR_YELLOW)
           this.master = new drainerMaster(this);
-        else if (this.flag.secondaryColor == COLOR_GREY) {
+        else if (this.flag.secondaryColor == COLOR_GREY)
           this.master = new puppetMaster(this);
-        }
-        else if (this.flag.secondaryColor == COLOR_RED) {
-          let newMaster = new hordeMaster(this);
-          if (this.ref.includes("controller"))
-            newMaster.tryToDowngrade = true;
-          let matches = this.ref.match(/\d+/g);
-          if (matches != null) //F?
-            newMaster.targetBeeCount = +matches[0];
-          else
-            newMaster.targetBeeCount = 1;
-          newMaster.priority = 4;
-          this.master = newMaster;
-        }
+        else if (this.flag.secondaryColor == COLOR_RED)
+          this.master = new dupletMaster(this);
+        else if (this.flag.secondaryColor == COLOR_ORANGE)
+          this.master = new squadMaster(this);
+
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {

@@ -59,6 +59,7 @@ export class drainerMaster extends SwarmMaster {
           setup: Setups.tank,
           amount: 1,
           priority: 4,
+          master: this.ref,
         };
         this.wish(tankOrder, this.ref + "_tank");
       }
@@ -67,6 +68,7 @@ export class drainerMaster extends SwarmMaster {
           setup: Setups.healer,
           amount: 1,
           priority: 4,
+          master: this.ref,
         };
         this.wish(healerOrder, this.ref + "_healer");
       }

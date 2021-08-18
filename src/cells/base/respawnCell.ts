@@ -20,6 +20,7 @@ export class respawnCell extends Cell {
   update() {
     super.update();
 
+
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
     if (!this.beeMaster && this.hive.stage > 0)
@@ -29,43 +30,44 @@ export class respawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
-    let sortedOrders = _.map(this.hive.spawOrders, (order, master) => { return { order: order, master: master! } }).sort((a, b) => a.order.priority - b.order.priority);
+    let sortedOrders = _.map(this.hive.spawOrders,
+      (order, ref) => { return { order: order, master: order.master ? order.master : ref! } })
+      .sort((a, b) => a.order.priority - b.order.priority);
     for (const key in sortedOrders) {
       if (!this.freeSpawns.length)
         break;
 
-      let order = sortedOrders[key].order; {
-        let spawn = this.freeSpawns.pop()!;
+      let order = sortedOrders[key].order;
+      let spawn = this.freeSpawns.pop()!;
 
-        let setup;
-        if (order.priority < 4)
-          setup = order.setup.getBody(energyAvailable);
-        else
-          setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
+      let setup;
+      if (order.priority < 4)
+        setup = order.setup.getBody(energyAvailable);
+      else
+        setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
 
-        if (setup.body.length) {
-          let name = order.setup.name + "_" + makeId(4);
-          let memory: CreepMemory = {
-            refMaster: sortedOrders[key].master,
-            born: Game.time,
+      if (setup.body.length) {
+        let name = order.setup.name + "_" + makeId(4);
+        let memory: CreepMemory = {
+          refMaster: sortedOrders[key].master,
+          born: Game.time,
+        };
+
+        let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
+
+        if (ans == OK) {
+          energyAvailable -= setup.cost;
+          if (LOGGING_CYCLE) Memory.log.spawns[name] = {
+            time: Game.time,
+            spawnRoom: this.hive.roomName,
+            fromSpawn: spawn!.name,
+            orderedBy: sortedOrders[key].master,
+            priority: order.priority,
           };
 
-          let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
-
-          if (ans == OK) {
-            energyAvailable -= setup.cost;
-            if (LOGGING_CYCLE) Memory.log.spawns[name] = {
-              time: Game.time,
-              spawnRoom: this.hive.roomName,
-              fromSpawn: spawn!.name,
-              orderedBy: sortedOrders[key].master,
-              priority: order.priority,
-            };
-
-            this.hive.spawOrders[sortedOrders[key].master].amount -= 1;
-            if (this.hive.spawOrders[sortedOrders[key].master].amount == 0)
-              delete this.hive.spawOrders[sortedOrders[key].master];
-          }
+          this.hive.spawOrders[sortedOrders[key].master].amount -= 1;
+          if (this.hive.spawOrders[sortedOrders[key].master].amount == 0)
+            delete this.hive.spawOrders[sortedOrders[key].master];
         }
       }
     }
