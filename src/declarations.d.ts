@@ -75,7 +75,7 @@ declare global {
           pos: RoomPosition,
           name: string,
           destroyTime: number,
-          acted: boolean,
+          master: boolean,
         }
       },
       crashes: {

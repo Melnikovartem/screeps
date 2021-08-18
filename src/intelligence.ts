@@ -43,7 +43,7 @@ export class Intel {
 
     if (room.controller) {
       if (room.controller.safeMode)
-        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 : 
+        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 :
       if (room.controller.my || !room.controller.owner)
         this.roomInfo[room.name].ownedByEnemy = false;
     }
@@ -84,10 +84,7 @@ export class Intel {
       });
 
     if (!this.roomInfo[room.name].enemies.length)
-      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(HEAL));
-
-    if (!this.roomInfo[room.name].enemies.length)
-      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
+      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
 
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);

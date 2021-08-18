@@ -42,13 +42,6 @@ export class Order {
     };
 
     this.destroyTime = -1;
-    if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
-      time: Game.time,
-      name: this.flag.name,
-      pos: this.flag.pos,
-      destroyTime: -1,
-      acted: false,
-    }
   }
 
   findHive(stage?: 0 | 1 | 2): Hive {
@@ -103,7 +96,6 @@ export class Order {
           this.master = new dupletMaster(this);
         else if (this.flag.secondaryColor == COLOR_ORANGE)
           this.master = new squadMaster(this);
-
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
@@ -191,8 +183,13 @@ export class Order {
   // what to do when delete if something neede
   delete() {
     if (LOGGING_CYCLE) {
-      Memory.log.orders[this.ref].destroyTime = Game.time;
-      Memory.log.orders[this.ref].pos = this.pos;
+      if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
+        time: Game.time,
+        name: this.flag.name,
+        pos: this.pos,
+        destroyTime: Game.time,
+        master: this.master ? true : false,
+      }
     }
 
     if (this.master)

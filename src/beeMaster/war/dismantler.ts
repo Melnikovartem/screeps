@@ -33,6 +33,7 @@ export class dismantlerMaster extends SwarmMaster {
     else
       this.dismantler = bee;
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+    this.spawned = true;
   }
 
   update() {
@@ -43,6 +44,14 @@ export class dismantlerMaster extends SwarmMaster {
 
     if (this.healer && !Apiary.bees[this.healer.ref])
       delete this.healer;
+
+    if (this.meetingPoint != this.order.pos) {
+      this.meetingPoint = this.order.pos;
+      if (this.healer)
+        this.healer.state = states.chill;
+      if (this.dismantler)
+        this.dismantler.state = states.chill;
+    }
 
     if (!this.spawned) {
       this.spawned = true;
@@ -79,13 +88,12 @@ export class dismantlerMaster extends SwarmMaster {
         bee.goRest(this.meetingPoint);
     });
 
-    if (dismantler && dismantler.state == states.chill
-      && healer && healer.state == states.chill
-      && dismantler.pos.isNearTo(this.meetingPoint) && healer.pos.isNearTo(this.meetingPoint)) {
-      healer.state = states.work;
+    if (dismantler && dismantler.state == states.chill && dismantler.pos.isNearTo(this.meetingPoint)) {
       dismantler.state = states.work;
       this.exit = <RoomPosition>dismantler.pos.findClosest(dismantler.creep.room.find(FIND_EXIT));
     }
+    if (healer && healer.state == states.chill && healer.pos.isNearTo(this.meetingPoint))
+      healer.state = states.work;
 
     if (healer && healer.state == states.work) {
       healer.goRest(this.order.pos);
@@ -105,7 +113,7 @@ export class dismantlerMaster extends SwarmMaster {
       if (dismantler.creep.hits == dismantler.creep.hitsMax)
         dismantler.state = states.work;
 
-      if (healer) {
+      if (healer && healer.state == states.work) {
         if (!dismantler.pos.isNearTo(healer))
           dismantler.goTo(healer.pos);
       } else dismantler.goRest(this.order.pos);

@@ -122,10 +122,10 @@ export class Hive {
     this.pos = this.room.controller!.pos;
 
     this.stage = 0;
-    if (this.room.storage)
+    if (this.room.storage && this.room.storage.store[RESOURCE_ENERGY] > 1000)
       this.stage = 1;
 
-    if (this.room.controller!.level == 8)
+    if (this.stage == 1 && this.room.controller!.level == 8)
       this.stage = 2;
 
     // create your own fun hive with this cool brand new cells

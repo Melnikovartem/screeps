@@ -66,7 +66,7 @@ export class managerMaster extends Master {
         priority: 7,
       };
 
-      if (this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000) {
+      if (this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 700000) {
         order.setup = new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup });
         order.setup.bodySetup.patternLimit = 5; // save energy from burning
       }

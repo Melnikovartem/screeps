@@ -31,14 +31,17 @@ export class respawnCell extends Cell {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
     let sortedOrders = _.map(this.hive.spawOrders,
-      (order, ref) => { return { order: order, master: order.master ? order.master : ref! } })
+      (order, ref) => { return { order: order, master: order.master ? order.master : ref!, ref: ref! } })
       .sort((a, b) => a.order.priority - b.order.priority);
+    console.log(_.map(sortedOrders, (o) => o.order.priority))
     for (let key = 0; key < sortedOrders.length; ++key) {
       if (!this.freeSpawns.length)
         break;
 
       let order = sortedOrders[key].order;
       let spawn = this.freeSpawns.pop()!;
+
+      console.log(order.amount, sortedOrders[key].ref, order.priority, this.freeSpawns.length);
 
       let setup;
       if (order.priority < 4)
@@ -65,9 +68,9 @@ export class respawnCell extends Cell {
             priority: order.priority,
           };
 
-          this.hive.spawOrders[sortedOrders[key].master].amount -= 1;
-          if (this.hive.spawOrders[sortedOrders[key].master].amount == 0)
-            delete this.hive.spawOrders[sortedOrders[key].master];
+          this.hive.spawOrders[sortedOrders[key].ref].amount -= 1;
+          if (this.hive.spawOrders[sortedOrders[key].ref].amount == 0)
+            delete this.hive.spawOrders[sortedOrders[key].ref];
         }
       }
     }

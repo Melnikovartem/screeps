@@ -46,7 +46,7 @@ export class defenseCell extends Cell {
         } else
           _.forEach(this.towers, (tower) => {
             let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
-            if (closest)
+            if (closest && (tower.pos.getRangeTo(closest) < 15 || (closest instanceof Creep && closest.owner.username == "Invader")))
               tower.attack(closest);
           });
       }
