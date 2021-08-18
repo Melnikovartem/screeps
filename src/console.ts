@@ -110,8 +110,11 @@ export class CustomConsole {
     return _.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster == masterName), (b) => b.print).join('\n');
   }
 
-  printspawOrders(hiveName?: string) {
+  printSpawnOrders(hiveName?: string) {
+    // i know this is messy, but this is print so it is ok
     return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName == hiveName), (h) => `${h.print
-      }:\n${_.map(h.spawOrders, (o, master) => `${o.priority} ${master}: ${o.setup.name} ${o.amount}`).join('\n')}\n`).join('\n');
+      }:\n${_.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
+        (a, b) => a.order.priority - b.order.priority),
+        (o) => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')}\n`).join('\n');
   }
 }

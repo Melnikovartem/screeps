@@ -85,20 +85,20 @@ export abstract class Master {
     }
   }
 
-  wish(order: SpawnOrder) {
+  wish(order: SpawnOrder, ref: string = this.ref) {
     // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
       if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyAvailable ||
         Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0) {
         order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
-        this.hive.spawOrders[this.ref] = order;
+        this.hive.spawOrders[ref] = order;
       } else
-        this.hive.bassboost.spawOrders[this.ref] = order;
+        this.hive.bassboost.spawOrders[ref] = order;
       if (this.hive.room.energyCapacityAvailable >= 1000 && Apiary.orders["boost_" + this.hive.roomName])
         Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
-      this.hive.spawOrders[this.ref] = order;
+      this.hive.spawOrders[ref] = order;
     this.waitingForBees += order.amount;
     // well he placed an order now just need to catch a creep after a spawn
   }

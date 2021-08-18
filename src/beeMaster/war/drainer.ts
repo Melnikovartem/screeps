@@ -60,7 +60,7 @@ export class drainerMaster extends SwarmMaster {
           amount: 1,
           priority: 4,
         };
-        this.wish(tankOrder);
+        this.wish(tankOrder, this.ref + "_tank");
       }
       if (!this.healer) {
         let healerOrder: SpawnOrder = {
@@ -68,7 +68,7 @@ export class drainerMaster extends SwarmMaster {
           amount: 1,
           priority: 4,
         };
-        this.wish(healerOrder);
+        this.wish(healerOrder, this.ref + "_healer");
       }
     }
 

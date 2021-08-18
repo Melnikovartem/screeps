@@ -58,7 +58,7 @@ export class hordeMaster extends SwarmMaster {
     _.forEach(roomInfo.enemies, (enemy) => {
       enemyTargetingCurrent[enemy.id] = {
         current: 0,
-        max: enemy.pos.getOpenPositions().length,
+        max: enemy.pos.getOpenPositions(true).length,
       }
     });
 
@@ -68,10 +68,12 @@ export class hordeMaster extends SwarmMaster {
           bee.goTo(this.order.pos);
         } else {
           let target: Structure | Creep = <Structure | Creep>bee.pos.findClosest(_.filter(roomInfo.enemies,
-            (structure) => enemyTargetingCurrent[structure.id].current < enemyTargetingCurrent[structure.id].max));
-
+            (enemy) => enemyTargetingCurrent[enemy.id].current < enemyTargetingCurrent[enemy.id].max));
           if (target) {
-            bee.attack(target);
+            if (bee.pos.getRangeTo(target) < 3)
+              bee.attack(target, { movingTarget: true });
+            else
+              bee.attack(target);
             enemyTargetingCurrent[target.id].current += 1;
           } else if (!bee.pos.isNearTo(this.order.pos))
             bee.goTo(this.order.pos);

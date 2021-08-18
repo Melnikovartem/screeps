@@ -89,6 +89,9 @@ export class Intel {
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK));
 
+    if (!this.roomInfo[room.name].enemies.length)
+      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);
+
     if (!this.roomInfo[room.name].enemies.length) {
       this.roomInfo[room.name].safePlace = true;
 
