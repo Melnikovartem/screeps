@@ -18,7 +18,6 @@ import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
 import { CreepSetup } from "./creepSetups";
 
 export interface SpawnOrder {
-  master: string;
   amount: number;
   setup: CreepSetup;
   priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this creep
@@ -95,7 +94,7 @@ export class Hive {
   cells: hiveCells;
   repairSheet: repairSheet;
 
-  orderList: SpawnOrder[] = [];
+  spawOrders: { [id: string]: SpawnOrder } = {};
 
   // some structures (aka preprocess of filters)
   constructionSites: ConstructionSite[] = [];
@@ -250,18 +249,18 @@ export class Hive {
     if (!Memory.log.hives[this.roomName])
       Memory.log.hives[this.roomName] = {};
     let orderMap: { [id: string]: { amount: number, priority: number } } = {};
-    _.forEach(this.orderList, (order) => {
-      orderMap[order.master] = {
-        amount: order.amount,
-        priority: order.priority,
+    for (const master in this.spawOrders) {
+      orderMap[master] = {
+        amount: this.spawOrders[master].amount,
+        priority: this.spawOrders[master].priority,
       };
-    });
+    }
     Memory.log.hives[this.roomName][Game.time] = {
       annexNames: this.annexNames,
       constructionSites: this.constructionSites.length,
       emergencyRepairs: this.emergencyRepairs.length,
       normalRepairs: this.normalRepairs.length,
-      orderList: orderMap,
+      spawOrders: orderMap,
     };
   }
 

@@ -80,26 +80,28 @@ export class Order {
     // dont forget to this.acted = true otherwise you will get new master each tick
     if (this.flag.color == COLOR_RED) {
       this.acted = true;
-      if (this.flag.secondaryColor == COLOR_BLUE)
-        this.master = new hordeMaster(this);
-      else if (this.flag.secondaryColor == COLOR_PURPLE)
-        this.master = new downgradeMaster(this);
-      else if (this.flag.secondaryColor == COLOR_YELLOW)
-        this.master = new drainerMaster(this);
-      else if (this.flag.secondaryColor == COLOR_GREY) {
-        this.master = new puppetMaster(this);
-      }
-      else if (this.flag.secondaryColor == COLOR_RED) {
-        let newMaster = new hordeMaster(this);
-        if (this.ref.includes("controller"))
-          newMaster.tryToDowngrade = true;
-        let matches = this.ref.match(/\d+/g);
-        if (matches != null) //F?
-          newMaster.targetBeeCount = +matches[0];
-        else
-          newMaster.targetBeeCount = 1;
-        newMaster.priority = 4;
-        this.master = newMaster;
+      if (!this.master) {
+        if (this.flag.secondaryColor == COLOR_BLUE)
+          this.master = new hordeMaster(this);
+        else if (this.flag.secondaryColor == COLOR_PURPLE)
+          this.master = new downgradeMaster(this);
+        else if (this.flag.secondaryColor == COLOR_YELLOW)
+          this.master = new drainerMaster(this);
+        else if (this.flag.secondaryColor == COLOR_GREY) {
+          this.master = new puppetMaster(this);
+        }
+        else if (this.flag.secondaryColor == COLOR_RED) {
+          let newMaster = new hordeMaster(this);
+          if (this.ref.includes("controller"))
+            newMaster.tryToDowngrade = true;
+          let matches = this.ref.match(/\d+/g);
+          if (matches != null) //F?
+            newMaster.targetBeeCount = +matches[0];
+          else
+            newMaster.targetBeeCount = 1;
+          newMaster.priority = 4;
+          this.master = newMaster;
+        }
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
@@ -110,7 +112,8 @@ export class Order {
       } else if (this.flag.secondaryColor == COLOR_GREY) {
         if (Object.keys(Apiary.hives).length < Game.gcl.level) {
           this.acted = true;
-          this.master = new claimerMaster(this);
+          if (!this.master)
+            this.master = new claimerMaster(this);
         } else
           this.delete();
       }
@@ -119,7 +122,7 @@ export class Order {
         let hiveToBoos = Apiary.hives[this.pos.roomName];
         if (hiveToBoos && hiveToBoos.stage == 0 && this.pos.roomName != this.hive.roomName) {
           hiveToBoos.bassboost = this.hive;
-          hiveToBoos.orderList = [];
+          hiveToBoos.spawOrders = {};
           if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.beeMaster) {
             hiveToBoos.cells.dev.beeMaster.waitingForBees = 0;
             (<bootstrapMaster>hiveToBoos.cells.dev.beeMaster).recalculateTargetBee();

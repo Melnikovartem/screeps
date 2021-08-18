@@ -56,7 +56,6 @@ export class drainerMaster extends SwarmMaster {
       this.phase = "meeting";
       if (!this.tank) {
         let tankOrder: SpawnOrder = {
-          master: this.ref,
           setup: Setups.tank,
           amount: 1,
           priority: 4,
@@ -65,7 +64,6 @@ export class drainerMaster extends SwarmMaster {
       }
       if (!this.healer) {
         let healerOrder: SpawnOrder = {
-          master: this.ref,
           setup: Setups.healer,
           amount: 1,
           priority: 4,

@@ -28,17 +28,13 @@ export class respawnCell extends Cell {
 
   run() {
     // generate the queue and start spawning
-    let remove: any[] = [];
     let energyAvailable = this.hive.room.energyAvailable;
-    this.hive.orderList.sort((a, b) => a.priority - b.priority);
-
-    _.some(this.hive.orderList, (order, key) => {
+    let sortedOrders = _.map(this.hive.spawOrders, (order, master) => { return { order: order, master: master! } }).sort((a, b) => a.order.priority - b.order.priority);
+    for (const key in sortedOrders) {
       if (!this.freeSpawns.length)
-        return true;
+        break;
 
-      if (order.amount <= 0 || !Apiary.masters[order.master]) {
-        remove.push(key);
-      } else {
+      let order = sortedOrders[key].order; {
         let spawn = this.freeSpawns.pop()!;
 
         let setup;
@@ -50,7 +46,7 @@ export class respawnCell extends Cell {
         if (setup.body.length) {
           let name = order.setup.name + "_" + makeId(4);
           let memory: CreepMemory = {
-            refMaster: order.master,
+            refMaster: sortedOrders[key].master,
             born: Game.time,
           };
 
@@ -62,21 +58,15 @@ export class respawnCell extends Cell {
               time: Game.time,
               spawnRoom: this.hive.roomName,
               fromSpawn: spawn!.name,
-              orderedBy: order.master,
+              orderedBy: sortedOrders[key].master,
             };
 
-            this.hive.orderList[key].amount -= 1;
+            this.hive.spawOrders[sortedOrders[key].master].amount -= 1;
+            if (this.hive.spawOrders[sortedOrders[key].master].amount == 0)
+              delete this.hive.spawOrders[sortedOrders[key].master];
           }
         }
       }
-
-      return false;
-    });
-
-    if (remove.length) {
-      _.forEach(remove.reverse(), (key) => {
-        this.hive.orderList.splice(key, 1);
-      });
     }
   };
 }

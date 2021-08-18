@@ -21,7 +21,6 @@ export class annexMaster extends Master {
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && roomInfo.safePlace && !roomInfo.ownedByEnemy) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
         priority: 5,

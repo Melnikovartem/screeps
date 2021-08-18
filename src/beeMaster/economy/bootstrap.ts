@@ -64,7 +64,7 @@ export class bootstrapMaster extends Master {
 
     if (this.checkBees() && this.hive.stage == 0) {
       let order: SpawnOrder = {
-        master: this.ref,
+
         setup: Setups.bootstrap,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 9,
@@ -120,7 +120,7 @@ export class bootstrapMaster extends Master {
           source = Game.getObjectById(bee.target);
 
 
-        if (source) {
+        if (source instanceof Source) {
           bee.state = states.refill;
           if (source.energy == 0)
             bee.target = null;
@@ -128,8 +128,10 @@ export class bootstrapMaster extends Master {
             bee.harvest(source);
             sourceTargetingCurrent[source.id] += 1;
           }
-        } else
+        } else {
           bee.state = states.chill;
+          bee.target = null;
+        }
       }
 
       if (bee.state == states.work) {

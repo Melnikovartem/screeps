@@ -35,7 +35,6 @@ export class puppetMaster extends Master {
 
     if (this.checkBees() && this.spawned < this.maxSpawns) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: Setups.puppet,
         amount: 1,
         priority: 2, // well it is cheap -_-

@@ -27,7 +27,7 @@ export class upgraderMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        master: this.ref,
+
         setup: Setups.upgrader.manual,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 8,

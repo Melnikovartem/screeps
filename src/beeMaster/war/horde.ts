@@ -32,7 +32,6 @@ export class hordeMaster extends SwarmMaster {
     if (this.checkBees() && this.spawned < this.maxSpawns
       && (Game.time >= roomInfo.safeModeEndTime - 100) && this.order.destroyTime > Game.time + CREEP_LIFE_TIME) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: Setups.knight,
         amount: this.targetBeeCount - this.beesAmount,
         priority: this.priority,

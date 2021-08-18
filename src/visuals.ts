@@ -79,7 +79,7 @@ export class Visuals {
         ss.push("→" + hive.bassboost.roomName);
         ss.push(":");
       } else {
-        ss.push(hive.orderList.length ? ` ${hive.orderList.length}` : "");
+        ss.push(Object.keys(hive.spawOrders).length ? ` ${Object.keys(hive.spawOrders).length}` : "");
         if (cell.beeMaster)
           ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
             "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);

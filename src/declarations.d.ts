@@ -59,7 +59,7 @@ declare global {
             constructionSites: number,
             emergencyRepairs: number,
             normalRepairs: number,
-            orderList: {
+            spawOrders: {
               [id: string]: {
                 amount: number,
                 priority: number,

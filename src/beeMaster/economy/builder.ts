@@ -27,7 +27,7 @@ export class builderMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        master: this.ref,
+
         setup: Setups.builder,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 8,
@@ -53,8 +53,10 @@ export class builderMaster extends Master {
 
         if (bee.target) {
           target = Game.getObjectById(bee.target);
-          if (target instanceof Structure && target.hits == target.hitsMax)
+          if (target instanceof Structure && target.hits == target.hitsMax) {
+            this.hive.shouldRecalc = true;
             target = null;
+          }
         }
 
         if (!target)

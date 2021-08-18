@@ -40,7 +40,7 @@ export class haulerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        master: this.ref,
+
         setup: Setups.hauler,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 6,
@@ -62,7 +62,7 @@ export class haulerMaster extends Master {
   run() {
     _.forEach(this.cell.quitefullContainers, (container) => {
       let target = this.targetMap[container.id];
-      if (target && !Apiary.bees[target.beeRef])
+      if (target && Apiary.bees[target.beeRef])
         return;
 
       let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill));
@@ -93,7 +93,7 @@ export class haulerMaster extends Master {
       if (bee.state == states.refill) {
         if (bee.target && this.targetMap[bee.target]) {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
-          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { ignoreRoads: true }) == OK) {
+          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) == OK) {
             this.targetMap[bee.target] = undefined;
             bee.target = null;
             bee.state = states.work;
@@ -103,7 +103,7 @@ export class haulerMaster extends Master {
       }
 
       if (bee.state == states.chill)
-        bee.goRest(this.cell.pos);
+        bee.goRest(this.cell.pos, { offRoad: true });
     });
   }
 }

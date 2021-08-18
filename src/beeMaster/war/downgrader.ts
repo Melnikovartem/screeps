@@ -28,7 +28,6 @@ export class downgradeMaster extends SwarmMaster {
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.order.destroyTime > Game.time + 100
       && Game.time + CREEP_CLAIM_LIFE_TIME >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
         priority: 9,

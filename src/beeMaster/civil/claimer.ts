@@ -25,7 +25,6 @@ export class claimerMaster extends Master {
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: Setups.claimer.normal,
         amount: 1,
         priority: 6,

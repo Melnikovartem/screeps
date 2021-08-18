@@ -21,7 +21,6 @@ export class queenMaster extends Master {
 
     if (this.checkBees(CREEP_LIFE_TIME)) {
       let order: SpawnOrder = {
-        master: this.ref,
         setup: new CreepSetup(Setups.queen.name, { ...Setups.queen.bodySetup }),
         amount: 1,
         priority: 0,

@@ -57,6 +57,10 @@ export abstract class Master {
     if (!spawnCycle)
       spawnCycle = CREEP_LIFE_TIME;
 
+    if (this.waitingForBees && !this.hive.spawOrders[this.ref]
+      && (!this.hive.bassboost || !this.hive.bassboost.spawOrders[this.ref]))
+      this.waitingForBees = 0;
+
     return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
       || (this.beesAmount == this.targetBeeCount && Game.time >= this.lastSpawns[0] + spawnCycle));
   }
@@ -86,15 +90,15 @@ export abstract class Master {
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
       if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyAvailable ||
-        this.hive.bassboost.orderList.length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0) {
+        Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0) {
         order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
-        this.hive.orderList.push(order);
+        this.hive.spawOrders[this.ref] = order;
       } else
-        this.hive.bassboost.orderList.push(order);
+        this.hive.bassboost.spawOrders[this.ref] = order;
       if (this.hive.room.energyCapacityAvailable >= 1000 && Apiary.orders["boost_" + this.hive.roomName])
         Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
-      this.hive.orderList.push(order);
+      this.hive.spawOrders[this.ref] = order;
     this.waitingForBees += order.amount;
     // well he placed an order now just need to catch a creep after a spawn
   }
@@ -108,6 +112,9 @@ export abstract class Master {
       this.bees[key].state = states.idle;
       this.bees[key].target = null;
     }
+    delete this.hive.spawOrders[this.ref];
+    if (this.hive.bassboost)
+      delete this.hive.bassboost.spawOrders[this.ref];
     delete Apiary.masters[this.ref];
   }
 

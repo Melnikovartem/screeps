@@ -60,7 +60,7 @@ export class managerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        master: this.ref,
+
         setup: Setups.manager,
         amount: 1,
         priority: 7,
