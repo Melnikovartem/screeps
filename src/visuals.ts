@@ -106,7 +106,7 @@ export class Visuals {
     }
     cell = hive.cells.excavation;
     if (cell) {
-      let ss = ["exacav"];
+      let ss = ["excav"];
       ss.push(` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`)
       if (cell.beeMaster)
         ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
@@ -129,6 +129,15 @@ export class Visuals {
       });
       ss = ["resource", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount
         }`];
+      ans.push(ss);
+    }
+
+    cell = hive.cells.upgrade;
+    if (cell) {
+      let ss = ["excav", ` ${Math.floor(cell.controller.progress / cell.controller.progressTotal * 100)}%`];
+      if (cell.beeMaster)
+        ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
+          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
       ans.push(ss);
     }
 

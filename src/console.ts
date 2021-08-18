@@ -102,8 +102,8 @@ export class CustomConsole {
     return _.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName == hiveName), (o) => o.print).join('\n');
   }
 
-  printOrders(hiveName?: string) {
-    return _.map(_.filter(Apiary.orders, (o) => !hiveName || o.hive.roomName == hiveName), (o) => o.print).join('\n');
+  printOrders(hiveName?: string, masters: boolean = true) {
+    return _.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName == hiveName) && (!masters || o.master)), (o) => o.print).join('\n');
   }
 
   printBees(masterName?: string) {

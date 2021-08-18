@@ -110,7 +110,7 @@ export class Bee {
 
 
   build(t: ConstructionSite | undefined, opt?: TravelToOptions): number {
-    return this.actionWrap(t, () => this.creep.build(<ConstructionSite>t), opt);
+    return this.actionWrap(t, () => this.creep.build(<ConstructionSite>t), opt, 3);
   }
 
   repair(t: Structure | undefined, opt?: TravelToOptions): number {

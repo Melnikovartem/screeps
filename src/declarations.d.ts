@@ -50,6 +50,7 @@ declare global {
           spawnRoom: string,
           fromSpawn: string,
           orderedBy: string,
+          priority: number,
         }
       },
       hives: {

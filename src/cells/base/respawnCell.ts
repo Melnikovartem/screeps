@@ -59,6 +59,7 @@ export class respawnCell extends Cell {
               spawnRoom: this.hive.roomName,
               fromSpawn: spawn!.name,
               orderedBy: sortedOrders[key].master,
+              priority: order.priority,
             };
 
             this.hive.spawOrders[sortedOrders[key].master].amount -= 1;

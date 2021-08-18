@@ -57,7 +57,9 @@ export class queenMaster extends Master {
         bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
 
       if (bee.state == states.fflush)
-        bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY);
+        if (bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY)
+          == ERR_NOT_IN_RANGE && bee.store[RESOURCE_ENERGY] > 0)
+          bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
 
       if (bee.state == states.chill)
         bee.goRest(this.cell.pos);

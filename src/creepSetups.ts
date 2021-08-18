@@ -69,6 +69,7 @@ export const SetupsNames = {
   knight: 'EuropeanHornet',
   tank: 'DolichovespulaArenaria',
   healer: 'Bald-facedHornet',
+  defender: 'VespaAffinis',
 }
 
 
@@ -129,6 +130,10 @@ export const Setups = {
     patternLimit: 1,
   }),
   knight: new CreepSetup(SetupsNames.knight, {
+    pattern: [TOUGH, ATTACK, MOVE],
+    patternLimit: 10,
+  }),
+  defender: new CreepSetup(SetupsNames.defender, {
     pattern: [TOUGH, ATTACK, MOVE, MOVE],
     patternLimit: 5,
   }),

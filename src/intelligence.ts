@@ -43,7 +43,7 @@ export class Intel {
 
     if (room.controller) {
       if (room.controller.safeMode)
-        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode;
+        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 : 
       if (room.controller.my || !room.controller.owner)
         this.roomInfo[room.name].ownedByEnemy = false;
     }

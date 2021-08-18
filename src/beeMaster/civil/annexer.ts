@@ -23,7 +23,7 @@ export class annexMaster extends Master {
       let order: SpawnOrder = {
         setup: Setups.claimer.normal,
         amount: 1,
-        priority: 5,
+        priority: 6,
       };
 
       if (this.order.pos.roomName in Game.rooms) {

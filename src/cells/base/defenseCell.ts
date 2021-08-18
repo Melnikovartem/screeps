@@ -14,9 +14,12 @@ export class defenseCell extends Cell {
     super.update();
 
     _.forEach(this.hive.annexNames, (annexName) => {
-      let roomInfo = Apiary.intel.getInfo(annexName, 10);
-      if (roomInfo.enemies.length > 0 && !roomInfo.safePlace && !Game.flags["defend_" + this.hive.roomName])
-        roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
+      if (annexName in Game.rooms) {
+        let roomInfo = Apiary.intel.getInfo(annexName, 10);
+        if (roomInfo.enemies.length > 0 && !roomInfo.safePlace && !Game.flags["defend_" + this.hive.roomName]
+          && _.filter(Game.rooms[annexName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0)
+          roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
+      }
     });
 
     let storageCell = this.hive.cells.storage;
@@ -35,7 +38,8 @@ export class defenseCell extends Cell {
       if (roomInfo.enemies.length > 0) {
         if (this.towers.length == 0) {
           if (this.hive.stage < 2) {
-            if (!Game.flags["defend_" + this.hive.roomName])
+            if (!Game.flags["defend_" + this.hive.roomName]
+              && _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0)
               roomInfo.enemies[0].pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
           } else
             this.hive.room.controller!.activateSafeMode(); // red button
