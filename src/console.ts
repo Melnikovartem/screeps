@@ -95,19 +95,19 @@ export class CustomConsole {
   }
 
   printHives() {
-    return _.map(Apiary.hives, (o) => o.print).join('\n');
+    _.forEach(_.map(Apiary.hives, (o) => o.print), (s) => console.log(s));
   }
 
   printMasters(hiveName?: string) {
-    return _.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName == hiveName), (o) => o.print).join('\n');
+    _.forEach(_.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName == hiveName), (o) => o.print), (s) => console.log(s));
   }
 
   printOrders(hiveName?: string, masters: boolean = true) {
-    return _.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName == hiveName) && (!masters || o.master)), (o) => o.print).join('\n');
+    _.forEach(_.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName == hiveName) && (!masters || o.master)), (o) => o.print), (s) => console.log(s));
   }
 
   printBees(masterName?: string) {
-    return _.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print).join('\n');
+    _.forEach(_.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print), (s) => console.log(s));
   }
 
   printSpawnOrders(hiveName?: string) {

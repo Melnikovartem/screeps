@@ -14,19 +14,29 @@ export class upgraderMaster extends Master {
     super(upgradeCell.hive, upgradeCell.ref);
 
     this.cell = upgradeCell;
-    let storageCell = this.hive.cells.storage
-    if (this.cell.link || (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4))
-      this.fastMode = true;
-    else if (storageCell)
-      this.targetBeeCount = Math.floor((storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50) * 10 / Math.floor(this.hive.room.energyCapacityAvailable / 3));
-    // working carry body parts Math.floor(this.hive.room.energyCapacityAvailable/150)*50
-    //rate of per 1 rate storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50
-    // desired rate(carrybodyparts/per 1 rate) = amount needed
+    let storageCell = this.hive.cells.storage;
+    let ratePerCreep = 1;
+    let desiredRate = 0;
 
-    let storageLink = storageCell && storageCell.link;
-    if (this.cell.link && storageLink)
-      this.targetBeeCount = Math.round(780 / this.cell.link.pos.getRangeTo(storageLink) / Math.floor(this.hive.room.energyCapacityAvailable / 550 * 5));
-    console.log(this.print, storageCell && storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50);
+    if (storageCell)
+      if (this.cell.link && storageCell.link) {
+        let patternLimit = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5);
+        this.fastMode = true;
+        desiredRate = 800 / this.cell.link.pos.getRangeTo(storageCell.link); // how to get more in?
+        ratePerCreep = 50 / (this.cell.link.pos.getTimeForPath(this.cell.controller) + patternLimit * 50);
+      } else if (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4) {
+        let patternLimit = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5);
+        this.fastMode = true;
+        desiredRate = Math.min(storageCell.storage.store[RESOURCE_ENERGY] / 2500, 100);
+        ratePerCreep = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
+        ratePerCreep = 50 / (storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + patternLimit * 50);
+      } else if (storageCell) {
+        let maxCap = Math.floor(this.hive.room.energyCapacityAvailable / 4);
+        desiredRate = Math.min(storageCell.storage.store[RESOURCE_ENERGY] / 5000, 100);
+        ratePerCreep = maxCap / (storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50);
+      }
+
+    this.targetBeeCount = Math.floor(desiredRate / ratePerCreep);
   }
 
   update() {

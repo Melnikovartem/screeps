@@ -78,7 +78,7 @@ export class Visuals {
   }
 
   statsBattle(hiveName: string): string[][] {
-    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName == hiveName && o.flag.color == COLOR_RED);
+    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName == hiveName && o.flag.color != COLOR_PURPLE && o.master);
     let ans: string[][] = [];
     _.forEach(orders, (order) => {
       let roomInfo = Apiary.intel.getInfo(order.pos.roomName);

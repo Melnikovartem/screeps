@@ -109,10 +109,9 @@ export class bootstrapMaster extends Master {
         if (!bee.target) {
           // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
           // but that is too much for too little
-          source = <Source>bee.pos.findClosest(
-            _.filter(this.cell.sources,
-              (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                && (source.pos.getOpenPositions().length || bee.pos.isNearTo(source)) && source.energy > 0));
+          source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
+            (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
+              && (source.pos.getOpenPositions().length || bee.pos.isNearTo(source)) && source.energy > 0));
           if (source) {
             this.sourceTargeting[source.id].current += 1;
             bee.target = source.id;
@@ -157,6 +156,13 @@ export class bootstrapMaster extends Master {
           }
         }
 
+        if (!target) {
+          let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
+            (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+          target = bee.pos.findClosest(targets);
+          workType = "refill";
+        }
+
         if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] == 0) {
           target = this.cell.controller;
           workType = "upgrade";
@@ -165,13 +171,6 @@ export class bootstrapMaster extends Master {
         if (!target) {
           let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.spawn.spawns;
           targets = _.filter(targets.concat(this.hive.cells.spawn.extensions),
-            (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-          target = bee.pos.findClosest(targets);
-          workType = "refill";
-        }
-
-        if (!target) {
-          let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           target = bee.pos.findClosest(targets);
           workType = "refill";

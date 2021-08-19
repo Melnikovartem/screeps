@@ -86,7 +86,6 @@ export abstract class Master {
   }
 
   wish(order: SpawnOrder, ref: string = this.ref) {
-    // this.print("? " + (this.hive.bassboost ? this.hive.bassboost.roomName : "Nope"));
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
       if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyAvailable ||
@@ -113,7 +112,7 @@ export abstract class Master {
       this.bees[key].target = null;
     }
     for (const key in this.hive.spawOrders)
-      if (this.hive.spawOrders[key].master == this.ref)
+      if (key.includes(this.ref))
         delete this.hive.spawOrders[key];
 
     if (this.hive.bassboost)

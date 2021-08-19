@@ -82,8 +82,6 @@ export class Order {
           this.master = new downgradeMaster(this);
         else if (this.flag.secondaryColor == COLOR_YELLOW)
           this.master = new dismantlerMaster(this);
-        else if (this.flag.secondaryColor == COLOR_GREY)
-          this.master = new puppetMaster(this);
         else if (this.flag.secondaryColor == COLOR_RED)
           this.master = new dupletMaster(this);
         else if (this.flag.secondaryColor == COLOR_ORANGE)
@@ -148,6 +146,10 @@ export class Order {
       if (this.flag.secondaryColor == COLOR_RED) {
         if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
           this.delete();
+      } else if (this.flag.secondaryColor == COLOR_YELLOW) {
+        this.acted = true;
+        if (!this.master)
+          this.master = new puppetMaster(this); // no longer a weapon of war
       }
     } else if (this.flag.color == COLOR_YELLOW) {
       if (this.pos.roomName in Game.rooms) {
@@ -212,6 +214,13 @@ export class Order {
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
       if (this.flag.memory.repeat > 0) {
+        if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
+          time: Game.time,
+          name: this.flag.name,
+          pos: this.pos,
+          destroyTime: Game.time,
+          master: this.master ? true : false,
+        }
         this.destroyTime = -1;
         this.flag.memory.repeat -= 1;
         if (this.master)

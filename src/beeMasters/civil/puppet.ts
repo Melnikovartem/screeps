@@ -24,14 +24,12 @@ export class puppetMaster extends Master {
     bee.creep.notifyWhenAttacked(false);
     if (this.order)
       this.order.destroyTime = bee.creep.memory.born + CREEP_LIFE_TIME + 3 * bee.creep.body.length;
+    this.spawned += 1;
   }
 
   update() {
     super.update();
     this.target = this.order.pos;
-
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
-      this.order.destroyTime = Game.time;
 
     if (this.checkBees() && this.spawned < this.maxSpawns) {
       let order: SpawnOrder = {
@@ -41,9 +39,10 @@ export class puppetMaster extends Master {
       };
 
       this.wish(order);
-
-      this.spawned += 1;
     }
+
+    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
+      this.order.destroyTime = Game.time;
   }
 
   run() {

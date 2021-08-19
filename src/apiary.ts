@@ -58,6 +58,8 @@ export class _Apiary {
       bee.update();
     });
 
+    console.log(Object.keys(Apiary.masters["masterPuppet_Flag0"].bees))
+
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.print + " update");
     });

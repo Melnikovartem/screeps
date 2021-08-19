@@ -52,7 +52,17 @@ export class Intel {
       this.toCache();
 
     if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace)
-      Memory.log.enemies[room.name + "_" + Game.time] = this.roomInfo[room.name].enemies;
+      Memory.log.enemies[room.name + "_" + Game.time] = _.map(this.roomInfo[room.name].enemies,
+        (e) => {
+          let ans: any = { hits: e.hits, hitsMax: e.hitsMax }
+          if (e instanceof Creep) {
+            ans.owner = e.owner.username;
+            ans.attack = e.getBodyParts(ATTACK);
+            ans.heal = e.getBodyParts(HEAL);
+          } else
+            ans.owner = e.structureType;
+          return ans;
+        });
     return this.roomInfo[roomName];
   }
 

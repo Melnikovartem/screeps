@@ -40,7 +40,7 @@ export class Bee {
     this.pos = this.creep.pos;
     this.store = this.creep.store;
     this.memory = this.creep.memory;
-    if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
+    if (this.state == states.idle && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
       this.master.newBee(this);
     }
