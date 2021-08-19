@@ -1,10 +1,13 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
+import { Order } from "../../order";
 import { profile } from "../../profiler/decorator";
+import { makeId } from "../../utils";
 
 @profile
 export class defenseCell extends Cell {
   towers: StructureTower[] = [];
+  defenseSwarms: { [id: string]: string } = {};
 
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
@@ -13,14 +16,17 @@ export class defenseCell extends Cell {
   update() {
     super.update();
 
-    _.forEach(this.hive.annexNames, (annexName) => {
-      if (annexName in Game.rooms) {
-        let roomInfo = Apiary.intel.getInfo(annexName, 10);
-        if (roomInfo.enemies.length > 0 && !roomInfo.safePlace && !Game.flags["defend_" + this.hive.roomName]
-          && _.filter(Game.rooms[annexName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0)
-          roomInfo.enemies[0].pos.createFlag("defend_" + annexName, COLOR_RED, COLOR_BLUE);
-      }
-    });
+    for (const key in this.defenseSwarms)
+      if (!Apiary.orders[this.defenseSwarms[key]])
+        delete this.defenseSwarms[key];
+
+    if (this.time == Game.time) {
+      _.forEach(_.filter(Apiary.orders, (o) => (/^defend_/.exec(o.ref) != null && o.hive == this.hive)), (o) => {
+        this.defenseSwarms[o.pos.roomName] = o.ref;
+      });
+    }
+
+    _.forEach(this.hive.annexNames, this.checkOrDefendSwarms);
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
@@ -31,17 +37,45 @@ export class defenseCell extends Cell {
     }
   };
 
+  checkOrDefendSwarms(roomName: string) {
+    if (roomName in Game.rooms) {
+      let roomInfo = Apiary.intel.getInfo(roomName, 10);
+      if (roomInfo.enemies.length > 0 && !this.defenseSwarms[roomName]
+        && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0) {
+        let freeSwarms: Order[] = [];
+        for (const roomDefName in this.defenseSwarms) {
+          let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
+          if (roomInfDef.safePlace)
+            freeSwarms.push(Apiary.orders[this.defenseSwarms[roomDefName]])
+        }
+        console.log(freeSwarms);
+        let ans: number | string | undefined;
+        if (freeSwarms.length) {
+          freeSwarms.sort((a, b) => a.pos.getRoomRangeTo(Game.rooms[roomName]) - b.pos.getRoomRangeTo(Game.rooms[roomName]))
+          ans = freeSwarms[0].flag.setPosition(roomInfo.enemies[0].pos);
+          if (ans == OK) {
+            this.defenseSwarms[roomName] = freeSwarms[0].ref;
+            delete this.defenseSwarms[freeSwarms[0].pos.roomName];
+          }
+        }
+        if (ans != OK) {
+          ans = roomInfo.enemies[0].pos.createFlag("defend_" + makeId(5), COLOR_RED, COLOR_BLUE);
+          if (typeof ans == "string")
+            this.defenseSwarms[roomName] = ans;
+        }
+      }
+    }
+  }
+
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     if (!roomInfo.safePlace) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
-        if (this.towers.length == 0) {
-          if (this.hive.stage < 2) {
-            if (!Game.flags["defend_" + this.hive.roomName]
-              && _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0)
-              roomInfo.enemies[0].pos.createFlag("defend_" + this.pos.roomName, COLOR_RED, COLOR_BLUE);
-          } else
+        if (_.filter(this.towers, (t) => t.store[RESOURCE_ENERGY] > 0).length == 0) {
+          if (this.hive.stage < 2)
+            this.checkOrDefendSwarms(this.hive.roomName);
+          else
             this.hive.room.controller!.activateSafeMode(); // red button
         } else
           _.forEach(this.towers, (tower) => {
