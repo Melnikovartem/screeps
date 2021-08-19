@@ -131,6 +131,7 @@ export const Setups = {
   }),
   defender: new CreepSetup(SetupsNames.defender, {
     pattern: [TOUGH, ATTACK, MOVE, MOVE],
+    patternLimit: 5,
   }),
   knight: new CreepSetup(SetupsNames.knight, {
     pattern: [TOUGH, ATTACK, MOVE],

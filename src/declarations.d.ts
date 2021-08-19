@@ -22,8 +22,8 @@ declare global {
   }
 
   interface FlagMemory {
-    repeat: number;
     hive: string;
+    repeat?: number;
   }
 
   interface Memory {

@@ -20,23 +20,22 @@ export class upgraderMaster extends Master {
 
     if (storageCell)
       if (this.cell.link && storageCell.link) {
-        let patternLimit = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5);
+        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
         this.fastMode = true;
         desiredRate = 800 / this.cell.link.pos.getRangeTo(storageCell.link); // how to get more in?
-        ratePerCreep = 50 / (this.cell.link.pos.getTimeForPath(this.cell.controller) + patternLimit * 50);
+        ratePerCreep = 50 / (10 / patternLimit + Math.max(this.cell.link.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2);
       } else if (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4) {
-        let patternLimit = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5);
+        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5), 8);
         this.fastMode = true;
         desiredRate = Math.min(storageCell.storage.store[RESOURCE_ENERGY] / 2500, 100);
         ratePerCreep = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
-        ratePerCreep = 50 / (storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + patternLimit * 50);
+        ratePerCreep = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2));
       } else if (storageCell) {
-        let maxCap = Math.floor(this.hive.room.energyCapacityAvailable / 4);
+        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 4), 800);
         desiredRate = Math.min(storageCell.storage.store[RESOURCE_ENERGY] / 5000, 100);
-        ratePerCreep = maxCap / (storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50);
+        ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2 + 50);
       }
-
-    this.targetBeeCount = Math.floor(desiredRate / ratePerCreep);
+    this.targetBeeCount = Math.round(desiredRate / ratePerCreep);
   }
 
   update() {
@@ -44,7 +43,6 @@ export class upgraderMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-
         setup: Setups.upgrader.manual,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 8,

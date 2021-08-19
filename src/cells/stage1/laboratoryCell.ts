@@ -81,6 +81,7 @@ export class laboratoryCell extends Cell {
         let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
         let res2Amount = mainStore[res2] + _.sum(this.laboratories, (lab) => lab.store[res2]);
 
+        console.log(res1, res1Amount, res2, res2Amount);
         amount = Math.min(res1Amount, res2Amount);
       }
     }

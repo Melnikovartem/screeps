@@ -130,7 +130,6 @@ export class Hive {
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
-      lab: new laboratoryCell(this),
       spawn: new respawnCell(this),
       defense: new defenseCell(this),
     };
@@ -141,6 +140,7 @@ export class Hive {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
       this.cells.excavation = new excavationCell(this);
+      this.cells.lab = new laboratoryCell(this);
 
       this.builder = new builderMaster(this);
       if (this.stage == 2) {

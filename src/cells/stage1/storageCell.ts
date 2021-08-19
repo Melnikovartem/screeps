@@ -40,15 +40,16 @@ export class storageCell extends Cell {
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"],
     amount?: number, resource?: ResourceConstant): number {
-    resource = resource ? resource : RESOURCE_ENERGY;
     if (to.length == 0)
       return ERR_INVALID_ARGS;
+    resource = resource ? resource : RESOURCE_ENERGY;
     if (this.storage.store.getUsedCapacity(resource) == 0)
       return ERR_NOT_ENOUGH_RESOURCES;
-    if (amount && amount == 0)
+    if (amount != undefined && amount == 0)
       return ERR_INVALID_ARGS;
     if (amount)
       amount = Math.min(this.storage.store.getUsedCapacity(resource), amount);
+
     this.requests[ref] = {
       ref: ref,
       from: [this.storage],
@@ -86,7 +87,7 @@ export class storageCell extends Cell {
         to: [this.storage],
         resource: RESOURCE_ENERGY,
         amount: this.link.store[RESOURCE_ENERGY] - LINK_CAPACITY * 0.5,
-        priority: 3,
+        priority: 4,
       };
 
     if (!this.master)
@@ -125,7 +126,7 @@ export class storageCell extends Cell {
               delete this.requests[key];
             }
           } else
-            this.requestFromStorage(this.link.id, [this.link], 3, Math.min(Math.ceil(amount * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]);
+            this.requestFromStorage(this.link.id, [this.link], 4, Math.min(Math.ceil(amount * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]);
         }
       }
     }

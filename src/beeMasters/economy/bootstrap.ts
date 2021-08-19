@@ -7,7 +7,7 @@ import { SpawnOrder } from "../../Hive";
 import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
-type workTypes = "upgrade" | "repair" | "build" | "refill" | "mining" | "working";
+type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
 
 @profile
 export class bootstrapMaster extends Master {
@@ -125,7 +125,11 @@ export class bootstrapMaster extends Master {
           if (source.energy == 0)
             bee.target = null;
           else {
-            bee.harvest(source);
+            if (Game.getObjectById("611e1db1376c26a0397820e8")) {
+              bee.goTo(<Resource>Game.getObjectById("611e1db1376c26a0397820e8"));
+              bee.creep.pickup(<Resource>Game.getObjectById("611e1db1376c26a0397820e8"))
+            } else
+              bee.harvest(source, { ignoreCreeps: true, ignoreRoads: true });
             sourceTargetingCurrent[source.id] += 1;
           }
         } else {

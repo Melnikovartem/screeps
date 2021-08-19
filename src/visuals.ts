@@ -98,97 +98,82 @@ export class Visuals {
     let cell;
     cell = hive.cells.spawn;
     if (cell) {
-      let ss = ["spawn"];
-      if (hive.bassboost) {
-        ss.push("→" + hive.bassboost.roomName);
-        ss.push(":");
-      } else {
-        ss.push(Object.keys(hive.spawOrders).length ? ` ${Object.keys(hive.spawOrders).length}` : "");
-        if (cell.master)
-          ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-            "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      }
-      ans.push(ss);
+      if (hive.bassboost)
+        ans.push(["spawn", "→" + hive.bassboost.roomName, ":"]);
+      else
+        ans.push(["spawn",
+          Object.keys(hive.spawOrders).length ? ` ${Object.keys(hive.spawOrders).length}` : "",
+          this.getBeesAmount(cell.master)]);
     }
     cell = hive.cells.storage;
-    if (cell) {
-      let ss = ["storage"];
-      ss.push(Object.keys(cell.requests).length ? ` ${Object.keys(cell.requests).length}` : "");
-      if (cell.master)
-        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      ans.push(ss);
-    }
+    if (cell)
+      ans.push(["storage",
+        Object.keys(cell.requests).length ? ` ${Object.keys(cell.requests).length}` : "",
+        this.getBeesAmount(cell.master)]);
     cell = hive.cells.dev;
-    if (cell) {
-      let ss = ["develop"];
-      ss.push(cell.sources.length ? ` ${Object.keys(cell.sources).length}` : "");
-      if (cell.master)
-        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      ans.push(ss);
-    }
+    if (cell)
+      ans.push(["develop",
+        cell.sources.length ? ` ${Object.keys(cell.sources).length}` : "",
+        this.getBeesAmount(cell.master)]);
     cell = hive.cells.excavation;
     if (cell) {
-      let ss = ["excav"];
-      ss.push(` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`)
-      if (cell.master)
-        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      ans.push(ss);
+      ans.push(["excav",
+        ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`,
+        this.getBeesAmount(cell.master)]);
 
-      let beesAmount = 0;
-      let waitingForBees = 0;
-      let targetBeeCount = 0;
+      let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
       let all = 0;
       _.forEach(cell.resourceCells, (rcell) => {
         all += 1;
         operational += rcell.operational ? 1 : 0;
         if (rcell.master && rcell.perSecondNeeded) {
-          beesAmount += rcell.master.beesAmount;
-          waitingForBees += rcell.master.waitingForBees;
-          targetBeeCount += rcell.master.targetBeeCount;
+          stats.beesAmount += rcell.master.beesAmount;
+          stats.waitingForBees += rcell.master.waitingForBees;
+          stats.targetBeeCount += rcell.master.targetBeeCount;
         }
       });
-      ss = ["resource", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${
-        waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount}`];
-      ans.push(ss);
+      ans.push(["resource", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
     let annexOrders = _.filter(Apiary.orders, (o) => o.hive == hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {
-      let beesAmount = 0;
-      let waitingForBees = 0;
-      let targetBeeCount = 0;
+      let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
       let all = 0;
       _.forEach(annexOrders, (o) => {
         all += 1;
         operational += o.acted ? 1 : 0;
         if (o.master) {
-          beesAmount += o.master.beesAmount;
-          waitingForBees += o.master.waitingForBees;
-          targetBeeCount += o.master.targetBeeCount;
+          stats.beesAmount += o.master.beesAmount;
+          stats.waitingForBees += o.master.waitingForBees;
+          stats.targetBeeCount += o.master.targetBeeCount;
         }
       });
-      let ss = ["annex", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${
-        waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount}`];
-      ans.push(ss);
+      ans.push(["annex", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
-    cell = hive.cells.upgrade;
-    if (cell) {
-      let ss = ["upgrade", ` ${Math.floor(cell.controller.progress / cell.controller.progressTotal * 100)}%`];
-      if (cell.master)
-        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      ans.push(ss);
+    let constLen = hive.constructionSites.length;
+    let repLen = hive.emergencyRepairs.length;
+    if (constLen + repLen > 0) {
+      ans.push(["build", (constLen ? ` C:${constLen}` : "")
+        + (repLen ? ` R:${repLen}` : ""),
+        this.getBeesAmount(hive.builder)])
     }
+
+    ans.push(["upgrade",
+      ` ${Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100)}%`,
+      this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
     return ans;
   }
 
+  getBeesAmount(master: { waitingForBees: number, beesAmount: number, targetBeeCount: number } | undefined): string {
+    if (!master)
+      return ":";
+    return `: ${master.waitingForBees ? "(" : ""}${master.beesAmount}${master.waitingForBees ?
+      "+" + master.waitingForBees + ")" : ""}/${master.targetBeeCount}`
+  }
   textStyle(style: TextStyle = {}): TextStyle {
     return _.defaults(style, {
       color: "#e3e3de",
@@ -259,7 +244,7 @@ export class Visuals {
       let tab = pad;
       for (const i in s) {
         vis.text(s[i], xMin + tab, height, this.textStyle(style));
-        tab += widths[i];
+        tab += widths[i] + (widths[i] > 6 ? 0.2 : 0);
       }
       height += TEXT_HEIGHT * 1.2;
     });

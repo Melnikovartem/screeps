@@ -26,7 +26,7 @@ export class defenseCell extends Cell {
       });
     }
 
-    _.forEach(this.hive.annexNames, this.checkOrDefendSwarms);
+    _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
@@ -35,7 +35,7 @@ export class defenseCell extends Cell {
       storageCell.requestFromStorage(this.ref,
         _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY]), 0);
     }
-  };
+  }
 
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
@@ -62,8 +62,10 @@ export class defenseCell extends Cell {
             ans = roomInfo.enemies[0].pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
           else
             ans = roomInfo.enemies[0].pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
-          if (typeof ans == "string")
+          if (typeof ans == "string") {
             this.defenseSwarms[roomName] = ans;
+            Game.flags[ans].memory = { hive: this.hive.roomName };
+          }
         }
       }
     }
@@ -82,10 +84,11 @@ export class defenseCell extends Cell {
         } else
           _.forEach(this.towers, (tower) => {
             let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
-            if (closest && (tower.pos.getRangeTo(closest) < 15 || (closest instanceof Creep && closest.owner.username == "Invader")))
+            if (closest && (closest.pos.getRangeTo(tower) < 15 || closest.pos.getRangeTo(this.hive.pos) < 5
+              || (closest instanceof Creep && closest.owner.username == "Invader")))
               tower.attack(closest);
           });
       }
     }
-  };
+  }
 }

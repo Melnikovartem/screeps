@@ -40,6 +40,8 @@ export class _Apiary {
     if (_.filter(this.hives, (h) => h.stage == 2).length == 0)
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
 
+    if (this.hives["W5N8"])
+      this.hives["W5N8"].stage = 2
   }
 
   // update phase
@@ -57,8 +59,6 @@ export class _Apiary {
     _.forEach(this.bees, (bee) => {
       bee.update();
     });
-
-    console.log(Object.keys(Apiary.masters["masterPuppet_Flag0"].bees))
 
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.print + " update");

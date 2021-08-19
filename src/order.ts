@@ -36,10 +36,7 @@ export class Order {
     else
       this.hive = this.findHive();
 
-    this.flag.memory = {
-      repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
-      hive: this.hive.roomName,
-    };
+    this.flag.memory = { hive: this.hive.roomName };
 
     this.destroyTime = -1;
   }
@@ -213,7 +210,7 @@ export class Order {
       this.act();
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
-      if (this.flag.memory.repeat > 0) {
+      if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
         if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
           time: Game.time,
           name: this.flag.name,

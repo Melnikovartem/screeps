@@ -11,6 +11,8 @@ export class Bee {
   pos: RoomPosition;
   store: Store<ResourceConstant, false>;
   memory: CreepMemory;
+  hits: number;
+  hitsMax: number;
 
   reusePath: number = 3;
   lifeTime: number = CREEP_LIFE_TIME;
@@ -27,6 +29,8 @@ export class Bee {
     this.pos = creep.pos;
     this.store = creep.store;
     this.memory = creep.memory;
+    this.hits = creep.hits;
+    this.hitsMax = creep.hitsMax;
 
     if (creep.getBodyParts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
@@ -40,6 +44,8 @@ export class Bee {
     this.pos = this.creep.pos;
     this.store = this.creep.store;
     this.memory = this.creep.memory;
+    this.hits = this.creep.hits;
+    this.hitsMax = this.creep.hitsMax;
     if (this.state == states.idle && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
       this.master.newBee(this);

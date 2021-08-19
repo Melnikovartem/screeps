@@ -98,7 +98,7 @@ export class dismantlerMaster extends SwarmMaster {
     if (healer && healer.state == states.work) {
       healer.goRest(this.order.pos);
       let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 3),
-        (creep) => creep.hits < creep.hitsMax));
+        (bee) => bee.hits < bee.hitsMax));
       if (healingTarget) {
         if (healer.pos.isNearTo(healingTarget))
           healer.heal(healingTarget);
@@ -108,9 +108,9 @@ export class dismantlerMaster extends SwarmMaster {
     }
 
     if (dismantler && (dismantler.state == states.refill
-      || (dismantler.state == states.work && dismantler.creep.hits <= dismantler.creep.hitsMax * 0.6))) {
+      || (dismantler.state == states.work && dismantler.hits <= dismantler.hitsMax * 0.6))) {
       dismantler.state = states.refill;
-      if (dismantler.creep.hits == dismantler.creep.hitsMax)
+      if (dismantler.hits == dismantler.hitsMax)
         dismantler.state = states.work;
 
       if (healer && healer.state == states.work) {

@@ -36,11 +36,11 @@ export class managerMaster extends Master {
         for (let k in this.cell.requests) {
           let request = this.cell.requests[k];
           if ((request.amount == undefined || request.amount >= 25 || request.resource != RESOURCE_ENERGY)
-            && _.sum(request.from, (s) => s.store[request.resource]) >= (request.amount ? request.amount : 0)
+            && this.manager.store[request.resource] + _.sum(request.from, (s) => s.store[request.resource]) >= (request.amount ? request.amount : 0)
             && request.to[0].id == this.cell.storage.id || request.from[0].id == this.cell.storage.id)
             targets.push(k);
         }
-        this.manager.target = targets.sort((a, b) => this.cell.requests[b].priority - this.cell.requests[a].priority)[0];
+        this.manager.target = targets.sort((a, b) => this.cell.requests[a].priority - this.cell.requests[b].priority)[0];
       }
 
       let request = this.cell.requests[this.manager.target];
