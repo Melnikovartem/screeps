@@ -35,6 +35,11 @@ export class _Apiary {
       if (room.controller && room.controller.my)
         this.hives[room.name] = new Hive(room.name);
     });
+
+    // get main hive
+    if (_.filter(this.hives, (h) => h.stage == 2).length == 0)
+      (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
+
   }
 
   // update phase

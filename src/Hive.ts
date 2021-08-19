@@ -299,6 +299,6 @@ export class Hive {
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Hive ${this.roomName}]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[${this.roomName}] ${this.stage}</a>`;
   }
 }

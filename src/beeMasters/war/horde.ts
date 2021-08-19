@@ -1,3 +1,4 @@
+import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
 import type { SpawnOrder } from "../../Hive";
 import { Order } from "../../order";
@@ -8,14 +9,19 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class hordeMaster extends SwarmMaster {
   // failsafe
-  maxSpawns: number = 100;
+  maxSpawns: number = 10;
   spawned: number = 0;
 
   tryToDowngrade: boolean = false;
-  priority: 1 | 4 = 1; // how fast do we need to put out the enemy
 
   constructor(order: Order) {
     super(order.hive, order);
+  }
+
+  newBee(bee: Bee) {
+    super.newBee(bee);
+    this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+    this.spawned += 1; // kinda loops in resets, but whatever
   }
 
   update() {
@@ -23,22 +29,18 @@ export class hordeMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
-    if (!roomInfo.safePlace && this.order.destroyTime <= Game.time + CREEP_LIFE_TIME)
-      this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
+    if (roomInfo.safePlace && this.beesAmount == 0)
+      this.order.destroyTime = Game.time;
 
     if (this.spawned == this.maxSpawns && !this.beesAmount && !this.waitingForBees)
       this.order.destroyTime = Game.time;
 
-    if (this.checkBees() && this.spawned < this.maxSpawns
-      && (Game.time >= roomInfo.safeModeEndTime - 100) && this.order.destroyTime > Game.time + CREEP_LIFE_TIME) {
+    if (this.checkBees() && this.spawned < this.maxSpawns && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
       let order: SpawnOrder = {
-        setup: Setups.knight,
+        setup: Setups.defender,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: this.priority,
+        priority: 1,
       };
-
-      if (this.priority == 1)
-        order.setup = Setups.defender;
 
       this.spawned += order.amount;
 

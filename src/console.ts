@@ -107,7 +107,7 @@ export class CustomConsole {
   }
 
   printBees(masterName?: string) {
-    return _.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster == masterName), (b) => b.print).join('\n');
+    return _.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print).join('\n');
   }
 
   printSpawnOrders(hiveName?: string) {

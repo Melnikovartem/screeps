@@ -32,14 +32,23 @@ export class Visuals {
         ans.y += + 0.2;
       }
 
+      let battleInfo: string[][] = [["bee squads"], ["", "🎯", "💀", "🐝"]];
+      for (const name in Apiary.hives) {
+        let stats = this.statsBattle(name);
+        if (stats.length > 0) {
+          battleInfo.push(["", name]);
+          battleInfo = battleInfo.concat(stats);
+        }
+      }
+      ans = { x: 25, y: 1, roomName: undefined };
+      this.table(battleInfo, ans, undefined, undefined, undefined, "center");
+
       if (Memory.settings.framerate > 1)
         this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
         let minSize = 0;
-        ans.roomName = name;
-        ans.x = 1;
-        ans.y = 1;
+        ans = { x: 1, y: 1, roomName: name };
         ans = this.table(this.statsHives(name), ans, undefined, minSize, 13);
         minSize = Math.max(minSize, ans.x - 1);
         ans.x = 1;
@@ -68,9 +77,24 @@ export class Visuals {
     }
   }
 
+  statsBattle(hiveName: string): string[][] {
+    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName == hiveName && o.flag.color == COLOR_RED);
+    let ans: string[][] = [];
+    _.forEach(orders, (order) => {
+      let roomInfo = Apiary.intel.getInfo(order.pos.roomName);
+      let info = [order.ref, " " + order.pos.roomName, " " + roomInfo.enemies.length];
+      if (order.master) {
+        info.push(`: ${order.master.waitingForBees ? "(" : ""}${order.master.beesAmount}${order.master.waitingForBees ?
+          "+" + order.master.waitingForBees + ")" : ""}/${order.master.targetBeeCount}`)
+      }
+      ans.push(info);
+    });
+    return ans;
+  }
+
   statsHives(hiveName: string): string[][] {
     let hive = Apiary.hives[hiveName];
-    let ans: string[][] = [["hive " + hiveName], ["cell", "❓", "🐝"]];
+    let ans: string[][] = [["hive " + hiveName], ["", "❓", "🐝"]];
     let cell;
     cell = hive.cells.spawn;
     if (cell) {
@@ -132,15 +156,6 @@ export class Visuals {
       ans.push(ss);
     }
 
-    cell = hive.cells.upgrade;
-    if (cell) {
-      let ss = ["excav", ` ${Math.floor(cell.controller.progress / cell.controller.progressTotal * 100)}%`];
-      if (cell.master)
-        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
-          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
-      ans.push(ss);
-    }
-
     let annexOrders = _.filter(Apiary.orders, (o) => o.hive == hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {
       let beesAmount = 0;
@@ -159,6 +174,15 @@ export class Visuals {
       });
       let ss = ["annex", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${
         waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount}`];
+      ans.push(ss);
+    }
+
+    cell = hive.cells.upgrade;
+    if (cell) {
+      let ss = ["upgrade", ` ${Math.floor(cell.controller.progress / cell.controller.progressTotal * 100)}%`];
+      if (cell.master)
+        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
       ans.push(ss);
     }
 
@@ -204,7 +228,7 @@ export class Visuals {
   }
 
   table(strings: string[][], pos: { x: number, y: number, roomName?: string },
-    style: TextStyle = {}, minSize: number = 1, maxSize: number = 15) {
+    style: TextStyle = {}, minSize: number = 1, maxSize: number = 15, align: "center" | "right" | "left" = "left") {
     let vis = new RoomVisual(pos.roomName);
     let pad = 0.2;
 
@@ -220,28 +244,37 @@ export class Visuals {
         widths[i] = Math.max(widths[i], s[i].length * TEXT_WIDTH + 0.6);
       }
     });
-    let height = pos.y + TEXT_HEIGHT + pad + (label ? TEXT_HEIGHT + pad : 0);
+
+    let xMin = pos.x;
+    let len = Math.min(Math.max(_.sum(widths) + pad * 2, minSize), maxSize);
+    if (align == "center")
+      xMin = pos.x - len / 2;
+    if (align == "right")
+      xMin = pos.x - len;
+    let xMax = xMin + len;
+
+    let yMin = pos.y;
+    let height = yMin + TEXT_HEIGHT + pad + (label ? TEXT_HEIGHT + pad : 0);
     _.forEach(strings, (s) => {
       let tab = pad;
       for (const i in s) {
-        vis.text(s[i], pos.x + tab, height, this.textStyle(style));
+        vis.text(s[i], xMin + tab, height, this.textStyle(style));
         tab += widths[i];
       }
       height += TEXT_HEIGHT * 1.2;
     });
-    let xMax = pos.x + Math.min(Math.max(_.sum(widths) + pad * 2, minSize), maxSize);
     let yMax = height - TEXT_HEIGHT + pad;
     if (label) {
       let labelStyle = this.textStyle(style);
       labelStyle.align = "center";
-      vis.text(label, pos.x + (xMax - pos.x) / 2, pos.y + TEXT_HEIGHT, labelStyle);
-      vis.poly([[pos.x, pos.y], [pos.x, pos.y + TEXT_HEIGHT + pad], [xMax, pos.y + TEXT_HEIGHT + pad], [xMax, pos.y], [pos.x, pos.y]], {
+      vis.text(label, xMin + (xMax - xMin) / 2, yMin + TEXT_HEIGHT, labelStyle);
+      vis.poly([[xMin, yMin], [xMin, yMin + TEXT_HEIGHT + pad], [xMax, yMin + TEXT_HEIGHT + pad], [xMax, yMin], [xMin, yMin]], {
         fill: "#ffdd80",
         stroke: undefined,
         opacity: 0.3,
       });
     }
-    vis.poly([[pos.x, pos.y], [pos.x, yMax], [xMax, yMax], [xMax, pos.y], [pos.x, pos.y]]);
+    vis.poly([[xMin, yMin], [xMin, yMax], [xMax, yMax], [xMax, yMin], [xMin, yMin]]);
     return { x: xMax, y: yMax, roomName: pos.roomName };
   }
 }

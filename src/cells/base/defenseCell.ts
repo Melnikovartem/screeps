@@ -21,7 +21,7 @@ export class defenseCell extends Cell {
         delete this.defenseSwarms[key];
 
     if (this.time == Game.time) {
-      _.forEach(_.filter(Apiary.orders, (o) => (/^defend_/.exec(o.ref) != null && o.hive == this.hive)), (o) => {
+      _.forEach(_.filter(Apiary.orders, (o) => (/^def_/.exec(o.ref) != null && o.hive == this.hive)), (o) => {
         this.defenseSwarms[o.pos.roomName] = o.ref;
       });
     }
@@ -58,7 +58,10 @@ export class defenseCell extends Cell {
           }
         }
         if (ans != OK) {
-          ans = roomInfo.enemies[0].pos.createFlag("defend_" + makeId(5), COLOR_RED, COLOR_BLUE);
+          if (roomInfo.enemies[0] instanceof Creep && roomInfo.enemies[0].owner.username == "Invader")
+            ans = roomInfo.enemies[0].pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
+          else
+            ans = roomInfo.enemies[0].pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
           if (typeof ans == "string")
             this.defenseSwarms[roomName] = ans;
         }

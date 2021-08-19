@@ -30,26 +30,21 @@ export class dupletMaster extends SwarmMaster {
     else
       this.knight = bee;
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 1000)
+      this.spawned = true;
   }
 
   update() {
     super.update();
 
-    if (this.knight && !Apiary.bees[this.knight.ref]) {
+    if (this.knight && !Apiary.bees[this.knight.ref])
       delete this.knight;
-      if (Memory.settings.framerate && this.healer)
-        this.healer.creep.say("😢");
-    }
 
-    if (this.healer && !Apiary.bees[this.healer.ref]) {
+    if (this.healer && !Apiary.bees[this.healer.ref])
       delete this.healer;
-      if (Memory.settings.framerate && this.knight)
-        this.knight.creep.say("😢");
-    }
 
     if (!this.spawned) {
       this.spawned = true;
-      console.log("here", !this.knight, !this.healer)
       if (!this.knight) {
         let knightOrder: SpawnOrder = {
           setup: new CreepSetup(Setups.knight.name, { ...Setups.defender.bodySetup }),
@@ -72,7 +67,7 @@ export class dupletMaster extends SwarmMaster {
       }
     }
 
-    if (!this.waitingForBees && (!this.knight || !this.knight))
+    if (!this.waitingForBees && this.beesAmount == 0)
       this.order.destroyTime = Game.time;
   }
 
@@ -84,14 +79,31 @@ export class dupletMaster extends SwarmMaster {
         bee.goRest(this.meetingPoint);
     });
 
-    if (knight && healer) {
+    if (knight && healer && knight.pos.isNearTo(healer)) {
       knight.state = states.work;
       healer.state = states.work;
+    }
 
-      if (!healer.pos.isNearTo(knight))
-        healer.goTo(knight.pos, { movingTarget: true });
+    if (knight && knight.state == states.work) {
+      let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
+      let target: Structure | Creep = <Structure | Creep>knight.pos.findClosest(roomInfo.enemies);
+      let ans;
+      if (target && target.pos.getRangeTo(knight) < 3)
+        ans = knight.attack(target);
+      else
+        ans = knight.goRest(this.order.pos);
 
-      if (knight.creep.hits < knight.creep.hitsMax) {
+      if (healer) {
+        if (!healer.pos.isNearTo(knight))
+          healer.goTo(knight.pos, { movingTarget: true });
+
+        if (ans == ERR_NOT_IN_RANGE)
+          healer.creep.move(healer.pos.getDirectionTo(knight.pos));
+      }
+    }
+
+    if (healer && healer.state == states.work) {
+      if (knight && knight.creep.hits < knight.creep.hitsMax) {
         if (healer.pos.isNearTo(knight))
           healer.heal(knight);
         else
@@ -106,17 +118,6 @@ export class dupletMaster extends SwarmMaster {
             healer.rangedHeal(healingTarget);
         }
       }
-
-      let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
-      let target: Structure | Creep = <Structure | Creep>knight.pos.findClosest(roomInfo.enemies);
-      let ans;
-      if (target && target.pos.getRangeTo(knight) < 3)
-        ans = knight.attack(target);
-      else
-        ans = knight.goRest(this.order.pos);
-
-      if (ans == ERR_NOT_IN_RANGE)
-        healer.creep.move(healer.pos.getDirectionTo(knight.pos));
     }
   }
 }

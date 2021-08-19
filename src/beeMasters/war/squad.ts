@@ -30,6 +30,8 @@ export class squadMaster extends SwarmMaster {
     else
       this.knights.push(bee);
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
+    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 1000)
+      this.spawned = true;
   }
 
   update() {
@@ -44,8 +46,7 @@ export class squadMaster extends SwarmMaster {
 
     if (!this.spawned) {
       this.spawned = true;
-      if (this.knights.length == 0 || (this.knights.length == 1
-        && (!this.knights[0].creep.ticksToLive || this.knights[0].creep.ticksToLive > 1000))) {
+      if (this.knights.length < 2) {
         let tankOrder: SpawnOrder = {
           setup: Setups.knight,
           amount: 2 - this.knights.length,
@@ -54,8 +55,8 @@ export class squadMaster extends SwarmMaster {
         };
         this.wish(tankOrder, this.ref + "_knight");
       }
-      if (this.healers.length == 0 || (this.healers.length == 1
-        && (!this.healers[0].creep.ticksToLive || this.healers[0].creep.ticksToLive > 1000))) {
+
+      if (this.healers.length < 2) {
         let healerOrder: SpawnOrder = {
           setup: Setups.healer,
           amount: 2 - this.healers.length,
@@ -64,14 +65,9 @@ export class squadMaster extends SwarmMaster {
         };
         this.wish(healerOrder, this.ref + "_healer");
       }
-
-      if (this.waitingForBees + this.beesAmount < 4) {
-        this.order.destroyTime = Game.time;
-        this.delete();
-      }
     }
 
-    if (!this.waitingForBees && this.knights.length == 0)
+    if (!this.waitingForBees && this.beesAmount == 0)
       this.order.destroyTime = Game.time;
   }
 
@@ -93,10 +89,16 @@ export class squadMaster extends SwarmMaster {
 
 
     if (knight1 && knight2 && healer1 && healer2) {
-      knight1.state = states.work;
-      knight2.state = states.work;
-      healer1.state = states.work;
-      healer2.state = states.work;
+      if (knight2.pos.isNearTo(knight1) && healer1.pos.isNearTo(knight1) && healer2.pos.isNearTo(knight2)) {
+        knight1.state = states.work;
+        knight2.state = states.work;
+        healer1.state = states.work;
+        healer2.state = states.work;
+      } else {
+        knight2.goTo(knight1.pos);
+        healer1.goTo(knight2.pos);
+        healer2.goTo(knight2.pos);
+      }
     }
 
     if (knight1 && knight1.state == states.work && !this.waitingForBees) {
@@ -135,12 +137,12 @@ export class squadMaster extends SwarmMaster {
         }
       }
 
-      if (ans1 == ERR_NOT_IN_RANGE && healer1)
+      if (healer1 && ans1 == ERR_NOT_IN_RANGE)
         healer1.creep.move(healer1.pos.getDirectionTo(knight1.pos));
-      if ((ans2 == ERR_NOT_IN_RANGE || (ans2 == undefined && ans1 == ERR_NOT_IN_RANGE)) && healer2)
+      if (healer2 && (ans2 == ERR_NOT_IN_RANGE || (ans2 == undefined && ans1 == ERR_NOT_IN_RANGE)))
         healer2.creep.move(healer2.pos.getDirectionTo(knight2 ? knight2.pos : knight1));
 
-      if (needsHealing)
+      if (needsHealing) {
         if (knight1.creep.hits < knight1.creep.hitsMax * 0.50) {
           _.forEach(this.healers, (healer) => {
             if (healer.pos.isNearTo(knight1!))
@@ -170,6 +172,13 @@ export class squadMaster extends SwarmMaster {
               healer.rangedHeal(knight2);
           });
         }
+      } else
+        _.forEach(this.healers, (healer) => {
+          let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 1),
+            (creep) => creep.hits < creep.hitsMax));
+          if (healingTarget)
+            healer.heal(healingTarget);
+        });
     }
   }
 }

@@ -34,7 +34,7 @@ export class Order {
     if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive])
       this.hive = Apiary.hives[this.flag.memory.hive];
     else
-      this.hive = this.findHive(1);
+      this.hive = this.findHive();
 
     this.flag.memory = {
       repeat: this.flag.memory.repeat ? this.flag.memory.repeat : 0,
@@ -45,17 +45,17 @@ export class Order {
   }
 
   findHive(stage?: 0 | 1 | 2): Hive {
-    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage ? stage : 0))
+    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage ? stage : 2))
       return Apiary.hives[this.pos.roomName];
 
     for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage ? stage : 0))
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage ? stage : 2))
         return Apiary.hives[exit];
     }
 
     // well time to look for faraway boys
-    let validHives = _.filter(Apiary.hives, (h) => h.stage >= (stage ? stage : 0));
+    let validHives = _.filter(Apiary.hives, (h) => h.stage >= (stage ? stage : 2));
     if (!validHives.length)
       validHives = _.map(Apiary.hives, (h) => h);
 
@@ -228,6 +228,6 @@ export class Order {
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref} ${this.acted ? "+" : "-"}]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref}] A${this.acted ? "+" : "-"} M${this.master ? "+" : "-"}</a>`;
   }
 }

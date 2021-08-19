@@ -123,9 +123,10 @@ export abstract class Master {
 
   get print(): string {
     let firstBee = this.bees[Object.keys(this.bees)[0]];
+    let roomName = this.hive.roomName;
     if (firstBee && firstBee.pos)
-      return `<a href=#!/room/${Game.shard.name}/${firstBee.pos.roomName}>[${this.ref} ${this.beesAmount}/${this.targetBeeCount}]</a>`;
-    return `<a href=#!/room/${Game.shard.name}/${this.hive.roomName}>[${this.ref} ${this.beesAmount}/${this.targetBeeCount}]</a>`;
+      roomName = firstBee.pos.roomName;
+    return `<a href=#!/room/${Game.shard.name}/${roomName}>[${this.ref}] ${this.beesAmount}/${this.targetBeeCount}</a>`;
   }
 
   /*
@@ -156,7 +157,6 @@ export abstract class Master {
 
     static fromCash(ref: string): Master | null {
 
-      console.log("V----");
       for (const key in Memory.masters[ref]) {
         let value = Memory.masters[ref][key];
 
@@ -165,15 +165,12 @@ export abstract class Master {
           if (!gameObject)
             return null;
 
-          console.log(key, gameObject);
           // set this parameter to new class object
         } else {
           // set this parameter to new class object
-          console.log(key, value);
         }
         ;
       }
-      console.log("^----");
 
       return null;
     }
