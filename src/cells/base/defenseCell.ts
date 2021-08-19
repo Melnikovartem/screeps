@@ -48,7 +48,6 @@ export class defenseCell extends Cell {
           if (roomInfDef.safePlace)
             freeSwarms.push(Apiary.orders[this.defenseSwarms[roomDefName]])
         }
-        console.log(freeSwarms);
         let ans: number | string | undefined;
         if (freeSwarms.length) {
           freeSwarms.sort((a, b) => a.pos.getRoomRangeTo(Game.rooms[roomName]) - b.pos.getRoomRangeTo(Game.rooms[roomName]))

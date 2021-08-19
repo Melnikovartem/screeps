@@ -1,4 +1,4 @@
-import { Master, states } from "beeMaster/_Master";
+import { Master, states } from "./beeMasters/_Master";
 import { profile } from "./profiler/decorator";
 
 @profile

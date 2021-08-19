@@ -1,5 +1,5 @@
 import { Bee } from "./bee";
-import { Master } from "./beeMaster/_Master";
+import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";

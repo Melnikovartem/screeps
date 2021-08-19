@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { managerMaster } from "../../beeMaster/economy/manager";
+import { managerMaster } from "../../beeMasters/economy/manager";
 import { profile } from "../../profiler/decorator";
 
 export interface StorageRequest {
@@ -89,8 +89,8 @@ export class storageCell extends Cell {
         priority: 3,
       };
 
-    if (!this.beeMaster)
-      this.beeMaster = new managerMaster(this);
+    if (!this.master)
+      this.master = new managerMaster(this);
   }
 
   run() {

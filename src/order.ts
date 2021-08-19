@@ -1,17 +1,17 @@
-import { hordeMaster } from "./beeMaster/war/horde";
-import { downgradeMaster } from "./beeMaster/war/downgrader";
-import { dismantlerMaster } from "./beeMaster/war/dismantler";
-import { dupletMaster } from "./beeMaster/war/duplet";
-import { squadMaster } from "./beeMaster/war/squad";
+import { hordeMaster } from "./beeMasters/war/horde";
+import { downgradeMaster } from "./beeMasters/war/downgrader";
+import { dismantlerMaster } from "./beeMasters/war/dismantler";
+import { dupletMaster } from "./beeMasters/war/duplet";
+import { squadMaster } from "./beeMasters/war/squad";
 
 import { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
-import { Master } from "./beeMaster/_Master";
+import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
-import { puppetMaster } from "./beeMaster/civil/puppet";
-import { annexMaster } from "./beeMaster/civil/annexer";
-import { claimerMaster } from "./beeMaster/civil/claimer";
-import { bootstrapMaster } from "./beeMaster/economy/bootstrap";
+import { puppetMaster } from "./beeMasters/civil/puppet";
+import { annexMaster } from "./beeMasters/civil/annexer";
+import { claimerMaster } from "./beeMasters/civil/claimer";
+import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
@@ -109,9 +109,9 @@ export class Order {
         if (hiveToBoos && hiveToBoos.stage == 0 && this.pos.roomName != this.hive.roomName) {
           hiveToBoos.bassboost = this.hive;
           hiveToBoos.spawOrders = {};
-          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.beeMaster) {
-            hiveToBoos.cells.dev.beeMaster.waitingForBees = 0;
-            (<bootstrapMaster>hiveToBoos.cells.dev.beeMaster).recalculateTargetBee();
+          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master) {
+            hiveToBoos.cells.dev.master.waitingForBees = 0;
+            (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
           }
         } else
           this.delete();
@@ -192,8 +192,8 @@ export class Order {
         let hiveBoosted = Apiary.hives[this.pos.roomName];
         if (hiveBoosted) {
           hiveBoosted.bassboost = null;
-          if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.beeMaster)
-            (<bootstrapMaster>hiveBoosted.cells.dev.beeMaster).recalculateTargetBee();
+          if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
+            (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
         }
       }
     }

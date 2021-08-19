@@ -80,7 +80,7 @@ export class hordeMaster extends SwarmMaster {
               bee.attack(target, { movingTarget: true });
             else
               bee.attack(target);
-            if (bee.pos.isNearTo(target) && target instanceof Creep && target.getBodyParts(ATTACK)) {
+            if (bee.pos.isNearTo(target) && target instanceof Creep && target.getBodyParts(ATTACK) && !target.getBodyParts(RANGED_ATTACK)) {
               let open = bee.pos.getOpenPositions().sort((a, b) => b.getRangeTo(target) - a.getRangeTo(target));
               if (open.length)
                 bee.goTo(open[0]);

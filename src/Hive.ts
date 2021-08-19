@@ -9,7 +9,7 @@ import { upgradeCell } from "./cells/stage1/upgradeCell";
 import { excavationCell } from "./cells/stage1/excavationCell";
 import { laboratoryCell } from "./cells/stage1/laboratoryCell";
 
-import { builderMaster } from "./beeMaster/economy/builder";
+import { builderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";

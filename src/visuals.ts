@@ -40,7 +40,7 @@ export class Visuals {
         ans.roomName = name;
         ans.x = 1;
         ans.y = 1;
-        ans = this.table(this.statsHives(name), ans, undefined, minSize);
+        ans = this.table(this.statsHives(name), ans, undefined, minSize, 13);
         minSize = Math.max(minSize, ans.x - 1);
         ans.x = 1;
         ans.y += + 0.2;
@@ -48,7 +48,7 @@ export class Visuals {
         let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest;
         if (labReuest && labReuest.plan) {
           ans = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
-            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize);
+            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize, 13);
           minSize = Math.max(minSize, ans.x - 1);
           ans.x = 1;
           ans.y += + 0.2;
@@ -80,9 +80,9 @@ export class Visuals {
         ss.push(":");
       } else {
         ss.push(Object.keys(hive.spawOrders).length ? ` ${Object.keys(hive.spawOrders).length}` : "");
-        if (cell.beeMaster)
-          ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-            "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+        if (cell.master)
+          ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+            "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
       }
       ans.push(ss);
     }
@@ -90,54 +90,75 @@ export class Visuals {
     if (cell) {
       let ss = ["storage"];
       ss.push(Object.keys(cell.requests).length ? ` ${Object.keys(cell.requests).length}` : "");
-      if (cell.beeMaster)
-        ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      if (cell.master)
+        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
       ans.push(ss);
     }
     cell = hive.cells.dev;
     if (cell) {
       let ss = ["develop"];
       ss.push(cell.sources.length ? ` ${Object.keys(cell.sources).length}` : "");
-      if (cell.beeMaster)
-        ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      if (cell.master)
+        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
       ans.push(ss);
     }
     cell = hive.cells.excavation;
     if (cell) {
       let ss = ["excav"];
       ss.push(` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`)
-      if (cell.beeMaster)
-        ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      if (cell.master)
+        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
       ans.push(ss);
 
       let beesAmount = 0;
       let waitingForBees = 0;
       let targetBeeCount = 0;
       let operational = 0;
-      let all = 0
+      let all = 0;
       _.forEach(cell.resourceCells, (rcell) => {
         all += 1;
         operational += rcell.operational ? 1 : 0;
-        if (rcell.beeMaster && rcell.perSecondNeeded) {
-          beesAmount += rcell.beeMaster.beesAmount;
-          waitingForBees += rcell.beeMaster.waitingForBees;
-          targetBeeCount += rcell.beeMaster.targetBeeCount;
+        if (rcell.master && rcell.perSecondNeeded) {
+          beesAmount += rcell.master.beesAmount;
+          waitingForBees += rcell.master.waitingForBees;
+          targetBeeCount += rcell.master.targetBeeCount;
         }
       });
-      ss = ["resource", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount
-        }`];
+      ss = ["resource", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${
+        waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount}`];
       ans.push(ss);
     }
 
     cell = hive.cells.upgrade;
     if (cell) {
       let ss = ["excav", ` ${Math.floor(cell.controller.progress / cell.controller.progressTotal * 100)}%`];
-      if (cell.beeMaster)
-        ss.push(`: ${cell.beeMaster.waitingForBees ? "(" : ""}${cell.beeMaster.beesAmount}${cell.beeMaster.waitingForBees ?
-          "+" + cell.beeMaster.waitingForBees + ")" : ""}/${cell.beeMaster.targetBeeCount}`);
+      if (cell.master)
+        ss.push(`: ${cell.master.waitingForBees ? "(" : ""}${cell.master.beesAmount}${cell.master.waitingForBees ?
+          "+" + cell.master.waitingForBees + ")" : ""}/${cell.master.targetBeeCount}`);
+      ans.push(ss);
+    }
+
+    let annexOrders = _.filter(Apiary.orders, (o) => o.hive == hive && /^annex_/.exec(o.ref))
+    if (annexOrders.length) {
+      let beesAmount = 0;
+      let waitingForBees = 0;
+      let targetBeeCount = 0;
+      let operational = 0;
+      let all = 0;
+      _.forEach(annexOrders, (o) => {
+        all += 1;
+        operational += o.acted ? 1 : 0;
+        if (o.master) {
+          beesAmount += o.master.beesAmount;
+          waitingForBees += o.master.waitingForBees;
+          targetBeeCount += o.master.targetBeeCount;
+        }
+      });
+      let ss = ["annex", ` ${operational}/${all}`, `: ${waitingForBees ? "(" : ""}${beesAmount}${
+        waitingForBees ? "+" + waitingForBees + ")" : ""}/${targetBeeCount}`];
       ans.push(ss);
     }
 

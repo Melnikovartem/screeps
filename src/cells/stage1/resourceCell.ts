@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { minerMaster } from "../../beeMaster/economy/miner";
+import { minerMaster } from "../../beeMasters/economy/miner";
 import { profile } from "../../profiler/decorator";
 
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
@@ -57,8 +57,8 @@ export class resourceCell extends Cell {
     if (this.resource instanceof Mineral && Game.time % 10 == 0)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
 
-    if (!this.beeMaster && this.operational) {
-      this.beeMaster = new minerMaster(this);
+    if (!this.master && this.operational) {
+      this.master = new minerMaster(this);
     }
   }
 

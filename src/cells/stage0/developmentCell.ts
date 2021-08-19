@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { bootstrapMaster } from "../../beeMaster/economy/bootstrap";
+import { bootstrapMaster } from "../../beeMasters/economy/bootstrap";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -20,15 +20,15 @@ export class developmentCell extends Cell {
   addResource(resource: Source) {
     if (!this.sources.includes(resource)) {
       this.sources.push(resource);
-      if (this.beeMaster)
-        (<bootstrapMaster>this.beeMaster).recalculateTargetBee();
+      if (this.master)
+        (<bootstrapMaster>this.master).recalculateTargetBee();
     }
   }
 
   update() {
     super.update();
-    if (!this.beeMaster)
-      this.beeMaster = new bootstrapMaster(this);
+    if (!this.master)
+      this.master = new bootstrapMaster(this);
   }
   run() { }
 }

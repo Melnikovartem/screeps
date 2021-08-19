@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
-import { upgraderMaster } from "../../beeMaster/economy/upgrader";
+import { upgraderMaster } from "../../beeMasters/economy/upgrader";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -40,8 +40,8 @@ export class upgradeCell extends Cell {
       }
     }
 
-    if (!this.beeMaster)
-      this.beeMaster = new upgraderMaster(this);
+    if (!this.master)
+      this.master = new upgraderMaster(this);
   }
 
   run() { }

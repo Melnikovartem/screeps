@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
 import { makeId } from "../../utils";
-import { queenMaster } from "../../beeMaster/economy/queen";
+import { queenMaster } from "../../beeMasters/economy/queen";
 import { LOGGING_CYCLE } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
@@ -23,8 +23,8 @@ export class respawnCell extends Cell {
 
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
-    if (!this.beeMaster && this.hive.stage > 0)
-      this.beeMaster = new queenMaster(this);
+    if (!this.master && this.hive.stage > 0)
+      this.master = new queenMaster(this);
   };
 
   run() {

@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
-import { haulerMaster } from "../../beeMaster/economy/hauler";
+import { haulerMaster } from "../../beeMasters/economy/hauler";
 import { safeWrap } from "../../utils";
 import { profile } from "../../profiler/decorator";
 @profile
@@ -18,8 +18,8 @@ export class excavationCell extends Cell {
   addResource(resource: Source | Mineral) {
     if (!this.resourceCells[resource.id]) {
       this.resourceCells[resource.id] = new resourceCell(this.hive, resource);
-      if (this.beeMaster)
-        (<haulerMaster>this.beeMaster).recalculateTargetBee();
+      if (this.master)
+        (<haulerMaster>this.master).recalculateTargetBee();
     }
   }
 
@@ -39,8 +39,8 @@ export class excavationCell extends Cell {
     });
     this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
 
-    if (!this.beeMaster)
-      this.beeMaster = new haulerMaster(this);
+    if (!this.master)
+      this.master = new haulerMaster(this);
   };
 
   run() {

@@ -1,5 +1,5 @@
 import { Hive } from "../Hive";
-import { Master } from "../beeMaster/_Master";
+import { Master } from "../beeMasters/_Master";
 import { profile } from "../profiler/decorator";
 import { UPDATE_EACH_TICK } from "../settings";
 
@@ -8,7 +8,7 @@ export abstract class Cell {
 
   hive: Hive;
   ref: string;
-  beeMaster: Master | undefined;
+  master: Master | undefined;
   time: number;
   pos: RoomPosition;
 
@@ -19,10 +19,10 @@ export abstract class Cell {
     this.pos = hive.pos;
 
     if (Apiary.masters["master" + this.ref])
-      this.beeMaster = Apiary.masters["master" + this.ref];
+      this.master = Apiary.masters["master" + this.ref];
   }
 
-  // first stage of decision making like do i a logistic transfer do i need more beeMasters
+  // first stage of decision making like do i a logistic transfer do i need more masters
   update<K extends keyof Cell>(): void {
     // updating structure object to actual data
     _.forEach(Object.keys(this), (key: K) => {
