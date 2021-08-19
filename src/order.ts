@@ -76,17 +76,9 @@ export class Order {
     if (this.flag.color == COLOR_RED) {
       this.acted = true;
       if (!this.master) {
-        if (this.flag.secondaryColor == COLOR_BLUE) {
-          let newMaster = new hordeMaster(this);
-          if (this.ref.includes("controller"))
-            newMaster.tryToDowngrade = true;
-          let matches = this.ref.match(/\d+/g);
-          if (matches != null && /^defend_/.exec(this.ref) == null)
-            newMaster.targetBeeCount = +matches[0];
-          else
-            newMaster.targetBeeCount = 1;
-          this.master = newMaster;
-        } else if (this.flag.secondaryColor == COLOR_PURPLE)
+        if (this.flag.secondaryColor == COLOR_BLUE)
+          this.master = new hordeMaster(this);
+        else if (this.flag.secondaryColor == COLOR_PURPLE)
           this.master = new downgradeMaster(this);
         else if (this.flag.secondaryColor == COLOR_YELLOW)
           this.master = new dismantlerMaster(this);

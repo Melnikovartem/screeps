@@ -16,8 +16,6 @@ export class hordeMaster extends SwarmMaster {
 
   constructor(order: Order) {
     super(order.hive, order);
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-    this.targetBeeCount = Math.ceil(Math.max(1, roomInfo.enemies.length / 2));
   }
 
   update() {
@@ -82,6 +80,11 @@ export class hordeMaster extends SwarmMaster {
               bee.attack(target, { movingTarget: true });
             else
               bee.attack(target);
+            if (bee.pos.isNearTo(target) && target instanceof Creep && target.getBodyParts(ATTACK)) {
+              let open = bee.pos.getOpenPositions().sort((a, b) => b.getRangeTo(target) - a.getRangeTo(target));
+              if (open.length)
+                bee.goTo(open[0]);
+            }
             enemyTargetingCurrent[target.id].current += 1;
           } else if (!bee.pos.isNearTo(this.order.pos))
             bee.goTo(this.order.pos);

@@ -28,7 +28,7 @@ export class Bee {
     this.store = creep.store;
     this.memory = creep.memory;
 
-    if (creep.getBodyparts(CLAIM))
+    if (creep.getBodyParts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
@@ -76,8 +76,8 @@ export class Bee {
     return this.creep.travelTo(target, opt);
   }
 
-  getBodyparts(partType: BodyPartConstant): number {
-    return _.filter(this.creep.body, (part: BodyPartDefinition) => part.type == partType).length;
+  getBodyParts(partType: BodyPartConstant): number {
+    return this.creep.getBodyParts(partType);
   }
 
   transfer(t: Structure | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {

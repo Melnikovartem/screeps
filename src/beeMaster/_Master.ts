@@ -112,7 +112,10 @@ export abstract class Master {
       this.bees[key].state = states.idle;
       this.bees[key].target = null;
     }
-    delete this.hive.spawOrders[this.ref];
+    for (const key in this.hive.spawOrders)
+      if (this.hive.spawOrders[key].master == this.ref)
+        delete this.hive.spawOrders[key];
+
     if (this.hive.bassboost)
       delete this.hive.bassboost.spawOrders[this.ref];
     delete Apiary.masters[this.ref];

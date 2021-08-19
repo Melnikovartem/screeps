@@ -1,7 +1,7 @@
 interface Creep {
-  getBodyparts(partType: BodyPartConstant): number;
+  getBodyParts(partType: BodyPartConstant): number;
 }
 
-Creep.prototype.getBodyparts = function(partType) {
+Creep.prototype.getBodyParts = function(partType) {
   return _.filter(this.body, (part: BodyPartDefinition) => part.type == partType).length;
 };

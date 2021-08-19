@@ -84,7 +84,7 @@ export class Intel {
       });
 
     if (!this.roomInfo[room.name].enemies.length)
-      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyparts(ATTACK) || creep.getBodyparts(HEAL));
+      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyParts(ATTACK) || creep.getBodyParts(HEAL));
 
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);

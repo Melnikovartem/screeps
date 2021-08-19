@@ -25,7 +25,7 @@ export class squadMaster extends SwarmMaster {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyparts(HEAL))
+    if (bee.creep.getBodyParts(HEAL))
       this.healers.push(bee);
     else
       this.knights.push(bee);

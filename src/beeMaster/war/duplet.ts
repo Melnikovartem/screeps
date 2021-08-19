@@ -25,7 +25,7 @@ export class dupletMaster extends SwarmMaster {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyparts(HEAL))
+    if (bee.creep.getBodyParts(HEAL))
       this.healer = bee;
     else
       this.knight = bee;
@@ -49,6 +49,7 @@ export class dupletMaster extends SwarmMaster {
 
     if (!this.spawned) {
       this.spawned = true;
+      console.log("here", !this.knight, !this.healer)
       if (!this.knight) {
         let knightOrder: SpawnOrder = {
           setup: new CreepSetup(Setups.knight.name, { ...Setups.defender.bodySetup }),
@@ -89,19 +90,27 @@ export class dupletMaster extends SwarmMaster {
 
       if (!healer.pos.isNearTo(knight))
         healer.goTo(knight.pos, { movingTarget: true });
+
       if (knight.creep.hits < knight.creep.hitsMax) {
         if (healer.pos.isNearTo(knight))
           healer.heal(knight);
         else
           healer.rangedHeal(knight);
+      } else {
+        let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 3),
+          (creep) => creep.hits < creep.hitsMax));
+        if (healingTarget) {
+          if (healer.pos.isNearTo(healingTarget))
+            healer.heal(healingTarget);
+          else
+            healer.rangedHeal(healingTarget);
+        }
       }
-
-
 
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
       let target: Structure | Creep = <Structure | Creep>knight.pos.findClosest(roomInfo.enemies);
       let ans;
-      if (target)
+      if (target && target.pos.getRangeTo(knight) < 3)
         ans = knight.attack(target);
       else
         ans = knight.goRest(this.order.pos);

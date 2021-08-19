@@ -28,7 +28,7 @@ export class dismantlerMaster extends SwarmMaster {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyparts(HEAL))
+    if (bee.creep.getBodyParts(HEAL))
       this.healer = bee;
     else
       this.dismantler = bee;
