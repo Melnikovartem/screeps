@@ -155,7 +155,7 @@ export class Visuals {
 
     let constLen = hive.constructionSites.length;
     let repLen = hive.emergencyRepairs.length;
-    if (constLen + repLen > 0) {
+    if (constLen + repLen > 0 || (hive.builder && hive.builder.beesAmount)) {
       ans.push(["build", (constLen ? ` C:${constLen}` : "")
         + (repLen ? ` R:${repLen}` : ""),
         this.getBeesAmount(hive.builder)])

@@ -26,8 +26,7 @@ export class excavationCell extends Cell {
   update() {
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
-      if (cell.operational)
-        safeWrap(() => { cell.update() }, cell.print + " update");
+      safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational) {
         if (cell.container.store.getUsedCapacity() >= 1000) {

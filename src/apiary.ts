@@ -18,6 +18,8 @@ export class _Apiary {
   masters: { [id: string]: Master };
   orders: { [id: string]: Order };
 
+  defenseSwarms: { [id: string]: Order } = {};
+
   constructor() {
     if (LOGGING_CYCLE) Memory.log.apiary = Game.time;
 
@@ -46,6 +48,7 @@ export class _Apiary {
 
   // update phase
   update() {
+
     Order.checkFlags();
     _.forEach(Apiary.orders, (order) => {
       safeWrap(() => order.update(), order.print + " update");

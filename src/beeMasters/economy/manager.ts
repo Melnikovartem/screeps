@@ -60,16 +60,13 @@ export class managerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-
-        setup: Setups.manager,
+        setup: new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup }),
         amount: 1,
         priority: 7,
       };
 
-      if (this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 700000) {
-        order.setup = new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup });
-        order.setup.bodySetup.patternLimit = 5; // save energy from burning
-      }
+      // desired linear regex from desmos i guess)
+      order.setup.bodySetup.patternLimit = this.hive.room.controller!.level * 2.3 - 8;
 
       this.wish(order);
     }

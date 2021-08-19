@@ -57,6 +57,20 @@ class repairSheet {
     }
   }
 
+  getHits(structure: Structure): number {
+    switch (structure.structureType) {
+      case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
+        return this[structure.structureType];
+      }
+      case STRUCTURE_ROAD: {
+        return structure.hits < structure.hitsMax * this.other * this.road_collapse ? structure.hits : 0;
+      }
+      default: {
+        return structure.hitsMax * this.other;
+      }
+    }
+  }
+
   isAnEmergency(structure: Structure): boolean {
     switch (structure.structureType) {
       case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
@@ -75,6 +89,9 @@ class repairSheet {
     switch (structure.structureType) {
       case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
         return structure.hits < this[structure.structureType];
+      }
+      case STRUCTURE_ROAD: {
+        return false;
       }
       default: {
         return structure.hits < structure.hitsMax * this.other;
@@ -101,6 +118,7 @@ export class Hive {
   constructionSites: ConstructionSite[] = [];
   emergencyRepairs: Structure[] = [];
   normalRepairs: Structure[] = [];
+  sumRepairs: number = 0;
 
   builder?: builderMaster;
 
@@ -227,7 +245,10 @@ export class Hive {
   private updateRepairs() {
     this.normalRepairs = [];
     this.emergencyRepairs = [];
+    this.sumRepairs = 0;
     _.forEach(this.room.find(FIND_STRUCTURES), (structure) => {
+      if (structure.hitsMax > structure.hits)
+        this.sumRepairs += Math.max(0, this.repairSheet.getHits(structure) - structure.hits);
       if (this.repairSheet.isAnEmergency(structure))
         this.emergencyRepairs.push(structure);
       else if (this.repairSheet.isAnRepairCase(structure))
@@ -237,11 +258,13 @@ export class Hive {
       let roomInfo = Apiary.intel.getInfo(room.name, 10);
       if (roomInfo.safePlace)
         _.forEach(room.find(FIND_STRUCTURES), (structure) => {
-          if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER)
+          if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER) {
+            this.sumRepairs += Math.max(0, this.repairSheet.getHits(structure) - structure.hits);
             if (this.repairSheet.isAnEmergency(structure))
               this.emergencyRepairs.push(structure);
             else if (this.repairSheet.isAnRepairCase(structure))
               this.normalRepairs.push(structure);
+          }
         });
     });
   }

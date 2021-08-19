@@ -49,7 +49,7 @@ export class resourceCell extends Cell {
   update() {
     super.update();
 
-    if (!this.operational)
+    if (!this.operational && Game.time % 30 == 0)
       this.updateStructure();
     if ((!this.container && !this.link) || (this.resource instanceof Mineral && !this.extractor))
       this.operational = false;

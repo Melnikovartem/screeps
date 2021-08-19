@@ -81,7 +81,6 @@ export class laboratoryCell extends Cell {
         let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
         let res2Amount = mainStore[res2] + _.sum(this.laboratories, (lab) => lab.store[res2]);
 
-        console.log(res1, res1Amount, res2, res2Amount);
         amount = Math.min(res1Amount, res2Amount);
       }
     }
@@ -165,10 +164,11 @@ export class laboratoryCell extends Cell {
         if (this.currentRequest.plan - this.currentRequest.current > 1000) {
           this.fflush(this.currentRequest.res);
           this.currentRequest.plan -= this.currentRequest.current;
-        } else if (this.currentRequest.current == 0) {
+        } else if (this.currentRequest.current < 5) {
           this.currentRequest = undefined;
           this.lab1 = undefined;
           this.lab2 = undefined;
+          console.log("here");
           this.fflushAll();
         }
       } else {
@@ -203,30 +203,31 @@ export class laboratoryCell extends Cell {
 
   run() {
     if (this.currentRequest && Game.time % this.currentRequest.cooldown == 0 && this.currentRequest.current > 0) {
-      if (this.lab1 && this.lab1.store[this.currentRequest.res1] >= 5
-        && this.lab2 && this.lab2.store[this.currentRequest.res2] >= 5) {
-        let labs = this.getFreeLabs(this.currentRequest.res, 5);
-        for (const k in _.filter(labs, (lab) => !lab.cooldown))
-          if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
-            this.currentRequest.current -= 5;
-        if (labs.length == 0)
-          this.fflushAll();
-      }
-    } else if (this.currentRequest && this.lab1 && this.lab2) {
-      let storageCell = this.hive.cells.storage;
-      if (storageCell && this.laboratories.length) {
-        // red button for request
-        let res1Amount = this.lab1.store[this.currentRequest.res1] + storageCell.storage.store[this.currentRequest.res1];
-        let res2Amount = this.lab2.store[this.currentRequest.res2] + storageCell.storage.store[this.currentRequest.res2];
-        if (res1Amount == 0 || res2Amount == 0) {
-          res1Amount += _.sum(this.hive.room.find(FIND_MY_CREEPS), (c) => c.store[this.currentRequest!.res1]);
-          res2Amount += _.sum(this.hive.room.find(FIND_MY_CREEPS), (c) => c.store[this.currentRequest!.res2]);
-          if (res1Amount == 0 || res2Amount == 0) {
-            this.currentRequest.plan = 0;
-            this.currentRequest.current = 0;
+      if (this.lab1 && this.lab2)
+        if (this.lab1.store[this.currentRequest.res1] >= 5 && this.lab2.store[this.currentRequest.res2] >= 5) {
+          let labs = this.getFreeLabs(this.currentRequest.res, 5);
+          for (const k in _.filter(labs, (lab) => !lab.cooldown))
+            if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
+              this.currentRequest.current -= 5;
+          if (labs.length == 0)
+            this.fflushAll();
+          console.log(this.currentRequest.current);
+        } else {
+          let storageCell = this.hive.cells.storage;
+          if (storageCell && this.laboratories.length) {
+            // red button for request
+            let res1Amount = this.lab1.store[this.currentRequest.res1] + storageCell.storage.store[this.currentRequest.res1];
+            let res2Amount = this.lab2.store[this.currentRequest.res2] + storageCell.storage.store[this.currentRequest.res2];
+            if (res1Amount == 0 || res2Amount == 0) {
+              res1Amount += _.sum(this.hive.room.find(FIND_MY_CREEPS), (c) => c.store[this.currentRequest!.res1]);
+              res2Amount += _.sum(this.hive.room.find(FIND_MY_CREEPS), (c) => c.store[this.currentRequest!.res2]);
+              if (res1Amount == 0 || res2Amount == 0) {
+                this.currentRequest.plan = 0;
+                this.currentRequest.current = 0;
+              }
+            }
           }
         }
-      }
     }
 
     // here some boost logic

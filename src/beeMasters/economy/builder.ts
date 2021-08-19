@@ -14,16 +14,15 @@ export class builderMaster extends Master {
     super.update();
 
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 22)
-      && storage && storage.store[RESOURCE_ENERGY] > 200000)
-      this.targetBeeCount = 3;
-    else if ((this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 6)
-      && storage && storage.store[RESOURCE_ENERGY] > 100000)
-      this.targetBeeCount = 2;
-    else if (this.hive.emergencyRepairs.length * 0.5 + this.hive.constructionSites.length >= 1.5)
-      this.targetBeeCount = 1;
-    else
+    let constLen = this.hive.constructionSites.length;
+    if (constLen == 0 && 6000 > this.hive.sumRepairs)
       this.targetBeeCount = 0;
+    else if ((constLen < 10 && this.hive.sumRepairs < 12000) || (storage && storage.store[RESOURCE_ENERGY] < 100000))
+      this.targetBeeCount = 1;
+    else if ((constLen < 20 && this.hive.sumRepairs < 27000) || (storage && storage.store[RESOURCE_ENERGY] < 200000))
+      this.targetBeeCount = 2;
+    else
+      this.targetBeeCount = 3;
 
     if (this.checkBees()) {
       let order: SpawnOrder = {

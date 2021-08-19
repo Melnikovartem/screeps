@@ -72,6 +72,8 @@ export class Order {
     // dont forget to this.acted = true otherwise you will get new master each tick
     if (this.flag.color == COLOR_RED) {
       this.acted = true;
+      if (/^def_/.exec(this.ref) != null)
+        Apiary.defenseSwarms[this.pos.roomName] = this;
       if (!this.master) {
         if (this.flag.secondaryColor == COLOR_BLUE)
           this.master = new hordeMaster(this);
@@ -196,6 +198,10 @@ export class Order {
             (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
         }
       }
+    } else if (this.flag.color == COLOR_RED) {
+      for (const key in Apiary.defenseSwarms)
+        if (Apiary.defenseSwarms[key].ref == this.ref)
+          delete Apiary.defenseSwarms[key];
     }
     this.flag.remove();
     delete Apiary.orders[this.ref];
