@@ -41,13 +41,14 @@ export class respawnCell extends Cell {
       let spawn = this.freeSpawns.pop()!;
 
       let setup;
-      if (order.priority < 4)
+      // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet) 
+      if (order.priority < 4 || order.priority == 1)
         setup = order.setup.getBody(energyAvailable);
       else
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
 
       if (setup.body.length) {
-        let name = order.setup.name + "_" + makeId(4);
+        let name = order.setup.name + " " + makeId(4);
         let memory: CreepMemory = {
           refMaster: sortedOrders[key].master,
           born: Game.time,

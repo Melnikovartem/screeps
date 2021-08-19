@@ -126,7 +126,7 @@ export abstract class Master {
     let roomName = this.hive.roomName;
     if (firstBee && firstBee.pos)
       roomName = firstBee.pos.roomName;
-    return `<a href=#!/room/${Game.shard.name}/${roomName}>[${this.ref}] ${this.beesAmount}/${this.targetBeeCount}</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${roomName}>${this.beesAmount}/${this.targetBeeCount} ["${this.ref}"]</a>`;
   }
 
   /*

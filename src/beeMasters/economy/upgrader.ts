@@ -14,12 +14,19 @@ export class upgraderMaster extends Master {
     super(upgradeCell.hive, upgradeCell.ref);
 
     this.cell = upgradeCell;
-    if (this.cell.link || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
+    let storageCell = this.hive.cells.storage
+    if (this.cell.link || (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4))
       this.fastMode = true;
+    else if (storageCell)
+      this.targetBeeCount = Math.floor((storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50) * 10 / Math.floor(this.hive.room.energyCapacityAvailable / 3));
+    // working carry body parts Math.floor(this.hive.room.energyCapacityAvailable/150)*50
+    //rate of per 1 rate storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50
+    // desired rate(carrybodyparts/per 1 rate) = amount needed
 
-    let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
+    let storageLink = storageCell && storageCell.link;
     if (this.cell.link && storageLink)
       this.targetBeeCount = Math.round(780 / this.cell.link.pos.getRangeTo(storageLink) / Math.floor(this.hive.room.energyCapacityAvailable / 550 * 5));
+    console.log(this.print, storageCell && storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 + 50);
   }
 
   update() {

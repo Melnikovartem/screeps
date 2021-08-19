@@ -56,20 +56,20 @@ export class CreepSetup {
 
 export const SetupsNames = {
   // Civilian
-  claimer: 'BeeDrone',
-  manager: 'StinglessBee',
+  claimer: 'Bee drone',
+  manager: 'Stingless bee',
   hauler: 'Bumblebee',
   miner: 'Andrena',
-  upgrader: 'HoneyBee',
+  upgrader: 'Honey bee',
   builder: 'Colletidae',
   scout: 'Stenotritidae',
-  bootstrap: 'BeeLarva',
-  queen: 'BeeQueen',
+  bootstrap: 'Bee larva',
+  queen: 'Bee queen',
   // War
-  knight: 'EuropeanHornet',
-  dismantler: 'DolichovespulaArenaria',
+  knight: 'European hornet',
+  dismantler: 'Dolichovespula arenaria',
   healer: 'Bald-facedHornet',
-  defender: 'VespaAffinis',
+  defender: 'Vespa affinis',
 }
 
 

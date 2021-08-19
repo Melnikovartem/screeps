@@ -18,7 +18,7 @@ export function safeWrap(cycle: () => void, context: string): void {
     try { cycle(); }
     catch (e) {
       if (LOGGING_CYCLE) {
-        let regex = /\[(.*)\]/.exec(context);
+        let regex = /\["(.*)\"]/.exec(context);
         Memory.log.crashes[regex ? regex[0] : context] = { time: Game.time, context: context, message: e.message }
       }
     }

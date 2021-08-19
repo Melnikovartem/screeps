@@ -45,7 +45,7 @@ export class defenseCell extends Cell {
         let freeSwarms: Order[] = [];
         for (const roomDefName in this.defenseSwarms) {
           let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
-          if (roomInfDef.safePlace)
+          if (roomInfDef.safePlace && Apiary.orders[this.defenseSwarms[roomDefName]].master)
             freeSwarms.push(Apiary.orders[this.defenseSwarms[roomDefName]])
         }
         let ans: number | string | undefined;

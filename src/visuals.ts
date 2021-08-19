@@ -49,7 +49,7 @@ export class Visuals {
       for (const name in Apiary.hives) {
         let minSize = 0;
         ans = { x: 1, y: 1, roomName: name };
-        ans = this.table(this.statsHives(name), ans, undefined, minSize, 13);
+        ans = this.table(this.statsHives(name), ans, undefined, minSize);
         minSize = Math.max(minSize, ans.x - 1);
         ans.x = 1;
         ans.y += + 0.2;
@@ -57,7 +57,7 @@ export class Visuals {
         let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest;
         if (labReuest && labReuest.plan) {
           ans = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
-            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize, 13);
+            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize);
           minSize = Math.max(minSize, ans.x - 1);
           ans.x = 1;
           ans.y += + 0.2;
@@ -218,17 +218,17 @@ export class Visuals {
     let vis = new RoomVisual(pos.roomName);
     let lab = this.label(label, pos, style, minSize, maxSize);
     let xMin = style.align == "right" ? lab.x : pos.x;
-    let xMax = xMin + (lab.x - pos.x) * progress * (style.align == "right" ? -1 : 1);
+    let xMax = xMin + (lab.x - pos.x) * Math.min(1, progress) * (style.align == "right" ? -1 : 1);
     vis.poly([[xMin, pos.y], [xMin, lab.y], [xMax, lab.y], [xMax, pos.y], [xMin, pos.y]], {
       fill: "#ffdd80",
       stroke: undefined,
-      opacity: 0.3,
+      opacity: 0.3 + (progress > 1 ? Math.min((progress - 1) / 5, 0.7) : 0),
     });
     return lab;
   }
 
   table(strings: string[][], pos: { x: number, y: number, roomName?: string },
-    style: TextStyle = {}, minSize: number = 1, maxSize: number = 15, align: "center" | "right" | "left" = "left") {
+    style: TextStyle = {}, minSize: number = 1, maxSize: number = 20, align: "center" | "right" | "left" = "left") {
     let vis = new RoomVisual(pos.roomName);
     let pad = 0.2;
 

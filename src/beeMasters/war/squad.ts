@@ -30,7 +30,7 @@ export class squadMaster extends SwarmMaster {
     else
       this.knights.push(bee);
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
-    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 1000)
+    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 800)
       this.spawned = true;
   }
 
@@ -45,12 +45,13 @@ export class squadMaster extends SwarmMaster {
     this.healers = _.compact(this.healers);
 
     if (!this.spawned) {
+      // if ever automated, then make priority 3
       this.spawned = true;
       if (this.knights.length < 2) {
         let tankOrder: SpawnOrder = {
           setup: Setups.knight,
           amount: 2 - this.knights.length,
-          priority: 4,
+          priority: 1,
           master: this.ref,
         };
         this.wish(tankOrder, this.ref + "_knight");
@@ -60,11 +61,12 @@ export class squadMaster extends SwarmMaster {
         let healerOrder: SpawnOrder = {
           setup: Setups.healer,
           amount: 2 - this.healers.length,
-          priority: 4,
+          priority: 1,
           master: this.ref,
         };
         this.wish(healerOrder, this.ref + "_healer");
       }
+      _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
 
     if (!this.waitingForBees && this.beesAmount == 0)
@@ -83,10 +85,9 @@ export class squadMaster extends SwarmMaster {
       knight1 = knight2;
 
     _.forEach(this.bees, (bee) => {
-      if (bee.state == states.chill)
-        bee.goRest(this.meetingPoint);
+      if (bee.state == states.refill)
+        bee.goRest(this.hive.pos);
     });
-
 
     if (knight1 && knight2 && healer1 && healer2) {
       if (knight2.pos.isNearTo(knight1) && healer1.pos.isNearTo(knight1) && healer2.pos.isNearTo(knight2)) {
@@ -100,6 +101,12 @@ export class squadMaster extends SwarmMaster {
         healer2.goTo(knight2.pos);
       }
     }
+
+    _.forEach(this.bees, (bee) => {
+      // if reconstructed while they all spawned, but not met yet or one was lost
+      if (bee.state == states.chill)
+        bee.state = states.work;
+    });
 
     if (knight1 && knight1.state == states.work && !this.waitingForBees) {
       // try to fix formation if broken

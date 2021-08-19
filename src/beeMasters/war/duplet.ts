@@ -13,14 +13,12 @@ export class dupletMaster extends SwarmMaster {
   healer: Bee | undefined;
   knight: Bee | undefined;
   spawned: boolean = false;
-  meetingPoint: RoomPosition;
 
   constructor(order: Order) {
     super(order.hive, order);
     // sad cause safeMode saves from this shit
     this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
     this.targetBeeCount = 2;
-    this.meetingPoint = this.hive.pos;
   }
 
   newBee(bee: Bee) {
@@ -65,6 +63,7 @@ export class dupletMaster extends SwarmMaster {
         healerOrder.setup.bodySetup.patternLimit = 2;
         this.wish(healerOrder, this.ref + "_healer");
       }
+      _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
 
     if (!this.waitingForBees && this.beesAmount == 0)
@@ -75,14 +74,20 @@ export class dupletMaster extends SwarmMaster {
     let knight = this.knight;
     let healer = this.healer;
     _.forEach(this.bees, (bee) => {
-      if (bee.state == states.chill)
-        bee.goRest(this.meetingPoint);
+      if (bee.state == states.refill)
+        bee.goRest(this.hive.pos);
     });
 
     if (knight && healer && knight.pos.isNearTo(healer)) {
       knight.state = states.work;
       healer.state = states.work;
     }
+
+    _.forEach(this.bees, (bee) => {
+      // if reconstructed while they all spawned, but not met yet or one was lost
+      if (bee.state == states.chill)
+        bee.state = states.work;
+    });
 
     if (knight && knight.state == states.work) {
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);

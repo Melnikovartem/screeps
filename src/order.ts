@@ -88,6 +88,7 @@ export class Order {
           this.master = new dupletMaster(this);
         else if (this.flag.secondaryColor == COLOR_ORANGE)
           this.master = new squadMaster(this);
+        // COLOR_WHITE to mark surrendered rooms
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
@@ -228,6 +229,6 @@ export class Order {
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>[Order ${this.ref}] A${this.acted ? "+" : "-"} M${this.master ? "+" : "-"}</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>A${this.acted ? "+" : "-"} M${this.master ? "+" : "-"} ["${this.ref}"]</a>`;
   }
 }
