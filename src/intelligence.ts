@@ -51,18 +51,24 @@ export class Intel {
     if (Game.time % 50 == 0)
       this.toCache();
 
-    if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace)
-      Memory.log.enemies[room.name + "_" + Game.time] = _.map(this.roomInfo[room.name].enemies,
-        (e) => {
-          let ans: any = { hits: e.hits, hitsMax: e.hitsMax }
-          if (e instanceof Creep) {
-            ans.owner = e.owner.username;
-            ans.attack = e.getBodyParts(ATTACK);
-            ans.heal = e.getBodyParts(HEAL);
-          } else
-            ans.owner = e.structureType;
-          return ans;
-        });
+    if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace) {
+      if (!Memory.log.enemies)
+        Memory.log.enemies = {};
+      if (!Memory.log.enemies[room.name])
+        Memory.log.enemies[room.name] = {};
+      if (+_.min(Object.keys(Memory.log.enemies[room.name])) + CREEP_LIFE_TIME / 2 < Game.time)
+        Memory.log.enemies[room.name][Game.time] = _.map(this.roomInfo[room.name].enemies,
+          (e) => {
+            let ans: any = { hits: e.hits, hitsMax: e.hitsMax }
+            if (e instanceof Creep) {
+              ans.owner = e.owner.username;
+              ans.attack = e.getBodyParts(ATTACK);
+              ans.heal = e.getBodyParts(HEAL);
+            } else
+              ans.owner = e.structureType;
+            return ans;
+          });
+    }
     return this.roomInfo[roomName];
   }
 

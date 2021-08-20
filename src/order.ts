@@ -177,7 +177,9 @@ export class Order {
   // what to do when delete if something neede
   delete() {
     if (LOGGING_CYCLE) {
-      if (LOGGING_CYCLE) Memory.log.orders[this.ref] = {
+      if (!Memory.log.orders)
+        Memory.log.orders = {};
+      Memory.log.orders[this.ref] = {
         time: Game.time,
         name: this.flag.name,
         pos: this.pos,
@@ -217,6 +219,8 @@ export class Order {
 
     if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
       if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
+        if (!Memory.log.orders)
+          Memory.log.orders = {};
         if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
           time: Game.time,
           name: this.flag.name,

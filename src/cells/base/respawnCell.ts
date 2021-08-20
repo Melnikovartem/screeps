@@ -41,7 +41,7 @@ export class respawnCell extends Cell {
       let spawn = this.freeSpawns.pop()!;
 
       let setup;
-      // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet) 
+      // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       if (order.priority < 4 || order.priority == 1)
         setup = order.setup.getBody(energyAvailable);
       else
@@ -58,13 +58,17 @@ export class respawnCell extends Cell {
 
         if (ans == OK) {
           energyAvailable -= setup.cost;
-          if (LOGGING_CYCLE) Memory.log.spawns[name] = {
-            time: Game.time,
-            spawnRoom: this.hive.roomName,
-            fromSpawn: spawn!.name,
-            orderedBy: sortedOrders[key].master,
-            priority: order.priority,
-          };
+          if (LOGGING_CYCLE) {
+            if (!Memory.log.spawns)
+              Memory.log.spawns = {};
+            Memory.log.spawns[name] = {
+              time: Game.time,
+              spawnRoom: this.hive.roomName,
+              fromSpawn: spawn!.name,
+              orderedBy: sortedOrders[key].master,
+              priority: order.priority,
+            };
+          }
 
           this.hive.spawOrders[sortedOrders[key].ref].amount -= 1;
           if (this.hive.spawOrders[sortedOrders[key].ref].amount == 0)

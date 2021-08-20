@@ -45,7 +45,7 @@ export class Mem {
       }
 
     if (Game.time % LOGGING_CYCLE == 0) {
-      if (Object.keys(Memory.log.spawns).length > 25) {
+      if (Memory.log.spawns && Object.keys(Memory.log.spawns).length > 25) {
         let j = Object.keys(Memory.log.spawns).length - 10;
         for (let i in Memory.log.spawns) {
           if (Memory.log.spawns[i].time + LOGGING_CYCLE * 3 > Game.time) continue;
@@ -64,7 +64,7 @@ export class Mem {
           }
         }
 
-      if (Object.keys(Memory.log.orders).length > 25) {
+      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 25) {
         let j = Object.keys(Memory.log.orders).length - 10;
         for (let i in Memory.log.orders) {
           if (Memory.log.orders[i].time + LOGGING_CYCLE * 3 > Game.time || Memory.log.orders[i].destroyTime == -1) continue;
@@ -73,7 +73,7 @@ export class Mem {
         }
       }
 
-      if (Object.keys(Memory.log.crashes).length > 100) {
+      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 100) {
         let j = Object.keys(Memory.log.crashes).length - 50;
         for (let key in Memory.log.crashes) {
           delete Memory.log.crashes[key];
@@ -81,7 +81,7 @@ export class Mem {
         }
       }
 
-      if (Object.keys(Memory.log.enemies).length > 50) {
+      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
         let j = Object.keys(Memory.log.enemies).length - 35;
         for (let key in Memory.log.enemies) {
           delete Memory.log.enemies[key];

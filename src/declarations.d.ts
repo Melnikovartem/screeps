@@ -44,7 +44,7 @@ declare global {
     log: {
       reset: number,
       apiary: number,
-      spawns: {
+      spawns?: {
         [id: string]: {
           time: number,
           spawnRoom: string,
@@ -53,7 +53,7 @@ declare global {
           priority: number,
         }
       },
-      hives: {
+      hives?: {
         [id: string]: {
           [id: number]: {
             annexNames: string[],
@@ -69,7 +69,7 @@ declare global {
           }
         }
       },
-      orders: {
+      orders?: {
         [id: string]: {
           time: number,
           pos: RoomPosition,
@@ -78,15 +78,15 @@ declare global {
           master: boolean,
         }
       },
-      crashes: {
+      crashes?: {
         [id: string]: {
           time: number,
           context: string,
           message: string,
         }
       },
-      enemies: {
-        [id: string]: any,
+      enemies?: {
+        [id: string]: { [id: number]: any },
       }
     },
   }

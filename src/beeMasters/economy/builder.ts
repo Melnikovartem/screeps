@@ -52,7 +52,8 @@ export class builderMaster extends Master {
 
         if (bee.target) {
           target = Game.getObjectById(bee.target);
-          if (target instanceof Structure && target.hits == target.hitsMax) {
+          if (target instanceof Structure && (target.hits == target.hitsMax
+            || target.hits >= this.hive.repairSheet.getHits(target) * 1.5)) {
             this.hive.shouldRecalc = true;
             target = null;
           }
