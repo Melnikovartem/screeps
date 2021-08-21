@@ -142,6 +142,13 @@ RoomPosition.prototype.getTimeForPath = function(target: RoomPosition | { pos: R
   return len;
 }
 
+let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
+  [FIND_EXIT_TOP]: (pos) => pos.y,
+  [FIND_EXIT_BOTTOM]: (pos) => 49 - pos.y,
+  [FIND_EXIT_LEFT]: (pos) => pos.x,
+  [FIND_EXIT_RIGHT]: (pos) => 49 - pos.x,
+}
+
 // couple of optimizations to make usability of getClosestByRange, but better
 RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos: RoomPosition }>(objects: Obj[]): Obj | null {
   if (objects.length == 0)
@@ -160,9 +167,23 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
     let newDistance = 0;
     if (this.roomName == pos.roomName)
       newDistance = this.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
-    else
-      newDistance += this.getRangeTo(pos) + pos.getRangeTo(this) + (this.getRoomRangeTo(pos) - 1) * 25;
+    else {
+      //cheap est of dist
+      let outOfRoom = 25;
+      if (this.roomName in Game.rooms) {
+        let exit = Game.rooms[this.roomName].findExitTo(pos.roomName);
+        if (exit > 0)
+          outOfRoom = getRangeToWall[exit](this) * 1.2;
+      }
+      let inRoom = 25;
+      if (pos.roomName in Game.rooms) {
+        let exit = Game.rooms[pos.roomName].findExitTo(this.roomName);
+        if (exit > 0)
+          inRoom = getRangeToWall[exit](pos) * 1.2;
+      }
 
+      newDistance += Math.ceil(outOfRoom + inRoom + (this.getRoomRangeTo(pos) - 1) * 25);
+    }
     if (newDistance < distance) {
       ans = object;
       distance = newDistance;

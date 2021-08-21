@@ -42,8 +42,11 @@ export class _Apiary {
     if (_.filter(this.hives, (h) => h.stage == 2).length == 0)
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
 
+    // for testing 
     if (this.hives["W5N8"])
       this.hives["W5N8"].stage = 2
+    if (this.hives["W7N9"])
+      this.hives["W7N9"].stage = 2
   }
 
   // update phase
