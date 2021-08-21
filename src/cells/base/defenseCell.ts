@@ -13,18 +13,16 @@ export class defenseCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(["towers"]);
 
     _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      _.forEach(this.towers, (tower) => {
-        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
-          storageCell!.requestFromStorage(tower.id, tower, 0);
-        else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY])
-          storageCell!.requestFromStorage(tower.id, tower, 4);
-      });
+      storageCell.requestFromStorage(this.ref,
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY]), 0);
+      storageCell.requestFromStorage(this.ref,
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY]), 4);
     }
   }
 

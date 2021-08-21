@@ -23,7 +23,7 @@ export abstract class Cell {
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters
-  update<K extends keyof Cell>(): void {
+  update<K extends keyof this>(updateMapKey?: K[]): void {
     // updating structure object to actual data
     _.forEach(Object.keys(this), (key: K) => {
       let data = this[key];
@@ -31,21 +31,20 @@ export abstract class Cell {
         let gameObject = Game.getObjectById(data.id)
         if (gameObject || UPDATE_EACH_TICK)
           this[key] = <typeof data>gameObject;
-      } else if (Array.isArray(data)
-        && (data[0] instanceof Structure || data[0] instanceof Source || data[0] instanceof Mineral)) {
-        let new_data: any[] = [];
-
-        _.forEach(data, (structure) => {
-          let gameObject = Game.getObjectById(structure.id)
-          if (gameObject)
-            new_data.push(gameObject);
-          else if (!UPDATE_EACH_TICK)
-            new_data.push(structure);
-        });
-
-        this[key] = <typeof data>new_data;
       }
     });
+
+    if (updateMapKey)
+      _.forEach(updateMapKey, (key: K) => {
+        for (const inMap in this[key]) {
+          let data = this[key][inMap];
+          if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
+            let gameObject = Game.getObjectById(data.id)
+            if (gameObject || UPDATE_EACH_TICK)
+              this[key][inMap] = <typeof data>gameObject;
+          }
+        }
+      });
   }
 
   // second stage of decision making like where do i need to spawn creeps or do i need

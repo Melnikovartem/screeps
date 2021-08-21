@@ -31,8 +31,15 @@ export class upgradeCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (this.link && storageCell && storageCell.link && (!storageCell.requests[this.link.id]
-      || storageCell.requests[this.link.id].amount[0] - this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= 50)) {
-      storageCell.requestFromStorage(this.link.id, this.link, 4);
+      || this.link.store.getFreeCapacity(RESOURCE_ENERGY) - storageCell.requests[this.link.id].amount[0] >= 50)) {
+      storageCell.requests[this.link.id] = {
+        ref: this.link.id,
+        from: [storageCell.link],
+        to: [this.link],
+        resource: [RESOURCE_ENERGY],
+        amount: [this.link.store.getFreeCapacity(RESOURCE_ENERGY)],
+        priority: 4,
+      };
     }
 
     if (!this.master)

@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class excavationCell extends Cell {
   resourceCells: { [id: string]: resourceCell } = {};
-  quitefullContainers: { [id: string]: StructureLab };
+  quitefullContainers: StructureContainer[] = [];
   shouldRecalc = true;
 
   constructor(hive: Hive) {

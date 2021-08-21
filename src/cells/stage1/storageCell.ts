@@ -7,11 +7,10 @@ import { profile } from "../../profiler/decorator";
 export interface StorageRequest {
   ref: string;
   from: (StructureLink | StructureTerminal | StructureStorage | StructureLab)[];
-  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab;
+  to: (StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab)[];
   resource: ResourceConstant[];
   amount: number[];
   priority: 0 | 1 | 2 | 3 | 4 | 5;
-  multipleFrom?: boolean;
 }
 
 @profile
@@ -38,26 +37,34 @@ export class storageCell extends Cell {
     this.pos = this.storage.pos;
   }
 
-  requestFromStorageMultiple() {
-
-  }
-
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
-    , minAmount: number = 0, res: ResourceConstant = RESOURCE_ENERGY): number {
-
-    let amount = Math.max(minAmount, this.storage.store.getUsedCapacity(res));
-    if (!amount)
-      return ERR_NOT_ENOUGH_RESOURCES;
-
+    , res: StorageRequest["resource"] = [], amount: number[] = []): number {
+    if (to.length == 0)
+      return ERR_NOT_FOUND;
     this.requests[ref] = {
       ref: ref,
       from: [this.storage],
-      to: to,
-      resource: [res],
+      to: [],
+      resource: [],
       priority: priority,
-      amount: [amount],
+      amount: [],
     };
-    return amount ? amount : OK;
+    _.forEach(to, (t, k) => {
+      if (!res[k])
+        res[k] = RESOURCE_ENERGY;
+      if (!amount[k])
+        amount[k] = (<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]);
+      if (amount[k] > 0) {
+        this.requests[ref].to.push(t);
+        this.requests[ref].resource.push(res[k]);
+        this.requests[ref].amount.push(amount[k]);
+      }
+    });
+    if (this.requests[ref].to.length == 0) {
+      delete this.requests[ref];
+      return 0;
+    }
+    return _.sum(this.requests[ref].amount);
   }
 
   requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]): number {
@@ -66,7 +73,7 @@ export class storageCell extends Cell {
     this.requests[ref] = {
       ref: ref,
       from: [],
-      to: this.storage,
+      to: [this.storage],
       resource: [],
       priority: priority,
       amount: [],
@@ -102,10 +109,12 @@ export class storageCell extends Cell {
           this.requests[key].from[fromKey] = from;
       }
 
-      let to = this.requests[key].to;
-      to = <typeof to>Game.getObjectById(to.id);
-      if (to)
-        this.requests[key].to = to;
+      for (const toKey in this.requests[key].to) {
+        let to = this.requests[key].to[toKey];
+        to = <typeof to>Game.getObjectById(to.id);
+        if (to)
+          this.requests[key].to[toKey] = to;
+      }
     }
 
     if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
@@ -122,27 +131,24 @@ export class storageCell extends Cell {
       let request;
       for (key in this.requests) {
         let req = this.requests[key];
-        if (req.from[0].id == this.link.id && req.to instanceof StructureLink) {
-          let amount = req.amount != undefined ? req.amount : req.to.store.getFreeCapacity(RESOURCE_ENERGY);
-          if (amount >= LINK_CAPACITY / 4) {
+        if (req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
+          if (req.amount[0] >= LINK_CAPACITY / 4) {
             request = this.requests[key];
             break;
           }
         }
       }
 
-      if (request && request.from[0].id == this.link.id && request.to instanceof StructureLink) {
-
+      if (request && request.from[0].id == this.link.id && request.to[0] instanceof StructureLink) {
         if (this.link.store[RESOURCE_ENERGY] + 25 >= request.amount[0]) {
           if (this.requests[this.link.id])
             this.requests[this.link.id].amount[0] = Math.max(0, this.link.store[RESOURCE_ENERGY] - request.amount[0] * 1.4);
-          if (!this.link.cooldown) {
-            this.link.transferEnergy(request.to, Math.min(request.amount[0], this.link.store[RESOURCE_ENERGY]));
-            delete this.requests[key];
-          }
+          if (!this.link.cooldown)
+            if (this.link.transferEnergy(request.to[0], Math.min(request.amount[0], this.link.store[RESOURCE_ENERGY])) == OK)
+              delete this.requests[key];
         } else
-          this.requestFromStorage(this.link.id, this.link, 4,
-            Math.min(Math.ceil(request.amount[0] * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]);
+          this.requestFromStorage(this.link.id, [this.link], 4, undefined,
+            [Math.min(Math.ceil(request.amount[0] * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]]);
       }
     }
   }

@@ -215,10 +215,10 @@ export class Hive {
 
   private updateCellData() {
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (!this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION))
-        if (!this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN))
-          if (!this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER))
-            if (!this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB))
+      if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) == ERR_INVALID_ARGS)
+        if (this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN) == ERR_INVALID_ARGS)
+          if (this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER) == ERR_INVALID_ARGS)
+            if (this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB) == ERR_INVALID_ARGS)
               void (0);
     });
   }

@@ -136,7 +136,7 @@ export class laboratoryCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(["laboratories"]);
     let storageCell = this.hive.cells.storage;
     if (storageCell && this.laboratories.length) {
       _.forEach(this.laboratories, (l) => {
@@ -161,10 +161,10 @@ export class laboratoryCell extends Cell {
         let res2 = this.currentRequest.res2;
 
         if (lab1.store[res1] < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(lab1.id + "_" + res1, lab1, 3, undefined, res1);
+          storageCell.requestFromStorage(lab1.id + "_" + res1, [lab1], 3, [res1]);
 
         if (lab2.store[res2] < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(lab2.id + "_" + res2, lab2, 3, undefined, res2);
+          storageCell.requestFromStorage(lab2.id + "_" + res2, [lab2], 3, [res2]);
 
         if (this.currentRequest.plan - this.currentRequest.current > LAB_MINERAL_CAPACITY / 2) {
           this.currentRequest.plan -= this.currentRequest.current;
@@ -202,7 +202,7 @@ export class laboratoryCell extends Cell {
 
         _.forEach(this.laboratories, (lab) => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
-            storageCell!.requestFromStorage(lab.id, lab, lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
+            storageCell!.requestFromStorage(lab.id, [lab], lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
         });
       }
     }

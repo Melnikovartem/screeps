@@ -25,7 +25,7 @@ export class developmentCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(["sources"]);
     if (!this.master)
       this.master = new bootstrapMaster(this);
   }

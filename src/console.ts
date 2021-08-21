@@ -45,7 +45,7 @@ export class CustomConsole {
     cell.requests[ref] = ({
       ref: ref,
       from: [from],
-      to: to,
+      to: [to],
       resource: [resource],
       amount: [amount],
       priority: 2,

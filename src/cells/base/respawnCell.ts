@@ -18,7 +18,7 @@ export class respawnCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(["extensions", "spawns"]);
 
 
     // find free spawners
