@@ -173,8 +173,8 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target) {
-          let targets: (StructureSpawn | StructureExtension)[] = this.hive.cells.spawn.spawns;
-          targets = _.filter(targets.concat(this.hive.cells.spawn.extensions),
+          let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
+          targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
             (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
           target = bee.pos.findClosest(targets);
           workType = "refill";

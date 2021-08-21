@@ -6,7 +6,7 @@ import { makeId } from "../../utils";
 
 @profile
 export class defenseCell extends Cell {
-  towers: StructureTower[] = [];
+  towers: { [id: string]: StructureTower } = {};
 
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
@@ -19,10 +19,12 @@ export class defenseCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY]), 0);
-      storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY]), 0);
+      _.forEach(this.towers, (tower) => {
+        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY])
+          storageCell!.requestFromStorage(tower.id, tower, 0);
+        else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY])
+          storageCell!.requestFromStorage(tower.id, tower, 4);
+      });
     }
   }
 

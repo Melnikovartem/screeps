@@ -153,7 +153,7 @@ export class Hive {
     };
 
     if (this.stage == 0)
-      this.cells.dev = new developmentCell(this, this.room.controller!, this.room.find(FIND_SOURCES));
+      this.cells.dev = new developmentCell(this);
     else {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
@@ -214,23 +214,25 @@ export class Hive {
   }
 
   private updateCellData() {
-    let extensions = this.cells.spawn.extensions;
-    let spawns = this.cells.spawn.spawns;
-    let towers = this.cells.defense.towers;
-    let laboratories: StructureLab[] | undefined;
-    if (this.cells.lab)
-      laboratories = this.cells.lab.laboratories;
-
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (structure instanceof StructureExtension && structure.isActive() && !extensions.includes(structure))
-        extensions.push(structure);
-      else if (structure instanceof StructureSpawn && structure.isActive() && !spawns.includes(structure))
-        spawns.push(structure);
-      else if (structure instanceof StructureTower && structure.isActive() && !towers.includes(structure))
-        towers.push(structure);
-      else if (laboratories && structure instanceof StructureLab && structure.isActive() && !laboratories.includes(structure))
-        laboratories.push(structure);
+      if (!this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION))
+        if (!this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN))
+          if (!this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER))
+            if (!this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB))
+              void (0);
     });
+  }
+
+  private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
+    if (structureMap)
+      if (type == structure.structureType) {
+        if (structure.isActive())
+          structureMap[structure.id] = <S>structure;
+        else
+          delete structureMap[structure.id];
+        return OK;
+      }
+    return ERR_INVALID_ARGS;
   }
 
   private updateConstructionSites(rooms?: Room[]) {

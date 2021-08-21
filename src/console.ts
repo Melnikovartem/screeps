@@ -45,9 +45,9 @@ export class CustomConsole {
     cell.requests[ref] = ({
       ref: ref,
       from: [from],
-      to: [to],
-      resource: resource,
-      amount: amount,
+      to: to,
+      resource: [resource],
+      amount: [amount],
       priority: 2,
     });
     return `OK ${mode.toUpperCase()} TERMINAL\nRESOURCE ${resource}: ${amount}`;

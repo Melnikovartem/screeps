@@ -34,8 +34,8 @@ export class queenMaster extends Master {
   }
 
   run() {
-    let targets: (StructureSpawn | StructureExtension)[] = this.cell.spawns;
-    targets = _.filter(targets.concat(this.cell.extensions), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    let targets: (StructureSpawn | StructureExtension)[] = _.map(this.cell.spawns);
+    targets = _.filter(targets.concat(_.map(this.cell.extensions)), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
 
     _.forEach(this.bees, (bee) => {
       if (bee.creep.store[RESOURCE_ENERGY] == 0) {
@@ -57,8 +57,8 @@ export class queenMaster extends Master {
         bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
 
       if (bee.state == states.fflush)
-        if (bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY)
-          == ERR_NOT_IN_RANGE && bee.store[RESOURCE_ENERGY] > 0)
+        if (bee.store[RESOURCE_ENERGY] > 0
+          && bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE)
           bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
 
       if (bee.state == states.chill)

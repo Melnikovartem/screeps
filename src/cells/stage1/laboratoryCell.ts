@@ -44,42 +44,16 @@ interface SynthesizeRequest {
 
 @profile
 export class laboratoryCell extends Cell {
-  laboratories: StructureLab[] = [];
+  laboratories: { [id: string]: StructureLab } = {};
   // inLab check for delivery system
-  boostRequests: { [id: string]: { bee: Bee, amount: number, resource: ResourceConstant } } = {};
+  boostRequests: { [id: string]: { amount: number, resource: ResourceConstant } } = {};
   labsStates: { [id: string]: "idle" | "waiting" | "boosting" | "production" | "fflush" | "source" } = {}
   synthesizeRequests: SynthesizeRequest[] = [];
   currentRequest?: SynthesizeRequest;
-  lab1: StructureLab | undefined; // with res1
-  lab2: StructureLab | undefined; // with res2
+  sourceLabs: [string, string] | undefined;
 
   constructor(hive: Hive) {
     super(hive, "LaboratoryCell_" + hive.room.name);
-  }
-
-  fllushProduction(res: ReactionConstant | BaseMineral): number {
-    let storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      if (storageCell.requests[this.ref + "_" + res] && storageCell.requests[this.ref + "_" + res].to[0].id == storageCell.storage.id)
-        return ERR_TIRED;
-      let labs = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "production"
-        && l.store.getUsedCapacity(this.currentRequest!.res) > 0);
-
-      if (labs.length) {
-        storageCell.requests[this.ref + "_" + res] = {
-          ref: this.ref + "_" + res,
-          to: [storageCell.storage],
-          from: labs,
-          resource: res,
-          priority: 3,
-          multipleFrom: true,
-        }
-
-        _.forEach(labs, (l) => this.labsStates[l.id] = "fflush");
-      }
-      return ERR_NOT_FOUND;
-    }
-    return ERR_NOT_FOUND;
   }
 
   fflushLab(lab: StructureLab) {
@@ -88,32 +62,24 @@ export class laboratoryCell extends Cell {
       let res = lab.mineralType;
       if (!res)
         return OK;
-      storageCell.requests[this.ref + "_" + res] = {
-        ref: this.ref + "_" + res,
-        to: [storageCell.storage],
-        from: [lab],
-        resource: res,
-        priority: 3,
-        multipleFrom: true,
-      }
+      storageCell.requestToStorage(this.ref + "_" + res, [lab], 3);
+      this.labsStates[lab.id] = "fflush";
     }
     return ERR_NOT_FOUND;
   }
 
-  rebalanceLabs() {
-    _.forEach(this.laboratories, (l) => {
-      if (l.store.getUsedCapacity() == 0 && this.labsStates[l.id] == "fflush")
-        this.labsStates[l.id] = "idle";
-      if ((this.labsStates[l.id] == "source" || this.labsStates[l.id] == "fflush") && !this.currentRequest)
-        this.labsStates[l.id] = "idle";
-    });
-  }
-
-  updateProductionLabs(resource: ReactionConstant) {
-    _.forEach(this.laboratories, (l) => {
-      if (this.labsStates[l.id] == "idle" && (!l.mineralType || l.mineralType == resource))
-        this.labsStates[l.id] = "production";
-    });
+  updateProductionLabs(): StructureLab[] {
+    if (this.currentRequest) {
+      let ans: StructureLab[] = [];
+      _.forEach(this.laboratories, (l) => {
+        if (this.labsStates[l.id] == "idle" && (!l.mineralType || l.mineralType == this.currentRequest!.res)) {
+          this.labsStates[l.id] = "production";
+          ans.push(l);
+        }
+      });
+      return ans;
+    }
+    return [];
   }
 
   getBoostingLab(resource: ReactionConstant) {
@@ -173,72 +139,90 @@ export class laboratoryCell extends Cell {
     super.update();
     let storageCell = this.hive.cells.storage;
     if (storageCell && this.laboratories.length) {
-      if (this.currentRequest && this.lab1 && this.lab2) {
+      _.forEach(this.laboratories, (l) => {
+        if (l.store.getUsedCapacity() == 0 && this.labsStates[l.id] == "fflush")
+          this.labsStates[l.id] = "idle";
+        if (this.labsStates[l.id] == "source")
+          if (!this.currentRequest)
+            if (this.labsStates[l.id] == "source")
+              if (!this.currentRequest)
+                this.labsStates[l.id] = "fflush";
+        if (this.labsStates[l.id] == "boosting")
+          // producing and dont need the boost
+          if (!this.currentRequest && ((!l.mineralType && Object.keys(this.boostRequests).length == 0)
+            || (l.mineralType && this.boostRequests[l.mineralType].amount == 0)))
+            this.labsStates[l.id] = "fflush";
+      });
+
+      if (this.currentRequest && this.sourceLabs) {
+        let lab1 = this.laboratories[this.sourceLabs[0]];
+        let lab2 = this.laboratories[this.sourceLabs[1]];
         let res1 = this.currentRequest.res1;
         let res2 = this.currentRequest.res2;
 
-        if (this.lab1.store[res1] < this.currentRequest.current && this.lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(this.lab1.id + "_" + res1, [this.lab1], 3, undefined, res1);
+        if (lab1.store[res1] < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
+          storageCell.requestFromStorage(lab1.id + "_" + res1, lab1, 3, undefined, res1);
 
-        if (this.lab2.store[res2] < this.currentRequest.current && this.lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(this.lab2.id + "_" + res2, [this.lab2], 3, undefined, res2);
+        if (lab2.store[res2] < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
+          storageCell.requestFromStorage(lab2.id + "_" + res2, lab2, 3, undefined, res2);
 
         if (this.currentRequest.plan - this.currentRequest.current > LAB_MINERAL_CAPACITY / 2) {
           this.currentRequest.plan -= this.currentRequest.current;
-          this.fllushProduction();
+          // this.fllushProduction(this.currentRequest.res);
         } else if (this.currentRequest.current < 5) {
-          this.fllushProduction(this.currentRequest.res);
-          this.labsStates[this.lab1.id] = "fflush";
+          //this.fllushProduction(this.currentRequest.res);
+          this.fflushLab(lab1);
+          this.fflushLab(lab2);
           this.currentRequest = undefined;
-          this.lab1 = undefined;
-          this.lab2 = undefined;
+          this.sourceLabs = undefined;
         }
-      } else {
+      } else if (this.synthesizeRequests.length || this.currentRequest) {
         if (!this.currentRequest)
           this.currentRequest = this.synthesizeRequests.shift();
 
-        if (this.currentRequest && (!this.lab1 || !this.lab2)) {
-          this.lab1 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
+        if (!this.sourceLabs) {
+          let lab1 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
             && (l.store.getFreeCapacity() == 0 || l.store.getUsedCapacity(this.currentRequest!.res1)))[0];
-          this.lab2 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
-            && (l.store.getFreeCapacity() == 0 || l.store.getUsedCapacity(this.currentRequest!.res1)))[0];
+          let lab2
+          if (lab1)
+            lab2 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
+              && (l.store.getFreeCapacity() == 0 || l.store.getUsedCapacity(this.currentRequest!.res1))
+              && l.id != lab1.id)[0];
 
-          if (!this.lab1 || !this.lab2) {
-            this.lab1 = undefined;
-            this.lab2 = undefined;
-          } else {
+          if (lab1 && lab2) {
             this.updateProductionLabs();
+            this.labsStates[lab1.id] = "source";
+            this.labsStates[lab2.id] = "source";
+            this.sourceLabs = [lab1.id, lab2.id];
           }
         }
+
+        // bring to boost
+        // TODO: boosting
+
+        _.forEach(this.laboratories, (lab) => {
+          if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
+            storageCell!.requestFromStorage(lab.id, lab, lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
+        });
       }
-
-      // bring to boost
-      // TODO: boosting
-
-      let energySum = 0;
-      let energyNeededLabs = _.filter(this.laboratories, (lab) => {
-        energySum += lab.store.getFreeCapacity(RESOURCE_ENERGY);
-        if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
-          energySum += LAB_ENERGY_CAPACITY;
-        return lab.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-      });
-      if (energySum > LAB_ENERGY_CAPACITY / 2)
-        storageCell.requestFromStorage(this.ref, energyNeededLabs, energySum > LAB_ENERGY_CAPACITY * 2 ? 2 : 4);
     }
   }
 
   run() {
     if (this.currentRequest && Game.time % this.currentRequest.cooldown == 0 && this.currentRequest.current > 0) {
-      if (this.lab1 && this.lab2)
-        if (this.lab1.store[this.currentRequest.res1] >= 5 && this.lab2.store[this.currentRequest.res2] >= 5) {
+      if (this.sourceLabs) {
+        let lab1 = this.laboratories[this.sourceLabs[0]];
+        let lab2 = this.laboratories[this.sourceLabs[1]];
+        if (lab1.store[this.currentRequest.res1] >= 5 && lab2.store[this.currentRequest.res2] >= 5) {
           let labs = _.filter(this.laboratories, (lab) => !lab.cooldown &&
-            this.boostingLabs.includes(lab.id) && lab.store.getFreeCapacity(this.currentRequest!.res) >= 5);
+            this.labsStates[lab.id] == "production" && lab.store.getFreeCapacity(this.currentRequest!.res) >= 5);
+          if (labs.length == 0)
+            labs = this.updateProductionLabs();
           for (const k in labs)
-            if (labs[k].runReaction(this.lab1!, this.lab2!) == OK)
+            if (labs[k].runReaction(lab1, lab2) == OK)
               this.currentRequest.current -= 5;
-        } else {
-          this.rebalanceLabs();
         }
+      }
     }
 
     // here some boost logic

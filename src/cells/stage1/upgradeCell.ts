@@ -30,14 +30,9 @@ export class upgradeCell extends Cell {
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
 
     let storageCell = this.hive.cells.storage;
-    if (this.link && storageCell && storageCell.link && !storageCell.requests[this.link.id]) {
-      storageCell.requests[this.link.id] = {
-        ref: this.link.id,
-        from: [storageCell.link],
-        to: [this.link],
-        resource: RESOURCE_ENERGY,
-        priority: 4,
-      }
+    if (this.link && storageCell && storageCell.link && (!storageCell.requests[this.link.id]
+      || storageCell.requests[this.link.id].amount[0] - this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= 50)) {
+      storageCell.requestFromStorage(this.link.id, this.link, 4);
     }
 
     if (!this.master)

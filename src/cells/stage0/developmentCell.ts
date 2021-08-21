@@ -8,18 +8,17 @@ import { profile } from "../../profiler/decorator";
 export class developmentCell extends Cell {
 
   controller: StructureController;
-  sources: Source[];
+  sources: { [id: string]: Source } = {};
 
-  constructor(hive: Hive, controller: StructureController, sources: Source[]) {
+  constructor(hive: Hive) {
     super(hive, "DevelopmentCell_" + hive.room.name);
 
-    this.controller = controller;
-    this.sources = sources;
+    this.controller = this.hive.room.controller!;
   }
 
   addResource(resource: Source) {
-    if (!this.sources.includes(resource)) {
-      this.sources.push(resource);
+    if (!this.sources[resource.id]) {
+      this.sources[resource.id] = resource;
       if (this.master)
         (<bootstrapMaster>this.master).recalculateTargetBee();
     }

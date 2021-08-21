@@ -8,9 +8,9 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class respawnCell extends Cell {
-  spawns: StructureSpawn[] = [];
+  spawns: { [id: string]: StructureSpawn } = {};
   freeSpawns: StructureSpawn[] = [];
-  extensions: StructureExtension[] = [];
+  extensions: { [id: string]: StructureExtension } = {};
 
 
   constructor(hive: Hive) {
@@ -22,7 +22,7 @@ export class respawnCell extends Cell {
 
 
     // find free spawners
-    this.freeSpawns = _.filter(this.spawns, (structure) => structure.spawning == null);
+    this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning == null);
     if (!this.master && this.hive.stage > 0)
       this.master = new queenMaster(this);
   };
