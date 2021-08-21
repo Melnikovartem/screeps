@@ -118,6 +118,8 @@ export class managerMaster extends Master {
 
               if (amountBee > 0)
                 this.manager.withdraw(request.from[current], request.resource[current], amountBee);
+              if (request.resource[current] != "energy")
+                console.log(request);
             } else if (this.manager.state == states.work) {
               let amountBee = Math.min(request.amount[current], this.manager.store[request.resource[current]],
                 (<Store<ResourceConstant, false>>request.to[current].store).getFreeCapacity(request.resource[current]));
@@ -126,8 +128,10 @@ export class managerMaster extends Master {
                 request.amount[current] -= amountBee;
             }
           }
-        } else
+        } else {
           this.manager.state = states.fflush;
+          this.manager.target = null;
+        }
       }
 
       if (this.manager.state == states.fflush) {

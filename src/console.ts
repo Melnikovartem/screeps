@@ -1,22 +1,15 @@
-import { makeId } from "./utils";
-
 export class CustomConsole {
 
   // some hand used functions
-  terminal(roomName: string, resource?: ResourceConstant, mode?: "fill" | "empty", amount?: number): string {
+  terminal(roomName: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = 0, mode?: "fill" | "empty"): string {
     let cell = Apiary.hives[roomName] && Apiary.hives[roomName].cells.storage;
     if (!cell || !cell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
-    if (mode && mode != "fill" && mode != "empty")
-      return "BAD ARGUMENTS";
-
-    resource = resource ? resource : RESOURCE_ENERGY;
-    amount = amount ? amount : 0;
 
     if (!mode) {
-      if (cell.storage.store[resource] > amount)
+      if (cell.storage.store[resource] >= amount)
         mode = "fill";
-      if (cell.terminal.store[resource] > amount) {
+      if (cell.terminal.store[resource] >= amount) {
         if (mode == "fill") {
           if (resource != RESOURCE_ENERGY)
             return "CAN'T DESIDE ON MODE";
@@ -25,31 +18,23 @@ export class CustomConsole {
       }
     }
 
-    if (!mode)
+    if (!mode || (mode != "fill" && mode != "empty"))
       return "NO VALID MODE FOUND";
 
-    let from;
-    let to;
-    if (mode == "empty") {
-      from = cell.terminal;
-      to = cell.storage;
-    } else {
-      to = cell.terminal;
-      from = cell.storage;
-    }
+    if (!amount)
+      if (mode == "empty")
+        amount = cell.terminal.store[resource];
+      else
+        amount = cell.storage.store[resource];
 
     if (mode == "fill" && resource == RESOURCE_ENERGY && !amount)
       amount = Math.min(amount, 10000);
-    amount = Math.min(amount ? amount : 10000, from.store[resource]);
-    let ref = "!USER_REQUEST " + makeId(4);
-    cell.requests[ref] = ({
-      ref: ref,
-      from: [from],
-      to: [to],
-      resource: [resource],
-      amount: [amount],
-      priority: 2,
-    });
+
+    if (mode == "empty")
+      cell.requestToStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
+    else
+      cell.requestFromStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
+
     return `OK ${mode.toUpperCase()} TERMINAL\nRESOURCE ${resource}: ${amount}`;
   }
 

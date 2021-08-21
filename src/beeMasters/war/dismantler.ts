@@ -10,30 +10,24 @@ import { profile } from "../../profiler/decorator";
 //first tandem btw
 @profile
 export class dismantlerMaster extends SwarmMaster {
-  healer: Bee | undefined;
   dismantler: Bee | undefined;
 
   // for last stage
   meetingPoint: RoomPosition;
   exit: RoomPosition | undefined;
-  spawned: boolean = false;
 
   constructor(order: Order) {
     super(order.hive, order);
 
     this.meetingPoint = order.pos;
     this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
-    this.targetBeeCount = 2;
   }
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyParts(HEAL))
-      this.healer = bee;
-    else
+    if (bee.creep.getBodyParts(WORK))
       this.dismantler = bee;
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
-    this.spawned = true;
   }
 
   update() {
@@ -42,45 +36,24 @@ export class dismantlerMaster extends SwarmMaster {
     if (this.dismantler && !Apiary.bees[this.dismantler.ref])
       delete this.dismantler;
 
-    if (this.healer && !Apiary.bees[this.healer.ref])
-      delete this.healer;
+    if (this.dismantler && (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y))
+      this.dismantler.state = states.chill;
 
-    if (this.meetingPoint != this.order.pos) {
-      this.meetingPoint = this.order.pos;
-      if (this.healer)
-        this.healer.state = states.chill;
-      if (this.dismantler)
-        this.dismantler.state = states.chill;
+    if (!this.dismantler && !this.waitingForBees) {
+      let dismantlerOrder: SpawnOrder = {
+        setup: Setups.dismantler,
+        amount: 1,
+        priority: 4,
+        master: this.ref,
+      };
+      this.wish(dismantlerOrder, this.ref + "_dismantler");
     }
 
-    if (!this.spawned) {
-      this.spawned = true;
-      if (!this.dismantler) {
-        let dismantlerOrder: SpawnOrder = {
-          setup: Setups.dismantler,
-          amount: 1,
-          priority: 4,
-          master: this.ref,
-        };
-        this.wish(dismantlerOrder, this.ref + "_dismantler");
-      }
-      if (!this.healer) {
-        let healerOrder: SpawnOrder = {
-          setup: Setups.healer,
-          amount: 1,
-          priority: 4,
-          master: this.ref,
-        };
-        this.wish(healerOrder, this.ref + "_healer");
-      }
-    }
-
-    if (!this.waitingForBees && !this.dismantler && !this.healer)
+    if (!this.waitingForBees && !this.dismantler)
       this.order.destroyTime = Game.time;
   }
 
   run() {
-    let healer = this.healer;
     let dismantler = this.dismantler;
 
     _.forEach(this.bees, (bee) => {
@@ -92,31 +65,13 @@ export class dismantlerMaster extends SwarmMaster {
       dismantler.state = states.work;
       this.exit = <RoomPosition>dismantler.pos.findClosest(dismantler.creep.room.find(FIND_EXIT));
     }
-    if (healer && healer.state == states.chill && healer.pos.isNearTo(this.meetingPoint))
-      healer.state = states.work;
-
-    if (healer && healer.state == states.work) {
-      healer.goRest(this.order.pos);
-      let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 3),
-        (bee) => bee.hits < bee.hitsMax));
-      if (healingTarget) {
-        if (healer.pos.isNearTo(healingTarget))
-          healer.heal(healingTarget);
-        else
-          healer.rangedHeal(healingTarget);
-      }
-    }
 
     if (dismantler && (dismantler.state == states.refill
       || (dismantler.state == states.work && dismantler.hits <= dismantler.hitsMax * 0.6))) {
       dismantler.state = states.refill;
       if (dismantler.hits == dismantler.hitsMax)
         dismantler.state = states.work;
-
-      if (healer && healer.state == states.work) {
-        if (!dismantler.pos.isNearTo(healer))
-          dismantler.goTo(healer.pos);
-      } else dismantler.goRest(this.order.pos);
+      dismantler.goRest(this.order.pos);
     }
 
     if (dismantler && dismantler.state == states.work && dismantler.pos.roomName != this.order.pos.roomName) {

@@ -24,7 +24,7 @@ export class haulerMaster extends Master {
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && !cell.link) {
-          let coef = 12; // mineral production
+          let coef = 10; // mineral production
           if (cell.resourceType != RESOURCE_ENERGY)
             coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
           accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef * 2;

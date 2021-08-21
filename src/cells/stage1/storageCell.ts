@@ -67,7 +67,8 @@ export class storageCell extends Cell {
     return _.sum(this.requests[ref].amount);
   }
 
-  requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]): number {
+  requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
+    , res: StorageRequest["resource"] = [], amount: number[] = []): number {
     if (from.length == 0)
       return ERR_NOT_FOUND;
     this.requests[ref] = {
@@ -78,17 +79,17 @@ export class storageCell extends Cell {
       priority: priority,
       amount: [],
     };
-    _.forEach(from, (f) => {
-      let res: ResourceConstant | null = RESOURCE_ENERGY;
-      if (f instanceof StructureLab)
-        res = f.mineralType;
-      if (res) {
-        let amount = (<Store<ResourceConstant, false>>f.store).getUsedCapacity(res);
-        if (amount > 0) {
-          this.requests[ref].from.push(f);
-          this.requests[ref].resource.push(res);
-          this.requests[ref].amount.push(amount);
-        }
+    _.forEach(from, (f, k) => {
+      if (!res[k])
+        res[k] = RESOURCE_ENERGY;
+      if (f instanceof StructureLab && f.mineralType)
+        res[k] = f.mineralType;
+      if (!amount[k])
+        amount[k] = (<Store<ResourceConstant, false>>f.store).getFreeCapacity(res[k]);
+      if (amount[k] > 0) {
+        this.requests[ref].from.push(f);
+        this.requests[ref].resource.push(res[k]);
+        this.requests[ref].amount.push(amount[k]);
       }
     });
     if (this.requests[ref].from.length == 0) {
