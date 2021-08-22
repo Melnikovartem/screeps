@@ -17,9 +17,9 @@ export class builderMaster extends Master {
     let constLen = this.hive.constructionSites.length;
     if (constLen == 0 && 6000 > this.hive.sumRepairs)
       this.targetBeeCount = 0;
-    else if ((constLen < 10 && this.hive.sumRepairs < 12000) || (storage && storage.store[RESOURCE_ENERGY] < 100000))
+    else if ((constLen < 10 && this.hive.sumRepairs < 12000) || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000))
       this.targetBeeCount = 1;
-    else if ((constLen < 20 && this.hive.sumRepairs < 27000) || (storage && storage.store[RESOURCE_ENERGY] < 200000))
+    else if ((constLen < 20 && this.hive.sumRepairs < 27000) || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000))
       this.targetBeeCount = 2;
     else
       this.targetBeeCount = 3;
@@ -38,7 +38,7 @@ export class builderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (bee.creep.store[RESOURCE_ENERGY] == 0)
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
         bee.state = states.refill;
       else
         bee.state = states.work;

@@ -96,7 +96,7 @@ export class bootstrapMaster extends Master {
 
     _.forEach(this.bees, (bee) => {
 
-      if (bee.creep.store[RESOURCE_ENERGY] == 0)
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
         bee.state = states.refill;
 
       if (bee.state == states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {

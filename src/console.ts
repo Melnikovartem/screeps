@@ -7,9 +7,9 @@ export class CustomConsole {
       return "ERROR: TERMINAL NOT FOUND";
 
     if (!mode) {
-      if (cell.storage.store[resource] >= amount)
+      if (cell.storage.store.getUsedCapacity(resource) >= amount)
         mode = "fill";
-      if (cell.terminal.store[resource] >= amount) {
+      if (cell.terminal.store.getUsedCapacity(resource) >= amount) {
         if (mode == "fill") {
           if (resource != RESOURCE_ENERGY)
             return "CAN'T DESIDE ON MODE";
@@ -23,19 +23,20 @@ export class CustomConsole {
 
     if (!amount)
       if (mode == "empty")
-        amount = cell.terminal.store[resource];
+        amount = cell.terminal.store.getUsedCapacity(resource);
       else
-        amount = cell.storage.store[resource];
+        amount = cell.storage.store.getUsedCapacity(resource);
 
-    if (mode == "fill" && resource == RESOURCE_ENERGY && !amount)
+    if (mode == "fill" && resource == RESOURCE_ENERGY)
       amount = Math.min(amount, 10000);
 
+    let ans;
     if (mode == "empty")
-      cell.requestToStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
+      ans = cell.requestToStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
     else
-      cell.requestFromStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
+      ans = cell.requestFromStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
 
-    return `OK ${mode.toUpperCase()} TERMINAL\nRESOURCE ${resource}: ${amount}`;
+    return `${mode.toUpperCase()} TERMINAL\nRESOURCE ${resource}: ${ans}`;
   }
 
   completeOrder(orderId: string, am?: number) {
@@ -53,7 +54,7 @@ export class CustomConsole {
     } else {
       let resource = <ResourceConstant>order.resourceType;
       let validHives = _.filter(Apiary.hives, (h) => h.cells.storage && h.cells.storage.terminal
-        && ((order!.type == ORDER_BUY && h.cells.storage.terminal.store[resource] > amount)
+        && ((order!.type == ORDER_BUY && h.cells.storage.terminal.store.getUsedCapacity(resource) > amount)
           || (order!.type == ORDER_SELL && h.cells.storage.terminal.store.getFreeCapacity(resource) > amount)));
 
       validHives.sort((a, b) => Game.market.calcTransactionCost(amount, a.roomName, order!.roomName!) -
@@ -62,7 +63,7 @@ export class CustomConsole {
       let terminal = validHives[0].cells.storage!.terminal!;
 
       if (order.type == ORDER_BUY)
-        amount = Math.min(amount, terminal.store[resource]);
+        amount = Math.min(amount, terminal.store.getUsedCapacity(resource));
       else
         amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
 

@@ -15,6 +15,7 @@ export class dismantlerMaster extends SwarmMaster {
   // for last stage
   meetingPoint: RoomPosition;
   exit: RoomPosition | undefined;
+  spawned: boolean = false;
 
   constructor(order: Order) {
     super(order.hive, order);
@@ -25,8 +26,10 @@ export class dismantlerMaster extends SwarmMaster {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyParts(WORK))
+    if (bee.creep.getBodyParts(WORK)) {
+      this.spawned = true;
       this.dismantler = bee;
+    }
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
 
@@ -39,7 +42,8 @@ export class dismantlerMaster extends SwarmMaster {
     if (this.dismantler && (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y))
       this.dismantler.state = states.chill;
 
-    if (!this.dismantler && !this.waitingForBees) {
+    if (!this.dismantler && !this.spawned) {
+      this.spawned = true;
       let dismantlerOrder: SpawnOrder = {
         setup: Setups.dismantler,
         amount: 1,
@@ -49,7 +53,7 @@ export class dismantlerMaster extends SwarmMaster {
       this.wish(dismantlerOrder, this.ref + "_dismantler");
     }
 
-    if (!this.waitingForBees && !this.dismantler)
+    if (!this.waitingForBees && this.beesAmount == 0)
       this.order.destroyTime = Game.time;
   }
 
@@ -79,7 +83,7 @@ export class dismantlerMaster extends SwarmMaster {
       let target = dismantler.pos.findClosest(roomInfo.enemies);
 
       // not sure what to do if there will be smart towers
-      if (target instanceof Structure && !(target instanceof StructureTower && target.store[RESOURCE_ENERGY] > 0))
+      if (target instanceof Structure && !(target instanceof StructureTower && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
         dismantler.dismantle(target);
       else if (dismantler.pos.x == 0 || dismantler.pos.x == 49 || dismantler.pos.y == 0 || dismantler.pos.y == 49)
         dismantler.goToRoom(dismantler.pos.roomName);

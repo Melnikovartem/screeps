@@ -20,9 +20,9 @@ export class defenseCell extends Cell {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
       storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store[RESOURCE_ENERGY]), 0);
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY)), 0);
       storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store[RESOURCE_ENERGY]), 4);
+        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY)), 4);
     }
   }
 
@@ -66,7 +66,7 @@ export class defenseCell extends Cell {
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
-        if (_.filter(this.towers, (t) => t.store[RESOURCE_ENERGY] > 0).length == 0) {
+        if (_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length == 0) {
           if (this.hive.stage < 2)
             this.checkOrDefendSwarms(this.hive.roomName);
           else

@@ -15,6 +15,7 @@ export class healerWaiterMaster extends SwarmMaster {
   // for last stage
   meetingPoint: RoomPosition;
   exit: RoomPosition | undefined;
+  spawned: boolean = false;
 
   constructor(order: Order) {
     super(order.hive, order);
@@ -25,8 +26,10 @@ export class healerWaiterMaster extends SwarmMaster {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.getBodyParts(HEAL))
+    if (bee.creep.getBodyParts(HEAL)) {
+      this.spawned = true;
       this.healer = bee;
+    }
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
 
@@ -42,7 +45,8 @@ export class healerWaiterMaster extends SwarmMaster {
         this.healer.state = states.chill;
     }
 
-    if (!this.healer && !this.waitingForBees) {
+    if (!this.spawned && !this.healer) {
+      this.spawned = true;
       let healerOrder: SpawnOrder = {
         setup: Setups.healer,
         amount: 1,
@@ -52,7 +56,7 @@ export class healerWaiterMaster extends SwarmMaster {
       this.wish(healerOrder, this.ref + "_healer");
     }
 
-    if (!this.waitingForBees && !this.healer)
+    if (!this.waitingForBees && this.beesAmount == 0)
       this.order.destroyTime = Game.time;
   }
 

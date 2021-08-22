@@ -110,8 +110,8 @@ export class laboratoryCell extends Cell {
         let res1 = REACTION_MAP[resource]!.res1;
         let res2 = REACTION_MAP[resource]!.res2;
 
-        let res1Amount = mainStore[res1] + _.sum(this.laboratories, (lab) => lab.store[res1]);
-        let res2Amount = mainStore[res2] + _.sum(this.laboratories, (lab) => lab.store[res2]);
+        let res1Amount = mainStore.getUsedCapacity(res1) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res1));
+        let res2Amount = mainStore.getUsedCapacity(res2) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res2));
 
         amount = Math.min(res1Amount, res2Amount);
       }
@@ -160,10 +160,10 @@ export class laboratoryCell extends Cell {
         let res1 = this.currentRequest.res1;
         let res2 = this.currentRequest.res2;
 
-        if (lab1.store[res1] < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
+        if (lab1.store.getUsedCapacity(res1) < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
           storageCell.requestFromStorage(lab1.id + "_" + res1, [lab1], 3, [res1]);
 
-        if (lab2.store[res2] < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
+        if (lab2.store.getUsedCapacity(res2) < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
           storageCell.requestFromStorage(lab2.id + "_" + res2, [lab2], 3, [res2]);
 
         if (this.currentRequest.plan - this.currentRequest.current > LAB_MINERAL_CAPACITY / 2) {

@@ -118,7 +118,7 @@ export class storageCell extends Cell {
       }
     }
 
-    if (this.link && this.link.store[RESOURCE_ENERGY] > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
       this.requestToStorage(this.link.id, [this.link], 4);
 
     if (!this.master)
@@ -141,15 +141,15 @@ export class storageCell extends Cell {
       }
 
       if (request && request.from[0].id == this.link.id && request.to[0] instanceof StructureLink) {
-        if (this.link.store[RESOURCE_ENERGY] + 25 >= request.amount[0]) {
+        if (this.link.store.getUsedCapacity(RESOURCE_ENERGY) + 25 >= request.amount[0]) {
           if (this.requests[this.link.id])
-            this.requests[this.link.id].amount[0] = Math.max(0, this.link.store[RESOURCE_ENERGY] - request.amount[0] * 1.4);
+            this.requests[this.link.id].amount[0] = Math.max(0, this.link.store.getUsedCapacity(RESOURCE_ENERGY) - request.amount[0] * 1.4);
           if (!this.link.cooldown)
-            if (this.link.transferEnergy(request.to[0], Math.min(request.amount[0], this.link.store[RESOURCE_ENERGY])) == OK)
+            if (this.link.transferEnergy(request.to[0], Math.min(request.amount[0], this.link.store.getUsedCapacity(RESOURCE_ENERGY))) == OK)
               delete this.requests[key];
         } else
           this.requestFromStorage(this.link.id, [this.link], 4, undefined,
-            [Math.min(Math.ceil(request.amount[0] * 1.2), LINK_CAPACITY) - this.link.store[RESOURCE_ENERGY]]);
+            [Math.min(Math.ceil(request.amount[0] * 1.2), LINK_CAPACITY) - this.link.store.getUsedCapacity(RESOURCE_ENERGY)]);
       }
     }
   }

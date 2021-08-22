@@ -53,7 +53,7 @@ export class haulerMaster extends Master {
   findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
     let ans: ResourceConstant = RESOURCE_ENERGY;
     for (let resourceConstant in store) {
-      if (ans != resourceConstant && store[<ResourceConstant>resourceConstant] > store[ans])
+      if (ans != resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
         ans = <ResourceConstant>resourceConstant;
     }
     return ans;
@@ -83,7 +83,7 @@ export class haulerMaster extends Master {
         bee.state = states.work;
 
       if (bee.state == states.work) {
-        if (bee.store[RESOURCE_ENERGY] > 0)
+        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
           bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
         bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, this.findOptimalResource(bee.store));
         if (bee.store.getUsedCapacity() == 0)

@@ -69,9 +69,9 @@ export class minerMaster extends Master {
         if (bee.state == states.chill && this.cell.resourceType == RESOURCE_ENERGY) {
           let target = this.cell.container;
           if (target && target.hits < target.hitsMax) {
-            if (bee.store[RESOURCE_ENERGY] > 0)
+            if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
               bee.repair(target);
-            if (bee.store[RESOURCE_ENERGY] < 24 && target.store[RESOURCE_ENERGY] >= 18)
+            if (bee.store.getUsedCapacity(RESOURCE_ENERGY) < 24 && target.store.getUsedCapacity(RESOURCE_ENERGY) >= 18)
               bee.withdraw(target, RESOURCE_ENERGY, 18);
           }
         }

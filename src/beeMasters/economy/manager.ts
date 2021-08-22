@@ -80,24 +80,25 @@ export class managerMaster extends Master {
             while (request.resource.length - 1 > current && request.from[current].store[request.resource[current]] == 0)
               current += 1;
 
-            if (this.manager.store.getUsedCapacity() >= _.sum(request.amount))
+            if (this.manager.store.getUsedCapacity(request.resource[current]) >= _.sum(request.amount))
               this.manager.state = states.work;
             if (this.manager.store.getFreeCapacity(request.resource[current]) == 0)
               this.manager.state = states.work;
             if (this.manager.store.getFreeCapacity(request.resource[current]) == 0 && this.manager.store[request.resource[current]] == 0)
               this.manager.state = states.fflush;
 
-            if (request.from[current].store[request.resource[current]] == 0 && this.manager.store[request.resource[current]] == 0 && this.manager.state == states.refill)
+            if (_.sum(request.amount) <= 0)
               delete this.cell.requests[this.manager.target];
-            else if (this.manager.state == states.refill)
-              this.manager.state = states.work;
+            else if (request.from[current].store[request.resource[current]] == 0
+              && this.manager.store[request.resource[current]] == 0 && this.manager.state == states.refill)
+              delete this.cell.requests[this.manager.target];
           }
 
           if (this.manager.state == states.work) {
             while (request.resource.length - 1 > current && this.manager.store[request.resource[current]] > request.amount[current])
               current += 1;
 
-            if (this.manager.store[request.resource[current]] == 0)
+            if (this.manager.store.getUsedCapacity(request.resource[current]) == 0)
               this.manager.state = states.refill;
 
 
@@ -106,20 +107,16 @@ export class managerMaster extends Master {
             // invalidate request
             else if (_.sum(request.to, (t, k) => (<Store<ResourceConstant, false>>t.store).getFreeCapacity(request.resource[k])) == 0)
               delete this.cell.requests[this.manager.target];
-            else if (this.manager.state == states.refill && _.sum(request.from,
-              (f, k) => (<Store<ResourceConstant, false>>f.store).getUsedCapacity(request.resource[k])) == 0)
-              delete this.cell.requests[this.manager.target];
           }
 
           if (this.cell.requests[this.manager.target]) {
             if (this.manager.state == states.refill) {
               let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource[current]),
-                request.from[current].store[request.resource[current]], request.amount[current] - this.manager.store[request.resource[current]]);
+                request.from[current].store[request.resource[current]],
+                request.amount[current] - this.manager.store.getUsedCapacity(request.resource[current]));
 
               if (amountBee > 0)
                 this.manager.withdraw(request.from[current], request.resource[current], amountBee);
-              if (request.resource[current] != "energy")
-                console.log(request);
             } else if (this.manager.state == states.work) {
               let amountBee = Math.min(request.amount[current], this.manager.store[request.resource[current]],
                 (<Store<ResourceConstant, false>>request.to[current].store).getFreeCapacity(request.resource[current]));
