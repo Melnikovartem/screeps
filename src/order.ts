@@ -92,6 +92,7 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
+        this.hive = this.findHive(1);
         if (!this.master)
           this.master = new annexMaster(this);
         if (this.hive.addAnex(this.pos.roomName) == OK)

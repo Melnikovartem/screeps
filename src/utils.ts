@@ -1,4 +1,4 @@
-import { SAFE_DEV, LOGGING_CYCLE } from "./settings";
+import { SAFE_DEV, LOGGING_CYCLE, DEVELOPING } from "./settings";
 
 export function makeId(length: number): string {
   var result = '';
@@ -21,7 +21,9 @@ export function safeWrap(cycle: () => void, context: string): void {
         if (!Memory.log.crashes)
           Memory.log.crashes = {};
         let regex = /\["(.*)\"]/.exec(context);
-        Memory.log.crashes[regex ? regex[0] : context] = { time: Game.time, context: context, message: e.message }
+        context = regex ? regex[0] : context;
+        if (DEVELOPING) console.log(context, e.message);
+        Memory.log.crashes[context] = { time: Game.time, context: context, message: e.message }
       }
     }
   } else

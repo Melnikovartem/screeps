@@ -198,7 +198,6 @@ export class laboratoryCell extends Cell {
         }
 
         // bring to boost
-        // TODO: boosting
 
         _.forEach(this.laboratories, (lab) => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)

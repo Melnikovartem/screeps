@@ -35,12 +35,11 @@ export class upgraderMaster extends Master {
         desiredRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
         ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2 + 50);
       }
-    if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 800000)
+
+    if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
       this.targetBeeCount = Math.ceil(desiredRate / ratePerCreep);
     else if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
       this.targetBeeCount = Math.round(desiredRate / ratePerCreep);
-    else
-      this.targetBeeCount = Math.floor(desiredRate / ratePerCreep);
   }
 
   update() {

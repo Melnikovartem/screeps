@@ -256,6 +256,7 @@ export class Hive {
       else if (this.repairSheet.isAnRepairCase(structure))
         this.normalRepairs.push(structure);
     });
+    console.log(this.print, "1", this.sumRepairs)
     _.forEach(this.annexes, (room) => {
       let roomInfo = Apiary.intel.getInfo(room.name, 10);
       if (roomInfo.safePlace)
@@ -269,6 +270,7 @@ export class Hive {
           }
         });
     });
+    this.sumRepairs = Math.floor(this.sumRepairs / 100);
   }
 
   updateLog() {
