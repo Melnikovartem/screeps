@@ -34,8 +34,14 @@ export class Order {
 
     if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive])
       this.hive = Apiary.hives[this.flag.memory.hive];
-    else
-      this.hive = this.findHive();
+    else {
+      let stageNeeded: 0 | 1 | 2 = 2;
+
+      if (this.flag.color == COLOR_PURPLE && this.flag.secondaryColor == COLOR_PURPLE)
+        stageNeeded = 0;
+
+      this.hive = this.findHive(stageNeeded);
+    }
 
     this.flag.memory = { hive: this.hive.roomName };
 
@@ -43,12 +49,12 @@ export class Order {
   }
 
   findHive(stage?: 0 | 1 | 2): Hive {
-    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage ? stage : 2))
+    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage != undefined ? stage : 2))
       return Apiary.hives[this.pos.roomName];
 
     for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage ? stage : 2))
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage != undefined ? stage : 2))
         return Apiary.hives[exit];
     }
 
@@ -92,7 +98,7 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_PURPLE) {
       if (this.flag.secondaryColor == COLOR_PURPLE) {
-        this.hive = this.findHive(1);
+        this.hive = this.hive;
         if (!this.master)
           this.master = new annexMaster(this);
         if (this.hive.addAnex(this.pos.roomName) == OK)

@@ -91,9 +91,8 @@ export class Intel {
 
     this.roomInfo[room.name].enemies = [];
 
-    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
-    if (targetFlags.length)
-      this.roomInfo[room.name].enemies = _.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
+    this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS),
+      (creep) => creep.getBodyParts(ATTACK) || creep.getBodyParts(HEAL) || creep.getBodyParts(RANGED_ATTACK));
 
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
@@ -102,10 +101,15 @@ export class Intel {
       });
 
     if (!this.roomInfo[room.name].enemies.length)
-      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.getBodyParts(ATTACK) || creep.getBodyParts(HEAL));
+      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);
+
+    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
 
     if (!this.roomInfo[room.name].enemies.length)
-      this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);
+      this.roomInfo[room.name].safePlace = true;
+
+    if (targetFlags.length)
+      this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
 
     if (!this.roomInfo[room.name].enemies.length) {
       this.roomInfo[room.name].safePlace = true;

@@ -173,9 +173,8 @@ export class Hive {
   }
 
   addAnex(annexName: string) {
-    if (!this.annexNames.includes(annexName)) {
+    if (!this.annexNames.includes(annexName))
       this.annexNames.push(annexName);
-    }
     if (annexName in Game.rooms) {
       this.shouldRecalc = true;
       return OK;
@@ -256,7 +255,6 @@ export class Hive {
       else if (this.repairSheet.isAnRepairCase(structure))
         this.normalRepairs.push(structure);
     });
-    console.log(this.print, "1", this.sumRepairs)
     _.forEach(this.annexes, (room) => {
       let roomInfo = Apiary.intel.getInfo(room.name, 10);
       if (roomInfo.safePlace)

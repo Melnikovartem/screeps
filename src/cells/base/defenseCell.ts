@@ -52,7 +52,7 @@ export class defenseCell extends Cell {
           if ((roomInfo.enemies[0] instanceof Creep && roomInfo.enemies[0].owner.username == "Invader")
             || roomInfo.enemies[0] instanceof StructureInvaderCore)
             ans = roomInfo.enemies[0].pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
-          else
+          else if (roomInfo.enemies[0] instanceof Creep)
             ans = roomInfo.enemies[0].pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
           if (typeof ans == "string")
             Game.flags[ans].memory = { hive: this.hive.roomName };

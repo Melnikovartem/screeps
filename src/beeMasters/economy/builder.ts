@@ -15,11 +15,15 @@ export class builderMaster extends Master {
 
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let constLen = this.hive.constructionSites.length;
-    if (constLen == 0 && this.hive.sumRepairs < 7000)
+    let repLen = this.hive.emergencyRepairs.length;
+    let repSum = this.hive.sumRepairs;
+    if (constLen == 0 && repSum < 5000 && repLen == 0)
       this.targetBeeCount = 0;
-    else if ((constLen < 10 && this.hive.sumRepairs < 14000) || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000))
+    else if ((constLen < 10 && repSum < 10000 && repLen < 50)
+      || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000))
       this.targetBeeCount = 1;
-    else if ((constLen < 20 && this.hive.sumRepairs < 21000) || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000))
+    else if ((constLen < 20 && repSum < 20000 && repLen < 100)
+      || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000))
       this.targetBeeCount = 2;
     else
       this.targetBeeCount = 3;
