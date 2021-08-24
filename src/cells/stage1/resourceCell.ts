@@ -1,6 +1,7 @@
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
+import { excavationCell } from "./excavationCell";
 import { minerMaster } from "../../beeMasters/economy/miner";
 import { profile } from "../../profiler/decorator";
 
@@ -14,15 +15,18 @@ export class resourceCell extends Cell {
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
   extractor: StructureExtractor | undefined;
+  parentCell: excavationCell;
+  master: minerMaster;
 
   operational: boolean = false;
 
-
-  constructor(hive: Hive, resource: Source | Mineral) {
+  constructor(hive: Hive, resource: Source | Mineral, excavationCell: excavationCell) {
     super(hive, "ResourceCell_" + resource.id);
 
     this.resource = resource;
     this.pos = this.resource.pos;
+    this.parentCell = excavationCell;
+    this.master = new minerMaster(this);
     this.updateStructure();
   }
 
@@ -44,6 +48,9 @@ export class resourceCell extends Cell {
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 10);
     if (roomInfo.ownedByEnemy)
       this.operational = false;
+
+    if (this.operational)
+      this.parentCell.shouldRecalc = true;
   }
 
   update() {
@@ -56,10 +63,6 @@ export class resourceCell extends Cell {
 
     if (this.resource instanceof Mineral && Game.time % 10 == 0)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
-
-    if (!this.master && this.operational) {
-      this.master = new minerMaster(this);
-    }
   }
 
   run() {

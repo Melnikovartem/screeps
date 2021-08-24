@@ -19,6 +19,7 @@ export class storageCell extends Cell {
   storage: StructureStorage;
   link: StructureLink | undefined;
   terminal: StructureTerminal | undefined;
+  master: managerMaster;
 
   requests: { [id: string]: StorageRequest } = {};
 
@@ -35,6 +36,7 @@ export class storageCell extends Cell {
       (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
 
     this.pos = this.storage.pos;
+    this.master = new managerMaster(this);
   }
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
@@ -118,11 +120,11 @@ export class storageCell extends Cell {
       }
     }
 
+    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000)
+      this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
+
     if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.requests[this.link.id])
       this.requestToStorage(this.link.id, [this.link], 4);
-
-    if (!this.master)
-      this.master = new managerMaster(this);
   }
 
   run() {

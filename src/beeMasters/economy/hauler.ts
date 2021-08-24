@@ -15,12 +15,11 @@ export class haulerMaster extends Master {
     super(excavationCell.hive, excavationCell.ref);
 
     this.cell = excavationCell;
-    this.recalculateTargetBee();
   }
 
   recalculateTargetBee() {
     let accumRoadTime = 0; // roadTime * minePotential
-    let energyCap = this.hive.room.energyCapacityAvailable
+    let energyCap = this.hive.room.energyCapacityAvailable;
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && !cell.link) {
@@ -33,10 +32,14 @@ export class haulerMaster extends Master {
 
     //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
     this.targetBeeCount = Math.ceil(accumRoadTime / Math.min(Math.floor(energyCap / 150) * 100, 1600));
+    this.cell.shouldRecalc = false;
   }
 
   update() {
     super.update();
+
+    if (this.cell.shouldRecalc)
+      this.recalculateTargetBee();
 
     if (this.checkBees()) {
       let order: SpawnOrder = {

@@ -9,6 +9,7 @@ export class upgradeCell extends Cell {
 
   controller: StructureController;
   link: StructureLink | undefined;
+  master: upgraderMaster;
 
   constructor(hive: Hive, controller: StructureController) {
     super(hive, "UpgradeCell_" + hive.room.name);
@@ -21,6 +22,8 @@ export class upgradeCell extends Cell {
       this.pos = this.link.pos;
     else
       this.pos = this.controller.pos;
+
+    this.master = new upgraderMaster(this);
   }
 
   update() {
@@ -42,9 +45,6 @@ export class upgradeCell extends Cell {
         priority: 4,
       };
     }
-
-    if (!this.master)
-      this.master = new upgraderMaster(this);
   }
 
   run() { }

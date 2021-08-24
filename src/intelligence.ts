@@ -103,16 +103,15 @@ export class Intel {
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS), (creep) => creep.hits < creep.hitsMax);
 
-    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
-
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].safePlace = true;
+
+    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
 
     if (targetFlags.length)
       this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
 
     if (!this.roomInfo[room.name].enemies.length) {
-      this.roomInfo[room.name].safePlace = true;
 
       this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
         filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||

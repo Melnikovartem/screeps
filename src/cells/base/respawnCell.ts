@@ -11,10 +11,13 @@ export class respawnCell extends Cell {
   spawns: { [id: string]: StructureSpawn } = {};
   freeSpawns: StructureSpawn[] = [];
   extensions: { [id: string]: StructureExtension } = {};
+  master: queenMaster | undefined;
 
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
+    if (this.hive.stage > 0)
+      this.master = new queenMaster(this);
   }
 
   update() {
@@ -23,8 +26,6 @@ export class respawnCell extends Cell {
 
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning == null);
-    if (!this.master && this.hive.stage > 0)
-      this.master = new queenMaster(this);
   };
 
   run() {

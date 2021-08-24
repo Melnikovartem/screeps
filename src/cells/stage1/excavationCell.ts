@@ -9,17 +9,18 @@ import { profile } from "../../profiler/decorator";
 export class excavationCell extends Cell {
   resourceCells: { [id: string]: resourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
-  shouldRecalc = true;
+  shouldRecalc: boolean = true;
+  master: haulerMaster;
 
   constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
+    this.master = new haulerMaster(this);
   }
 
   addResource(resource: Source | Mineral) {
     if (!this.resourceCells[resource.id]) {
-      this.resourceCells[resource.id] = new resourceCell(this.hive, resource);
-      if (this.master)
-        (<haulerMaster>this.master).recalculateTargetBee();
+      this.resourceCells[resource.id] = new resourceCell(this.hive, resource, this);
+      this.shouldRecalc = true;
     }
   }
 
@@ -37,9 +38,6 @@ export class excavationCell extends Cell {
       }
     });
     this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
-
-    if (!this.master)
-      this.master = new haulerMaster(this);
   };
 
   run() {

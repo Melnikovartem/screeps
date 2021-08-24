@@ -28,7 +28,8 @@ export class managerMaster extends Master {
 
     let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
 
-    if (this.manager && (this.manager.state == states.chill || emergencyRequests.length)) {
+    if (this.manager && (this.manager.state == states.chill || emergencyRequests.length)
+      && this.manager.pos.roomName == this.cell.pos.roomName) {
       if (emergencyRequests.length) {
         this.manager.target = emergencyRequests[0].ref;
       } else {
@@ -67,6 +68,8 @@ export class managerMaster extends Master {
 
   run() {
     if (this.manager) {
+      if (this.manager.pos.roomName != this.cell.pos.roomName)
+        this.manager.state = states.chill;
       if (this.manager.creep.ticksToLive && this.manager.creep.ticksToLive < 15)
         this.manager.state = states.fflush;
       if (!this.manager.target)

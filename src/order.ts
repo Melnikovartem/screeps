@@ -114,13 +114,16 @@ export class Order {
       else if (this.flag.secondaryColor == COLOR_WHITE) {
         this.acted = true;
         let hiveToBoos = Apiary.hives[this.pos.roomName];
-        if (hiveToBoos && hiveToBoos.stage == 0 && this.pos.roomName != this.hive.roomName) {
+        if (hiveToBoos && this.pos.roomName != this.hive.roomName
+          && (hiveToBoos.stage == 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
           hiveToBoos.bassboost = this.hive;
           hiveToBoos.spawOrders = {};
-          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master) {
-            hiveToBoos.cells.dev.master.waitingForBees = 0;
+          _.forEach(this.hive.cells, (c) => {
+            if (c.master)
+              c.master.waitingForBees = 0;
+          });
+          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
             (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
-          }
         } else
           this.delete();
       }
