@@ -18,13 +18,22 @@ export class Intel {
 
   getInfo(roomName: string, lag?: number): RoomInfo {
     if (!this.roomInfo[roomName])
-      this.roomInfo[roomName] = {
-        lastUpdated: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].lastUpdated : -1,
-        enemies: [],
-        safePlace: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].safePlace : true,
-        ownedByEnemy: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].ownedByEnemy : false,
-        safeModeEndTime: Memory.cache.intellegence[roomName] ? Memory.cache.intellegence[roomName].safeModeEndTime : -1,
-      };
+      if (Memory.cache.intellegence[roomName])
+        this.roomInfo[roomName] = {
+          lastUpdated: Memory.cache.intellegence[roomName].lastUpdated,
+          enemies: [],
+          safePlace: Memory.cache.intellegence[roomName].safePlace,
+          ownedByEnemy: Memory.cache.intellegence[roomName].ownedByEnemy,
+          safeModeEndTime: Memory.cache.intellegence[roomName].safeModeEndTime,
+        };
+      else
+        this.roomInfo[roomName] = {
+          lastUpdated: -1,
+          enemies: [],
+          safePlace: true,
+          ownedByEnemy: undefined,
+          safeModeEndTime: -1,
+        };
 
     // it is cached after first check
     lag = lag ? lag : 0;
@@ -34,6 +43,10 @@ export class Intel {
 
     if (!(roomName in Game.rooms)) {
       this.roomInfo[roomName].enemies = [];
+
+      if (!this.roomInfo[roomName].safePlace && !this.roomInfo[roomName].ownedByEnemy
+        && Game.time - this.roomInfo[roomName].lastUpdated > CREEP_LIFE_TIME * 1.5)
+        this.roomInfo[roomName].safePlace = true;
       return this.roomInfo[roomName];
     }
 
@@ -49,9 +62,6 @@ export class Intel {
       else
         this.roomInfo[room.name].ownedByEnemy = undefined;
     }
-
-    if (Game.time % 50 == 0)
-      this.toCache();
 
     if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace) {
       if (!Memory.log.enemies)
@@ -78,6 +88,7 @@ export class Intel {
   toCache() {
     for (const roomName in this.roomInfo) {
       Memory.cache.intellegence[roomName] = {
+        lastUpdated: this.roomInfo[roomName].lastUpdated,
         safePlace: this.roomInfo[roomName].safePlace,
         ownedByEnemy: this.roomInfo[roomName].ownedByEnemy,
         safeModeEndTime: this.roomInfo[roomName].safeModeEndTime,
@@ -109,7 +120,7 @@ export class Intel {
     let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
 
     if (targetFlags.length)
-      this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
+      this.roomInfo[room.name].enemies = this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
 
     if (!this.roomInfo[room.name].enemies.length) {
 

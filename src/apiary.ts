@@ -42,7 +42,7 @@ export class _Apiary {
     if (_.filter(this.hives, (h) => h.stage == 2).length == 0)
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
 
-    // for testing 
+    // for testing
     if (this.hives["W5N8"])
       this.hives["W5N8"].stage = 2
     if (this.hives["W7N9"])
@@ -69,6 +69,9 @@ export class _Apiary {
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.update(), master.print + " update");
     });
+
+    if (Game.time % 50 == 0)
+      this.intel.toCache();
   }
 
   // run phase

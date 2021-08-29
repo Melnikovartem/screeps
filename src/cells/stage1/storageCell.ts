@@ -55,7 +55,8 @@ export class storageCell extends Cell {
       if (!res[k])
         res[k] = RESOURCE_ENERGY;
       if (!amount[k])
-        amount[k] = (<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]);
+        amount[k] = Math.min((<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]),
+          this.storage.store.getUsedCapacity(res[k]));
       if (amount[k] > 0) {
         this.requests[ref].to.push(t);
         this.requests[ref].resource.push(res[k]);

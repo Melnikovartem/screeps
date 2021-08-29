@@ -28,7 +28,7 @@ export class CustomConsole {
         amount = cell.storage.store.getUsedCapacity(resource);
 
     if (mode == "fill" && resource == RESOURCE_ENERGY)
-      amount = Math.min(amount, 10000);
+      amount = Math.min(amount, 100000);
 
     let ans;
     if (mode == "empty")

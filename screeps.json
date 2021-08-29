@@ -41,6 +41,15 @@
     "path": "/",
     "branch": "main"
   },
+  "home": {
+    "email": "hereToTest",
+    "password": "this1sATest",
+    "protocol": "http",
+    "hostname": "192.168.0.56",
+    "port": 21025,
+    "path": "/",
+    "branch": "main"
+  },
   "pserver": {
     "email": "username",
     "password": "Password",

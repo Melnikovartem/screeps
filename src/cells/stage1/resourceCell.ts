@@ -31,14 +31,14 @@ export class resourceCell extends Cell {
   }
 
   updateStructure() {
-    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
+    this.container = <StructureContainer>_.filter(this.pos.findInRange(FIND_STRUCTURES, 2),
       (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
-      this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
+      this.link = <StructureLink>_.filter(this.pos.findInRange(FIND_MY_STRUCTURES, 2),
         (structure) => structure.structureType == STRUCTURE_LINK)[0];
       this.operational = this.container || this.link ? true : false;
     } else if (this.resource instanceof Mineral) {
-      this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
+      this.extractor = <StructureExtractor>_.filter(this.pos.lookFor(LOOK_STRUCTURES),
         (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
       this.operational = this.extractor && this.container ? true : false;
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
