@@ -63,17 +63,27 @@ export class Visuals {
           ans.y += + 0.2;
         }
 
+        if (Apiary.logger) {
+          ans = this.table(Apiary.logger.visualizeEnergy(name), ans, undefined, minSize);
+          minSize = Math.max(minSize, ans.x - 1);
+          ans.x = 1;
+          ans.y += + 0.2;
+        }
+
         this.caching[name] = new RoomVisual(name).export();
         _.forEach(Apiary.hives[name].annexNames, (annex) => {
           new RoomVisual(annex).import(this.caching![name]);
-          if (Memory.settings.framerate > 1)
-            this.caching![annex] = this.caching![name];
         });
       }
     } else {
       new RoomVisual().import(this.caching["global"]);
-      for (const name in this.caching)
-        new RoomVisual(name).import(this.caching[name]);
+      for (const name in Apiary.hives)
+        if (this.caching[name]) {
+          new RoomVisual(name).import(this.caching[name]);
+          _.forEach(Apiary.hives[name].annexNames, (annex) => {
+            new RoomVisual(annex).import(this.caching![name]);
+          });
+        }
     }
   }
 

@@ -1,4 +1,5 @@
 import { Hive } from "../hive";
+import { SetupsNames } from "../creepSetups";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
@@ -53,16 +54,17 @@ export class Logger {
   }
 
   newSpawn(beeName: string, spawn: StructureSpawn, cost: number, priority: number, masterName: string) {
-    if (!Memory.log.hives[spawn.pos.roomName])
+    let hiveName = Apiary.masters[masterName] ? Apiary.masters[masterName].hive.roomName : spawn.pos.roomName;
+    if (!Memory.log.hives[hiveName])
       return ERR_NOT_FOUND;
-    Memory.log.hives[spawn.pos.roomName].spawns[beeName] = {
+    Memory.log.hives[hiveName].spawns[beeName] = {
       time: Game.time,
       fromSpawn: spawn.name,
       orderedBy: masterName,
       priority: priority,
     };
 
-    this.addResourceStat(spawn.pos.roomName, "spawn_" + beeName.substring(0, beeName.length - 5), cost);
+    this.addResourceStat(spawn.pos.roomName, "spawn_" + beeName.substring(0, beeName.length - 5), -cost);
     return OK;
   }
 
@@ -115,7 +117,7 @@ export class Logger {
         for (let res in Memory.log.hives[key].resourceBalance)
           for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
             let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
-            if (diff >= LOGGING_CYCLE * 2) {
+            if (diff >= LOGGING_CYCLE * 4) {
               Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
                 time: Game.time - Math.floor(diff / 2),
                 amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
@@ -124,21 +126,25 @@ export class Logger {
           }
       }
 
-      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 25) {
-        let j = Object.keys(Memory.log.orders).length - 10;
-        for (let i in Memory.log.orders) {
-          if (Memory.log.orders[i].time + LOGGING_CYCLE * 3 > Game.time || Memory.log.orders[i].destroyTime == -1) continue;
-          delete Memory.log.orders[i];
-          if (--j == 0) break;
-        }
+      if (Object.keys(Memory.log.orders).length > 50) {
+        let sortedKeys = Object.keys(Memory.log.orders).sort((a, b) => Memory.log.orders[b].time - Memory.log.orders[a].time);
+        let j = sortedKeys.length - 25;
+        _.some(sortedKeys, (i) => {
+          if (--j <= 0) return true;
+          if (Memory.log.orders[i].destroyTime != -1)
+            delete Memory.log.orders[i];
+          return false;
+        });
       }
 
-      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 100) {
-        let j = Object.keys(Memory.log.crashes).length - 50;
-        for (let key in Memory.log.crashes) {
-          delete Memory.log.crashes[key];
-          if (--j == 0) break;
-        }
+      if (Object.keys(Memory.log.crashes).length > 100) {
+        let sortedKeys = Object.keys(Memory.log.crashes).sort((a, b) => Memory.log.crashes[b].time - Memory.log.crashes[a].time);
+        let j = sortedKeys.length - 25;
+        _.some(sortedKeys, (i) => {
+          if (--j <= 0) return true;
+          delete Memory.log.crashes[i];
+          return false;
+        });
       }
 
       if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
@@ -149,5 +155,62 @@ export class Logger {
         }
       }
     }
+  }
+
+  reportEnergy(hiveName: string): { [id: string]: number } {
+    let stats = Memory.log.hives[hiveName].resourceBalance[RESOURCE_ENERGY]!;
+    let ans: { [id: string]: number } = {};
+    let getRate = (ref: string): number => stats[ref] ? stats[ref].amount / Math.max(Game.time - stats[ref].time, 1) : 0;
+    if (Apiary.hives[hiveName].cells.excavation) {
+      // well here is also the mineral hauling cost but fuck it
+      let haulerExp = getRate("spawn_" + SetupsNames.hauler);
+      let minerExp = getRate("spawn_" + SetupsNames.miner);
+      let minerNum = 0;
+      let haulerNum = 0;
+      _.forEach(Apiary.hives[hiveName].cells.excavation!.resourceCells, (cell) => {
+        if (cell.resourceType == RESOURCE_ENERGY) {
+          minerNum++;
+          if (!cell.link) haulerNum++;
+        }
+      });
+      haulerExp /= Math.max(haulerNum, 1);
+      minerExp /= Math.max(minerNum, 1);
+      _.forEach(Apiary.hives[hiveName].cells.excavation!.resourceCells, (cell) => {
+        if (cell.resourceType == RESOURCE_ENERGY) {
+          let ref = "mining_" + cell.resource.id.slice(cell.resource.id.length - 4);
+          ans[ref] = getRate(ref) + minerExp + (cell.link ? 0 : haulerExp);
+        }
+      });
+    }
+
+    ans["upgrade"] = getRate("upgrade");
+    ans["annex"] = getRate("spawn_" + SetupsNames.claimer);
+    ans["mineral"] = getRate("spawn_" + SetupsNames.miner + " M");
+    type civilRoles = "queen" | "queen";
+    ans["upkeep"] = _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s]));
+    ans["build"] = getRate("build");
+
+    return ans;
+  }
+
+  visualizeEnergy(hiveName: string): string[][] {
+    let report = this.reportEnergy(hiveName);
+    let ans: string[][] = [["energy"], ["", "⚡"]];
+    let overAll = 0;
+    let prep = (rate: number): string => { overAll += rate; return String(Math.round(rate * 100) / 100) };
+
+    ans.push(["  📈income"]);
+    for (let ref in report)
+      if (report[ref] > 0)
+        ans.push([ref, prep(report[ref])]);
+
+
+    ans.push(["  📉expenditure"]);
+    for (let ref in report)
+      if (report[ref] < 0)
+        ans.push([ref, prep(report[ref])]);
+
+    ans.splice(1, 0, ["  💎🙌", prep(overAll)]);
+    return ans;
   }
 }

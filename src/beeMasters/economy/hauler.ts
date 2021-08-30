@@ -95,15 +95,9 @@ export class haulerMaster extends Master {
           res = this.findOptimalResource(bee.store);
         let ans = bee.transfer(this.cell.dropOff, res);
 
-        if (Apiary.logger && ans == OK) {
-          let container = Game.getObjectById(bee.target || "");
-          let resId = "failed";
-          if (container instanceof StructureContainer) {
-            let resource = container.pos.findInRange(FIND_SOURCES, 2)[0];
-            if (resource)
-              resId = resource.id.slice(resource.id.length - 4);
-          }
-          Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + resId, bee.store, this.cell.dropOff.store, res, 1);
+        if (Apiary.logger && ans == OK && bee.target) {
+          let ref = "mining_" + bee.target.slice(bee.target.length - 4);
+          Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.cell.dropOff.store, res, 1);
         }
 
         if (bee.store.getUsedCapacity() == 0) {
@@ -118,6 +112,10 @@ export class haulerMaster extends Master {
           if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) == OK) {
             this.targetMap[bee.target] = undefined;
             bee.state = states.work;
+            let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));
+            if (!res)
+              res = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 2));
+            bee.target = res ? res.id : null;
           }
         } else
           bee.state = states.chill; //failsafe

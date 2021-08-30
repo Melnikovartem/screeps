@@ -79,7 +79,7 @@ declare global {
           }
         }
       },
-      orders?: {
+      orders: {
         [id: string]: {
           time: number,
           pos: RoomPosition,
@@ -88,7 +88,7 @@ declare global {
           master: boolean,
         }
       },
-      crashes?: {
+      crashes: {
         [id: string]: {
           time: number,
           context: string,

@@ -101,7 +101,7 @@ export const Setups = {
       pattern: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
       patternLimit: 1,
     }),
-    minerals: new CreepSetup(SetupsNames.miner, {
+    minerals: new CreepSetup(SetupsNames.miner + " M", {
       fixed: [WORK, WORK, WORK, WORK, CARRY, MOVE],
       pattern: [WORK, WORK, WORK, WORK, WORK, MOVE],
     })
