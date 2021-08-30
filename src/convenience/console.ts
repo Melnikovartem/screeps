@@ -1,7 +1,7 @@
 export class CustomConsole {
 
   // some hand used functions
-  terminal(roomName: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = 0, mode?: "fill" | "empty"): string {
+  terminal(roomName: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = 0, mode?: "fill" | "empty") {
     let cell = Apiary.hives[roomName] && Apiary.hives[roomName].cells.storage;
     if (!cell || !cell.terminal)
       return "ERROR: TERMINAL NOT FOUND";
@@ -39,6 +39,33 @@ export class CustomConsole {
     return `${mode.toUpperCase()} TERMINAL\nRESOURCE ${resource}: ${ans}`;
   }
 
+  terminalSend(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity) {
+    let terminalFrom = Apiary.hives[roomNameFrom] && Apiary.hives[roomNameFrom].cells.storage && Apiary.hives[roomNameFrom].cells.storage!.terminal;
+    if (!terminalFrom)
+      return "ERROR: FROM TERMINAL NOT FOUND";
+    if (terminalFrom.cooldown > 0)
+      return "TERMINAL COOLDOWN";
+    let terminalTo = Apiary.hives[roomNameTo] && Apiary.hives[roomNameTo].cells.storage && Apiary.hives[roomNameTo].cells.storage!.terminal;
+    if (!terminalTo)
+      return "ERROR: TO TERMINAL NOT FOUND";
+
+    if (amount == Infinity)
+      amount = Math.floor(terminalFrom.store.getUsedCapacity(resource) / 2);
+    else
+      amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
+
+    amount = Math.min(amount, terminalTo.store.getFreeCapacity(resource));
+
+    let ans = terminalFrom.send(resource, amount, roomNameTo);
+    if (ans == OK)
+      return `$SEND FROM ${roomNameFrom} TO ${roomNameTo}\nRESOURCE ${resource}: ${amount}
+      \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
+    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
+      return `NOT ENOUGHT RESOURSES TO SEND FROM ${roomNameFrom} TO ${roomNameTo}
+      \nRESOURCE ${resource}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
+    return ans;
+  }
+
   completeOrder(orderId: string, am?: number) {
     let order = Game.market.getOrderById(orderId);
     if (!order)
@@ -49,6 +76,7 @@ export class CustomConsole {
     let amount = am ? am : order.remainingAmount;
     let ans;
     let energy: number | string = "NOT NEEDED";
+    let hiveName: string = "global";
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {
@@ -67,12 +95,14 @@ export class CustomConsole {
       else
         amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
 
+      hiveName = terminal.pos.roomName;
+
       energy = Game.market.calcTransactionCost(amount, terminal.pos.roomName, order.roomName);
       ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
     }
 
     if (ans == OK)
-      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"}\nRESOURCE ${order.resourceType
+      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}\nRESOURCE ${order.resourceType
         }: ${amount}\nMONEY: ${amount * order.price}\nENERGY: ${energy}`;
     else if (ans == ERR_NOT_ENOUGH_RESOURCES)
       return `NOT ENOUGHT RESOURSES TO ${order.type == ORDER_SELL ? "BUY" : "SELL"

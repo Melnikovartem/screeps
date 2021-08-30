@@ -13,6 +13,7 @@ export class excavationCell extends Cell {
   shouldRecalc: boolean = true;
   master: haulerMaster;
   dropOff: StructureStorage | StructureContainer;
+  roomResources: { [id: string]: number } = {};
 
   constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
@@ -22,6 +23,9 @@ export class excavationCell extends Cell {
 
   addResource(resource: Source | Mineral) {
     if (!this.resourceCells[resource.id]) {
+      if (!this.roomResources[resource.pos.roomName])
+        this.roomResources[resource.pos.roomName] = 0;
+      this.roomResources[resource.pos.roomName] += 1;
       this.resourceCells[resource.id] = new resourceCell(this.hive, resource, this);
       this.shouldRecalc = true;
     }

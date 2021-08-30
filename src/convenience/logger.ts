@@ -117,7 +117,7 @@ export class Logger {
         for (let res in Memory.log.hives[key].resourceBalance)
           for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
             let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
-            if (diff >= LOGGING_CYCLE * 4) {
+            if (diff >= LOGGING_CYCLE * 10) {
               Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
                 time: Game.time - Math.floor(diff / 2),
                 amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
@@ -157,17 +157,26 @@ export class Logger {
     }
   }
 
-  reportEnergy(hiveName: string): { [id: string]: number } {
+  reportEnergy(hiveName: string, extra: boolean = false): { [id: string]: { profit: number, revenue?: number } } {
+    let hive = Apiary.hives[hiveName];
     let stats = Memory.log.hives[hiveName].resourceBalance[RESOURCE_ENERGY]!;
-    let ans: { [id: string]: number } = {};
+    let ans: { [id: string]: { profit: number, revenue?: number } } = {};
     let getRate = (ref: string): number => stats[ref] ? stats[ref].amount / Math.max(Game.time - stats[ref].time, 1) : 0;
-    if (Apiary.hives[hiveName].cells.excavation) {
+    let excavation = Apiary.hives[hiveName].cells.excavation;
+    if (excavation) {
       // well here is also the mineral hauling cost but fuck it
       let haulerExp = getRate("spawn_" + SetupsNames.hauler);
       let minerExp = getRate("spawn_" + SetupsNames.miner);
+      let annexExp = getRate("spawn_" + SetupsNames.claimer);
+      if (extra) {
+        ans["hauler"] = { profit: haulerExp };
+        ans["miner"] = { profit: minerExp };
+        ans["annex"] = { profit: annexExp };
+      }
+
       let minerNum = 0;
       let haulerNum = 0;
-      _.forEach(Apiary.hives[hiveName].cells.excavation!.resourceCells, (cell) => {
+      _.forEach(hive.cells.excavation!.resourceCells, (cell) => {
         if (cell.resourceType == RESOURCE_ENERGY) {
           minerNum++;
           if (!cell.link) haulerNum++;
@@ -175,42 +184,53 @@ export class Logger {
       });
       haulerExp /= Math.max(haulerNum, 1);
       minerExp /= Math.max(minerNum, 1);
-      _.forEach(Apiary.hives[hiveName].cells.excavation!.resourceCells, (cell) => {
+      annexExp /= hive.annexes.length;
+
+      _.forEach(excavation.resourceCells, (cell) => {
         if (cell.resourceType == RESOURCE_ENERGY) {
           let ref = "mining_" + cell.resource.id.slice(cell.resource.id.length - 4);
-          ans[ref] = getRate(ref) + minerExp + (cell.link ? 0 : haulerExp);
+          ans[ref] = {
+            profit: getRate(ref) + minerExp + (cell.link ? 0 : haulerExp)
+              + (cell.pos.roomName != hive.roomName && hive.annexNames.includes(cell.pos.roomName)
+                ? annexExp / excavation!.roomResources[cell.pos.roomName] : 0),
+            revenue: getRate(ref),
+          };
         }
       });
     }
 
-    ans["upgrade"] = getRate("upgrade");
-    ans["annex"] = getRate("spawn_" + SetupsNames.claimer);
-    ans["mineral"] = getRate("spawn_" + SetupsNames.miner + " M");
+    ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + SetupsNames.upgrader), revenue: getRate("upgrade") };
+    ans["mineral"] = { profit: getRate("spawn_" + SetupsNames.miner + " M") };
     type civilRoles = "queen" | "queen";
-    ans["upkeep"] = _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s]));
-    ans["build"] = getRate("build");
+    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
+    ans["build"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.builder), revenue: getRate("build") };
 
     return ans;
   }
 
   visualizeEnergy(hiveName: string): string[][] {
     let report = this.reportEnergy(hiveName);
-    let ans: string[][] = [["energy"], ["", "⚡"]];
+    let ans: string[][] = [["energy"], ["", "⚡", "💸"]];
     let overAll = 0;
-    let prep = (rate: number): string => { overAll += rate; return String(Math.round(rate * 100) / 100) };
+    let prep = (rate: number): string => String(Math.round(rate * 100) / 100);
 
     ans.push(["  📈income"]);
     for (let ref in report)
-      if (report[ref] > 0)
-        ans.push([ref, prep(report[ref])]);
+      if (report[ref].profit > 0) {
+        overAll += report[ref].profit;
+        ans.push([ref, report[ref].revenue != undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      }
 
 
     ans.push(["  📉expenditure"]);
     for (let ref in report)
-      if (report[ref] < 0)
-        ans.push([ref, prep(report[ref])]);
+      if (report[ref].profit < 0) {
+        overAll += report[ref].profit;
+        ans.push([ref, report[ref].revenue != undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      }
 
-    ans.splice(1, 0, ["  💎🙌", prep(overAll)]);
+    ans.push(["  💎🙌"]);
+    ans.push(["", "", prep(overAll)]);
     return ans;
   }
 }
