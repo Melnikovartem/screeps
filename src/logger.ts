@@ -36,15 +36,15 @@ export class Logger {
     if (!Memory.log.hives[hiveName].resourceBalance[resource]![ref])
       Memory.log.hives[hiveName].resourceBalance[resource]![ref] = {
         amount: 0,
-        initTime: Game.time,
+        time: Game.time,
       }
 
     Memory.log.hives[hiveName].resourceBalance[resource]![ref].amount += amount;
     return OK;
   }
 
-  resourceTransfer<R extends ResourceConstant>
-    (hiveName: string, ref: string, storeFrom: Store<R, false>, storeTo: Store<R, false>, resource: R, mode: 1 | -1 = -1) {
+  resourceTransfer<R extends ResourceConstant>(hiveName: string, ref: string, storeFrom: Store<R, false>,
+    storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1) {
     if (!Memory.log.hives[hiveName])
       return ERR_NOT_FOUND;
     let amount = Math.min(<number>storeFrom.getUsedCapacity(resource), <number>storeTo.getFreeCapacity(resource)) * mode;
@@ -111,6 +111,17 @@ export class Logger {
           delete Memory.log.hives[key].spawns[i];
           return false;
         });
+
+        for (let res in Memory.log.hives[key].resourceBalance)
+          for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
+            let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
+            if (diff >= LOGGING_CYCLE * 2) {
+              Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
+                time: Game.time - Math.floor(diff / 2),
+                amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
+              }
+            }
+          }
       }
 
       if (Memory.log.orders && Object.keys(Memory.log.orders).length > 25) {

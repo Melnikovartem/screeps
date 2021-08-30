@@ -73,7 +73,7 @@ declare global {
             [key in ResourceConstant]?: {
               [id: string]: {
                 amount: number,
-                initTime: number,
+                time: number,
               }
             }
           }

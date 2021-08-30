@@ -146,16 +146,27 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.attackController(<StructureController>t), opt);
   }
 
+  repairRoadOnMove(ans: number = ERR_NOT_IN_RANGE) {
+    if (ans == ERR_NOT_IN_RANGE)
+      this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+  }
+
   static checkBees() {
     // after all the masters where created and retrived if it was needed
     for (const name in Game.creeps) {
       let bee = Apiary.bees[name];
       if (!bee)
         Apiary.bees[name] = new Bee(Game.creeps[name]);
-      else if (bee.state == states.idle && /^masterDevelopmentCell/.exec(bee.memory.refMaster)) {
-        let randomMaster = Object.keys(Apiary.masters)[Math.floor(Math.random() * Object.keys(Apiary.masters).length)];
-        bee.memory.refMaster = randomMaster;
-        Apiary.masters[randomMaster].newBee(bee);
+      else if (bee.state == states.idle) {
+        let regex = /^masterDevelopmentCell_(.*)/.exec(bee.memory.refMaster);
+        if (regex) {
+          let viableMasters = _.map(_.filter(Apiary.masters, (m) => m.hive.roomName == regex![1]), (m) => m.ref);
+          let randomMaster = viableMasters[Math.floor(Math.random() * viableMasters.length)];
+          if (randomMaster) {
+            bee.memory.refMaster = randomMaster;
+            Apiary.masters[randomMaster].newBee(bee);
+          }
+        }
       }
     }
   }

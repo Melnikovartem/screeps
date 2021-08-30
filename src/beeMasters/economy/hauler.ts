@@ -86,9 +86,11 @@ export class haulerMaster extends Master {
         bee.state = states.work;
 
       if (bee.state == states.work) {
-        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-          bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
         let res: ResourceConstant = RESOURCE_ENERGY;
+
+        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+          bee.repairRoadOnMove();
+
         if (bee.pos.isNearTo(this.cell.dropOff))
           res = this.findOptimalResource(bee.store);
         let ans = bee.transfer(this.cell.dropOff, res);

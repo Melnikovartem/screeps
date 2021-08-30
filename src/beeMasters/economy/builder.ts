@@ -41,52 +41,62 @@ export class builderMaster extends Master {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
-        bee.state = states.refill;
-      else
-        bee.state = states.work;
+    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
+    if (storage)
+      _.forEach(this.bees, (bee) => {
+        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+          bee.state = states.refill;
+        else
+          bee.state = states.work;
 
-      if (bee.state == states.refill
-        && bee.withdraw(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY) == OK)
-        bee.state = states.work;
+        if (bee.state == states.refill && bee.withdraw(storage, RESOURCE_ENERGY) == OK) {
+          if (Apiary.logger)
+            Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
+          bee.state = states.work;
+        }
+        if (bee.state == states.work) {
+          let target: Structure | ConstructionSite | null = null;
+          if (bee.target) {
+            target = Game.getObjectById(bee.target);
+            if (target instanceof Structure && (target.hits == target.hitsMax
+              || target.hits >= this.hive.repairSheet.getHits(target) * 1.5)) {
+              this.hive.shouldRecalc = true;
+              target = null;
+            }
+          }
+          if (!target)
+            target = bee.pos.findClosest(this.hive.emergencyRepairs);
+          if (!target)
+            target = bee.pos.findClosest(this.hive.constructionSites);
+          if (!target)
+            target = bee.pos.findClosest(this.hive.normalRepairs);
 
-      if (bee.state == states.work) {
-        let target: Structure | ConstructionSite | null = null;
-
-        if (bee.target) {
-          target = Game.getObjectById(bee.target);
-          if (target instanceof Structure && (target.hits == target.hitsMax
-            || target.hits >= this.hive.repairSheet.getHits(target) * 1.5)) {
-            this.hive.shouldRecalc = true;
-            target = null;
+          if (target) {
+            let ans;
+            if (target instanceof ConstructionSite)
+              ans = bee.build(target);
+            else if (target instanceof Structure)
+              ans = bee.repair(target);
+            bee.target = target.id;
+            bee.repairRoadOnMove(ans);
+          } else {
+            bee.target = null;
+            bee.state = states.fflush;
           }
         }
 
-        if (!target)
-          target = bee.pos.findClosest(this.hive.emergencyRepairs);
-        if (!target)
-          target = bee.pos.findClosest(this.hive.constructionSites);
-        if (!target)
-          target = bee.pos.findClosest(this.hive.normalRepairs);
+        if (bee.state == states.fflush)
+          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+            let ans = bee.transfer(storage, RESOURCE_ENERGY);
+            if (ans == OK && Apiary.logger)
+              Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, storage!.store, RESOURCE_ENERGY, 1);
+            bee.repairRoadOnMove(ans);
+          }
+          else
+            bee.state = states.chill;
 
-        if (target) {
-          let ans;
-          if (target instanceof ConstructionSite)
-            ans = bee.build(target);
-          else if (target instanceof Structure)
-            ans = bee.repair(target);
-          bee.target = target.id;
-          if (ans == ERR_NOT_IN_RANGE)
-            bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
-        } else {
-          bee.target = null;
-          bee.state = states.chill;
-        }
-      }
-
-      if (bee.state == states.chill)
-        bee.goRest(this.hive.pos);
-    });
+        if (bee.state == states.chill)
+          bee.goRest(this.hive.pos);
+      });
   }
 }

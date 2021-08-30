@@ -89,8 +89,11 @@ export class upgraderMaster extends Master {
             suckerTarget = storage;
         }
 
-        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK)
+        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK) {
+          if (Apiary.logger && suckerTarget)
+            Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", suckerTarget.store, bee.store);
           bee.state = states.work;
+        }
 
         if (!suckerTarget)
           bee.state = states.chill;

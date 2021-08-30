@@ -73,7 +73,7 @@ export class resourceCell extends Cell {
       let ans = this.link.transferEnergy(storageLink);
       if (Apiary.logger && ans == OK)
         Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
-          this.link.store, storageLink.store, RESOURCE_ENERGY);
+          this.link.store, storageLink.store, RESOURCE_ENERGY, 1);
     }
   }
 }
