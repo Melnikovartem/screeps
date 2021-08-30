@@ -3,15 +3,17 @@ import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";
+import { Logger } from "./logger";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { LOGGING_CYCLE } from "./settings";
+import { LOGGING_CYCLE, DEVELOPING } from "./settings";
 
 @profile
 export class _Apiary {
   destroyTime: number;
   intel: Intel;
+  logger: Logger | undefined;
 
   bees: { [id: string]: Bee };
   hives: { [id: string]: Hive };
@@ -21,10 +23,10 @@ export class _Apiary {
   defenseSwarms: { [id: string]: Order } = {};
 
   constructor() {
-    if (LOGGING_CYCLE) Memory.log.apiary = Game.time;
-
     this.destroyTime = Game.time + 4000;
     this.intel = new Intel();
+    if (LOGGING_CYCLE)
+      this.logger = new Logger();
 
     this.bees = {};
     this.hives = {};
@@ -43,10 +45,12 @@ export class _Apiary {
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
 
     // for testing
-    if (this.hives["W5N8"])
-      this.hives["W5N8"].stage = 2
-    if (this.hives["W7N9"])
-      this.hives["W7N9"].stage = 2
+    if (DEVELOPING) {
+      if (this.hives["W5N8"])
+        this.hives["W5N8"].stage = 2;
+      if (this.hives["W7N9"])
+        this.hives["W7N9"].stage = 2;
+    }
   }
 
   // update phase

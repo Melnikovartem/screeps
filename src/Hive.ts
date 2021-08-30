@@ -13,7 +13,7 @@ import { builderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
+import { UPDATE_EACH_TICK } from "./settings";
 
 import { CreepSetup } from "./creepSetups";
 
@@ -170,6 +170,9 @@ export class Hive {
     this.updateCellData();
     this.repairSheet = new repairSheet(this.stage);
     this.shouldRecalc = true;
+
+    if (Apiary.logger)
+      Apiary.logger.initHive(this.roomName);
   }
 
   addAnex(annexName: string) {
@@ -271,27 +274,6 @@ export class Hive {
     this.sumRepairs = Math.floor(this.sumRepairs / 100);
   }
 
-  updateLog() {
-    if (!Memory.log.hives)
-      Memory.log.hives = {};
-    if (!Memory.log.hives[this.roomName])
-      Memory.log.hives[this.roomName] = {};
-    let orderMap: { [id: string]: { amount: number, priority: number } } = {};
-    for (const master in this.spawOrders) {
-      orderMap[master] = {
-        amount: this.spawOrders[master].amount,
-        priority: this.spawOrders[master].priority,
-      };
-    }
-    Memory.log.hives[this.roomName][Game.time] = {
-      annexNames: this.annexNames,
-      constructionSites: this.constructionSites.length,
-      emergencyRepairs: this.emergencyRepairs.length,
-      normalRepairs: this.normalRepairs.length,
-      spawOrders: orderMap,
-    };
-  }
-
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
@@ -308,8 +290,8 @@ export class Hive {
 
     if (Game.time % 100 == 29)
       this.updateCellData();
-    if (Game.time % LOGGING_CYCLE == 0)
-      this.updateLog();
+    if (Apiary.logger)
+      Apiary.logger.hiveLog(this);
 
     if (UPDATE_EACH_TICK)
       _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });

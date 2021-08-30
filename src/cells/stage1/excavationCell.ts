@@ -5,16 +5,19 @@ import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../../beeMasters/economy/hauler";
 import { safeWrap } from "../../utils";
 import { profile } from "../../profiler/decorator";
+
 @profile
 export class excavationCell extends Cell {
   resourceCells: { [id: string]: resourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
   shouldRecalc: boolean = true;
   master: haulerMaster;
+  dropOff: StructureStorage | StructureContainer;
 
   constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
     this.master = new haulerMaster(this);
+    this.dropOff = this.hive.cells.storage!.storage;
   }
 
   addResource(resource: Source | Mineral) {

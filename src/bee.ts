@@ -60,8 +60,11 @@ export class Bee {
     if (this.creep.pos.inRangeTo(target!, range))
       return action();
     else {
+      let targetPos = <RoomPosition>(target instanceof RoomObject && target.pos) || (target instanceof RoomPosition && target);
+      if (range > 1 && targetPos.roomName != this.pos.roomName)
+        range = 1;
       opt.range = range;
-      this.goTo(target!, opt);
+      this.goTo(targetPos, opt);
     }
     return ERR_NOT_IN_RANGE;
   }

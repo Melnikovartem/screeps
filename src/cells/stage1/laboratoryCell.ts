@@ -1,4 +1,4 @@
-import { Bee } from "../../bee";
+// import { Bee } from "../../bee";
 import { Cell } from "../_Cell";
 import { Hive } from "../../Hive";
 
@@ -53,7 +53,7 @@ export class laboratoryCell extends Cell {
   sourceLabs: [string, string] | undefined;
 
   constructor(hive: Hive) {
-    super(hive, "LaboratoryCell_" + hive.room.name);
+    super(hive, "LaboratoryCell" + hive.room.name);
   }
 
   fflushLab(lab: StructureLab) {

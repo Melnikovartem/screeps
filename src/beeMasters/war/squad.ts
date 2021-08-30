@@ -136,10 +136,8 @@ export class squadMaster extends SwarmMaster {
         ans1 = knight1.goRest(this.order.pos, { returnData: nextPos });
         if (knight2) {
           if (nextPos.nextPos)
-            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => {
-              if (knight1!.pos.x == p.x && knight1!.pos.y == p.y) console.log("F"); return knight2!.pos.isNearTo(p)
-                && (!healer1 || knight1!.pos != p)
-            })[0];
+            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(),
+              (p) => knight2!.pos.isNearTo(p) && (!healer1 || knight1!.pos != p))[0];
           if (newPos) {
             ans2 = ERR_NOT_IN_RANGE;
             knight2.creep.move(knight2.pos.getDirectionTo(newPos));

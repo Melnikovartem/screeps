@@ -88,9 +88,26 @@ export class haulerMaster extends Master {
       if (bee.state == states.work) {
         if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
           bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
-        bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, this.findOptimalResource(bee.store));
-        if (bee.store.getUsedCapacity() == 0)
+        let res: ResourceConstant = RESOURCE_ENERGY;
+        if (bee.pos.isNearTo(this.cell.dropOff))
+          res = this.findOptimalResource(bee.store);
+        let ans = bee.transfer(this.cell.dropOff, res);
+
+        if (Apiary.logger && ans == OK) {
+          let container = Game.getObjectById(bee.target || "");
+          let resId = "failed";
+          if (container instanceof StructureContainer) {
+            let resource = container.pos.findInRange(FIND_SOURCES, 2)[0];
+            if (resource)
+              resId = resource.id.slice(resource.id.length - 4);
+          }
+          Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + resId, bee.store, this.cell.dropOff.store, res, 1);
+        }
+
+        if (bee.store.getUsedCapacity() == 0) {
           bee.state = states.chill;
+          bee.target = null;
+        }
       }
 
       if (bee.state == states.refill) {
@@ -98,7 +115,6 @@ export class haulerMaster extends Master {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
           if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) == OK) {
             this.targetMap[bee.target] = undefined;
-            bee.target = null;
             bee.state = states.work;
           }
         } else

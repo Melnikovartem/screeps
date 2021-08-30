@@ -70,7 +70,10 @@ export class resourceCell extends Cell {
     if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && this.link.cooldown == 0 && storageLink
       && (this.link.store.getUsedCapacity(RESOURCE_ENERGY) <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY)
         || this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= LINK_CAPACITY / 8)) {
-      this.link.transferEnergy(storageLink);
+      let ans = this.link.transferEnergy(storageLink);
+      if (Apiary.logger && ans == OK)
+        Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
+          this.link.store, storageLink.store, RESOURCE_ENERGY);
     }
   }
 }

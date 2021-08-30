@@ -29,6 +29,7 @@ declare global {
   interface Memory {
     cache: {
       intellegence: any;
+      roomPlaner: { [id: string]: any };
     },
     masters: { [id: string]: any };
 
@@ -44,28 +45,37 @@ declare global {
     log: {
       reset: number,
       apiary: number,
-      spawns?: {
+      hives: {
         [id: string]: {
-          time: number,
-          spawnRoom: string,
-          fromSpawn: string,
-          orderedBy: string,
-          priority: number,
-        }
-      },
-      hives?: {
-        [id: string]: {
-          [id: number]: {
-            annexNames: string[],
-            constructionSites: number,
-            emergencyRepairs: number,
-            normalRepairs: number,
-            spawOrders: {
+          loggedStates: {
+            [id: number]: {
+              annexNames: string[],
+              constructionSites: number,
+              emergencyRepairs: number,
+              normalRepairs: number,
+              spawOrders: {
+                [id: string]: {
+                  amount: number,
+                  priority: number,
+                }
+              }
+            }
+          },
+          spawns: {
+            [id: string]: {
+              time: number,
+              fromSpawn: string,
+              orderedBy: string,
+              priority: number,
+            }
+          },
+          resourceBalance: {
+            [key in ResourceConstant]?: {
               [id: string]: {
                 amount: number,
-                priority: number,
+                initTime: number,
               }
-            },
+            }
           }
         }
       },

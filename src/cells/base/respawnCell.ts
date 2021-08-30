@@ -3,7 +3,6 @@ import { Hive } from "../../Hive";
 
 import { makeId } from "../../utils";
 import { queenMaster } from "../../beeMasters/economy/queen";
-import { LOGGING_CYCLE } from "../../settings";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -22,7 +21,6 @@ export class respawnCell extends Cell {
 
   update() {
     super.update(["extensions", "spawns"]);
-
 
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning == null);
@@ -58,19 +56,11 @@ export class respawnCell extends Cell {
         let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 
         if (ans == OK) {
-          energyAvailable -= setup.cost;
-          if (LOGGING_CYCLE) {
-            if (!Memory.log.spawns)
-              Memory.log.spawns = {};
-            Memory.log.spawns[name] = {
-              time: Game.time,
-              spawnRoom: this.hive.roomName,
-              fromSpawn: spawn!.name,
-              orderedBy: sortedOrders[key].master,
-              priority: order.priority,
-            };
-          }
 
+          if (Apiary.logger)
+            Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, sortedOrders[key].master);
+
+          energyAvailable -= setup.cost;
           this.hive.spawOrders[sortedOrders[key].ref].amount -= 1;
           if (this.hive.spawOrders[sortedOrders[key].ref].amount == 0)
             delete this.hive.spawOrders[sortedOrders[key].ref];
