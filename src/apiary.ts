@@ -3,7 +3,7 @@ import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";
-import { Logger } from "./logger";
+import { Logger } from "./convenience/logger";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";

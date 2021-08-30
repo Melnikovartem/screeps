@@ -1,5 +1,5 @@
-import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK } from "./settings";
+import { profile } from "../profiler/decorator";
+import { UPDATE_EACH_TICK } from "../settings";
 
 const TEXT_SIZE = 0.8;
 const TEXT_WIDTH = TEXT_SIZE * 0.5;

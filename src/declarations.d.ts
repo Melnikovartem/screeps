@@ -1,5 +1,5 @@
 import type { _Apiary } from "./Apiary";
-import type { CustomConsole } from "./console";
+import type { CustomConsole } from "./convenience/console";
 
 declare global {
   var Apiary: _Apiary;

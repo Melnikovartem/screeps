@@ -1,8 +1,8 @@
 'use strict'
 
 import { Mem } from "./memory";
-import { Visuals } from "./visuals";
-import { CustomConsole } from "./console";
+import { Visuals } from "./convenience/visuals";
+import { CustomConsole } from "./convenience/console";
 
 import "./Traveler/Traveler";
 

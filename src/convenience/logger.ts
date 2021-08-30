@@ -1,7 +1,7 @@
-import { Hive } from "./hive";
+import { Hive } from "../hive";
 
-import { profile } from "./profiler/decorator";
-import { LOGGING_CYCLE } from "./settings";
+import { profile } from "../profiler/decorator";
+import { LOGGING_CYCLE } from "../settings";
 
 @profile
 export class Logger {
