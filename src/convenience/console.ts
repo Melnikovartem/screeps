@@ -7,7 +7,7 @@ export class CustomConsole {
       return "ERROR: TERMINAL NOT FOUND";
 
     if (!mode) {
-      if (cell.storage.store.getUsedCapacity(resource) >= amount)
+      if (cell.storage.store.getUsedCapacity(resource) >= (amount ? amount : 1))
         mode = "fill";
       if (cell.terminal.store.getUsedCapacity(resource) >= amount) {
         if (mode == "fill") {
@@ -58,11 +58,11 @@ export class CustomConsole {
 
     let ans = terminalFrom.send(resource, amount, roomNameTo);
     if (ans == OK)
-      return `$SEND FROM ${roomNameFrom} TO ${roomNameTo}\nRESOURCE ${resource}: ${amount}
-      \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
+      return `$SEND FROM ${roomNameFrom} TO ${roomNameTo}\nRESOURCE ${resource}: ${amount
+        }\nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
     else if (ans == ERR_NOT_ENOUGH_RESOURCES)
-      return `NOT ENOUGHT RESOURSES TO SEND FROM ${roomNameFrom} TO ${roomNameTo}
-      \nRESOURCE ${resource}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
+      return `NOT ENOUGHT RESOURSES TO SEND FROM ${roomNameFrom} TO ${roomNameTo
+        }\nRESOURCE ${resource}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
     return ans;
   }
 

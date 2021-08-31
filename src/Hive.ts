@@ -13,7 +13,7 @@ import { builderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK } from "./settings";
+import { UPDATE_EACH_TICK, DEVELOPING } from "./settings";
 
 import { CreepSetup } from "./creepSetups";
 
@@ -293,7 +293,7 @@ export class Hive {
     if (Apiary.logger)
       Apiary.logger.hiveLog(this);
 
-    if (UPDATE_EACH_TICK)
+    if (DEVELOPING)
       _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });
 
     _.forEach(this.cells, (cell) => {

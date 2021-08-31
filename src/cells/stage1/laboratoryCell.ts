@@ -53,7 +53,7 @@ export class laboratoryCell extends Cell {
   sourceLabs: [string, string] | undefined;
 
   constructor(hive: Hive) {
-    super(hive, "LaboratoryCell" + hive.room.name);
+    super(hive, "LaboratoryCell_" + hive.room.name);
   }
 
   fflushLab(lab: StructureLab) {
@@ -138,8 +138,10 @@ export class laboratoryCell extends Cell {
   update() {
     super.update(["laboratories"]);
     let storageCell = this.hive.cells.storage;
-    if (storageCell && this.laboratories.length) {
+    if (storageCell && Object.keys(this.laboratories).length) {
       _.forEach(this.laboratories, (l) => {
+        if (!this.labsStates[l.id])
+          this.labsStates[l.id] = "idle";
         if (l.store.getUsedCapacity() == 0 && this.labsStates[l.id] == "fflush")
           this.labsStates[l.id] = "idle";
         if (this.labsStates[l.id] == "source")
@@ -176,14 +178,14 @@ export class laboratoryCell extends Cell {
           this.currentRequest = undefined;
           this.sourceLabs = undefined;
         }
-      } else if (this.synthesizeRequests.length || this.currentRequest) {
+      } else {
         if (!this.currentRequest)
           this.currentRequest = this.synthesizeRequests.shift();
 
-        if (!this.sourceLabs) {
+        if (!this.sourceLabs && this.currentRequest) {
           let lab1 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
             && (l.store.getFreeCapacity() == 0 || l.store.getUsedCapacity(this.currentRequest!.res1)))[0];
-          let lab2
+          let lab2;
           if (lab1)
             lab2 = _.filter(this.laboratories, (l) => this.labsStates[l.id] == "idle"
               && (l.store.getFreeCapacity() == 0 || l.store.getUsedCapacity(this.currentRequest!.res1))

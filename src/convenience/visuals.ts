@@ -1,5 +1,5 @@
 import { profile } from "../profiler/decorator";
-import { UPDATE_EACH_TICK } from "../settings";
+import { UPDATE_EACH_TICK, DEVELOPING } from "../settings";
 
 const TEXT_SIZE = 0.8;
 const TEXT_WIDTH = TEXT_SIZE * 0.5;
@@ -224,6 +224,8 @@ export class Visuals {
 
   table(strings: string[][], pos: { x: number, y: number, roomName?: string },
     style: TextStyle = {}, minSize: number = 1, maxSize: number = 20, align: "center" | "right" | "left" = "left") {
+    if (DEVELOPING)
+      pos.x += 2; // broken visuals @ xxScreeps server
     let vis = new RoomVisual(pos.roomName);
     let pad = 0.2;
 

@@ -68,7 +68,7 @@ export class haulerMaster extends Master {
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill));
+      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill && Game.time - b.memory.born > 100));
       if (bee) {
         bee.state = states.refill;
         bee.target = container.id;
