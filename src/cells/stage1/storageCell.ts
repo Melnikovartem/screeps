@@ -54,9 +54,10 @@ export class storageCell extends Cell {
     _.forEach(to, (t, k) => {
       if (!res[k])
         res[k] = RESOURCE_ENERGY;
-      if (!amount[k])
-        amount[k] = Math.min((<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]),
-          this.storage.store.getUsedCapacity(res[k]));
+      if (!amount[k] || amount[k] == Infinity)
+        amount[k] = (<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]);
+      amount[k] = Math.min(amount[k], this.storage.store.getUsedCapacity(res[k]));
+
       if (amount[k] > 0) {
         this.requests[ref].to.push(t);
         this.requests[ref].resource.push(res[k]);
@@ -87,8 +88,10 @@ export class storageCell extends Cell {
         res[k] = RESOURCE_ENERGY;
       if (f instanceof StructureLab && f.mineralType)
         res[k] = f.mineralType;
-      if (!amount[k])
-        amount[k] = (<Store<ResourceConstant, false>>f.store).getFreeCapacity(res[k]);
+      if (!amount[k] || amount[k] == Infinity)
+        amount[k] = (<Store<ResourceConstant, false>>f.store).getUsedCapacity(res[k]);
+      amount[k] = Math.min(amount[k], this.storage.store.getFreeCapacity(res[k]));
+
       if (amount[k] > 0) {
         this.requests[ref].from.push(f);
         this.requests[ref].resource.push(res[k]);

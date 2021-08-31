@@ -16,9 +16,10 @@ export class Visuals {
         this.caching = {};
 
       let ans: { x: number, y: number, roomName: undefined | string } = { x: 42, y: 1, roomName: undefined };
-      ans = this.progressbar("CPU", ans, Game.cpu.getUsed() / 20, { align: "right" }, 6);
+      ans = this.progressbar("CPU", ans, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       ans.x = 42;
       ans.y += + 0.2;
+      // bucket size same as PIXEL_CPU_COST
       ans = this.progressbar("BUCKET", ans, Game.cpu.bucket / 10000, { align: "right" }, 6);
       ans.x = 42;
       ans.y += + 0.2;

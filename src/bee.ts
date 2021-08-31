@@ -148,7 +148,8 @@ export class Bee {
 
   repairRoadOnMove(ans: number = ERR_NOT_IN_RANGE) {
     if (ans == ERR_NOT_IN_RANGE)
-      this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+    return ans;
   }
 
   static checkBees() {

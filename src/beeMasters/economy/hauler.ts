@@ -10,6 +10,7 @@ import { profile } from "../../profiler/decorator";
 export class haulerMaster extends Master {
   cell: excavationCell;
   targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
+  roadUpkeepCost: { [id: string]: number } = {};
 
   constructor(excavationCell: excavationCell) {
     super(excavationCell.hive, excavationCell.ref);
@@ -33,6 +34,11 @@ export class haulerMaster extends Master {
     //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
     this.targetBeeCount = Math.ceil(accumRoadTime / Math.min(Math.floor(energyCap / 150) * 100, 1600));
     this.cell.shouldRecalc = false;
+  }
+
+  deleteBee(ref: string) {
+    super.deleteBee(ref);
+    delete this.roadUpkeepCost[ref];
   }
 
   update() {
@@ -72,6 +78,7 @@ export class haulerMaster extends Master {
       if (bee) {
         bee.state = states.refill;
         bee.target = container.id;
+        this.roadUpkeepCost[bee.ref] = 0;
         this.targetMap[container.id] = {
           beeRef: bee.ref,
           resource: this.findOptimalResource(container.store),
@@ -89,7 +96,8 @@ export class haulerMaster extends Master {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
         if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-          bee.repairRoadOnMove();
+          if (bee.repairRoadOnMove() == OK && bee.target)
+            this.roadUpkeepCost[bee.ref] += 1;
 
         if (bee.pos.isNearTo(this.cell.dropOff))
           res = this.findOptimalResource(bee.store);
@@ -98,6 +106,10 @@ export class haulerMaster extends Master {
         if (Apiary.logger && ans == OK && bee.target) {
           let ref = "mining_" + bee.target.slice(bee.target.length - 4);
           Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.cell.dropOff.store, res, 1);
+          if (this.roadUpkeepCost[bee.ref] > 0) {
+            Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+            Apiary.logger.addResourceStat(this.hive.roomName, "build", -this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+          }
         }
 
         if (bee.store.getUsedCapacity() == 0) {

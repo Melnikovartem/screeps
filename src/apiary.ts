@@ -23,7 +23,7 @@ export class _Apiary {
   defenseSwarms: { [id: string]: Order } = {};
 
   constructor() {
-    this.destroyTime = Game.time + 4000;
+    this.destroyTime = Game.time + 6000;
     this.intel = new Intel();
     if (LOGGING_CYCLE)
       this.logger = new Logger();

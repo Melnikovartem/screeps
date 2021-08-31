@@ -62,13 +62,13 @@ export class laboratoryCell extends Cell {
       let res = lab.mineralType;
       if (!res)
         return OK;
-      storageCell.requestToStorage(this.ref + "_" + res, [lab], 3);
+      storageCell.requestToStorage(lab.id + "_" + res, [lab], 3);
       this.labsStates[lab.id] = "fflush";
     }
     return ERR_NOT_FOUND;
   }
 
-  updateProductionLabs(): StructureLab[] {
+  updateProductionLabs() {
     if (this.currentRequest) {
       let ans: StructureLab[] = [];
       _.forEach(this.laboratories, (l) => {
@@ -77,9 +77,7 @@ export class laboratoryCell extends Cell {
           ans.push(l);
         }
       });
-      return ans;
     }
-    return [];
   }
 
   getBoostingLab(resource: ReactionConstant) {
@@ -91,9 +89,8 @@ export class laboratoryCell extends Cell {
       if (this.labsStates[l.id] == "idle" && (!l.mineralType || l.mineralType == resource)) {
         this.labsStates[l.id] = "boosting";
         ans = OK;
-        return true;
       }
-      return false;
+      return ans == OK;
     });
 
     return ans;
@@ -102,26 +99,20 @@ export class laboratoryCell extends Cell {
   newSynthesizeRequest(resource: ReactionConstant, amount?: number, coef?: number): number {
     if (!Object.keys(REACTION_TIME).includes(resource))
       return 0;
-
     if (!amount) {
       amount = 0;
       let mainStore = this.hive.cells.storage && this.hive.cells.storage.storage.store;
       if (mainStore) {
         let res1 = REACTION_MAP[resource]!.res1;
         let res2 = REACTION_MAP[resource]!.res2;
-
         let res1Amount = mainStore.getUsedCapacity(res1) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res1));
         let res2Amount = mainStore.getUsedCapacity(res2) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res2));
-
         amount = Math.min(res1Amount, res2Amount);
       }
     }
-
     amount -= amount % 5;
-
     if (coef)
       amount *= coef;
-
     if (amount > 0)
       this.synthesizeRequests.push({
         plan: amount,
@@ -131,7 +122,6 @@ export class laboratoryCell extends Cell {
         res2: REACTION_MAP[resource]!.res2,
         cooldown: REACTION_TIME[resource],
       });
-
     return amount;
   }
 
@@ -140,20 +130,32 @@ export class laboratoryCell extends Cell {
     let storageCell = this.hive.cells.storage;
     if (storageCell && Object.keys(this.laboratories).length) {
       _.forEach(this.laboratories, (l) => {
-        if (!this.labsStates[l.id])
-          this.labsStates[l.id] = "idle";
-        if (l.store.getUsedCapacity() == 0 && this.labsStates[l.id] == "fflush")
-          this.labsStates[l.id] = "idle";
-        if (this.labsStates[l.id] == "source")
-          if (!this.currentRequest)
-            if (this.labsStates[l.id] == "source")
-              if (!this.currentRequest)
-                this.labsStates[l.id] = "fflush";
-        if (this.labsStates[l.id] == "boosting")
-          // producing and dont need the boost
-          if (!this.currentRequest && ((!l.mineralType && Object.keys(this.boostRequests).length == 0)
-            || (l.mineralType && this.boostRequests[l.mineralType].amount == 0)))
-            this.labsStates[l.id] = "fflush";
+        switch (this.labsStates[l.id]) {
+          case undefined:
+            this.labsStates[l.id] = "idle";
+          case "idle":
+            break;
+          case "fflush":
+            if (!l.mineralType)
+              this.labsStates[l.id] = "idle";
+            break;
+          case "source":
+            if (!this.currentRequest)
+              this.labsStates[l.id] = "fflush";
+            break;
+          case "production":
+            let res = l.mineralType;
+            if (res && !storageCell!.requests[l.id + "_" + res] && (!this.currentRequest || res != this.currentRequest.res
+              || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
+              storageCell!.requestToStorage(l.id + "_" + res, [l], 3);
+            break;
+          case "boosting":
+            // producing and dont need the boost
+            if (!this.currentRequest && ((!l.mineralType && Object.keys(this.boostRequests).length == 0)
+              || (l.mineralType && this.boostRequests[l.mineralType].amount == 0)))
+              this.labsStates[l.id] = "fflush";
+            break;
+        }
       });
 
       if (this.currentRequest && this.sourceLabs) {
@@ -162,11 +164,11 @@ export class laboratoryCell extends Cell {
         let res1 = this.currentRequest.res1;
         let res2 = this.currentRequest.res2;
 
-        if (lab1.store.getUsedCapacity(res1) < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(lab1.id + "_" + res1, [lab1], 3, [res1]);
+        if (lab1.store.getUsedCapacity(res1) < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 2)
+          storageCell.requestFromStorage("lab_" + lab1.id, [lab1], 3, [res1]);
 
-        if (lab2.store.getUsedCapacity(res2) < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 10)
-          storageCell.requestFromStorage(lab2.id + "_" + res2, [lab2], 3, [res2]);
+        if (lab2.store.getUsedCapacity(res2) < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 2)
+          storageCell.requestFromStorage("lab_" + lab2.id, [lab2], 3, [res2]);
 
         if (this.currentRequest.plan - this.currentRequest.current > LAB_MINERAL_CAPACITY / 2) {
           this.currentRequest.plan -= this.currentRequest.current;
@@ -192,10 +194,10 @@ export class laboratoryCell extends Cell {
               && l.id != lab1.id)[0];
 
           if (lab1 && lab2) {
-            this.updateProductionLabs();
             this.labsStates[lab1.id] = "source";
             this.labsStates[lab2.id] = "source";
             this.sourceLabs = [lab1.id, lab2.id];
+            this.updateProductionLabs();
           }
         }
 
@@ -203,7 +205,7 @@ export class laboratoryCell extends Cell {
 
         _.forEach(this.laboratories, (lab) => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
-            storageCell!.requestFromStorage(lab.id, [lab], lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
+            storageCell!.requestFromStorage("lab_" + lab.id, [lab], lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
         });
       }
     }
@@ -215,10 +217,9 @@ export class laboratoryCell extends Cell {
         let lab1 = this.laboratories[this.sourceLabs[0]];
         let lab2 = this.laboratories[this.sourceLabs[1]];
         if (lab1.store[this.currentRequest.res1] >= 5 && lab2.store[this.currentRequest.res2] >= 5) {
+          this.updateProductionLabs();
           let labs = _.filter(this.laboratories, (lab) => !lab.cooldown &&
             this.labsStates[lab.id] == "production" && lab.store.getFreeCapacity(this.currentRequest!.res) >= 5);
-          if (labs.length == 0)
-            labs = this.updateProductionLabs();
           for (const k in labs)
             if (labs[k].runReaction(lab1, lab2) == OK)
               this.currentRequest.current -= 5;

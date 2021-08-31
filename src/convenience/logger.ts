@@ -45,10 +45,10 @@ export class Logger {
   }
 
   resourceTransfer<R extends ResourceConstant>(hiveName: string, ref: string, storeFrom: Store<R, false>,
-    storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1) {
+    storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1, loss: number = 0) {
     if (!Memory.log.hives[hiveName])
       return ERR_NOT_FOUND;
-    let amount = Math.min(<number>storeFrom.getUsedCapacity(resource), <number>storeTo.getFreeCapacity(resource)) * mode;
+    let amount = Math.floor(Math.min(<number>storeFrom.getUsedCapacity(resource), <number>storeTo.getFreeCapacity(resource)) * mode * (1 - loss));
     this.addResourceStat(hiveName, ref, amount, resource);
     return OK;
   }

@@ -53,6 +53,16 @@ export abstract class Master {
     this.lastSpawns.sort();
   }
 
+  deleteBee(ref: string) {
+    delete this.bees[ref];
+
+    this.lastSpawns = [];
+    _.forEach(this.bees, (bee) => {
+      this.lastSpawns.push(bee.creep.memory.born);
+    });
+    this.lastSpawns.sort();
+  }
+
   checkBees(spawnCycle?: number): boolean {
     if (!spawnCycle)
       spawnCycle = CREEP_LIFE_TIME;
@@ -68,20 +78,10 @@ export abstract class Master {
   // first stage of decision making like do i need to spawn new creeps
   update() {
     this.beesAmount = 0; // Object.keys(this.bees).length
-    let deletedBees = false;
-    for (const key in this.bees) {
+    for (const ref in this.bees) {
       this.beesAmount += 1;
-      if (!Apiary.bees[this.bees[key].ref]) {
-        delete this.bees[key];
-        deletedBees = true;
-      }
-    }
-    if (deletedBees) {
-      this.lastSpawns = [];
-      _.forEach(this.bees, (bee) => {
-        this.lastSpawns.push(bee.creep.memory.born);
-      });
-      this.lastSpawns.sort();
+      if (!Apiary.bees[this.bees[ref].ref])
+        this.deleteBee(ref);
     }
   }
 
