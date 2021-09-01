@@ -1,5 +1,12 @@
 export class CustomConsole {
 
+  vis(framerate: number = 1) {
+    if (Memory.settings.framerate)
+      Memory.settings.framerate = 0;
+    else
+      Memory.settings.framerate = framerate;
+  }
+
   // some hand used functions
   terminal(roomName: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity, mode?: "fill" | "empty") {
     let cell = Apiary.hives[roomName] && Apiary.hives[roomName].cells.storage;

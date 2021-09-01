@@ -91,8 +91,7 @@ export class builderMaster extends Master {
             if (ans == OK && Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, storage!.store, RESOURCE_ENERGY, 1);
             bee.repairRoadOnMove(ans);
-          }
-          else
+          } else
             bee.state = states.chill;
 
         if (bee.state == states.chill)

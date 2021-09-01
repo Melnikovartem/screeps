@@ -85,8 +85,8 @@ export class Bee {
     return this.creep.travelTo(target, opt);
   }
 
-  getBodyParts(partType: BodyPartConstant): number {
-    return this.creep.getBodyParts(partType);
+  getBodyParts(partType: BodyPartConstant, boosted: 1 | 0 | -1 = 0): number {
+    return this.creep.getBodyParts(partType, boosted);
   }
 
   transfer(t: Structure | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {

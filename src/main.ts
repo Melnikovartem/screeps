@@ -70,4 +70,4 @@ if (PROFILER) {
 
 export const loop = _loop;
 
-onGlobalReset()
+onGlobalReset();

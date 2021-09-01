@@ -44,6 +44,23 @@ export class haulerMaster extends Master {
   update() {
     super.update();
 
+    _.forEach(this.cell.quitefullContainers, (container) => {
+      let target = this.targetMap[container.id];
+      if (target && Apiary.bees[target.beeRef])
+        return;
+
+      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill && Game.time - b.memory.born > 100));
+      if (bee) {
+        bee.state = states.refill;
+        bee.target = container.id;
+        this.roadUpkeepCost[bee.ref] = 0;
+        this.targetMap[container.id] = {
+          beeRef: bee.ref,
+          resource: this.findOptimalResource(container.store),
+        };
+      }
+    });
+
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
 
@@ -69,23 +86,6 @@ export class haulerMaster extends Master {
   }
 
   run() {
-    _.forEach(this.cell.quitefullContainers, (container) => {
-      let target = this.targetMap[container.id];
-      if (target && Apiary.bees[target.beeRef])
-        return;
-
-      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill && Game.time - b.memory.born > 100));
-      if (bee) {
-        bee.state = states.refill;
-        bee.target = container.id;
-        this.roadUpkeepCost[bee.ref] = 0;
-        this.targetMap[container.id] = {
-          beeRef: bee.ref,
-          resource: this.findOptimalResource(container.store),
-        };
-      }
-    });
-
     _.forEach(this.bees, (bee) => {
       if (bee.state == states.refill && bee.store.getFreeCapacity() == 0)
         bee.state = states.work;

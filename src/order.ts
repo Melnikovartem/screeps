@@ -129,7 +129,7 @@ export class Order {
       }
     } else if (this.flag.color == COLOR_CYAN) {
       this.acted = true;
-      let hive = Apiary.hives[this.pos.roomName]
+      let hive = Apiary.hives[this.pos.roomName];
       if (hive) {
         if (this.flag.secondaryColor == COLOR_CYAN) {
           hive.pos = this.pos;
@@ -142,7 +142,8 @@ export class Order {
           if (hive.cells.storage)
             hive.cells.storage.pos = this.pos;
         } else if (this.flag.secondaryColor == COLOR_BROWN) {
-          if (hive.cells.lab)
+          if (hive.cells.lab) {
+            hive.cells.lab.pos = this.pos;
             if (!hive.cells.lab.currentRequest) {
               let sum = 0;
               _.forEach(this.flag.name.split("_"), (res) => {
@@ -151,6 +152,7 @@ export class Order {
               if (sum == 0)
                 this.delete();
             }
+          }
         }
       } else
         this.delete();

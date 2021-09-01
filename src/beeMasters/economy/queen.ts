@@ -12,7 +12,6 @@ export class queenMaster extends Master {
 
   constructor(respawnCell: respawnCell) {
     super(respawnCell.hive, respawnCell.ref);
-
     this.cell = respawnCell;
   }
 
@@ -36,31 +35,49 @@ export class queenMaster extends Master {
   run() {
     let targets: (StructureSpawn | StructureExtension)[] = _.map(this.cell.spawns);
     targets = _.filter(targets.concat(_.map(this.cell.extensions)), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-
+    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     _.forEach(this.bees, (bee) => {
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
-        if (targets.length)
-          bee.state = states.refill;
-        else
-          bee.state = states.chill;
-      } else {
-        if (targets.length)
-          bee.state = states.work;
-        else
-          bee.state = states.fflush;
+      switch (bee.state) {
+        case states.refill:
+          if (bee.withdraw(storage, RESOURCE_ENERGY) == OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+            bee.state = states.work;
+            let target = bee.pos.findClosest(targets)!;
+            if (!bee.pos.isNearTo(target))
+              bee.goTo(target);
+          }
+          break;
+        case states.work:
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+            bee.state = states.refill;
+            if (storage && !bee.pos.isNearTo(storage))
+              bee.goTo(storage);
+          } else {
+            let ans = bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
+            if (ans == OK) {
+              let target = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
+                s.structureType == STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+              if (target && !bee.pos.isNearTo(target))
+                console.log(bee.goTo(target));
+            } else if (ans == ERR_NOT_FOUND)
+              bee.state = states.fflush;
+          }
+          break;
+        case states.fflush:
+          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+            bee.state = states.chill;
+          else if (bee.transfer(storage, RESOURCE_ENERGY) == OK)
+            break;
+        case states.chill:
+          if (targets.length)
+            bee.state = states.work;
+          else
+            bee.goRest(this.cell.pos);
+          break;
+        case states.boosting:
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "capacity" }]) == OK)
+            bee.state = states.chill;
+          break;
       }
-
-      if (bee.state == states.refill && bee.withdraw(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY) == OK)
-        bee.state = states.work;
-
-      if (bee.state == states.work && targets.length)
-        bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
-
-      if (bee.state == states.fflush)
-        bee.transfer(this.hive.cells.storage && this.hive.cells.storage.storage, RESOURCE_ENERGY);
-
-      if (bee.state == states.chill)
-        bee.goRest(this.cell.pos);
     });
   }
 }

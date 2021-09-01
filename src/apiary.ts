@@ -55,13 +55,13 @@ export class _Apiary {
 
   // update phase
   update() {
-    _.forEach(this.hives, (hive) => {
-      safeWrap(() => hive.update(), hive.print + " update");
-    });
-
     Order.checkFlags();
     _.forEach(Apiary.orders, (order) => {
       safeWrap(() => order.update(), order.print + " update");
+    });
+
+    _.forEach(this.hives, (hive) => {
+      safeWrap(() => hive.update(), hive.print + " update");
     });
 
     Bee.checkBees();

@@ -11,6 +11,7 @@ export enum states {
   work = 2,
   fflush = 3,
   refill = 4,
+  boosting = 5,
 }
 
 // i will need to do something so i can build up structure from memory
@@ -26,6 +27,7 @@ export abstract class Master {
   lastSpawns: number[];
   beesAmount: number = 0;
   bees: { [id: string]: Bee } = {};
+  boost: boolean = false;
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
@@ -38,7 +40,7 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
-    bee.state = states.chill;
+    bee.state = this.boost ? states.boosting : states.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;

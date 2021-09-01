@@ -59,13 +59,12 @@ export class bootstrapMaster extends Master {
   update() {
     super.update();
 
-    if (Game.time % 100 == 97)
+    if (this.cell.shouldRecalc)
       this.recalculateTargetBee(); // just to check if expansions are done
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
     if (this.checkBees() && this.hive.stage == 0 && roomInfo.safePlace) {
       let order: SpawnOrder = {
-
         setup: Setups.bootstrap,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 9,

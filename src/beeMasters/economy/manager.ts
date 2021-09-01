@@ -60,7 +60,8 @@ export class managerMaster extends Master {
       };
 
       // desired linear regex from desmos i guess)
-      order.setup.bodySetup.patternLimit = this.hive.room.controller!.level * 2.3 - 8;
+      let lvl = this.hive.room.controller!.level;
+      order.setup.bodySetup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
 
       this.wish(order);
     }
@@ -90,9 +91,7 @@ export class managerMaster extends Master {
             if (this.manager.store.getFreeCapacity(request.resource[current]) == 0 && this.manager.store[request.resource[current]] == 0)
               this.manager.state = states.fflush;
 
-            if (_.sum(request.amount) <= 0)
-              delete this.cell.requests[this.manager.target];
-            else if (request.from[current].store[request.resource[current]] == 0
+            if (request.from[current].store[request.resource[current]] == 0
               && this.manager.store[request.resource[current]] == 0 && this.manager.state == states.refill)
               delete this.cell.requests[this.manager.target];
           }
@@ -120,7 +119,9 @@ export class managerMaster extends Master {
 
               if (amountBee > 0)
                 this.manager.withdraw(request.from[current], request.resource[current], amountBee);
-            } else if (this.manager.state == states.work) {
+            }
+
+            if (this.manager.state == states.work) {
               let amountBee = Math.min(request.amount[current], this.manager.store[request.resource[current]],
                 (<Store<ResourceConstant, false>>request.to[current].store).getFreeCapacity(request.resource[current]));
 

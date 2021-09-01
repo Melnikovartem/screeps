@@ -45,6 +45,9 @@ export class minerMaster extends Master {
           bee.state = states.chill;
         if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded == 0))
           bee.state = states.chill;
+        if ((this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType) == 0)
+          || (!this.cell.link && this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType) == 0))
+          bee.state = states.chill;
 
         if (bee.state == states.work) {
           bee.harvest(this.cell.resource);
