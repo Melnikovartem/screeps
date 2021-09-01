@@ -30,25 +30,25 @@ export class managerMaster extends Master {
 
     if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
       && this.manager.pos.roomName === this.cell.pos.roomName) {
-      if (emergencyRequests.length) {
-        this.manager.target = emergencyRequests[0].ref;
-      } else {
+      if (this.manager.target) {
+        if (this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority && emergencyRequests.length) {
+          this.manager.target = emergencyRequests[0].ref;
+          let res = this.cell.requests[this.manager.target].resource;
+          this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
+            : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+        }
+      } else if (this.manager.state == states.chill) {
         let targets: string[] = [];
         for (let k in this.cell.requests)
-          if (this.cell.requests[k].to[0].id === this.cell.storage.id || this.cell.requests[k].from[0].id === this.cell.storage.id)
+          if (this.cell.requests[k].amount > 0
+            && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
             targets.push(k);
-        this.manager.target = targets.sort((a, b) => this.cell.requests[a].priority - this.cell.requests[b].priority)[0];
-      }
-
-      let request = this.cell.requests[this.manager.target];
-      if (request) {
-        if (_.sum(request.amount) > 0) {
-          if (_.sum(request.resource, (res) => this.manager!.store[<ResourceConstant>res]) > 0)
-            this.manager.state = states.work;
-          else
-            this.manager.state = states.refill;
-        } else
-          delete this.cell.requests[this.manager.target];
+        if (targets.length) {
+          this.manager.target = targets.sort((a, b) => this.cell.requests[a].priority - this.cell.requests[b].priority)[0];
+          let res = this.cell.requests[this.manager.target].resource;
+          this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
+            : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+        }
       }
     }
 
@@ -73,66 +73,59 @@ export class managerMaster extends Master {
         this.manager.state = states.chill;
       if (this.manager.creep.ticksToLive && this.manager.creep.ticksToLive < 15)
         this.manager.state = states.fflush;
-      if (!this.manager.target)
-        this.manager.state = states.fflush;
 
       if (this.manager.target) {
         let request: StorageRequest = this.cell.requests[this.manager.target];
         if (request) {
-          let current = 0;
           if (this.manager.state === states.refill) {
-            while (request.resource.length - 1 > current && request.from[current].store[request.resource[current]] === 0)
-              current += 1;
-
-            if (this.manager.store.getUsedCapacity(request.resource[current]) >= _.sum(request.amount))
+            if (this.manager.store.getUsedCapacity(request.resource) >= request.amount)
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource[current]) === 0)
+            if (this.manager.store.getFreeCapacity(request.resource) === 0)
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource[current]) === 0 && this.manager.store[request.resource[current]] === 0)
+            if (this.manager.store.getFreeCapacity(request.resource) === 0 && this.manager.store[request.resource] === 0)
               this.manager.state = states.fflush;
 
-            if (request.from[current].store[request.resource[current]] === 0
-              && this.manager.store[request.resource[current]] === 0 && this.manager.state === states.refill)
+            if (request.from.store[request.resource] === 0
+              && this.manager.store[request.resource] === 0 && this.manager.state === states.refill)
               delete this.cell.requests[this.manager.target];
           }
 
           if (this.manager.state === states.work) {
-            while (request.resource.length - 1 > current && this.manager.store[request.resource[current]] > request.amount[current])
-              current += 1;
-
-            if (this.manager.store.getUsedCapacity(request.resource[current]) === 0)
+            if (this.manager.store.getUsedCapacity(request.resource) === 0)
               this.manager.state = states.refill;
 
-
-            if (_.sum(request.amount) <= 0)
+            if (request.amount <= 0)
               delete this.cell.requests[this.manager.target];
             // invalidate request
-            else if (_.sum(request.to, (t, k) => (<Store<ResourceConstant, false>>t.store).getFreeCapacity(request.resource[k])) === 0)
+            else if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource) === 0)
               delete this.cell.requests[this.manager.target];
           }
 
           if (this.cell.requests[this.manager.target]) {
             if (this.manager.state === states.refill) {
-              let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource[current]),
-                request.from[current].store[request.resource[current]],
-                request.amount[current] - this.manager.store.getUsedCapacity(request.resource[current]));
+              let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource),
+                request.from.store[request.resource],
+                request.amount - this.manager.store.getUsedCapacity(request.resource));
 
               if (amountBee > 0)
-                this.manager.withdraw(request.from[current], request.resource[current], amountBee);
+                this.manager.withdraw(request.from, request.resource, amountBee);
             }
 
             if (this.manager.state === states.work) {
-              let amountBee = Math.min(request.amount[current], this.manager.store[request.resource[current]],
-                (<Store<ResourceConstant, false>>request.to[current].store).getFreeCapacity(request.resource[current]));
+              let amountBee = Math.min(request.amount, this.manager.store[request.resource],
+                (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
 
-              if (amountBee > 0 && this.manager.transfer(request.to[current], request.resource[current], amountBee) === OK)
-                request.amount[current] -= amountBee;
+              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK)
+                request.amount -= amountBee;
             }
           }
         } else {
           this.manager.state = states.fflush;
           this.manager.target = null;
         }
+      } else {
+        this.manager.state = states.fflush;
+        this.manager.target = null;
       }
 
       if (this.manager.state === states.fflush) {

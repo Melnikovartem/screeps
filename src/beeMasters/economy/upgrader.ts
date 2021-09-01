@@ -19,11 +19,12 @@ export class upgraderMaster extends Master {
     let ratePerCreep = 1;
     let desiredRate = 0;
 
-    if (storageCell)
-      if (this.cell.link && storageCell.link) {
+    if (storageCell) {
+      let storageLink = storageCell.links[Object.keys(storageCell.links)[0]];
+      if (this.cell.link && storageLink) {
         let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
         this.fastMode = true;
-        desiredRate = 800 / this.cell.link.pos.getRangeTo(storageCell.link); // how to get more in?
+        desiredRate = 800 / this.cell.link.pos.getRangeTo(storageLink); // how to get more in?
         ratePerCreep = 50 / (10 / patternLimit + Math.max(this.cell.link.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2);
       } else if (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4) {
         let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5), 8);
@@ -36,6 +37,7 @@ export class upgraderMaster extends Master {
         desiredRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
         ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2 + 50);
       }
+    }
 
     if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
       this.targetBeeCount = Math.ceil(desiredRate / ratePerCreep);
@@ -73,8 +75,8 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (bee.state != states.boosting && this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25
-        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+      if ((this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25
+        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) && bee.state != states.boosting) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;
@@ -86,15 +88,13 @@ export class upgraderMaster extends Master {
         let ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         switch (ans) {
           case OK:
-            if (Apiary.logger && suckerTarget)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", suckerTarget.store, bee.store);
             bee.state = states.work;
             break;
-          case ERR_NOT_IN_RANGE:
-            bee.state = states.refill;
+          case ERR_NOT_FOUND:
+            bee.state = states.chill;
             break;
           default:
-            bee.state = states.chill;
+            bee.state = states.refill;
             break;
         }
       }
@@ -104,6 +104,8 @@ export class upgraderMaster extends Master {
           bee.upgradeController(this.cell.controller);
           break;
         case states.chill:
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+            bee.state = states.work;
           bee.goRest(this.cell.pos);
           break;
         case states.boosting:

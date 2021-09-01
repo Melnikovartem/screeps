@@ -19,10 +19,12 @@ export class defenseCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY)), 0);
-      storageCell.requestFromStorage(this.ref,
-        _.filter(this.towers, (tower) => tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY)), 4);
+      _.forEach(this.towers, (tower) => {
+        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
+          storageCell!.requestFromStorage(this.ref, tower, 0);
+        else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY))
+          storageCell!.requestFromStorage(this.ref, tower, 3);
+      });
     }
   }
 

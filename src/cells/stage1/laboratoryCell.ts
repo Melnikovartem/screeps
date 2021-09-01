@@ -125,7 +125,7 @@ export class laboratoryCell extends Cell {
 
   askForBoost(bee: Bee, requests: { type: BoostType, amount?: number }[]) {
     let storageCell = this.hive.cells.storage;
-    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell!.master.manager) {
+    if ((Game.time - bee.memory.born <= 600 || Object.keys(this.boostRequests).length == 0) && storageCell && storageCell!.master.manager) {
       if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
         this.boostRequests[bee.ref] = requests;
         for (let k in this.boostRequests[bee.ref]) {
@@ -240,7 +240,7 @@ export class laboratoryCell extends Cell {
           case "idle":
             res = l.mineralType;
             if (res)
-              storageCell!.requestToStorage(l.id, [l], 4, [res]);
+              storageCell!.requestToStorage(l.id, l, 4, res);
             break;
           case "source":
             break;
@@ -248,15 +248,15 @@ export class laboratoryCell extends Cell {
             res = l.mineralType;
             if (res && !storageCell!.requests[l.id] && (!this.currentRequest || res !== this.currentRequest.res
               || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
-              storageCell!.requestToStorage(l.id, [l], 3, [res]);
+              storageCell!.requestToStorage(l.id, l, 3, res);
             break;
           default: // boosting lab
             // producing and dont need the boost TODO
             res = state;
             if (l.mineralType && l.mineralType !== res)
-              storageCell!.requestToStorage(l.id, [l], 1, [l.mineralType]);
+              storageCell!.requestToStorage(l.id, l, 1, l.mineralType);
             if (!storageCell!.requests[l.id] && l.store.getUsedCapacity(res) < LAB_MINERAL_CAPACITY / 2)
-              storageCell!.requestFromStorage("lab_" + l.id, [l], 1, [res]);
+              storageCell!.requestFromStorage("lab_" + l.id, l, 1, res);
             break;
         }
       });
@@ -268,9 +268,9 @@ export class laboratoryCell extends Cell {
         let res2 = this.currentRequest.res2;
 
         if (lab1.store.getUsedCapacity(res1) < this.currentRequest.current && lab1.store.getFreeCapacity(res1) > LAB_MINERAL_CAPACITY / 2)
-          storageCell.requestFromStorage("lab_" + lab1.id, [lab1], 3, [res1]);
+          storageCell.requestFromStorage("lab_" + lab1.id, lab1, 3, res1);
         if (lab2.store.getUsedCapacity(res2) < this.currentRequest.current && lab2.store.getFreeCapacity(res2) > LAB_MINERAL_CAPACITY / 2)
-          storageCell.requestFromStorage("lab_" + lab2.id, [lab2], 3, [res2]);
+          storageCell.requestFromStorage("lab_" + lab2.id, lab2, 3, res2);
 
         if (this.currentRequest.plan - this.currentRequest.current > LAB_MINERAL_CAPACITY / 2) {
           this.currentRequest.plan -= this.currentRequest.current;
@@ -309,7 +309,7 @@ export class laboratoryCell extends Cell {
 
         _.forEach(this.laboratories, (lab) => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
-            storageCell!.requestFromStorage("lab_" + lab.id, [lab], lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
+            storageCell!.requestFromStorage("lab_" + lab.id, lab, lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
         });
       }
     }

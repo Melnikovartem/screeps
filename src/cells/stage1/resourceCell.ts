@@ -76,14 +76,19 @@ export class resourceCell extends Cell {
   }
 
   run() {
-    let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && this.link.cooldown === 0 && storageLink
-      && (this.link.store.getUsedCapacity(RESOURCE_ENERGY) <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY)
-        || this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= LINK_CAPACITY / 8)) {
-      let ans = this.link.transferEnergy(storageLink);
-      if (Apiary.logger && ans === OK)
-        Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
-          this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);
+    if (this.link) {
+      let usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY)
+      if (usedCap >= LINK_CAPACITY / 8 && this.link.cooldown === 0 && this.hive.cells.storage) {
+        let storageLink = this.hive.cells.storage.getFreeLink(true);
+        if (storageLink && (usedCap <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY) || usedCap >= LINK_CAPACITY / 1.1428)) {
+          let ans = this.link.transferEnergy(storageLink);
+          this.hive.cells.storage.linksState[storageLink.id] = "busy";
+          if (Apiary.logger && ans === OK)
+            Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
+              this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);
+
+        }
+      }
     }
   }
 }
