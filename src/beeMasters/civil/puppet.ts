@@ -41,7 +41,7 @@ export class puppetMaster extends Master {
       this.wish(order);
     }
 
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
+    if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
       this.order.destroyTime = Game.time;
   }
 

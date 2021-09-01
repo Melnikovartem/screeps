@@ -39,7 +39,7 @@ export class healerWaiterMaster extends SwarmMaster {
     if (this.healer && !Apiary.bees[this.healer.ref])
       delete this.healer;
 
-    if (this.meetingPoint.x != this.order.pos.x || this.meetingPoint.y != this.order.pos.y) {
+    if (this.meetingPoint.x !== this.order.pos.x || this.meetingPoint.y !== this.order.pos.y) {
       this.meetingPoint = this.order.pos;
       if (this.healer)
         this.healer.state = states.chill;
@@ -56,7 +56,7 @@ export class healerWaiterMaster extends SwarmMaster {
       this.wish(healerOrder, this.ref + "_healer");
     }
 
-    if (!this.waitingForBees && this.beesAmount == 0)
+    if (!this.waitingForBees && this.beesAmount === 0)
       this.order.destroyTime = Game.time;
   }
 
@@ -64,14 +64,14 @@ export class healerWaiterMaster extends SwarmMaster {
     let healer = this.healer;
 
     _.forEach(this.bees, (bee) => {
-      if (bee.state == states.chill)
+      if (bee.state === states.chill)
         bee.goRest(this.meetingPoint);
     });
 
-    if (healer && healer.state == states.chill && healer.pos.isNearTo(this.meetingPoint))
+    if (healer && healer.state === states.chill && healer.pos.isNearTo(this.meetingPoint))
       healer.state = states.work;
 
-    if (healer && healer.state == states.work) {
+    if (healer && healer.state === states.work) {
       healer.goRest(this.order.pos);
       let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 3),
         (bee) => bee.hits < bee.hitsMax));

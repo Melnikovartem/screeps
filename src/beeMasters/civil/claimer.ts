@@ -20,7 +20,7 @@ export class claimerMaster extends Master {
   update() {
     super.update();
 
-    if (this.beesAmount == 0 && !this.waitingForBees && this.spawned == this.maxSpawns)
+    if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
       this.order.destroyTime = Game.time;
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
@@ -37,12 +37,12 @@ export class claimerMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (bee.pos.roomName != this.order.pos.roomName)
+      if (bee.pos.roomName !== this.order.pos.roomName)
         bee.goTo(this.order.pos);
       else {
-        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType == STRUCTURE_CONTROLLER)[0];
+        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType === STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner) {
-          if (bee.claimController(controller) == OK)
+          if (bee.claimController(controller) === OK)
             bee.pos.createFlag("boost_" + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
           Apiary.destroyTime = Game.time; // create new hive
         } else

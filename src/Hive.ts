@@ -43,12 +43,12 @@ class repairSheet {
   road_collapse: number = 0.5;
 
   constructor(hiveStage: 0 | 1 | 2) {
-    if (hiveStage == 0) {
+    if (hiveStage === 0) {
       this[STRUCTURE_RAMPART] = 20000;
       this[STRUCTURE_WALL] = 20000;
       this.other = 0.7;
       this.collapse = 0.5;
-    } else if (hiveStage == 2) {
+    } else if (hiveStage === 2) {
       this[STRUCTURE_RAMPART] = 2000000;
       this[STRUCTURE_WALL] = 2000000;
       this.other = 1;
@@ -143,7 +143,7 @@ export class Hive {
     if (this.room.storage)
       this.stage = 1;
 
-    if (this.stage == 1 && this.room.controller!.level == 8)
+    if (this.stage === 1 && this.room.controller!.level === 8)
       this.stage = 2;
 
     // create your own fun hive with this cool brand new cells
@@ -152,7 +152,7 @@ export class Hive {
       defense: new defenseCell(this),
     };
 
-    if (this.stage == 0)
+    if (this.stage === 0)
       this.cells.dev = new developmentCell(this);
     else {
       this.cells.storage = new storageCell(this, this.room.storage!);
@@ -161,7 +161,7 @@ export class Hive {
       this.cells.lab = new laboratoryCell(this);
 
       this.builder = new builderMaster(this);
-      if (this.stage == 2) {
+      if (this.stage === 2) {
         // TODO cause i haven' reached yet
       }
     }
@@ -200,7 +200,7 @@ export class Hive {
       _.forEach(room.find(FIND_SOURCES), (s) => {
         if (!Game.flags["mine_" + s.id]) {
           let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
-          if (typeof flag == "string")
+          if (typeof flag === "string")
             Game.flags[flag].memory.hive = this.roomName;
         }
       });
@@ -209,7 +209,7 @@ export class Hive {
     _.forEach(this.room.find(FIND_MINERALS), (s) => {
       if (!Game.flags["mine_" + s.id]) {
         let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
-        if (typeof flag == "string")
+        if (typeof flag === "string")
           Game.flags[flag].memory.hive = this.roomName;
       }
     });
@@ -217,17 +217,17 @@ export class Hive {
 
   private updateCellData() {
     _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
-      if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) == ERR_INVALID_ARGS)
-        if (this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN) == ERR_INVALID_ARGS)
-          if (this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER) == ERR_INVALID_ARGS)
-            if (this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB) == ERR_INVALID_ARGS)
+      if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) === ERR_INVALID_ARGS)
+        if (this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN) === ERR_INVALID_ARGS)
+          if (this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER) === ERR_INVALID_ARGS)
+            if (this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB) === ERR_INVALID_ARGS)
               void (0);
     });
   }
 
   private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
     if (structureMap)
-      if (type == structure.structureType) {
+      if (type === structure.structureType) {
         if (structure.isActive())
           structureMap[structure.id] = <S>structure;
         else
@@ -262,7 +262,7 @@ export class Hive {
       let roomInfo = Apiary.intel.getInfo(room.name, 10);
       if (roomInfo.safePlace)
         _.forEach(room.find(FIND_STRUCTURES), (structure) => {
-          if (structure.structureType == STRUCTURE_ROAD || structure.structureType == STRUCTURE_CONTAINER) {
+          if (structure.structureType === STRUCTURE_ROAD || structure.structureType === STRUCTURE_CONTAINER) {
             this.sumRepairs += Math.max(0, this.repairSheet.getHits(structure) - structure.hits);
             if (this.repairSheet.isAnEmergency(structure))
               this.emergencyRepairs.push(structure);
@@ -277,10 +277,10 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (UPDATE_EACH_TICK || Game.time % 10 == 8 || this.shouldRecalc) {
+    if (UPDATE_EACH_TICK || Game.time % 10 === 8 || this.shouldRecalc) {
       this.updateRooms();
       this.updateConstructionSites();
-      if (UPDATE_EACH_TICK || Game.time % 30 == 8 || this.shouldRecalc)
+      if (UPDATE_EACH_TICK || Game.time % 30 === 8 || this.shouldRecalc)
         this.updateRepairs(); // cause costly
       if (this.shouldRecalc) {
         this.markResources();
@@ -288,7 +288,7 @@ export class Hive {
       }
     }
 
-    if (Game.time % 100 == 29)
+    if (Game.time % 100 === 29)
       this.updateCellData();
     if (Apiary.logger)
       Apiary.logger.hiveLog(this);

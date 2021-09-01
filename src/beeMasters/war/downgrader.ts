@@ -50,12 +50,12 @@ export class downgradeMaster extends SwarmMaster {
             roomInfo.enemies[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
 
           let ans = bee.attackController(room.controller);
-          if (ans == OK) {
+          if (ans === OK) {
             this.lastAttacked = Game.time;
             if (Memory.settings.framerate)
               bee.creep.say("💥");
           }
-          else if (ans == ERR_TIRED)
+          else if (ans === ERR_TIRED)
             this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE / 2; // not sure what to DO if reboot and it is tired
         }
       }

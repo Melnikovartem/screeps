@@ -37,7 +37,7 @@ export class CreepSetup {
     let segmentCost = _.sum(this.bodySetup.pattern, s => BODYPART_COST[s]);
 
     let limitSegments = Infinity;
-    if (this.bodySetup.patternLimit != undefined)
+    if (this.bodySetup.patternLimit !== undefined)
       limitSegments = this.bodySetup.patternLimit;
 
     let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));

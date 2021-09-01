@@ -28,14 +28,14 @@ export class managerMaster extends Master {
 
     let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
 
-    if (this.manager && (this.manager.state == states.chill || emergencyRequests.length)
-      && this.manager.pos.roomName == this.cell.pos.roomName) {
+    if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
+      && this.manager.pos.roomName === this.cell.pos.roomName) {
       if (emergencyRequests.length) {
         this.manager.target = emergencyRequests[0].ref;
       } else {
         let targets: string[] = [];
         for (let k in this.cell.requests)
-          if (this.cell.requests[k].to[0].id == this.cell.storage.id || this.cell.requests[k].from[0].id == this.cell.storage.id)
+          if (this.cell.requests[k].to[0].id === this.cell.storage.id || this.cell.requests[k].from[0].id === this.cell.storage.id)
             targets.push(k);
         this.manager.target = targets.sort((a, b) => this.cell.requests[a].priority - this.cell.requests[b].priority)[0];
       }
@@ -69,7 +69,7 @@ export class managerMaster extends Master {
 
   run() {
     if (this.manager) {
-      if (this.manager.pos.roomName != this.cell.pos.roomName)
+      if (this.manager.pos.roomName !== this.cell.pos.roomName)
         this.manager.state = states.chill;
       if (this.manager.creep.ticksToLive && this.manager.creep.ticksToLive < 15)
         this.manager.state = states.fflush;
@@ -80,39 +80,39 @@ export class managerMaster extends Master {
         let request: StorageRequest = this.cell.requests[this.manager.target];
         if (request) {
           let current = 0;
-          if (this.manager.state == states.refill) {
-            while (request.resource.length - 1 > current && request.from[current].store[request.resource[current]] == 0)
+          if (this.manager.state === states.refill) {
+            while (request.resource.length - 1 > current && request.from[current].store[request.resource[current]] === 0)
               current += 1;
 
             if (this.manager.store.getUsedCapacity(request.resource[current]) >= _.sum(request.amount))
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource[current]) == 0)
+            if (this.manager.store.getFreeCapacity(request.resource[current]) === 0)
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource[current]) == 0 && this.manager.store[request.resource[current]] == 0)
+            if (this.manager.store.getFreeCapacity(request.resource[current]) === 0 && this.manager.store[request.resource[current]] === 0)
               this.manager.state = states.fflush;
 
-            if (request.from[current].store[request.resource[current]] == 0
-              && this.manager.store[request.resource[current]] == 0 && this.manager.state == states.refill)
+            if (request.from[current].store[request.resource[current]] === 0
+              && this.manager.store[request.resource[current]] === 0 && this.manager.state === states.refill)
               delete this.cell.requests[this.manager.target];
           }
 
-          if (this.manager.state == states.work) {
+          if (this.manager.state === states.work) {
             while (request.resource.length - 1 > current && this.manager.store[request.resource[current]] > request.amount[current])
               current += 1;
 
-            if (this.manager.store.getUsedCapacity(request.resource[current]) == 0)
+            if (this.manager.store.getUsedCapacity(request.resource[current]) === 0)
               this.manager.state = states.refill;
 
 
             if (_.sum(request.amount) <= 0)
               delete this.cell.requests[this.manager.target];
             // invalidate request
-            else if (_.sum(request.to, (t, k) => (<Store<ResourceConstant, false>>t.store).getFreeCapacity(request.resource[k])) == 0)
+            else if (_.sum(request.to, (t, k) => (<Store<ResourceConstant, false>>t.store).getFreeCapacity(request.resource[k])) === 0)
               delete this.cell.requests[this.manager.target];
           }
 
           if (this.cell.requests[this.manager.target]) {
-            if (this.manager.state == states.refill) {
+            if (this.manager.state === states.refill) {
               let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource[current]),
                 request.from[current].store[request.resource[current]],
                 request.amount[current] - this.manager.store.getUsedCapacity(request.resource[current]));
@@ -121,11 +121,11 @@ export class managerMaster extends Master {
                 this.manager.withdraw(request.from[current], request.resource[current], amountBee);
             }
 
-            if (this.manager.state == states.work) {
+            if (this.manager.state === states.work) {
               let amountBee = Math.min(request.amount[current], this.manager.store[request.resource[current]],
                 (<Store<ResourceConstant, false>>request.to[current].store).getFreeCapacity(request.resource[current]));
 
-              if (amountBee > 0 && this.manager.transfer(request.to[current], request.resource[current], amountBee) == OK)
+              if (amountBee > 0 && this.manager.transfer(request.to[current], request.resource[current], amountBee) === OK)
                 request.amount[current] -= amountBee;
             }
           }
@@ -135,7 +135,7 @@ export class managerMaster extends Master {
         }
       }
 
-      if (this.manager.state == states.fflush) {
+      if (this.manager.state === states.fflush) {
         if (this.manager.creep.store.getUsedCapacity() > 0) {
           let resource = <ResourceConstant>Object.keys(this.manager.store)[0];
           this.manager.transfer(this.cell.storage, resource);
@@ -144,7 +144,7 @@ export class managerMaster extends Master {
       }
 
       _.forEach(this.bees, (bee) => {
-        if (bee.state == states.chill)
+        if (bee.state === states.chill)
           bee.goRest(this.cell.pos);
       });
     }

@@ -39,7 +39,7 @@ export class queenMaster extends Master {
     _.forEach(this.bees, (bee) => {
       switch (bee.state) {
         case states.refill:
-          if (bee.withdraw(storage, RESOURCE_ENERGY) == OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+          if (bee.withdraw(storage, RESOURCE_ENERGY) === OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = states.work;
             let target = bee.pos.findClosest(targets)!;
             if (!bee.pos.isNearTo(target))
@@ -47,25 +47,25 @@ export class queenMaster extends Master {
           }
           break;
         case states.work:
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0) {
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = states.refill;
             if (storage && !bee.pos.isNearTo(storage))
               bee.goTo(storage);
           } else {
             let ans = bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
-            if (ans == OK) {
+            if (ans === OK) {
               let target = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
-                s.structureType == STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
+                s.structureType === STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
               if (target && !bee.pos.isNearTo(target))
-                console.log(bee.goTo(target));
-            } else if (ans == ERR_NOT_FOUND)
+                bee.goTo(target);
+            } else if (ans === ERR_NOT_FOUND)
               bee.state = states.fflush;
           }
           break;
         case states.fflush:
-          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
             bee.state = states.chill;
-          else if (bee.transfer(storage, RESOURCE_ENERGY) == OK)
+          else if (bee.transfer(storage, RESOURCE_ENERGY) === OK)
             break;
         case states.chill:
           if (targets.length)
@@ -74,7 +74,7 @@ export class queenMaster extends Master {
             bee.goRest(this.cell.pos);
           break;
         case states.boosting:
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "capacity" }]) == OK)
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "capacity" }]) === OK)
             bee.state = states.chill;
           break;
       }

@@ -25,7 +25,7 @@ export class haulerMaster extends Master {
       _.forEach(this.cell.resourceCells, (cell) => {
         if (cell.container && !cell.link) {
           let coef = 10; // mineral production
-          if (cell.resourceType != RESOURCE_ENERGY)
+          if (cell.resourceType !== RESOURCE_ENERGY)
             coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
           accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef * 2;
         }
@@ -49,7 +49,7 @@ export class haulerMaster extends Master {
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state == states.chill && Game.time - b.memory.born > 100));
+      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state === states.chill && Game.time - b.memory.born > 100));
       if (bee) {
         bee.state = states.refill;
         bee.target = container.id;
@@ -79,7 +79,7 @@ export class haulerMaster extends Master {
   findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
     let ans: ResourceConstant = RESOURCE_ENERGY;
     for (let resourceConstant in store) {
-      if (ans != resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
+      if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
         ans = <ResourceConstant>resourceConstant;
     }
     return ans;
@@ -87,23 +87,23 @@ export class haulerMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (bee.state == states.refill && bee.store.getFreeCapacity() == 0)
+      if (bee.state === states.refill && bee.store.getFreeCapacity() === 0)
         bee.state = states.work;
-      if (bee.state == states.chill && bee.store.getUsedCapacity() > 0)
+      if (bee.state === states.chill && bee.store.getUsedCapacity() > 0)
         bee.state = states.work;
 
-      if (bee.state == states.work) {
+      if (bee.state === states.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
         if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-          if (bee.repairRoadOnMove() == OK && bee.target)
+          if (bee.repairRoadOnMove() === OK && bee.target)
             this.roadUpkeepCost[bee.ref] += 1;
 
         if (bee.pos.isNearTo(this.cell.dropOff))
           res = this.findOptimalResource(bee.store);
         let ans = bee.transfer(this.cell.dropOff, res);
 
-        if (Apiary.logger && ans == OK && bee.target) {
+        if (Apiary.logger && ans === OK && bee.target) {
           let ref = "mining_" + bee.target.slice(bee.target.length - 4);
           Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.cell.dropOff.store, res, 1);
           if (this.roadUpkeepCost[bee.ref] > 0) {
@@ -112,16 +112,16 @@ export class haulerMaster extends Master {
           }
         }
 
-        if (bee.store.getUsedCapacity() == 0) {
+        if (bee.store.getUsedCapacity() === 0) {
           bee.state = states.chill;
           bee.target = null;
         }
       }
 
-      if (bee.state == states.refill) {
+      if (bee.state === states.refill) {
         if (bee.target && this.targetMap[bee.target]) {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
-          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) == OK) {
+          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) === OK) {
             this.targetMap[bee.target] = undefined;
             bee.state = states.work;
             let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));
@@ -133,7 +133,7 @@ export class haulerMaster extends Master {
           bee.state = states.chill; //failsafe
       }
 
-      if (bee.state == states.chill)
+      if (bee.state === states.chill)
         bee.goRest(this.cell.pos, { offRoad: true });
     });
   }

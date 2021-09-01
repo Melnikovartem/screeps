@@ -36,25 +36,27 @@ export class Order {
       this.hive = Apiary.hives[this.flag.memory.hive];
     else {
       let stageNeeded: 0 | 1 | 2 = 2;
-
-      if (this.flag.color == COLOR_PURPLE && this.flag.secondaryColor == COLOR_PURPLE)
+      if (this.flag.color === COLOR_PURPLE && this.flag.secondaryColor === COLOR_PURPLE)
         stageNeeded = 0;
 
-      this.hive = this.findHive(stageNeeded);
+      if (this.flag.color == COLOR_CYAN) {
+        this.hive = Apiary.hives[this.pos.roomName];
+      } else {
+        this.hive = this.findHive(stageNeeded)
+      }
     }
 
     this.flag.memory = { hive: this.hive.roomName };
-
     this.destroyTime = -1;
   }
 
-  findHive(stage?: 0 | 1 | 2): Hive {
-    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= (stage != undefined ? stage : 2))
+  findHive(stage: 0 | 1 | 2): Hive {
+    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= stage)
       return Apiary.hives[this.pos.roomName];
 
     for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage != undefined ? stage : 2))
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage !== undefined ? stage : 2))
         return Apiary.hives[exit];
     }
 
@@ -75,117 +77,166 @@ export class Order {
     return bestHive;
   }
 
+  uniqueFlag() {
+    if (this.pos.roomName in Game.rooms) {
+      _.forEach(Game.rooms[this.pos.roomName].find(FIND_FLAGS), (f) => {
+        if (f.name != this.ref && f.color === this.flag.color && f.secondaryColor == this.flag.secondaryColor) {
+          if (Apiary.orders[f.name])
+            Apiary.orders[f.name].delete();
+        }
+      });
+      return OK;
+    }
+    return ERR_NOT_FOUND;
+  }
+
   act() {
-    // dont forget to this.acted = true otherwise you will get new master each tick
-    if (this.flag.color == COLOR_RED) {
-      this.acted = true;
-      if (/^def_/.exec(this.ref) != null)
-        Apiary.defenseSwarms[this.pos.roomName] = this;
-      if (!this.master) {
-        if (this.flag.secondaryColor == COLOR_BLUE)
-          this.master = new hordeMaster(this);
-        else if (this.flag.secondaryColor == COLOR_PURPLE)
-          this.master = new downgradeMaster(this);
-        else if (this.flag.secondaryColor == COLOR_YELLOW)
-          this.master = new dismantlerMaster(this);
-        else if (this.flag.secondaryColor == COLOR_GREEN)
-          this.master = new healerWaiterMaster(this);
-        else if (this.flag.secondaryColor == COLOR_RED)
-          this.master = new dupletMaster(this);
-        else if (this.flag.secondaryColor == COLOR_ORANGE)
-          this.master = new squadMaster(this);
-        // COLOR_WHITE to mark surrendered rooms
-      }
-    } else if (this.flag.color == COLOR_PURPLE) {
-      if (this.flag.secondaryColor == COLOR_PURPLE) {
-        this.hive = this.hive;
-        if (!this.master)
-          this.master = new annexMaster(this);
-        if (this.hive.addAnex(this.pos.roomName) == OK)
-          this.acted = true;
-      } else if (this.flag.secondaryColor == COLOR_GREY) {
-        if (Object.keys(Apiary.hives).length < Game.gcl.level) {
-          this.acted = true;
-          if (!this.master)
-            this.master = new claimerMaster(this);
-        } else
-          this.delete();
-      }
-      else if (this.flag.secondaryColor == COLOR_WHITE) {
+    switch (this.flag.color) {
+      case COLOR_RED:
         this.acted = true;
-        let hiveToBoos = Apiary.hives[this.pos.roomName];
-        if (hiveToBoos && this.pos.roomName != this.hive.roomName
-          && (hiveToBoos.stage == 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
-          hiveToBoos.bassboost = this.hive;
-          hiveToBoos.spawOrders = {};
-          _.forEach(this.hive.cells, (c) => {
-            if (c.master)
-              c.master.waitingForBees = 0;
-          });
-          if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
-            (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
+        if (/^def_/.exec(this.ref) !== null)
+          Apiary.defenseSwarms[this.pos.roomName] = this;
+        if (!this.master)
+          switch (this.flag.secondaryColor) {
+            case COLOR_BLUE:
+              this.master = new hordeMaster(this);
+              break;
+            case COLOR_PURPLE:
+              this.master = new downgradeMaster(this);
+              break;
+            case COLOR_YELLOW:
+              this.master = new dismantlerMaster(this);
+              break;
+            case COLOR_GREEN:
+              this.master = new healerWaiterMaster(this);
+              break;
+            case COLOR_RED:
+              this.master = new dupletMaster(this);
+              break;
+            case COLOR_ORANGE:
+              this.master = new squadMaster(this);
+              break;
+            case COLOR_WHITE:
+              // COLOR_WHITE to mark surrendered rooms
+              break;
+          }
+        break;
+      case COLOR_PURPLE:
+        switch (this.flag.secondaryColor) {
+          case COLOR_PURPLE:
+            this.hive = this.hive;
+            if (!this.master)
+              this.master = new annexMaster(this);
+            if (this.hive.addAnex(this.pos.roomName) === OK)
+              this.acted = true;
+            break;
+          case COLOR_GREY:
+            if (Object.keys(Apiary.hives).length < Game.gcl.level) {
+              this.acted = true;
+              if (!this.master)
+                this.master = new claimerMaster(this);
+            } else
+              this.delete();
+            break;
+          case COLOR_WHITE:
+            this.acted = true;
+            let hiveToBoos = Apiary.hives[this.pos.roomName];
+            if (hiveToBoos && this.pos.roomName !== this.hive.roomName
+              && (hiveToBoos.stage === 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
+              hiveToBoos.bassboost = this.hive;
+              hiveToBoos.spawOrders = {};
+              _.forEach(this.hive.cells, (c) => {
+                if (c.master)
+                  c.master.waitingForBees = 0;
+              });
+              if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
+                (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
+            } else
+              this.delete();
+            break;
+        }
+        break;
+      case COLOR_CYAN:
+        this.acted = true;
+        this.uniqueFlag();
+        if (this.hive) {
+          let prefix = "";
+          switch (this.flag.secondaryColor) {
+            case COLOR_CYAN:
+              this.hive.pos = this.pos;
+              if (this.hive.cells.excavation)
+                this.hive.cells.excavation.pos = this.pos;
+              prefix = "chillZone";
+              break;
+            case COLOR_GREEN:
+              if (this.hive)
+                this.hive.cells.spawn.pos = this.pos;
+              prefix = "queen";
+              break;
+            case COLOR_YELLOW:
+              if (this.hive.cells.storage)
+                this.hive.cells.storage.pos = this.pos;
+              prefix = "man";
+              break;
+            case COLOR_BROWN:
+              if (this.hive.cells.lab) {
+                this.hive.cells.lab.pos = this.pos;
+                let sum = 0;
+                _.forEach(this.flag.name.split("_"), (res) => {
+                  sum += this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
+                });
+                if (sum === 0)
+                  prefix = "lab";
+              }
+              break;
+          }
+          if (prefix != "" && this.ref != prefix + this.hive.roomName) {
+            this.pos.createFlag(prefix + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
+            this.delete();
+          }
         } else
           this.delete();
-      }
-    } else if (this.flag.color == COLOR_CYAN) {
-      this.acted = true;
-      let hive = Apiary.hives[this.pos.roomName];
-      if (hive) {
-        if (this.flag.secondaryColor == COLOR_CYAN) {
-          hive.pos = this.pos;
-          if (hive.cells.excavation)
-            hive.cells.excavation.pos = this.pos;
-        } else if (this.flag.secondaryColor == COLOR_GREEN) {
-          if (hive)
-            hive.cells.spawn.pos = this.pos;
-        } else if (this.flag.secondaryColor == COLOR_YELLOW) {
-          if (hive.cells.storage)
-            hive.cells.storage.pos = this.pos;
-        } else if (this.flag.secondaryColor == COLOR_BROWN) {
-          if (hive.cells.lab) {
-            hive.cells.lab.pos = this.pos;
-            if (!hive.cells.lab.currentRequest) {
-              let sum = 0;
-              _.forEach(this.flag.name.split("_"), (res) => {
-                sum += hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
-              });
-              if (sum == 0)
+        break;
+      case COLOR_GREY:
+        switch (this.flag.secondaryColor) {
+          case COLOR_RED:
+            if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
+              this.delete();
+            break;
+          case COLOR_YELLOW:
+            this.acted = true;
+            if (!this.master)
+              this.master = new puppetMaster(this);
+            break;
+        }
+        break;
+      case COLOR_YELLOW:
+
+        if (this.pos.roomName in Game.rooms) {
+          let resource: Source | Mineral | undefined;
+          this.acted = true;
+          switch (this.flag.secondaryColor) {
+            case COLOR_YELLOW:
+              resource = this.pos.lookFor(LOOK_SOURCES)[0];
+              if (resource) {
+                if (this.hive.cells.excavation)
+                  this.hive.cells.excavation.addResource(resource);
+                else if (this.hive.cells.dev)
+                  this.hive.cells.dev.addResource(resource)
+              } else
                 this.delete();
-            }
+              break;
+            case COLOR_CYAN:
+              resource = this.pos.lookFor(LOOK_MINERALS)[0];
+              if (resource) {
+                if (this.hive.cells.excavation)
+                  this.hive.cells.excavation.addResource(resource)
+              } else
+                this.delete();
+              break;
           }
         }
-      } else
-        this.delete();
-    } else if (this.flag.color == COLOR_GREY) {
-      if (this.flag.secondaryColor == COLOR_RED) {
-        if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length == 0)
-          this.delete();
-      } else if (this.flag.secondaryColor == COLOR_YELLOW) {
-        this.acted = true;
-        if (!this.master)
-          this.master = new puppetMaster(this); // no longer a weapon of war
-      }
-    } else if (this.flag.color == COLOR_YELLOW) {
-      if (this.pos.roomName in Game.rooms) {
-        this.acted = true;
-        if (this.flag.secondaryColor == COLOR_YELLOW) {
-          let resource: Source | undefined = this.pos.lookFor(LOOK_SOURCES)[0];
-          if (resource) {
-            if (this.hive.cells.excavation)
-              this.hive.cells.excavation.addResource(resource);
-            else if (this.hive.cells.dev)
-              this.hive.cells.dev.addResource(resource)
-          } else
-            this.delete();
-        } else if (this.flag.secondaryColor == COLOR_CYAN) {
-          let resource: Mineral | undefined = this.pos.lookFor(LOOK_MINERALS)[0];
-          if (resource) {
-            if (this.hive.cells.excavation)
-              this.hive.cells.excavation.addResource(resource)
-          } else
-            this.delete();
-        }
-      }
+        break;
     }
   }
 
@@ -206,8 +257,8 @@ export class Order {
     if (this.master)
       Apiary.masters[this.master.ref].delete();
 
-    if (this.flag.color == COLOR_PURPLE) {
-      if (this.flag.secondaryColor == COLOR_WHITE) {
+    if (this.flag.color === COLOR_PURPLE) {
+      if (this.flag.secondaryColor === COLOR_WHITE) {
         let hiveBoosted = Apiary.hives[this.pos.roomName];
         if (hiveBoosted) {
           hiveBoosted.bassboost = null;
@@ -215,9 +266,9 @@ export class Order {
             (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
         }
       }
-    } else if (this.flag.color == COLOR_RED) {
+    } else if (this.flag.color === COLOR_RED) {
       for (const key in Apiary.defenseSwarms)
-        if (Apiary.defenseSwarms[key].ref == this.ref)
+        if (Apiary.defenseSwarms[key].ref === this.ref)
           delete Apiary.defenseSwarms[key];
     }
     this.flag.remove();
@@ -226,13 +277,13 @@ export class Order {
 
   update() {
     this.flag = Game.flags[this.ref];
-    if (this.flag.pos.x != this.pos.x || this.flag.pos.y != this.pos.y)
+    if (this.flag.pos.x !== this.pos.x || this.flag.pos.y !== this.pos.y)
       this.acted = false;
     this.pos = this.flag.pos;
     if (!this.acted)
       this.act();
 
-    if (this.destroyTime != -1 && this.destroyTime <= Game.time) {
+    if (this.destroyTime !== -1 && this.destroyTime <= Game.time) {
       if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
         if (!Memory.log.orders)
           Memory.log.orders = {};

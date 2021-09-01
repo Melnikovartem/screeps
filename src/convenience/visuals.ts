@@ -11,7 +11,7 @@ export class Visuals {
   caching: { [id: string]: string } | null = null;
 
   create() {
-    if (Game.time % Memory.settings.framerate == 0 || !this.caching || UPDATE_EACH_TICK) {
+    if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
 
@@ -89,7 +89,7 @@ export class Visuals {
   }
 
   statsBattle(hiveName: string): string[][] {
-    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName == hiveName && o.flag.color != COLOR_PURPLE && o.master);
+    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName === hiveName && o.flag.color !== COLOR_PURPLE && o.master);
     let ans: string[][] = [];
     _.forEach(orders, (order) => {
       let roomInfo = Apiary.intel.getInfo(order.pos.roomName);
@@ -147,7 +147,7 @@ export class Visuals {
       ans.push(["resource", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
-    let annexOrders = _.filter(Apiary.orders, (o) => o.hive == hive && /^annex_/.exec(o.ref))
+    let annexOrders = _.filter(Apiary.orders, (o) => o.hive === hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {
       let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
@@ -204,7 +204,7 @@ export class Visuals {
     let textLen = label.length * TEXT_WIDTH;
     let xMax = pos.x + Math.min(Math.max(minSize, textLen + 0.5), maxSize);
     let yMax = pos.y + TEXT_HEIGHT + 0.5;
-    vis.text(label, (style.align == "right" ? xMax - 0.25 : pos.x + 0.25), pos.y + 0.25 + TEXT_HEIGHT, this.textStyle(style));
+    vis.text(label, (style.align === "right" ? xMax - 0.25 : pos.x + 0.25), pos.y + 0.25 + TEXT_HEIGHT, this.textStyle(style));
     vis.poly([[pos.x, pos.y], [pos.x, yMax], [xMax, yMax], [xMax, pos.y], [pos.x, pos.y]]);
     return { x: xMax, y: yMax, roomName: pos.roomName };;
   }
@@ -213,8 +213,8 @@ export class Visuals {
     style: TextStyle = {}, minSize: number = 1, maxSize: number = 15) {
     let vis = new RoomVisual(pos.roomName);
     let lab = this.label(label, pos, style, minSize, maxSize);
-    let xMin = style.align == "right" ? lab.x : pos.x;
-    let xMax = xMin + (lab.x - pos.x) * Math.min(1, progress) * (style.align == "right" ? -1 : 1);
+    let xMin = style.align === "right" ? lab.x : pos.x;
+    let xMax = xMin + (lab.x - pos.x) * Math.min(1, progress) * (style.align === "right" ? -1 : 1);
     vis.poly([[xMin, pos.y], [xMin, lab.y], [xMax, lab.y], [xMax, pos.y], [xMin, pos.y]], {
       fill: "#ffdd80",
       stroke: undefined,
@@ -231,7 +231,7 @@ export class Visuals {
     let pad = 0.2;
 
     let label;
-    if (strings.length > 0 && strings[0].length == 1)
+    if (strings.length > 0 && strings[0].length === 1)
       label = strings.shift()![0];
 
     let widths: number[] = [];
@@ -245,9 +245,9 @@ export class Visuals {
 
     let xMin = pos.x;
     let len = Math.min(Math.max(_.sum(widths) + pad * 2, minSize), maxSize);
-    if (align == "center")
+    if (align === "center")
       xMin = pos.x - len / 2;
-    if (align == "right")
+    if (align === "right")
       xMin = pos.x - len;
     let xMax = xMin + len;
 

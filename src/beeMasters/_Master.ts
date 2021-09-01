@@ -48,7 +48,7 @@ export abstract class Master {
     let birthTime = bee.creep.memory.born;
 
     this.lastSpawns.push(birthTime);
-    if (this.lastSpawns[0] == -1)
+    if (this.lastSpawns[0] === -1)
       this.lastSpawns.shift();
 
     this.beesAmount += 1;
@@ -74,7 +74,7 @@ export abstract class Master {
       this.waitingForBees = 0;
 
     return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
-      || (this.beesAmount == this.targetBeeCount && Game.time >= this.lastSpawns[0] + spawnCycle));
+      || (this.beesAmount === this.targetBeeCount && Game.time >= this.lastSpawns[0] + spawnCycle));
   }
 
   // first stage of decision making like do i need to spawn new creeps
@@ -144,11 +144,11 @@ export abstract class Master {
       _.forEach(keys || Object.entries(this), (key) => {
         let value = (<any>this)[key];
         if (value) {
-          if (typeof value == "string") {
+          if (typeof value === "string") {
             Memory.masters[this.ref][key] = value;
           } else if (value instanceof Structure || value instanceof Source) {
             Memory.masters[this.ref][key] = { id: value.id };
-          } else if (key == "hive") {
+          } else if (key === "hive") {
             Memory.masters[this.ref][key] = value.room.name;
           } else if (Array.isArray(value) && value[0] instanceof Structure) {
             Memory.masters[this.ref][key] = _.map(value, (structure: Structure) => structure.id);

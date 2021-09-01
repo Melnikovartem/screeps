@@ -30,7 +30,7 @@ export class defenseCell extends Cell {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 10);
       if (roomInfo.enemies.length > 0 && !Apiary.defenseSwarms[roomName]
-        && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color == COLOR_RED).length == 0) {
+        && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
         let freeSwarms: Order[] = [];
         for (const roomDefName in Apiary.defenseSwarms) {
           let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
@@ -43,19 +43,19 @@ export class defenseCell extends Cell {
           freeSwarms.sort((a, b) => a.pos.getRoomRangeTo(Game.rooms[roomName]) - b.pos.getRoomRangeTo(Game.rooms[roomName]))
           if (freeSwarms[0].pos.getRoomRangeTo(Game.rooms[roomName]) < 5) {
             ans = freeSwarms[0].flag.setPosition(roomInfo.enemies[0].pos);
-            if (ans == OK) {
+            if (ans === OK) {
               Apiary.defenseSwarms[roomName] = freeSwarms[0];
               delete Apiary.defenseSwarms[freeSwarms[0].pos.roomName];
             }
           }
         }
-        if (ans != OK) {
-          if ((roomInfo.enemies[0] instanceof Creep && roomInfo.enemies[0].owner.username == "Invader")
+        if (ans !== OK) {
+          if ((roomInfo.enemies[0] instanceof Creep && roomInfo.enemies[0].owner.username === "Invader")
             || roomInfo.enemies[0] instanceof StructureInvaderCore)
             ans = roomInfo.enemies[0].pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
           else if (roomInfo.enemies[0] instanceof Creep)
             ans = roomInfo.enemies[0].pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
-          if (typeof ans == "string")
+          if (typeof ans === "string")
             Game.flags[ans].memory = { hive: this.hive.roomName };
         }
       }
@@ -67,7 +67,7 @@ export class defenseCell extends Cell {
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
-        if (_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length == 0) {
+        if (_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length === 0) {
           if (this.hive.stage < 2)
             this.checkOrDefendSwarms(this.hive.roomName);
           else
@@ -76,7 +76,7 @@ export class defenseCell extends Cell {
           _.forEach(this.towers, (tower) => {
             let closest = tower.pos.findClosestByRange(roomInfo!.enemies);
             if (closest && (closest.pos.getRangeTo(tower) < 15 || closest.pos.getRangeTo(this.hive.pos) < 5
-              || (closest instanceof Creep && closest.owner.username == "Invader")))
+              || (closest instanceof Creep && closest.owner.username === "Invader")))
               tower.attack(closest);
           });
       }

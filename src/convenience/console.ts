@@ -14,25 +14,25 @@ export class CustomConsole {
       return `ERROR: TERMINAL NOT FOUND @ ${roomName}`;
 
     if (!mode) {
-      if (cell.storage.store.getUsedCapacity(resource) >= (amount == Infinity ? 1 : amount))
+      if (cell.storage.store.getUsedCapacity(resource) >= (amount === Infinity ? 1 : amount))
         mode = "fill";
-      if (cell.terminal.store.getUsedCapacity(resource) >= (amount == Infinity ? 1 : amount)) {
-        if (mode == "fill") {
-          if (resource != RESOURCE_ENERGY)
+      if (cell.terminal.store.getUsedCapacity(resource) >= (amount === Infinity ? 1 : amount)) {
+        if (mode === "fill") {
+          if (resource !== RESOURCE_ENERGY)
             return `CAN'T DESIDE ON MODE @ ${roomName}`;
         } else
           mode = "empty";
       }
     }
 
-    if (!mode || (mode != "fill" && mode != "empty"))
+    if (!mode || (mode !== "fill" && mode !== "empty"))
       return `NO VALID MODE FOUND @ ${roomName}`;
 
-    if (mode == "fill" && resource == RESOURCE_ENERGY && amount == Infinity)
+    if (mode === "fill" && resource === RESOURCE_ENERGY && amount === Infinity)
       amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 100000);
 
     let ans;
-    if (mode == "empty")
+    if (mode === "empty")
       ans = cell.requestToStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
     else
       ans = cell.requestFromStorage("!USER_REQUEST", [cell.terminal], 2, [resource], [amount]);
@@ -57,14 +57,14 @@ export class CustomConsole {
     let energyCap = Math.floor(terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
     amount = Math.min(amount, energyCap);
 
-    if (resource == RESOURCE_ENERGY && amount * (1 + energyCost) > terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY))
+    if (resource === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY))
       amount = Math.floor(amount * (1 - energyCost));
 
     let ans = terminalFrom.send(resource, amount, roomNameTo);
-    if (ans == OK)
+    if (ans === OK)
       return `SEND FROM ${roomNameFrom} TO ${roomNameTo} \nRESOURCE ${resource}: ${amount
         } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)} `;
-    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
+    else if (ans === ERR_NOT_ENOUGH_RESOURCES)
       return `NOT ENOUGHT RESOURSES TO SEND FROM ${roomNameFrom} TO ${roomNameTo
         } \nRESOURCE ${resource}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)} `;
     return ans;
@@ -80,7 +80,7 @@ export class CustomConsole {
     let order = Game.market.getOrderById(orderId);
     if (!order)
       return "ORDER NOT FOUND";
-    if (order.type == ORDER_SELL && !am)
+    if (order.type === ORDER_SELL && !am)
       return `AMOUNT NEEDED.MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
 
     let amount = am ? am : order.remainingAmount;
@@ -92,15 +92,15 @@ export class CustomConsole {
     } else {
       let resource = <ResourceConstant>order.resourceType;
       let validHives = _.filter(Apiary.hives, (h) => h.cells.storage && h.cells.storage.terminal
-        && ((order!.type == ORDER_BUY && h.cells.storage.terminal.store.getUsedCapacity(resource) > amount)
-          || (order!.type == ORDER_SELL && h.cells.storage.terminal.store.getFreeCapacity(resource) > amount)));
+        && ((order!.type === ORDER_BUY && h.cells.storage.terminal.store.getUsedCapacity(resource) > amount)
+          || (order!.type === ORDER_SELL && h.cells.storage.terminal.store.getFreeCapacity(resource) > amount)));
 
       validHives.sort((a, b) => Game.market.calcTransactionCost(amount, a.roomName, order!.roomName!) -
         Game.market.calcTransactionCost(amount, b.roomName, order!.roomName!));
 
       let terminal = validHives[0].cells.storage!.terminal!;
 
-      if (order.type == ORDER_BUY)
+      if (order.type === ORDER_BUY)
         amount = Math.min(amount, terminal.store.getUsedCapacity(resource));
       else
         amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
@@ -111,13 +111,13 @@ export class CustomConsole {
       ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
     }
 
-    if (ans == OK)
-      return `OK ${order.type == ORDER_SELL ? "BOUGHT" : "SOLD"} @${hiveName} \nRESOURCE ${
+    if (ans === OK)
+      return `OK ${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @${hiveName} \nRESOURCE ${
         order.resourceType
         }: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy} `;
-    else if (ans == ERR_NOT_ENOUGH_RESOURCES)
+    else if (ans === ERR_NOT_ENOUGH_RESOURCES)
       return `NOT ENOUGHT RESOURSES TO ${
-        order.type == ORDER_SELL ? "BUY" : "SELL"
+        order.type === ORDER_SELL ? "BUY" : "SELL"
         } \nRESOURCE ${order.resourceType}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy} `;
     return ans;
   }
@@ -127,11 +127,11 @@ export class CustomConsole {
   }
 
   printMasters(hiveName?: string) {
-    _.forEach(_.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName == hiveName), (o) => o.print), (s) => console.log(s));
+    _.forEach(_.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName === hiveName), (o) => o.print), (s) => console.log(s));
   }
 
   printOrders(hiveName?: string, masters: boolean = true) {
-    _.forEach(_.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName == hiveName) && (!masters || o.master)), (o) => o.print), (s) => console.log(s));
+    _.forEach(_.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName === hiveName) && (!masters || o.master)), (o) => o.print), (s) => console.log(s));
   }
 
   printBees(masterName?: string) {
@@ -140,7 +140,7 @@ export class CustomConsole {
 
   printSpawnOrders(hiveName?: string) {
     // i know this is messy, but this is print so it is ok
-    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName == hiveName), (h) => `${
+    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName), (h) => `${
       h.print
       }: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(

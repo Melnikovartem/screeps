@@ -23,7 +23,7 @@ export class respawnCell extends Cell {
     super.update(["extensions", "spawns"]);
 
     // find free spawners
-    this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning == null);
+    this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
   };
 
   run() {
@@ -41,7 +41,7 @@ export class respawnCell extends Cell {
 
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
-      if (order.priority < 4 || order.priority == 1)
+      if (order.priority < 4 || order.priority === 1)
         setup = order.setup.getBody(energyAvailable);
       else
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
@@ -55,14 +55,14 @@ export class respawnCell extends Cell {
 
         let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 
-        if (ans == OK) {
+        if (ans === OK) {
 
           if (Apiary.logger)
             Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, sortedOrders[key].master);
 
           energyAvailable -= setup.cost;
           this.hive.spawOrders[sortedOrders[key].ref].amount -= 1;
-          if (this.hive.spawOrders[sortedOrders[key].ref].amount == 0)
+          if (this.hive.spawOrders[sortedOrders[key].ref].amount === 0)
             delete this.hive.spawOrders[sortedOrders[key].ref];
         }
       }

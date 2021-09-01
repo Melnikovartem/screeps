@@ -55,7 +55,7 @@ function main() {
     visuals = undefined;
 
   // now it checks itself!! i am genius
-  if (GENERATE_PIXEL && Game.cpu.bucket == 10000 && Game.cpu.generatePixel)
+  if (GENERATE_PIXEL && Game.cpu.bucket === 10000 && Game.cpu.generatePixel)
     Game.cpu.generatePixel();
 }
 

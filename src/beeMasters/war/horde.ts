@@ -29,10 +29,10 @@ export class hordeMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
-    if (roomInfo.safePlace && this.beesAmount == 0)
+    if (roomInfo.safePlace && this.beesAmount === 0)
       this.order.destroyTime = Game.time;
 
-    if (this.spawned == this.maxSpawns && !this.beesAmount && !this.waitingForBees)
+    if (this.spawned === this.maxSpawns && !this.beesAmount && !this.waitingForBees)
       this.order.destroyTime = Game.time;
 
     if (this.checkBees() && this.spawned < this.maxSpawns && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
@@ -69,7 +69,7 @@ export class hordeMaster extends SwarmMaster {
 
     _.forEach(this.bees, (bee) => {
       if (roomInfo.safeModeEndTime < Game.time || !roomInfo.ownedByEnemy)
-        if (bee.pos.roomName != this.order.pos.roomName) {
+        if (bee.pos.roomName !== this.order.pos.roomName) {
           let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1);
           if (enemies.length)
             bee.attack(enemies[0]);

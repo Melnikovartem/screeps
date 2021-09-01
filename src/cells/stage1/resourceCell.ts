@@ -32,14 +32,14 @@ export class resourceCell extends Cell {
 
   updateStructure() {
     this.container = <StructureContainer>_.filter(this.pos.findInRange(FIND_STRUCTURES, 2),
-      (structure) => structure.structureType == STRUCTURE_CONTAINER)[0];
+      (structure) => structure.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.pos.findInRange(FIND_MY_STRUCTURES, 2),
-        (structure) => structure.structureType == STRUCTURE_LINK)[0];
+        (structure) => structure.structureType === STRUCTURE_LINK)[0];
       this.operational = this.container || this.link ? true : false;
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.pos.lookFor(LOOK_STRUCTURES),
-        (structure) => structure.structureType == STRUCTURE_EXTRACTOR)[0];
+        (structure) => structure.structureType === STRUCTURE_EXTRACTOR)[0];
       this.operational = this.extractor && this.container ? true : false;
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
       this.resourceType = this.resource.mineralType;
@@ -56,22 +56,22 @@ export class resourceCell extends Cell {
   update() {
     super.update();
 
-    if (!this.operational && Game.time % 30 == 0)
+    if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
     if ((!this.container && !this.link) || (this.resource instanceof Mineral && !this.extractor))
       this.operational = false;
 
-    if (this.resource instanceof Mineral && Game.time % 10 == 0)
+    if (this.resource instanceof Mineral && Game.time % 10 === 0)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
   }
 
   run() {
     let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && this.link.cooldown == 0 && storageLink
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && this.link.cooldown === 0 && storageLink
       && (this.link.store.getUsedCapacity(RESOURCE_ENERGY) <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY)
         || this.link.store.getFreeCapacity(RESOURCE_ENERGY) <= LINK_CAPACITY / 8)) {
       let ans = this.link.transferEnergy(storageLink);
-      if (Apiary.logger && ans == OK)
+      if (Apiary.logger && ans === OK)
         Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
           this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);
     }

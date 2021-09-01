@@ -27,10 +27,10 @@ export class minerMaster extends Master {
         priority: 2,
       };
 
-      if (this.cell.resourceType != RESOURCE_ENERGY) {
+      if (this.cell.resourceType !== RESOURCE_ENERGY) {
         order.setup = Setups.miner.minerals;
         order.priority = 6;
-      } else if (this.cell.pos.roomName != this.hive.roomName)
+      } else if (this.cell.pos.roomName !== this.hive.roomName)
         order.priority = 5;
 
       this.wish(order);
@@ -41,23 +41,23 @@ export class minerMaster extends Master {
     if (this.cell.operational)
       _.forEach(this.bees, (bee) => {
         bee.state = states.work;
-        if (this.cell.resource instanceof Source && this.cell.resource.energy == 0)
+        if (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
           bee.state = states.chill;
-        if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded == 0))
+        if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0))
           bee.state = states.chill;
-        if ((this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType) == 0)
-          || (!this.cell.link && this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType) == 0))
+        if ((this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType) === 0)
+          || (!this.cell.link && this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType) === 0))
           bee.state = states.chill;
 
-        if (bee.state == states.work) {
+        if (bee.state === states.work) {
           bee.harvest(this.cell.resource);
           if (bee.creep.store[this.cell.resourceType] >= 25)
             bee.state = states.fflush;
         }
 
-        if (bee.state == states.fflush) {
+        if (bee.state === states.fflush) {
           let target: StructureLink | StructureContainer | undefined;
-          if (this.cell.link && this.cell.resourceType == RESOURCE_ENERGY
+          if (this.cell.link && this.cell.resourceType === RESOURCE_ENERGY
             && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
             target = this.cell.link;
           else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
@@ -69,7 +69,7 @@ export class minerMaster extends Master {
             bee.state = states.chill;
         }
 
-        if (bee.state == states.chill && this.cell.resourceType == RESOURCE_ENERGY) {
+        if (bee.state === states.chill && this.cell.resourceType === RESOURCE_ENERGY) {
           let target = this.cell.container;
           if (target && target.hits < target.hitsMax) {
             if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)

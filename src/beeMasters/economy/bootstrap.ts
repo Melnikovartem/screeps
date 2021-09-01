@@ -37,7 +37,7 @@ export class bootstrapMaster extends Master {
       let walkablePositions = source.pos.getOpenPositions(true).length;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
-      if (source.room.name == this.hive.roomName)
+      if (source.room.name === this.hive.roomName)
         this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[0];
       else
         this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[1]; // they need to walk more;
@@ -63,7 +63,7 @@ export class bootstrapMaster extends Master {
       this.recalculateTargetBee(); // just to check if expansions are done
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
-    if (this.checkBees() && this.hive.stage == 0 && roomInfo.safePlace) {
+    if (this.checkBees() && this.hive.stage === 0 && roomInfo.safePlace) {
       let order: SpawnOrder = {
         setup: Setups.bootstrap,
         amount: this.targetBeeCount - this.beesAmount,
@@ -95,15 +95,15 @@ export class bootstrapMaster extends Master {
 
     _.forEach(this.bees, (bee) => {
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
         bee.state = states.refill;
 
-      if (bee.state == states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+      if (bee.state === states.refill && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
         bee.target = null;
         bee.state = states.work;
       }
 
-      if (bee.state == states.refill || bee.state == states.chill) {
+      if (bee.state === states.refill || bee.state === states.chill) {
         let source: Source | null;
         if (!bee.target) {
           // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
@@ -121,7 +121,7 @@ export class bootstrapMaster extends Master {
 
         if (source instanceof Source) {
           bee.state = states.refill;
-          if (source.energy == 0)
+          if (source.energy === 0)
             bee.target = null;
           else {
             if (Game.getObjectById("611e1db1376c26a0397820e8")) {
@@ -137,7 +137,7 @@ export class bootstrapMaster extends Master {
         }
       }
 
-      if (bee.state == states.work) {
+      if (bee.state === states.work) {
         let target: Structure | ConstructionSite | null = null;
         let workType: workTypes = "working";
 
@@ -146,10 +146,10 @@ export class bootstrapMaster extends Master {
           if (target) {
             if (target instanceof ConstructionSite)
               workType = "build";
-            else if (target.structureType == STRUCTURE_CONTROLLER)
+            else if (target.structureType === STRUCTURE_CONTROLLER)
               workType = "upgrade";
-            else if ((target.structureType == STRUCTURE_SPAWN || target.structureType == STRUCTURE_EXTENSION
-              || target.structureType == STRUCTURE_STORAGE || target.structureType == STRUCTURE_TOWER)
+            else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
+              || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
               && (<StructureSpawn | StructureExtension | StructureTower>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
               workType = "refill"; // also can be StructureStorage, but if i cast that it will be sad (different type of <Store>)
             else if (target.hits < target.hitsMax)
@@ -166,7 +166,7 @@ export class bootstrapMaster extends Master {
           workType = "refill";
         }
 
-        if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] == 0) {
+        if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] === 0) {
           target = this.cell.controller;
           workType = "upgrade";
         }
@@ -202,22 +202,22 @@ export class bootstrapMaster extends Master {
         }
 
         let ans;
-        if (workType == "repair")
+        if (workType === "repair")
           ans = bee.repair(<Structure>target);
-        else if (workType == "build")
+        else if (workType === "build")
           ans = bee.build(<ConstructionSite>target);
-        else if (workType == "refill")
+        else if (workType === "refill")
           ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
-        else if (workType == "upgrade")
+        else if (workType === "upgrade")
           ans = bee.upgradeController(<StructureController>target);
-        if (ans == ERR_NOT_IN_RANGE)
+        if (ans === ERR_NOT_IN_RANGE)
           bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
 
         count[workType] += 1;
         bee.target = target.id;
       }
 
-      if (bee.state == states.chill)
+      if (bee.state === states.chill)
         bee.goRest(this.hive.pos);
     });
 

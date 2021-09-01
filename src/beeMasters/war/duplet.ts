@@ -66,7 +66,7 @@ export class dupletMaster extends SwarmMaster {
       _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
 
-    if (!this.waitingForBees && this.beesAmount == 0)
+    if (!this.waitingForBees && this.beesAmount === 0)
       this.order.destroyTime = Game.time;
   }
 
@@ -74,7 +74,7 @@ export class dupletMaster extends SwarmMaster {
     let knight = this.knight;
     let healer = this.healer;
     _.forEach(this.bees, (bee) => {
-      if (bee.state == states.refill)
+      if (bee.state === states.refill)
         bee.goRest(this.hive.pos);
     });
 
@@ -85,30 +85,30 @@ export class dupletMaster extends SwarmMaster {
 
     _.forEach(this.bees, (bee) => {
       // if reconstructed while they all spawned, but not met yet or one was lost
-      if (bee.state == states.chill)
+      if (bee.state === states.chill)
         bee.state = states.work;
     });
 
-    if (knight && knight.state == states.work) {
+    if (knight && knight.state === states.work) {
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
       let target: Structure | Creep = <Structure | Creep>knight.pos.findClosest(_.filter(roomInfo.enemies,
-        (e) => (e.pos.getRangeTo(knight!) < 4 || (knight!.pos.roomName == this.order.pos.roomName)
-          && !(e instanceof Creep && e.owner.username == "Source Keeper"))));
+        (e) => (e.pos.getRangeTo(knight!) < 4 || (knight!.pos.roomName === this.order.pos.roomName)
+          && !(e instanceof Creep && e.owner.username === "Source Keeper"))));
       let ans;
       if (target)
         ans = knight.attack(target);
-      else if (knight.hits == knight.hitsMax)
+      else if (knight.hits === knight.hitsMax)
         ans = knight.goRest(this.order.pos);
 
       if (healer) {
-        if (healer.pos.isNearTo(knight.pos) && ans == ERR_NOT_IN_RANGE)
+        if (healer.pos.isNearTo(knight.pos) && ans === ERR_NOT_IN_RANGE)
           healer.creep.move(healer.pos.getDirectionTo(knight.pos));
         else if (!healer.pos.isNearTo(knight.pos))
           healer.goTo(knight.pos);
       }
     }
 
-    if (healer && healer.state == states.work) {
+    if (healer && healer.state === states.work) {
       if (healer.hits < healer.hitsMax) {
         healer.heal(healer);
       } if (knight && knight.hits < knight.hitsMax) {

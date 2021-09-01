@@ -72,12 +72,12 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+      if (this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
         bee.state = states.refill;
       else
         bee.state = states.work;
 
-      if (bee.state == states.refill) {
+      if (bee.state === states.refill) {
         let suckerTarget;
 
         if (this.cell.link)
@@ -89,7 +89,7 @@ export class upgraderMaster extends Master {
             suckerTarget = storage;
         }
 
-        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) == OK) {
+        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) === OK) {
           if (Apiary.logger && suckerTarget)
             Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", suckerTarget.store, bee.store);
           bee.state = states.work;
@@ -99,10 +99,10 @@ export class upgraderMaster extends Master {
           bee.state = states.chill;
       }
 
-      if (bee.state == states.work)
+      if (bee.state === states.work)
         bee.upgradeController(this.cell.controller);
 
-      if (bee.state == states.chill)
+      if (bee.state === states.chill)
         bee.goRest(this.cell.pos);
     });
   }

@@ -71,7 +71,7 @@ export class Logger {
   hiveLog(hive: Hive) {
     if (!Memory.log.hives[hive.roomName])
       return ERR_NOT_FOUND;
-    if (Game.time % LOGGING_CYCLE == 0) {
+    if (Game.time % LOGGING_CYCLE === 0) {
       let orderMap: { [id: string]: { amount: number, priority: number } } = {};
 
       for (const ref in hive.spawOrders) {
@@ -94,7 +94,7 @@ export class Logger {
   }
 
   clean() {
-    if (Game.time % LOGGING_CYCLE == 0) {
+    if (Game.time % LOGGING_CYCLE === 0) {
       for (let key in Memory.log.hives) {
         let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates)
           .sort((a, b) => <number><unknown>b - <number><unknown>a);
@@ -131,7 +131,7 @@ export class Logger {
         let j = sortedKeys.length - 25;
         _.some(sortedKeys, (i) => {
           if (--j <= 0) return true;
-          if (Memory.log.orders[i].destroyTime != -1)
+          if (Memory.log.orders[i].destroyTime !== -1)
             delete Memory.log.orders[i];
           return false;
         });
@@ -151,7 +151,7 @@ export class Logger {
         let j = Object.keys(Memory.log.enemies).length - 35;
         for (let key in Memory.log.enemies) {
           delete Memory.log.enemies[key];
-          if (--j == 0) break;
+          if (--j === 0) break;
         }
       }
     }
@@ -177,7 +177,7 @@ export class Logger {
       let minerNum = 0;
       let haulerNum = 0;
       _.forEach(hive.cells.excavation!.resourceCells, (cell) => {
-        if (cell.resourceType == RESOURCE_ENERGY) {
+        if (cell.resourceType === RESOURCE_ENERGY) {
           minerNum++;
           if (!cell.link) haulerNum++;
         }
@@ -187,11 +187,11 @@ export class Logger {
       annexExp /= hive.annexes.length;
 
       _.forEach(excavation.resourceCells, (cell) => {
-        if (cell.resourceType == RESOURCE_ENERGY) {
+        if (cell.resourceType === RESOURCE_ENERGY) {
           let ref = "mining_" + cell.resource.id.slice(cell.resource.id.length - 4);
           ans[ref] = {
             profit: getRate(ref) + minerExp + (cell.link ? 0 : haulerExp)
-              + (cell.pos.roomName != hive.roomName && hive.annexNames.includes(cell.pos.roomName)
+              + (cell.pos.roomName !== hive.roomName && hive.annexNames.includes(cell.pos.roomName)
                 ? annexExp / excavation!.roomResources[cell.pos.roomName] : 0),
             revenue: getRate(ref),
           };
@@ -218,7 +218,7 @@ export class Logger {
     for (let ref in report)
       if (report[ref].profit > 0) {
         overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue != undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
       }
 
 
@@ -226,7 +226,7 @@ export class Logger {
     for (let ref in report)
       if (report[ref].profit < 0) {
         overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue != undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
       }
 
     ans.push(["  💎🙌"]);

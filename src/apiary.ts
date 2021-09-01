@@ -41,7 +41,7 @@ export class _Apiary {
     });
 
     // get main hive
-    if (_.filter(this.hives, (h) => h.stage == 2).length == 0)
+    if (_.filter(this.hives, (h) => h.stage === 2).length === 0)
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
 
     // for testing
@@ -73,7 +73,7 @@ export class _Apiary {
       safeWrap(() => master.update(), master.print + " update");
     });
 
-    if (Game.time % 50 == 0)
+    if (Game.time % 50 === 0)
       this.intel.toCache();
   }
 

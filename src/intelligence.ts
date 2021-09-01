@@ -63,7 +63,7 @@ export class Intel {
         this.roomInfo[room.name].ownedByEnemy = undefined;
     }
 
-    if (Game.time % LOGGING_CYCLE == 0 && !this.roomInfo[room.name].safePlace) {
+    if (Game.time % LOGGING_CYCLE === 0 && !this.roomInfo[room.name].safePlace) {
       if (!Memory.log.enemies)
         Memory.log.enemies = {};
       if (!Memory.log.enemies[room.name])
@@ -107,8 +107,8 @@ export class Intel {
 
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
-        filter: (structure) => structure.structureType == STRUCTURE_TOWER ||
-          structure.structureType == STRUCTURE_INVADER_CORE
+        filter: (structure) => structure.structureType === STRUCTURE_TOWER ||
+          structure.structureType === STRUCTURE_INVADER_CORE
       });
 
     if (!this.roomInfo[room.name].enemies.length)
@@ -117,7 +117,7 @@ export class Intel {
     if (!this.roomInfo[room.name].enemies.length)
       this.roomInfo[room.name].safePlace = true;
 
-    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color == COLOR_GREY && flag.secondaryColor == COLOR_RED);
+    let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
 
     if (targetFlags.length)
       this.roomInfo[room.name].enemies = this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
@@ -125,15 +125,15 @@ export class Intel {
     if (!this.roomInfo[room.name].enemies.length) {
 
       this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
-        filter: (structure) => structure.structureType == STRUCTURE_SPAWN ||
-          structure.structureType == STRUCTURE_POWER_SPAWN
+        filter: (structure) => structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_POWER_SPAWN
       });
 
       // time to pillage
       if (!this.roomInfo[room.name].enemies.length)
         this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
-          filter: (structure) => structure.structureType == STRUCTURE_RAMPART ||
-            structure.structureType == STRUCTURE_EXTENSION
+          filter: (structure) => structure.structureType === STRUCTURE_RAMPART ||
+            structure.structureType === STRUCTURE_EXTENSION
         });
 
       if (!this.roomInfo[room.name].enemies.length)

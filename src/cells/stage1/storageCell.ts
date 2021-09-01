@@ -30,10 +30,10 @@ export class storageCell extends Cell {
     this.storage = storage;
 
     this.link = <StructureLink>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      (structure) => structure.structureType == STRUCTURE_LINK)[0];
+      (structure) => structure.structureType === STRUCTURE_LINK)[0];
 
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      (structure) => structure.structureType == STRUCTURE_TERMINAL)[0];
+      (structure) => structure.structureType === STRUCTURE_TERMINAL)[0];
 
     this.pos = this.storage.pos;
     this.master = new managerMaster(this);
@@ -41,7 +41,7 @@ export class storageCell extends Cell {
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
     , res: StorageRequest["resource"] = [], amount: number[] = []): number {
-    if (to.length == 0)
+    if (to.length === 0)
       return ERR_NOT_FOUND;
     this.requests[ref] = {
       ref: ref,
@@ -54,7 +54,7 @@ export class storageCell extends Cell {
     _.forEach(to, (t, k) => {
       if (!res[k])
         res[k] = RESOURCE_ENERGY;
-      if (!amount[k] || amount[k] == Infinity)
+      if (!amount[k] || amount[k] === Infinity)
         amount[k] = (<Store<ResourceConstant, false>>t.store).getFreeCapacity(res[k]);
       amount[k] = Math.min(amount[k], this.storage.store.getUsedCapacity(res[k]));
 
@@ -64,7 +64,7 @@ export class storageCell extends Cell {
         this.requests[ref].amount.push(amount[k]);
       }
     });
-    if (this.requests[ref].to.length == 0) {
+    if (this.requests[ref].to.length === 0) {
       delete this.requests[ref];
       return 0;
     }
@@ -73,7 +73,7 @@ export class storageCell extends Cell {
 
   requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
     , res: StorageRequest["resource"] = [], amount: number[] = []): number {
-    if (from.length == 0)
+    if (from.length === 0)
       return ERR_NOT_FOUND;
     this.requests[ref] = {
       ref: ref,
@@ -88,7 +88,7 @@ export class storageCell extends Cell {
         res[k] = RESOURCE_ENERGY;
       if (f instanceof StructureLab && f.mineralType)
         res[k] = f.mineralType;
-      if (!amount[k] || amount[k] == Infinity)
+      if (!amount[k] || amount[k] === Infinity)
         amount[k] = (<Store<ResourceConstant, false>>f.store).getUsedCapacity(res[k]);
       amount[k] = Math.min(amount[k], this.storage.store.getFreeCapacity(res[k]));
 
@@ -98,7 +98,7 @@ export class storageCell extends Cell {
         this.requests[ref].amount.push(amount[k]);
       }
     });
-    if (this.requests[ref].from.length == 0) {
+    if (this.requests[ref].from.length === 0) {
       delete this.requests[ref];
       return 0;
     }
@@ -138,7 +138,7 @@ export class storageCell extends Cell {
       let request;
       for (key in this.requests) {
         let req = this.requests[key];
-        if (req.from[0].id == this.link.id && req.to[0] instanceof StructureLink) {
+        if (req.from[0].id === this.link.id && req.to[0] instanceof StructureLink) {
           if (req.amount[0] >= LINK_CAPACITY / 4) {
             request = this.requests[key];
             break;
@@ -146,12 +146,12 @@ export class storageCell extends Cell {
         }
       }
 
-      if (request && request.from[0].id == this.link.id && request.to[0] instanceof StructureLink) {
+      if (request && request.from[0].id === this.link.id && request.to[0] instanceof StructureLink) {
         if (this.link.store.getUsedCapacity(RESOURCE_ENERGY) + 25 >= request.amount[0]) {
           if (this.requests[this.link.id])
             this.requests[this.link.id].amount[0] = Math.max(0, this.link.store.getUsedCapacity(RESOURCE_ENERGY) - request.amount[0] * 1.4);
           if (!this.link.cooldown)
-            if (this.link.transferEnergy(request.to[0], Math.min(request.amount[0], this.link.store.getUsedCapacity(RESOURCE_ENERGY))) == OK)
+            if (this.link.transferEnergy(request.to[0], Math.min(request.amount[0], this.link.store.getUsedCapacity(RESOURCE_ENERGY))) === OK)
               delete this.requests[key];
         } else
           this.requestFromStorage(this.link.id, [this.link], 4, undefined,

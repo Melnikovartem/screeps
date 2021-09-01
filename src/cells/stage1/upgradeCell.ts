@@ -16,7 +16,7 @@ export class upgradeCell extends Cell {
 
     this.controller = controller;
 
-    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
+    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
 
     if (this.link)
       this.pos = this.link.pos;
@@ -29,13 +29,13 @@ export class upgradeCell extends Cell {
   update() {
     super.update();
 
-    if (!this.link && Game.time % 30 == 7)
-      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType == STRUCTURE_LINK)[0];
+    if (!this.link && Game.time % 30 === 7)
+      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
 
     let storageCell = this.hive.cells.storage;
     if (this.link && storageCell && storageCell.link && (!storageCell.requests[this.link.id]
       || this.link.store.getFreeCapacity(RESOURCE_ENERGY) - storageCell.requests[this.link.id].amount[0] >= 50
-      || this.link.store.getFreeCapacity(RESOURCE_ENERGY) == LINK_CAPACITY)) {
+      || this.link.store.getFreeCapacity(RESOURCE_ENERGY) === LINK_CAPACITY)) {
       storageCell.requests[this.link.id] = {
         ref: this.link.id,
         from: [storageCell.link],

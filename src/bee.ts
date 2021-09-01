@@ -46,7 +46,7 @@ export class Bee {
     this.memory = this.creep.memory;
     this.hits = this.creep.hits;
     this.hitsMax = this.creep.hitsMax;
-    if (this.state == states.idle && Apiary.masters[this.creep.memory.refMaster]) {
+    if (this.state === states.idle && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
       this.master.newBee(this);
     }
@@ -61,7 +61,7 @@ export class Bee {
       return action();
     else {
       let targetPos = <RoomPosition>(target instanceof RoomObject && target.pos) || (target instanceof RoomPosition && target);
-      if (range > 1 && targetPos.roomName != this.pos.roomName)
+      if (range > 1 && targetPos.roomName !== this.pos.roomName)
         range = 1;
       opt.range = range;
       this.goTo(targetPos, opt);
@@ -70,7 +70,7 @@ export class Bee {
   }
 
   goRest(pos: RoomPosition, opt?: TravelToOptions): number {
-    if ((this.pos.x != pos.x || this.pos.y != pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName != pos.roomName)
+    if ((this.pos.x !== pos.x || this.pos.y !== pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName !== pos.roomName)
       this.goTo(pos, opt);
     else
       return OK;
@@ -147,7 +147,7 @@ export class Bee {
   }
 
   repairRoadOnMove(ans: number = ERR_NOT_IN_RANGE) {
-    if (ans == ERR_NOT_IN_RANGE)
+    if (ans === ERR_NOT_IN_RANGE)
       return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
     return ans;
   }
@@ -158,10 +158,10 @@ export class Bee {
       let bee = Apiary.bees[name];
       if (!bee)
         Apiary.bees[name] = new Bee(Game.creeps[name]);
-      else if (bee.state == states.idle) {
+      else if (bee.state === states.idle) {
         let regex = /^masterDevelopmentCell_(.*)/.exec(bee.memory.refMaster);
         if (regex) {
-          let viableMasters = _.map(_.filter(Apiary.masters, (m) => m.hive.roomName == regex![1]), (m) => m.ref);
+          let viableMasters = _.map(_.filter(Apiary.masters, (m) => m.hive.roomName === regex![1]), (m) => m.ref);
           let randomMaster = viableMasters[Math.floor(Math.random() * viableMasters.length)];
           if (randomMaster) {
             bee.memory.refMaster = randomMaster;
