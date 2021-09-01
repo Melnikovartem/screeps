@@ -9,6 +9,7 @@ import { profile } from "../../profiler/decorator";
 export class upgraderMaster extends Master {
   cell: upgradeCell;
   fastMode: boolean = false;
+  boost = true;
 
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
@@ -72,38 +73,44 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if (this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-        bee.state = states.refill;
-      else
-        bee.state = states.work;
-
-      if (bee.state === states.refill) {
+      if (bee.state != states.boosting && this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25
+        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
         let suckerTarget;
-
         if (this.cell.link)
           suckerTarget = this.cell.link;
-
         if (!suckerTarget) {
           let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
           if (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
             suckerTarget = storage;
         }
-
-        if (bee.withdraw(suckerTarget, RESOURCE_ENERGY) === OK) {
-          if (Apiary.logger && suckerTarget)
-            Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", suckerTarget.store, bee.store);
-          bee.state = states.work;
+        let ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        switch (ans) {
+          case OK:
+            if (Apiary.logger && suckerTarget)
+              Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", suckerTarget.store, bee.store);
+            bee.state = states.work;
+            break;
+          case ERR_NOT_IN_RANGE:
+            bee.state = states.refill;
+            break;
+          default:
+            bee.state = states.chill;
+            break;
         }
-
-        if (!suckerTarget)
-          bee.state = states.chill;
       }
 
-      if (bee.state === states.work)
-        bee.upgradeController(this.cell.controller);
-
-      if (bee.state === states.chill)
-        bee.goRest(this.cell.pos);
+      switch (bee.state) {
+        case states.work:
+          bee.upgradeController(this.cell.controller);
+          break;
+        case states.chill:
+          bee.goRest(this.cell.pos);
+          break;
+        case states.boosting:
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
+            bee.state = states.chill;
+          break;
+      }
     });
   }
 }

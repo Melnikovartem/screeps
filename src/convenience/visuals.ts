@@ -2,35 +2,36 @@ import { profile } from "../profiler/decorator";
 import { UPDATE_EACH_TICK, DEVELOPING } from "../settings";
 
 const TEXT_SIZE = 0.8;
-const TEXT_WIDTH = TEXT_SIZE * 0.5;
+const TEXT_WIDTH = TEXT_SIZE * 0.465;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 
 @profile
 export class Visuals {
 
   caching: { [id: string]: string } | null = null;
+  anchor: { x: number, y: number, roomName?: string | undefined } = { x: 49, y: 1 };
+
+  getAnchor(x?: number, roomName?: string | null, y?: number) {
+    if (x !== undefined)
+      this.anchor.x = x;
+    this.anchor.y = y ? y : this.anchor.y + 0.2;
+    if (roomName !== undefined)
+      this.anchor.roomName = roomName ? roomName : undefined;
+    return this.anchor;
+  }
 
   create() {
     if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
 
-      let ans: { x: number, y: number, roomName: undefined | string } = { x: 42, y: 1, roomName: undefined };
-      ans = this.progressbar("CPU", ans, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
-      ans.x = 42;
-      ans.y += + 0.2;
+      this.anchor = this.progressbar("CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       // bucket size same as PIXEL_CPU_COST
-      ans = this.progressbar("BUCKET", ans, Game.cpu.bucket / 10000, { align: "right" }, 6);
-      ans.x = 42;
-      ans.y += + 0.2;
-      ans = this.progressbar("GCL " + Game.gcl.level + "→" + (Game.gcl.level + 1), ans, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
-      ans.x = 42;
-      ans.y += + 0.2;
+      this.anchor = this.progressbar("BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
+      this.anchor = this.progressbar("GCL " + Game.gcl.level + "→" + (Game.gcl.level + 1), this.getAnchor(49), Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
       let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
       if (heapStat) {
-        ans = this.progressbar("HEAP", ans, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
-        ans.x = 42;
-        ans.y += + 0.2;
+        this.anchor = this.progressbar("HEAP", this.getAnchor(49), heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
       }
 
       let battleInfo: string[][] = [["bee squads"], ["", "🎯", "💀", "🐝"]];
@@ -41,35 +42,25 @@ export class Visuals {
           battleInfo = battleInfo.concat(stats);
         }
       }
-      ans = { x: 25, y: 1, roomName: undefined };
-      this.table(battleInfo, ans, undefined, undefined, undefined, "center");
+      this.anchor = this.table(battleInfo, this.getAnchor(25, null, 1), undefined, undefined, undefined, "center");
 
       if (Memory.settings.framerate > 1)
         this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
         let minSize = 0;
-        ans = { x: 1, y: 1, roomName: name };
-        ans = this.table(this.statsHives(name), ans, undefined, minSize);
-        minSize = Math.max(minSize, ans.x - 1);
-        ans.x = 1;
-        ans.y += + 0.2;
+        this.anchor = this.table(this.statsHives(name), this.getAnchor(1, name, 1), undefined, minSize);
+        minSize = Math.max(minSize, this.anchor.x - 1);
+
 
         let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest;
         if (labReuest && labReuest.plan) {
-          ans = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
-            ans, 1 - (labReuest.current / labReuest.plan), undefined, minSize);
-          minSize = Math.max(minSize, ans.x - 1);
-          ans.x = 1;
-          ans.y += + 0.2;
+          this.anchor = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
+            this.getAnchor(1), 1 - (labReuest.current / labReuest.plan), undefined, minSize);
+          minSize = Math.max(minSize, this.anchor.x - 1);
         }
 
-        if (Apiary.logger) {
-          ans = this.table(Apiary.logger.visualizeEnergy(name), ans, undefined, minSize);
-          minSize = Math.max(minSize, ans.x - 1);
-          ans.x = 1;
-          ans.y += + 0.2;
-        }
+        this.visualizeEnergy(name);
 
         this.caching[name] = new RoomVisual(name).export();
         _.forEach(Apiary.hives[name].annexNames, (annex) => {
@@ -86,6 +77,36 @@ export class Visuals {
           });
         }
     }
+  }
+
+  visualizeEnergy(hiveName: string) {
+    if (!Apiary.logger)
+      return;
+    let report = Apiary.logger.reportEnergy(hiveName);
+    let ans: string[][] = [["energy"], ["", "⚡", "💸"]];
+    let overAll = 0;
+    let prep = (rate: number): string => String(Math.round(rate * 100) / 100);
+
+    ans.push(["  📈income"]);
+    for (let ref in report)
+      if (report[ref].profit > 0) {
+        overAll += report[ref].profit;
+        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      }
+
+
+    ans.push(["  📉expenditure"]);
+    for (let ref in report)
+      if (report[ref].profit < 0) {
+        overAll += report[ref].profit;
+        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      }
+
+    ans.splice(2, 0, ["  💎🙌", "", prep(overAll)]);
+
+    this.anchor = this.table(ans, this.getAnchor(0.5, undefined, 48.5),
+      undefined, undefined, undefined, "left", "bottom");
+    return;
   }
 
   statsBattle(hiveName: string): string[][] {
@@ -201,10 +222,10 @@ export class Visuals {
   label(label: string, pos: { x: number, y: number, roomName?: string },
     style: TextStyle = {}, minSize: number = 1, maxSize: number = 15) {
     let vis = new RoomVisual(pos.roomName);
-    let textLen = label.length * TEXT_WIDTH;
-    let xMax = pos.x + Math.min(Math.max(minSize, textLen + 0.5), maxSize);
+    let textLen = label.length * TEXT_WIDTH * 1.05;
+    let xMax = pos.x + Math.min(Math.max(minSize, textLen + 0.5), maxSize) * (style.align === "right" ? -1 : 1);
     let yMax = pos.y + TEXT_HEIGHT + 0.5;
-    vis.text(label, (style.align === "right" ? xMax - 0.25 : pos.x + 0.25), pos.y + 0.25 + TEXT_HEIGHT, this.textStyle(style));
+    vis.text(label, pos.x + 0.25 * (style.align === "right" ? -1 : 1), yMax - 0.26, this.textStyle(style));
     vis.poly([[pos.x, pos.y], [pos.x, yMax], [xMax, yMax], [xMax, pos.y], [pos.x, pos.y]]);
     return { x: xMax, y: yMax, roomName: pos.roomName };;
   }
@@ -223,8 +244,8 @@ export class Visuals {
     return lab;
   }
 
-  table(strings: string[][], pos: { x: number, y: number, roomName?: string },
-    style: TextStyle = {}, minSize: number = 1, maxSize: number = 20, align: "center" | "right" | "left" = "left") {
+  table(strings: string[][], pos: { x: number, y: number, roomName?: string }, style: TextStyle = {},
+    minSize: number = 1, maxSize: number = 20, align: "center" | "right" | "left" = "left", snap: "bottom" | "top" = "top") {
     if (DEVELOPING)
       pos.x += 2; // broken visuals @ xxScreeps server
     let vis = new RoomVisual(pos.roomName);
@@ -252,27 +273,37 @@ export class Visuals {
     let xMax = xMin + len;
 
     let yMin = pos.y;
-    let height = yMin + TEXT_HEIGHT + pad + (label ? TEXT_HEIGHT + pad : 0);
+    let height = snap === "bottom" ? -pad * 2 : pad + TEXT_HEIGHT + (label ? TEXT_HEIGHT + pad * 2 : 0);
+    if (snap == "bottom")
+      strings.reverse();
+
     _.forEach(strings, (s) => {
       let tab = pad;
       for (const i in s) {
-        vis.text(s[i], xMin + tab, height, this.textStyle(style));
-        tab += widths[i] + (widths[i] > 6 ? 0.2 : 0);
+        vis.text(s[i], xMin + tab, yMin + height, this.textStyle(style));
+        tab += widths[i] + (widths[i] > 6 ? 0.2 : 0)
       }
-      height += TEXT_HEIGHT * 1.2;
+      height += TEXT_HEIGHT * 1.2 * (snap === "bottom" ? -1 : 1);
     });
-    let yMax = height - TEXT_HEIGHT + pad;
+    let yMax = yMin + height - (snap !== "bottom" ? TEXT_HEIGHT - pad : 0);
     if (label) {
       let labelStyle = this.textStyle(style);
       labelStyle.align = "center";
-      vis.text(label, xMin + (xMax - xMin) / 2, yMin + TEXT_HEIGHT, labelStyle);
-      vis.poly([[xMin, yMin], [xMin, yMin + TEXT_HEIGHT + pad], [xMax, yMin + TEXT_HEIGHT + pad], [xMax, yMin], [xMin, yMin]], {
+      let yLabel;
+      if (snap === "bottom") {
+        yMax -= TEXT_HEIGHT + pad * 2;
+        yLabel = yMax + TEXT_HEIGHT + pad * 2;
+      } else {
+        yLabel = yMin + TEXT_HEIGHT + 2 * pad;
+      }
+      vis.text(label, xMin + (xMax - xMin) / 2, yLabel - pad, labelStyle);
+      vis.poly([[xMin, yLabel], [xMin, yLabel - TEXT_HEIGHT - pad * 2], [xMax, yLabel - TEXT_HEIGHT - pad * 2], [xMax, yLabel]], {
         fill: "#ffdd80",
         stroke: undefined,
         opacity: 0.3,
       });
     }
     vis.poly([[xMin, yMin], [xMin, yMax], [xMax, yMax], [xMax, yMin], [xMin, yMin]]);
-    return { x: xMax, y: yMax, roomName: pos.roomName };
+    return { x: align === "center" ? xMax : pos.x, y: yMax, roomName: pos.roomName };
   }
 }

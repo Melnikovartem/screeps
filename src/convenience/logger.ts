@@ -48,7 +48,7 @@ export class Logger {
     storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1, loss: number = 0) {
     if (!Memory.log.hives[hiveName])
       return ERR_NOT_FOUND;
-    let amount = Math.floor(Math.min(<number>storeFrom.getUsedCapacity(resource), <number>storeTo.getFreeCapacity(resource)) * mode * (1 - loss));
+    let amount = Math.floor(Math.min(+storeFrom.getUsedCapacity(resource), +storeTo.getFreeCapacity(resource)) * mode * (1 - loss));
     this.addResourceStat(hiveName, ref, amount, resource);
     return OK;
   }
@@ -97,11 +97,11 @@ export class Logger {
     if (Game.time % LOGGING_CYCLE === 0) {
       for (let key in Memory.log.hives) {
         let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates)
-          .sort((a, b) => <number><unknown>b - <number><unknown>a);
+          .sort((a, b) => +b - +a);
         let j = sortedKeys.length - 10;
         _.some(sortedKeys, (i) => {
           if (--j <= 0) return true;
-          delete Memory.log.hives[key].loggedStates[<number><unknown>i];
+          delete Memory.log.hives[key].loggedStates[+i];
           return false;
         });
 
@@ -193,7 +193,7 @@ export class Logger {
             profit: getRate(ref) + minerExp + (cell.link ? 0 : haulerExp)
               + (cell.pos.roomName !== hive.roomName && hive.annexNames.includes(cell.pos.roomName)
                 ? annexExp / excavation!.roomResources[cell.pos.roomName] : 0),
-            revenue: getRate(ref),
+            revenue: getRate(ref) * (cell.link ? 1 / 0.97 : 1),
           };
         }
       });
@@ -204,33 +204,8 @@ export class Logger {
     type civilRoles = "queen" | "queen";
     ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
     ans["build"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.builder), revenue: getRate("build") };
+    ans["defense"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.defender) };
 
-    return ans;
-  }
-
-  visualizeEnergy(hiveName: string): string[][] {
-    let report = this.reportEnergy(hiveName);
-    let ans: string[][] = [["energy"], ["", "⚡", "💸"]];
-    let overAll = 0;
-    let prep = (rate: number): string => String(Math.round(rate * 100) / 100);
-
-    ans.push(["  📈income"]);
-    for (let ref in report)
-      if (report[ref].profit > 0) {
-        overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
-      }
-
-
-    ans.push(["  📉expenditure"]);
-    for (let ref in report)
-      if (report[ref].profit < 0) {
-        overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
-      }
-
-    ans.push(["  💎🙌"]);
-    ans.push(["", "", prep(overAll)]);
     return ans;
   }
 }

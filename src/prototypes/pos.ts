@@ -15,8 +15,8 @@ function getRoomCoorinates(roomName: string): number[] {
   let x = 0;
   let y = 0;
   if (parsed) {
-    x = <number><unknown>parsed[2] * (parsed[1] === "W" ? -1 : 0);
-    y = <number><unknown>parsed[4] * (parsed[3] === "s" ? -1 : 0);
+    x = +parsed[2] * (parsed[1] === "W" ? -1 : 0);
+    y = +parsed[4] * (parsed[3] === "s" ? -1 : 0);
   }
   return [x, y];
 }

@@ -12,7 +12,6 @@ export class minerMaster extends Master {
 
   constructor(resourceCell: resourceCell) {
     super(resourceCell.hive, resourceCell.ref);
-
     this.cell = resourceCell;
   }
 
@@ -50,15 +49,17 @@ export class minerMaster extends Master {
           bee.state = states.chill;
 
         if (bee.state === states.work) {
-          bee.harvest(this.cell.resource);
+          if (this.cell.pos.isFree() && bee.pos != this.cell.pos)
+            bee.goTo(this.cell.pos);
+          else
+            bee.harvest(this.cell.resource);
           if (bee.creep.store[this.cell.resourceType] >= 25)
             bee.state = states.fflush;
         }
 
         if (bee.state === states.fflush) {
           let target: StructureLink | StructureContainer | undefined;
-          if (this.cell.link && this.cell.resourceType === RESOURCE_ENERGY
-            && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
+          if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
             target = this.cell.link;
           else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
             target = this.cell.container;

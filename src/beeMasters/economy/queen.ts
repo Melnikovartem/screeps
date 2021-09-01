@@ -65,7 +65,7 @@ export class queenMaster extends Master {
         case states.fflush:
           if (bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
             bee.state = states.chill;
-          else if (bee.transfer(storage, RESOURCE_ENERGY) === OK)
+          else if (bee.transfer(storage, RESOURCE_ENERGY) !== OK)
             break;
         case states.chill:
           if (targets.length)

@@ -211,7 +211,6 @@ export class Order {
         }
         break;
       case COLOR_YELLOW:
-
         if (this.pos.roomName in Game.rooms) {
           let resource: Source | Mineral | undefined;
           this.acted = true;
@@ -222,7 +221,7 @@ export class Order {
                 if (this.hive.cells.excavation)
                   this.hive.cells.excavation.addResource(resource);
                 else if (this.hive.cells.dev)
-                  this.hive.cells.dev.addResource(resource)
+                  this.hive.cells.dev.addResource(resource);
               } else
                 this.delete();
               break;
@@ -230,7 +229,7 @@ export class Order {
               resource = this.pos.lookFor(LOOK_MINERALS)[0];
               if (resource) {
                 if (this.hive.cells.excavation)
-                  this.hive.cells.excavation.addResource(resource)
+                  this.hive.cells.excavation.addResource(resource);
               } else
                 this.delete();
               break;

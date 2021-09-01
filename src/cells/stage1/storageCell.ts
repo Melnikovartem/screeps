@@ -18,6 +18,7 @@ export class storageCell extends Cell {
 
   storage: StructureStorage;
   link: StructureLink | undefined;
+  linkState: "busy" | "free" = "free";
   terminal: StructureTerminal | undefined;
   master: managerMaster;
 
@@ -107,6 +108,8 @@ export class storageCell extends Cell {
 
   update() {
     super.update();
+
+    this.linkState = "free";
 
     for (const key in this.requests) {
       for (const fromKey in this.requests[key].from) {

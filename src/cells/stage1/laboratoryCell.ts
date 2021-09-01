@@ -30,8 +30,10 @@ for (let key in BOOSTS)
     }
 
 let ss = "";
-for (let action in s)
+for (let action in s) {
   ss += action + ", ";
+  s[action].reverse();
+}
 console.log(`{${ss}}`);
 console.log(JSON.stringify(s));
 */
@@ -42,7 +44,7 @@ type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "rangedAttack" | "heal" | "capacity" | "fatigue" | "damage";
 
-const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["UO", "UHO2", "XUHO2"], "build": ["LH", "LH2O", "XLH2O"], "dismantle": ["ZH", "ZH2O", "XZH2O"], "upgrade": ["GH", "GH2O", "XGH2O"], "attack": ["UH", "UH2O", "XUH2O"], "rangedAttack": ["KO", "KHO2", "XKHO2"], "heal": ["LO", "LHO2", "XLHO2"], "capacity": ["KH", "KH2O", "XKH2O"], "fatigue": ["ZO", "ZHO2", "XZHO2"], "damage": ["GO", "GHO2", "XGHO2"] };
+const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["XUHO2", "UHO2", "UO"], "build": ["XLH2O", "LH2O", "LH"], "dismantle": ["XZH2O", "ZH2O", "ZH"], "upgrade": ["XGH2O", "GH2O", "GH"], "attack": ["XUH2O", "UH2O", "UH"], "rangedAttack": ["XKHO2", "KHO2", "KO"], "heal": ["XLHO2", "LHO2", "LO"], "capacity": ["XKH2O", "KH2O", "KH"], "fatigue": ["XZHO2", "ZHO2", "ZO"], "damage": ["XGHO2", "GHO2", "GO"] };
 const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
 const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
@@ -123,7 +125,7 @@ export class laboratoryCell extends Cell {
 
   askForBoost(bee: Bee, requests: { type: BoostType, amount?: number }[]) {
     let storageCell = this.hive.cells.storage;
-    if (storageCell && storageCell!.master.manager) {
+    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell!.master.manager) {
       if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
         this.boostRequests[bee.ref] = requests;
         for (let k in this.boostRequests[bee.ref]) {
@@ -199,19 +201,23 @@ export class laboratoryCell extends Cell {
         if (lab)
           if (lab.store.getUsedCapacity(r.res) >= LAB_BOOST_MINERAL && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= LAB_BOOST_ENERGY) {
             if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
-              && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY)
-              if (bee.pos.isNearTo(lab)) {
+              && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
+              let pos = lab.pos.getOpenPositions(true)[0];
+              if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
                 let ans = lab.boostCreep(bee.creep, r.amount);
-                if (ans === OK && Apiary.logger) {
+                if (ans === OK) {
                   // bad things if 2 creeps want to be boosted at same time
-                  Apiary.logger.addResourceStat(this.hive.roomName, "labs", r.amount * LAB_BOOST_MINERAL, r.res);
-                  Apiary.logger.addResourceStat(this.hive.roomName, "labs", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
+                  r.amount = 0;
+                  if (Apiary.logger) {
+                    Apiary.logger.addResourceStat(this.hive.roomName, "labs", r.amount * LAB_BOOST_MINERAL, r.res);
+                    Apiary.logger.addResourceStat(this.hive.roomName, "labs", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
+                  }
                 }
               } else {
-                let pos = lab.pos.getOpenPositions(true)[0];
                 bee.goRest(pos);
                 return ERR_NOT_IN_RANGE;
               }
+            }
           } else
             bee.goRest(this.pos);
         return ERR_TIRED;
@@ -248,9 +254,9 @@ export class laboratoryCell extends Cell {
             // producing and dont need the boost TODO
             res = state;
             if (l.mineralType && l.mineralType !== res)
-              storageCell!.requestToStorage(l.id, [l], 2, [l.mineralType]);
+              storageCell!.requestToStorage(l.id, [l], 1, [l.mineralType]);
             if (!storageCell!.requests[l.id] && l.store.getUsedCapacity(res) < LAB_MINERAL_CAPACITY / 2)
-              storageCell!.requestFromStorage(l.id, [l], 2, [res]);
+              storageCell!.requestFromStorage("lab_" + l.id, [l], 1, [res]);
             break;
         }
       });

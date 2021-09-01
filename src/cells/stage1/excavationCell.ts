@@ -49,8 +49,7 @@ export class excavationCell extends Cell {
 
   run() {
     _.forEach(this.resourceCells, (cell) => {
-      if (cell.operational)
-        safeWrap(() => { cell.run() }, cell.print + " run");
+      safeWrap(() => { cell.run() }, cell.print + " run");
     });
   };
 }
