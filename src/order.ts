@@ -215,6 +215,13 @@ export class Order {
             } else
               this.delete();
             break;
+          case COLOR_ORANGE:
+            if (Memory.cache.roomPlaner[this.pos.roomName]) {
+              this.uniqueFlag();
+              Apiary.planner.toActive(this.pos.roomName);
+            } else
+              this.delete();
+            break;
         }
         break;
       case COLOR_GREY:
@@ -297,6 +304,11 @@ export class Order {
       case COLOR_WHITE:
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
+            delete Apiary.planner.activePlanning[this.pos.roomName];
+            if (Memory.cache.roomPlaner[this.hive.roomName] === {})
+              this.hive.resetPlanner();
+            break;
+          case COLOR_ORANGE:
             delete Apiary.planner.activePlanning[this.pos.roomName];
             break;
         }

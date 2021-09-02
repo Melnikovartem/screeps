@@ -10,7 +10,28 @@ const BASE_VERTICAL: Module = { exits: [{ x: 20, y: 21 }, { x: 20, y: 24 }, { x:
 const EXTRA_VERTICAL: Module = { exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [], setup: { "road": { "pos": [{ "x": 25, "y": 24 }, { "x": 23, "y": 25 }, { "x": 22, "y": 24 }, { "x": 21, "y": 23 }, { "x": 27, "y": 25 }, { "x": 26, "y": 23 }, { "x": 24, "y": 23 }, { "x": 25, "y": 22 }, { "x": 27, "y": 22 }, { "x": 23, "y": 22 }, { "x": 28, "y": 24 }, { "x": 29, "y": 23 }] }, "lab": { "pos": [] }, "storage": { "pos": [] }, "link": { "pos": [] }, "terminal": { "pos": [] }, "spawn": { "pos": [{ "x": 25, "y": 26 }] }, "extension": { "pos": [{ "x": 24, "y": 25 }, { "x": 24, "y": 24 }, { "x": 26, "y": 24 }, { "x": 26, "y": 25 }, { "x": 27, "y": 24 }, { "x": 27, "y": 23 }, { "x": 28, "y": 23 }, { "x": 27, "y": 26 }, { "x": 28, "y": 26 }, { "x": 28, "y": 25 }, { "x": 29, "y": 25 }, { "x": 29, "y": 24 }, { "x": 30, "y": 24 }, { "x": 30, "y": 23 }, { "x": 30, "y": 22 }, { "x": 29, "y": 22 }, { "x": 28, "y": 22 }, { "x": 23, "y": 24 }, { "x": 23, "y": 23 }, { "x": 22, "y": 23 }, { "x": 22, "y": 22 }, { "x": 21, "y": 22 }, { "x": 20, "y": 22 }, { "x": 20, "y": 23 }, { "x": 21, "y": 24 }, { "x": 21, "y": 25 }, { "x": 22, "y": 25 }, { "x": 22, "y": 26 }, { "x": 23, "y": 26 }, { "x": 20, "y": 24 }] }, "tower": { "pos": [{ "x": 25, "y": 23 }, { "x": 24, "y": 22 }, { "x": 26, "y": 22 }] }, "rampart": { "pos": [] } } };
 const EXTRA_HORIZONTAL: Module = { exits: [{ x: 20, y: 24 }, { x: 20, y: 26 }], freeSpaces: [], setup: { "road": { "pos": [{ "x": 21, "y": 25 }, { "x": 20, "y": 24 }, { "x": 20, "y": 26 }] }, "lab": { "pos": [] }, "storage": { "pos": [] }, "link": { "pos": [] }, "terminal": { "pos": [] }, "spawn": { "pos": [{ "x": 23, "y": 25 }] }, "extension": { "pos": [{ "x": 21, "y": 27 }, { "x": 21, "y": 26 }, { "x": 20, "y": 28 }, { "x": 21, "y": 24 }, { "x": 20, "y": 22 }, { "x": 21, "y": 23 }, { "x": 22, "y": 26 }, { "x": 22, "y": 24 }] }, "tower": { "pos": [{ "x": 20, "y": 23 }, { "x": 20, "y": 27 }, { "x": 20, "y": 25 }] }, "rampart": { "pos": [] } } };
 
+const WALLS: Module = { exits: [], freeSpaces: [], setup: { "road": { "pos": [{ "x": 25, "y": 25 }, { "x": 26, "y": 26 }, { "x": 24, "y": 24 }, { "x": 23, "y": 24 }, { "x": 24, "y": 23 }, { "x": 26, "y": 27 }, { "x": 27, "y": 26 }, { "x": 28, "y": 25 }, { "x": 25, "y": 22 }, { "x": 27, "y": 24 }, { "x": 26, "y": 23 }, { "x": 25, "y": 28 }, { "x": 22, "y": 25 }, { "x": 23, "y": 26 }, { "x": 24, "y": 27 }, { "x": 21, "y": 25 }, { "x": 20, "y": 24 }, { "x": 20, "y": 26 }, { "x": 23, "y": 23 }, { "x": 22, "y": 22 }, { "x": 21, "y": 21 }, { "x": 20, "y": 21 }, { "x": 23, "y": 27 }, { "x": 22, "y": 28 }, { "x": 21, "y": 29 }, { "x": 20, "y": 29 }] }, "lab": { "pos": [{ "x": 21, "y": 24 }, { "x": 22, "y": 24 }, { "x": 23, "y": 25 }, { "x": 22, "y": 26 }, { "x": 21, "y": 26 }, { "x": 20, "y": 25 }, { "x": 20, "y": 23 }, { "x": 21, "y": 23 }, { "x": 20, "y": 27 }, { "x": 21, "y": 27 }] }, "storage": { "pos": [{ "x": 25, "y": 26 }] }, "link": { "pos": [{ "x": 24, "y": 25 }] }, "terminal": { "pos": [{ "x": 24, "y": 26 }] }, "extension": { "pos": [{ "x": 22, "y": 23 }, { "x": 20, "y": 28 }, { "x": 21, "y": 28 }, { "x": 22, "y": 27 }, { "x": 20, "y": 30 }, { "x": 21, "y": 30 }, { "x": 22, "y": 29 }, { "x": 23, "y": 28 }, { "x": 21, "y": 22 }, { "x": 20, "y": 22 }, { "x": 20, "y": 20 }, { "x": 21, "y": 20 }, { "x": 22, "y": 21 }, { "x": 23, "y": 22 }] } } };
+
+const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
+  [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS / 2 } },
+  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } },
+  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } }
+}
 type Pos = { x: number, y: number };
+
+/*
+let ss = "";
+for (let t in [STRUCTURE_ROAD, STRUCTURE_WALL, STRUCTURE_RAMPART]) {
+  let sss = ""
+  let type = [STRUCTURE_ROAD, STRUCTURE_WALL, STRUCTURE_RAMPART][t];
+  for (let lvl in CONTROLLER_STRUCTURES[type])
+    sss += `${lvl}: {amount: ${CONTROLLER_STRUCTURES[type][lvl]}, heal: ${type.toUpperCase()}_HITS},`
+  sss = sss.substring(0, sss.length - 1);
+  ss += `STRUCTURE_${type.toUpperCase()}: {${sss}},`;
+}
+ss = ss.substring(0, ss.length - 1);
+console.log(`{${ss}}`);
+*/
 
 @profile
 export class RoomPlanner {
@@ -128,10 +149,11 @@ export class RoomPlanner {
         });
       }
     });
+
+    this.addToPlan(anchor, WALLS, (a: Pos) => rotate(a, baseRotation));
   }
 
-  addToPlan(anchor: { x: number, y: number, roomName: string }, configuration: Module, transformPos: (a: Pos) => Pos
-    , ignore: BuildableStructureConstant[] = []) {
+  addToPlan(anchor: { x: number, y: number, roomName: string }, configuration: Module, transformPos: (a: Pos) => Pos) {
     this.activePlanning[anchor.roomName].freeSpaces = this.activePlanning[anchor.roomName].freeSpaces
       .concat(_.map(configuration.freeSpaces, (p) => transformPos(p)));
 
@@ -156,7 +178,7 @@ export class RoomPlanner {
         if (!plan[x][y])
           plan[x][y] = { s: undefined, r: false };
         if (placed[sType]! < CONTROLLER_STRUCTURES[sType][8]) {
-          if (terrain.get(x, y) != TERRAIN_MASK_WALL && !ignore.includes(sType)) {
+          if (terrain.get(x, y) != TERRAIN_MASK_WALL) {
             if (sType == STRUCTURE_RAMPART) {
               plan[x][y] = { s: plan[x][y].s, r: true };
             } else if (!plan[x][y].s) {
@@ -165,9 +187,30 @@ export class RoomPlanner {
             } else if (sType == STRUCTURE_WALL)
               plan[x][y] = { s: plan[x][y].s, r: true };
           }
-        }
-        else
+        } else
           this.activePlanning[anchor.roomName].freeSpaces.push(ans);
+      }
+    }
+  }
+
+  toActive(roomName: string) {
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [] };
+    let plan = this.activePlanning[roomName].plan;
+    for (let t in Memory.cache.roomPlaner[roomName]) {
+      let sType = <BuildableStructureConstant>t;
+      let poss = Memory.cache.roomPlaner[roomName][sType]!.pos;
+      for (let i = 0; i < poss.length; ++i) {
+        let x = poss[i].x;
+        let y = poss[i].y;
+        if (!plan[x])
+          plan[x] = {};
+        if (!plan[x][y])
+          plan[x][y] = { s: undefined, r: false };
+        if (sType == STRUCTURE_RAMPART) {
+          plan[x][y] = { s: plan[x][y].s, r: true };
+        } else {
+          plan[x][y] = { s: sType, r: plan[x][y].r };
+        }
       }
     }
   }
@@ -219,13 +262,12 @@ export class RoomPlanner {
   }
 
   checkBuildings(roomName: string) {
-    if (!(roomName in Game.rooms))
+    if (!(roomName in Game.rooms) || !Memory.cache.roomPlaner[roomName])
       return { pos: [], sum: 0 };
 
     let controller: StructureController | { level: number } | undefined = Game.rooms[roomName].controller;
     if (!controller)
       controller = { level: 0 };
-
 
     let ans: RoomPosition[] = [];
     let sum = 0;
@@ -233,11 +275,13 @@ export class RoomPlanner {
     for (let t in Memory.cache.roomPlaner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let positions = Memory.cache.roomPlaner[roomName][sType]!.pos;
-      for (let i = 0; i < CONTROLLER_STRUCTURES[sType][controller.level] && i < positions.length; ++i) {
+      let specialCase = SPECIAL_STRUCTURE[sType] && SPECIAL_STRUCTURE[sType]![controller.level];
+      for (let i = 0; i < (specialCase ? specialCase.amount : CONTROLLER_STRUCTURES[sType][controller.level])
+        && i < positions.length; ++i) {
         let pos = new RoomPosition(positions[i].x, positions[i].y, roomName);
         let structure = <Structure<BuildableStructureConstant> | undefined>_.filter(pos.lookFor(LOOK_STRUCTURES),
           (s) => s.structureType == sType)[0];
-        if (!structure && (sType == STRUCTURE_RAMPART || _.filter(pos.lookFor(LOOK_STRUCTURES)).length == 0)) {
+        if (!structure && (_.filter(pos.lookFor(LOOK_STRUCTURES)).length == 0) || sType == STRUCTURE_RAMPART) {
           if (constructions <= 5) {
             let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
             if (!constructionSite) {
@@ -248,9 +292,12 @@ export class RoomPlanner {
             ans.push(pos);
             constructions++;
           }
-        } else if (structure && structure.hits < structure.hitsMax) {
-          sum += structure.hitsMax - structure.hits;
-          ans.push(pos);
+        } else if (structure) {
+          let hitsHeal = (specialCase ? specialCase.heal : structure.hitsMax) * 0.8;
+          if (structure.hits < hitsHeal) {
+            sum += hitsHeal - structure.hits;
+            ans.push(pos);
+          }
         }
       }
     }
