@@ -1,5 +1,6 @@
 import type { _Apiary } from "./Apiary";
 import type { CustomConsole } from "./convenience/console";
+import type { RoomSetup } from "./roomPlanner";
 
 declare global {
   var Apiary: _Apiary;
@@ -29,7 +30,7 @@ declare global {
   interface Memory {
     cache: {
       intellegence: any;
-      roomPlaner: { [id: string]: { [key in StructureConstant]?: { "pos": { "x": number, "y": number }[] } } }
+      roomPlaner: { [id: string]: RoomSetup }
     },
     masters: { [id: string]: any };
 

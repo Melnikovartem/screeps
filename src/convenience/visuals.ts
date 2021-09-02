@@ -21,6 +21,8 @@ export class Visuals {
   }
 
   create() {
+    Apiary.planner.visualize();
+
     if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
@@ -48,8 +50,9 @@ export class Visuals {
         this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
+        if (Apiary.planner.activePlanning[name])
+          break;
         this.statsHives(name);
-
         this.visualizeEnergy(name);
 
         this.caching[name] = new RoomVisual(name).export();

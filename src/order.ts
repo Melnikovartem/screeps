@@ -36,7 +36,8 @@ export class Order {
       this.hive = Apiary.hives[this.flag.memory.hive];
     else {
       let stageNeeded: 0 | 1 | 2 = 2;
-      if (this.flag.color === COLOR_PURPLE && this.flag.secondaryColor === COLOR_PURPLE)
+      if ((this.flag.color === COLOR_PURPLE && this.flag.secondaryColor === COLOR_PURPLE)
+        || this.flag.color == COLOR_WHITE)
         stageNeeded = 0;
 
       if (this.flag.color == COLOR_CYAN) {
@@ -45,8 +46,8 @@ export class Order {
         this.hive = this.findHive(stageNeeded)
       }
     }
-
-    this.flag.memory = { hive: this.hive.roomName };
+    if (this.hive)
+      this.flag.memory = { hive: this.hive.roomName };
     this.destroyTime = -1;
   }
 
@@ -197,6 +198,24 @@ export class Order {
         } else
           this.delete();
         break;
+      case COLOR_WHITE:
+        this.acted = true;
+        this.uniqueFlag();
+        switch (this.flag.secondaryColor) {
+          case COLOR_WHITE:
+            if (this.hive.roomName == this.pos.roomName) {
+              let storagePos = this.hive.cells.storage && this.hive.cells.storage.storage.pos;
+              if (storagePos && !this.flag.name.includes("force")) {
+                this.flag.setPosition(storagePos);
+                this.pos = storagePos;
+              }
+              Apiary.planner.generatePlan(this.pos);
+              break;
+            } else
+              this.delete();
+            break;
+        }
+        break;
       case COLOR_GREY:
         switch (this.flag.secondaryColor) {
           case COLOR_RED:
@@ -256,19 +275,31 @@ export class Order {
     if (this.master)
       Apiary.masters[this.master.ref].delete();
 
-    if (this.flag.color === COLOR_PURPLE) {
-      if (this.flag.secondaryColor === COLOR_WHITE) {
-        let hiveBoosted = Apiary.hives[this.pos.roomName];
-        if (hiveBoosted) {
-          hiveBoosted.bassboost = null;
-          if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
-            (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
+    switch (this.flag.color) {
+      case COLOR_PURPLE:
+        switch (this.flag.secondaryColor) {
+          case COLOR_WHITE:
+            let hiveBoosted = Apiary.hives[this.pos.roomName];
+            if (hiveBoosted) {
+              hiveBoosted.bassboost = null;
+              if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
+                (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
+            }
+            break;
         }
-      }
-    } else if (this.flag.color === COLOR_RED) {
-      for (const key in Apiary.defenseSwarms)
-        if (Apiary.defenseSwarms[key].ref === this.ref)
-          delete Apiary.defenseSwarms[key];
+        break;
+      case COLOR_RED:
+        for (const key in Apiary.defenseSwarms)
+          if (Apiary.defenseSwarms[key].ref === this.ref)
+            delete Apiary.defenseSwarms[key];
+        break;
+      case COLOR_WHITE:
+        switch (this.flag.secondaryColor) {
+          case COLOR_WHITE:
+            delete Apiary.planner.activePlanning[this.pos.roomName];
+            break;
+        }
+        break;
     }
     this.flag.remove();
     delete Apiary.orders[this.ref];
