@@ -200,14 +200,15 @@ export class Order {
         break;
       case COLOR_WHITE:
         this.acted = true;
-        this.uniqueFlag();
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
             if (this.hive.roomName == this.pos.roomName) {
+              this.uniqueFlag();
               let storagePos = this.hive.cells.storage && this.hive.cells.storage.storage.pos;
               if (storagePos && !this.flag.name.includes("force")) {
-                this.flag.setPosition(storagePos);
                 this.pos = storagePos;
+                this.pos.x -= 1;
+                this.flag.setPosition(this.pos);
               }
               Apiary.planner.generatePlan(this.pos);
               break;

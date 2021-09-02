@@ -102,6 +102,14 @@ export class Hive {
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
+    if (!Memory.cache.roomPlaner[roomName]) {
+      Memory.cache.roomPlaner[roomName] = {};
+      _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
+        if (!Memory.cache.roomPlaner[roomName][s.structureType])
+          Memory.cache.roomPlaner[roomName][s.structureType] = { "pos": [] };
+        Memory.cache.roomPlaner[roomName][s.structureType]!.pos.push({ x: s.pos.x, y: s.pos.y });
+      });
+    }
   }
 
   addAnex(annexName: string) {

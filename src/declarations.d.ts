@@ -93,6 +93,7 @@ declare global {
           time: number,
           context: string,
           message: string,
+          stack: string,
         }
       },
       enemies?: {
