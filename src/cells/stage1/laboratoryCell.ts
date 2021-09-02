@@ -231,35 +231,36 @@ export class laboratoryCell extends Cell {
     super.update(["laboratories"]);
     let storageCell = this.hive.cells.storage;
     if (storageCell && Object.keys(this.laboratories).length) {
-      _.forEach(this.laboratories, (l) => {
-        let state = this.labsStates[l.id];
-        let res: MineralConstant | ReactionConstant | null;
-        switch (state) {
-          case undefined:
-            this.labsStates[l.id] = "idle";
-          case "idle":
-            res = l.mineralType;
-            if (res)
-              storageCell!.requestToStorage(l.id, l, 4, res);
-            break;
-          case "source":
-            break;
-          case "production":
-            res = l.mineralType;
-            if (res && !storageCell!.requests[l.id] && (!this.currentRequest || res !== this.currentRequest.res
-              || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
-              storageCell!.requestToStorage(l.id, l, 3, res);
-            break;
-          default: // boosting lab
-            // producing and dont need the boost TODO
-            res = state;
-            if (l.mineralType && l.mineralType !== res)
-              storageCell!.requestToStorage(l.id, l, 1, l.mineralType);
-            if (!storageCell!.requests[l.id] && l.store.getUsedCapacity(res) < LAB_MINERAL_CAPACITY / 2)
-              storageCell!.requestFromStorage("lab_" + l.id, l, 1, res);
-            break;
-        }
-      });
+      if (Game.time != this.time)
+        _.forEach(this.laboratories, (l) => {
+          let state = this.labsStates[l.id];
+          let res: MineralConstant | ReactionConstant | null;
+          switch (state) {
+            case undefined:
+              this.labsStates[l.id] = "idle";
+            case "idle":
+              res = l.mineralType;
+              if (res)
+                storageCell!.requestToStorage(l.id, l, 4, res);
+              break;
+            case "source":
+              break;
+            case "production":
+              res = l.mineralType;
+              if (res && !storageCell!.requests[l.id] && (!this.currentRequest || res !== this.currentRequest.res
+                || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
+                storageCell!.requestToStorage(l.id, l, 3, res);
+              break;
+            default: // boosting lab
+              // producing and dont need the boost TODO
+              res = state;
+              if (l.mineralType && l.mineralType !== res)
+                storageCell!.requestToStorage(l.id, l, 1, l.mineralType);
+              if (!storageCell!.requests[l.id] && l.store.getUsedCapacity(res) < LAB_MINERAL_CAPACITY / 2)
+                storageCell!.requestFromStorage("lab_" + l.id, l, 1, res);
+              break;
+          }
+        });
 
       if (this.currentRequest && this.sourceLabs) {
         let lab1 = this.laboratories[this.sourceLabs[0]];

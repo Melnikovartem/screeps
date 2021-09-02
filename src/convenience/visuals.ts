@@ -14,7 +14,7 @@ export class Visuals {
   getAnchor(x?: number, roomName?: string | null, y?: number) {
     if (x !== undefined)
       this.anchor.x = x;
-    this.anchor.y = y ? y : this.anchor.y + 0.2;
+    this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y >= 0 ? y : this.anchor.y;
     if (roomName !== undefined)
       this.anchor.roomName = roomName ? roomName : undefined;
     return this.anchor;
@@ -48,17 +48,7 @@ export class Visuals {
         this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
-        let minSize = 0;
-        this.anchor = this.table(this.statsHives(name), this.getAnchor(1, name, 1), undefined, minSize);
-        minSize = Math.max(minSize, this.anchor.x - 1);
-
-
-        let labReuest = Apiary.hives[name].cells.lab && Apiary.hives[name].cells.lab!.currentRequest;
-        if (labReuest && labReuest.plan) {
-          this.anchor = this.progressbar(`🧪 ${labReuest.res1} + ${labReuest.res2} => ${labReuest.res} ${labReuest.plan}`,
-            this.getAnchor(1), 1 - (labReuest.current / labReuest.plan), undefined, minSize);
-          minSize = Math.max(minSize, this.anchor.x - 1);
-        }
+        this.statsHives(name);
 
         this.visualizeEnergy(name);
 
@@ -124,7 +114,7 @@ export class Visuals {
     return ans;
   }
 
-  statsHives(hiveName: string): string[][] {
+  statsHives(hiveName: string) {
     let hive = Apiary.hives[hiveName];
     let ans: string[][] = [["hive " + hiveName], ["", "❓", "🐝"]];
     let cell;
@@ -185,11 +175,10 @@ export class Visuals {
       ans.push(["annex", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
-    let constLen = hive.constructionSites.length;
-    let repLen = hive.emergencyRepairs.length;
-    if (constLen + repLen > 0 || (hive.builder && hive.builder.beesAmount)) {
+    let constLen = hive.structuresConst.length;
+    if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
       ans.push(["build", (constLen ? ` C:${constLen}` : "")
-        + (repLen ? ` R:${repLen}` : ""),
+        + (constLen ? ` R:${constLen}` : ""),
         this.getBeesAmount(hive.builder)])
     }
 
@@ -197,7 +186,36 @@ export class Visuals {
       ` ${Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100)}%`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
-    return ans;
+    let minSize = 0;
+    this.anchor = this.table(ans, this.getAnchor(1, hiveName, 1), undefined, minSize);
+    minSize = Math.max(minSize, this.anchor.x - 1);
+
+    let labCell = Apiary.hives[hiveName].cells.lab;
+    if (labCell) {
+      let labRequest = labCell.currentRequest;
+      if (labRequest) {
+        this.anchor = this.progressbar(`🧪 ${labRequest.res1} + ${labRequest.res2} => ${labRequest.res} ${labRequest.plan}`,
+          this.getAnchor(1), 1 - (labRequest.current / labRequest.plan), undefined, minSize);
+        minSize = Math.max(minSize, this.anchor.x - 1);
+      }
+      if (Object.keys(labCell.boostRequests).length) {
+        let boosts: { [id: string]: { [id: string]: number } } = {};
+        _.forEach(labCell.boostRequests, (rr) => _.forEach(rr, (r) => {
+          if (!r.amount || !r.res)
+            return;
+          if (!boosts[r.type])
+            boosts[r.type] = {};
+          if (!boosts[r.type][r.res])
+            boosts[r.type][r.res] = 0
+          boosts[r.type][r.res] += r.amount;
+        }));
+        ans = [["boosts", "🧬", "🧪"]];
+        for (let action in boosts)
+          ans.push([action].concat(_.map(boosts[action], (num, res) => `${res}: ${num}`)));
+        this.anchor = this.table(ans, this.getAnchor(1), undefined, minSize);
+        minSize = Math.max(minSize, this.anchor.x - 1);
+      }
+    }
   }
 
   getBeesAmount(master: { waitingForBees: number, beesAmount: number, targetBeeCount: number } | undefined): string {

@@ -1,4 +1,6 @@
 import { Cell } from "./cells/_Cell";
+import { CreepSetup } from "./creepSetups";
+
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
 
@@ -14,8 +16,6 @@ import { builderMaster } from "./beeMasters/economy/builder";
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
 import { UPDATE_EACH_TICK, DEVELOPING } from "./settings";
-
-import { CreepSetup } from "./creepSetups";
 
 export interface SpawnOrder {
   amount: number;
@@ -35,72 +35,6 @@ interface hiveCells {
 }
 
 @profile
-class repairSheet {
-  [STRUCTURE_RAMPART]: number = 200000;
-  [STRUCTURE_WALL]: number = 200000;
-  other: number = 1;
-  collapse: number = 0.75;
-  road_collapse: number = 0.5;
-
-  constructor(hiveStage: 0 | 1 | 2) {
-    if (hiveStage === 0) {
-      this[STRUCTURE_RAMPART] = 20000;
-      this[STRUCTURE_WALL] = 20000;
-      this.other = 0.7;
-      this.collapse = 0.5;
-    } else if (hiveStage === 2) {
-      this[STRUCTURE_RAMPART] = 2000000;
-      this[STRUCTURE_WALL] = 2000000;
-      this.other = 1;
-      this.collapse = 0.86;
-      this.road_collapse = 0.25;
-    }
-  }
-
-  getHits(structure: Structure): number {
-    switch (structure.structureType) {
-      case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
-        return this[structure.structureType];
-      }
-      case STRUCTURE_ROAD: {
-        return structure.hits < structure.hitsMax * this.other * this.road_collapse ? structure.hits : 0;
-      }
-      default: {
-        return structure.hitsMax * this.other;
-      }
-    }
-  }
-
-  isAnEmergency(structure: Structure): boolean {
-    switch (structure.structureType) {
-      case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
-        return structure.hits < this[structure.structureType] * this.collapse;
-      }
-      case STRUCTURE_ROAD: {
-        return structure.hits < structure.hitsMax * this.other * this.road_collapse;
-      }
-      default: {
-        return structure.hits < structure.hitsMax * this.other * this.collapse;
-      }
-    }
-  }
-
-  isAnRepairCase(structure: Structure): boolean {
-    switch (structure.structureType) {
-      case STRUCTURE_RAMPART: case STRUCTURE_WALL: {
-        return structure.hits < this[structure.structureType];
-      }
-      case STRUCTURE_ROAD: {
-        return false;
-      }
-      default: {
-        return structure.hits < structure.hitsMax * this.other;
-      }
-    }
-  }
-}
-
-@profile
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
   roomName: string;
@@ -110,15 +44,8 @@ export class Hive {
   annexes: Room[] = []; // this room and annexes
   rooms: Room[] = []; //this room and annexes
   cells: hiveCells;
-  repairSheet: repairSheet;
 
   spawOrders: { [id: string]: SpawnOrder } = {};
-
-  // some structures (aka preprocess of filters)
-  constructionSites: ConstructionSite[] = [];
-  emergencyRepairs: Structure[] = [];
-  normalRepairs: Structure[] = [];
-  sumRepairs: number = 0;
 
   builder?: builderMaster;
 
@@ -131,6 +58,9 @@ export class Hive {
 
   shouldRecalc: boolean;
   bassboost: Hive | null = null;
+
+  structuresConst: RoomPosition[] = [];
+  sumCost: number = 0;
 
   // help grow creeps from other colony
 
@@ -168,7 +98,6 @@ export class Hive {
 
     //look for new structures for those wich need them
     this.updateCellData();
-    this.repairSheet = new repairSheet(this.stage);
     this.shouldRecalc = true;
 
     if (Apiary.logger)
@@ -237,41 +166,14 @@ export class Hive {
     return ERR_INVALID_ARGS;
   }
 
-  private updateConstructionSites(rooms?: Room[]) {
-    this.constructionSites = [];
-    _.forEach(rooms ? rooms : this.rooms, (room) => {
-      let roomInfo = Apiary.intel.getInfo(room.name, 10);
-      if (roomInfo.safePlace)
-        this.constructionSites = this.constructionSites.concat(_.filter(room.find(FIND_CONSTRUCTION_SITES), (site) => site.my));
+  updateStructures() {
+    this.structuresConst = [];
+    this.sumCost = 0;
+    _.forEach(this.rooms, (r) => {
+      let ans = Apiary.planner.checkBuildings(r.name);
+      this.structuresConst = this.structuresConst.concat(ans.pos);
+      this.sumCost += ans.sum;
     });
-  }
-
-  private updateRepairs() {
-    this.normalRepairs = [];
-    this.emergencyRepairs = [];
-    this.sumRepairs = 0;
-    _.forEach(this.room.find(FIND_STRUCTURES), (structure) => {
-      if (structure.hitsMax > structure.hits)
-        this.sumRepairs += Math.max(0, this.repairSheet.getHits(structure) - structure.hits);
-      if (this.repairSheet.isAnEmergency(structure))
-        this.emergencyRepairs.push(structure);
-      else if (this.repairSheet.isAnRepairCase(structure))
-        this.normalRepairs.push(structure);
-    });
-    _.forEach(this.annexes, (room) => {
-      let roomInfo = Apiary.intel.getInfo(room.name, 10);
-      if (roomInfo.safePlace)
-        _.forEach(room.find(FIND_STRUCTURES), (structure) => {
-          if (structure.structureType === STRUCTURE_ROAD || structure.structureType === STRUCTURE_CONTAINER) {
-            this.sumRepairs += Math.max(0, this.repairSheet.getHits(structure) - structure.hits);
-            if (this.repairSheet.isAnEmergency(structure))
-              this.emergencyRepairs.push(structure);
-            else if (this.repairSheet.isAnRepairCase(structure))
-              this.normalRepairs.push(structure);
-          }
-        });
-    });
-    this.sumRepairs = Math.floor(this.sumRepairs / 100);
   }
 
   update() {
@@ -279,9 +181,7 @@ export class Hive {
     this.room = Game.rooms[this.roomName];
     if (UPDATE_EACH_TICK || Game.time % 10 === 8 || this.shouldRecalc) {
       this.updateRooms();
-      this.updateConstructionSites();
-      if (UPDATE_EACH_TICK || Game.time % 30 === 8 || this.shouldRecalc)
-        this.updateRepairs(); // cause costly
+      this.updateStructures();
       if (this.shouldRecalc) {
         this.markResources();
         this.shouldRecalc = false;

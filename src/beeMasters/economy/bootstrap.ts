@@ -185,14 +185,16 @@ export class bootstrapMaster extends Master {
         }
 
         if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
-          if (!target) {
-            target = bee.pos.findClosest(this.hive.emergencyRepairs)
-            workType = "repair";
-          }
-
-          if (!target) {
-            target = bee.pos.findClosest(this.hive.constructionSites);
-            workType = "build";
+          let pos = bee.pos.findClosest(this.hive.structuresConst);
+          if (pos) {
+            target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+            if (target)
+              workType = "build";
+            else {
+              target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
+              if (target)
+                workType = "repair";
+            }
           }
         }
 

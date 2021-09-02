@@ -32,6 +32,7 @@ export class excavationCell extends Cell {
   }
 
   update() {
+    super.update();
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       safeWrap(() => { cell.update() }, cell.print + " update");

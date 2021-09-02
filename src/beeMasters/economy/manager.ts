@@ -30,14 +30,15 @@ export class managerMaster extends Master {
 
     if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
       && this.manager.pos.roomName === this.cell.pos.roomName) {
-      if (this.manager.target) {
-        if (this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority && emergencyRequests.length) {
+      if (this.manager.target && this.cell.requests[this.manager.target]) {
+        if (emergencyRequests.length && this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority) {
           this.manager.target = emergencyRequests[0].ref;
           let res = this.cell.requests[this.manager.target].resource;
           this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
             : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
         }
       } else if (this.manager.state == states.chill) {
+        this.manager.target = null;
         let targets: string[] = [];
         for (let k in this.cell.requests)
           if (this.cell.requests[k].amount > 0
@@ -94,8 +95,6 @@ export class managerMaster extends Master {
             if (this.manager.store.getUsedCapacity(request.resource) === 0)
               this.manager.state = states.refill;
 
-            if (request.amount <= 0)
-              delete this.cell.requests[this.manager.target];
             // invalidate request
             else if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource) === 0)
               delete this.cell.requests[this.manager.target];

@@ -4,6 +4,7 @@ import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./intelligence";
 import { Logger } from "./convenience/logger";
+import { RoomPlanner } from "./RoomPlanner";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
@@ -13,6 +14,7 @@ import { LOGGING_CYCLE, DEVELOPING } from "./settings";
 export class _Apiary {
   destroyTime: number;
   intel: Intel;
+  planner: RoomPlanner;
   logger: Logger | undefined;
 
   bees: { [id: string]: Bee };
@@ -25,6 +27,7 @@ export class _Apiary {
   constructor() {
     this.destroyTime = Game.time + 6000;
     this.intel = new Intel();
+    this.planner = new RoomPlanner();
     if (LOGGING_CYCLE)
       this.logger = new Logger();
 

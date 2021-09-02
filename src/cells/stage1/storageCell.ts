@@ -89,6 +89,16 @@ export class storageCell extends Cell {
   update() {
     super.update(["links"]);
 
+
+    for (let k in this.requests) {
+      let from = <StorageRequest["from"] | null>Game.getObjectById(this.requests[k].from.id);
+      if (from)
+        this.requests[k].from = from;
+      let to = <StorageRequest["to"] | null>Game.getObjectById(this.requests[k].to.id);
+      if (to)
+        this.requests[k].to = to;
+    }
+
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000)
       this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
 
@@ -100,5 +110,9 @@ export class storageCell extends Cell {
     }
   }
 
-  run() { }
+  run() {
+    for (let k in this.requests)
+      if (this.requests[k].amount <= 0)
+        delete this.requests[k];
+  }
 }

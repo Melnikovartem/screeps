@@ -29,7 +29,7 @@ declare global {
   interface Memory {
     cache: {
       intellegence: any;
-      roomPlaner: { [id: string]: any };
+      roomPlaner: { [id: string]: { [key in StructureConstant]?: { "pos": { "x": number, "y": number }[] } } }
     },
     masters: { [id: string]: any };
 
@@ -50,9 +50,8 @@ declare global {
           loggedStates: {
             [id: number]: {
               annexNames: string[],
-              constructionSites: number,
-              emergencyRepairs: number,
-              normalRepairs: number,
+              structuresConst: number
+              sumCost: number,
               spawOrders: {
                 [id: string]: {
                   amount: number,
