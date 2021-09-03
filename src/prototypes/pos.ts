@@ -157,47 +157,67 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  _.some(objects, (object: Obj) => {
-    let pos: RoomPosition;
-    if (object instanceof RoomPosition)
-      pos = object;
-    else
-      pos = (<{ pos: RoomPosition }>object).pos;
+  _.some(objects, (obj: Obj) => {
+    let pos = "pos" in obj ? (<{ pos: RoomPosition }>obj).pos : <RoomPosition>obj;
 
     let newDistance = 0;
-    if (this.roomName === pos.roomName)
-      newDistance = this.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
-    else {
-      //cheap (in terms of CPU) est of dist
-      let outOfRoom = 25;
-      if (this.roomName in Game.rooms) {
-        let exit = Game.rooms[this.roomName].findExitTo(pos.roomName);
-        if (exit > 0)
-          outOfRoom = getRangeToWall[exit](this) * 1.2;
-      }
-      let inRoom = 25;
-      if (pos.roomName in Game.rooms) {
-        let exit = Game.rooms[pos.roomName].findExitTo(this.roomName);
-        if (exit > 0)
-          inRoom = getRangeToWall[exit](pos) * 1.2;
+    //cheap (in terms of CPU) est of dist
+
+    let route = Game.map.findRoute(this.roomName, pos.roomName);
+    let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
+    let currentRoom = this.roomName;
+
+    if (route === -2)
+      newDistance = Infinity
+    else
+      for (let i in route) {
+        let room = Game.rooms[currentRoom];
+        let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
+        if (room) {
+          if (!(enterance instanceof RoomPosition))
+            enterance = room.find(enterance)[0];
+          // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
+          let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByRange(room.find(route[i].exit));
+
+          if (exit) {
+            newDistance += enterance.getRangeTo(exit);
+            newEnterance = exit.getEnteranceToRoom();
+          }
+        } else
+          newDistance += 15;
+
+
+        if (!newEnterance)
+          newEnterance = oppositeExit[route[i].exit];
+        enterance = newEnterance;
+        currentRoom = route[i].room;
       }
 
-      newDistance += Math.ceil(outOfRoom + inRoom + (this.getRoomRangeTo(pos) - 1) * 25);
+    if (pos.roomName in Game.rooms) {
+      if (!(enterance instanceof RoomPosition))
+        enterance = Game.rooms[pos.roomName].find(enterance)[0];
+      newDistance += enterance.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
     }
+
     if (newDistance < distance) {
-      ans = object;
+      ans = obj;
       distance = newDistance;
     } else if (newDistance === distance) {
       // i thought of linear dist but it is not good at all in this world
       if (Math.random() > 0.8)
-        ans = object; // just a random chance to invalidate this object (so getClosest wouldn't prefer the top left ones)
+        ans = obj; // just a random chance to invalidate this object (so getClosest wouldn't prefer the top left ones)
       //i didn't rly calculate the E of this ans, but surely it is satisfactory
     }
 
-    if (distance === 1)
-      return true;
-    return false;
+    if (0 % 2 == 1 && this.roomName == "E22S56" && pos.roomName != "E21S57")
+      console.log(newDistance, this, pos);
+
+    return distance === 1;
   });
+
+  if (0 % 2 == 1 && this.roomName == "E22S56")
+    console.log("\n");
+
 
   return ans;
 }

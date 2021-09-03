@@ -41,61 +41,64 @@ export class builderMaster extends Master {
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     if (storage)
       _.forEach(this.bees, (bee) => {
-        if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-          bee.state = states.refill;
-        else
-          bee.state = states.work;
+        switch (bee.state) {
+          case states.refill:
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+              bee.state = states.work;
+            else if (bee.withdraw(storage, RESOURCE_ENERGY) === OK) {
+              bee.state = states.work;
+              bee.target = null;
+              if (Apiary.logger)
+                Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
+            } else
+              break;
+          case states.work:
+            if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
+              bee.state = states.refill;
+            else {
+              let target: Structure | ConstructionSite | null = null;
+              if (bee.target) {
+                target = Game.getObjectById(bee.target);
+                if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
+                  this.hive.shouldRecalc = 1;
+                  target = null;
+                }
+              }
 
-        if (bee.state === states.refill && bee.withdraw(storage, RESOURCE_ENERGY) === OK) {
-          bee.target = null;
-          if (Apiary.logger)
-            Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
-          bee.state = states.work;
-        }
-        if (bee.state === states.work) {
-          let target: Structure | ConstructionSite | null = null;
-          if (bee.target) {
-            target = Game.getObjectById(bee.target);
-            if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
-              this.hive.shouldRecalc = 1;
-              target = null;
+              if (!target) {
+                let pos = bee.pos.findClosest(this.hive.structuresConst);
+                if (pos) {
+                  target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+                  if (!target)
+                    target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
+                }
+              }
+
+              if (target) {
+                let ans;
+                if (target instanceof ConstructionSite)
+                  ans = bee.build(target);
+                else if (target instanceof Structure)
+                  ans = bee.repair(target);
+                bee.target = target.id;
+                bee.repairRoadOnMove(ans);
+              } else {
+                bee.target = null;
+                bee.state = states.chill;
+              }
             }
-          }
-
-          if (!target) {
-            let pos = bee.pos.findClosest(this.hive.structuresConst);
-            if (pos) {
-              target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-              if (!target)
-                target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
-            }
-          }
-
-          if (target) {
-            let ans;
-            if (target instanceof ConstructionSite)
-              ans = bee.build(target);
-            else if (target instanceof Structure)
-              ans = bee.repair(target);
-            bee.target = target.id;
-            bee.repairRoadOnMove(ans);
-          } else {
-            bee.target = null;
-            bee.state = states.fflush;
-          }
+          case states.chill:
+            if (this.hive.sumCost)
+              bee.state = states.work;
+            else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+              let ans = bee.transfer(storage, RESOURCE_ENERGY);
+              if (ans === OK && Apiary.logger)
+                Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, storage!.store, RESOURCE_ENERGY, 1);
+              bee.repairRoadOnMove(ans);
+            } else
+              bee.goRest(this.hive.pos);
+            break;
         }
-
-        if (bee.state === states.fflush)
-          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-            let ans = bee.transfer(storage, RESOURCE_ENERGY);
-            if (ans === OK && Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, storage!.store, RESOURCE_ENERGY, 1);
-            bee.repairRoadOnMove(ans);
-          } else
-            bee.state = states.chill;
-
-        if (bee.state === states.chill)
-          bee.goRest(this.hive.pos);
       });
   }
 }

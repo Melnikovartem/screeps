@@ -76,7 +76,7 @@ export class Visuals {
         for (let y in Apiary.planner.activePlanning[roomName].plan[+x]) {
           let style: CircleStyle = {
             opacity: 0.6,
-            radius: 0.4
+            radius: 0.35
           };
           switch (Apiary.planner.activePlanning[roomName].plan[+x][+y].s) {
             case STRUCTURE_ROAD:
@@ -108,7 +108,7 @@ export class Visuals {
             vis.circle(+x, +y, {
               opacity: 0.3,
               fill: "#A1FF80",
-              radius: 0.2,
+              radius: 0.5,
             });
           }
         }

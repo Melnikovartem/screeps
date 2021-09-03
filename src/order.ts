@@ -78,13 +78,12 @@ export class Order {
     return bestHive;
   }
 
-  uniqueFlag() {
+  uniqueFlag(local: boolean = true) {
     if (this.pos.roomName in Game.rooms) {
-      _.forEach(Game.rooms[this.pos.roomName].find(FIND_FLAGS), (f) => {
-        if (f.name != this.ref && f.color === this.flag.color && f.secondaryColor == this.flag.secondaryColor) {
-          if (Apiary.orders[f.name])
-            Apiary.orders[f.name].delete();
-        }
+      _.forEach(Game.flags, (f) => {
+        if (f.color === this.flag.color && f.secondaryColor == this.flag.secondaryColor
+          && (!local || f.pos.roomName == this.pos.roomName) && f.name != this.ref && Apiary.orders[f.name])
+          Apiary.orders[f.name].delete();
       });
       return OK;
     }
@@ -202,12 +201,8 @@ export class Order {
         this.acted = true;
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
-            if (this.hive.roomName == this.pos.roomName) {
-              this.uniqueFlag();
-              Apiary.planner.generatePlan(this.pos);
-              break;
-            } else
-              this.delete();
+            this.uniqueFlag(false);
+            Apiary.planner.generatePlan(this.pos);
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName]) {
@@ -298,12 +293,13 @@ export class Order {
       case COLOR_WHITE:
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
-            delete Apiary.planner.activePlanning[this.pos.roomName];
-            if (Memory.cache.roomPlanner[this.pos.roomName] === {})
-              Apiary.planner.resetPlanner(this.pos.roomName);
+            for (let name in Apiary.planner.activePlanning)
+              delete Apiary.planner.activePlanning[name];
             break;
           case COLOR_ORANGE:
             delete Apiary.planner.activePlanning[this.pos.roomName];
+            if (Memory.cache.roomPlanner[this.pos.roomName] === {})
+              Apiary.planner.resetPlanner(this.pos.roomName);
             break;
         }
         break;
