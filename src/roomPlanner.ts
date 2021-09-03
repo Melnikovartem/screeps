@@ -13,7 +13,7 @@ const EXTRA_HORIZONTAL: Module = { exits: [{ x: 20, y: 24 }, { x: 20, y: 26 }], 
 const WALLS: Module = { exits: [], freeSpaces: [], setup: { "road": { "pos": [{ "x": 25, "y": 25 }, { "x": 26, "y": 26 }, { "x": 24, "y": 24 }, { "x": 23, "y": 24 }, { "x": 24, "y": 23 }, { "x": 26, "y": 27 }, { "x": 27, "y": 26 }, { "x": 28, "y": 25 }, { "x": 25, "y": 22 }, { "x": 27, "y": 24 }, { "x": 26, "y": 23 }, { "x": 25, "y": 28 }, { "x": 22, "y": 25 }, { "x": 23, "y": 26 }, { "x": 24, "y": 27 }, { "x": 21, "y": 25 }, { "x": 20, "y": 24 }, { "x": 20, "y": 26 }, { "x": 23, "y": 23 }, { "x": 22, "y": 22 }, { "x": 21, "y": 21 }, { "x": 20, "y": 21 }, { "x": 23, "y": 27 }, { "x": 22, "y": 28 }, { "x": 21, "y": 29 }, { "x": 20, "y": 29 }] }, "lab": { "pos": [{ "x": 21, "y": 24 }, { "x": 22, "y": 24 }, { "x": 23, "y": 25 }, { "x": 22, "y": 26 }, { "x": 21, "y": 26 }, { "x": 20, "y": 25 }, { "x": 20, "y": 23 }, { "x": 21, "y": 23 }, { "x": 20, "y": 27 }, { "x": 21, "y": 27 }] }, "storage": { "pos": [{ "x": 25, "y": 26 }] }, "link": { "pos": [{ "x": 24, "y": 25 }] }, "terminal": { "pos": [{ "x": 24, "y": 26 }] }, "extension": { "pos": [{ "x": 22, "y": 23 }, { "x": 20, "y": 28 }, { "x": 21, "y": 28 }, { "x": 22, "y": 27 }, { "x": 20, "y": 30 }, { "x": 21, "y": 30 }, { "x": 22, "y": 29 }, { "x": 23, "y": 28 }, { "x": 21, "y": 22 }, { "x": 20, "y": 22 }, { "x": 20, "y": 20 }, { "x": 21, "y": 20 }, { "x": 22, "y": 21 }, { "x": 23, "y": 22 }] } } };
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
-  [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS / 2 } },
+  [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS } },
   [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } },
   [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } }
 }
@@ -40,13 +40,25 @@ export class RoomPlanner {
       plan: { [id: number]: { [id: number]: { s: StructureConstant | undefined, r: boolean } } },
       placed: { [key in StructureConstant]?: number },
       freeSpaces: Pos[], exits: RoomPosition[],
+      jobsToDo: (() => void | -1)[];
     }
   } = {};
+
+  run() {
+    // CPU for planner - least important one
+    for (let roomName in this.activePlanning) {
+      while (this.activePlanning[roomName].jobsToDo.length) {
+        if (this.activePlanning[roomName].jobsToDo[0]() !== -1)
+          this.activePlanning[roomName].jobsToDo.shift();
+      }
+    }
+  }
   generatePlan(anchor: RoomPosition) {
-    Memory.cache.roomPlaner[anchor.roomName] = {};
-    this.activePlanning[anchor.roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [] };
+    this.activePlanning[anchor.roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [] };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[anchor.roomName].placed[<BuildableStructureConstant>t] = 0;
+
+    let jobs = this.activePlanning[anchor.roomName].jobsToDo;
 
     let rotate = (pos: Pos, direction: 0 | 1 | 2 | 3, shiftY: number = 0, shiftX: number = 0) => {
       let x = pos.x - 25;
@@ -72,85 +84,99 @@ export class RoomPlanner {
     }
 
     let baseRotation: 0 | 1 | 2 | 3 = <0 | 1 | 2 | 3>(2 % 4);
-    this.addToPlan(anchor, baseRotation > 1 ? BASE_VERTICAL : BASE_HORIZONTAL, (a: Pos) => rotate(a, baseRotation));
+    jobs.push(() => this.addToPlan(anchor, baseRotation > 1 ? BASE_VERTICAL : BASE_HORIZONTAL, (a: Pos) => rotate(a, baseRotation)));
     if (baseRotation != 2)
-      this.addToPlan(anchor, EXTRA_VERTICAL, (a: Pos) => rotate(a, 0, -3)); // top
+      jobs.push(() => this.addToPlan(anchor, EXTRA_VERTICAL, (a: Pos) => rotate(a, 0, -3))); // top
     if (baseRotation != 3)
-      this.addToPlan(anchor, EXTRA_VERTICAL, (a: Pos) => rotate(a, 1, 3)); // bottom
+      jobs.push(() => this.addToPlan(anchor, EXTRA_VERTICAL, (a: Pos) => rotate(a, 1, 3))); // bottom
     if (baseRotation != 1)
-      this.addToPlan(anchor, EXTRA_HORIZONTAL, (a: Pos) => rotate(a, 1, 0)); // right
+      jobs.push(() => this.addToPlan(anchor, EXTRA_HORIZONTAL, (a: Pos) => rotate(a, 1, 0))); // right
     if (baseRotation != 0)
-      this.addToPlan(anchor, EXTRA_HORIZONTAL, (a: Pos) => rotate(a, 0)); // left
+      jobs.push(() => this.addToPlan(anchor, EXTRA_HORIZONTAL, (a: Pos) => rotate(a, 0))); // left
 
 
-    let placed = this.activePlanning[anchor.roomName].placed;
-    let plan = this.activePlanning[anchor.roomName].plan;
-    _.forEach([STRUCTURE_EXTENSION, STRUCTURE_OBSERVER], (sType) => {
-      if (placed[sType]! < CONTROLLER_STRUCTURES[sType][8]) {
-        let pos: Pos | undefined;
-        while (pos = this.activePlanning[anchor.roomName].freeSpaces.shift()) {
-          if (!plan[pos.x])
-            plan[pos.x] = {};
-          if (!plan[pos.x][pos.y])
-            plan[pos.x][pos.y] = { s: undefined, r: false };
-          if (!plan[pos.x][pos.y].s)
-            break;
-          if (pos)
-            plan[pos.x][pos.y] = { s: sType, r: false };
-        }
-      }
-    });
-
-    let pathArgs = {
-      costCallback: function(roomName: string, costMatrix: CostMatrix) {
-        if (roomName == anchor.roomName) {
+    let pathArgs: FindPathOpts = {
+      costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
+        if (Apiary.planner.activePlanning[roomName]) {
+          let plan = Apiary.planner.activePlanning[roomName].plan;
           for (let x in plan)
-            for (let y in plan) {
+            for (let y in plan[x]) {
               if (plan[x][y].s == STRUCTURE_ROAD)
                 costMatrix.set(+x, +y, 1);
               else if (plan[x][y].s)
                 costMatrix.set(+x, +y, 255);
             }
+          return costMatrix;
         }
-      }, plainCost: 3, swampCost: 12,
+      }, plainCost: 2, swampCost: 10, ignoreCreeps: true,
     }
 
     let futureResourceCells = _.filter(Game.flags, (f) => f.color == COLOR_YELLOW && f.memory.hive == anchor.roomName);
     _.forEach(futureResourceCells, (f) => {
-      let exit = f.pos.findClosestByPath(this.activePlanning[anchor.roomName].exits, pathArgs);
-      if (exit) {
-        let path = f.pos.findPathTo(exit, pathArgs);
-        let container: Pos;
-        if (path.length > 1)
-          container = path[1];
-        else if (path.length > 0)
-          container = path[0];
-        else
-          container = f.pos.getOpenPositions(true)[0];
+      if (f.color == COLOR_CYAN) {
 
-        if (container) {
-          if (!plan[container.x])
-            plan[container.x] = {};
-          if (!plan[container.x][container.y])
-            plan[container.x][container.y] = { s: undefined, r: false };
-          if (plan[container.x][container.y].s)
-            placed[plan[container.x][container.y].s!]!--;
-          plan[container.x][container.y] = { s: STRUCTURE_CONTAINER, r: plan[container.x][container.y].r };
-        }
-
-        path.shift(); path.shift();
-        _.forEach(path, (pos) => {
-          if (!plan[pos.x])
-            plan[pos.x] = {};
-          if (!plan[pos.x][pos.y])
-            plan[pos.x][pos.y] = { s: undefined, r: false };
-          if (!plan[pos.x][pos.y].s)
-            plan[pos.x][pos.y] = { s: STRUCTURE_ROAD, r: plan[pos.x][pos.y].r };
-        });
       }
+      jobs.push(() => {
+        let plan = this.activePlanning[anchor.roomName].plan;
+        let exit = f.pos.findClosestByPath(this.activePlanning[anchor.roomName].exits, pathArgs);
+        if (!exit)
+          exit = f.pos.findClosest(this.activePlanning[anchor.roomName].exits);
+        if (exit) {
+          let path = exit.findPathTo(f.pos);
+          console.log(f.pos, path.length && [path[0].x, path[0].y])
+          path.pop();
+          if (f.pos.roomName == exit.roomName) {
+            let container: Pos;
+            if (path.length > 1)
+              container = path[path.length - 2];
+            else if (path.length > 0)
+              container = path[0];
+            else
+              container = f.pos.getOpenPositions(true)[0];
+
+            if (container) {
+              if (!plan[container.x])
+                plan[container.x] = {};
+              if (!plan[container.x][container.y])
+                plan[container.x][container.y] = { s: undefined, r: false };
+              if (plan[container.x][container.y].s)
+                this.activePlanning[anchor.roomName].placed[plan[container.x][container.y].s!]!--;
+              plan[container.x][container.y] = { s: STRUCTURE_CONTAINER, r: plan[container.x][container.y].r };
+            }
+            path.pop(); path.pop();
+          }
+          _.forEach(path, (pos) => {
+            if (!plan[pos.x])
+              plan[pos.x] = {};
+            if (!plan[pos.x][pos.y])
+              plan[pos.x][pos.y] = { s: undefined, r: false };
+            if (!plan[pos.x][pos.y].s)
+              plan[pos.x][pos.y] = { s: STRUCTURE_ROAD, r: plan[pos.x][pos.y].r };
+          });
+        }
+      });
     });
 
-    this.addToPlan(anchor, WALLS, (a: Pos) => rotate(a, baseRotation));
+    jobs.push(() => this.addToPlan(anchor, WALLS, (a: Pos) => rotate(a, baseRotation)));
+
+    jobs.push(() => {
+      let plan = this.activePlanning[anchor.roomName].plan;
+      _.forEach([STRUCTURE_EXTENSION, STRUCTURE_OBSERVER], (sType) => {
+        if (this.activePlanning[anchor.roomName].placed[sType]! < CONTROLLER_STRUCTURES[sType][8]) {
+          let pos: Pos | undefined;
+          while (pos = this.activePlanning[anchor.roomName].freeSpaces.shift()) {
+            if (!plan[pos.x])
+              plan[pos.x] = {};
+            if (!plan[pos.x][pos.y])
+              plan[pos.x][pos.y] = { s: undefined, r: false };
+            if (!plan[pos.x][pos.y].s)
+              break;
+            if (pos)
+              plan[pos.x][pos.y] = { s: sType, r: false };
+          }
+        }
+      });
+    });
   }
 
   addToPlan(anchor: { x: number, y: number, roomName: string }, configuration: Module, transformPos: (a: Pos) => Pos) {
@@ -194,11 +220,11 @@ export class RoomPlanner {
   }
 
   toActive(roomName: string) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [] };
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [] };
     let plan = this.activePlanning[roomName].plan;
-    for (let t in Memory.cache.roomPlaner[roomName]) {
+    for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
-      let poss = Memory.cache.roomPlaner[roomName][sType]!.pos;
+      let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
       for (let i = 0; i < poss.length; ++i) {
         let x = poss[i].x;
         let y = poss[i].y;
@@ -215,54 +241,37 @@ export class RoomPlanner {
     }
   }
 
-  visualize() {
-    for (let roomName in this.activePlanning) {
-      let vis = new RoomVisual(roomName);
-      for (let x in this.activePlanning[roomName].plan)
-        for (let y in this.activePlanning[roomName].plan[+x]) {
-          let style: CircleStyle = {
-            opacity: 0.6,
-            radius: 0.4
-          };
-          switch (this.activePlanning[roomName].plan[+x][+y].s) {
-            case STRUCTURE_ROAD:
-              style.fill = "#B0B0B0";
-              style.radius = 0.1;
-              break;
-            case STRUCTURE_WALL:
-              style.fill = "#333433";
-              style.opacity = 1;
-              break;
-            case STRUCTURE_EXTENSION:
-              style.fill = "#ffdd80";
-              break;
-            case STRUCTURE_LAB:
-              style.fill = "#91EFD8";
-              break;
-            case STRUCTURE_TOWER:
-              style.fill = "#F93274";
-              break;
-            case undefined:
-              style.opacity = 0;
-              break;
-            default:
-              style.fill = "#1823FF";
-              break;
-          }
-          vis.circle(+x, +y, style);
-          if (this.activePlanning[roomName].plan[+x][+y].r) {
-            vis.circle(+x, +y, {
-              opacity: 0.3,
-              fill: "#A1FF80",
-              radius: 0.2,
-            });
-          }
-        }
-    }
+  resetPlanner(roomName: string) {
+    if (!(roomName in Game.rooms))
+      return;
+
+    Memory.cache.roomPlanner[roomName] = {};
+    _.forEach((<(Structure | ConstructionSite)[]>Game.rooms[roomName].find(FIND_STRUCTURES))
+      .concat(Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES)),
+      (s) => {
+        if (!(s.structureType in CONTROLLER_STRUCTURES))
+          return;
+        if (this.getCase(s).amount == 0)
+          return;
+        if (!Memory.cache.roomPlanner[roomName][s.structureType])
+          Memory.cache.roomPlanner[roomName][s.structureType] = { "pos": [] };
+        Memory.cache.roomPlanner[roomName][s.structureType]!.pos.push({ x: s.pos.x, y: s.pos.y });
+      });
+  }
+
+  getCase(structure: Structure | ConstructionSite | { structureType: StructureConstant, pos: { roomName: string }, hitsMax: number }) {
+    let controller: StructureController | { level: number } | undefined = Game.rooms[structure.pos.roomName] && Game.rooms[structure.pos.roomName].controller;
+    if (!controller)
+      controller = { level: 0 };
+    let specialCase = SPECIAL_STRUCTURE[structure.structureType] && SPECIAL_STRUCTURE[structure.structureType]![controller!.level];
+    return specialCase ? specialCase : {
+      amount: CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType][controller!.level]
+      , heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax,
+    };
   }
 
   checkBuildings(roomName: string) {
-    if (!(roomName in Game.rooms) || !Memory.cache.roomPlaner[roomName])
+    if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return { pos: [], sum: 0 };
 
     let controller: StructureController | { level: number } | undefined = Game.rooms[roomName].controller;
@@ -272,16 +281,15 @@ export class RoomPlanner {
     let ans: RoomPosition[] = [];
     let sum = 0;
     let constructions = 0;
-    for (let t in Memory.cache.roomPlaner[roomName]) {
+    for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
-      let positions = Memory.cache.roomPlaner[roomName][sType]!.pos;
-      let specialCase = SPECIAL_STRUCTURE[sType] && SPECIAL_STRUCTURE[sType]![controller.level];
-      for (let i = 0; i < (specialCase ? specialCase.amount : CONTROLLER_STRUCTURES[sType][controller.level])
-        && i < positions.length; ++i) {
+      let cc = this.getCase({ structureType: sType, pos: { roomName: roomName }, hitsMax: 0 });
+      let positions = Memory.cache.roomPlanner[roomName][sType]!.pos;
+      for (let i = 0; i < cc.amount && i < positions.length; ++i) {
         let pos = new RoomPosition(positions[i].x, positions[i].y, roomName);
         let structure = <Structure<BuildableStructureConstant> | undefined>_.filter(pos.lookFor(LOOK_STRUCTURES),
           (s) => s.structureType == sType)[0];
-        if (!structure && (_.filter(pos.lookFor(LOOK_STRUCTURES)).length == 0) || sType == STRUCTURE_RAMPART) {
+        if (!structure) {
           if (constructions <= 5) {
             let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
             if (!constructionSite) {
@@ -293,9 +301,9 @@ export class RoomPlanner {
             constructions++;
           }
         } else if (structure) {
-          let hitsHeal = (specialCase ? specialCase.heal : structure.hitsMax) * 0.8;
-          if (structure.hits < hitsHeal) {
-            sum += hitsHeal - structure.hits;
+          let heal = this.getCase(structure).heal;
+          if (structure.hits < heal * 0.8) {
+            sum += Math.round((heal - structure.hits) / 100);
             ans.push(pos);
           }
         }

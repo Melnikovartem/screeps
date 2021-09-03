@@ -204,19 +204,13 @@ export class Order {
           case COLOR_WHITE:
             if (this.hive.roomName == this.pos.roomName) {
               this.uniqueFlag();
-              let storagePos = this.hive.cells.storage && this.hive.cells.storage.storage.pos;
-              if (storagePos && !this.flag.name.includes("force")) {
-                this.pos = storagePos;
-                this.pos.x -= 1;
-                this.flag.setPosition(this.pos);
-              }
               Apiary.planner.generatePlan(this.pos);
               break;
             } else
               this.delete();
             break;
           case COLOR_ORANGE:
-            if (Memory.cache.roomPlaner[this.pos.roomName]) {
+            if (Memory.cache.roomPlanner[this.pos.roomName]) {
               this.uniqueFlag();
               Apiary.planner.toActive(this.pos.roomName);
             } else
@@ -305,8 +299,8 @@ export class Order {
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
             delete Apiary.planner.activePlanning[this.pos.roomName];
-            if (Memory.cache.roomPlaner[this.hive.roomName] === {})
-              this.hive.resetPlanner();
+            if (Memory.cache.roomPlanner[this.pos.roomName] === {})
+              Apiary.planner.resetPlanner(this.pos.roomName);
             break;
           case COLOR_ORANGE:
             delete Apiary.planner.activePlanning[this.pos.roomName];

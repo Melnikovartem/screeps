@@ -56,7 +56,7 @@ export class Hive {
   // 1 storage - 7lvl
   // max
 
-  shouldRecalc: boolean;
+  shouldRecalc: 0 | 1 | 2;
   bassboost: Hive | null = null;
 
   structuresConst: RoomPosition[] = [];
@@ -98,32 +98,17 @@ export class Hive {
 
     //look for new structures for those wich need them
     this.updateCellData();
-    this.shouldRecalc = true;
+    this.shouldRecalc = 2;
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
-
-    if (!Memory.cache.roomPlaner[roomName] || Memory.cache.roomPlaner[roomName] === {})
-      this.resetPlanner();
-  }
-
-  resetPlanner() {
-    Memory.cache.roomPlaner[this.roomName] = {};
-    _.forEach((<(Structure | ConstructionSite)[]>this.room.find(FIND_MY_STRUCTURES)).concat(this.room.find(FIND_CONSTRUCTION_SITES)),
-      (s) => {
-        if (!(s.structureType in CONTROLLER_STRUCTURES))
-          return;
-        if (!Memory.cache.roomPlaner[this.roomName][s.structureType])
-          Memory.cache.roomPlaner[this.roomName][s.structureType] = { "pos": [] };
-        Memory.cache.roomPlaner[this.roomName][s.structureType]!.pos.push({ x: s.pos.x, y: s.pos.y });
-      });
   }
 
   addAnex(annexName: string) {
     if (!this.annexNames.includes(annexName))
       this.annexNames.push(annexName);
     if (annexName in Game.rooms) {
-      this.shouldRecalc = true;
+      this.shouldRecalc = 2;
       return OK;
     } else
       return ERR_NOT_FOUND;
@@ -197,12 +182,15 @@ export class Hive {
     if (UPDATE_EACH_TICK || Game.time % 10 === 8 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
-      if (this.shouldRecalc) {
+      if (this.shouldRecalc > 1) {
         this.markResources();
-        this.shouldRecalc = false;
+        _.forEach(this.rooms, (r) => {
+          if (!Memory.cache.roomPlanner[r.name] || Memory.cache.roomPlanner[r.name] === {})
+            Apiary.planner.resetPlanner(r.name);
+        });
       }
+      this.shouldRecalc = 0;
     }
-
     if (Game.time % 100 === 29)
       this.updateCellData();
     if (Apiary.logger)

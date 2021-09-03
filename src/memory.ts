@@ -5,7 +5,7 @@ import { Logger } from "./convenience/logger";
 export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
-    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlaner: {} };
+    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {} };
     if (!Memory.settings) Memory.settings = { framerate: 10 };
 
     Logger.init();
@@ -14,7 +14,7 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = {};
-    Memory.cache = { intellegence: {}, roomPlaner: {} };
+    Memory.cache = { intellegence: {}, roomPlanner: {} };
     Memory.settings = { framerate: 10 };
 
     Logger.init(true);

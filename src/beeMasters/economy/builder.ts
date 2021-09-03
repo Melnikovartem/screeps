@@ -13,20 +13,17 @@ export class builderMaster extends Master {
   update() {
     super.update();
 
-    //let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
+    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let constLen = this.hive.structuresConst.length;
     let constSum = this.hive.sumCost;
-    if (constSum === 0 && constLen === 0)
+    if (!storage || constSum === 0 && constLen === 0 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
       this.targetBeeCount = 0;
-    else
+    else if (constSum < 13000 && constLen < 10 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
       this.targetBeeCount = 1;
-    /*
-    else if ((constLen < 20 && repSum < 20000 && repLen < 100)
-      || (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 200000))
+    else if (constSum < 22000 && constLen < 20 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000)
       this.targetBeeCount = 2;
     else
       this.targetBeeCount = 3;
-    */
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
@@ -59,8 +56,8 @@ export class builderMaster extends Master {
           let target: Structure | ConstructionSite | null = null;
           if (bee.target) {
             target = Game.getObjectById(bee.target);
-            if (target instanceof Structure && target.hits === target.hitsMax) {
-              this.hive.shouldRecalc = true;
+            if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
+              this.hive.shouldRecalc = 1;
               target = null;
             }
           }

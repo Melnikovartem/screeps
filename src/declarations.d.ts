@@ -30,7 +30,7 @@ declare global {
   interface Memory {
     cache: {
       intellegence: any;
-      roomPlaner: { [id: string]: RoomSetup }
+      roomPlanner: { [id: string]: RoomSetup }
     },
     masters: { [id: string]: any };
 

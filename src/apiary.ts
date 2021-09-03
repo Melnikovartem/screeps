@@ -5,10 +5,12 @@ import { Order } from "./order";
 import { Intel } from "./intelligence";
 import { Logger } from "./convenience/logger";
 import { RoomPlanner } from "./RoomPlanner";
+import { Visuals } from "./convenience/visuals";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE, DEVELOPING } from "./settings";
+
 
 @profile
 export class _Apiary {
@@ -16,6 +18,7 @@ export class _Apiary {
   intel: Intel;
   planner: RoomPlanner;
   logger: Logger | undefined;
+  visuals: Visuals | undefined;
 
   bees: { [id: string]: Bee };
   hives: { [id: string]: Hive };
@@ -78,6 +81,11 @@ export class _Apiary {
 
     if (Game.time % 50 === 0)
       this.intel.toCache();
+
+    if (this.visuals && !Memory.settings.framerate)
+      this.visuals = undefined;
+    else if (!this.visuals && Memory.settings.framerate)
+      this.visuals = new Visuals();
   }
 
   // run phase
@@ -88,5 +96,10 @@ export class _Apiary {
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.run(), master.print + " run");
     });
+
+    Apiary.planner.run();
+
+    if (this.visuals)
+      this.visuals.create();
   }
 }

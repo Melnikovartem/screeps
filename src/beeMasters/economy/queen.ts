@@ -27,6 +27,8 @@ export class queenMaster extends Master {
 
       // can refill in 1 run
       order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
+      if (this.hive.room.energyAvailable >= 1300)
+        order.setup.bodySetup.fixed = [WORK];
 
       this.wish(order);
     }
@@ -54,10 +56,10 @@ export class queenMaster extends Master {
           } else {
             let ans = bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
             if (ans === OK) {
-              let target = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
-                s.structureType === STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)[0];
-              if (target && !bee.pos.isNearTo(target))
-                bee.goTo(target);
+              let nearByTargets = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
+                s.structureType === STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+              if (nearByTargets.length > 0 && !_.filter(nearByTargets, (s) => s.pos.getRangeTo(bee.pos) == 1).length)
+                bee.goTo(nearByTargets[0]);
             } else if (ans === ERR_NOT_FOUND)
               bee.state = states.fflush;
           }

@@ -21,8 +21,6 @@ export class Visuals {
   }
 
   create() {
-    Apiary.planner.visualize();
-
     if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
@@ -50,8 +48,6 @@ export class Visuals {
         this.caching["global"] = new RoomVisual().export();
 
       for (const name in Apiary.hives) {
-        if (Apiary.planner.activePlanning[name])
-          break;
         this.statsHives(name);
         this.visualizeEnergy(name);
 
@@ -68,6 +64,53 @@ export class Visuals {
           _.forEach(Apiary.hives[name].annexNames, (annex) => {
             new RoomVisual(annex).import(this.caching![name]);
           });
+        }
+    }
+    this.visualizePlanner();
+  }
+
+  visualizePlanner() {
+    for (let roomName in Apiary.planner.activePlanning) {
+      let vis = new RoomVisual(roomName);
+      for (let x in Apiary.planner.activePlanning[roomName].plan)
+        for (let y in Apiary.planner.activePlanning[roomName].plan[+x]) {
+          let style: CircleStyle = {
+            opacity: 0.6,
+            radius: 0.4
+          };
+          switch (Apiary.planner.activePlanning[roomName].plan[+x][+y].s) {
+            case STRUCTURE_ROAD:
+              style.fill = "#B0B0B0";
+              style.radius = 0.2;
+              break;
+            case STRUCTURE_WALL:
+              style.fill = "#333433";
+              style.opacity = 1;
+              break;
+            case STRUCTURE_EXTENSION:
+              style.fill = "#ffdd80";
+              break;
+            case STRUCTURE_LAB:
+              style.fill = "#91EFD8";
+              break;
+            case STRUCTURE_TOWER:
+              style.fill = "#F93274";
+              break;
+            case undefined:
+              style.opacity = 0;
+              break;
+            default:
+              style.fill = "#1823FF";
+              break;
+          }
+          vis.circle(+x, +y, style);
+          if (Apiary.planner.activePlanning[roomName].plan[+x][+y].r) {
+            vis.circle(+x, +y, {
+              opacity: 0.3,
+              fill: "#A1FF80",
+              radius: 0.2,
+            });
+          }
         }
     }
   }
@@ -180,8 +223,7 @@ export class Visuals {
 
     let constLen = hive.structuresConst.length;
     if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
-      ans.push(["build", (constLen ? ` C:${constLen}` : "")
-        + (constLen ? ` R:${constLen}` : ""),
+      ans.push(["build", hive.sumCost ? ` ${Math.round(hive.sumCost / 1000)}K/${hive.structuresConst.length}` : "",
         this.getBeesAmount(hive.builder)])
     }
 

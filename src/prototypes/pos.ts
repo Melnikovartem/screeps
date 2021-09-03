@@ -168,7 +168,7 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
     if (this.roomName === pos.roomName)
       newDistance = this.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
     else {
-      //cheap est of dist
+      //cheap (in terms of CPU) est of dist
       let outOfRoom = 25;
       if (this.roomName in Game.rooms) {
         let exit = Game.rooms[this.roomName].findExitTo(pos.roomName);
