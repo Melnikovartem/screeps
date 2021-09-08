@@ -28,7 +28,7 @@ export class managerMaster extends Master {
 
     let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
 
-    if (this.manager && (this.manager.state === states.chill || this.manager.state === states.fflush || emergencyRequests.length)
+    if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
       && this.manager.pos.roomName === this.cell.pos.roomName) {
       if (this.manager.target && this.cell.requests[this.manager.target]) {
         if (emergencyRequests.length && this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority) {
@@ -98,9 +98,8 @@ export class managerMaster extends Master {
                 (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
                 request.amount - this.manager.store.getUsedCapacity(request.resource));
 
-              if (amountBee > 0 && this.manager.withdraw(request.from, request.resource, amountBee) == OK)
-                if (this.manager.pos.isNearTo(request.to))
-                  this.manager.state = states.work;
+              if (amountBee > 0)
+                this.manager.withdraw(request.from, request.resource, amountBee) == OK
             }
 
             if (this.manager.state === states.work) {
@@ -108,11 +107,8 @@ export class managerMaster extends Master {
                 this.manager.store.getUsedCapacity(request.resource),
                 (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
 
-              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK) {
+              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK)
                 request.amount -= amountBee;
-                if (this.manager.pos.isNearTo(request.from))
-                  this.manager.state = states.refill;
-              }
             }
           }
         } else {

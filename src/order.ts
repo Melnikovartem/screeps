@@ -194,6 +194,7 @@ export class Order {
           }
         } else
           this.delete();
+        // this.delete(); if need to get rid of tone of flags
         break;
       case COLOR_WHITE:
         switch (this.flag.secondaryColor) {

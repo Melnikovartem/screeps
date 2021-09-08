@@ -1,6 +1,6 @@
 interface RoomPosition {
   getRoomCoorinates(): number[];
-  getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition }): number;
+  getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition } | string): number;
   getNearbyPositions(): RoomPosition[];
   getOpenPositions(ignoreCreeps?: boolean): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
@@ -21,17 +21,20 @@ function getRoomCoorinates(roomName: string): number[] {
   return [x, y];
 }
 
-RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition }): number {
-  let ans;
+RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition } | string): number {
+  let toRoom: string;
   if (pos instanceof Room)
-    ans = Game.map.findRoute(this.roomName, pos.name);
+    toRoom = pos.name;
   else if (pos instanceof RoomPosition)
-    ans = Game.map.findRoute(this.roomName, pos.roomName);
+    toRoom = pos.roomName;
+  else if (typeof pos === "string")
+    toRoom = pos;
   else
-    ans = Game.map.findRoute(this.roomName, pos.pos.roomName);
-  if (typeof ans !== "number")
-    ans = ans.length;
-  return ans === -2 ? Infinity : ans;
+    toRoom = pos.pos.roomName;
+  let ans = Game.map.findRoute(this.roomName, toRoom);
+  if (ans !== -2)
+    return ans.length;
+  return Infinity;
 }
 
 RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {

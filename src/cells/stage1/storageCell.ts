@@ -100,36 +100,69 @@ export class storageCell extends Cell {
         this.requests[k].to = to;
     }
 
-    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000)
-      this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
+    if (!Object.keys(this.requests).length && this.terminal) {
+      let res: ResourceConstant | undefined;
+      let amount: number = 0;
+      if (this.terminal.store.getFreeCapacity() > this.terminal.store.getUsedCapacity() * 0.1) {
+        let isFull = this.storage.store.getFreeCapacity() < this.storage.store.getCapacity() * 0.1;
+        res = RESOURCE_ENERGY;
+        amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
+        if (amount >= 0)
+          if (!isFull)
+            for (let resourceConstant in this.terminal.store) {
+              let resource = <ResourceConstant>resourceConstant;
+              let newAmount = this.terminal.store.getUsedCapacity(resource);
+              if (resource === RESOURCE_ENERGY)
+                newAmount -= TERMINAL_ENERGY;
+              if (newAmount > amount) {
+                res = resource;
+                amount = newAmount;
+              }
+            }
+          else
+            for (let resourceConstant in this.storage.store) {
+              let resource = <ResourceConstant>resourceConstant;
+              let newAmount = -this.storage.store.getUsedCapacity(resource);
+              if (Math.abs(newAmount) > Math.abs(amount)) {
+                res = resource;
+                amount = newAmount;
+              }
+            }
+
+        if (amount > 0 && !isFull)
+          this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 5500));
+        else if (amount < 0)
+          this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 5500));
+      } else if (!this.terminal.cooldown) {
+        for (let resourceConstant in this.terminal.store) {
+          let resource = <ResourceConstant>resourceConstant;
+          let newAmount = this.terminal.store.getUsedCapacity(resource);
+          if (resource === RESOURCE_ENERGY)
+            newAmount -= TERMINAL_ENERGY;
+          if (Math.abs(newAmount) > Math.abs(amount)) {
+            res = resource;
+            amount = newAmount;
+          }
+        }
+
+        let orders = Game.market.getAllOrders((order) => order.resourceType === res
+          && this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25)
+        if (orders.length) {
+          orders.sort((a, b) => a.price - b.price);
+          console.log(orders[0].price, orders[orders.length - 1].price, res);
+        }
+      }
+    }
 
     for (let id in this.links) {
       let link = this.links[id];
       this.linksState[id] = "idle";
-      if (link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.requests[link.id])
+      if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
         this.requestToStorage("link_" + link.id, link, 4);
     }
 
-    if (!Object.keys(this.requests).length && this.terminal) {
-      let res: ResourceConstant = RESOURCE_ENERGY;
-      let amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
-
-      for (let resourceConstant in this.terminal.store) {
-        let resource = <ResourceConstant>resourceConstant;
-        let newAmount = this.terminal.store.getUsedCapacity(resource);
-        if (res === RESOURCE_ENERGY)
-          newAmount -= TERMINAL_ENERGY;
-        if (Math.abs(newAmount) > amount) {
-          res = resource;
-          amount = newAmount;
-        }
-      }
-
-      if (amount > 0)
-        this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 9900));
-      else if (amount < 0)
-        this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 9900));
-    }
+    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000)
+      this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
   }
 
   run() {
@@ -138,12 +171,10 @@ export class storageCell extends Cell {
       if (request.amount > 0 && !request.from.store[request.resource]
         && !(this.master.manager && this.master.manager.store[request.resource]))
         delete this.requests[k];
-      if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
+      if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
         delete this.requests[k];
-      if (request.amount <= 0) {
-        console.log(this.requests[k].ref, this.requests[k].amount)
+      if (request.amount <= 0)
         delete this.requests[k];
-      }
     }
   }
 }
