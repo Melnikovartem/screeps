@@ -68,6 +68,14 @@ export class Logger {
     return OK;
   }
 
+  newMarketOperation(order: Order, amount: number, hiveName: string) {
+    if (!order.roomName)
+      return;
+    console.log(`SOLD FROM ${hiveName} TO ${order.roomName} \nRESOURCE ${order.resourceType.toUpperCase()}: ${amount
+      } \nENERGY: ${Game.market.calcTransactionCost(amount, hiveName, order.roomName)} `);
+    this.addResourceStat(hiveName, "export", amount, <ResourceConstant>order.resourceType);
+  }
+
   hiveLog(hive: Hive) {
     if (!Memory.log.hives[hive.roomName])
       return ERR_NOT_FOUND;

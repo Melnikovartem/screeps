@@ -32,11 +32,11 @@ export class upgraderMaster extends Master {
         this.fastMode = true;
         desiredRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 2500, 100);
         ratePerCreep = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
-        ratePerCreep = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2));
+        ratePerCreep = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 - 3, 0) * 2));
       } else if (storageCell) {
         let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 4), 800);
         desiredRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
-        ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2 + 50);
+        ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 - 3, 0) * 2 + 50);
       }
     }
 

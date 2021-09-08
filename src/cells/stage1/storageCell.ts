@@ -101,12 +101,10 @@ export class storageCell extends Cell {
     }
 
     if (!Object.keys(this.requests).length && this.terminal) {
-      let res: ResourceConstant | undefined;
-      let amount: number = 0;
-      if (this.terminal.store.getFreeCapacity() > this.terminal.store.getUsedCapacity() * 0.1) {
+      if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.1) {
         let isFull = this.storage.store.getFreeCapacity() < this.storage.store.getCapacity() * 0.1;
-        res = RESOURCE_ENERGY;
-        amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
+        let res: ResourceConstant = RESOURCE_ENERGY;
+        let amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
         if (amount >= 0)
           if (!isFull)
             for (let resourceConstant in this.terminal.store) {
@@ -133,24 +131,6 @@ export class storageCell extends Cell {
           this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 5500));
         else if (amount < 0)
           this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 5500));
-      } else if (!this.terminal.cooldown) {
-        for (let resourceConstant in this.terminal.store) {
-          let resource = <ResourceConstant>resourceConstant;
-          let newAmount = this.terminal.store.getUsedCapacity(resource);
-          if (resource === RESOURCE_ENERGY)
-            newAmount -= TERMINAL_ENERGY;
-          if (Math.abs(newAmount) > Math.abs(amount)) {
-            res = resource;
-            amount = newAmount;
-          }
-        }
-
-        let orders = Game.market.getAllOrders((order) => order.resourceType === res
-          && this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25)
-        if (orders.length) {
-          orders.sort((a, b) => a.price - b.price);
-          console.log(orders[0].price, orders[orders.length - 1].price, res);
-        }
       }
     }
 
@@ -175,6 +155,43 @@ export class storageCell extends Cell {
         delete this.requests[k];
       if (request.amount <= 0)
         delete this.requests[k];
+    }
+
+    if (Game.time % 10 == 4 && Apiary.useBucket && this.terminal
+      && this.terminal.store.getFreeCapacity() < this.terminal.store.getCapacity() * 0.3 && !this.terminal.cooldown) {
+      let res: ResourceConstant | undefined;
+      let amount: number = 0;
+      for (let resourceConstant in this.terminal.store) {
+        let resource = <ResourceConstant>resourceConstant;
+        let newAmount = this.terminal.store.getUsedCapacity(resource);
+        if (resource === RESOURCE_ENERGY)
+          newAmount -= TERMINAL_ENERGY;
+        if (Math.abs(newAmount) > Math.abs(amount)) {
+          res = resource;
+          amount = newAmount;
+        }
+      }
+
+      let maxPrice = 0;
+      let orders = Game.market.getAllOrders((order) => {
+        if (order.resourceType !== res)
+          return false;
+        maxPrice = maxPrice > order.price ? maxPrice : order.price;
+        return this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25;
+      });
+      if (orders.length)
+        orders = orders.filter((order) => order.price > maxPrice * 0.9);
+      if (orders.length) {
+        orders.sort((a, b) => b.price - a.price);
+        console.log(orders[0].price, orders[orders.length - 1].price);
+        let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, orders[0].roomName!) / 10000;
+        let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+        amount = Math.min(amount, energyCap, orders[0].amount);
+        if (orders[0].resourceType === RESOURCE_ENERGY && amount * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
+          amount = Math.floor(amount * (1 - energyCost));
+        if (Game.market.deal(orders[0].id, amount, this.hive.roomName) === OK && Apiary.logger)
+          Apiary.logger.newMarketOperation(orders[0], amount, this.hive.roomName);
+      }
     }
   }
 }

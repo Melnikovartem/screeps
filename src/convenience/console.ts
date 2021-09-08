@@ -33,9 +33,9 @@ export class CustomConsole {
 
     let ans;
     if (mode === "empty")
-      ans = cell.requestToStorage("!USER_REQUEST", cell.terminal, 2, resource, amount);
+      ans = cell.requestToStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
     else
-      ans = cell.requestFromStorage("!USER_REQUEST", cell.terminal, 2, resource, amount);
+      ans = cell.requestFromStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
 
     return `${mode.toUpperCase()} TERMINAL @ ${roomName} \nRESOURCE ${resource}: ${ans} `;
   }

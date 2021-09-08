@@ -34,7 +34,7 @@ export class defenseCell extends Cell {
       if (roomInfo.enemies.length > 0 && !Apiary.defenseSwarms[roomName]
         && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
         let enemy = roomInfo.enemies[0];
-        if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) > 0)
+        if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)
           return;
         let freeSwarms: Order[] = [];
         for (const roomDefName in Apiary.defenseSwarms) {

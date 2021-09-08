@@ -121,7 +121,7 @@ export class managerMaster extends Master {
       }
 
       if (this.manager.state === states.fflush) {
-        if (this.manager.creep.store.getUsedCapacity() > 0) {
+        if (this.manager.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
           let resource = <ResourceConstant>Object.keys(this.manager.store)[0];
           this.manager.transfer(this.cell.storage, resource);
         } else

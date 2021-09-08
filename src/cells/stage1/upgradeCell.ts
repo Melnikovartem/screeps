@@ -38,6 +38,11 @@ export class upgradeCell extends Cell {
       let storageLink = storageCell.getFreeLink();
       if (storageLink) {
         let usedCap = storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
+        if (freeCap > usedCap + 50 || freeCap == LINK_CAPACITY - usedCap)
+          storageCell.requestFromStorage("link_" + storageLink.id, storageLink, 4, undefined, LINK_CAPACITY - usedCap);
+        else
+          delete storageCell.requests["link_" + storageLink.id];
+
         if (freeCap <= usedCap || freeCap >= LINK_CAPACITY / 1.05) {
           if (!storageLink.cooldown) {
             storageLink.transferEnergy(this.link!, Math.min(freeCap, usedCap)) == 0;
@@ -45,8 +50,7 @@ export class upgradeCell extends Cell {
               Apiary.logger.resourceTransfer(this.hive.roomName, "upgrade", storageLink.store, this.link!.store, RESOURCE_ENERGY, -1, 0.3);
           } else
             delete storageCell.requests["link_" + storageLink.id];
-        } else
-          storageCell.requestFromStorage("link_" + storageLink.id, storageLink, 4, undefined, Math.min(freeCap * 2, LINK_CAPACITY) - usedCap);
+        }
       }
     }
   }

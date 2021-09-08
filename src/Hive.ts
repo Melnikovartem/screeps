@@ -11,6 +11,8 @@ import { upgradeCell } from "./cells/stage1/upgradeCell";
 import { excavationCell } from "./cells/stage1/excavationCell";
 import { laboratoryCell } from "./cells/stage1/laboratoryCell";
 
+import { observeCell } from "./cells/stage2/observeCell";
+
 import { builderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./utils";
@@ -32,6 +34,7 @@ interface hiveCells {
   excavation?: excavationCell;
   dev?: developmentCell;
   lab?: laboratoryCell;
+  observe?: observeCell;
 }
 
 @profile
@@ -92,6 +95,10 @@ export class Hive {
 
       this.builder = new builderMaster(this);
       if (this.stage === 2) {
+        let obeserver = <StructureObserver | undefined>this.room.find(FIND_MY_STRUCTURES,
+          { filter: { structureType: STRUCTURE_OBSERVER } })[0];
+        if (obeserver)
+          this.cells.observe = new observeCell(this, obeserver);
         // TODO cause i haven' reached yet
       }
     }
@@ -169,17 +176,22 @@ export class Hive {
   updateStructures() {
     this.structuresConst = [];
     this.sumCost = 0;
-    _.forEach(this.rooms, (r) => {
+    let check = (r: Room) => {
       let ans = Apiary.planner.checkBuildings(r.name);
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
-    });
+    }
+    // 45 85
+    if (Math.round(Game.time / 10) % 4 == 0)
+      _.forEach(this.rooms, check);
+    else
+      check(this.room);
   }
 
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (UPDATE_EACH_TICK || Game.time % 10 === 8 || this.shouldRecalc) {
+    if (UPDATE_EACH_TICK || Game.time % 20 === 5 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
       if (this.shouldRecalc > 1) {

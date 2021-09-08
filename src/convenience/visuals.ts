@@ -69,6 +69,12 @@ export class Visuals {
     }
   }
 
+  createLight() {
+    this.anchor = this.label("LOW CPU MODE", this.getAnchor(49, null, 1));
+    this.anchor = this.progressbar("CPU", this.getAnchor(49), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
+    this.anchor = this.progressbar("BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
+  }
+
   visualizePlanner() {
     for (let roomName in Apiary.planner.activePlanning) {
       let vis = new RoomVisual(roomName);
@@ -228,7 +234,7 @@ export class Visuals {
     }
 
     ans.push(["upgrade",
-      ` ${Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100)}%`,
+      ` ${hive.room.controller!.progressTotal ? Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%" : ""}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
     let minSize = 0;

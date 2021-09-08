@@ -15,6 +15,7 @@ import { LOGGING_CYCLE } from "./settings";
 @profile
 export class _Apiary {
   destroyTime: number;
+  useBucket: boolean = false;
   username: string = "";
   intel: Intel;
   planner: RoomPlanner;
@@ -52,6 +53,7 @@ export class _Apiary {
 
   // update phase
   update() {
+    this.useBucket = Game.cpu.bucket > 1000;
     Order.checkFlags();
     _.forEach(Apiary.orders, (order) => {
       safeWrap(() => order.update(), order.print + " update");
@@ -88,9 +90,11 @@ export class _Apiary {
       safeWrap(() => master.run(), master.print + " run");
     });
 
-    Apiary.planner.run();
-
-    if (this.visuals)
-      this.visuals.create();
+    if (this.useBucket) {
+      Apiary.planner.run();
+      if (this.visuals)
+        this.visuals.create();
+    } else if (this.visuals)
+      this.visuals.createLight();
   }
 }
