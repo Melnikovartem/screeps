@@ -216,7 +216,7 @@ export class RoomPlanner {
   addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant, force: boolean = false) {
     if (!this.activePlanning[roomName])
       this.initPlanning(roomName);
-    if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL)
+    if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType != STRUCTURE_EXTRACTOR)
       return ERR_NO_PATH;
     let placed = this.activePlanning[roomName].placed;
     let plan = this.activePlanning[roomName].plan;

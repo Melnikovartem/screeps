@@ -247,8 +247,7 @@ export class Visuals {
     if (labCell) {
       let labRequest = labCell.currentRequest;
       if (labRequest) {
-        this.anchor = this.progressbar(`🧪 ${labRequest.res} ${labRequest.plan}`,
-          this.getAnchor(1), 1 - (labRequest.current / labRequest.plan), undefined, minSize);
+        this.anchor = this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.getAnchor(1), undefined, minSize);
         minSize = Math.max(minSize, this.anchor.x - 1);
       }
       if (Object.keys(labCell.boostRequests).length) {
