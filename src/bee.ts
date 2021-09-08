@@ -173,6 +173,6 @@ export class Bee {
   }
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>${this.state} ["${this.ref}"]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

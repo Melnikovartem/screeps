@@ -61,36 +61,37 @@ export class RoomPlanner {
       placed: { [key in StructureConstant]?: number },
       freeSpaces: Pos[], exits: RoomPosition[],
       jobsToDo: Job[]; // ERR_BUSY - repeat job, ERR_FULL - failed
-      correct: boolean;
+      correct: "ok" | "fail" | "work";
     }
   } = {};
 
   run() {
     // CPU for planner - least important one
     for (let roomName in this.activePlanning) {
-      if (!this.activePlanning[roomName].correct) {
+      if (this.activePlanning[roomName].correct === "work") {
         let jobs = this.activePlanning[roomName].jobsToDo;
-        let ok = true;
         while (jobs.length) {
           let ans = jobs[0].func();
           if (ans !== ERR_BUSY)
             jobs.shift();
           if (ans == ERR_FULL) {
-            ok = false;
+            this.activePlanning[roomName].correct = "fail";
             console.log("failed", roomName, jobs[0].context);
             break;
           }
         }
-        if (!jobs.length && ok) {
-          console.log("success", roomName);
-          this.activePlanning[roomName].correct = true;
+        if (!jobs.length) {
+          if (this.activePlanning[roomName].correct != "fail") {
+            console.log("success", roomName);
+            this.activePlanning[roomName].correct == "ok";
+          }
         }
       }
     }
   }
 
   initPlanning(roomName: string, correct: boolean = false) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: correct };
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: correct ? "ok" : "work" };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
@@ -133,7 +134,7 @@ export class RoomPlanner {
     this.addModule(anchor, baseRotation > 1 ? BASE_VERTICAL : BASE_HORIZONTAL, (a) => rotate(a, baseRotation));
 
     let futureResourceCells = _.filter(Game.flags, (f) => f.color == COLOR_YELLOW && f.memory.hive == anchor.roomName);
-    futureResourceCells.sort((a, b) => a.pos.getRoomRangeTo(anchor) - b.pos.getRoomRangeTo(anchor))
+    futureResourceCells.sort((a, b) => a.pos.getRoomRangeTo(anchor, true) - b.pos.getRoomRangeTo(anchor, true))
     _.forEach(futureResourceCells, (f) => {
       if (f.color == COLOR_CYAN)
         this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
@@ -147,6 +148,17 @@ export class RoomPlanner {
           return OK;
         }
       });
+    });
+
+    jobs.push({
+      context: "upgrade site",
+      func: () => {
+        let contr = Game.rooms[anchor.roomName] && Game.rooms[anchor.roomName].controller;
+        if (contr) {
+          _.forEach(contr.pos.getOpenPositions(), (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+        }
+        return OK;
+      }
     });
 
     this.addModule(anchor, WALLS, (a) => rotate(a, baseRotation));

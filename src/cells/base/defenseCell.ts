@@ -46,7 +46,7 @@ export class defenseCell extends Cell {
         let ans: number | string | undefined;
         if (freeSwarms.length) {
           freeSwarms.sort((a, b) => a.pos.getRoomRangeTo(Game.rooms[roomName]) - b.pos.getRoomRangeTo(Game.rooms[roomName]))
-          if (freeSwarms[0].pos.getRoomRangeTo(Game.rooms[roomName]) < 5) {
+          if (freeSwarms[0].pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
             ans = freeSwarms[0].flag.setPosition(roomInfo.enemies[0].pos);
             if (ans === OK) {
               Apiary.defenseSwarms[roomName] = freeSwarms[0];

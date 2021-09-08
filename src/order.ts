@@ -210,9 +210,9 @@ export class Order {
               this.delete();
             break;
           case COLOR_RED:
-            if (Game.time % 3 === 0) {
+            if (Game.time % 3 === 0 && Apiary.useBucket) {
               let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
-              if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username) && Apiary.useBucket)
+              if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
                 Apiary.planner.resetPlanner(this.pos.roomName);
               this.uniqueFlag();
               Apiary.planner.toActive(this.pos.roomName);

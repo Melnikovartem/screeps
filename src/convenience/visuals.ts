@@ -8,7 +8,7 @@ const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 @profile
 export class Visuals {
 
-  caching: { [id: string]: string } | null = null;
+  caching: { [id: string]: string } = {};
   anchor: { x: number, y: number, roomName?: string | undefined } = { x: 49, y: 1 };
 
   getAnchor(x?: number, roomName?: string | null, y?: number) {
@@ -22,14 +22,11 @@ export class Visuals {
 
   create() {
     this.visualizePlanner();
-    if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
-      if (!this.caching)
-        this.caching = {};
-
-      this.anchor = this.progressbar("CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
+    if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
+      this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       // bucket size same as PIXEL_CPU_COST
-      this.anchor = this.progressbar("BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
-      this.anchor = this.progressbar("GCL " + Game.gcl.level + "→" + (Game.gcl.level + 1), this.getAnchor(49), Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
+      this.anchor = this.progressbar(Game.cpu.bucket + " : BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
+      this.anchor = this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.getAnchor(49), Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
       let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
       if (heapStat) {
         this.anchor = this.progressbar("HEAP", this.getAnchor(49), heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
@@ -70,9 +67,14 @@ export class Visuals {
   }
 
   createLight() {
-    this.anchor = this.label("LOW CPU MODE", this.getAnchor(49, null, 1));
-    this.anchor = this.progressbar("CPU", this.getAnchor(49), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
-    this.anchor = this.progressbar("BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
+    if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
+      this.anchor = this.label("LOW CPU MODE", this.getAnchor(48, null, 1), { align: "right" }, 8);
+      this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(48), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 8);
+      this.anchor = this.progressbar(Game.cpu.bucket + " : BUCKET", this.getAnchor(48), Game.cpu.bucket / 10000, { align: "right" }, 8);
+      if (Memory.settings.framerate > 1)
+        this.caching["global"] = new RoomVisual().export();
+    } else
+      new RoomVisual().import(this.caching["global"]);
   }
 
   visualizePlanner() {
@@ -245,7 +247,7 @@ export class Visuals {
     if (labCell) {
       let labRequest = labCell.currentRequest;
       if (labRequest) {
-        this.anchor = this.progressbar(`🧪 ${labRequest.res1} + ${labRequest.res2} => ${labRequest.res} ${labRequest.plan}`,
+        this.anchor = this.progressbar(`🧪 ${labRequest.res} ${labRequest.plan}`,
           this.getAnchor(1), 1 - (labRequest.current / labRequest.plan), undefined, minSize);
         minSize = Math.max(minSize, this.anchor.x - 1);
       }
@@ -308,7 +310,7 @@ export class Visuals {
     vis.poly([[xMin, pos.y], [xMin, lab.y], [xMax, lab.y], [xMax, pos.y], [xMin, pos.y]], {
       fill: "#ffdd80",
       stroke: undefined,
-      opacity: 0.3 + (progress > 1 ? Math.min((progress - 1) / 5, 0.7) : 0),
+      opacity: progress >= 1 ? 0.5 : 0.3,
     });
     return lab;
   }
@@ -373,6 +375,6 @@ export class Visuals {
       });
     }
     vis.poly([[xMin, yMin], [xMin, yMax], [xMax, yMax], [xMax, yMin], [xMin, yMin]]);
-    return { x: align === "center" ? xMax : pos.x, y: yMax, roomName: pos.roomName };
+    return { x: align === "right" ? pos.x : xMax, y: yMax, roomName: pos.roomName };
   }
 }
