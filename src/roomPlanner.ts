@@ -16,8 +16,8 @@ const WALLS: Module = { exits: [], freeSpaces: [], setup: { "road": { "pos": [] 
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS } },
-  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } },
-  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 2000000 } }
+  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1 } },
+  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1 } }
 }
 type Pos = { x: number, y: number };
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
@@ -278,6 +278,8 @@ export class RoomPlanner {
           return;
         if (this.getCase(s).amount == 0)
           return;
+        if (s.pos.getEnteranceToRoom())
+          return;
         if (!Memory.cache.roomPlanner[roomName][s.structureType])
           Memory.cache.roomPlanner[roomName][s.structureType] = { "pos": [] };
         Memory.cache.roomPlanner[roomName][s.structureType]!.pos.push({ x: s.pos.x, y: s.pos.y });
@@ -315,19 +317,22 @@ export class RoomPlanner {
         let structure = <Structure<BuildableStructureConstant> | undefined>_.filter(pos.lookFor(LOOK_STRUCTURES),
           (s) => s.structureType == sType)[0];
         if (!structure) {
-          if (constructions <= 5) {
-            let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
-            if (!constructionSite) {
+          let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
+          if (!constructionSite) {
+            if (constructions < 10) {
               sum += CONSTRUCTION_COST[sType];
               pos.createConstructionSite(sType);
-            } else
-              sum += constructionSite.progressTotal - constructionSite.progress;
+              ans.push(pos);
+              constructions++;
+            }
+          } else {
+            sum += constructionSite.progressTotal - constructionSite.progress;
             ans.push(pos);
             constructions++;
           }
         } else if (structure) {
           let heal = this.getCase(structure).heal;
-          if (structure.hits < heal * 0.8) {
+          if ((structure.hits < heal * 0.8 && !constructions) || structure.hits < heal * 0.3) {
             sum += Math.round((heal - structure.hits) / 100);
             ans.push(pos);
           }

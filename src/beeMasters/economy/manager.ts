@@ -81,13 +81,12 @@ export class managerMaster extends Master {
           if (this.manager.state === states.refill) {
             if (this.manager.store.getUsedCapacity(request.resource) >= request.amount)
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource) === 0)
+            if (!this.manager.store.getFreeCapacity(request.resource))
               this.manager.state = states.work;
-            if (this.manager.store.getFreeCapacity(request.resource) === 0 && this.manager.store[request.resource] === 0)
+            if (this.manager.store.getUsedCapacity() != this.manager.store.getUsedCapacity(request.resource))
               this.manager.state = states.fflush;
 
-            if (request.from.store[request.resource] === 0
-              && this.manager.store[request.resource] === 0 && this.manager.state === states.refill)
+            if (!request.from.store[request.resource] && !this.manager.store[request.resource] && this.manager.state === states.refill)
               delete this.cell.requests[this.manager.target];
           }
 
@@ -96,26 +95,33 @@ export class managerMaster extends Master {
               this.manager.state = states.refill;
 
             // invalidate request
-            else if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource) === 0)
+            if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
               delete this.cell.requests[this.manager.target];
           }
 
           if (this.cell.requests[this.manager.target]) {
             if (this.manager.state === states.refill) {
               let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource),
-                request.from.store[request.resource],
+                (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
                 request.amount - this.manager.store.getUsedCapacity(request.resource));
 
               if (amountBee > 0)
                 this.manager.withdraw(request.from, request.resource, amountBee);
+
+              if (this.manager.pos.isNearTo(request.to))
+                this.manager.state = states.work;
             }
 
             if (this.manager.state === states.work) {
-              let amountBee = Math.min(request.amount, this.manager.store[request.resource],
+              let amountBee = Math.min(request.amount,
+                this.manager.store.getUsedCapacity(request.resource),
                 (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
 
               if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK)
                 request.amount -= amountBee;
+
+              if (this.manager.pos.isNearTo(request.from))
+                this.manager.state = states.refill;
             }
           }
         } else {

@@ -14,7 +14,6 @@ import { annexMaster } from "./beeMasters/civil/annexer";
 import { claimerMaster } from "./beeMasters/civil/claimer";
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
-import { makeId } from "./utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
@@ -52,18 +51,18 @@ export class Order {
     this.destroyTime = -1;
   }
 
-  findHive(stage: 0 | 1 | 2): Hive {
+  findHive(stage: 0 | 1 | 2 = 2): Hive {
     if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= stage)
       return Apiary.hives[this.pos.roomName];
 
     for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= (stage !== undefined ? stage : 2))
+      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= stage)
         return Apiary.hives[exit];
     }
 
     // well time to look for faraway boys
-    let validHives = _.filter(Apiary.hives, (h) => h.stage >= (stage ? stage : 2));
+    let validHives = _.filter(Apiary.hives, (h) => h.stage >= stage);
     if (!validHives.length)
       validHives = _.map(Apiary.hives, (h) => h);
 
@@ -92,9 +91,9 @@ export class Order {
   }
 
   act() {
+    this.acted = true;
     switch (this.flag.color) {
       case COLOR_RED:
-        this.acted = true;
         if (/^def_/.exec(this.ref) !== null)
           Apiary.defenseSwarms[this.pos.roomName] = this;
         if (!this.master)
@@ -128,19 +127,17 @@ export class Order {
             this.hive = this.hive;
             if (!this.master)
               this.master = new annexMaster(this);
-            if (this.hive.addAnex(this.pos.roomName) === OK)
-              this.acted = true;
+            if (this.hive.addAnex(this.pos.roomName) !== OK)
+              this.acted = false;
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
-              this.acted = true;
               if (!this.master)
                 this.master = new claimerMaster(this);
             } else
               this.delete();
             break;
           case COLOR_WHITE:
-            this.acted = true;
             let hiveToBoos = Apiary.hives[this.pos.roomName];
             if (hiveToBoos && this.pos.roomName !== this.hive.roomName
               && (hiveToBoos.stage === 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
@@ -158,7 +155,6 @@ export class Order {
         }
         break;
       case COLOR_CYAN:
-        this.acted = true;
         this.uniqueFlag();
         if (this.hive) {
           let prefix = "";
@@ -199,7 +195,6 @@ export class Order {
           this.delete();
         break;
       case COLOR_WHITE:
-        this.acted = true;
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
             this.uniqueFlag(false);
@@ -213,11 +208,15 @@ export class Order {
               this.delete();
             break;
           case COLOR_RED:
-            let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
-            if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
-              Apiary.planner.resetPlanner(this.pos.roomName);
-            this.pos.createFlag(this.ref + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
-            this.delete();
+            if (Game.time % 3 === 0) {
+              let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
+              if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
+                Apiary.planner.resetPlanner(this.pos.roomName);
+              this.uniqueFlag();
+              Apiary.planner.toActive(this.pos.roomName);
+            }
+            this.acted = false;
+            break;
         }
         break;
       case COLOR_GREY:
@@ -227,7 +226,6 @@ export class Order {
               this.delete();
             break;
           case COLOR_YELLOW:
-            this.acted = true;
             if (!this.master)
               this.master = new puppetMaster(this);
             break;
@@ -236,7 +234,6 @@ export class Order {
       case COLOR_YELLOW:
         if (this.pos.roomName in Game.rooms) {
           let resource: Source | Mineral | undefined;
-          this.acted = true;
           switch (this.flag.secondaryColor) {
             case COLOR_YELLOW:
               resource = this.pos.lookFor(LOOK_SOURCES)[0];
@@ -257,7 +254,8 @@ export class Order {
                 this.delete();
               break;
           }
-        }
+        } else
+          this.acted = false;
         break;
     }
   }
@@ -303,7 +301,7 @@ export class Order {
             for (let name in Apiary.planner.activePlanning)
               delete Apiary.planner.activePlanning[name];
             break;
-          case COLOR_ORANGE:
+          case COLOR_ORANGE: case COLOR_RED:
             delete Apiary.planner.activePlanning[this.pos.roomName];
             break;
         }

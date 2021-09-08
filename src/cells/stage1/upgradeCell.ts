@@ -43,6 +43,8 @@ export class upgradeCell extends Cell {
             let amount = usedCap - freeCap * 1.4;
             if (amount > 0)
               storageCell.requests["link_" + storageLink.id].amount = amount;
+            else
+              delete storageCell.requests["link_" + storageLink.id];
           }
           if (!storageLink.cooldown) {
             storageLink.transferEnergy(this.link!, Math.min(freeCap, usedCap)) == 0;

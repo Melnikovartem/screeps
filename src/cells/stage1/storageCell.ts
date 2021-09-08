@@ -13,6 +13,8 @@ export interface StorageRequest {
   priority: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
+const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
+
 @profile
 export class storageCell extends Cell {
 
@@ -89,7 +91,6 @@ export class storageCell extends Cell {
   update() {
     super.update(["links"]);
 
-
     for (let k in this.requests) {
       let from = <StorageRequest["from"] | null>Game.getObjectById(this.requests[k].from.id);
       if (from)
@@ -107,6 +108,27 @@ export class storageCell extends Cell {
       this.linksState[id] = "idle";
       if (link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.requests[link.id])
         this.requestToStorage("link_" + link.id, link, 4);
+    }
+
+    if (!Object.keys(this.requests).length && this.terminal) {
+      let res: ResourceConstant = RESOURCE_ENERGY;
+      let amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
+
+      for (let resourceConstant in this.terminal.store) {
+        let resource = <ResourceConstant>resourceConstant;
+        let newAmount = this.terminal.store.getUsedCapacity(resource);
+        if (res === RESOURCE_ENERGY)
+          newAmount -= TERMINAL_ENERGY;
+        if (Math.abs(newAmount) > amount) {
+          res = resource;
+          amount = newAmount;
+        }
+      }
+
+      if (amount > 0)
+        this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 9900));
+      else if (amount < 0)
+        this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 9900));
     }
   }
 

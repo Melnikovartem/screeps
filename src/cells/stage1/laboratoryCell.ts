@@ -47,6 +47,8 @@ type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "ran
 const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["XUHO2", "UHO2", "UO"], "build": ["XLH2O", "LH2O", "LH"], "dismantle": ["XZH2O", "ZH2O", "ZH"], "upgrade": ["XGH2O", "GH2O", "GH"], "attack": ["XUH2O", "UH2O", "UH"], "rangedAttack": ["XKHO2", "KHO2", "KO"], "heal": ["XLHO2", "LHO2", "LO"], "capacity": ["XKH2O", "KH2O", "KH"], "fatigue": ["XZHO2", "ZHO2", "ZO"], "damage": ["XGHO2", "GHO2", "GO"] };
 const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
+const BOOST_LVL: 0 | 1 | 2 = 0; // the lower number the better quality of boosts is allowed
+
 const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
 for (const res1 in REACTIONS) {
   for (const res2 in REACTIONS[res1])
@@ -128,7 +130,7 @@ export class laboratoryCell extends Cell {
     if ((Game.time - bee.memory.born <= 600 || Object.keys(this.boostRequests).length == 0) && storageCell && storageCell!.master.manager) {
       if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
         this.boostRequests[bee.ref] = requests;
-        for (let k in this.boostRequests[bee.ref]) {
+        for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
           let r = this.boostRequests[bee.ref][k];
           if (!r.amount)
             r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
@@ -146,9 +148,11 @@ export class laboratoryCell extends Cell {
             }
             return r.res;
           });
+          if (BOOST_LVL - k <= 0)
+            break;
         }
       }
-      for (let k in this.boostRequests[bee.ref]) {
+      for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
         let r = this.boostRequests[bee.ref][k];
         let lab: StructureLab | undefined;
 

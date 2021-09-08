@@ -21,6 +21,7 @@ export class Visuals {
   }
 
   create() {
+    this.visualizePlanner();
     if (Game.time % Memory.settings.framerate === 0 || !this.caching || UPDATE_EACH_TICK) {
       if (!this.caching)
         this.caching = {};
@@ -66,7 +67,6 @@ export class Visuals {
           });
         }
     }
-    this.visualizePlanner();
   }
 
   visualizePlanner() {

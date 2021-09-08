@@ -27,8 +27,8 @@ export class queenMaster extends Master {
 
       // can refill in 1 run
       order.setup.bodySetup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
-      if (this.hive.room.energyAvailable >= 1300)
-        order.setup.bodySetup.fixed = [WORK];
+      if (this.hive.room.energyAvailable >= 1500)
+        order.setup.bodySetup.fixed = [WORK, MOVE];
 
       this.wish(order);
     }
