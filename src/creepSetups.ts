@@ -13,38 +13,29 @@ const partsImportance = [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK,
 @profile
 export class CreepSetup {
   name: string;
-  bodySetup: BodySetup;
+  fixed: BodyPartConstant[];
+  pattern: BodyPartConstant[];
+  patternLimit: number;
 
   constructor(setupName: string, bodySetup: BodySetup) {
     this.name = setupName;
 
-    this.bodySetup = {
-      fixed: [],
-      pattern: [],
-      patternLimit: Infinity,
-    };
-
-    this.bodySetup = bodySetup;
+    this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
+    this.pattern = bodySetup.pattern;
+    this.patternLimit = bodySetup.patternLimit ? bodySetup.patternLimit : Infinity;
   }
 
   getBody(energy: number): { body: BodyPartConstant[], cost: number } {
     let body: BodyPartConstant[] = [];
-    if (this.bodySetup.fixed)
-      _.forEach(this.bodySetup.fixed, (s) => body.push(s))
 
+    _.forEach(this.fixed, (s) => body.push(s));
     let fixedCosts = _.sum(body, s => BODYPART_COST[s]);
 
-    let segmentCost = _.sum(this.bodySetup.pattern, s => BODYPART_COST[s]);
-
-    let limitSegments = Infinity;
-    if (this.bodySetup.patternLimit !== undefined)
-      limitSegments = this.bodySetup.patternLimit;
-
-    let maxSegment = Math.min(limitSegments, Math.floor((energy - fixedCosts) / segmentCost));
-
+    let segmentCost = _.sum(this.pattern, s => BODYPART_COST[s]);
+    let maxSegment = Math.min(this.patternLimit, Math.floor((energy - fixedCosts) / segmentCost));
     _.times(maxSegment, () => {
-      if (this.bodySetup.pattern.length + body.length <= 50)
-        _.forEach(this.bodySetup.pattern, (s) => body.push(s))
+      if (this.pattern.length + body.length <= 50)
+        _.forEach(this.pattern, (s) => body.push(s))
     });
 
     return {

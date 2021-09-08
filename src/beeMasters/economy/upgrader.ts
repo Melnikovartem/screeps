@@ -10,6 +10,7 @@ export class upgraderMaster extends Master {
   cell: upgradeCell;
   fastMode: boolean = false;
   boost = true;
+  patternPerBee = Infinity;
 
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
@@ -27,7 +28,7 @@ export class upgraderMaster extends Master {
         desiredRate = 800 / this.cell.link.pos.getRangeTo(storageLink); // how to get more in?
         ratePerCreep = 50 / (10 / patternLimit + Math.max(this.cell.link.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2);
       } else if (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4) {
-        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550 * 5), 8);
+        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
         this.fastMode = true;
         desiredRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 2500, 100);
         ratePerCreep = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
@@ -39,10 +40,18 @@ export class upgraderMaster extends Master {
       }
     }
 
-    if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
-      this.targetBeeCount = Math.ceil(desiredRate / ratePerCreep);
-    else if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
-      this.targetBeeCount = Math.round(desiredRate / ratePerCreep);
+    if (this.hive.stage == 2) {
+      this.targetBeeCount = 1;
+      this.patternPerBee = 0;
+    } else {
+      let rounding = Math.floor;
+      if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+        rounding = Math.ceil;
+      else if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
+        rounding = Math.round;
+      this.targetBeeCount = rounding(desiredRate / ratePerCreep);
+      this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
+    }
   }
 
   update() {
@@ -68,6 +77,8 @@ export class upgraderMaster extends Master {
         order.priority = 2;
         order.setup = Setups.upgrader.manual;
       }
+
+      order.setup.patternLimit = this.patternPerBee;
 
       this.wish(order);
     }

@@ -12,7 +12,7 @@ export class excavationCell extends Cell {
   quitefullContainers: StructureContainer[] = [];
   shouldRecalc: boolean = true;
   master: haulerMaster;
-  dropOff: StructureStorage | StructureContainer;
+  dropOff: StructureStorage | StructureContainer | StructureLink;
   roomResources: { [id: string]: number } = {};
 
   constructor(hive: Hive) {

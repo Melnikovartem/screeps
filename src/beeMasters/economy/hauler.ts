@@ -44,6 +44,9 @@ export class haulerMaster extends Master {
   update() {
     super.update();
 
+    if ((<Store<ResourceConstant, false>>this.cell.dropOff.store).getFreeCapacity() <= 0)
+      return;
+
     _.forEach(this.cell.quitefullContainers, (container) => {
       let target = this.targetMap[container.id];
       if (target && Apiary.bees[target.beeRef])
@@ -66,7 +69,6 @@ export class haulerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-
         setup: Setups.hauler,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 6,

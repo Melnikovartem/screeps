@@ -1,5 +1,3 @@
-'use strict'
-
 import { Mem } from "./memory";
 import { CustomConsole } from "./convenience/console";
 

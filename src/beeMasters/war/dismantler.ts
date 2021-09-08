@@ -10,17 +10,14 @@ import { profile } from "../../profiler/decorator";
 //first tandem btw
 @profile
 export class dismantlerMaster extends SwarmMaster {
-  dismantler: Bee | undefined;
+  bee: Bee | undefined;
 
   // for last stage
-  meetingPoint: RoomPosition;
   exit: RoomPosition | undefined;
   spawned: boolean = false;
 
   constructor(order: Order) {
     super(order.hive, order);
-
-    this.meetingPoint = order.pos;
     this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
   }
 
@@ -28,7 +25,7 @@ export class dismantlerMaster extends SwarmMaster {
     super.newBee(bee);
     if (bee.creep.getBodyParts(WORK)) {
       this.spawned = true;
-      this.dismantler = bee;
+      this.bee = bee;
     }
     this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
@@ -36,21 +33,18 @@ export class dismantlerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.dismantler && !Apiary.bees[this.dismantler.ref])
-      delete this.dismantler;
+    if (this.bee && !Apiary.bees[this.bee.ref])
+      delete this.bee;
 
-    if (this.dismantler && (this.meetingPoint.x !== this.order.pos.x || this.meetingPoint.y !== this.order.pos.y))
-      this.dismantler.state = states.chill;
-
-    if (!this.dismantler && !this.spawned) {
+    if (!this.bee && !this.spawned) {
       this.spawned = true;
-      let dismantlerOrder: SpawnOrder = {
+      let beeOrder: SpawnOrder = {
         setup: Setups.dismantler,
         amount: 1,
         priority: 4,
         master: this.ref,
       };
-      this.wish(dismantlerOrder, this.ref + "_dismantler");
+      this.wish(beeOrder, this.ref + "_bee");
     }
 
     if (!this.waitingForBees && this.beesAmount === 0)
@@ -58,41 +52,40 @@ export class dismantlerMaster extends SwarmMaster {
   }
 
   run() {
-    let dismantler = this.dismantler;
-
     _.forEach(this.bees, (bee) => {
+
+      if (bee.state === states.chill && bee.pos.isNearTo(this.order.pos)) {
+        bee.state = states.work;
+        this.exit = <RoomPosition>bee.pos.findClosest(bee.creep.room.find(FIND_EXIT));
+      }
+
+      if (bee.state === states.refill
+        || (bee.state === states.work && bee.hits <= bee.hitsMax * 0.6)) {
+        bee.state = states.refill;
+        if (bee.hits === bee.hitsMax)
+          bee.state = states.work;
+        bee.goRest(this.order.pos);
+      }
+
+      if (bee.state === states.work && bee.pos.roomName !== this.order.pos.roomName) {
+        let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
+        let target = bee.pos.findClosest(roomInfo.enemies);
+
+        // not sure what to do if there will be smart towers
+        if (target instanceof Structure && !(target instanceof StructureTower && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
+          bee.dismantle(target);
+        else if (bee.pos.x === 0 || bee.pos.x === 49 || bee.pos.y === 0 || bee.pos.y === 49)
+          bee.goToRoom(bee.pos.roomName);
+      }
+
+      if (bee.state === states.work && bee.creep.room.name === this.order.pos.roomName) {
+        if (!this.exit) // failsafe
+          this.exit = <RoomPosition>bee.pos.findClosest(bee.creep.room.find(FIND_EXIT));
+        bee.goTo(this.exit);
+      }
+
       if (bee.state === states.chill)
-        bee.goRest(this.meetingPoint);
+        bee.goRest(this.order.pos);
     });
-
-    if (dismantler && dismantler.state === states.chill && dismantler.pos.isNearTo(this.meetingPoint)) {
-      dismantler.state = states.work;
-      this.exit = <RoomPosition>dismantler.pos.findClosest(dismantler.creep.room.find(FIND_EXIT));
-    }
-
-    if (dismantler && (dismantler.state === states.refill
-      || (dismantler.state === states.work && dismantler.hits <= dismantler.hitsMax * 0.6))) {
-      dismantler.state = states.refill;
-      if (dismantler.hits === dismantler.hitsMax)
-        dismantler.state = states.work;
-      dismantler.goRest(this.order.pos);
-    }
-
-    if (dismantler && dismantler.state === states.work && dismantler.pos.roomName !== this.order.pos.roomName) {
-      let roomInfo = Apiary.intel.getInfo(dismantler.pos.roomName);
-      let target = dismantler.pos.findClosest(roomInfo.enemies);
-
-      // not sure what to do if there will be smart towers
-      if (target instanceof Structure && !(target instanceof StructureTower && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
-        dismantler.dismantle(target);
-      else if (dismantler.pos.x === 0 || dismantler.pos.x === 49 || dismantler.pos.y === 0 || dismantler.pos.y === 49)
-        dismantler.goToRoom(dismantler.pos.roomName);
-    }
-
-    if (dismantler && dismantler.state === states.work && dismantler.creep.room.name === this.order.pos.roomName) {
-      if (!this.exit) // failsafe
-        this.exit = <RoomPosition>dismantler.pos.findClosest(dismantler.creep.room.find(FIND_EXIT));
-      dismantler.goTo(this.exit);
-    }
   }
 }

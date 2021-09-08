@@ -5,7 +5,7 @@
 import { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
 import { Bee } from "../../bee";
-import { Setups, CreepSetup } from "../../creepSetups";
+import { Setups } from "../../creepSetups";
 import { SpawnOrder } from "../../Hive";
 import { Master, states } from "../_Master";
 import { profile } from "../../profiler/decorator";
@@ -28,7 +28,7 @@ export class managerMaster extends Master {
 
     let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
 
-    if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
+    if (this.manager && (this.manager.state === states.chill || this.manager.state === states.fflush || emergencyRequests.length)
       && this.manager.pos.roomName === this.cell.pos.roomName) {
       if (this.manager.target && this.cell.requests[this.manager.target]) {
         if (emergencyRequests.length && this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority) {
@@ -55,14 +55,14 @@ export class managerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        setup: new CreepSetup(Setups.manager.name, { ...Setups.manager.bodySetup }),
+        setup: Setups.manager,
         amount: 1,
         priority: 7,
       };
 
       // desired linear regex from desmos i guess)
       let lvl = this.hive.room.controller!.level;
-      order.setup.bodySetup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
+      order.setup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
 
       this.wish(order);
     }
@@ -85,18 +85,11 @@ export class managerMaster extends Master {
               this.manager.state = states.work;
             if (this.manager.store.getUsedCapacity() != this.manager.store.getUsedCapacity(request.resource))
               this.manager.state = states.fflush;
-
-            if (!request.from.store[request.resource] && !this.manager.store[request.resource] && this.manager.state === states.refill)
-              delete this.cell.requests[this.manager.target];
           }
 
           if (this.manager.state === states.work) {
             if (this.manager.store.getUsedCapacity(request.resource) === 0)
               this.manager.state = states.refill;
-
-            // invalidate request
-            if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
-              delete this.cell.requests[this.manager.target];
           }
 
           if (this.cell.requests[this.manager.target]) {
@@ -105,11 +98,9 @@ export class managerMaster extends Master {
                 (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
                 request.amount - this.manager.store.getUsedCapacity(request.resource));
 
-              if (amountBee > 0)
-                this.manager.withdraw(request.from, request.resource, amountBee);
-
-              if (this.manager.pos.isNearTo(request.to))
-                this.manager.state = states.work;
+              if (amountBee > 0 && this.manager.withdraw(request.from, request.resource, amountBee) == OK)
+                if (this.manager.pos.isNearTo(request.to))
+                  this.manager.state = states.work;
             }
 
             if (this.manager.state === states.work) {
@@ -117,11 +108,11 @@ export class managerMaster extends Master {
                 this.manager.store.getUsedCapacity(request.resource),
                 (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
 
-              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK)
+              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK) {
                 request.amount -= amountBee;
-
-              if (this.manager.pos.isNearTo(request.from))
-                this.manager.state = states.refill;
+                if (this.manager.pos.isNearTo(request.from))
+                  this.manager.state = states.refill;
+              }
             }
           }
         } else {

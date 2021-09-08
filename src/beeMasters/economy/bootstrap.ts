@@ -26,8 +26,8 @@ export class bootstrapMaster extends Master {
     let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200);
     if (this.hive.bassboost)
       workBodyParts = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
-    if (Setups.bootstrap.bodySetup.patternLimit)
-      workBodyParts = Math.min(Setups.bootstrap.bodySetup.patternLimit, workBodyParts);
+    if (Setups.bootstrap.patternLimit)
+      workBodyParts = Math.min(Setups.bootstrap.patternLimit, workBodyParts);
 
     // theoretically i should count road from minerals to controller, but this is good enough
     let magicNumber = [0.5, 0.666];

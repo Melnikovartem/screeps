@@ -133,8 +133,17 @@ export class storageCell extends Cell {
   }
 
   run() {
-    for (let k in this.requests)
-      if (this.requests[k].amount <= 0)
+    for (let k in this.requests) {
+      let request = this.requests[k];
+      if (request.amount > 0 && !request.from.store[request.resource]
+        && !(this.master.manager && this.master.manager.store[request.resource]))
         delete this.requests[k];
+      if ((<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
+        delete this.requests[k];
+      if (request.amount <= 0) {
+        console.log(this.requests[k].ref, this.requests[k].amount)
+        delete this.requests[k];
+      }
+    }
   }
 }

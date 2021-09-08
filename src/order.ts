@@ -94,6 +94,7 @@ export class Order {
     this.acted = true;
     switch (this.flag.color) {
       case COLOR_RED:
+        this.flag.memory.repeat = this.flag.memory.repeat ? this.flag.memory.repeat : 0;
         if (/^def_/.exec(this.ref) !== null)
           Apiary.defenseSwarms[this.pos.roomName] = this;
         if (!this.master)

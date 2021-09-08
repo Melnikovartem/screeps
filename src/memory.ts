@@ -6,6 +6,8 @@ export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
     if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {} };
+    if (!Memory.cache.intellegence) Memory.cache.intellegence = {};
+    if (!Memory.cache.roomPlanner) Memory.cache.roomPlanner = {};
     if (!Memory.settings) Memory.settings = { framerate: 10 };
 
     Logger.init();
