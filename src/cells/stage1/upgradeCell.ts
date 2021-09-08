@@ -39,8 +39,11 @@ export class upgradeCell extends Cell {
       if (storageLink) {
         let usedCap = storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
         if (freeCap <= usedCap || freeCap >= LINK_CAPACITY / 1.05) {
-          if (storageCell.requests["link_" + storageLink.id])
-            storageCell.requests["link_" + storageLink.id].amount = Math.min(0, usedCap - freeCap * 1.4);
+          if (storageCell.requests["link_" + storageLink.id]) {
+            let amount = usedCap - freeCap * 1.4;
+            if (amount > 0)
+              storageCell.requests["link_" + storageLink.id].amount = amount;
+          }
           if (!storageLink.cooldown) {
             storageLink.transferEnergy(this.link!, Math.min(freeCap, usedCap)) == 0;
             if (Apiary.logger)

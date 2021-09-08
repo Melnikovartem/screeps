@@ -185,7 +185,7 @@ export class Hive {
       if (this.shouldRecalc > 1) {
         this.markResources();
         _.forEach(this.rooms, (r) => {
-          if (!Memory.cache.roomPlanner[r.name] || Memory.cache.roomPlanner[r.name] === {})
+          if (!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length)
             Apiary.planner.resetPlanner(r.name);
         });
       }

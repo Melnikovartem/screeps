@@ -14,6 +14,7 @@ import { annexMaster } from "./beeMasters/civil/annexer";
 import { claimerMaster } from "./beeMasters/civil/claimer";
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
+import { makeId } from "./utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
@@ -205,12 +206,18 @@ export class Order {
             Apiary.planner.generatePlan(this.pos);
             break;
           case COLOR_ORANGE:
-            if (Memory.cache.roomPlanner[this.pos.roomName]) {
+            if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
               this.uniqueFlag();
               Apiary.planner.toActive(this.pos.roomName);
             } else
               this.delete();
             break;
+          case COLOR_RED:
+            let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
+            if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
+              Apiary.planner.resetPlanner(this.pos.roomName);
+            this.pos.createFlag(this.ref + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+            this.delete();
         }
         break;
       case COLOR_GREY:
@@ -298,8 +305,6 @@ export class Order {
             break;
           case COLOR_ORANGE:
             delete Apiary.planner.activePlanning[this.pos.roomName];
-            if (Memory.cache.roomPlanner[this.pos.roomName] === {})
-              Apiary.planner.resetPlanner(this.pos.roomName);
             break;
         }
         break;

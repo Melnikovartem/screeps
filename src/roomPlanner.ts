@@ -68,27 +68,29 @@ export class RoomPlanner {
   run() {
     // CPU for planner - least important one
     for (let roomName in this.activePlanning) {
-      let jobs = this.activePlanning[roomName].jobsToDo;
-      let ok = true;
-      while (jobs.length) {
-        let ans = jobs[0].func();
-        if (ans !== ERR_BUSY)
-          jobs.shift();
-        if (ans == ERR_FULL) {
-          ok = false;
-          console.log("failed", jobs[0].context);
-          break;
+      if (!this.activePlanning[roomName].correct) {
+        let jobs = this.activePlanning[roomName].jobsToDo;
+        let ok = true;
+        while (jobs.length) {
+          let ans = jobs[0].func();
+          if (ans !== ERR_BUSY)
+            jobs.shift();
+          if (ans == ERR_FULL) {
+            ok = false;
+            console.log("failed", roomName, jobs[0].context);
+            break;
+          }
         }
-      }
-      if (!this.activePlanning[roomName].correct && !jobs.length && ok) {
-        console.log("success");
-        this.activePlanning[roomName].correct = true;
+        if (!jobs.length && ok) {
+          console.log("success", roomName);
+          this.activePlanning[roomName].correct = true;
+        }
       }
     }
   }
 
-  initPlanning(roomName: string) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: false };
+  initPlanning(roomName: string, correct: boolean = false) {
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: correct };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
@@ -255,6 +257,7 @@ export class RoomPlanner {
   }
 
   toActive(roomName: string) {
+    this.initPlanning(roomName, true);
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;

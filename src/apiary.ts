@@ -9,12 +9,13 @@ import { Visuals } from "./convenience/visuals";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { LOGGING_CYCLE, DEVELOPING } from "./settings";
+import { LOGGING_CYCLE } from "./settings";
 
 
 @profile
 export class _Apiary {
   destroyTime: number;
+  username: string = "";
   intel: Intel;
   planner: RoomPlanner;
   logger: Logger | undefined;
@@ -42,21 +43,15 @@ export class _Apiary {
 
   init() {
     _.forEach(Game.rooms, (room) => {
-      if (room.controller && room.controller.my)
+      if (room.controller && room.controller.my) {
+        this.username = room.controller.owner!.username;
         this.hives[room.name] = new Hive(room.name);
+      }
     });
 
     // get main hive
     if (_.filter(this.hives, (h) => h.stage === 2).length === 0)
       (<Hive[]>_.map(this.hives)).sort((a, b) => b.room.energyCapacityAvailable - a.room.energyCapacityAvailable)[0].stage = 2;
-
-    // for testing
-    if (DEVELOPING) {
-      if (this.hives["W5N8"])
-        this.hives["W5N8"].stage = 2;
-      if (this.hives["W7N9"])
-        this.hives["W7N9"].stage = 2;
-    }
   }
 
   // update phase

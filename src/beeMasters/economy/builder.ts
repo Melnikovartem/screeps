@@ -50,8 +50,11 @@ export class builderMaster extends Master {
               bee.target = null;
               if (Apiary.logger)
                 Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
-            } else
-              break;
+              let target = bee.pos.findClosest(this.hive.structuresConst);
+              if (target && target.getRangeTo(bee.pos) > 3)
+                bee.goTo(target);
+            }
+            break;
           case states.work:
             if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
               bee.state = states.refill;
@@ -87,6 +90,8 @@ export class builderMaster extends Master {
                 bee.state = states.chill;
               }
             }
+            if (bee.state !== states.chill)
+              break;
           case states.chill:
             if (this.hive.sumCost)
               bee.state = states.work;
