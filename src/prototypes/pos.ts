@@ -1,7 +1,7 @@
 interface RoomPosition {
   getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition } | string, pathfind?: boolean): number;
-  getNearbyPositions(): RoomPosition[];
-  getOpenPositions(ignoreCreeps?: boolean): RoomPosition[];
+  getPositionsInRange(range?: number): RoomPosition[];
+  getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
   getEnteranceToRoom(): RoomPosition | null;
   getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number;
@@ -42,14 +42,14 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
   }
 }
 
-RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
+RoomPosition.prototype.getPositionsInRange = function(range: number = 1): RoomPosition[] {
   let positions: RoomPosition[] = [];
 
-  let startX = this.x - 1 || 1;
-  let startY = this.y - 1 || 1;
+  let startX = this.x >= range ? this.x - range : 0;
+  let startY = this.y >= range ? this.y - range : 0;
 
-  for (let x = startX; x <= this.x + 1 && x < 49; x++) {
-    for (let y = startY; y <= this.y + 1 && y < 49; y++) {
+  for (let x = startX; x <= this.x + range && x <= 49; x++) {
+    for (let y = startY; y <= this.y + range && y <= 49; y++) {
       positions.push(new RoomPosition(x, y, this.roomName));
     }
   }
@@ -57,8 +57,8 @@ RoomPosition.prototype.getNearbyPositions = function(): RoomPosition[] {
   return positions
 }
 
-RoomPosition.prototype.getOpenPositions = function(ignoreCreeps?: boolean): RoomPosition[] {
-  let nearbyPositions: RoomPosition[] = this.getNearbyPositions();
+RoomPosition.prototype.getOpenPositions = function(ignoreCreeps?: boolean, range: number = 1): RoomPosition[] {
+  let nearbyPositions: RoomPosition[] = this.getPositionsInRange(range);
 
   return _.filter(nearbyPositions, (pos) => pos.isFree(ignoreCreeps));
 }

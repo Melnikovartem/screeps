@@ -2,7 +2,7 @@ import { profile } from "../profiler/decorator";
 import { UPDATE_EACH_TICK, DEVELOPING } from "../settings";
 
 const TEXT_SIZE = 0.8;
-const TEXT_WIDTH = TEXT_SIZE * 0.465;
+const TEXT_WIDTH = TEXT_SIZE * 0.46;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 
 @profile
@@ -178,22 +178,22 @@ export class Visuals {
         ans.push(["spawn", "→" + hive.bassboost.roomName, ":"]);
       else
         ans.push(["spawn",
-          Object.keys(hive.spawOrders).length ? ` ${Object.keys(hive.spawOrders).length}` : "",
+          !Object.keys(hive.spawOrders).length ? "" : ` ${Object.keys(hive.spawOrders).length}`,
           this.getBeesAmount(cell.master)]);
     }
     cell = hive.cells.storage;
     if (cell)
       ans.push(["storage",
-        Object.keys(cell.requests).length ? ` ${Object.keys(cell.requests).length}` : "",
+        !Object.keys(cell.requests).length ? "" : ` ${Object.keys(cell.requests).length}`,
         this.getBeesAmount(cell.master)]);
     cell = hive.cells.dev;
     if (cell)
       ans.push(["develop",
-        cell.sources.length ? ` ${Object.keys(cell.sources).length}` : "",
+        !cell.sources.length ? "" : ` ${Object.keys(cell.sources).length}`,
         this.getBeesAmount(cell.master)]);
     cell = hive.cells.excavation;
     if (cell) {
-      ans.push(["excav",
+      ans.push(["excav", !cell.quitefullContainers.length ? "" :
         ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`,
         this.getBeesAmount(cell.master)]);
 
@@ -209,7 +209,7 @@ export class Visuals {
           stats.targetBeeCount += rcell.master.targetBeeCount;
         }
       });
-      ans.push(["resource", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
+      ans.push(["resource", operational == all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
     let annexOrders = _.filter(Apiary.orders, (o) => o.hive === hive && /^annex_/.exec(o.ref))
@@ -226,17 +226,17 @@ export class Visuals {
           stats.targetBeeCount += o.master.targetBeeCount;
         }
       });
-      ans.push(["annex", ` ${operational}/${all}`, this.getBeesAmount(stats)]);
+      ans.push(["annex", operational == all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
     let constLen = hive.structuresConst.length;
     if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
-      ans.push(["build", hive.sumCost ? ` ${Math.round(hive.sumCost / 1000)}K/${hive.structuresConst.length}` : "",
+      ans.push(["build", !hive.sumCost ? "" : ` ${Math.round(hive.sumCost / 1000)}K/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder)])
     }
 
     ans.push(["upgrade",
-      ` ${hive.room.controller!.progressTotal ? Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%" : ""}`,
+      ` ${!hive.room.controller!.progressTotal ? "" : Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%"}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
     let minSize = 0;
@@ -335,7 +335,7 @@ export class Visuals {
     });
 
     let xMin = pos.x;
-    let len = Math.min(Math.max(_.sum(widths) + pad * 2, minSize), maxSize);
+    let len = Math.min(Math.max(_.sum(widths) + pad * widths.length + pad, minSize), maxSize);
     if (align === "center")
       xMin = pos.x - len / 2;
     if (align === "right")
@@ -348,10 +348,10 @@ export class Visuals {
       strings.reverse();
 
     _.forEach(strings, (s) => {
-      let tab = pad;
+      let tab = pad * 2;
       for (const i in s) {
         vis.text(s[i], xMin + tab, yMin + height, this.textStyle(style));
-        tab += widths[i] + (widths[i] > 6 ? 0.2 : 0)
+        tab += widths[i];
       }
       height += TEXT_HEIGHT * 1.2 * (snap === "bottom" ? -1 : 1);
     });

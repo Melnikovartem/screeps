@@ -23,7 +23,7 @@ type Pos = { x: number, y: number };
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
 const PATH_ARGS: FindPathOpts = {
-  plainCost: 2, swampCost: 10, ignoreCreeps: true,
+  plainCost: 2, swampCost: 4, ignoreCreeps: true,
   costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
     if (Apiary.planner.activePlanning[roomName]) {
       let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -72,19 +72,16 @@ export class RoomPlanner {
         let jobs = this.activePlanning[roomName].jobsToDo;
         while (jobs.length) {
           let ans = jobs[0].func();
-          if (ans !== ERR_BUSY)
-            jobs.shift();
           if (ans == ERR_FULL) {
             this.activePlanning[roomName].correct = "fail";
             console.log("failed", roomName, jobs[0].context);
             break;
-          }
+          } else if (ans !== ERR_BUSY)
+            jobs.shift();
         }
-        if (!jobs.length) {
-          if (this.activePlanning[roomName].correct != "fail") {
-            console.log("success", roomName);
-            this.activePlanning[roomName].correct == "ok";
-          }
+        if (!jobs.length && this.activePlanning[roomName].correct != "fail") {
+          console.log("success", roomName);
+          this.activePlanning[roomName].correct = "ok";
         }
       }
     }
@@ -144,7 +141,7 @@ export class RoomPlanner {
           let ans = this.connectWithRoad(anchor, f.pos);
           if (ans == ERR_FULL || ans == ERR_BUSY)
             return ans;
-          this.addToPlan(ans, f.pos.roomName, STRUCTURE_EXTRACTOR, true);
+          this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
           return OK;
         }
       });
@@ -155,7 +152,31 @@ export class RoomPlanner {
       func: () => {
         let contr = Game.rooms[anchor.roomName] && Game.rooms[anchor.roomName].controller;
         if (contr) {
-          _.forEach(contr.pos.getOpenPositions(), (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+          let poss = contr.pos.getOpenPositions(true);
+          _.forEach(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+          poss = contr.pos.getPositionsInRange(2);
+          poss.sort((a, b) => a.getRangeTo(anchor) - b.getRangeTo(anchor));
+          if (!_.some(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_LINK) == OK))
+            return ERR_FULL;
+        }
+        return OK;
+      }
+    });
+
+    jobs.push({
+      context: "exits to rooms",
+      func: () => {
+        let exitsGlobal = Game.map.describeExits(anchor.roomName);
+        for (let e in exitsGlobal) {
+          if (exitsGlobal[<ExitConstant>+e]) {
+            let exit = anchor.findClosest(Game.rooms[anchor.roomName].find(<ExitConstant>+e));
+            if (exit) {
+              let ans = this.connectWithRoad(anchor, exit);
+              if (ans == ERR_FULL || ans == ERR_BUSY)
+                return ans;
+            } else
+              return ERR_BUSY;
+          }
         }
         return OK;
       }
@@ -165,7 +186,7 @@ export class RoomPlanner {
 
     let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_OBSERVER];
     jobs.push({
-      context: "filling new free spaces",
+      context: "filling in",
       func: () => {
         let placed = this.activePlanning[anchor.roomName].placed;
         for (let i in fillTypes) {
@@ -193,10 +214,8 @@ export class RoomPlanner {
     if (!exit)
       return ERR_FULL;
     let path = exit.findPathTo(pos, PATH_ARGS);
-    if (path.length == 0) {
-      console.log(anchor.roomName, "->", exit, "->", pos.roomName);
+    if (path.length == 0)
       return ERR_FULL;
-    }
 
     let lastPath = path.pop()!;
     _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, STRUCTURE_ROAD));
@@ -208,8 +227,6 @@ export class RoomPlanner {
       this.activePlanning[anchor.roomName].exits.push(ent ? ent : exit);
       return ERR_BUSY;
     }
-    if (exit.roomName == anchor.roomName)
-      this.activePlanning[anchor.roomName].exits.push(exit);
     return exit;
   }
 
