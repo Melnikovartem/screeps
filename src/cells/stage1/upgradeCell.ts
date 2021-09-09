@@ -35,10 +35,11 @@ export class upgradeCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-    if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 8) {
+    if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 2) {
       this.storageLink = storageCell.getFreeLink();
       if (this.storageLink) {
-        storageCell.linksState[this.storageLink.id] = "busy";
+        if (storageCell.master.manager && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
+          storageCell.linksState[this.storageLink.id] = "busy";
         let usedCap = this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
         if (freeCap >= usedCap + 50 || freeCap == LINK_CAPACITY - usedCap)
           storageCell.requestFromStorage("link_" + this.storageLink.id, this.storageLink, 3, undefined, LINK_CAPACITY - usedCap);

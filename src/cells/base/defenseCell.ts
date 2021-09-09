@@ -21,9 +21,9 @@ export class defenseCell extends Cell {
     if (storageCell) {
       _.forEach(this.towers, (tower) => {
         if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage(this.ref, tower, 0);
+          storageCell!.requestFromStorage("tower_" + tower.id, tower, 1);
         else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage(this.ref, tower, 3);
+          storageCell!.requestFromStorage("tower_" + tower.id, tower, 3);
       });
     }
   }

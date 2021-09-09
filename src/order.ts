@@ -190,7 +190,7 @@ export class Order {
                   sum += this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
                 });
                 if (sum === 0)
-                  prefix = "lab";
+                  prefix = this.ref.includes("temp") || this.ref.includes("lab") ? "lab" : "temp";
               }
               break;
           }
@@ -209,7 +209,15 @@ export class Order {
         });
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
-            Apiary.planner.generatePlan(this.pos);
+            let baseRotation: 0 | 1 | 2 | 3 = 0;
+            if (this.ref.includes("right"))
+              baseRotation = 1;
+            else if (this.ref.includes("top"))
+              baseRotation = 2;
+            else if (this.ref.includes("bottom"))
+              baseRotation = 3;
+
+            Apiary.planner.generatePlan(this.pos, baseRotation);
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {

@@ -31,11 +31,16 @@ export class managerMaster extends Master {
     if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
       && this.manager.pos.roomName === this.cell.pos.roomName) {
       if (this.manager.target && this.cell.requests[this.manager.target]) {
-        if (emergencyRequests.length && this.cell.requests[this.manager.target].priority > emergencyRequests[0].priority) {
-          this.manager.target = emergencyRequests[0].ref;
-          let res = this.cell.requests[this.manager.target].resource;
-          this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
-            : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+        if (emergencyRequests.length) {
+          let closest = this.cell.storage.pos.findClosest(_.map(emergencyRequests, (r) => r.to))!;
+          let target = _.filter(emergencyRequests, (r) => r.to.id == closest.id)[0];
+          if (this.cell.requests[this.manager.target].priority > target.priority
+            || this.cell.pos.getRangeTo(target.to.pos) > this.cell.pos.getRangeTo(target.to.pos)) {
+            this.manager.target = target.ref;
+            let res = this.cell.requests[this.manager.target].resource;
+            this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
+              : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+          }
         }
       } else if (this.manager.state == states.chill) {
         this.manager.target = null;

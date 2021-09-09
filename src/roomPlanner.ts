@@ -16,8 +16,8 @@ const WALLS: Module = { exits: [], freeSpaces: [], setup: { "road": { "pos": [] 
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS } },
-  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1 } },
-  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1 } }
+  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } },
+  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } }
 }
 type Pos = { x: number, y: number };
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
@@ -99,7 +99,7 @@ export class RoomPlanner {
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
 
-  generatePlan(anchor: RoomPosition) {
+  generatePlan(anchor: RoomPosition, baseRotation: 0 | 1 | 2 | 3 = 0) {
     this.initPlanning(anchor.roomName);
     let jobs = this.activePlanning[anchor.roomName].jobsToDo;
     let rotate = (pos: Pos, direction: 0 | 1 | 2 | 3, shiftY: number = 0, shiftX: number = 0) => {
@@ -124,8 +124,6 @@ export class RoomPlanner {
       }
       return { x: x + (anchor.x + shiftX), y: y + (anchor.y + shiftY) };
     }
-
-    let baseRotation: 0 | 1 | 2 | 3 = <0 | 1 | 2 | 3>(2 % 4);
     if (baseRotation != 2)
       this.addModule(anchor, EXTRA_VERTICAL, (a) => rotate(a, 0, -3)); // top
     if (baseRotation != 3)
@@ -354,7 +352,7 @@ export class RoomPlanner {
   addToCache(pos: Pos, roomName: string, sType: BuildableStructureConstant) {
     if (!Memory.cache.roomPlanner[roomName][sType])
       Memory.cache.roomPlanner[roomName][sType] = { "pos": [] };
-    Memory.cache.roomPlanner[roomName][sType]!.pos.push(pos);
+    Memory.cache.roomPlanner[roomName][sType]!.pos.push({ x: pos.x, y: pos.y });
   }
 
   getCase(structure: Structure | ConstructionSite | { structureType: StructureConstant, pos: { roomName: string }, hitsMax: number }) {
@@ -391,10 +389,10 @@ export class RoomPlanner {
           let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
           if (!constructionSite) {
             if (constructions < 10) {
-              let place = _.filter(pos.lookFor(LOOK_STRUCTURES))[0];
-              if (place) {
+              let place = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType != STRUCTURE_RAMPART)[0];
+              if (place && sType != STRUCTURE_RAMPART) {
                 if ((<OwnedStructure>place).my)
-                  place.destroy()
+                  place.destroy();
               } else {
                 sum += CONSTRUCTION_COST[sType];
                 pos.createConstructionSite(sType);

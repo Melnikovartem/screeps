@@ -1,5 +1,4 @@
 import { profile } from "../profiler/decorator";
-import { UPDATE_EACH_TICK, DEVELOPING } from "../settings";
 
 const TEXT_SIZE = 0.8;
 const TEXT_WIDTH = TEXT_SIZE * 0.46;
@@ -21,7 +20,7 @@ export class Visuals {
   }
 
   create() {
-    if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
+    if (Game.time % Memory.settings.framerate === 0) {
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       // bucket size same as PIXEL_CPU_COST
       this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
@@ -67,7 +66,7 @@ export class Visuals {
   }
 
   createLight() {
-    if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
+    if (Game.time % Memory.settings.framerate === 0) {
       this.anchor = this.label("LOW CPU MODE", this.getAnchor(48, null, 1), { align: "right" }, 8);
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(48), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 8);
       this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(48), Game.cpu.bucket / 10000, { align: "right" }, 8);
@@ -102,7 +101,8 @@ export class Visuals {
               style.fill = "#91EFD8";
               break;
             case STRUCTURE_TOWER:
-              style.fill = "#F93274";
+              style.fill = "#F988AE";
+              style.opacity = 0.45;
               break;
             case STRUCTURE_SPAWN:
               style.fill = "#9E1393";
@@ -325,8 +325,6 @@ export class Visuals {
 
   table(strings: string[][], pos: { x: number, y: number, roomName?: string }, style: TextStyle = {},
     minSize: number = 1, maxSize: number = 20, align: "center" | "right" | "left" = "left", snap: "bottom" | "top" = "top") {
-    if (DEVELOPING)
-      pos.x += 2; // broken visuals @ xxScreeps server
     let vis = new RoomVisual(pos.roomName);
     let pad = 0.2;
 

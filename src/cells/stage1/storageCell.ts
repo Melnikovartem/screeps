@@ -113,10 +113,10 @@ export class storageCell extends Cell {
           if (!isFull)
             for (let resourceConstant in this.terminal.store) {
               let resource = <ResourceConstant>resourceConstant;
-              let newAmount = this.terminal.store.getUsedCapacity(resource);
               if (resource === RESOURCE_ENERGY)
-                newAmount -= TERMINAL_ENERGY;
-              if (newAmount > amount) {
+                continue;
+              let newAmount = this.terminal.store.getUsedCapacity(resource);
+              if (newAmount > amount || res === RESOURCE_ENERGY) {
                 res = resource;
                 amount = newAmount;
               }
@@ -125,6 +125,8 @@ export class storageCell extends Cell {
             for (let resourceConstant in this.storage.store) {
               let resource = <ResourceConstant>resourceConstant;
               let newAmount = -this.storage.store.getUsedCapacity(resource);
+              if (resource === RESOURCE_ENERGY)
+                newAmount += 200000; // save 200K energy everytime
               if (Math.abs(newAmount) > Math.abs(amount)) {
                 res = resource;
                 amount = newAmount;
