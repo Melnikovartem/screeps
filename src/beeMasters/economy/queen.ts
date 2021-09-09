@@ -61,7 +61,7 @@ export class queenMaster extends Master {
             if (ans === OK) {
               let nearByTargets = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
                 s.structureType === STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-              if (nearByTargets.length > 0 && !_.filter(nearByTargets, (s) => s.pos.getRangeTo(bee.pos) == 1).length)
+              if (nearByTargets.length > 0 && !_.filter(nearByTargets, (s) => s.pos.getRangeTo(bee.pos) === 1).length)
                 bee.goTo(nearByTargets[0]);
             } else if (ans === ERR_NOT_FOUND)
               bee.state = states.fflush;

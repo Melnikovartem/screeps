@@ -57,7 +57,7 @@ export class resourceCell extends Cell {
       if (this.link)
         posNear = this.link.pos.getOpenPositions(true);
       this.pos = _.filter(this.resource.pos.getOpenPositions(true),
-        (p) => _.filter(posNear, (pp) => pp.x == p.x && pp.y == p.y).length > 0)[0];
+        (p) => _.filter(posNear, (pp) => pp.x === p.x && pp.y === p.y).length > 0)[0];
       if (!this.pos)
         this.pos = this.resource.pos;
     }

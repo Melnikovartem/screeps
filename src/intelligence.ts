@@ -118,9 +118,11 @@ export class Intel {
       this.roomInfo[room.name].safePlace = true;
 
     let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
+    let flagTargets = _.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
 
-    if (targetFlags.length)
-      this.roomInfo[room.name].enemies = this.roomInfo[room.name].enemies.concat(_.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0])));
+    if (flagTargets.length)
+      this.roomInfo[room.name].enemies = this.roomInfo[room.name].enemies.concat(
+        flagTargets.filter((s) => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_TOWER));
 
     if (!this.roomInfo[room.name].enemies.length) {
 
@@ -129,6 +131,12 @@ export class Intel {
           structure.structureType === STRUCTURE_POWER_SPAWN
       });
 
+      if (!this.roomInfo[room.name].enemies.length)
+        this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS));
+
+      if (!this.roomInfo[room.name].enemies.length)
+        this.roomInfo[room.name].enemies = this.roomInfo[room.name].enemies = flagTargets;
+
       // time to pillage
       if (!this.roomInfo[room.name].enemies.length)
         this.roomInfo[room.name].enemies = room.find(FIND_HOSTILE_STRUCTURES, {
@@ -136,8 +144,6 @@ export class Intel {
             structure.structureType === STRUCTURE_EXTENSION
         });
 
-      if (!this.roomInfo[room.name].enemies.length)
-        this.roomInfo[room.name].enemies = _.filter(room.find(FIND_HOSTILE_CREEPS));
     }
   }
 }

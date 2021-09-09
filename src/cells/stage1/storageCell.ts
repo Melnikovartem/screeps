@@ -66,7 +66,7 @@ export class storageCell extends Cell {
   requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
     , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = 0): number {
 
-    if (from.structureType == STRUCTURE_LAB && from.mineralType)
+    if (from.structureType === STRUCTURE_LAB && from.mineralType)
       res = from.mineralType;
     if (!amount || amount === Infinity)
       amount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(res);
@@ -84,12 +84,12 @@ export class storageCell extends Cell {
   }
 
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
-    let links = _.filter(this.links, (l) => !sendIn || this.linksState[l.id] == "idle").sort(
+    let links = _.filter(this.links, (l) => !sendIn || this.linksState[l.id] === "idle").sort(
       (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1));
     if (sendIn)
       return links[0];
     else
-      return links.sort((a, b) => a.cooldown - b.cooldown)[0];
+      return links.reduce((prev, curr) => curr.cooldown < prev.cooldown ? curr : prev);
   }
 
   update() {
@@ -179,7 +179,7 @@ export class storageCell extends Cell {
 
       let targetPrice = -1;
       let orders = Game.market.getAllOrders((order) => {
-        if (order.type == ORDER_SELL || order.resourceType !== res)
+        if (order.type === ORDER_SELL || order.resourceType !== res)
           return false;
         if (targetPrice < order.price)
           targetPrice = order.price;
@@ -188,15 +188,15 @@ export class storageCell extends Cell {
       if (orders.length)
         orders = orders.filter((order) => order.price > targetPrice * 0.9);
       if (orders.length) {
-        orders.sort((a, b) => b.price - a.price);
-        let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, orders[0].roomName!) / 10000;
+        let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
+        let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, order.roomName!) / 10000;
         let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-        amount = Math.min(amount, energyCap, orders[0].amount);
+        amount = Math.min(amount, energyCap, order.amount);
         if (orders[0].resourceType === RESOURCE_ENERGY && amount * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
           amount = Math.floor(amount * (1 - energyCost));
         let ans = Game.market.deal(orders[0].id, amount, this.hive.roomName);
         if (ans === OK && Apiary.logger)
-          Apiary.logger.newMarketOperation(orders[0], amount, this.hive.roomName);
+          Apiary.logger.newMarketOperation(order, amount, this.hive.roomName);
       }
     }
   }

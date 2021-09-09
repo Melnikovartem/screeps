@@ -70,9 +70,9 @@ export class bootstrapMaster extends Master {
         priority: 9,
       };
 
-      if (this.beesAmount < this.targetBeeCount * 0.5) {
+      if (this.beesAmount < this.targetBeeCount * 0.2) {
         order.priority = 2;
-        order.amount = Math.ceil(this.targetBeeCount / 2 - this.beesAmount);
+        order.amount = Math.ceil(this.targetBeeCount * 0.2 - this.beesAmount);
       }
 
       this.wish(order);

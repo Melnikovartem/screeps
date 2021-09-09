@@ -71,7 +71,7 @@ export class Logger {
   newMarketOperation(order: Order, amount: number, hiveName: string) {
     if (!order.roomName)
       return;
-    this.addResourceStat(hiveName, order.type == ORDER_BUY ? "export" : "import", order.type == ORDER_BUY ? -amount : amount, <ResourceConstant>order.resourceType);
+    this.addResourceStat(hiveName, order.type === ORDER_BUY ? "export" : "import", order.type === ORDER_BUY ? -amount : amount, <ResourceConstant>order.resourceType);
   }
 
   hiveLog(hive: Hive) {

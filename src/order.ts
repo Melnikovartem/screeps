@@ -2,7 +2,7 @@ import { hordeDefenseMaster } from "./beeMasters/war/hordeDefense";
 import { hordeMaster } from "./beeMasters/war/horde";
 import { downgradeMaster } from "./beeMasters/war/downgrader";
 import { dismantlerMaster } from "./beeMasters/war/dismantler";
-import { healerWaiterMaster } from "./beeMasters/war/healerWaiter";
+import { waiterMaster } from "./beeMasters/war/waiter";
 import { dupletMaster } from "./beeMasters/war/duplet";
 import { squadMaster } from "./beeMasters/war/squad";
 
@@ -86,8 +86,8 @@ export class Order {
   uniqueFlag(local: boolean = true) {
     if (this.pos.roomName in Game.rooms) {
       _.forEach(Game.flags, (f) => {
-        if (f.color === this.flag.color && f.secondaryColor == this.flag.secondaryColor
-          && (!local || f.pos.roomName == this.pos.roomName) && f.name != this.ref && Apiary.orders[f.name])
+        if (f.color === this.flag.color && f.secondaryColor === this.flag.secondaryColor
+          && (!local || f.pos.roomName === this.pos.roomName) && f.name !== this.ref && Apiary.orders[f.name])
           Apiary.orders[f.name].delete();
       });
       return OK;
@@ -108,9 +108,11 @@ export class Order {
               this.master = new hordeDefenseMaster(this);
               break;
             case COLOR_CYAN:
-              this.master = new hordeMaster(this);
+              let master = new hordeMaster(this);
               let regex = /^\d*/.exec(this.ref);
-              console.log(regex);
+              if (regex && regex[0])
+                master.maxSpawns = +regex[0];
+              this.master = master;
               break;
             case COLOR_PURPLE:
               this.master = new downgradeMaster(this);
@@ -119,7 +121,7 @@ export class Order {
               this.master = new dismantlerMaster(this);
               break;
             case COLOR_GREEN:
-              this.master = new healerWaiterMaster(this);
+              this.master = new waiterMaster(this);
               break;
             case COLOR_RED:
               this.master = new dupletMaster(this);
@@ -128,7 +130,10 @@ export class Order {
               this.master = new squadMaster(this);
               break;
             case COLOR_WHITE:
-              // COLOR_WHITE to mark surrendered rooms
+              if (this.ref !== "surrender_" + this.hive.roomName) {
+                this.pos.createFlag("surrender_" + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
+                this.delete();
+              }
               break;
           }
         break;
@@ -198,7 +203,7 @@ export class Order {
               }
               break;
           }
-          if (prefix != "" && this.ref != prefix + this.hive.roomName) {
+          if (prefix !== "" && this.ref !== prefix + this.hive.roomName) {
             this.pos.createFlag(prefix + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
             this.delete();
           }
@@ -208,7 +213,7 @@ export class Order {
         break;
       case COLOR_WHITE:
         _.forEach(Game.flags, (f) => {
-          if (f.color === COLOR_WHITE && f.name != this.ref && Apiary.orders[f.name])
+          if (f.color === COLOR_WHITE && f.name !== this.ref && Apiary.orders[f.name])
             Apiary.orders[f.name].delete();
         });
         switch (this.flag.secondaryColor) {
@@ -232,7 +237,7 @@ export class Order {
           case COLOR_RED:
             if (Game.time % 3 === 0 && Apiary.useBucket) {
               let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
-              if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
+              if (contr && (contr.my || contr.reservation && contr.reservation.username === Apiary.username))
                 Apiary.planner.resetPlanner(this.pos.roomName);
               Apiary.planner.toActive(this.pos.roomName);
             }
@@ -263,6 +268,7 @@ export class Order {
       case COLOR_GREY:
         switch (this.flag.secondaryColor) {
           case COLOR_RED:
+            this.acted = false;
             if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
               this.delete();
             break;
@@ -354,7 +360,7 @@ export class Order {
             delete Apiary.defenseSwarms[key];
         break;
       case COLOR_WHITE:
-        if (!_.filter(Apiary.orders, (o) => o.flag.color === COLOR_WHITE && o.ref != this.ref).length)
+        if (!_.filter(Apiary.orders, (o) => o.flag.color === COLOR_WHITE && o.ref !== this.ref).length)
           for (let name in Apiary.planner.activePlanning)
             delete Apiary.planner.activePlanning[name];
         break;

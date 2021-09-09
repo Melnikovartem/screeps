@@ -45,12 +45,12 @@ export class defenseCell extends Cell {
         }
         let ans: number | string | undefined;
         if (freeSwarms.length) {
-          freeSwarms.sort((a, b) => a.pos.getRoomRangeTo(Game.rooms[roomName]) - b.pos.getRoomRangeTo(Game.rooms[roomName]))
-          if (freeSwarms[0].pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
-            ans = freeSwarms[0].flag.setPosition(roomInfo.enemies[0].pos);
+          let swarm = freeSwarms.reduce((prev, curr) => prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
+          if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
+            ans = swarm.flag.setPosition(roomInfo.enemies[0].pos);
             if (ans === OK) {
-              Apiary.defenseSwarms[roomName] = freeSwarms[0];
-              delete Apiary.defenseSwarms[freeSwarms[0].pos.roomName];
+              Apiary.defenseSwarms[roomName] = swarm;
+              delete Apiary.defenseSwarms[swarm.pos.roomName];
             }
           }
         }
@@ -59,7 +59,7 @@ export class defenseCell extends Cell {
             || enemy instanceof StructureInvaderCore)
             ans = enemy.pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
           else if (enemy instanceof Creep)
-            ans = enemy.pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
+            ans = enemy.pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_CYAN);
           if (typeof ans === "string")
             Game.flags[ans].memory = { hive: this.hive.roomName };
         }

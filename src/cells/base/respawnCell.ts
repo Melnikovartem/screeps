@@ -24,7 +24,7 @@ export class respawnCell extends Cell {
 
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
-    if (Object.keys(this.spawns).length == 0)
+    if (Object.keys(this.spawns).length === 0)
       this.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
   };
 

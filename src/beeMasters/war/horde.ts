@@ -50,9 +50,14 @@ export class hordeMaster extends SwarmMaster {
           else if (bee.hits === bee.hitsMax)
             bee.rangedAttack(target);
           if (bee.pos.getRangeTo(target) < 3 && target instanceof Creep || bee.hits <= bee.hitsMax * 0.7) {
-            let open = bee.pos.getOpenPositions().sort((a, b) => b.getRangeTo(target!) - a.getRangeTo(target!));
-            if (open.length)
-              bee.goTo(open[0]);
+            let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
+              let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
+              if (ans === 0)
+                ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+              return ans < 0 ? curr : prev;
+            });
+            if (open)
+              bee.goTo(open);
           }
         } else
           bee.goRest(this.order.pos);

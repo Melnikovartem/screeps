@@ -218,7 +218,7 @@ export class Visuals {
           stats.targetBeeCount += rcell.master.targetBeeCount;
         }
       });
-      ans.push(["resource", operational == all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
+      ans.push(["resource", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
     let annexOrders = _.filter(Apiary.orders, (o) => o.hive === hive && /^annex_/.exec(o.ref))
@@ -235,7 +235,7 @@ export class Visuals {
           stats.targetBeeCount += o.master.targetBeeCount;
         }
       });
-      ans.push(["annex", operational == all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
+      ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
     let constLen = hive.structuresConst.length;
@@ -351,7 +351,7 @@ export class Visuals {
 
     let yMin = pos.y;
     let height = snap === "bottom" ? -pad * 2 : pad + TEXT_HEIGHT + (label ? TEXT_HEIGHT + pad * 2 : 0);
-    if (snap == "bottom")
+    if (snap === "bottom")
       strings.reverse();
 
     _.forEach(strings, (s) => {

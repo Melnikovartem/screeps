@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 
 //first tandem btw
 @profile
-export class healerWaiterMaster extends SwarmMaster {
+export class waiterMaster extends SwarmMaster {
   healer: Bee | undefined;
 
   // for last stage

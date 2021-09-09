@@ -49,7 +49,7 @@ export class minerMaster extends Master {
           bee.state = states.chill;
 
         if (bee.state === states.work) {
-          if (this.cell.pos.isFree() && bee.pos != this.cell.pos)
+          if (this.cell.pos.isFree() && bee.pos !== this.cell.pos)
             bee.goTo(this.cell.pos);
           else
             bee.harvest(this.cell.resource);

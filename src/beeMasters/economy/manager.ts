@@ -33,16 +33,16 @@ export class managerMaster extends Master {
       if (this.manager.target && this.cell.requests[this.manager.target]) {
         if (emergencyRequests.length) {
           let closest = this.cell.storage.pos.findClosest(_.map(emergencyRequests, (r) => r.to))!;
-          let target = _.filter(emergencyRequests, (r) => r.to.id == closest.id)[0];
+          let target = _.filter(emergencyRequests, (r) => r.to.id === closest.id)[0];
           if (this.cell.requests[this.manager.target].priority > target.priority
             || this.cell.pos.getRangeTo(target.to.pos) > this.cell.pos.getRangeTo(target.to.pos)) {
             this.manager.target = target.ref;
             let res = this.cell.requests[this.manager.target].resource;
             this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
-              : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+              : this.manager.store.getUsedCapacity() === 0 ? states.refill : states.work;
           }
         }
-      } else if (this.manager.state == states.chill) {
+      } else if (this.manager.state === states.chill) {
         this.manager.target = null;
         let targets: string[] = [];
         for (let k in this.cell.requests)
@@ -50,10 +50,10 @@ export class managerMaster extends Master {
             && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
             targets.push(k);
         if (targets.length) {
-          this.manager.target = targets.sort((a, b) => this.cell.requests[a].priority - this.cell.requests[b].priority)[0];
+          this.manager.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev })[0];
           let res = this.cell.requests[this.manager.target].resource;
           this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
-            : this.manager.store.getUsedCapacity() == 0 ? states.refill : states.work;
+            : this.manager.store.getUsedCapacity() === 0 ? states.refill : states.work;
         }
       }
     }
@@ -88,7 +88,7 @@ export class managerMaster extends Master {
               this.manager.state = states.work;
             if (!this.manager.store.getFreeCapacity(request.resource))
               this.manager.state = states.work;
-            if (this.manager.store.getUsedCapacity() != this.manager.store.getUsedCapacity(request.resource))
+            if (this.manager.store.getUsedCapacity() !== this.manager.store.getUsedCapacity(request.resource))
               this.manager.state = states.fflush;
           }
 
@@ -104,7 +104,7 @@ export class managerMaster extends Master {
                 request.amount - this.manager.store.getUsedCapacity(request.resource));
 
               if (amountBee > 0)
-                this.manager.withdraw(request.from, request.resource, amountBee) == OK
+                this.manager.withdraw(request.from, request.resource, amountBee) === OK
             }
 
             if (this.manager.state === states.work) {

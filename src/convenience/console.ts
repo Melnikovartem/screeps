@@ -101,9 +101,8 @@ export class CustomConsole {
         hive = Apiary.hives[roomName];
       else {
         let validHives = _.filter(Apiary.hives, (h) => h.cells.storage && h.cells.storage.terminal && validateTerminal(h.cells.storage.terminal));
-        validHives.sort((a, b) => Game.market.calcTransactionCost(amount, a.roomName, order!.roomName!) -
-          Game.market.calcTransactionCost(amount, b.roomName, order!.roomName!));
-        hive = validHives.pop();
+        hive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(100, prev.roomName, order!.roomName!) >
+          Game.market.calcTransactionCost(100, curr.roomName, order!.roomName!) ? curr : prev);
       }
 
       if (!hive)
@@ -139,7 +138,7 @@ export class CustomConsole {
     let sum = 0, count = 0;
     let anchor = new RoomPosition(25, 25, roomName);
     let orders = Game.market.getAllOrders((order) => {
-      if (order.type == ORDER_BUY || order.resourceType !== resource || !order.roomName)
+      if (order.type === ORDER_BUY || order.resourceType !== resource || !order.roomName)
         return false;
       if (targetPrice < order.price)
         targetPrice = order.price;
@@ -152,8 +151,8 @@ export class CustomConsole {
     if (orders.length)
       orders = orders.filter((order) => order.price < targetPrice * 0.9);
     if (orders.length) {
-      orders.sort((a, b) => a.price - b.price);
-      return this.completeOrder(orders[0].id, roomName, amount);
+      let order = orders.reduce((prev, curr) => prev.price > curr.price ? curr : prev);
+      return this.completeOrder(order.id, roomName, amount);
     }
     return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${roomName} `;
   }

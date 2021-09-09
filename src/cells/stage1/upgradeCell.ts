@@ -41,7 +41,7 @@ export class upgradeCell extends Cell {
         if (storageCell.master.manager && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
           storageCell.linksState[this.storageLink.id] = "busy";
         let usedCap = this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
-        if (freeCap >= usedCap + 50 || freeCap == LINK_CAPACITY - usedCap)
+        if (freeCap >= usedCap + 50 || freeCap === LINK_CAPACITY - usedCap)
           storageCell.requestFromStorage("link_" + this.storageLink.id, this.storageLink, 3, undefined, LINK_CAPACITY - usedCap);
         else
           delete storageCell.requests["link_" + this.storageLink.id];

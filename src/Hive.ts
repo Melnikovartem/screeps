@@ -182,7 +182,7 @@ export class Hive {
       this.sumCost += ans.sum;
     }
     // 85
-    if (Math.round(Game.time / 10) % 8 == 0)
+    if (Math.round(Game.time / 10) % 8 === 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);

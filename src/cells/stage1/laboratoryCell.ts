@@ -299,11 +299,11 @@ export class laboratoryCell extends Cell {
           let potentialMineral = (l: StructureLab, r: BaseMineral | ReactionConstant) => l.store.getFreeCapacity(r) + l.store.getUsedCapacity(r);
 
           let lab1 = _.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle" && potentialMineral(l, res1) >= 5)
-            .sort((a, b) => b.store.getUsedCapacity(res1) - a.store.getUsedCapacity(res1))[0];
+            .reduce((prev, curr) => curr.store.getUsedCapacity(res1) > prev.store.getUsedCapacity(res1) ? curr : prev);
           let lab2;
           if (lab1)
             lab2 = _.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle" && potentialMineral(l, res2) >= 5
-              && l.id !== lab1.id).sort((a, b) => b.store.getUsedCapacity(res2) - a.store.getUsedCapacity(res2))[0];
+              && l.id !== lab1.id).reduce((prev, curr) => curr.store.getUsedCapacity(res2) > prev.store.getUsedCapacity(res2) ? curr : prev);
 
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";

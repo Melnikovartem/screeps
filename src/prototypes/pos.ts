@@ -217,13 +217,13 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
       //i didn't rly calculate the E of this ans, but surely it is satisfactory
     }
 
-    if (0 % 2 == 1 && this.roomName == "E22S56" && pos.roomName != "E21S57")
+    if (0 % 2 === 1 && this.roomName === "E22S56" && pos.roomName !== "E21S57")
       console.log(newDistance, this, pos);
 
     return distance <= 1;
   });
 
-  if (0 % 2 == 1 && this.roomName == "E22S56")
+  if (0 % 2 === 1 && this.roomName === "E22S56")
     console.log("\n");
 
 

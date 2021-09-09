@@ -24,7 +24,7 @@ export abstract class Master {
   targetBeeCount: number = 1;
   waitingForBees: number = 0;
 
-  lastSpawns: number[];
+  oldestSpawn: number;
   beesAmount: number = 0;
   bees: { [id: string]: Bee } = {};
   boost: boolean = false;
@@ -33,7 +33,7 @@ export abstract class Master {
     this.hive = hive;
     this.ref = "master" + ref;
 
-    this.lastSpawns = [-1];
+    this.oldestSpawn = -1;
 
     Apiary.masters[this.ref] = this;
   }
@@ -45,24 +45,13 @@ export abstract class Master {
     if (this.waitingForBees)
       this.waitingForBees -= 1;
 
-    let birthTime = bee.creep.memory.born;
-
-    this.lastSpawns.push(birthTime);
-    if (this.lastSpawns[0] === -1)
-      this.lastSpawns.shift();
-
     this.beesAmount += 1;
-    this.lastSpawns.sort();
+    this.oldestSpawn = _.reduce(this.bees, (result, bee) => result > bee.creep.memory.born ? bee.creep.memory.born : result);
   }
 
   deleteBee(ref: string) {
     delete this.bees[ref];
-
-    this.lastSpawns = [];
-    _.forEach(this.bees, (bee) => {
-      this.lastSpawns.push(bee.creep.memory.born);
-    });
-    this.lastSpawns.sort();
+    this.oldestSpawn = _.reduce(this.bees, (result, bee) => result > bee.creep.memory.born ? bee.creep.memory.born : result);
   }
 
   checkBees(spawnCycle?: number): boolean {
@@ -74,7 +63,7 @@ export abstract class Master {
       this.waitingForBees = 0;
 
     return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
-      || (this.beesAmount === this.targetBeeCount && Game.time >= this.lastSpawns[0] + spawnCycle));
+      || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle));
   }
 
   // first stage of decision making like do i need to spawn new creeps
