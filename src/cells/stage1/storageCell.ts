@@ -84,8 +84,12 @@ export class storageCell extends Cell {
   }
 
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
-    return _.filter(this.links, (l) => !sendIn || this.linksState[l.id] == "idle").sort(
-      (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1))[0];
+    let links = _.filter(this.links, (l) => !sendIn || this.linksState[l.id] == "idle").sort(
+      (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1));
+    if (sendIn)
+      return links[0];
+    else
+      return links.sort((a, b) => a.cooldown - b.cooldown)[0];
   }
 
   update() {
@@ -140,8 +144,7 @@ export class storageCell extends Cell {
       if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
         this.requestToStorage("link_" + link.id, link, 4);
     }
-
-    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000)
+    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && Object.keys(Apiary.hives).length > 1)
       this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
   }
 

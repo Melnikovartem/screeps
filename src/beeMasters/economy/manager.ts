@@ -124,14 +124,29 @@ export class managerMaster extends Master {
         if (this.manager.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
           let resource = <ResourceConstant>Object.keys(this.manager.store)[0];
           this.manager.transfer(this.cell.storage, resource);
-        } else
-          this.manager.state = states.chill;
+        } else {
+          if (this.manager.target)
+            this.manager.state = states.refill;
+          else
+            this.manager.state = states.chill;
+        }
       }
 
       _.forEach(this.bees, (bee) => {
         if (bee.state === states.chill)
           bee.goRest(this.cell.pos);
       });
+
+      /* drop off extra res in sim
+      let store = this.manager.store
+      let ans: ResourceConstant = RESOURCE_ENERGY;
+      for (let resourceConstant in store) {
+        if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
+          ans = <ResourceConstant>resourceConstant;
+      }
+      if (store[ans] > 0)
+        this.manager.creep.drop(ans);
+      */
     }
   }
 }

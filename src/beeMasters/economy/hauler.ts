@@ -97,9 +97,8 @@ export class haulerMaster extends Master {
       if (bee.state === states.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
-        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-          if (bee.repairRoadOnMove() === OK)
-            this.roadUpkeepCost[bee.ref]++;
+        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && bee.repairRoadOnMove() === OK)
+          this.roadUpkeepCost[bee.ref]++;
 
         if (bee.pos.isNearTo(this.cell.dropOff))
           res = this.findOptimalResource(bee.store);

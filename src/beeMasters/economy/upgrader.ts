@@ -44,22 +44,24 @@ export class upgraderMaster extends Master {
   }
 
   recalculateTargetBee() {
+    let storageCell = this.hive.cells.storage;
     if (this.hive.stage == 2) {
       this.targetBeeCount = 1;
       this.patternPerBee = 0;
-    } else {
+    } else if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000) {
+      this.targetBeeCount = 1;
+      this.patternPerBee = 0;
+    } else if (storageCell) {
       let desiredRate = this.maxRate;
+      if (this.cell.link && Object.keys(storageCell.links).length > 1
+        && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
+        desiredRate *= Object.keys(storageCell.links).length;
       let rounding = Math.floor;
-      let storageCell = this.hive.cells.storage;
-      if (storageCell)
-        if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
-          rounding = Math.ceil;
-        else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
-          rounding = Math.round;
-        else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000) {
-          desiredRate = 1;
-          rounding = Math.ceil;
-        }
+      if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+        rounding = Math.ceil;
+      else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
+        rounding = Math.round;
+
       this.targetBeeCount = rounding(desiredRate / this.ratePerCreep);
       this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
     }

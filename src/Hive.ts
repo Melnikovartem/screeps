@@ -17,7 +17,7 @@ import { builderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./utils";
 import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK, DEVELOPING } from "./settings";
+import { DEVELOPING } from "./settings";
 
 export interface SpawnOrder {
   amount: number;
@@ -191,7 +191,7 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (UPDATE_EACH_TICK || Game.time % 20 === 5 || this.shouldRecalc) {
+    if (Game.time % 20 === 5 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
       if (this.shouldRecalc > 1) {

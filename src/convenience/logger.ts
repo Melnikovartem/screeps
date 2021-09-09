@@ -142,15 +142,16 @@ export class Logger {
         });
       }
 
-      if (Object.keys(Memory.log.crashes).length > 100) {
-        let sortedKeys = Object.keys(Memory.log.crashes).sort((a, b) => Memory.log.crashes[b].time - Memory.log.crashes[a].time);
-        let j = sortedKeys.length - 25;
-        _.some(sortedKeys, (i) => {
-          if (--j <= 0) return true;
-          delete Memory.log.crashes[i];
-          return false;
-        });
-      }
+      if (Memory.log.crashes)
+        if (Object.keys(Memory.log.crashes).length > 100) {
+          let sortedKeys = Object.keys(Memory.log.crashes).sort((a, b) => Memory.log.crashes[b].time - Memory.log.crashes[a].time);
+          let j = sortedKeys.length - 25;
+          _.some(sortedKeys, (i) => {
+            if (--j <= 0) return true;
+            delete Memory.log.crashes[i];
+            return false;
+          });
+        }
 
       if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
         let j = Object.keys(Memory.log.enemies).length - 35;

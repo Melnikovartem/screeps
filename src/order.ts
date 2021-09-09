@@ -35,36 +35,41 @@ export class Order {
     if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive])
       this.hive = Apiary.hives[this.flag.memory.hive];
     else {
-      let stageNeeded: 0 | 1 | 2 = 2;
-      if ((this.flag.color === COLOR_PURPLE && this.flag.secondaryColor === COLOR_PURPLE)
-        || this.flag.color == COLOR_WHITE)
-        stageNeeded = 0;
-
-      if (this.flag.color == COLOR_CYAN) {
-        this.hive = Apiary.hives[this.pos.roomName];
-      } else {
-        this.hive = this.findHive(stageNeeded)
+      let filter: (h: Hive) => boolean = (h) => h.stage >= 2;;
+      switch (this.flag.color) {
+        case COLOR_CYAN:
+          filter = (h) => h.roomName === this.pos.roomName && h.stage >= 1;
+          break;
+        case COLOR_PURPLE:
+          if (this.flag.secondaryColor === COLOR_WHITE)
+            filter = (h) => h.roomName !== this.pos.roomName;
+          if (this.flag.secondaryColor !== COLOR_PURPLE)
+            break;
+        case COLOR_YELLOW: case COLOR_WHITE:
+          filter = (h) => h.stage >= 0;
+          break;
       }
+
+      this.hive = this.findHive(filter);
     }
-    if (this.hive)
-      this.flag.memory = { hive: this.hive.roomName };
+    this.flag.memory = { hive: this.hive.roomName };
     this.destroyTime = -1;
   }
 
-  findHive(stage: 0 | 1 | 2 = 2): Hive {
-    if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].stage >= stage)
+  findHive(filter: (h: Hive) => boolean = () => true): Hive {
+    if (Apiary.hives[this.pos.roomName] && filter(Apiary.hives[this.pos.roomName]))
       return Apiary.hives[this.pos.roomName];
 
     for (const k in Game.map.describeExits(this.pos.roomName)) {
       let exit = Game.map.describeExits(this.pos.roomName)[<ExitKey>k];
-      if (exit && Apiary.hives[exit] && Apiary.hives[exit].stage >= stage)
+      if (exit && Apiary.hives[exit] && filter(Apiary.hives[exit]))
         return Apiary.hives[exit];
     }
 
     // well time to look for faraway boys
-    let validHives = _.filter(Apiary.hives, (h) => h.stage >= stage);
+    let validHives = _.filter(Apiary.hives, filter);
     if (!validHives.length)
-      validHives = _.map(Apiary.hives, (h) => h);
+      validHives = _.map(Apiary.hives);
 
     let bestHive = validHives.pop()!; // if i don't have a single hive wtf am i doing
     let dist = this.pos.getRoomRangeTo(bestHive);
@@ -157,7 +162,7 @@ export class Order {
         break;
       case COLOR_CYAN:
         this.uniqueFlag();
-        if (this.hive) {
+        if (this.hive.roomName === this.pos.roomName) {
           let prefix = "";
           switch (this.flag.secondaryColor) {
             case COLOR_CYAN:

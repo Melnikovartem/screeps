@@ -21,11 +21,10 @@ export class Visuals {
   }
 
   create() {
-    this.visualizePlanner();
     if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       // bucket size same as PIXEL_CPU_COST
-      this.anchor = this.progressbar(Game.cpu.bucket + " : BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
+      this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
       this.anchor = this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.getAnchor(49), Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6);
       let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
       if (heapStat) {
@@ -64,13 +63,14 @@ export class Visuals {
           });
         }
     }
+    this.visualizePlanner();
   }
 
   createLight() {
     if (Game.time % Memory.settings.framerate === 0 || UPDATE_EACH_TICK) {
       this.anchor = this.label("LOW CPU MODE", this.getAnchor(48, null, 1), { align: "right" }, 8);
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(48), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 8);
-      this.anchor = this.progressbar(Game.cpu.bucket + " : BUCKET", this.getAnchor(48), Game.cpu.bucket / 10000, { align: "right" }, 8);
+      this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(48), Game.cpu.bucket / 10000, { align: "right" }, 8);
       if (Memory.settings.framerate > 1)
         this.caching["global"] = new RoomVisual().export();
     } else
