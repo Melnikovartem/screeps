@@ -104,6 +104,15 @@ export class Visuals {
             case STRUCTURE_TOWER:
               style.fill = "#F93274";
               break;
+            case STRUCTURE_SPAWN:
+              style.fill = "#9E1393";
+              style.opacity = 1;
+              break;
+            case null:
+              style.fill = "#1C1C1C";
+              style.opacity = 0.4;
+              style.radius = 0.1;
+              break;
             case undefined:
               style.opacity = 0;
               break;

@@ -57,7 +57,7 @@ console.log(`{${ss}}`);
 export class RoomPlanner {
   activePlanning: {
     [id: string]: {
-      plan: { [id: number]: { [id: number]: { s: StructureConstant | undefined, r: boolean } } },
+      plan: { [id: number]: { [id: number]: { s: BuildableStructureConstant | undefined | null, r: boolean } } },
       placed: { [key in StructureConstant]?: number },
       freeSpaces: Pos[], exits: RoomPosition[],
       jobsToDo: Job[]; // ERR_BUSY - repeat job, ERR_FULL - failed
@@ -71,13 +71,19 @@ export class RoomPlanner {
       if (this.activePlanning[roomName].correct === "work") {
         let jobs = this.activePlanning[roomName].jobsToDo;
         while (jobs.length) {
-          let ans = jobs[0].func();
+          let ans
+          try {
+            ans = jobs[0].func();
+          } catch {
+            ans = ERR_BUSY;
+          }
           if (ans == ERR_FULL) {
             this.activePlanning[roomName].correct = "fail";
             console.log("failed", roomName, jobs[0].context);
+          }
+          if (ans !== OK)
             break;
-          } else if (ans !== ERR_BUSY)
-            jobs.shift();
+          jobs.shift();
         }
         if (!jobs.length && this.activePlanning[roomName].correct != "fail") {
           console.log("success", roomName);
@@ -156,7 +162,15 @@ export class RoomPlanner {
           _.forEach(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
           poss = contr.pos.getPositionsInRange(2);
           poss.sort((a, b) => a.getRangeTo(anchor) - b.getRangeTo(anchor));
-          if (!_.some(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_LINK) == OK))
+          let pos: RoomPosition | undefined;
+          _.some(poss, (p) => {
+            if (this.addToPlan(p, anchor.roomName, STRUCTURE_LINK) == OK)
+              pos = p;
+            return pos;
+          });
+          if (pos)
+            this.connectWithRoad(anchor, pos);
+          else
             return ERR_FULL;
         }
         return OK;
@@ -171,7 +185,7 @@ export class RoomPlanner {
           if (exitsGlobal[<ExitConstant>+e]) {
             let exit = anchor.findClosest(Game.rooms[anchor.roomName].find(<ExitConstant>+e));
             if (exit) {
-              let ans = this.connectWithRoad(anchor, exit);
+              let ans = this.connectWithRoad(anchor, exit, false);
               if (ans == ERR_FULL || ans == ERR_BUSY)
                 return ans;
             } else
@@ -207,7 +221,7 @@ export class RoomPlanner {
     });
   }
 
-  connectWithRoad(anchor: RoomPosition, pos: RoomPosition): Pos | ERR_BUSY | ERR_FULL {
+  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean = anchor.roomName === pos.roomName): Pos | ERR_BUSY | ERR_FULL {
     let exit = pos.findClosestByPath(this.activePlanning[anchor.roomName].exits, PATH_ARGS);
     if (!exit)
       exit = pos.findClosest(this.activePlanning[anchor.roomName].exits);
@@ -218,7 +232,10 @@ export class RoomPlanner {
       return ERR_FULL;
 
     let lastPath = path.pop()!;
-    _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, STRUCTURE_ROAD));
+    if (addRoads)
+      _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, STRUCTURE_ROAD));
+    else
+      _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, null));
 
     let exitPos = path.length > 0 ? path[path.length - 1] : lastPath;
     exit = new RoomPosition(exitPos.x, exitPos.y, exit.roomName);
@@ -230,7 +247,7 @@ export class RoomPlanner {
     return exit;
   }
 
-  addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant, force: boolean = false) {
+  addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null, force: boolean = false) {
     if (!this.activePlanning[roomName])
       this.initPlanning(roomName);
     if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType != STRUCTURE_EXTRACTOR)
@@ -241,18 +258,25 @@ export class RoomPlanner {
       plan[pos.x] = {};
     if (!plan[pos.x][pos.y])
       plan[pos.x][pos.y] = { s: undefined, r: false };
+
+
     if (sType == STRUCTURE_RAMPART)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
-    else if (!plan[pos.x][pos.y].s) {
-      if (placed[sType]! >= CONTROLLER_STRUCTURES[sType][8])
-        return ERR_FULL;
-      placed[sType]!++;
+    else if (plan[pos.x][pos.y].s === undefined) {
+      if (sType) {
+        if (placed[sType]! >= CONTROLLER_STRUCTURES[sType][8])
+          return ERR_FULL;
+        placed[sType]!++;
+      }
       plan[pos.x][pos.y] = { s: sType, r: false };
-    } else if (sType == STRUCTURE_WALL)
+    } else if (sType == STRUCTURE_WALL && plan[pos.x][pos.y].s != STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (force) {
-      placed[sType]!--;
+      if (plan[pos.x][pos.y].s)
+        placed[plan[pos.x][pos.y].s!]!--;
       plan[pos.x][pos.y] = { s: sType, r: false };
+      if (sType)
+        placed[sType]!++;
     } else
       return ERR_NO_PATH;
     return OK;
@@ -297,7 +321,7 @@ export class RoomPlanner {
   }
 
   resetPlanner(roomName: string) {
-    if (!(roomName in Game.rooms))
+    if (!this.activePlanning[roomName])
       return;
     Memory.cache.roomPlanner[roomName] = {};
     _.forEach((<(Structure | ConstructionSite)[]>Game.rooms[roomName].find(FIND_STRUCTURES))
@@ -309,10 +333,28 @@ export class RoomPlanner {
           return;
         if (s.pos.getEnteranceToRoom())
           return;
-        if (!Memory.cache.roomPlanner[roomName][s.structureType])
-          Memory.cache.roomPlanner[roomName][s.structureType] = { "pos": [] };
-        Memory.cache.roomPlanner[roomName][s.structureType]!.pos.push({ x: s.pos.x, y: s.pos.y });
+        this.addToCache(s.pos, s.pos.roomName, <BuildableStructureConstant>s.structureType);
       });
+  }
+
+  saveActive(roomName: string) {
+    let active = this.activePlanning[roomName];
+    if (!(active))
+      return;
+    Memory.cache.roomPlanner[roomName] = {};
+    for (let x in active.plan)
+      for (let y in active.plan[+x]) {
+        if (active.plan[+x][+y].s)
+          this.addToCache({ x: +x, y: +y }, roomName, active.plan[+x][+y].s!);
+        if (active.plan[+x][+y].r)
+          this.addToCache({ x: +x, y: +y }, roomName, STRUCTURE_RAMPART);
+      }
+  }
+
+  addToCache(pos: Pos, roomName: string, sType: BuildableStructureConstant) {
+    if (!Memory.cache.roomPlanner[roomName][sType])
+      Memory.cache.roomPlanner[roomName][sType] = { "pos": [] };
+    Memory.cache.roomPlanner[roomName][sType]!.pos.push(pos);
   }
 
   getCase(structure: Structure | ConstructionSite | { structureType: StructureConstant, pos: { roomName: string }, hitsMax: number }) {
@@ -349,10 +391,16 @@ export class RoomPlanner {
           let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType == sType)[0];
           if (!constructionSite) {
             if (constructions < 10) {
-              sum += CONSTRUCTION_COST[sType];
-              pos.createConstructionSite(sType);
-              ans.push(pos);
-              constructions++;
+              let place = _.filter(pos.lookFor(LOOK_STRUCTURES))[0];
+              if (place) {
+                if ((<OwnedStructure>place).my)
+                  place.destroy()
+              } else {
+                sum += CONSTRUCTION_COST[sType];
+                pos.createConstructionSite(sType);
+                ans.push(pos);
+                constructions++;
+              }
             }
           } else {
             sum += constructionSite.progressTotal - constructionSite.progress;

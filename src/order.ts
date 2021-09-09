@@ -14,6 +14,7 @@ import { annexMaster } from "./beeMasters/civil/annexer";
 import { claimerMaster } from "./beeMasters/civil/claimer";
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
+import { makeId } from "./utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
@@ -202,14 +203,16 @@ export class Order {
         // this.delete(); if need to get rid of tone of flags
         break;
       case COLOR_WHITE:
+        _.forEach(Game.flags, (f) => {
+          if (f.color === COLOR_WHITE && f.name != this.ref && Apiary.orders[f.name])
+            Apiary.orders[f.name].delete();
+        });
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
-            this.uniqueFlag(false);
             Apiary.planner.generatePlan(this.pos);
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
-              this.uniqueFlag();
               Apiary.planner.toActive(this.pos.roomName);
             } else
               this.delete();
@@ -219,10 +222,29 @@ export class Order {
               let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
               if (contr && (contr.my || contr.reservation && contr.reservation.username == Apiary.username))
                 Apiary.planner.resetPlanner(this.pos.roomName);
-              this.uniqueFlag();
               Apiary.planner.toActive(this.pos.roomName);
             }
             this.acted = false;
+            break;
+          case COLOR_GREEN:
+            let del: 0 | 1 | 2 = 0;
+            for (let name in Apiary.planner.activePlanning) {
+              if (Apiary.planner.activePlanning[name].correct !== "ok")
+                del = 1;
+            }
+            if (!del) {
+              for (let name in Apiary.planner.activePlanning) {
+                Apiary.planner.saveActive(name);
+                delete Apiary.planner.activePlanning[name];
+              }
+              if (!Object.keys(Apiary.planner.activePlanning).length)
+                del = 2
+            }
+            if (del) {
+              this.delete();
+              if (del > 1)
+                this.pos.createFlag(this.ref + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+            }
             break;
         }
         break;
@@ -303,15 +325,9 @@ export class Order {
             delete Apiary.defenseSwarms[key];
         break;
       case COLOR_WHITE:
-        switch (this.flag.secondaryColor) {
-          case COLOR_WHITE:
-            for (let name in Apiary.planner.activePlanning)
-              delete Apiary.planner.activePlanning[name];
-            break;
-          case COLOR_ORANGE: case COLOR_RED:
-            delete Apiary.planner.activePlanning[this.pos.roomName];
-            break;
-        }
+        if (!_.filter(Apiary.orders, (o) => o.flag.color === COLOR_WHITE && o.ref != this.ref).length)
+          for (let name in Apiary.planner.activePlanning)
+            delete Apiary.planner.activePlanning[name];
         break;
     }
     this.flag.remove();
