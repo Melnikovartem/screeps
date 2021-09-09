@@ -101,6 +101,10 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.attack(<Creep | Structure | PowerCreep>t), opt);
   }
 
+  rangedAttack(t: Creep | Structure | PowerCreep | undefined, opt?: TravelToOptions): number {
+    return this.actionWrap(t, () => this.creep.rangedAttack(<Creep | Structure | PowerCreep>t), opt, 3);
+  }
+
   heal(t: Creep | PowerCreep | Bee | undefined, opt?: TravelToOptions) {
     if (t instanceof Bee)
       t = t.creep;

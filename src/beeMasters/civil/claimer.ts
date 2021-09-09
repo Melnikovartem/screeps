@@ -21,7 +21,7 @@ export class claimerMaster extends Master {
     super.update();
 
     if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
-      this.order.destroyTime = Game.time;
+      this.order.delete();
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
@@ -46,7 +46,7 @@ export class claimerMaster extends Master {
             bee.pos.createFlag("boost_" + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
           Apiary.destroyTime = Game.time; // create new hive
         } else
-          this.order.destroyTime = 0;
+          this.order.delete();
       }
     });
   }

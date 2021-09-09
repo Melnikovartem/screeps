@@ -181,8 +181,8 @@ export class Hive {
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
     }
-    // 45 85
-    if (Math.round(Game.time / 10) % 4 == 0)
+    // 85
+    if (Math.round(Game.time / 10) % 8 == 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);
@@ -191,7 +191,7 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (Game.time % 20 === 5 || this.shouldRecalc) {
+    if (Game.time % 40 === 5 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
       if (this.shouldRecalc > 1) {

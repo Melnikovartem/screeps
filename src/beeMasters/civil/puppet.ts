@@ -22,8 +22,6 @@ export class puppetMaster extends Master {
   newBee(bee: Bee) {
     super.newBee(bee);
     bee.creep.notifyWhenAttacked(false);
-    if (this.order)
-      this.order.destroyTime = bee.creep.memory.born + CREEP_LIFE_TIME + 3 * bee.creep.body.length;
     this.spawned += 1;
   }
 
@@ -42,7 +40,7 @@ export class puppetMaster extends Master {
     }
 
     if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
-      this.order.destroyTime = Game.time;
+      this.order.delete();
   }
 
   run() {

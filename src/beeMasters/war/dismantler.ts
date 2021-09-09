@@ -1,7 +1,6 @@
 import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
 import type { SpawnOrder } from "../../Hive";
-import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 import { states } from "../_Master";
 
@@ -16,18 +15,12 @@ export class dismantlerMaster extends SwarmMaster {
   exit: RoomPosition | undefined;
   spawned: boolean = false;
 
-  constructor(order: Order) {
-    super(order.hive, order);
-    this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
-  }
-
   newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.getBodyParts(WORK)) {
       this.spawned = true;
       this.bee = bee;
     }
-    this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
   }
 
   update() {
@@ -48,7 +41,7 @@ export class dismantlerMaster extends SwarmMaster {
     }
 
     if (!this.waitingForBees && this.beesAmount === 0)
-      this.order.destroyTime = Game.time;
+      this.order.delete();
   }
 
   run() {

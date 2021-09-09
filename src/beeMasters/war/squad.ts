@@ -1,7 +1,6 @@
 import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
 import type { SpawnOrder } from "../../Hive";
-import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 import { states } from "../_Master";
 
@@ -13,15 +12,9 @@ export class squadMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
   spawned: boolean = false;
-  meetingPoint: RoomPosition;
+  meetingPoint: RoomPosition = this.hive.pos;
+  targetBeeCount = 4;
 
-  constructor(order: Order) {
-    super(order.hive, order);
-    // sad cause safeMode saves from this shit
-    this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
-    this.targetBeeCount = 4;
-    this.meetingPoint = this.hive.pos;
-  }
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -29,7 +22,6 @@ export class squadMaster extends SwarmMaster {
       this.healers.push(bee);
     else
       this.knights.push(bee);
-    this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
     if (bee.creep.ticksToLive && bee.creep.ticksToLive < 800)
       this.spawned = true;
   }
@@ -73,7 +65,7 @@ export class squadMaster extends SwarmMaster {
     }
 
     if (!this.waitingForBees && this.beesAmount === 0)
-      this.order.destroyTime = Game.time;
+      this.order.delete();
   }
 
   run() {

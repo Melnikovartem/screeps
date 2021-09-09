@@ -47,7 +47,7 @@ export class annexMaster extends Master {
         if (controller)
           bee.reserveController(controller);
         else
-          this.order.destroyTime = 0;
+          this.order.delete();
       }
     });
   }

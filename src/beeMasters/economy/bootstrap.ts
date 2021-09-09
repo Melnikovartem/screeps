@@ -159,6 +159,8 @@ export class bootstrapMaster extends Master {
             else
               target = null;
           }
+          if (!target)
+            this.hive.shouldRecalc = 1;
         }
 
         if (!target) {

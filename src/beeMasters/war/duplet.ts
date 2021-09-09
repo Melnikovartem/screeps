@@ -1,7 +1,6 @@
 import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
 import type { SpawnOrder } from "../../Hive";
-import { Order } from "../../order";
 import { SwarmMaster } from "../_SwarmMaster";
 import { states } from "../_Master";
 
@@ -13,13 +12,7 @@ export class dupletMaster extends SwarmMaster {
   healer: Bee | undefined;
   knight: Bee | undefined;
   spawned: boolean = false;
-
-  constructor(order: Order) {
-    super(order.hive, order);
-    // sad cause safeMode saves from this shit
-    this.order.destroyTime = Game.time + CREEP_LIFE_TIME;
-    this.targetBeeCount = 2;
-  }
+  targetBeeCount = 2;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -27,7 +20,6 @@ export class dupletMaster extends SwarmMaster {
       this.healer = bee;
     else
       this.knight = bee;
-    this.order.destroyTime = Math.max(this.order.destroyTime, this.lastSpawns[0] + CREEP_LIFE_TIME + 150);
     if (bee.creep.ticksToLive && bee.creep.ticksToLive < 1000)
       this.spawned = true;
   }
@@ -67,7 +59,7 @@ export class dupletMaster extends SwarmMaster {
     }
 
     if (!this.waitingForBees && this.beesAmount === 0)
-      this.order.destroyTime = Game.time;
+      this.order.delete();
   }
 
   run() {

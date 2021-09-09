@@ -5,6 +5,7 @@ import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../../beeMasters/economy/hauler";
 import { safeWrap } from "../../utils";
 import { profile } from "../../profiler/decorator";
+import { DEVELOPING } from "../../settings";
 
 @profile
 export class excavationCell extends Cell {
@@ -32,12 +33,11 @@ export class excavationCell extends Cell {
   }
 
   update() {
-    super.update();
     this.quitefullContainers = [];
     _.forEach(this.resourceCells, (cell) => {
       safeWrap(() => { cell.update() }, cell.print + " update");
 
-      if (cell.container && cell.operational) {
+      if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
         if (cell.container.store.getUsedCapacity() >= 1000) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace)

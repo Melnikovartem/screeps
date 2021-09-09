@@ -38,8 +38,15 @@ export class CreepSetup {
         _.forEach(this.pattern, (s) => body.push(s))
     });
 
+    body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
+    let index = body.indexOf(MOVE);
+    if (index !== -1) {
+      body.splice(index, 1);
+      body.push(MOVE);
+    }
+
     return {
-      body: body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b)),
+      body: body,
       cost: fixedCosts + segmentCost * maxSegment,
     };
   }
@@ -121,16 +128,18 @@ export const Setups = {
     patternLimit: 1,
   }),
   defender: new CreepSetup(SetupsNames.defender, {
-    pattern: [TOUGH, ATTACK, MOVE, MOVE],
-    patternLimit: 5,
+    fixed: [HEAL, MOVE],
+    pattern: [RANGED_ATTACK, MOVE],
+    patternLimit: 4,
   }),
   knight: new CreepSetup(SetupsNames.knight, {
-    pattern: [TOUGH, ATTACK, MOVE],
+    fixed: [RANGED_ATTACK, MOVE],
+    pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE, MOVE],
   }),
   dismantler: new CreepSetup(SetupsNames.dismantler, {
     pattern: [WORK, TOUGH, MOVE],
   }),
   healer: new CreepSetup(SetupsNames.healer, {
-    pattern: [HEAL, HEAL, MOVE, MOVE],
+    pattern: [TOUGH, HEAL, MOVE],
   }),
 }

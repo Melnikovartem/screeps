@@ -1,3 +1,4 @@
+import { hordeDefenseMaster } from "./beeMasters/war/hordeDefense";
 import { hordeMaster } from "./beeMasters/war/horde";
 import { downgradeMaster } from "./beeMasters/war/downgrader";
 import { dismantlerMaster } from "./beeMasters/war/dismantler";
@@ -23,7 +24,6 @@ export class Order {
   ref: string;
   flag: Flag;
   pos: RoomPosition;
-  destroyTime: number
   master?: Master;
   hive: Hive;
   acted: boolean = false;
@@ -54,7 +54,6 @@ export class Order {
       this.hive = this.findHive(filter);
     }
     this.flag.memory = { hive: this.hive.roomName };
-    this.destroyTime = -1;
   }
 
   findHive(filter: (h: Hive) => boolean = () => true): Hive {
@@ -106,7 +105,12 @@ export class Order {
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_BLUE:
+              this.master = new hordeDefenseMaster(this);
+              break;
+            case COLOR_CYAN:
               this.master = new hordeMaster(this);
+              let regex = /^\d*/.exec(this.ref);
+              console.log(regex);
               break;
             case COLOR_PURPLE:
               this.master = new downgradeMaster(this);
@@ -299,6 +303,23 @@ export class Order {
 
   // what to do when delete if something neede
   delete() {
+    if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
+      if (!Memory.log.orders)
+        Memory.log.orders = {};
+      if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
+        time: Game.time,
+        name: this.flag.name,
+        pos: this.pos,
+        destroyTime: Game.time,
+        master: this.master ? true : false,
+      }
+      this.flag.memory.repeat -= 1;
+      if (this.master)
+        Apiary.masters[this.master.ref].delete();
+      this.acted = false;
+      return;
+    }
+
     if (LOGGING_CYCLE) {
       if (!Memory.log.orders)
         Memory.log.orders = {};
@@ -349,26 +370,6 @@ export class Order {
     this.pos = this.flag.pos;
     if (!this.acted)
       this.act();
-
-    if (this.destroyTime !== -1 && this.destroyTime <= Game.time) {
-      if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
-        if (!Memory.log.orders)
-          Memory.log.orders = {};
-        if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
-          time: Game.time,
-          name: this.flag.name,
-          pos: this.pos,
-          destroyTime: Game.time,
-          master: this.master ? true : false,
-        }
-        this.destroyTime = -1;
-        this.flag.memory.repeat -= 1;
-        if (this.master)
-          Apiary.masters[this.master.ref].delete();
-        this.act();
-      } else
-        this.delete();
-    }
   }
 
   static checkFlags() {

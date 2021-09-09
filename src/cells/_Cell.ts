@@ -50,6 +50,6 @@ export abstract class Cell {
   abstract run(): void;
 
   get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>${this.hive.roomName}.["${this.ref}"]</a>`;
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

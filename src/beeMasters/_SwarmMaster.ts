@@ -1,7 +1,6 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
 
-import type { Hive } from "../Hive";
 import { Bee } from "../bee";
 import { Master } from "./_Master";
 
@@ -13,11 +12,10 @@ export abstract class SwarmMaster extends Master {
 
   order: Order;
 
-  constructor(hive: Hive, order: Order) {
-    super(hive, "Swarm_" + order.ref);
+  constructor(order: Order) {
+    super(order.hive, "Swarm_" + order.ref);
 
     this.order = order;
-    this.order.destroyTime = Game.time + CREEP_LIFE_TIME + 10;
   }
 
   newBee(bee: Bee) {
