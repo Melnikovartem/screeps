@@ -56,7 +56,8 @@ export class _Apiary {
     this.useBucket = Game.cpu.bucket > 500;
     Order.checkFlags();
     _.forEach(Apiary.orders, (order) => {
-      safeWrap(() => order.update(), order.print + " update");
+      if (order)
+        safeWrap(() => order.update(), order.print + " update");
     });
 
     _.forEach(this.hives, (hive) => {

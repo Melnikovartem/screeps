@@ -28,7 +28,7 @@ declare global {
   interface FlagMemory {
     hive: string;
     repeat?: number;
-    spawned?: number;
+    info?: number; // for different tasks
   }
 
   interface Memory {

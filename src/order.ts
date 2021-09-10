@@ -191,16 +191,10 @@ export class Order {
                 this.hive.cells.storage.pos = this.pos;
               prefix = "man";
               break;
-            case COLOR_BROWN:
-              if (this.hive.cells.lab) {
+            case COLOR_GREY:
+              if (this.hive.cells.lab)
                 this.hive.cells.lab.pos = this.pos;
-                let sum = 0;
-                _.forEach(this.flag.name.split("_"), (res) => {
-                  sum += this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res);
-                });
-                if (sum === 0)
-                  prefix = this.ref.includes("temp") || this.ref.includes("lab") ? "lab" : "temp";
-              }
+              prefix = "lab";
               break;
           }
           if (prefix !== "" && this.ref !== prefix + this.hive.roomName) {
@@ -275,6 +269,17 @@ export class Order {
           case COLOR_YELLOW:
             if (!this.master)
               this.master = new puppetMaster(this);
+            break;
+          case COLOR_CYAN:
+            this.acted = false;
+            if (this.pos.roomName === this.hive.roomName && this.hive.cells.lab) {
+              if (!Object.keys(this.hive.cells.lab.synthesizeRequests).length) {
+                let ans = _.some(this.flag.name.split("_"), (res) => this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res));
+                if (!ans)
+                  this.delete();
+              }
+            } else
+              this.delete();
             break;
         }
         break;

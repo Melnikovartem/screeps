@@ -59,6 +59,7 @@ export abstract class Master {
     if (!spawnCycle)
       spawnCycle = CREEP_LIFE_TIME;
 
+    // failsafe
     if (this.waitingForBees && !this.hive.spawOrders[this.ref]
       && (!this.hive.bassboost || !this.hive.bassboost.spawOrders[this.ref]))
       this.waitingForBees = 0;

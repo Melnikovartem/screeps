@@ -240,7 +240,7 @@ export class Visuals {
 
     let constLen = hive.structuresConst.length;
     if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
-      ans.push(["build", !hive.sumCost ? "" : ` ${Math.round(hive.sumCost / 1000)}K/${hive.structuresConst.length}`,
+      ans.push(["build", !hive.sumCost ? "" : ` ${hive.sumCost >= 1000 ? Math.round(hive.sumCost / 1000) : Math.round(hive.sumCost / 1000 * 10) / 10}K/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder)])
     }
 
@@ -254,7 +254,7 @@ export class Visuals {
 
     let labCell = Apiary.hives[hiveName].cells.lab;
     if (labCell) {
-      let labRequest = labCell.currentRequest;
+      let labRequest = labCell.currentProduction;
       if (labRequest) {
         this.anchor = this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.getAnchor(1), undefined, minSize);
         minSize = Math.max(minSize, this.anchor.x - 1);

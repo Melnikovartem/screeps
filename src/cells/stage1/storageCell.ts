@@ -13,7 +13,8 @@ export interface StorageRequest {
   priority: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
-const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
+export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
+export const STORAGE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4)
 
 @profile
 export class storageCell extends Cell {
@@ -47,8 +48,8 @@ export class storageCell extends Cell {
   }
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
-    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = 0): number {
-    if (!amount || amount === Infinity)
+    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    if (amount === Infinity)
       amount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(res);
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     if (amount > 0)
@@ -64,11 +65,8 @@ export class storageCell extends Cell {
   }
 
   requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
-    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = 0): number {
-
-    if (from.structureType === STRUCTURE_LAB && from.mineralType)
-      res = from.mineralType;
-    if (!amount || amount === Infinity)
+    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    if (amount === Infinity)
       amount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(res);
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     if (amount > 0)
@@ -106,35 +104,41 @@ export class storageCell extends Cell {
 
     if (!Object.keys(this.requests).length && this.terminal) {
       if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.1) {
-        let isFull = this.storage.store.getFreeCapacity() < this.storage.store.getCapacity() * 0.1;
+        let freeCap = this.storage.store.getCapacity() * 0.8 - this.storage.store.getUsedCapacity();
         let res: ResourceConstant = RESOURCE_ENERGY;
         let amount = this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) - TERMINAL_ENERGY;
-        if (amount >= 0)
-          if (!isFull)
+        if (amount >= 0) {
+          amount = 0;
+          // target amount in storage [80% - 9900, 80%]
+          if (freeCap > 9900)
             for (let resourceConstant in this.terminal.store) {
               let resource = <ResourceConstant>resourceConstant;
-              if (resource === RESOURCE_ENERGY)
-                continue;
               let newAmount = this.terminal.store.getUsedCapacity(resource);
-              if (newAmount > amount || res === RESOURCE_ENERGY) {
+              if (resource == RESOURCE_ENERGY)
+                newAmount -= TERMINAL_ENERGY;
+              if (newAmount < amount && newAmount > 0) {
                 res = resource;
                 amount = newAmount;
               }
             }
-          else
+          else if (freeCap < 0) {
             for (let resourceConstant in this.storage.store) {
               let resource = <ResourceConstant>resourceConstant;
               let newAmount = -this.storage.store.getUsedCapacity(resource);
               if (resource === RESOURCE_ENERGY)
-                newAmount += 200000; // save 200K energy everytime
-              if (Math.abs(newAmount) > Math.abs(amount)) {
+                newAmount -= STORAGE_ENERGY; // save 400K energy everytime
+              if (-amount < newAmount) {
                 res = resource;
-                amount = newAmount;
+                amount = -newAmount;
               }
             }
+            amount = Math.max(amount, freeCap);
+          }
+        } else if (this.storage.store.getUsedCapacity(res) < STORAGE_ENERGY)
+          amount = 0;
 
-        if (amount > 0 && !isFull)
-          this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 5500));
+        if (amount > 0)
+          this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 5500, freeCap));
         else if (amount < 0)
           this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 5500));
       }
@@ -162,8 +166,7 @@ export class storageCell extends Cell {
         delete this.requests[k];
     }
 
-    if (this.terminal && this.terminal.store.getFreeCapacity() < this.terminal.store.getCapacity() * 0.3
-      && Apiary.useBucket && !this.terminal.cooldown) {
+    if (this.terminal && this.terminal.store.getUsedCapacity() > this.terminal.store.getCapacity() * 0.7 && !this.terminal.cooldown) {
       let res: ResourceConstant | undefined;
       let amount: number = 0;
       for (let resourceConstant in this.terminal.store) {
@@ -171,32 +174,56 @@ export class storageCell extends Cell {
         let newAmount = this.terminal.store.getUsedCapacity(resource);
         if (resource === RESOURCE_ENERGY)
           newAmount -= TERMINAL_ENERGY;
-        if (Math.abs(newAmount) > Math.abs(amount)) {
+        if (newAmount > amount) {
           res = resource;
           amount = newAmount;
         }
       }
 
-      let targetPrice = -1;
-      let orders = Game.market.getAllOrders((order) => {
-        if (order.type === ORDER_SELL || order.resourceType !== res)
-          return false;
-        if (targetPrice < order.price)
-          targetPrice = order.price;
-        return this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25;
-      });
-      if (orders.length)
-        orders = orders.filter((order) => order.price > targetPrice * 0.9);
-      if (orders.length) {
-        let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
-        let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, order.roomName!) / 10000;
-        let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-        amount = Math.min(amount, energyCap, order.amount);
-        if (orders[0].resourceType === RESOURCE_ENERGY && amount * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
-          amount = Math.floor(amount * (1 - energyCost));
-        let ans = Game.market.deal(orders[0].id, amount, this.hive.roomName);
-        if (ans === OK && Apiary.logger)
-          Apiary.logger.newMarketOperation(order, amount, this.hive.roomName);
+      let amoundSend: number = 0;
+      if (res === RESOURCE_ENERGY) {
+        let closest = _.filter(Apiary.hives, (h) => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
+          && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_ENERGY)
+          .reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
+        if (closest) {
+          let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;
+          amoundSend = Math.min(amount, terminalTo.store.getFreeCapacity(res));
+
+          let energyCost = Game.market.calcTransactionCost(10000, this.pos.roomName, terminalTo.pos.roomName) / 10000;
+          let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+          amoundSend = Math.min(amoundSend, energyCap);
+
+          if (res === RESOURCE_ENERGY && amoundSend * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
+            amoundSend = Math.floor(amoundSend * (1 - energyCost));
+
+          let ans = this.terminal.send(res, amoundSend, terminalTo.pos.roomName);
+          if (ans === OK && Apiary.logger)
+            Apiary.logger.newTerminalTransfer(this.terminal, terminalTo, amoundSend, res);
+        }
+      }
+
+      if (amoundSend === 0 && Apiary.useBucket) {
+        let targetPrice = -1;
+        let orders = Game.market.getAllOrders((order) => {
+          if (order.type === ORDER_SELL || order.resourceType !== res)
+            return false;
+          if (targetPrice < order.price)
+            targetPrice = order.price;
+          return this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25;
+        });
+        if (orders.length)
+          orders = orders.filter((order) => order.price > targetPrice * 0.9);
+        if (orders.length) {
+          let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
+          let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, order.roomName!) / 10000;
+          let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+          amount = Math.min(amount, energyCap, order.amount);
+          if (orders[0].resourceType === RESOURCE_ENERGY && amount * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
+            amount = Math.floor(amount * (1 - energyCost));
+          let ans = Game.market.deal(orders[0].id, amount, this.hive.roomName);
+          if (ans === OK && Apiary.logger)
+            Apiary.logger.newMarketOperation(order, amount, this.hive.roomName);
+        }
       }
     }
   }

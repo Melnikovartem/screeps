@@ -72,6 +72,13 @@ export class Logger {
     if (!order.roomName)
       return;
     this.addResourceStat(hiveName, order.type === ORDER_BUY ? "export" : "import", order.type === ORDER_BUY ? -amount : amount, <ResourceConstant>order.resourceType);
+    this.addResourceStat(hiveName, "terminal", -Game.market.calcTransactionCost(amount, hiveName, order.roomName));
+  }
+
+  newTerminalTransfer(terminalFrom: StructureTerminal, terminalTo: StructureTerminal, amount: number, resource: ResourceConstant) {
+    this.addResourceStat(terminalFrom.pos.roomName, "export local", -amount, resource);
+    this.addResourceStat(terminalTo.pos.roomName, "import local", amount, resource);
+    this.addResourceStat(terminalFrom.pos.roomName, "terminal", -Game.market.calcTransactionCost(amount, terminalFrom.pos.roomName, terminalTo.pos.roomName));
   }
 
   hiveLog(hive: Hive) {

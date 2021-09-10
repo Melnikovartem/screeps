@@ -1,5 +1,6 @@
-export class CustomConsole {
+import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 
+export class CustomConsole {
   vis(framerate: number = 1) {
     if (Memory.settings.framerate)
       Memory.settings.framerate = 0;
@@ -8,47 +9,46 @@ export class CustomConsole {
   }
 
   // some hand used functions
-  terminal(roomName: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity, mode?: "fill" | "empty") {
-    let hive = Apiary.hives[roomName];
+  terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a>`;
+
     let cell = hive && hive.cells.storage;
     if (!cell || !cell.terminal)
       return `ERROR: TERMINAL NOT FOUND @ ${hive.print}`;
 
-    if (!mode) {
-      if (cell.storage.store.getUsedCapacity(resource) >= (amount === Infinity ? 1 : amount))
-        mode = "fill";
-      if (cell.terminal.store.getUsedCapacity(resource) >= (amount === Infinity ? 1 : amount)) {
-        if (mode === "fill") {
-          if (resource !== RESOURCE_ENERGY)
-            return `CAN'T DESIDE ON MODE @ ${hive.print}`;
-        } else
-          mode = "empty";
-      }
-    }
-
     if (!mode || (mode !== "fill" && mode !== "empty"))
-      return `NO VALID MODE FOUND @ ${hive.print}`;
+      return `ERROR: NO VALID MODE @ ${hive.print}`;
 
     if (mode === "fill" && resource === RESOURCE_ENERGY && amount === Infinity)
-      amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 100000);
+      amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 9900);
+
+    if (mode === "empty" && resource === RESOURCE_ENERGY)
+      amount -= TERMINAL_ENERGY;
 
     let ans;
-    if (mode === "empty")
-      ans = cell.requestToStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
-    else
-      ans = cell.requestFromStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
+    if (amount > 0)
+      if (mode === "empty")
+        ans = cell.requestToStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
+      else
+        ans = cell.requestFromStorage("!USER_REQUEST", cell.terminal, 2, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
 
-    return `${mode.toUpperCase()} TERMINAL @ ${hive.print} \nRESOURCE ${resource}: ${ans} `;
+    return `${mode.toUpperCase()} TERMINAL @ ${hive.print} \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
   }
 
-  terminalSend(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity) {
+  send(roomNameFrom: string, roomNameTo: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY) {
     let hiveFrom = Apiary.hives[roomNameFrom];
+    if (!hiveFrom)
+      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
     let terminalFrom = hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage!.terminal;
     if (!terminalFrom)
       return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
     if (terminalFrom.cooldown > 0)
       return "TERMINAL COOLDOWN";
     let hiveTo = Apiary.hives[roomNameTo];
+    if (!hiveTo)
+      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
     let terminalTo = hiveTo && hiveTo.cells.storage && hiveTo.cells.storage!.terminal;
     if (!terminalTo)
       return `ERROR: TO TERMINAL NOT @ ${roomNameTo}`;
@@ -64,26 +64,29 @@ export class CustomConsole {
       amount = Math.floor(amount * (1 - energyCost));
 
     let ans = terminalFrom.send(resource, amount, roomNameTo);
-    let info = ` SEND FROM ${hiveFrom.print} TO ${hiveTo.print} \nRESOURCE ${resource}: ${amount
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.newTerminalTransfer(terminalFrom, terminalTo, amount, resource);
+
+    let info = `SEND FROM ${hiveFrom.print} TO ${hiveTo.print} \nRESOURCE ${resource.toUpperCase()}: ${amount
       } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
     if (ans === OK)
       return "OK" + info;
     else
-      return `ERROR ${ans}` + info;
+      return `ERROR: ${ans}` + info;
   }
 
   transfer(roomNameFrom: string, roomNameTo: string, res: ResourceConstant = RESOURCE_ENERGY, amount?: number) {
-    console.log(this.terminal(roomNameFrom, res, amount, "fill"));
-    console.log(this.terminal(roomNameTo, res, amount, "empty"));
-    console.log(this.terminalSend(roomNameFrom, roomNameTo, res, amount));
+    console.log(this.terminal(roomNameFrom, amount, res, "fill"));
+    console.log(this.terminal(roomNameTo, amount, res, "empty"));
+    console.log(this.send(roomNameFrom, roomNameTo, amount, res));
   }
 
   completeOrder(orderId: string, roomName?: string, am: number = Infinity) {
     let order = Game.market.getOrderById(orderId);
     if (!order)
-      return "ORDER NOT FOUND";
+      return "ERROR: ORDER NOT FOUND";
     if (order.type === ORDER_SELL && !am)
-      return `AMOUNT NEEDED.MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
+      return `AMOUNT NEEDED MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
 
     let amount = Math.min(am, order.remainingAmount);
     let ans;
@@ -125,12 +128,12 @@ export class CustomConsole {
         Apiary.logger.newMarketOperation(order, amount, terminal.pos.roomName);
     }
 
-    let info = ` ${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName} \nRESOURCE ${order.resourceType.toUpperCase()
-      }: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
+    let info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + order.roomName : ""
+      }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
     if (ans === OK)
       return "OK" + info;
     else
-      return `ERROR ${ans}` + info;
+      return `ERROR: ${ans}` + info;
   }
 
   buy(roomName: string, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
@@ -155,6 +158,40 @@ export class CustomConsole {
       return this.completeOrder(order.id, roomName, amount);
     }
     return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${roomName} `;
+  }
+
+  create(hiveName: string, ...resource: string[]) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a> ${hiveName}`;
+    let cell = Apiary.hives[hiveName] && Apiary.hives[hiveName].cells.lab;
+    if (!cell)
+      return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+
+    let productionFlags = Game.rooms[hiveName].find(FIND_FLAGS, { filter: { color: COLOR_GREY, secondaryColor: COLOR_CYAN } });
+    for (let k in productionFlags)
+      resource = resource.concat(productionFlags[k].name.split("_"));
+    resource.push(hiveName);
+    let ref = resource.filter((value, index) => resource.indexOf(value) === index).join("_");
+    let create = true;
+    for (let k in productionFlags)
+      if (ref !== productionFlags[k].name)
+        productionFlags[k].remove()
+      else {
+        create = false;
+      }
+    if (create) {
+      let pos = [new RoomPosition(cell.pos.x, cell.pos.y + 1, cell.pos.roomName), new RoomPosition(cell.pos.x, cell.pos.y - 1, cell.pos.roomName)]
+        .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0];
+      if (pos)
+        pos.createFlag(ref, COLOR_GREY, COLOR_CYAN);
+      else
+        return `ERROR: TOO MUCH FLAGS @ ${hive.print}`;
+    } else
+      return `ALREADY EXISTS @ ${hive.print}`;
+
+
+    return `OK @ ${hive.print}`;
   }
 
   printHives() {

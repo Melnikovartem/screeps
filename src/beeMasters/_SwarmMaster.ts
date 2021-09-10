@@ -17,8 +17,11 @@ export abstract class SwarmMaster extends Master {
   constructor(order: Order) {
     super(order.hive, "Swarm_" + order.ref);
     this.order = order;
-    if (this.order.flag.memory.spawned)
-      this.spawned = this.order.flag.memory.spawned;
+
+    if (this.order.flag.memory.info)
+      this.spawned = this.order.flag.memory.info;
+    else
+      this.order.flag.memory.info = this.spawned;
   }
 
   checkBeesSwarm() {
@@ -31,6 +34,6 @@ export abstract class SwarmMaster extends Master {
     super.newBee(bee);
     bee.creep.notifyWhenAttacked(false);
     this.spawned += 1;
-    this.order.flag.memory.spawned = this.spawned;
+    this.order.flag.memory.info = this.spawned;
   }
 }
