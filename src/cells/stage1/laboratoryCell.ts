@@ -1,6 +1,6 @@
-import { Bee } from "../../bee";
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Bee } from "../../bee";
+import type { Hive } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
 
@@ -314,8 +314,6 @@ export class laboratoryCell extends Cell {
             this.updateProductionLabs();
           }
         }
-
-        // bring to boost
 
         _.forEach(this.laboratories, (lab) => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)

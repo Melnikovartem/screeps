@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
 
-import { excavationCell } from "./excavationCell";
+import type { excavationCell } from "./excavationCell";
 import { minerMaster } from "../../beeMasters/economy/miner";
 import { profile } from "../../profiler/decorator";
 

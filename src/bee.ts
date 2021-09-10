@@ -18,8 +18,8 @@ export class Bee {
   lifeTime: number = CREEP_LIFE_TIME;
 
   // target caching and states to have some tools to work with in masters
-  state: states = states.idle;
-  target: string | null = null;
+  state: states;
+  target: string | null;
 
   // for now it will be forever binded
   constructor(creep: Creep) {
@@ -31,6 +31,9 @@ export class Bee {
     this.memory = creep.memory;
     this.hits = creep.hits;
     this.hitsMax = creep.hitsMax;
+
+    this.state = creep.memory.state;
+    this.target = creep.memory.target;
 
     if (creep.getBodyParts(CLAIM))
       this.lifeTime = CREEP_CLAIM_LIFE_TIME;
@@ -46,7 +49,11 @@ export class Bee {
     this.memory = this.creep.memory;
     this.hits = this.creep.hits;
     this.hitsMax = this.creep.hitsMax;
-    if (this.state === states.idle && Apiary.masters[this.creep.memory.refMaster]) {
+
+    this.creep.memory.state = this.state;
+    this.creep.memory.target = this.target;
+
+    if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
       this.master.newBee(this);
     }

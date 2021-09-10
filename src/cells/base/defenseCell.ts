@@ -1,6 +1,6 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
-import { Order } from "../../order";
+import type { Hive } from "../../Hive";
+import type { Order } from "../../order";
 import { profile } from "../../profiler/decorator";
 import { makeId } from "../../utils";
 

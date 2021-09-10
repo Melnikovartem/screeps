@@ -1,5 +1,5 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../../beeMasters/economy/hauler";

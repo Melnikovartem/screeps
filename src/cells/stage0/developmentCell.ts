@@ -1,5 +1,5 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
 
 import { bootstrapMaster } from "../../beeMasters/economy/bootstrap";
 import { profile } from "../../profiler/decorator";

@@ -1,10 +1,10 @@
-// amanges colony untill storage lvl
-import { developmentCell } from "../../cells/stage0/developmentCell";
+// manages colony untill storage lvl
+import type { developmentCell } from "../../cells/stage0/developmentCell";
 
-import { Bee } from "../../Bee";
 import { Setups } from "../../creepSetups";
-import { SpawnOrder } from "../../Hive";
 import { Master, states } from "../_Master";
+import type { Bee } from "../../Bee";
+import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";

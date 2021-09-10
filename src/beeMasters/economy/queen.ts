@@ -1,9 +1,9 @@
-// refills the respawnCell
-import { respawnCell } from "../../cells/base/respawnCell";
+import type { respawnCell } from "../../cells/base/respawnCell";
 
 import { Setups } from "../../creepSetups";
-import { SpawnOrder } from "../../Hive";
 import { Master, states } from "../_Master";
+import type { SpawnOrder } from "../../Hive";
+
 import { profile } from "../../profiler/decorator";
 
 @profile

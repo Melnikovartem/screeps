@@ -1,8 +1,8 @@
-import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups"
-import type { SpawnOrder } from "../../Hive";
-import { Order } from "../../order";
 import { Master } from "../_Master";
+import type { Bee } from "../../bee";
+import type { Order } from "../../order";
+import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile

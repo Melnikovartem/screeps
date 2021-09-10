@@ -1,7 +1,8 @@
-import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
-import type { SpawnOrder } from "../../Hive";
 import { SwarmMaster } from "../_SwarmMaster";
+import type { Bee } from "../../bee";
+import type { SpawnOrder } from "../../Hive";
+
 import { states } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
@@ -11,10 +12,8 @@ import { profile } from "../../profiler/decorator";
 export class squadMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
-  spawned: boolean = false;
   meetingPoint: RoomPosition = this.hive.pos;
-  targetBeeCount = 4;
-
+  maxSpawns = 4;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -22,8 +21,6 @@ export class squadMaster extends SwarmMaster {
       this.healers.push(bee);
     else
       this.knights.push(bee);
-    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 800)
-      this.spawned = true;
   }
 
   update() {
@@ -36,9 +33,8 @@ export class squadMaster extends SwarmMaster {
       this.healers[key] = Apiary.bees[this.healers[key].ref];
     this.healers = _.compact(this.healers);
 
-    if (!this.spawned) {
+    if (this.checkBeesSwarm()) {
       // if ever automated, then make priority 3
-      this.spawned = true;
       if (this.knights.length < 2) {
         let tankOrder: SpawnOrder = {
           setup: Setups.knight,
@@ -63,9 +59,6 @@ export class squadMaster extends SwarmMaster {
       else
         _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
-
-    if (!this.waitingForBees && this.beesAmount === 0)
-      this.order.delete();
   }
 
   run() {

@@ -1,4 +1,4 @@
-import { Hive } from "../hive";
+import type { Hive } from "../hive";
 import { SetupsNames } from "../creepSetups";
 
 import { profile } from "../profiler/decorator";

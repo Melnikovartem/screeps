@@ -1,5 +1,7 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
+
+import { states } from "../../beeMasters/_Master";
 
 import { makeId } from "../../utils";
 import { queenMaster } from "../../beeMasters/economy/queen";
@@ -53,6 +55,8 @@ export class respawnCell extends Cell {
         let memory: CreepMemory = {
           refMaster: sortedOrders[key].master,
           born: Game.time,
+          state: states.idle,
+          target: null,
         };
 
         let ans = spawn.spawnCreep(setup.body, name, { memory: memory });

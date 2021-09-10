@@ -1,36 +1,19 @@
-import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
-import type { SpawnOrder } from "../../Hive";
 import { SwarmMaster } from "../_SwarmMaster";
+import type { SpawnOrder } from "../../Hive";
 import { states } from "../_Master";
-
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
 @profile
 export class dismantlerMaster extends SwarmMaster {
-  bee: Bee | undefined;
-
   // for last stage
   exit: RoomPosition | undefined;
-  spawned: boolean = false;
-
-  newBee(bee: Bee) {
-    super.newBee(bee);
-    if (bee.creep.getBodyParts(WORK)) {
-      this.spawned = true;
-      this.bee = bee;
-    }
-  }
 
   update() {
     super.update();
 
-    if (this.bee && !Apiary.bees[this.bee.ref])
-      delete this.bee;
-
-    if (!this.bee && !this.spawned) {
-      this.spawned = true;
+    if (this.checkBeesSwarm()) {
       let beeOrder: SpawnOrder = {
         setup: Setups.dismantler,
         amount: 1,

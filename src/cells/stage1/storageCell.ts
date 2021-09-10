@@ -1,5 +1,5 @@
 import { Cell } from "../_Cell";
-import { Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
 
 import { managerMaster } from "../../beeMasters/economy/manager";
 import { profile } from "../../profiler/decorator";
@@ -144,7 +144,7 @@ export class storageCell extends Cell {
       let link = this.links[id];
       this.linksState[id] = "idle";
       if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
-        this.requestToStorage("link_" + link.id, link, 4);
+        this.requestToStorage("link_" + link.id, link, 3);
     }
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && Object.keys(Apiary.hives).length > 1)
       this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);

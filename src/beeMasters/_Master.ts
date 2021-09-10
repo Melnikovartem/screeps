@@ -1,5 +1,4 @@
 // import { makeId } from "../utils/other";
-
 import { SpawnOrder, Hive } from "../Hive";
 import { Bee } from "../bee";
 import { profile } from "../profiler/decorator";
@@ -40,7 +39,9 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
-    bee.state = this.boost ? states.boosting : states.chill;
+    if (bee.state === states.idle)
+      bee.state = this.boost ? states.boosting : states.chill;
+    // bee.state = this.boost ? states.boosting : states.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;
@@ -86,7 +87,7 @@ export abstract class Master {
       } else
         this.hive.bassboost.spawOrders[ref] = order;
       if (this.hive.room.energyCapacityAvailable >= 1000 && Apiary.orders["boost_" + this.hive.roomName] &&
-        (this.hive.cells.storage && this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 10000))
+        (this.hive.cells.storage && this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 15000))
         Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
       this.hive.spawOrders[ref] = order;

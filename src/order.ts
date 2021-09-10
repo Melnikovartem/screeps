@@ -6,10 +6,10 @@ import { waiterMaster } from "./beeMasters/war/waiter";
 import { dupletMaster } from "./beeMasters/war/duplet";
 import { squadMaster } from "./beeMasters/war/squad";
 
-import { ReactionConstant } from "./cells/stage1/laboratoryCell";
+import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
-import { Master } from "./beeMasters/_Master";
-import { Hive } from "./Hive";
+import type { Master } from "./beeMasters/_Master";
+import type { Hive } from "./Hive";
 import { puppetMaster } from "./beeMasters/civil/puppet";
 import { annexMaster } from "./beeMasters/civil/annexer";
 import { claimerMaster } from "./beeMasters/civil/claimer";

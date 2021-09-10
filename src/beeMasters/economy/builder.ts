@@ -1,6 +1,6 @@
 import { Setups } from "../../creepSetups";
-import { SpawnOrder, Hive } from "../../Hive";
 import { Master, states } from "../_Master";
+import type { SpawnOrder, Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile

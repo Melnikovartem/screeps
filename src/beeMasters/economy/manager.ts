@@ -1,13 +1,9 @@
-// manages the storage if needed
-// like from storage to link or terminal
-// refill towers?
-// refills the respawnCell
-import { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
+import type { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
-import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
-import { SpawnOrder } from "../../Hive";
 import { Master, states } from "../_Master";
+import type { Bee } from "../../bee";
+import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -50,7 +46,7 @@ export class managerMaster extends Master {
             && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
             targets.push(k);
         if (targets.length) {
-          this.manager.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev })[0];
+          this.manager.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
           let res = this.cell.requests[this.manager.target].resource;
           this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
             : this.manager.store.getUsedCapacity() === 0 ? states.refill : states.work;

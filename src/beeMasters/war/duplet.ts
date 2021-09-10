@@ -1,9 +1,8 @@
-import { Bee } from "../../bee";
 import { Setups } from "../../creepSetups";
-import type { SpawnOrder } from "../../Hive";
 import { SwarmMaster } from "../_SwarmMaster";
+import type { Bee } from "../../bee";
+import type { SpawnOrder } from "../../Hive";
 import { states } from "../_Master";
-
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
@@ -11,8 +10,7 @@ import { profile } from "../../profiler/decorator";
 export class dupletMaster extends SwarmMaster {
   healer: Bee | undefined;
   knight: Bee | undefined;
-  spawned: boolean = false;
-  targetBeeCount = 2;
+  maxSpawns = 1;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -20,8 +18,6 @@ export class dupletMaster extends SwarmMaster {
       this.healer = bee;
     else
       this.knight = bee;
-    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 1000)
-      this.spawned = true;
   }
 
   update() {
@@ -33,8 +29,7 @@ export class dupletMaster extends SwarmMaster {
     if (this.healer && !Apiary.bees[this.healer.ref])
       delete this.healer;
 
-    if (!this.spawned) {
-      this.spawned = true;
+    if (this.checkBeesSwarm()) {
       if (!this.knight) {
         let knightOrder: SpawnOrder = {
           setup: Setups.defender,
@@ -57,9 +52,6 @@ export class dupletMaster extends SwarmMaster {
       }
       _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
-
-    if (!this.waitingForBees && this.beesAmount === 0)
-      this.order.delete();
   }
 
   run() {

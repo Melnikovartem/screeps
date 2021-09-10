@@ -1,5 +1,5 @@
 import { Cell } from "./cells/_Cell";
-import { CreepSetup } from "./creepSetups";
+import type { CreepSetup } from "./creepSetups";
 
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
@@ -182,7 +182,7 @@ export class Hive {
       this.sumCost += ans.sum;
     }
     // 85
-    if (Math.round(Game.time / 10) % 8 === 0)
+    if (this.shouldRecalc > 1 || Math.round(Game.time / 10) % 8 === 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);
