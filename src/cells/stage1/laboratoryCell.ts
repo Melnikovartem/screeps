@@ -102,18 +102,13 @@ export class laboratoryCell extends Cell {
   }
 
   newSynthesizeRequest(resource: ReactionConstant, amount?: number, coef?: number): number {
-    if (!Object.keys(REACTION_TIME).includes(resource))
+    if (!(resource in REACTION_TIME))
       return 0;
     if (!amount) {
       amount = 0;
-      let mainStore = this.hive.cells.storage && this.hive.cells.storage.storage.store;
-      if (mainStore) {
-        let res1 = REACTION_MAP[resource]!.res1;
-        let res2 = REACTION_MAP[resource]!.res2;
-        let res1Amount = mainStore.getUsedCapacity(res1) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res1));
-        let res2Amount = mainStore.getUsedCapacity(res2) + _.sum(this.laboratories, (lab) => lab.store.getUsedCapacity(res2));
-        amount = Math.min(res1Amount, res2Amount);
-      }
+      let res1Amount = this.getMineralSum(REACTION_MAP[resource]!.res1, true);
+      let res2Amount = this.getMineralSum(REACTION_MAP[resource]!.res2, true);
+      amount = Math.min(res1Amount, res2Amount);
     }
     amount -= amount % 5;
     if (coef)
@@ -129,7 +124,7 @@ export class laboratoryCell extends Cell {
     return amount;
   }
 
-  getMineralSum(res: ReactionConstant | MineralConstant) {
+  getMineralSum(res: ReactionConstant | MineralConstant, source: boolean = false) {
     let sum = 0;
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
@@ -137,14 +132,15 @@ export class laboratoryCell extends Cell {
       if (storageCell.master.manager)
         sum += storageCell.master.manager.store.getUsedCapacity(res);
     }
-
     let inLabMax;
-    if (this.boostLabs[res])
-      inLabMax = this.laboratories[this.boostLabs[res]!].store.getUsedCapacity(res);
+    if (source)
+      inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"
+        || this.labsStates[l.id] === "production" || this.labsStates[l.id] === "source"), (l) => l.store.getUsedCapacity(res)));
     else
-      inLabMax = (<StructureLab[]>_.map(this.laboratories)).reduce((result, curr) =>
-        result.store.getUsedCapacity(res) < curr.store.getUsedCapacity(res) && this.labsStates[curr.id] !== "source"
-          ? curr : result).store.getUsedCapacity(res);
+      if (this.boostLabs[res])
+        inLabMax = this.laboratories[this.boostLabs[res]!].store.getUsedCapacity(res);
+      else
+        inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"), (l) => l.store.getUsedCapacity(res)))
     sum += inLabMax;
     return sum;
   }
@@ -283,8 +279,9 @@ export class laboratoryCell extends Cell {
               storageCell.requestFromStorage("lab_" + id, l, 1, state);
             if (!Object.keys(this.boostRequests).length && this.currentProduction) {
               this.labsStates[id] = "idle";
-              delete storageCell.requests["lab_" + id];
               delete this.boostLabs[state];
+              if (l.mineralType)
+                storageCell.requestToStorage("lab_" + id, l, 3, l.mineralType);
             }
             break;
         }
@@ -366,15 +363,19 @@ export class laboratoryCell extends Cell {
       if (this.sourceLabs) {
         let lab1 = this.laboratories[this.sourceLabs[0]];
         let lab2 = this.laboratories[this.sourceLabs[1]];
-        if (lab1.store[this.currentProduction.res1] >= 5 && lab2.store[this.currentProduction.res2] >= 5) {
-          this.updateProductionLabs();
-          let labs = _.filter(this.laboratories, (lab) => !lab.cooldown &&
-            this.labsStates[lab.id] === "production" && lab.store.getFreeCapacity(this.currentProduction!.res) >= 5);
-          for (const k in labs)
+        let amount = Math.min(lab1.store[this.currentProduction.res1], lab2.store[this.currentProduction.res2])
+        if (amount >= 5) {
+          if (Game.time % this.currentProduction.cooldown * 4 === 0)
+            this.updateProductionLabs();
+          let labs = _.filter(this.laboratories, (lab) => this.labsStates[lab.id] === "production"
+            && !lab.cooldown && lab.store.getFreeCapacity(this.currentProduction!.res) >= 5);
+
+          for (let k = 0; k < labs.length && amount >= 5; ++k)
             if (labs[k].runReaction(lab1, lab2) === OK) {
+              this.currentProduction.plan -= 5;
+              amount -= 5;
               if (Apiary.logger)
                 Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.currentProduction.res);
-              this.currentProduction.plan -= 5;
             }
         }
       }

@@ -14,7 +14,9 @@ export interface StorageRequest {
 }
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
-export const STORAGE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4)
+export const STORAGE_BALANCE: { [key in ResourceConstant]?: number } = {
+  [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
+};
 
 @profile
 export class storageCell extends Cell {
@@ -49,6 +51,8 @@ export class storageCell extends Cell {
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
     , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    if (this.master.manager && this.master.manager.target == ref)
+      return 0;
     if (amount === Infinity)
       amount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(res);
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
@@ -66,6 +70,8 @@ export class storageCell extends Cell {
 
   requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
     , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    if (this.master.manager && this.master.manager.target == ref)
+      return 0;
     if (amount === Infinity)
       amount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(res);
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
@@ -102,7 +108,7 @@ export class storageCell extends Cell {
         this.requests[k].to = to;
     }
 
-    if (!Object.keys(this.requests).length && this.terminal) {
+    if ((!Object.keys(this.requests).length || this.storage.store.getFreeCapacity() < 10000) && this.terminal) {
       if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.1) {
         let freeCap = this.storage.store.getCapacity() * 0.8 - this.storage.store.getUsedCapacity();
         let res: ResourceConstant = RESOURCE_ENERGY;
@@ -114,9 +120,9 @@ export class storageCell extends Cell {
             for (let resourceConstant in this.terminal.store) {
               let resource = <ResourceConstant>resourceConstant;
               let newAmount = this.terminal.store.getUsedCapacity(resource);
-              if (resource == RESOURCE_ENERGY)
+              if (resource === RESOURCE_ENERGY)
                 newAmount -= TERMINAL_ENERGY;
-              if (newAmount < amount && newAmount > 0) {
+              if (newAmount < amount || !amount && newAmount > 0) {
                 res = resource;
                 amount = newAmount;
               }
@@ -124,9 +130,9 @@ export class storageCell extends Cell {
           else if (freeCap < 0) {
             for (let resourceConstant in this.storage.store) {
               let resource = <ResourceConstant>resourceConstant;
-              let newAmount = -this.storage.store.getUsedCapacity(resource);
+              let newAmount = this.storage.store.getUsedCapacity(resource);
               if (resource === RESOURCE_ENERGY)
-                newAmount -= STORAGE_ENERGY; // save 400K energy everytime
+                newAmount -= STORAGE_BALANCE[RESOURCE_ENERGY]!; // save 400K energy everytime
               if (-amount < newAmount) {
                 res = resource;
                 amount = -newAmount;
@@ -134,11 +140,12 @@ export class storageCell extends Cell {
             }
             amount = Math.max(amount, freeCap);
           }
-        } else if (this.storage.store.getUsedCapacity(res) < STORAGE_ENERGY)
+        } else if (this.storage.store.getUsedCapacity(res) < STORAGE_BALANCE[RESOURCE_ENERGY]!)
           amount = 0;
 
         if (amount > 0)
-          this.requestToStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(amount, 5500, freeCap));
+          this.requestToStorage("terminal_" + this.terminal.id, this.terminal,
+            this.storage.store.getFreeCapacity() < 10000 ? 2 : 5, res, Math.min(amount, 5500, freeCap));
         else if (amount < 0)
           this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 5500));
       }
@@ -167,7 +174,7 @@ export class storageCell extends Cell {
     }
 
     if (this.terminal && this.terminal.store.getUsedCapacity() > this.terminal.store.getCapacity() * 0.7 && !this.terminal.cooldown) {
-      let res: ResourceConstant | undefined;
+      let res: ResourceConstant = RESOURCE_ENERGY;
       let amount: number = 0;
       for (let resourceConstant in this.terminal.store) {
         let resource = <ResourceConstant>resourceConstant;
@@ -181,9 +188,9 @@ export class storageCell extends Cell {
       }
 
       let amoundSend: number = 0;
-      if (res === RESOURCE_ENERGY) {
+      if (res in STORAGE_BALANCE) {
         let closest = _.filter(Apiary.hives, (h) => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
-          && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_ENERGY)
+          && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[res]!)
           .reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
         if (closest) {
           let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;

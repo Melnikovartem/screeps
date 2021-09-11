@@ -63,17 +63,25 @@ export class builderMaster extends Master {
               if (bee.target) {
                 target = Game.getObjectById(bee.target);
                 if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
-                  this.hive.shouldRecalc = 1;
                   target = null;
                 }
+                if (!target && !this.hive.structuresConst.length)
+                  this.hive.shouldRecalc = 2;
               }
 
               if (!target) {
                 let pos = bee.pos.findClosest(this.hive.structuresConst);
-                if (pos) {
+                while (pos && !target) {
                   target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
                   if (!target)
                     target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
+                  if (!target)
+                    for (let k = 0; k < this.hive.structuresConst.length; ++k)
+                      if (this.hive.structuresConst[k].x == pos.x && this.hive.structuresConst[k].y == pos.y) {
+                        this.hive.structuresConst.splice(k, 1);
+                        break;
+                      }
+                  pos = bee.pos.findClosest(this.hive.structuresConst);
                 }
               }
 

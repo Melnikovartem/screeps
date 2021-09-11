@@ -142,7 +142,7 @@ export class Visuals {
 
     ans.push(["  📈income"]);
     for (let ref in report)
-      if (report[ref].profit > 0) {
+      if (Math.round(report[ref].profit * 100) > 0) {
         overAll += report[ref].profit;
         ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
       }
@@ -150,7 +150,7 @@ export class Visuals {
 
     ans.push(["  📉expenditure"]);
     for (let ref in report)
-      if (report[ref].profit < 0) {
+      if (Math.round(report[ref].profit * 100) < 0) {
         overAll += report[ref].profit;
         ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
       }

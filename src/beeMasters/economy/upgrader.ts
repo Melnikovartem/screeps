@@ -11,36 +11,10 @@ export class upgraderMaster extends Master {
   fastMode: boolean = false;
   boost = true;
   patternPerBee = Infinity;
-  maxRate = 1;
-  ratePerCreep = 1;
 
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
-
     this.cell = upgradeCell;
-    let storageCell = this.hive.cells.storage;
-
-    if (storageCell) {
-      let storageLink = storageCell.links[Object.keys(storageCell.links)[0]];
-      if (this.cell.link && storageLink) {
-        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.fastMode = true;
-        this.maxRate = 800 / this.cell.link.pos.getRangeTo(storageLink); // how to get more in?
-        this.ratePerCreep = 50 / (10 / patternLimit + Math.max(this.cell.link.pos.getTimeForPath(this.cell.controller) - 3, 0) * 2);
-      } else if (storageCell && this.cell.controller.pos.getRangeTo(storageCell.storage) < 4) {
-        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.fastMode = true;
-        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 2500, 100);
-        this.ratePerCreep = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
-        this.ratePerCreep = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 - 3, 0) * 2));
-      } else if (storageCell) {
-        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 4), 800);
-        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
-        this.ratePerCreep = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.cell.controller) * 2 - 3, 0) * 2 + 50);
-      }
-    }
-
-    this.recalculateTargetBee();
   }
 
   recalculateTargetBee() {
@@ -52,17 +26,17 @@ export class upgraderMaster extends Master {
       this.targetBeeCount = 1;
       this.patternPerBee = 0;
     } else if (storageCell) {
-      let desiredRate = this.maxRate;
+      let desiredRate = this.cell.maxRate;
       if (this.cell.link && Object.keys(storageCell.links).length > 1
         && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
         desiredRate *= Object.keys(storageCell.links).length;
       let rounding = Math.floor;
       if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
         rounding = Math.ceil;
-      else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
+      else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 400000)
         rounding = Math.round;
 
-      this.targetBeeCount = rounding(desiredRate / this.ratePerCreep);
+      this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
       this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
     }
   }

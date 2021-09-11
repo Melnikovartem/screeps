@@ -12,6 +12,9 @@ export class upgradeCell extends Cell {
   storageLink: StructureLink | undefined;
   master: upgraderMaster;
 
+  maxRate = 1;
+  ratePerCreepMax = 1;
+
   constructor(hive: Hive, controller: StructureController) {
     super(hive, "UpgradeCell_" + hive.room.name);
 
@@ -25,13 +28,34 @@ export class upgradeCell extends Cell {
       this.pos = this.controller.pos;
 
     this.master = new upgraderMaster(this);
+
+    let storageCell = this.hive.cells.storage;
+    if (storageCell) {
+      let storageLink = storageCell.links[Object.keys(storageCell.links)[0]];
+      if (this.link && storageLink) {
+        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
+        this.master.fastMode = true;
+        this.maxRate = 800 / this.link.pos.getRangeTo(storageLink); // how to get more in?
+        this.ratePerCreepMax = 50 / (10 / patternLimit + Math.max(this.link.pos.getTimeForPath(this.controller) - 3, 0) * 2);
+      } else if (storageCell && this.controller.pos.getRangeTo(storageCell.storage) < 4) {
+        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
+        this.master.fastMode = true;
+        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 2500, 100);
+        this.ratePerCreepMax = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
+        this.ratePerCreepMax = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2));
+      } else if (storageCell) {
+        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 4), 800);
+        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
+        this.ratePerCreepMax = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2 + 50);
+      }
+      this.master.recalculateTargetBee();
+    }
   }
 
   update() {
     super.update();
     if (!this.link && Game.time % 30 === 7)
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
-
 
     let storageCell = this.hive.cells.storage;
     let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);

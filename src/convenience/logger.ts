@@ -218,6 +218,10 @@ export class Logger {
     ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
     ans["build"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.builder), revenue: getRate("build") };
     ans["defense"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.defender) };
+    ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
+    ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
+    ans["terminal"] = { profit: getRate("terminal") };
+    ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
 
     return ans;
   }

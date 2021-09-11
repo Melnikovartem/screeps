@@ -59,7 +59,7 @@ export class Hive {
   // 1 storage - 7lvl
   // max
 
-  shouldRecalc: 0 | 1 | 2;
+  shouldRecalc: 0 | 1 | 2 | 3;
   bassboost: Hive | null = null;
 
   structuresConst: RoomPosition[] = [];
@@ -105,7 +105,7 @@ export class Hive {
 
     //look for new structures for those wich need them
     this.updateCellData();
-    this.shouldRecalc = 2;
+    this.shouldRecalc = 3;
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
@@ -174,6 +174,7 @@ export class Hive {
   }
 
   updateStructures() {
+    let checkAnnexes = this.sumCost > 0 || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0;
     this.structuresConst = [];
     this.sumCost = 0;
     let check = (r: Room) => {
@@ -181,8 +182,7 @@ export class Hive {
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
     }
-    // 85
-    if (this.shouldRecalc > 1 || Math.round(Game.time / 10) % 8 === 0)
+    if (checkAnnexes)
       _.forEach(this.rooms, check);
     else
       check(this.room);
@@ -194,7 +194,7 @@ export class Hive {
     if (Game.time % 40 === 5 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
-      if (this.shouldRecalc > 1) {
+      if (this.shouldRecalc > 3) {
         this.markResources();
         _.forEach(this.rooms, (r) => {
           if (!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length)
