@@ -275,7 +275,7 @@ export class Order {
             if (this.pos.roomName === this.hive.roomName && this.hive.cells.lab) {
               if (!Object.keys(this.hive.cells.lab.synthesizeRequests).length) {
                 let ans = _.some(this.flag.name.split("_"), (res) => this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res));
-                if (!ans)
+                if (!ans && this.hive.cells.lab.time !== Game.time)
                   this.delete();
               }
             } else

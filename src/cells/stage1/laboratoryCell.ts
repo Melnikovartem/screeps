@@ -295,12 +295,14 @@ export class laboratoryCell extends Cell {
           let freeCap = l.store.getFreeCapacity(r);
           if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.currentProduction!.plan <= LAB_MINERAL_CAPACITY)
             && l.store.getUsedCapacity(r) < this.currentProduction!.plan)
-            storageCell!.requestFromStorage("lab_" + l.id, l, 3, r,
-              Math.min(LAB_MINERAL_CAPACITY, Math.max(LAB_MINERAL_CAPACITY - this.currentProduction!.plan, this.currentProduction!.plan)));
+            storageCell!.requestFromStorage("lab_" + l.id, l, 3, r, Math.min(this.currentProduction!.plan, freeCap));
         };
 
         updateSourceLab(lab1, this.currentProduction.res1);
         updateSourceLab(lab2, this.currentProduction.res2);
+
+        if (Game.time % 100 === 0)
+          this.currentProduction.plan = this.getMineralSum(this.currentProduction.res);
 
         if (this.currentProduction.plan < 5) {
           this.labsStates[lab1.id] = "idle";
@@ -370,17 +372,20 @@ export class laboratoryCell extends Cell {
           let labs = _.filter(this.laboratories, (lab) => this.labsStates[lab.id] === "production"
             && !lab.cooldown && lab.store.getFreeCapacity(this.currentProduction!.res) >= 5);
 
-          for (let k = 0; k < labs.length && amount >= 5; ++k)
-            if (labs[k].runReaction(lab1, lab2) === OK) {
+          for (let k = 0; k < labs.length && amount >= 5; ++k) {
+            let ans = labs[k].runReaction(lab1, lab2);
+            if (ans === OK) {
               this.currentProduction.plan -= 5;
               amount -= 5;
-              if (Apiary.logger)
-                Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.currentProduction.res);
+              if (Apiary.logger) {
+                Apiary.logger.addResourceStat(this.hive.roomName, "labs", 5, this.currentProduction.res);
+                Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.currentProduction.res1);
+                Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.currentProduction.res2);
+              }
             }
+          }
         }
       }
     }
-
-    // here some boost logic
   }
 }

@@ -13,43 +13,45 @@ export class managerMaster extends Master {
 
   constructor(storageCell: storageCell) {
     super(storageCell.hive, storageCell.ref);
-
     this.cell = storageCell;
   }
 
   update() {
     super.update();
-    if (this.beesAmount && (this.manager && !Apiary.bees[this.manager.ref] || !this.manager))
-      this.manager = this.bees[Object.keys(this.bees)[0]];
+    if (!this.manager)
+      if (this.beesAmount)
+        this.manager = this.bees[Object.keys(this.bees)[0]];
+      else
+        return;
 
     let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
+    let bee = this.manager;
 
-    if (this.manager && (this.manager.state === states.chill || emergencyRequests.length)
-      && this.manager.pos.roomName === this.cell.pos.roomName) {
-      if (this.manager.target && this.cell.requests[this.manager.target]) {
+    if (bee.state === states.chill || emergencyRequests.length) {
+      if (bee.target && this.cell.requests[bee.target]) {
         if (emergencyRequests.length) {
           let closest = this.cell.storage.pos.findClosest(_.map(emergencyRequests, (r) => r.to))!;
           let target = _.filter(emergencyRequests, (r) => r.to.id === closest.id)[0];
-          if (this.cell.requests[this.manager.target].priority > target.priority
+          if (this.cell.requests[bee.target].priority > target.priority
             || this.cell.pos.getRangeTo(target.to.pos) > this.cell.pos.getRangeTo(target.to.pos)) {
-            this.manager.target = target.ref;
-            let res = this.cell.requests[this.manager.target].resource;
-            this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
-              : this.manager.store.getUsedCapacity() === 0 ? states.refill : states.work;
+            bee.target = target.ref;
+            let res = this.cell.requests[bee.target].resource;
+            bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
+              : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
           }
         }
-      } else if (this.manager.state === states.chill) {
-        this.manager.target = null;
+      } else if (bee.state === states.chill) {
+        bee.target = null;
         let targets: string[] = [];
         for (let k in this.cell.requests)
           if (this.cell.requests[k].amount > 0
             && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
             targets.push(k);
         if (targets.length) {
-          this.manager.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
-          let res = this.cell.requests[this.manager.target].resource;
-          this.manager.state = this.manager.store.getUsedCapacity() > this.manager.store.getUsedCapacity(res) ? states.fflush
-            : this.manager.store.getUsedCapacity() === 0 ? states.refill : states.work;
+          bee.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
+          let res = this.cell.requests[bee.target].resource;
+          bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
+            : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
         }
       }
     }
@@ -60,8 +62,7 @@ export class managerMaster extends Master {
         amount: 1,
         priority: 7,
       };
-
-      // desired linear regex from desmos i guess)
+      // desired linear regex from desmos))
       let lvl = this.hive.room.controller!.level;
       order.setup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
 
@@ -70,84 +71,76 @@ export class managerMaster extends Master {
   }
 
   run() {
-    if (this.manager) {
-      if (this.manager.pos.roomName !== this.cell.pos.roomName)
-        this.manager.state = states.chill;
-      if (this.manager.creep.ticksToLive && this.manager.creep.ticksToLive < 15)
-        this.manager.state = states.fflush;
+    let bee = this.manager;
+    if (!bee)
+      return;
 
-      if (this.manager.target) {
-        let request: StorageRequest = this.cell.requests[this.manager.target];
-        if (request) {
-          if (this.manager.state === states.refill) {
-            if (this.manager.store.getUsedCapacity(request.resource) >= request.amount)
-              this.manager.state = states.work;
-            if (!this.manager.store.getFreeCapacity(request.resource))
-              this.manager.state = states.work;
-            if (this.manager.store.getUsedCapacity() !== this.manager.store.getUsedCapacity(request.resource))
-              this.manager.state = states.fflush;
-          }
+    if (bee.pos.roomName !== this.cell.pos.roomName)
+      bee.state = states.chill;
+    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 15)
+      bee.state = states.fflush;
 
-          if (this.manager.state === states.work) {
-            if (this.manager.store.getUsedCapacity(request.resource) === 0)
-              this.manager.state = states.refill;
-          }
+    if (bee.target) {
+      let request: StorageRequest = this.cell.requests[bee.target];
+      if (request) {
+        if (bee.state === states.refill) {
+          if (bee.store.getUsedCapacity(request.resource) >= request.amount)
+            bee.state = states.work;
+          if (!bee.store.getFreeCapacity(request.resource))
+            bee.state = states.work;
+          if (bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(request.resource))
+            bee.state = states.fflush;
+        }
+        if (bee.state === states.work) {
+          if (bee.store.getUsedCapacity(request.resource) === 0)
+            bee.state = states.refill;
+        }
 
-          if (this.cell.requests[this.manager.target]) {
-            if (this.manager.state === states.refill) {
-              let amountBee = Math.min(this.manager.store.getFreeCapacity(request.resource),
-                (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
-                request.amount - this.manager.store.getUsedCapacity(request.resource));
+        if (bee.state === states.refill) {
+          let amountBee = Math.min(bee.store.getFreeCapacity(request.resource),
+            (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
+            request.amount - bee.store.getUsedCapacity(request.resource));
 
-              if (amountBee > 0)
-                this.manager.withdraw(request.from, request.resource, amountBee) === OK
-            }
+          if (amountBee > 0)
+            bee.withdraw(request.from, request.resource, amountBee) === OK
+        }
+        if (bee.state === states.work) {
+          let amountBee = Math.min(request.amount,
+            bee.store.getUsedCapacity(request.resource),
+            (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
 
-            if (this.manager.state === states.work) {
-              let amountBee = Math.min(request.amount,
-                this.manager.store.getUsedCapacity(request.resource),
-                (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
-
-              if (amountBee > 0 && this.manager.transfer(request.to, request.resource, amountBee) === OK)
-                request.amount -= amountBee;
-            }
-          }
-        } else {
-          this.manager.state = states.fflush;
-          this.manager.target = null;
+          if (amountBee > 0 && bee.transfer(request.to, request.resource, amountBee) === OK)
+            request.amount -= amountBee;
         }
       } else {
-        this.manager.state = states.fflush;
-        this.manager.target = null;
+        bee.state = states.fflush;
+        bee.target = null;
       }
+    } else
+      bee.state = states.fflush;
 
-      if (this.manager.state === states.fflush) {
-        if (this.manager.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
-          let resource = <ResourceConstant>Object.keys(this.manager.store)[0];
-          this.manager.transfer(this.cell.storage, resource);
-        } else {
-          if (this.manager.target)
-            this.manager.state = states.refill;
-          else
-            this.manager.state = states.chill;
-        }
-      }
+    if (bee.state === states.fflush)
+      if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
+        let resource = <ResourceConstant>Object.keys(bee.store)[0];
+        bee.transfer(this.cell.storage, resource);
+      } else
+        if (bee.target)
+          bee.state = states.refill;
+        else
+          bee.state = states.chill;
 
-      _.forEach(this.bees, (bee) => {
-        if (bee.state === states.chill)
-          bee.goRest(this.cell.pos);
-      });
+    if (bee.state === states.chill)
+      bee.goRest(this.cell.pos);
 
-      /* drop off extra res in sim
-      let store = this.manager.store
-      let ans: ResourceConstant = RESOURCE_ENERGY;
-      for (let resourceConstant in store) {
-        if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
-          ans = <ResourceConstant>resourceConstant;
-      }
-      if (store[ans] > 0)
-        this.manager.creep.drop(ans);
-      */
+    /* drop off extra res in sim
+    let store = bee.store
+    let ans: ResourceConstant = RESOURCE_ENERGY;
+    for (let resourceConstant in store) {
+      if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
+        ans = <ResourceConstant>resourceConstant;
     }
+    if (store[ans] > 0)
+      bee.creep.drop(ans);
+    */
   }
 }

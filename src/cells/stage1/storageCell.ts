@@ -167,9 +167,9 @@ export class storageCell extends Cell {
       if (request.amount > 0 && !request.from.store[request.resource]
         && !(this.master.manager && this.master.manager.store[request.resource]))
         delete this.requests[k];
-      if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
+      else if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
         delete this.requests[k];
-      if (request.amount <= 0)
+      else if (request.amount <= 0)
         delete this.requests[k];
     }
 

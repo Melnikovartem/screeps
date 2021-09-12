@@ -10,6 +10,7 @@ export class CustomConsole {
 
   // some hand used functions
   terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
+    hiveName = hiveName.toUpperCase();
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a>`;
@@ -38,6 +39,8 @@ export class CustomConsole {
   }
 
   send(roomNameFrom: string, roomNameTo: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY) {
+    roomNameFrom = roomNameFrom.toUpperCase();
+    roomNameTo = roomNameTo.toUpperCase();
     let hiveFrom = Apiary.hives[roomNameFrom];
     if (!hiveFrom)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
@@ -91,10 +94,13 @@ export class CustomConsole {
     let amount = Math.min(am, order.remainingAmount);
     let ans;
     let energy: number | string = "NOT NEEDED";
-    let hiveName: string = "global";
+    let hiveName: string = "NO HIVE";
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {
+      if (order.type === ORDER_SELL && order.price > 100)
+        return "ORDER_PRICE IS STUPID HIGH";
+
       let resource = <ResourceConstant>order.resourceType;
       let hive;
       let validateTerminal = (t: StructureTerminal) =>
@@ -128,7 +134,8 @@ export class CustomConsole {
         Apiary.logger.newMarketOperation(order, amount, terminal.pos.roomName);
     }
 
-    let info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + order.roomName : ""
+
+    let info = ` ${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""
       }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
     if (ans === OK)
       return "OK" + info;
@@ -136,10 +143,11 @@ export class CustomConsole {
       return `ERROR: ${ans}` + info;
   }
 
-  buy(roomName: string, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
+  buy(hiveName: string, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
+    hiveName = hiveName.toUpperCase();
     let targetPrice = -1;
     let sum = 0, count = 0;
-    let anchor = new RoomPosition(25, 25, roomName);
+    let anchor = new RoomPosition(25, 25, hiveName);
     let orders = Game.market.getAllOrders((order) => {
       if (order.type === ORDER_BUY || order.resourceType !== resource || !order.roomName)
         return false;
@@ -150,24 +158,26 @@ export class CustomConsole {
       return anchor.getRoomRangeTo(order.roomName!) < 50;
     });
     targetPrice = Math.min(targetPrice, (sum / count) * 1.2);
-    console.log(orders.length, targetPrice);
     if (orders.length)
       orders = orders.filter((order) => order.price < targetPrice * 0.9);
     if (orders.length) {
       let order = orders.reduce((prev, curr) => prev.price > curr.price ? curr : prev);
-      return this.completeOrder(order.id, roomName, amount);
+      return this.completeOrder(order.id, hiveName, amount);
     }
-    return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${roomName} `;
+    return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${this.formatRoom(hiveName)} `;
   }
 
-  create(hiveName: string, ...resource: string[]) {
+  produce(hiveName: string, ...resource: string[]) {
+    hiveName = hiveName.toUpperCase();
     let hive = Apiary.hives[hiveName];
     if (!hive)
-      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a> ${hiveName}`;
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     let cell = Apiary.hives[hiveName] && Apiary.hives[hiveName].cells.lab;
     if (!cell)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
 
+    for (let k in resource)
+      resource[k] = resource[k].toUpperCase();
     let productionFlags = Game.rooms[hiveName].find(FIND_FLAGS, { filter: { color: COLOR_GREY, secondaryColor: COLOR_CYAN } });
     for (let k in productionFlags)
       resource = resource.concat(productionFlags[k].name.split("_"));
@@ -208,6 +218,10 @@ export class CustomConsole {
 
   printBees(masterName?: string) {
     _.forEach(_.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print), (s) => console.log(s));
+  }
+
+  formatRoom(roomNae: string) {
+    return `<a href=#!/room/${Game.shard.name}/${roomNae}>${roomNae}</a>`
   }
 
   printSpawnOrders(hiveName?: string) {
