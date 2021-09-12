@@ -139,8 +139,11 @@ export class laboratoryCell extends Cell {
     else
       if (this.boostLabs[res])
         inLabMax = this.laboratories[this.boostLabs[res]!].store.getUsedCapacity(res);
-      else
-        inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"), (l) => l.store.getUsedCapacity(res)))
+      else {
+        inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"), (l) => l.store.getUsedCapacity(res)));
+        if (!inLabMax)
+          inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "production"), (l) => l.store.getUsedCapacity(res)));
+      }
     sum += inLabMax;
     return sum;
   }
@@ -166,7 +169,7 @@ export class laboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
     let storageCell = this.hive.cells.storage;
-    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell!.master.manager) {
+    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell.master.manager) {
       if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
         this.boostRequests[bee.ref] = requests;
         for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
@@ -301,8 +304,8 @@ export class laboratoryCell extends Cell {
         updateSourceLab(lab1, this.currentProduction.res1);
         updateSourceLab(lab2, this.currentProduction.res2);
 
-        if (Game.time % 100 === 0)
-          this.currentProduction.plan = this.getMineralSum(this.currentProduction.res);
+        if (Game.time % 500 === 0)
+          this.currentProduction.plan = Math.min(this.getMineralSum(this.currentProduction.res1), this.getMineralSum(this.currentProduction.res2));
 
         if (this.currentProduction.plan < 5) {
           this.labsStates[lab1.id] = "idle";

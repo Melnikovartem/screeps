@@ -1,5 +1,6 @@
 import { upgradeCell } from "../../cells/stage1/upgradeCell";
 
+import { posPrefix } from "../../order";
 import { Setups } from "../../creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
@@ -8,9 +9,10 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class upgraderMaster extends Master {
   cell: upgradeCell;
-  fastMode: boolean = false;
   boost = true;
-  patternPerBee = Infinity;
+  patternPerBee = 0;
+  fastMode = false;
+  fastModePossible = false;
 
   constructor(upgradeCell: upgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
@@ -18,27 +20,36 @@ export class upgraderMaster extends Master {
   }
 
   recalculateTargetBee() {
-    let storageCell = this.hive.cells.storage;
-    if (this.hive.stage === 2) {
-      this.targetBeeCount = 1;
-      this.patternPerBee = 0;
-    } else if (storageCell && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000) {
-      this.targetBeeCount = 1;
-      this.patternPerBee = 0;
-    } else if (storageCell) {
-      let desiredRate = this.cell.maxRate;
-      if (this.cell.link && Object.keys(storageCell.links).length > 1
-        && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
-        desiredRate *= Object.keys(storageCell.links).length;
-      let rounding = Math.floor;
-      if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
-        rounding = Math.ceil;
-      else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 400000)
-        rounding = Math.round;
+    this.fastModePossible = !!(this.cell.link || (this.hive.cells.storage && this.cell.pos.getRangeTo(this.hive.cells.storage.storage) < 4));
 
-      this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
-      this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
+    let storageCell = this.hive.cells.storage;
+    if (!storageCell)
+      return;
+
+    this.targetBeeCount = 1;
+    this.patternPerBee = 0;
+
+    this.fastMode = true;
+    if (!(posPrefix.upgrade + this.hive.roomName in Game.flags)) {
+      this.fastMode = false;
+      return;
     }
+
+    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000)
+      return;
+
+    let desiredRate = this.cell.maxRate;
+    if (this.cell.link && Object.keys(storageCell.links).length > 1
+      && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
+      desiredRate *= Object.keys(storageCell.links).length;
+    let rounding = Math.floor;
+    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+      rounding = Math.ceil;
+    else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 400000)
+      rounding = Math.round;
+
+    this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
+    this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
   }
 
   update() {
@@ -53,13 +64,10 @@ export class upgraderMaster extends Master {
           priority: 8,
         };
 
-        if (!this.fastMode)
-          if (this.cell.link || (this.hive.cells.storage && this.cell.controller.pos.getRangeTo(this.hive.cells.storage.storage) < 4))
-            this.fastMode = true;
+        let fastModePossible = this.cell.link || (this.hive.cells.storage && this.cell.pos.getRangeTo(this.hive.cells.storage.storage) < 4);
 
-        if (this.fastMode)
+        if (this.fastMode && fastModePossible)
           order.setup = Setups.upgrader.fast;
-
 
         if (this.cell.controller.ticksToDowngrade < 1500) {
           // idk how but we failed miserably
@@ -76,8 +84,7 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.bees, (bee) => {
-      if ((this.fastMode && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 25
-        || bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) && bee.state !== states.boosting) {
+      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) && bee.state !== states.boosting) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;
@@ -113,6 +120,9 @@ export class upgraderMaster extends Master {
           if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
             bee.state = states.chill;
           break;
+        case states.refill:
+          if (bee.store.getFreeCapacity(RESOURCE_ENERGY) === 0)
+            bee.state = states.work;
       }
     });
   }

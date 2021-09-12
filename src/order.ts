@@ -3,7 +3,6 @@ import { hordeMaster } from "./beeMasters/war/horde";
 import { downgradeMaster } from "./beeMasters/war/downgrader";
 import { dismantlerMaster } from "./beeMasters/war/dismantler";
 import { waiterMaster } from "./beeMasters/war/waiter";
-import { dupletMaster } from "./beeMasters/war/duplet";
 import { squadMaster } from "./beeMasters/war/squad";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
@@ -18,6 +17,14 @@ import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 import { makeId } from "./utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
+
+export enum posPrefix {
+  upgrade = "polen",
+  chill = "chillZone",
+  queen = "brood",
+  manager = "crown",
+  lab = "lab",
+}
 
 @profile
 export class Order {
@@ -107,11 +114,13 @@ export class Order {
             case COLOR_BLUE:
               this.master = new hordeDefenseMaster(this);
               break;
-            case COLOR_CYAN:
+            case COLOR_RED:
               let master = new hordeMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
                 master.maxSpawns = +regex[0];
+              else if (/^def_/.exec(this.ref) !== null)
+                master.maxSpawns = 1;
               this.master = master;
               break;
             case COLOR_PURPLE:
@@ -122,9 +131,6 @@ export class Order {
               break;
             case COLOR_GREEN:
               this.master = new waiterMaster(this);
-              break;
-            case COLOR_RED:
-              this.master = new dupletMaster(this);
               break;
             case COLOR_ORANGE:
               this.master = new squadMaster(this);
@@ -179,22 +185,25 @@ export class Order {
               this.hive.pos = this.pos;
               if (this.hive.cells.excavation)
                 this.hive.cells.excavation.pos = this.pos;
-              prefix = "chillZone";
+              prefix = posPrefix.chill;
               break;
             case COLOR_GREEN:
               if (this.hive)
                 this.hive.cells.spawn.pos = this.pos;
-              prefix = "queen";
+              prefix = posPrefix.queen;
               break;
             case COLOR_YELLOW:
               if (this.hive.cells.storage)
                 this.hive.cells.storage.pos = this.pos;
-              prefix = "man";
+              prefix = posPrefix.manager;
               break;
             case COLOR_GREY:
               if (this.hive.cells.lab)
                 this.hive.cells.lab.pos = this.pos;
-              prefix = "lab";
+              prefix = posPrefix.lab;
+              break;
+            case COLOR_ORANGE:
+              prefix = posPrefix.upgrade;
               break;
           }
           if (prefix !== "" && this.ref !== prefix + this.hive.roomName) {
@@ -266,7 +275,7 @@ export class Order {
             if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
               this.delete();
             break;
-          case COLOR_YELLOW:
+          case COLOR_PURPLE:
             if (!this.master)
               this.master = new puppetMaster(this);
             break;
@@ -355,6 +364,13 @@ export class Order {
               hiveBoosted.bassboost = null;
               if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
                 (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
+
+              let pos = hiveBoosted.room.controller && hiveBoosted.room.controller.pos;
+              if (pos) {
+                let newPos = [new RoomPosition(pos.x, pos.y + 1, pos.roomName), new RoomPosition(pos.x, pos.y - 1, pos.roomName)]
+                  .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
+                newPos.createFlag("fast" + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
+              }
             }
             break;
         }

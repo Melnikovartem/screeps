@@ -34,12 +34,10 @@ export class upgradeCell extends Cell {
       let storageLink = storageCell.links[Object.keys(storageCell.links)[0]];
       if (this.link && storageLink) {
         let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.master.fastMode = true;
         this.maxRate = 800 / this.link.pos.getRangeTo(storageLink); // how to get more in?
         this.ratePerCreepMax = 50 / (10 / patternLimit + Math.max(this.link.pos.getTimeForPath(this.controller) - 3, 0) * 2);
       } else if (storageCell && this.controller.pos.getRangeTo(storageCell.storage) < 4) {
         let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.master.fastMode = true;
         this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 2500, 100);
         this.ratePerCreepMax = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
         this.ratePerCreepMax = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2));
