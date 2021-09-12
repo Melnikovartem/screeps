@@ -13,6 +13,7 @@ export abstract class SwarmMaster extends Master {
   order: Order;
   spawned: number = 0;
   maxSpawns: number = 1;
+  notify = false;
 
   constructor(order: Order) {
     super(order.hive, "Swarm_" + order.ref);
@@ -32,7 +33,6 @@ export abstract class SwarmMaster extends Master {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    bee.creep.notifyWhenAttacked(false);
     this.spawned += 1;
     this.order.flag.memory.info = this.spawned;
   }

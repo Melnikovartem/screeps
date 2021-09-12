@@ -13,6 +13,7 @@ function getRoomCoorinates(roomName: string): number[] {
   let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
   let x = 0;
   let y = 0;
+  console.log(parsed);
   if (parsed) {
     x = +parsed[2] * (parsed[1] === "W" ? -1 : 0);
     y = +parsed[4] * (parsed[3] === "s" ? -1 : 0);

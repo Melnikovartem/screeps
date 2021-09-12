@@ -22,6 +22,7 @@ export abstract class Master {
 
   targetBeeCount: number = 1;
   waitingForBees: number = 0;
+  notify = true;
 
   oldestSpawn: number;
   beesAmount: number = 0;
@@ -39,6 +40,7 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
+    bee.creep.notifyWhenAttacked(this.notify);
     if (bee.state === states.idle)
       bee.state = this.boost ? states.boosting : states.chill;
     // bee.state = this.boost ? states.boosting : states.chill;

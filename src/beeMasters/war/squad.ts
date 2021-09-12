@@ -4,7 +4,7 @@ import type { Bee } from "../../bee";
 import type { SpawnOrder } from "../../Hive";
 
 import { states } from "../_Master";
-
+import { makeId } from "../../utils";
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
@@ -14,6 +14,7 @@ export class squadMaster extends SwarmMaster {
   knights: Bee[] = [];
   meetingPoint: RoomPosition = this.hive.pos;
   maxSpawns = 4;
+  roadLength = 0;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -36,6 +37,16 @@ export class squadMaster extends SwarmMaster {
     if (this.checkBeesSwarm()) {
       // if ever automated, then make priority 3
       if (this.knights.length < 2) {
+        if (this.healers.length < 2) {
+          let healerOrder: SpawnOrder = {
+            setup: Setups.healer,
+            amount: 2 - this.healers.length,
+            priority: 1,
+            master: this.ref,
+          };
+          this.wish(healerOrder, this.ref + "_healer");
+        }
+
         let tankOrder: SpawnOrder = {
           setup: Setups.knight,
           amount: 2 - this.knights.length,
@@ -43,16 +54,6 @@ export class squadMaster extends SwarmMaster {
           master: this.ref,
         };
         this.wish(tankOrder, this.ref + "_knight");
-      }
-
-      if (this.healers.length < 2) {
-        let healerOrder: SpawnOrder = {
-          setup: Setups.healer,
-          amount: 2 - this.healers.length,
-          priority: 1,
-          master: this.ref,
-        };
-        this.wish(healerOrder, this.ref + "_healer");
       }
       if (this.knights.length === 2 && this.healers.length === 2)
         _.forEach(this.bees, (bee) => bee.state = states.chill);
@@ -105,7 +106,18 @@ export class squadMaster extends SwarmMaster {
 
       needsHealing = knight1.hits < knight1.hitsMax || (knight2 && knight2.hits < knight2.hitsMax);
       if (target) {
-        ans1 = knight1.attack(target, { returnData: nextPos, ignoreCreeps: false });
+        let miningMode = target instanceof StructurePowerBank;
+        if (miningMode) {
+          if (!this.roadLength)
+            this.roadLength = Game.time - knight1.creep.memory.born;
+          let attack = (knight1.getBodyParts(ATTACK) + (knight2 ? knight2.getBodyParts(ATTACK) : 0)) * 24 // 30/15*12
+          if (this.roadLength >= target.hits / attack - 30)
+            target.pos.createFlag(Math.ceil((<StructurePowerBank>target).power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
+        }
+
+        if (!miningMode || knight1.hits > knight1.getBodyParts(ATTACK) * 15)
+          ans1 = knight1.attack(target, { returnData: nextPos, ignoreCreeps: false });
+
         if (knight2) {
           if (nextPos.nextPos)
             newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => knight2!.pos.isNearTo(p)
@@ -115,7 +127,8 @@ export class squadMaster extends SwarmMaster {
             knight2.creep.move(knight2.pos.getDirectionTo(newPos));
           }
           if (knight2.pos.isNearTo(target) || !newPos)
-            ans2 = knight2.attack(target, { ignoreCreeps: false });
+            if (!miningMode || knight2.hits > knight2.getBodyParts(ATTACK) * 15)
+              ans2 = knight2.attack(target, { ignoreCreeps: false });
         }
       } else if (!needsHealing) {
         ans1 = knight1.goRest(this.order.pos, { returnData: nextPos });
@@ -145,6 +158,7 @@ export class squadMaster extends SwarmMaster {
           healer2.goTo(knight1.pos, { ignoreCreeps: false });
       }
     }
+
     _.forEach(this.healers, (healer) => {
       let healed = false;
       _.forEach(this.healers.concat(this.knights), (b) => {

@@ -1,3 +1,4 @@
+import { makeId } from "./utils";
 import { profile } from "./profiler/decorator";
 
 export type RoomSetup = { [key in BuildableStructureConstant]?: { "pos": { "x": number, "y": number }[] } };
@@ -390,8 +391,11 @@ export class RoomPlanner {
             if (constructions < 10) {
               let place = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_RAMPART)[0];
               if (place && sType !== STRUCTURE_RAMPART) {
-                if ((<OwnedStructure>place).my)
-                  place.destroy();
+                if ((<OwnedStructure>place).my) {
+                  if (sType !== STRUCTURE_SPAWN)
+                    place.destroy();
+                } else
+                  place.pos.createFlag(makeId(4), COLOR_GREY, COLOR_RED);
               } else {
                 sum += CONSTRUCTION_COST[sType];
                 pos.createConstructionSite(sType);

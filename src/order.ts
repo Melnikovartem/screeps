@@ -11,6 +11,7 @@ import type { Master } from "./beeMasters/_Master";
 import type { Hive } from "./Hive";
 import { puppetMaster } from "./beeMasters/civil/puppet";
 import { annexMaster } from "./beeMasters/civil/annexer";
+import { pickupMaster } from "./beeMasters/civil/pickup";
 import { claimerMaster } from "./beeMasters/civil/claimer";
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
@@ -81,7 +82,7 @@ export class Order {
     let bestHive = validHives.pop()!; // if i don't have a single hive wtf am i doing
     let dist = this.pos.getRoomRangeTo(bestHive);
     _.forEach(validHives, (h) => {
-      let newDist = this.pos.getRoomRangeTo(h)
+      let newDist = this.pos.getRoomRangeTo(h);
       if (newDist < dist) {
         dist = newDist;
         bestHive = h;
@@ -146,11 +147,14 @@ export class Order {
       case COLOR_PURPLE:
         switch (this.flag.secondaryColor) {
           case COLOR_PURPLE:
-            this.hive = this.hive;
             if (!this.master)
               this.master = new annexMaster(this);
             if (this.hive.addAnex(this.pos.roomName) !== OK)
               this.acted = false;
+            break;
+          case COLOR_GREEN:
+            if (!this.master)
+              this.master = new pickupMaster(this);
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {

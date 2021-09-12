@@ -7,7 +7,6 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class puppetMaster extends Master {
-  target: RoomPosition;
   maxSpawns: number = 1;
   spawned: number = 0;
   order: Order;
@@ -16,18 +15,15 @@ export class puppetMaster extends Master {
     super(order.hive, "Puppet_" + order.ref);
 
     this.order = order;
-    this.target = order.pos;
   }
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    bee.creep.notifyWhenAttacked(false);
     this.spawned += 1;
   }
 
   update() {
     super.update();
-    this.target = this.order.pos;
 
     if (this.checkBees() && this.spawned < this.maxSpawns) {
       let order: SpawnOrder = {

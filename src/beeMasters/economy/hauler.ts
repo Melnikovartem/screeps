@@ -3,6 +3,7 @@ import type { excavationCell } from "../../cells/stage1/excavationCell";
 import { Setups } from "../../creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
+import { findOptimalResource } from "../../utils"
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -58,7 +59,7 @@ export class haulerMaster extends Master {
         this.roadUpkeepCost[bee.ref] = 0;
         this.targetMap[container.id] = {
           beeRef: bee.ref,
-          resource: this.findOptimalResource(container.store),
+          resource: findOptimalResource(container.store),
         };
       }
     });
@@ -77,15 +78,6 @@ export class haulerMaster extends Master {
     }
   }
 
-  findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
-    let ans: ResourceConstant = RESOURCE_ENERGY;
-    for (let resourceConstant in store) {
-      if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
-        ans = <ResourceConstant>resourceConstant;
-    }
-    return ans;
-  }
-
   run() {
     _.forEach(this.bees, (bee) => {
       if (bee.state === states.refill && bee.store.getFreeCapacity() === 0)
@@ -100,7 +92,7 @@ export class haulerMaster extends Master {
           this.roadUpkeepCost[bee.ref]++;
 
         if (bee.pos.isNearTo(this.cell.dropOff))
-          res = this.findOptimalResource(bee.store);
+          res = findOptimalResource(bee.store);
         let ans = bee.transfer(this.cell.dropOff, res);
 
         if (Apiary.logger && ans === OK && bee.target) {

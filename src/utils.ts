@@ -29,3 +29,12 @@ export function safeWrap(cycle: () => void, context: string): void {
   } else
     cycle();
 }
+
+export function findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
+  let ans: ResourceConstant = RESOURCE_ENERGY;
+  for (let resourceConstant in store) {
+    if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
+      ans = <ResourceConstant>resourceConstant;
+  }
+  return ans;
+}

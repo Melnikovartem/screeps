@@ -259,6 +259,7 @@ export class CustomConsole {
 
   printBees(masterName?: string) {
     _.forEach(_.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print), (s) => console.log(s));
+    return "";
   }
 
   formatRoom(roomNae: string) {
