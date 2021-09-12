@@ -234,6 +234,10 @@ export class Order {
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
               Apiary.planner.toActive(this.pos.roomName);
+              if (this.hive.roomName === this.pos.roomName)
+                this.hive.shouldRecalc = 1;
+              else
+                this.hive.shouldRecalc = 2;
             } else
               this.delete();
             break;
@@ -265,6 +269,8 @@ export class Order {
               if (del > 1)
                 this.pos.createFlag(this.ref + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
             }
+            break;
+          case COLOR_CYAN:
             break;
         }
         break;

@@ -1,4 +1,6 @@
+import { makeId } from "../utils";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
+import type { RoomSetup } from "../roomPlanner";
 
 export class CustomConsole {
   vis(framerate: number = 1) {
@@ -8,9 +10,16 @@ export class CustomConsole {
       Memory.settings.framerate = framerate;
   }
 
+  format(s: string) {
+    if (/\d/.exec(s) !== null)
+      return s.toUpperCase();
+    else
+      return s.toLowerCase();
+  }
+
   // some hand used functions
   terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
-    hiveName = hiveName.toUpperCase();
+    hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a>`;
@@ -23,7 +32,7 @@ export class CustomConsole {
       return `ERROR: NO VALID MODE @ ${hive.print}`;
 
     if (mode === "fill" && resource === RESOURCE_ENERGY && amount === Infinity)
-      amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 9900);
+      amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 11000);
 
     if (mode === "empty" && resource === RESOURCE_ENERGY)
       amount -= TERMINAL_ENERGY;
@@ -39,8 +48,8 @@ export class CustomConsole {
   }
 
   send(roomNameFrom: string, roomNameTo: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY) {
-    roomNameFrom = roomNameFrom.toUpperCase();
-    roomNameTo = roomNameTo.toUpperCase();
+    roomNameFrom = this.format(roomNameFrom);
+    roomNameTo = this.format(roomNameTo);
     let hiveFrom = Apiary.hives[roomNameFrom];
     if (!hiveFrom)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
@@ -70,7 +79,7 @@ export class CustomConsole {
     if (ans === OK && Apiary.logger)
       Apiary.logger.newTerminalTransfer(terminalFrom, terminalTo, amount, resource);
 
-    let info = `SEND FROM ${hiveFrom.print} TO ${hiveTo.print} \nRESOURCE ${resource.toUpperCase()}: ${amount
+    let info = ` SEND FROM ${hiveFrom.print} TO ${hiveTo.print} \nRESOURCE ${resource.toUpperCase()}: ${amount
       } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
     if (ans === OK)
       return "OK" + info;
@@ -87,7 +96,7 @@ export class CustomConsole {
   completeOrder(orderId: string, roomName?: string, am: number = Infinity) {
     let order = Game.market.getOrderById(orderId);
     if (!order)
-      return "ERROR: ORDER NOT FOUND";
+      return `ERROR: ORDER NOT FOUND`;
     if (order.type === ORDER_SELL && !am)
       return `AMOUNT NEEDED MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
 
@@ -115,7 +124,7 @@ export class CustomConsole {
       }
 
       if (!hive)
-        return `NO VALID HIVE FOUND`;
+        return `NO VALID HIVE FOUND${roomName ? " @ " + this.formatRoom(roomName) : ""}`;
       hiveName = hive.print;
       let terminal = hive.cells.storage!.terminal!;
       if (!terminal || !validateTerminal(terminal))
@@ -153,10 +162,10 @@ export class CustomConsole {
         return false;
       if (targetPrice < order.price)
         targetPrice = order.price;
-      sum += order.price;
-      ++count;
+      sum += order.price * order.amount;
+      count += order.amount;
       return anchor.getRoomRangeTo(order.roomName!) < 50;
-    });
+    })
     targetPrice = Math.min(targetPrice, (sum / count) * 1.2);
     if (orders.length)
       orders = orders.filter((order) => order.price < targetPrice * 0.9);
@@ -202,6 +211,38 @@ export class CustomConsole {
 
 
     return `OK @ ${hive.print}`;
+  }
+
+  update(roomName: string, cache: RoomSetup) {
+    if (!(roomName in Game.rooms))
+      return `CANNOT ACCESS ${this.formatRoom(roomName)}`
+    if (!Memory.cache.roomPlanner[roomName])
+      return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
+
+    if (!(roomName in Apiary.planner.activePlanning))
+      Apiary.planner.toActive(roomName);
+
+    for (let t in cache) {
+      let val: BuildableStructureConstant | null = <BuildableStructureConstant>t;
+      if (!(t in CONSTRUCTION_COST))
+        if (t === "null")
+          val = null;
+        else
+          continue;
+      for (let i in cache[<BuildableStructureConstant>t]!.pos) {
+        let pos = cache[<BuildableStructureConstant>t]!.pos[i];
+        Apiary.planner.addToPlan(pos, roomName, val, true);
+      }
+    }
+    let contr = Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
+    let pos = contr && [new RoomPosition(contr.x, contr.y + 1, roomName), new RoomPosition(contr.x, contr.y - 1, roomName)]
+      .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0];
+    if (pos)
+      pos.createFlag("change_" + roomName + "_" + makeId(4), COLOR_WHITE, COLOR_CYAN);
+    else
+      return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
+
+    return "OK";
   }
 
   printHives() {

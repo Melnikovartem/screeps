@@ -1,6 +1,6 @@
 import { profile } from "./profiler/decorator";
 
-export type RoomSetup = { [key in StructureConstant]?: { "pos": { "x": number, "y": number }[] } };
+export type RoomSetup = { [key in BuildableStructureConstant]?: { "pos": { "x": number, "y": number }[] } };
 
 type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[] }
 
@@ -19,7 +19,7 @@ const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amo
   [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } },
   [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } }
 }
-type Pos = { x: number, y: number };
+export type Pos = { x: number, y: number };
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
 const PATH_ARGS: FindPathOpts = {
@@ -256,8 +256,6 @@ export class RoomPlanner {
       plan[pos.x] = {};
     if (!plan[pos.x][pos.y])
       plan[pos.x][pos.y] = { s: undefined, r: false };
-
-
     if (sType === STRUCTURE_RAMPART)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (plan[pos.x][pos.y].s === undefined) {
@@ -266,13 +264,13 @@ export class RoomPlanner {
           return ERR_FULL;
         placed[sType]!++;
       }
-      plan[pos.x][pos.y] = { s: sType, r: false };
+      plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
     } else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (force) {
       if (plan[pos.x][pos.y].s)
         placed[plan[pos.x][pos.y].s!]!--;
-      plan[pos.x][pos.y] = { s: sType, r: false };
+      plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
       if (sType)
         placed[sType]!++;
     } else
@@ -312,9 +310,10 @@ export class RoomPlanner {
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (let i = 0; i < poss.length; ++i) {
-        this.addToPlan(poss[i], roomName, sType);
-      }
+      for (let i = 0; i < poss.length; ++i)
+        this.addToPlan(poss[i], roomName, sType, true);
+      if (!poss.length)
+        delete Memory.cache.roomPlanner[roomName][sType];
     }
   }
 

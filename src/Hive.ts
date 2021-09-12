@@ -12,6 +12,7 @@ import { excavationCell } from "./cells/stage1/excavationCell";
 import { laboratoryCell } from "./cells/stage1/laboratoryCell";
 
 import { observeCell } from "./cells/stage2/observeCell";
+import { powerCell } from "./cells/stage2/powerCell";
 
 import { builderMaster } from "./beeMasters/economy/builder";
 
@@ -35,6 +36,7 @@ interface hiveCells {
   dev?: developmentCell;
   lab?: laboratoryCell;
   observe?: observeCell;
+  power?: powerCell;
 }
 
 @profile
@@ -95,10 +97,18 @@ export class Hive {
 
       this.builder = new builderMaster(this);
       if (this.stage === 2) {
-        let obeserver = <StructureObserver | undefined>this.room.find(FIND_MY_STRUCTURES,
-          { filter: { structureType: STRUCTURE_OBSERVER } })[0];
+        let obeserver: StructureObserver | undefined;
+        let powerSpawn: StructurePowerSpawn | undefined;
+        _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
+          if (s.structureType === STRUCTURE_OBSERVER)
+            obeserver = s;
+          else if (s.structureType == STRUCTURE_POWER_SPAWN)
+            powerSpawn = s;
+        });
         if (obeserver)
           this.cells.observe = new observeCell(this, obeserver);
+        if (powerSpawn)
+          this.cells.power = new powerCell(this, powerSpawn)
         // TODO cause i haven' reached yet
       }
     }

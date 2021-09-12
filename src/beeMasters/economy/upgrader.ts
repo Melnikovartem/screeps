@@ -20,11 +20,11 @@ export class upgraderMaster extends Master {
   }
 
   recalculateTargetBee() {
-    this.fastModePossible = !!(this.cell.link || (this.hive.cells.storage && this.cell.pos.getRangeTo(this.hive.cells.storage.storage) < 4));
-
     let storageCell = this.hive.cells.storage;
     if (!storageCell)
       return;
+
+    this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
 
     this.targetBeeCount = 1;
     this.patternPerBee = 0;
@@ -64,9 +64,7 @@ export class upgraderMaster extends Master {
           priority: 8,
         };
 
-        let fastModePossible = this.cell.link || (this.hive.cells.storage && this.cell.pos.getRangeTo(this.hive.cells.storage.storage) < 4);
-
-        if (this.fastMode && fastModePossible)
+        if (this.fastModePossible)
           order.setup = Setups.upgrader.fast;
 
         if (this.cell.controller.ticksToDowngrade < 1500) {
@@ -76,7 +74,6 @@ export class upgraderMaster extends Master {
         }
 
         order.setup.patternLimit = this.patternPerBee;
-
         this.wish(order);
       }
     }

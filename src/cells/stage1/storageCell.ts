@@ -7,7 +7,7 @@ import { profile } from "../../profiler/decorator";
 export interface StorageRequest {
   ref: string;
   from: StructureLink | StructureTerminal | StructureStorage | StructureLab;
-  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab;
+  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab | StructurePowerSpawn;
   resource: ResourceConstant;
   amount: number;
   priority: 0 | 1 | 2 | 3 | 4 | 5;
@@ -164,8 +164,8 @@ export class storageCell extends Cell {
   run() {
     for (let k in this.requests) {
       let request = this.requests[k];
-      if (request.amount > 0 && !request.from.store[request.resource]
-        && !(this.master.manager && this.master.manager.store[request.resource]))
+      if (request.amount > 0 && !(<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource)
+        && !(this.master.manager && this.master.manager.store.getUsedCapacity(request.resource)))
         delete this.requests[k];
       else if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
         delete this.requests[k];

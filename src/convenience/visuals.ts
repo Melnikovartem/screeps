@@ -100,9 +100,17 @@ export class Visuals {
             case STRUCTURE_LAB:
               style.fill = "#91EFD8";
               break;
+            case STRUCTURE_LINK:
+              style.fill = "#8B59EF";
+              break;
+            case STRUCTURE_STORAGE: case STRUCTURE_TERMINAL:
+              style.fill = "#FBA31C";
+              style.opacity = 0.8;
+              break;
             case STRUCTURE_TOWER:
               style.fill = "#F988AE";
-              style.opacity = 0.45;
+              style.opacity = 0.8;
+              style.radius = 0.3;
               break;
             case STRUCTURE_SPAWN:
               style.fill = "#9E1393";
