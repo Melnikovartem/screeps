@@ -3,7 +3,7 @@ import type { Hive } from "../../Hive";
 
 import { resourceCell } from "./resourceCell";
 import { haulerMaster } from "../../beeMasters/economy/hauler";
-import { safeWrap } from "../../utils";
+import { safeWrap } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 import { DEVELOPING } from "../../settings";
 

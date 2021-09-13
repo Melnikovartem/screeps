@@ -1,9 +1,9 @@
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 
 import { states } from "../_Master";
-import { findOptimalResource } from "../../utils"
+import { findOptimalResource } from "../../abstract/utils"
 import { profile } from "../../profiler/decorator";
 
 @profile

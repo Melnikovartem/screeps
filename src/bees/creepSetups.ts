@@ -1,6 +1,6 @@
 // body generating idea from overmind kinda
 // i think i dont need custom ordered creeps
-import { profile } from "./profiler/decorator";
+import { profile } from "../profiler/decorator";
 
 interface BodySetup {
   fixed?: BodyPartConstant[];

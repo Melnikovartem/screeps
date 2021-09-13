@@ -15,7 +15,7 @@ import { pickupMaster } from "./beeMasters/civil/pickup";
 import { claimerMaster } from "./beeMasters/civil/claimer";
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
-import { makeId } from "./utils";
+import { makeId } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 

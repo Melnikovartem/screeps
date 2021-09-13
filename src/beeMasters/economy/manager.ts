@@ -1,8 +1,8 @@
 import type { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
-import type { Bee } from "../../bee";
+import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 

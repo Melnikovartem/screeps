@@ -1,6 +1,6 @@
-import { makeId } from "../utils";
+import { makeId } from "../abstract/utils";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
-import type { RoomSetup } from "../roomPlanner";
+import type { RoomSetup } from "../abstract/roomPlanner";
 
 export class CustomConsole {
   vis(framerate: number = 1) {

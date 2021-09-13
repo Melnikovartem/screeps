@@ -1,6 +1,6 @@
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { Bee } from "../../bee";
+import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
 import { states } from "../_Master";
 import { profile } from "../../profiler/decorator";

@@ -1,5 +1,5 @@
-import { profile } from "./profiler/decorator";
-import { Logger } from "./convenience/logger";
+import { profile } from "../profiler/decorator";
+import { Logger } from "../convenience/logger";
 
 @profile
 export class Mem {

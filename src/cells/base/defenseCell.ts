@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import type { Hive } from "../../Hive";
 import type { Order } from "../../order";
 import { profile } from "../../profiler/decorator";
-import { makeId } from "../../utils";
+import { makeId } from "../../abstract/utils";
 
 @profile
 export class defenseCell extends Cell {

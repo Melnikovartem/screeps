@@ -1,5 +1,5 @@
-import { Master, states } from "./beeMasters/_Master";
-import { profile } from "./profiler/decorator";
+import { Master, states } from "../beeMasters/_Master";
+import { profile } from "../profiler/decorator";
 
 @profile
 export class Bee {

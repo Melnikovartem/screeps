@@ -1,8 +1,8 @@
 // same as goverment intelligence
 // we collect data about enemy
 // in this case on battlefield
-import { profile } from "./profiler/decorator";
-import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "./settings";
+import { profile } from "../profiler/decorator";
+import { UPDATE_EACH_TICK, LOGGING_CYCLE } from "../settings";
 
 interface RoomInfo {
   lastUpdated: number,

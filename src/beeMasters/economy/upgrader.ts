@@ -1,7 +1,7 @@
 import { upgradeCell } from "../../cells/stage1/upgradeCell";
 
 import { posPrefix } from "../../order";
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";

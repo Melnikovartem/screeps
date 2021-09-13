@@ -1,5 +1,5 @@
 import { Cell } from "./cells/_Cell";
-import type { CreepSetup } from "./creepSetups";
+import type { CreepSetup } from "./bees/creepSetups";
 
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
@@ -16,7 +16,7 @@ import { powerCell } from "./cells/stage2/powerCell";
 
 import { builderMaster } from "./beeMasters/economy/builder";
 
-import { safeWrap } from "./utils";
+import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { DEVELOPING } from "./settings";
 

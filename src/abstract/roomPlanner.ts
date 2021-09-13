@@ -1,5 +1,5 @@
 import { makeId } from "./utils";
-import { profile } from "./profiler/decorator";
+import { profile } from "../profiler/decorator";
 
 export type RoomSetup = { [key in BuildableStructureConstant]?: { "pos": { "x": number, "y": number }[] } };
 

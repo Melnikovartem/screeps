@@ -1,9 +1,9 @@
 // manages colony untill storage lvl
 import type { developmentCell } from "../../cells/stage0/developmentCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
-import type { Bee } from "../../Bee";
+import type { Bee } from "../../bees/Bee";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 

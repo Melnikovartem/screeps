@@ -1,6 +1,6 @@
 import type { respawnCell } from "../../cells/base/respawnCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
 

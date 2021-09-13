@@ -1,4 +1,4 @@
-import { SAFE_DEV, LOGGING_CYCLE, DEVELOPING } from "./settings";
+import { SAFE_DEV, LOGGING_CYCLE, DEVELOPING } from "../settings";
 
 export function makeId(length: number): string {
   var result = '';

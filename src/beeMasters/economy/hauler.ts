@@ -1,9 +1,9 @@
 import type { excavationCell } from "../../cells/stage1/excavationCell";
 
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
-import { findOptimalResource } from "../../utils"
+import { findOptimalResource } from "../../abstract/utils"
 import { profile } from "../../profiler/decorator";
 
 @profile

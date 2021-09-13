@@ -1,4 +1,4 @@
-import { Mem } from "./memory";
+import { Mem } from "./abstract/memory";
 import { CustomConsole } from "./convenience/console";
 
 import "./Traveler/Traveler";

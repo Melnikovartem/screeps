@@ -1,7 +1,7 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
 
-import { Bee } from "../bee";
+import { Bee } from "../bees/bee";
 import { Master } from "./_Master";
 
 import { Order } from "../order";

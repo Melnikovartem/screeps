@@ -1,6 +1,6 @@
 // import { makeId } from "../utils/other";
 import { SpawnOrder, Hive } from "../Hive";
-import { Bee } from "../bee";
+import { Bee } from "../bees/bee";
 import { profile } from "../profiler/decorator";
 
 // some states that masters can use in different ways

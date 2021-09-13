@@ -1,6 +1,6 @@
 import type { _Apiary } from "./Apiary";
 import type { CustomConsole } from "./convenience/console";
-import type { RoomSetup } from "./roomPlanner";
+import type { RoomSetup } from "./abstract/roomPlanner";
 import type { states } from "./beeMasters/_Master";
 
 declare global {

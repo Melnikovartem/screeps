@@ -1,13 +1,13 @@
-import { Bee } from "./bee";
+import { Bee } from "./bees/bee";
 import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
-import { Intel } from "./intelligence";
+import { Intel } from "./abstract/intelligence";
 import { Logger } from "./convenience/logger";
-import { RoomPlanner } from "./RoomPlanner";
+import { RoomPlanner } from "./abstract/RoomPlanner";
 import { Visuals } from "./convenience/visuals";
 
-import { safeWrap } from "./utils";
+import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 

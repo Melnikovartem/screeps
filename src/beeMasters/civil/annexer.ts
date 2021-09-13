@@ -1,4 +1,4 @@
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 

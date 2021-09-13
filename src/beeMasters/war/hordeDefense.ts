@@ -1,5 +1,5 @@
 import { hordeMaster } from "./horde";
-import { Setups } from "../../creepSetups";
+import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";

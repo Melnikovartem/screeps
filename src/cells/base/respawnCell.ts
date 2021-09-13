@@ -3,7 +3,7 @@ import type { Hive } from "../../Hive";
 
 import { states } from "../../beeMasters/_Master";
 
-import { makeId } from "../../utils";
+import { makeId } from "../../abstract/utils";
 import { queenMaster } from "../../beeMasters/economy/queen";
 import { profile } from "../../profiler/decorator";
 

@@ -1,5 +1,5 @@
 import { Cell } from "../_Cell";
-import type { Bee } from "../../bee";
+import type { Bee } from "../../bees/bee";
 import type { Hive } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";

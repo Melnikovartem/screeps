@@ -1,5 +1,5 @@
 import type { Hive } from "../hive";
-import { SetupsNames } from "../creepSetups";
+import { SetupsNames } from "../bees/creepSetups";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
