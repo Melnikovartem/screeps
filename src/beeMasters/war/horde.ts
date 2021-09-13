@@ -12,7 +12,7 @@ export class hordeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.checkBees() && this.checkBeesSwarm()) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         setup: Setups.knight,
         amount: this.targetBeeCount - this.beesAmount,
@@ -24,14 +24,15 @@ export class hordeMaster extends SwarmMaster {
   }
 
   run() {
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
     _.forEach(this.bees, (bee) => {
+      Apiary.intel.getInfo(this.order.pos.roomName, 25);
       if (bee.pos.roomName !== this.order.pos.roomName) {
         let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
         if (enemies.length)
           bee.rangedAttack(enemies[0]);
-        bee.goTo(this.order.pos);
+        bee.goTo(this.order.pos, { allowSK: true });
       } else {
+        let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
         let target = bee.pos.findClosest(roomInfo.enemies);
         if (target) {
           if (bee.pos.getRangeTo(target) <= 3)

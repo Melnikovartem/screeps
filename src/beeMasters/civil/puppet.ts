@@ -1,31 +1,14 @@
 import { Setups } from "../../creepSetups"
-import { Master } from "../_Master";
-import type { Bee } from "../../bee";
-import type { Order } from "../../order";
+import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class puppetMaster extends Master {
-  maxSpawns: number = 1;
-  spawned: number = 0;
-  order: Order;
-
-  constructor(order: Order) {
-    super(order.hive, "Puppet_" + order.ref);
-
-    this.order = order;
-  }
-
-  newBee(bee: Bee) {
-    super.newBee(bee);
-    this.spawned += 1;
-  }
+export class puppetMaster extends SwarmMaster {
 
   update() {
     super.update();
-
-    if (this.checkBees() && this.spawned < this.maxSpawns) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         setup: Setups.puppet,
         amount: 1,

@@ -176,7 +176,7 @@ export class Traveler {
    */
 
   public static checkAvoid(roomName: string): boolean {
-    return Memory.rooms && Memory.rooms[roomName] && Memory.rooms[roomName].avoid;
+    return !!(Memory.cache.avoid[roomName] && Memory.cache.avoid[roomName] > Game.time);
   }
 
   /**
@@ -234,9 +234,9 @@ export class Traveler {
     if (!room) { return; }
     if (room.controller) {
       if (room.controller.owner && !room.controller.my) {
-        room.memory.avoid = 1;
+        Memory.cache.avoid[room.name] = Game.time + 10000;
       } else {
-        delete room.memory.avoid;
+        Memory.cache.avoid[room.name] = Game.time;
       }
     }
   }
@@ -588,8 +588,7 @@ export class Traveler {
     let count = 0;
     for (let roomName in Memory.empire.hostileRooms) {
       if (Memory.empire.hostileRooms[roomName]) {
-        if (!Memory.rooms[roomName]) { Memory.rooms[roomName] = {} as any; }
-        Memory.rooms[roomName].avoid = 1;
+        Memory.cache.avoid[roomName] = Game.time + 10000;
         count++;
       }
       if (cleanup) {

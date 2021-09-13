@@ -6,6 +6,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class downgradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+  maxSpawns = Infinity;
 
   update() {
     super.update();

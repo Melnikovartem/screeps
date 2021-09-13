@@ -81,6 +81,11 @@ export const Setups = {
       pattern: [CLAIM, MOVE],
       patternLimit: 2,
     }),
+    carapaced: new CreepSetup(SetupsNames.claimer, {
+      fixed: [CLAIM, MOVE],
+      pattern: [TOUGH, MOVE],
+      patternLimit: 10,
+    }),
   },
   queen: new CreepSetup(SetupsNames.queen, {
     pattern: [CARRY, CARRY, MOVE],

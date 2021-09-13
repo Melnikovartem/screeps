@@ -7,11 +7,6 @@ declare global {
   var Apiary: _Apiary;
   var A: CustomConsole;
 
-  interface RoomMemory {
-    // for TRAVELER
-    avoid?: any;
-  }
-
   interface CreepMemory {
     refMaster: string;
     born: number;
@@ -35,6 +30,7 @@ declare global {
     cache: {
       intellegence: any;
       roomPlanner: { [id: string]: RoomSetup }
+      avoid: { [id: string]: number };
     },
     masters: { [id: string]: any };
 

@@ -394,7 +394,7 @@ export class RoomPlanner {
                 if ((<OwnedStructure>place).my) {
                   if (sType !== STRUCTURE_SPAWN)
                     place.destroy();
-                } else
+                } else if (!place.pos.lookFor(LOOK_FLAGS).length)
                   place.pos.createFlag(makeId(4), COLOR_GREY, COLOR_RED);
               } else {
                 sum += CONSTRUCTION_COST[sType];

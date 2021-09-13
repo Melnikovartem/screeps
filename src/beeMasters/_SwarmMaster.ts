@@ -25,15 +25,20 @@ export abstract class SwarmMaster extends Master {
       this.order.flag.memory.info = this.spawned;
   }
 
+  checkBees(spawnCycle?: number) {
+    return this.checkBeesSwarm() && super.checkBees(spawnCycle);
+  }
+
   checkBeesSwarm() {
     if (this.spawned >= this.maxSpawns && !this.waitingForBees && !this.beesAmount)
       this.order.delete();
-    return this.spawned < this.maxSpawns
+    return this.spawned < this.maxSpawns;
   }
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    this.spawned += 1;
+    if (bee.creep.memory.born + 2 >= Game.time)
+      this.spawned += 1;
     this.order.flag.memory.info = this.spawned;
   }
 }

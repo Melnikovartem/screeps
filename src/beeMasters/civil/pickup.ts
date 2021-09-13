@@ -1,7 +1,5 @@
 import { Setups } from "../../creepSetups";
-import { Master } from "../_Master";
-import type { Bee } from "../../bee";
-import type { Order } from "../../order";
+import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 
 import { states } from "../_Master";
@@ -9,26 +7,11 @@ import { findOptimalResource } from "../../utils"
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class pickupMaster extends Master {
-  order: Order;
-  maxSpawns: number = 1;
-  spawned: number = 0;
-
-  constructor(order: Order) {
-    super(order.hive, "Pickup_" + order.ref);
-
-    this.order = order;
-  }
-
-  newBee(bee: Bee) {
-    super.newBee(bee);
-    this.spawned += 1;
-  }
+export class pickupMaster extends SwarmMaster {
 
   update() {
     super.update();
-
-    if (this.checkBees() && this.spawned < this.maxSpawns) {
+    if (this.checkBees()) {
       let order: SpawnOrder = {
         setup: Setups.pickup,
         amount: 1,
@@ -37,9 +20,6 @@ export class pickupMaster extends Master {
 
       this.wish(order);
     }
-
-    if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
-      this.order.delete();
   }
 
   run() {

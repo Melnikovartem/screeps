@@ -13,10 +13,9 @@ function getRoomCoorinates(roomName: string): number[] {
   let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
   let x = 0;
   let y = 0;
-  console.log(parsed);
   if (parsed) {
-    x = +parsed[2] * (parsed[1] === "W" ? -1 : 0);
-    y = +parsed[4] * (parsed[3] === "s" ? -1 : 0);
+    x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
+    y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
   }
   return [x, y];
 }
@@ -218,14 +217,8 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
       //i didn't rly calculate the E of this ans, but surely it is satisfactory
     }
 
-    if (0 % 2 === 1 && this.roomName === "E22S56" && pos.roomName !== "E21S57")
-      console.log(newDistance, this, pos);
-
     return distance <= 1;
   });
-
-  if (0 % 2 === 1 && this.roomName === "E22S56")
-    console.log("\n");
 
 
   return ans;

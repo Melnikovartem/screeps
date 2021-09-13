@@ -18,7 +18,7 @@ export class hordeDefenseMaster extends hordeMaster {
       return;
     }
 
-    if (this.checkBees() && this.checkBeesSwarm() && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
+    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
       let order: SpawnOrder = {
         setup: Setups.defender,
         amount: this.targetBeeCount - this.beesAmount,

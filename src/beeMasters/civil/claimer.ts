@@ -1,27 +1,13 @@
 import { Setups } from "../../creepSetups";
-import { Master } from "../_Master";
-import type { Order } from "../../order";
+import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class claimerMaster extends Master {
-  order: Order;
-  maxSpawns: number = 1;
-  spawned: number = 0;
-
-  constructor(order: Order) {
-    super(order.hive, "Claimer_" + order.ref);
-
-    this.order = order;
-  }
-
+export class claimerMaster extends SwarmMaster {
   update() {
     super.update();
-
-    if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
-      this.order.delete();
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
@@ -29,6 +15,9 @@ export class claimerMaster extends Master {
         amount: 1,
         priority: 6,
       };
+
+      if (this.hive.pos.getRoomRangeTo(this.order.pos) > 6)
+        order.setup = Setups.claimer.carapaced;
 
       this.wish(order);
       this.spawned += 1;
@@ -38,7 +27,7 @@ export class claimerMaster extends Master {
   run() {
     _.forEach(this.bees, (bee) => {
       if (bee.pos.roomName !== this.order.pos.roomName)
-        bee.goTo(this.order.pos);
+        bee.goTo(this.order.pos, { allowSK: this.hive.pos.getRoomRangeTo(this.order.pos) > 6 ? true : false });
       else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType === STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner) {

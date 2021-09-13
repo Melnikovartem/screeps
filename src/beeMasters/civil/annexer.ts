@@ -1,19 +1,12 @@
 import { Setups } from "../../creepSetups";
-import { Master } from "../_Master";
-import type { Order } from "../../order";
+import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class annexMaster extends Master {
-  order: Order;
-
-  constructor(order: Order) {
-    super(order.hive, "Annexer_" + order.ref);
-
-    this.order = order;
-  }
+export class annexMaster extends SwarmMaster {
+  maxSpawns = Infinity;
 
   update() {
     super.update();

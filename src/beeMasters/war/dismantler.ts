@@ -13,7 +13,7 @@ export class dismantlerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.checkBeesSwarm()) {
+    if (this.checkBees()) {
       let beeOrder: SpawnOrder = {
         setup: Setups.dismantler,
         amount: 1,

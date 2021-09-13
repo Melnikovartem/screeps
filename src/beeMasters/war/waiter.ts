@@ -9,7 +9,7 @@ export class waiterMaster extends SwarmMaster {
 
   update() {
     super.update();
-    if (this.checkBeesSwarm()) {
+    if (this.checkBees()) {
       let healerOrder: SpawnOrder = {
         setup: Setups.healer,
         amount: 1,
