@@ -152,10 +152,6 @@ export class Order {
             if (this.hive.addAnex(this.pos.roomName) !== OK)
               this.acted = false;
             break;
-          case COLOR_GREEN:
-            if (!this.master)
-              this.master = new pickupMaster(this);
-            break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
               if (!this.master)
@@ -288,6 +284,16 @@ export class Order {
           case COLOR_PURPLE:
             if (!this.master)
               this.master = new puppetMaster(this);
+            break;
+          case COLOR_GREEN:
+            if (!this.master) {
+              let master = new pickupMaster(this);
+              let regex = /^\d*/.exec(this.ref);
+              if (regex && regex[0])
+                master.maxSpawns = +regex[0];
+              master.targetBeeCount = master.maxSpawns;
+              this.master = master;
+            }
             break;
           case COLOR_CYAN:
             this.acted = false;

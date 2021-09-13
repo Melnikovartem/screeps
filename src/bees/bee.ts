@@ -100,7 +100,7 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.transfer(t!, resourceType, amount), opt);
   }
 
-  withdraw(t: Structure | Tombstone | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
+  withdraw(t: Structure | Tombstone | Ruin | undefined, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
     return this.actionWrap(t, () => this.creep.withdraw(t!, resourceType, amount), opt);
   }
 

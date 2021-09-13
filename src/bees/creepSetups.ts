@@ -65,8 +65,9 @@ export const SetupsNames = {
   queen: 'Bee queen',
   // War
   knight: 'European hornet',
+  tank: "Red paper wasp",
   dismantler: 'Dolichovespula arenaria',
-  healer: 'Bald-facedHornet',
+  healer: 'Bald-faced hornet',
   defender: 'Vespa affinis',
 }
 
@@ -144,10 +145,14 @@ export const Setups = {
     fixed: [RANGED_ATTACK, MOVE],
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE, MOVE],
   }),
+  tank: new CreepSetup(SetupsNames.tank, {
+    fixed: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE],
+    pattern: [ATTACK, MOVE],
+  }),
   dismantler: new CreepSetup(SetupsNames.dismantler, {
     pattern: [WORK, TOUGH, MOVE],
   }),
   healer: new CreepSetup(SetupsNames.healer, {
-    pattern: [TOUGH, HEAL, MOVE],
+    pattern: [HEAL, MOVE],
   }),
 }
