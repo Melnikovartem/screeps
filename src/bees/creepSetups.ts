@@ -142,7 +142,7 @@ export const Setups = {
     patternLimit: 4,
   }),
   knight: new CreepSetup(SetupsNames.knight, {
-    fixed: [RANGED_ATTACK, MOVE],
+    fixed: [TOUGH, MOVE],
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE, MOVE],
   }),
   tank: new CreepSetup(SetupsNames.tank, {

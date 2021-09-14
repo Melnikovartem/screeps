@@ -61,7 +61,12 @@ export class Order {
 
       this.hive = this.findHive(filter);
     }
-    this.flag.memory = { hive: this.hive.roomName };
+    let newMemory: FlagMemory = { hive: this.hive.roomName };
+    if (this.flag.memory.info)
+      newMemory.info = this.flag.memory.info;
+    if (this.flag.memory.repeat)
+      newMemory.info = this.flag.memory.repeat;
+    this.flag.memory = newMemory;
   }
 
   findHive(filter: (h: Hive) => boolean = () => true): Hive {

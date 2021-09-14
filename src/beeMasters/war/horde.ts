@@ -1,5 +1,6 @@
 import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
+import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
@@ -23,32 +24,40 @@ export class hordeMaster extends SwarmMaster {
     }
   }
 
+  attackOrFlee(bee: Bee, target: Creep | Structure) {
+    if (bee.pos.getRangeTo(target) <= 3)
+      bee.rangedAttack(target);
+    else if (bee.hits === bee.hitsMax)
+      bee.rangedAttack(target);
+    if (bee.pos.getRangeTo(target) < 3 && target instanceof Creep || bee.hits <= bee.hitsMax * 0.7) {
+      let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
+        let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
+        if (ans === 0)
+          ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+        return ans < 0 ? curr : prev;
+      });
+      if (open)
+        bee.goTo(open);
+      return ERR_BUSY;
+    }
+    return OK;
+  }
+
   run() {
     _.forEach(this.bees, (bee) => {
       Apiary.intel.getInfo(this.order.pos.roomName, 25);
       if (bee.pos.roomName !== this.order.pos.roomName) {
         let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
+        let ans: number = OK;
         if (enemies.length)
-          bee.rangedAttack(enemies[0]);
-        bee.goTo(this.order.pos, { allowSK: true });
+          ans = this.attackOrFlee(bee, enemies[0]);
+        if (ans === OK)
+          bee.goTo(this.order.pos, { allowSK: true });
       } else {
         let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
         let target = bee.pos.findClosest(roomInfo.enemies);
         if (target) {
-          if (bee.pos.getRangeTo(target) <= 3)
-            bee.rangedAttack(target, { movingTarget: true });
-          else if (bee.hits === bee.hitsMax)
-            bee.rangedAttack(target);
-          if (bee.pos.getRangeTo(target) < 3 && target instanceof Creep || bee.hits <= bee.hitsMax * 0.7) {
-            let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
-              let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
-              if (ans === 0)
-                ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
-              return ans < 0 ? curr : prev;
-            });
-            if (open)
-              bee.goTo(open);
-          }
+          this.attackOrFlee(bee, target);
         } else
           bee.goRest(this.order.pos);
       }

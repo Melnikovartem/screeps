@@ -33,7 +33,7 @@ export class squadMaster extends SwarmMaster {
       this.healers[key] = Apiary.bees[this.healers[key].ref];
     this.healers = _.compact(this.healers);
 
-    if (this.checkBeesSwarm()) {
+    if (this.checkBees()) {
       // if ever automated, then make priority 3
 
       if (this.healers.length < 2) {
@@ -94,7 +94,6 @@ export class squadMaster extends SwarmMaster {
     let needsHealing: boolean | undefined;
 
     if (knight1 && knight1.state === states.work && !this.waitingForBees) {
-
       let roomInfo = Apiary.intel.getInfo(knight1.pos.roomName);
       let target: Structure | Creep | null = knight1.pos.findClosest(_.filter(roomInfo.enemies,
         (e) => (e.pos.getRangeTo(knight1!) < 4 || (knight1!.pos.roomName === this.order.pos.roomName
@@ -106,6 +105,7 @@ export class squadMaster extends SwarmMaster {
       needsHealing = knight1.hits < knight1.hitsMax || (knight2 && knight2.hits < knight2.hitsMax);
       if (!target)
         target = this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
+
       if (target) {
         let miningMode = target instanceof StructurePowerBank;
         if (miningMode) {
@@ -145,19 +145,8 @@ export class squadMaster extends SwarmMaster {
         }
       }
 
-      if (healer1) {
-        if (healer1.pos.isNearTo(knight1.pos) && ans1 === ERR_NOT_IN_RANGE)
-          healer1.creep.move(healer1.pos.getDirectionTo(knight1.pos));
-        else if (!healer1.pos.isNearTo(knight1.pos))
-          healer1.goTo(knight1.pos, { ignoreCreeps: false });
-      }
-      let knightTarget2 = knight2 ? knight2 : knight1;
-      if (healer2) {
-        if (healer2.pos.isNearTo(knightTarget2) && (knight2 ? ans2 : ans1) === ERR_NOT_IN_RANGE)
-          healer2.creep.move(healer2.pos.getDirectionTo(knightTarget2.pos));
-        else if (!healer2.pos.isNearTo(knightTarget2))
-          healer2.goTo(knight1.pos, { ignoreCreeps: false });
-      }
+      this.healerFollow(healer1, ans1, knight1.pos);
+      this.healerFollow(healer2, knight2 ? ans2 : ans1, (knight2 ? knight2 : knight1).pos);
     }
 
     _.forEach(this.healers, (healer) => {
@@ -189,5 +178,14 @@ export class squadMaster extends SwarmMaster {
           healer.goTo(this.order.pos);
       }
     });
+  }
+
+  healerFollow(healer: Bee | undefined, ans: number | undefined, pos: RoomPosition) {
+    if (!healer)
+      return;
+    if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE)
+      healer.creep.move(healer.pos.getDirectionTo(pos));
+    else if (!healer.pos.isNearTo(pos))
+      healer.goTo(pos, { ignoreCreeps: false });
   }
 }

@@ -29,7 +29,7 @@ export class dupletMaster extends SwarmMaster {
     if (this.healer && !Apiary.bees[this.healer.ref])
       delete this.healer;
 
-    if (this.checkBeesSwarm()) {
+    if (this.checkBees()) {
       if (!this.knight) {
         let knightOrder: SpawnOrder = {
           setup: Setups.defender,

@@ -1,4 +1,5 @@
-import { Master, states } from "../beeMasters/_Master";
+import { states } from "../beeMasters/_Master";
+import type { Master } from "../beeMasters/_Master";
 import { profile } from "../profiler/decorator";
 
 @profile
@@ -108,21 +109,25 @@ export class Bee {
     return this.actionWrap(t, () => this.creep.pickup(t!), opt);
   }
 
-  attack(t: Creep | Structure | PowerCreep | undefined, opt?: TravelToOptions): number {
+  attack(t: Creep | Structure | PowerCreep | undefined, opt: TravelToOptions = {}): number {
+    opt.movingTarget = true;
     return this.actionWrap(t, () => this.creep.attack(t!), opt);
   }
 
-  rangedAttack(t: Creep | Structure | PowerCreep | undefined, opt?: TravelToOptions): number {
+  rangedAttack(t: Creep | Structure | PowerCreep | undefined, opt: TravelToOptions = {}): number {
+    opt.movingTarget = true;
     return this.actionWrap(t, () => this.creep.rangedAttack(t!), opt, 3);
   }
 
-  heal(t: Creep | PowerCreep | Bee | undefined, opt?: TravelToOptions) {
+  heal(t: Creep | PowerCreep | Bee | undefined, opt: TravelToOptions = {}) {
+    opt.movingTarget = true;
     if (t instanceof Bee)
       t = t.creep;
     return this.actionWrap(t, () => this.creep.heal(<Creep | PowerCreep>t), opt);
   }
 
-  rangedHeal(t: Creep | PowerCreep | Bee | undefined, opt?: TravelToOptions) {
+  rangedHeal(t: Creep | PowerCreep | Bee | undefined, opt: TravelToOptions = {}) {
+    opt.movingTarget = true;
     if (t instanceof Bee)
       t = t.creep;
     return this.actionWrap(t, () => this.creep.rangedHeal(<Creep | PowerCreep>t), opt, 3);
