@@ -3,6 +3,7 @@ import { hordeMaster } from "./beeMasters/war/horde";
 import { downgradeMaster } from "./beeMasters/war/downgrader";
 import { dismantlerMaster } from "./beeMasters/war/dismantler";
 import { waiterMaster } from "./beeMasters/war/waiter";
+import { dupletMaster } from "./beeMasters/war/miningDuplet";
 import { squadMaster } from "./beeMasters/war/squad";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
@@ -132,7 +133,7 @@ export class Order {
             case COLOR_PURPLE:
               this.master = new downgradeMaster(this);
               break;
-            case COLOR_YELLOW:
+            case COLOR_BROWN:
               this.master = new dismantlerMaster(this);
               break;
             case COLOR_GREEN:
@@ -146,6 +147,9 @@ export class Order {
                 this.pos.createFlag("surrender_" + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
                 this.delete();
               }
+              break;
+            case COLOR_YELLOW:
+              this.master = new dupletMaster(this);
               break;
           }
         break;

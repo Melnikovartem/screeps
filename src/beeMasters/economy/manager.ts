@@ -40,7 +40,7 @@ export class managerMaster extends Master {
               : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
           }
         }
-      } else if (bee.state === states.chill) {
+      } else {
         bee.target = null;
         let targets: string[] = [];
         for (let k in this.cell.requests)

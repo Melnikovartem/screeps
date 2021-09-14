@@ -146,8 +146,9 @@ export const Setups = {
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE, MOVE],
   }),
   tank: new CreepSetup(SetupsNames.tank, {
-    fixed: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE],
+    fixed: [TOUGH, MOVE],
     pattern: [ATTACK, MOVE],
+    patternLimit: 20,
   }),
   dismantler: new CreepSetup(SetupsNames.dismantler, {
     pattern: [WORK, TOUGH, MOVE],

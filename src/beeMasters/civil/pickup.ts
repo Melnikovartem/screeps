@@ -15,7 +15,7 @@ export class pickupMaster extends SwarmMaster {
       let order: SpawnOrder = {
         setup: Setups.pickup,
         amount: 1,
-        priority: 1,
+        priority: 4,
       };
 
       this.wish(order);
@@ -29,14 +29,13 @@ export class pickupMaster extends SwarmMaster {
 
     let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
     if (this.order.pos.roomName in Game.rooms) {
-
-      target = this.order.pos.findInRange(FIND_RUINS, 1)[0];
+      target = this.order.pos.lookFor(LOOK_RUINS)[0];
       if (!target)
-        target = this.order.pos.findInRange(FIND_TOMBSTONES, 1)[0];
+        target = this.order.pos.lookFor(LOOK_TOMBSTONES)[0];
       if (!target)
-        target = this.order.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
+        target = this.order.pos.lookFor(LOOK_RESOURCES)[0];
       if (!target)
-        target = <StructureStorage>this.order.pos.findInRange(FIND_STRUCTURES, 1)
+        target = <StructureStorage>this.order.pos.lookFor(LOOK_STRUCTURES)
           .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
     }
 
@@ -74,7 +73,11 @@ export class pickupMaster extends SwarmMaster {
             }
           } else
             bee.state = states.chill;
+          break;
       }
+
+      // if (!target && bee.pos.roomName === this.order.pos.roomName && (this.order.pos.x !== this.hive.pos.x || this.order.pos.y !== this.hive.pos.y))
+      // this.order.flag.setPosition(this.hive.pos);
     });
   }
 }

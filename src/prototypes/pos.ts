@@ -8,7 +8,6 @@ interface RoomPosition {
   findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
 }
 
-// i wanted to do in in linear math, but then i remebered: FUCKING exits
 function getRoomCoorinates(roomName: string): number[] {
   let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
   let x = 0;
@@ -20,6 +19,7 @@ function getRoomCoorinates(roomName: string): number[] {
   return [x, y];
 }
 
+// i wanted to do in in linear math, but then i remebered: FUCKING exits
 RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition } | string, pathfind: boolean = false): number {
   let toRoom: string;
   if (pos instanceof Room)

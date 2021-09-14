@@ -90,7 +90,7 @@ export class storageCell extends Cell {
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
     let links = _.filter(this.links, (l) => !sendIn || this.linksState[l.id] === "idle").sort(
       (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1));
-    if (sendIn)
+    if (sendIn || !links.length)
       return links[0];
     else
       return links.reduce((prev, curr) => curr.cooldown < prev.cooldown ? curr : prev);
@@ -189,10 +189,10 @@ export class storageCell extends Cell {
 
       let amoundSend: number = 0;
       if (res in STORAGE_BALANCE) {
-        let closest = _.filter(Apiary.hives, (h) => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
+        let hives = _.filter(Apiary.hives, (h) => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
           && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[res]!)
-          .reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
-        if (closest) {
+        if (hives.length) {
+          let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
           let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;
           amoundSend = Math.min(amount, terminalTo.store.getFreeCapacity(res));
 

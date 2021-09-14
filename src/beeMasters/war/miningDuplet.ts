@@ -2,7 +2,9 @@ import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
+
 import { states } from "../_Master";
+import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
@@ -10,7 +12,9 @@ import { profile } from "../../profiler/decorator";
 export class dupletMaster extends SwarmMaster {
   healer: Bee | undefined;
   knight: Bee | undefined;
-  maxSpawns = 1;
+  maxSpawns = 2;
+  targetBeeCount = 2;
+  roadTime = 0;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -54,6 +58,15 @@ export class dupletMaster extends SwarmMaster {
     }
   }
 
+  healerFollow(healer: Bee | undefined, ans: number | undefined, pos: RoomPosition) {
+    if (!healer)
+      return;
+    if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE)
+      healer.creep.move(healer.pos.getDirectionTo(pos));
+    else if (!healer.pos.isNearTo(pos))
+      healer.goTo(pos, { ignoreCreeps: false });
+  }
+
   run() {
     let knight = this.knight;
     let healer = this.healer;
@@ -62,34 +75,38 @@ export class dupletMaster extends SwarmMaster {
         bee.goRest(this.hive.pos);
     });
 
+
     if (knight && healer) {
       knight.state = states.work;
       healer.state = states.work;
     }
 
-    _.forEach(this.bees, (bee) => {
-      // if reconstructed while they all spawned, but not met yet or one was lost
-      if (bee.state === states.chill)
-        bee.state = states.work;
-    });
-
     if (knight && knight.state === states.work) {
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
-      let target: Structure | Creep = <Structure | Creep>knight.pos.findClosest(_.filter(roomInfo.enemies,
-        (e) => (e.pos.getRangeTo(knight!) < 4 || (knight!.pos.roomName === this.order.pos.roomName)
-          && !(e instanceof Creep && e.owner.username === "Source Keeper"))));
-      let ans;
-      if (target)
-        ans = knight.attack(target);
-      else if (knight.hits === knight.hitsMax)
-        ans = knight.goRest(this.order.pos);
+      let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
+        && !(e instanceof Creep && e.owner.username === "Source Keeper")))
+      if (knight.pos.roomName === this.order.pos.roomName)
+        enemies = enemies.concat(this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK))
+      let target = knight.pos.findClosest(enemies);
 
-      if (healer) {
-        if (healer.pos.isNearTo(knight.pos) && ans === ERR_NOT_IN_RANGE)
-          healer.creep.move(healer.pos.getDirectionTo(knight.pos));
-        else if (!healer.pos.isNearTo(knight.pos))
-          healer.goTo(knight.pos);
-      }
+      let ans;
+      if (target) {
+        if (target instanceof StructurePowerBank) {
+          if (!this.roadTime)
+            this.roadTime = target!.pos.getTimeForPath(this.hive.pos);
+          let attack = knight.getBodyParts(ATTACK);
+          if (this.roadTime + (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 >= target.hits / attack
+            && !target!.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY).length)
+            target!.pos.createFlag(Math.ceil(target.power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
+
+          if (knight.hits > knight.hitsMax * 0.5)
+            ans = knight.attack(target);
+        } else
+          ans = knight.attack(target);
+      } else if (knight.hits === knight.hitsMax)
+        ans = knight.goRest(this.order.pos, { preferHighway: true });
+
+      this.healerFollow(this.healer, ans, knight.pos);
     }
 
     if (healer && healer.state === states.work) {

@@ -14,6 +14,7 @@ export class squadMaster extends SwarmMaster {
   knights: Bee[] = [];
   maxSpawns = 4;
   roadTime = 0;
+  targetBeeCount = 4;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -35,7 +36,6 @@ export class squadMaster extends SwarmMaster {
 
     if (this.checkBees()) {
       // if ever automated, then make priority 3
-
       if (this.healers.length < 2) {
         let healerOrder: SpawnOrder = {
           setup: Setups.healer,
@@ -54,9 +54,7 @@ export class squadMaster extends SwarmMaster {
         };
         this.wish(tankOrder, this.ref + "_knight");
       }
-      if (this.knights.length === 2 && this.healers.length === 2)
-        _.forEach(this.bees, (bee) => bee.state = states.chill);
-      else
+      if (this.knights.length !== 2 || this.healers.length !== 2)
         _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
   }
