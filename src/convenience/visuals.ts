@@ -34,6 +34,9 @@ export class Visuals {
       for (const name in Apiary.hives) {
         let stats = this.statsBattle(name);
         if (stats.length > 0) {
+          for (let i in stats)
+            for (let j in stats[i])
+              stats[i][j] = stats[i][j].slice(0, 11);
           battleInfo.push(["", name]);
           battleInfo = battleInfo.concat(stats);
         }

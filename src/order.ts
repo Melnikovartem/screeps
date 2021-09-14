@@ -3,13 +3,13 @@ import { hordeMaster } from "./beeMasters/war/horde";
 import { downgradeMaster } from "./beeMasters/war/downgrader";
 import { dismantlerMaster } from "./beeMasters/war/dismantler";
 import { waiterMaster } from "./beeMasters/war/waiter";
-import { dupletMaster } from "./beeMasters/war/miningDuplet";
 import { squadMaster } from "./beeMasters/war/squad";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
 import type { Master } from "./beeMasters/_Master";
 import type { Hive } from "./Hive";
+import { dupletMaster } from "./beeMasters/civil/miningDuplet";
 import { puppetMaster } from "./beeMasters/civil/puppet";
 import { annexMaster } from "./beeMasters/civil/annexer";
 import { pickupMaster } from "./beeMasters/civil/pickup";

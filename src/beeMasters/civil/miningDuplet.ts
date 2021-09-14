@@ -36,7 +36,7 @@ export class dupletMaster extends SwarmMaster {
     if (this.checkBees()) {
       if (!this.knight) {
         let knightOrder: SpawnOrder = {
-          setup: Setups.defender,
+          setup: Setups.tank,
           amount: 1,
           priority: 4,
           master: this.ref,
@@ -61,10 +61,15 @@ export class dupletMaster extends SwarmMaster {
   healerFollow(healer: Bee | undefined, ans: number | undefined, pos: RoomPosition) {
     if (!healer)
       return;
-    if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE)
+    if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE && healer.pos.roomName == pos.roomName)
       healer.creep.move(healer.pos.getDirectionTo(pos));
     else if (!healer.pos.isNearTo(pos))
       healer.goTo(pos, { ignoreCreeps: false });
+  }
+
+  callPickUp(power: number) {
+    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY).length)
+      this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
   }
 
   run() {
@@ -85,8 +90,14 @@ export class dupletMaster extends SwarmMaster {
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
       let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
         && !(e instanceof Creep && e.owner.username === "Source Keeper")))
-      if (knight.pos.roomName === this.order.pos.roomName)
-        enemies = enemies.concat(this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK))
+      if (knight.pos.roomName === this.order.pos.roomName) {
+        enemies = enemies.concat(this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK));
+        if (!enemies.length) {
+          let res = this.order.pos.lookFor(LOOK_RESOURCES)[0]
+          if (res)
+            this.callPickUp(res.amount);
+        }
+      }
       let target = knight.pos.findClosest(enemies);
 
       let ans;
@@ -95,10 +106,8 @@ export class dupletMaster extends SwarmMaster {
           if (!this.roadTime)
             this.roadTime = target!.pos.getTimeForPath(this.hive.pos);
           let attack = knight.getBodyParts(ATTACK);
-          if (this.roadTime + (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 >= target.hits / attack
-            && !target!.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY).length)
-            target!.pos.createFlag(Math.ceil(target.power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
-
+          if (this.roadTime + (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 >= target.hits / attack)
+            this.callPickUp(target.power)
           if (knight.hits > knight.hitsMax * 0.5)
             ans = knight.attack(target);
         } else

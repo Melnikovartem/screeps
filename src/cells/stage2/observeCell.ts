@@ -3,7 +3,6 @@ import type { Hive } from "../../Hive";
 
 import { STORAGE_BALANCE } from "../stage1/storageCell"
 
-import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -51,14 +50,25 @@ export class observeCell extends Cell {
       return;
 
     let power = <StructurePowerBank>Game.rooms[this.prevRoom].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
-    if (power) {
+    if (power && power.ticksToDecay > 1500) {
       let open = power.pos.getOpenPositions(true).length;
       let needed = Math.ceil(power.hits / (30 * 20) / power.ticksToDecay + 0.5);
-      let working = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_RED && f.secondaryColor === COLOR_YELLOW).length;
-      for (; working < Math.min(needed, open); ++working) {
-        let ans = power.pos.createFlag("mining_" + power.id + "_" + makeId(4), COLOR_RED, COLOR_ORANGE);
-        if (typeof ans === "string")
-          Game.flags[ans].memory = { hive: this.hive.roomName };
+      let flags = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_RED && f.secondaryColor === COLOR_YELLOW);
+      let working = flags.length;
+      let nums = [...Array(open).keys()];
+      _.forEach(flags, (f) => {
+        let regex = /^mining_\w*_(\d)/.exec(f.name);
+        if (regex) {
+          var index = nums.indexOf(+regex[1]);
+          if (index !== -1)
+            nums.splice(index, 1);
+        }
+      });
+      for (; working < Math.min(needed, open) && nums.length; ++working) {
+        let ref = "mining_" + power.id + "_" + nums.pop();
+        if (!Game.flags[ref]) {
+          power.pos.createFlag(ref, COLOR_RED, COLOR_YELLOW);
+        }
       }
     }
   }
