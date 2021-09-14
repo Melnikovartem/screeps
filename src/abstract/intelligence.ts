@@ -37,6 +37,8 @@ export class Intel {
 
     // it is cached after first check
     lag = lag ? lag : 0;
+    if (Apiary.useBucket)
+      lag = Math.max(4, lag);
     if (UPDATE_EACH_TICK) lag = 0;
     if (this.roomInfo[roomName].lastUpdated + lag >= Game.time)
       return this.roomInfo[roomName];

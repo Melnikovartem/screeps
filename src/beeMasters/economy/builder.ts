@@ -14,7 +14,7 @@ export class builderMaster extends Master {
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let constLen = this.hive.structuresConst.length;
     let constSum = this.hive.sumCost;
-    if (!storage || constSum === 0 && constLen === 0 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
+    if (!storage || constSum < 100 && constLen <= 1 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
       this.targetBeeCount = 0;
     else if ((constSum < 13000 && constLen < 10) || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
       this.targetBeeCount = 1;
@@ -27,14 +27,16 @@ export class builderMaster extends Master {
   update() {
     super.update();
     this.recalculateTargetBee();
-
     if (this.checkBees()) {
-      let order: SpawnOrder = {
-        setup: Setups.builder,
-        amount: this.targetBeeCount - this.beesAmount,
-        priority: 8,
-      };
-      this.wish(order);
+      this.recalculateTargetBee();
+      if (this.checkBees()) {
+        let order: SpawnOrder = {
+          setup: Setups.builder,
+          amount: this.targetBeeCount - this.beesAmount,
+          priority: 8,
+        };
+        this.wish(order);
+      }
     }
   }
 
@@ -67,7 +69,7 @@ export class builderMaster extends Master {
               if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
                 target = null;
               }
-              if (!target && !this.hive.structuresConst.length)
+              if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
                 this.hive.shouldRecalc = 2;
             }
 
@@ -77,13 +79,14 @@ export class builderMaster extends Master {
                 target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
                 if (!target)
                   target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
-                if (!target)
+                if (!target) {
                   for (let k = 0; k < this.hive.structuresConst.length; ++k)
                     if (this.hive.structuresConst[k].x == pos.x && this.hive.structuresConst[k].y == pos.y) {
                       this.hive.structuresConst.splice(k, 1);
                       break;
                     }
-                pos = bee.pos.findClosest(this.hive.structuresConst);
+                  pos = bee.pos.findClosest(this.hive.structuresConst);
+                }
               }
             }
 

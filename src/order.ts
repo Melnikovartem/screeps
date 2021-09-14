@@ -156,7 +156,8 @@ export class Order {
       case COLOR_PURPLE:
         switch (this.flag.secondaryColor) {
           case COLOR_PURPLE:
-            if (!this.master)
+            let bassboost = this.hive.room.find(FIND_FLAGS).filter((f) => f.color === COLOR_PURPLE && f.secondaryColor === COLOR_WHITE).length;
+            if (!this.master && !bassboost)
               this.master = new annexMaster(this);
             if (this.hive.addAnex(this.pos.roomName) !== OK)
               this.acted = false;
@@ -243,10 +244,11 @@ export class Order {
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
               Apiary.planner.toActive(this.pos.roomName);
-              if (this.hive.roomName === this.pos.roomName)
-                this.hive.shouldRecalc = 1;
-              else
-                this.hive.shouldRecalc = 2;
+              if (this.hive.shouldRecalc < 3)
+                if (this.hive.roomName === this.pos.roomName)
+                  this.hive.shouldRecalc = 1;
+                else
+                  this.hive.shouldRecalc = 2;
             } else
               this.delete();
             break;
@@ -265,13 +267,13 @@ export class Order {
               if (Apiary.planner.activePlanning[name].correct !== "ok")
                 del = 1;
             }
-            if (!del) {
+            if (!del || /^force/.exec(this.ref)) {
               for (let name in Apiary.planner.activePlanning) {
                 Apiary.planner.saveActive(name);
                 delete Apiary.planner.activePlanning[name];
               }
               if (!Object.keys(Apiary.planner.activePlanning).length)
-                del = 2
+                del = 2;
             }
             if (del) {
               this.delete();

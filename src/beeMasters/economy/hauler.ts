@@ -2,7 +2,6 @@ import type { excavationCell } from "../../cells/stage1/excavationCell";
 
 import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
-import type { SpawnOrder } from "../../Hive";
 import { findOptimalResource } from "../../abstract/utils"
 import { profile } from "../../profiler/decorator";
 
@@ -68,13 +67,11 @@ export class haulerMaster extends Master {
       this.recalculateTargetBee();
 
     if (this.checkBees()) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: Setups.hauler,
         amount: Math.max(1, this.targetBeeCount - this.beesAmount),
         priority: 6,
-      };
-
-      this.wish(order);
+      });
     }
   }
 

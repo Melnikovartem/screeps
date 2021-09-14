@@ -53,7 +53,7 @@ export class _Apiary {
 
   // update phase
   update() {
-    this.useBucket = Game.cpu.bucket > 500;
+    this.useBucket = Game.cpu.bucket > 1500 || Memory.settings.forceBucket > 0;
     Order.checkFlags();
     _.forEach(Apiary.orders, (order) => {
       if (order)

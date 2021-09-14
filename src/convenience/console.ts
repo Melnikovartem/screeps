@@ -3,11 +3,12 @@ import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import type { RoomSetup } from "../abstract/roomPlanner";
 
 export class CustomConsole {
-  vis(framerate: number = 1) {
-    if (Memory.settings.framerate)
+  vis(framerate?: number, force: number = 0) {
+    if (Memory.settings.framerate && framerate === undefined)
       Memory.settings.framerate = 0;
     else
-      Memory.settings.framerate = framerate;
+      Memory.settings.framerate = framerate ? framerate : (!Memory.settings.framerate ? 1 : 0);
+    Memory.settings.forceBucket = force;
   }
 
   format(s: string) {

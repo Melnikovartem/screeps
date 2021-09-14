@@ -9,7 +9,7 @@ export class Mem {
     if (!Memory.cache.intellegence) Memory.cache.intellegence = {};
     if (!Memory.cache.roomPlanner) Memory.cache.roomPlanner = {};
     if (!Memory.cache.avoid) Memory.cache.avoid = {};
-    if (!Memory.settings) Memory.settings = { framerate: 10 };
+    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0 };
 
     Logger.init();
   }
@@ -18,7 +18,7 @@ export class Mem {
     console.log("> > Memory wipe!");
     Memory.masters = {};
     Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {} };
-    Memory.settings = { framerate: 10 };
+    Memory.settings = { framerate: 10, forceBucket: 0 };
 
     Logger.init(true);
   }

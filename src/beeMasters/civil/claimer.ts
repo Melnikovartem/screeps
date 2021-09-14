@@ -27,7 +27,7 @@ export class claimerMaster extends SwarmMaster {
   run() {
     _.forEach(this.bees, (bee) => {
       if (bee.pos.roomName !== this.order.pos.roomName)
-        bee.goTo(this.order.pos, { allowSK: this.hive.pos.getRoomRangeTo(this.order.pos) > 6 ? true : false });
+        bee.goTo(this.order.pos);
       else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType === STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner) {

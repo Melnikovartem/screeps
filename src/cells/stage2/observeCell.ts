@@ -43,7 +43,7 @@ export class observeCell extends Cell {
     super.update();
     this.roomsToCheck = this.powerRooms;
 
-    if (!this.prevRoom)
+    if (!this.prevRoom || !(this.prevRoom in Game.rooms))
       return;
     let storage = this.hive.cells && this.hive.cells.storage && this.hive.cells.storage.storage;
     if (!storage || storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[RESOURCE_ENERGY]! / 2)
@@ -57,7 +57,7 @@ export class observeCell extends Cell {
       let working = flags.length;
       let nums = [...Array(open).keys()];
       _.forEach(flags, (f) => {
-        let regex = /^mining_\w*_(\d)/.exec(f.name);
+        let regex = /^power_\w*_(\d)/.exec(f.name);
         if (regex) {
           var index = nums.indexOf(+regex[1]);
           if (index !== -1)
@@ -74,7 +74,17 @@ export class observeCell extends Cell {
   }
 
   run() {
-    this.prevRoom = this.roomsToCheck[Math.floor(Math.random() * this.roomsToCheck.length)]
-    this.obeserver.observeRoom(this.prevRoom);
+    let index = 0;
+    if (this.prevRoom)
+      index = this.roomsToCheck.indexOf(this.prevRoom);
+
+    if (index < 0 || index >= this.roomsToCheck.length)
+      index = 0;
+
+    if (this.roomsToCheck.length > 0) {
+      this.prevRoom = this.roomsToCheck[index];
+      this.obeserver.observeRoom(this.prevRoom);
+    } else
+      this.prevRoom = undefined;
   }
 }

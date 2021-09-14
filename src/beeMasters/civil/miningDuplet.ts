@@ -1,7 +1,6 @@
 import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
-import type { SpawnOrder } from "../../Hive";
 
 import { states } from "../_Master";
 import { makeId } from "../../abstract/utils";
@@ -34,26 +33,22 @@ export class dupletMaster extends SwarmMaster {
       delete this.healer;
 
     if (this.checkBees()) {
-      if (!this.knight) {
-        let knightOrder: SpawnOrder = {
-          setup: Setups.tank,
-          amount: 1,
-          priority: 4,
-          master: this.ref,
-        };
-        knightOrder.setup.patternLimit = 10;
-        this.wish(knightOrder, this.ref + "_knight");
-      }
-      if (!this.healer) {
-        let healerOrder: SpawnOrder = {
+      if (!this.healer)
+        this.wish({
           setup: Setups.healer,
           amount: 1,
           priority: 4,
           master: this.ref,
-        };
-        healerOrder.setup.patternLimit = 2;
-        this.wish(healerOrder, this.ref + "_healer");
-      }
+        }, this.ref + "_healer");
+
+      if (!this.knight)
+        this.wish({
+          setup: Setups.tank,
+          amount: 1,
+          priority: 4,
+          master: this.ref,
+        }, this.ref + "_knight");
+
       _.forEach(this.bees, (bee) => bee.state = states.refill);
     }
   }

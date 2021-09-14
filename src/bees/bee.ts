@@ -89,7 +89,10 @@ export class Bee {
     return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
-  goTo(target: RoomPosition | RoomObject, opt?: TravelToOptions): number {
+  goTo(target: RoomPosition | RoomObject, opt: TravelToOptions = {}): number {
+    opt.allowSK = true;
+    if (Game.shard.name === "shard3")
+      opt.maxOps = 500
     return this.creep.travelTo(target, opt);
   }
 

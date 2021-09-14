@@ -143,7 +143,7 @@ export class RoomPlanner {
       jobs.push({
         context: "resource roads",
         func: () => {
-          let ans = this.connectWithRoad(anchor, f.pos);
+          let ans = this.connectWithRoad(anchor, f.pos, true);
           if (ans === ERR_FULL || ans === ERR_BUSY)
             return ans;
           this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
@@ -167,6 +167,7 @@ export class RoomPlanner {
               pos = p;
             return pos;
           });
+          console.log(pos);
           if (pos)
             this.connectWithRoad(anchor, pos);
           else
@@ -380,42 +381,51 @@ export class RoomPlanner {
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let cc = this.getCase({ structureType: sType, pos: { roomName: roomName }, hitsMax: 0 });
+      let toadd: RoomPosition[] = [];
+      let placed = 0;
       let positions = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (let i = 0; i < cc.amount && i < positions.length; ++i) {
+      for (let i = 0; i < positions.length; ++i) {
         let pos = new RoomPosition(positions[i].x, positions[i].y, roomName);
         let structure = <Structure<BuildableStructureConstant> | undefined>_.filter(pos.lookFor(LOOK_STRUCTURES),
           (s) => s.structureType === sType)[0];
         if (!structure) {
-          let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType === sType)[0];
-          if (!constructionSite) {
-            if (constructions < 10) {
+          if (constructions < 10) {
+            let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType === sType)[0];
+            if (!constructionSite) {
               let place = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_RAMPART)[0];
               if (place && sType !== STRUCTURE_RAMPART) {
                 if ((<OwnedStructure>place).my) {
-                  if (sType !== STRUCTURE_SPAWN)
-                    place.destroy();
+                  place.destroy();
                 } else if (!place.pos.lookFor(LOOK_FLAGS).length)
-                  place.pos.createFlag(makeId(4), COLOR_GREY, COLOR_RED);
-              } else {
-                sum += CONSTRUCTION_COST[sType];
-                pos.createConstructionSite(sType);
-                ans.push(pos);
-                constructions++;
-              }
+                  place.pos.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
+              } else
+                toadd.push(pos);
+            } else {
+              sum += constructionSite.progressTotal - constructionSite.progress;
+              ans.push(pos);
+              constructions++;
             }
-          } else {
-            sum += constructionSite.progressTotal - constructionSite.progress;
-            ans.push(pos);
-            constructions++;
           }
         } else if (structure) {
+          if (sType == STRUCTURE_SPAWN && roomName == "E12S55")
+            console.log(pos);
+          placed++;
           let heal = this.getCase(structure).heal;
           if ((structure.hits < heal * 0.8 && !constructions) || structure.hits < heal * 0.3) {
-            sum += Math.round((heal - structure.hits) / 100);
+            sum += Math.ceil((heal - structure.hits) / 100);
             ans.push(pos);
           }
         }
       }
+      for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < 10; ++i) {
+        sum += CONSTRUCTION_COST[sType];
+        if (sType === STRUCTURE_SPAWN)
+          toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
+        else
+          toadd[i].createConstructionSite(sType);
+        constructions++;
+      }
+
     }
     return { pos: ans, sum: sum };
   }

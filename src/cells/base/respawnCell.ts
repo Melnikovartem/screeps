@@ -26,7 +26,7 @@ export class respawnCell extends Cell {
 
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
-    if (Object.keys(this.spawns).length === 0)
+    if (!Object.keys(this.spawns).length)
       this.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
   };
 
@@ -45,10 +45,10 @@ export class respawnCell extends Cell {
 
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
-      if (order.priority < 4 && order.priority !== 1)
-        setup = order.setup.getBody(energyAvailable);
-      else
+      if (order.priority > 3 || order.priority === 1)
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable);
+      else
+        setup = order.setup.getBody(energyAvailable);
 
       if (setup.body.length) {
         let name = order.setup.name + " " + makeId(4);
@@ -71,7 +71,8 @@ export class respawnCell extends Cell {
           if (this.hive.spawOrders[sortedOrders[key].ref].amount === 0)
             delete this.hive.spawOrders[sortedOrders[key].ref];
         }
-      }
+      } else
+        break;
     }
   };
 }

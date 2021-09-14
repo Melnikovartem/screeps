@@ -75,7 +75,7 @@ export class Hive {
     this.pos = this.room.controller!.pos;
 
     this.stage = 0;
-    if (this.room.storage)
+    if (this.room.storage && this.room.storage.isActive())
       this.stage = 1;
 
     if (this.stage === 1 && this.room.controller!.level === 8)
@@ -125,7 +125,8 @@ export class Hive {
     if (!this.annexNames.includes(annexName))
       this.annexNames.push(annexName);
     if (annexName in Game.rooms) {
-      this.shouldRecalc = 2;
+      if (this.shouldRecalc < 3)
+        this.shouldRecalc = 3;
       return OK;
     } else
       return ERR_NOT_FOUND;
@@ -204,7 +205,7 @@ export class Hive {
     if (Game.time % 40 === 5 || this.shouldRecalc) {
       this.updateRooms();
       this.updateStructures();
-      if (this.shouldRecalc > 3) {
+      if (this.shouldRecalc > 2) {
         this.markResources();
         _.forEach(this.rooms, (r) => {
           if (!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length)

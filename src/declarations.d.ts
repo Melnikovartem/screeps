@@ -37,6 +37,7 @@ declare global {
     // some setting that i wan't to be able to change dynamically
     settings: {
       framerate: number,
+      forceBucket: number,
     }
 
     // for TRAVELER

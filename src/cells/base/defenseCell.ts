@@ -34,6 +34,9 @@ export class defenseCell extends Cell {
       if (roomInfo.enemies.length > 0 && !Apiary.defenseSwarms[roomName]
         && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
         let enemy = roomInfo.enemies[0];
+        let pos = enemy.pos.getPositionsInRange().filter((p) => !p.getEnteranceToRoom())[0];
+        if (!pos)
+          pos = enemy.pos;
         if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)
           return;
         let freeSwarms: Order[] = [];
@@ -57,9 +60,9 @@ export class defenseCell extends Cell {
         if (ans !== OK) {
           if ((enemy instanceof Creep && enemy.owner.username === "Invader")
             || enemy instanceof StructureInvaderCore)
-            ans = enemy.pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
+            ans = pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
           else if (enemy instanceof Creep)
-            ans = enemy.pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
+            ans = pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
           if (typeof ans === "string")
             Game.flags[ans].memory = { hive: this.hive.roomName };
         }

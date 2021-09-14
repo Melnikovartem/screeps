@@ -2,13 +2,14 @@ import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
+import { states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
 // most basic of bitches a horde full of wasps
 @profile
 export class hordeMaster extends SwarmMaster {
   // failsafe
-  maxSpawns: number = 10;
+  maxSpawns: number = 5;
 
   update() {
     super.update();
@@ -46,20 +47,25 @@ export class hordeMaster extends SwarmMaster {
   run() {
     _.forEach(this.bees, (bee) => {
       Apiary.intel.getInfo(this.order.pos.roomName, 25);
-      if (bee.pos.roomName !== this.order.pos.roomName) {
-        let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
-        let ans: number = OK;
-        if (enemies.length)
-          ans = this.attackOrFlee(bee, enemies[0]);
-        if (ans === OK)
-          bee.goTo(this.order.pos, { allowSK: true });
-      } else {
+      if (bee.state === states.work) {
+        if (bee.pos.roomName !== this.order.pos.roomName)
+          bee.state = states.chill;
         let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
         let target = bee.pos.findClosest(roomInfo.enemies);
         if (target) {
           this.attackOrFlee(bee, target);
         } else
           bee.goRest(this.order.pos);
+      } else {
+        let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
+        let ans: number = OK;
+        if (enemies.length)
+          ans = this.attackOrFlee(bee, enemies[0]);
+        if (ans === OK) {
+          bee.goTo(this.order.pos, { range: 5 });
+          if (bee.pos.getRangeTo(this.order.pos) <= 5)
+            bee.state = states.work;
+        }
       }
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
