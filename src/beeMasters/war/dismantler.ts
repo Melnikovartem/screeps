@@ -28,7 +28,7 @@ export class dismantlerMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
 
       if (bee.state === states.chill && bee.pos.isNearTo(this.order.pos)) {
         bee.state = states.work;

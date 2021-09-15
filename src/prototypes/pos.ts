@@ -1,4 +1,5 @@
 interface RoomPosition {
+  getRoomCoorinates(): [number, number, string, string];
   getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition } | string, pathfind?: boolean): number;
   getPositionsInRange(range?: number): RoomPosition[];
   getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
@@ -8,7 +9,7 @@ interface RoomPosition {
   findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
 }
 
-function getRoomCoorinates(roomName: string): number[] {
+function getRoomCoorinates(roomName: string): [number, number] {
   let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
   let x = 0;
   let y = 0;
@@ -17,6 +18,18 @@ function getRoomCoorinates(roomName: string): number[] {
     y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
   }
   return [x, y];
+}
+
+RoomPosition.prototype.getRoomCoorinates = function getRoomCoorinates() {
+  let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(this.roomName);
+  let x = 0;
+  let y = 0;
+  if (parsed) {
+    x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
+    y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
+    return [x, y, parsed[1], parsed[3]];
+  }
+  return [0, 0, "E", "S"];
 }
 
 // i wanted to do in in linear math, but then i remebered: FUCKING exits

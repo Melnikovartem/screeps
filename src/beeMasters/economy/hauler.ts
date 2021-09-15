@@ -76,7 +76,7 @@ export class haulerMaster extends Master {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       if (bee.state === states.refill && bee.store.getFreeCapacity() === 0)
         bee.state = states.work;
       if (bee.state === states.chill && bee.store.getUsedCapacity() > 0)

@@ -39,7 +39,7 @@ export class pickupMaster extends SwarmMaster {
           .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
     }
 
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       if (bee.store.getFreeCapacity() === 0)
         bee.state = states.fflush;
       else if (bee.store.getUsedCapacity() === 0)

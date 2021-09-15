@@ -21,7 +21,7 @@ export class waiterMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       bee.goRest(this.order.pos);
       let healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3),
         (beeTarget) => beeTarget.hits < beeTarget.hitsMax));

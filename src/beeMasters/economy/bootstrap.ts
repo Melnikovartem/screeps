@@ -22,8 +22,8 @@ export class bootstrapMaster extends Master {
     this.cell = developmentCell;
     this.recalculateTargetBee();
 
-    if (this.hive.roomName === "E13S56")
-      this.handAddedResources = [this.roomPos(22, 15), this.roomPos(15, 22, "E13S55")]
+    /* if (this.hive.roomName === "E13S56")
+      this.handAddedResources = [this.roomPos(22, 15), this.roomPos(15, 22, "E13S55")] */
   }
 
   roomPos(x: number, y: number, r?: string) {
@@ -59,7 +59,7 @@ export class bootstrapMaster extends Master {
     });
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
     if (this.hive.bassboost)
-      this.targetBeeCount = Math.min(this.targetBeeCount, 5);
+      this.targetBeeCount = Math.min(this.targetBeeCount, 10);
   }
 
   newBee(bee: Bee): void {
@@ -103,10 +103,7 @@ export class bootstrapMaster extends Master {
     _.forEach(this.cell.sources, (source) => {
       sourceTargetingCurrent[source.id] = 0;
     });
-    _.forEach(this.bees, (bee) => {
-      if (Game.cpu.bucket < 500 && Game.shard.name === "shard3")
-        return;
-
+    _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case states.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
@@ -121,34 +118,33 @@ export class bootstrapMaster extends Master {
         case states.chill:
           if (bee.pos.roomName === this.hive.roomName)
             bee.state = states.refill;
-
       }
 
-      if (bee.state === states.refill) {
-        let source: Source | null;
-
-        if (this.handAddedResources.length) {
-          let pos = this.handAddedResources[0];
-
-          if (bee.pos.roomName !== pos.roomName)
-            bee.goTo(pos);
-          else {
-            let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
-            target = pos.lookFor(LOOK_RUINS).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
-            if (!target)
-              target = pos.lookFor(LOOK_TOMBSTONES).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
-            if (!target)
-              target = pos.lookFor(LOOK_RESOURCES).filter((r) => r.resourceType === RESOURCE_ENERGY && r.amount > 0)[0];
-            if (!target)
-              target = <StructureStorage>pos.lookFor(LOOK_STRUCTURES)
-                .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
-            if (target) {
-              if (target instanceof Resource)
-                bee.pickup(target)
-              else
-                bee.withdraw(target, RESOURCE_ENERGY);
-            } else
-              this.handAddedResources.shift();
+      switch (bee.state) {
+        case states.refill:
+          let source: Source | null;
+          if (this.handAddedResources.length) {
+            let pos = this.handAddedResources[0];
+            if (bee.pos.roomName !== pos.roomName)
+              bee.goTo(pos);
+            else {
+              let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
+              target = pos.lookFor(LOOK_RUINS).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+              if (!target)
+                target = pos.lookFor(LOOK_TOMBSTONES).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+              if (!target)
+                target = pos.lookFor(LOOK_RESOURCES).filter((r) => r.resourceType === RESOURCE_ENERGY && r.amount > 0)[0];
+              if (!target)
+                target = <StructureStorage>pos.lookFor(LOOK_STRUCTURES)
+                  .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+              if (target) {
+                if (target instanceof Resource)
+                  bee.pickup(target)
+                else
+                  bee.withdraw(target, RESOURCE_ENERGY);
+              } else
+                this.handAddedResources.shift();
+            }
             return;
           }
 
@@ -176,101 +172,99 @@ export class bootstrapMaster extends Master {
             bee.state = states.chill;
             bee.target = null;
           }
-        }
-      }
+          break;
+        case states.work:
+          let target: Structure | ConstructionSite | null = null;
+          let workType: workTypes = "working";
 
-      if (bee.state === states.work) {
-        let target: Structure | ConstructionSite | null = null;
-        let workType: workTypes = "working";
-
-        if (bee.target) {
-          target = Game.getObjectById(bee.target);
-          if (target) {
-            if (target instanceof ConstructionSite)
-              workType = "build";
-            else if (target.structureType === STRUCTURE_CONTROLLER)
-              workType = "upgrade";
-            else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
-              || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
-              && (<StructureSpawn | StructureExtension | StructureTower>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
-              workType = "refill"; // also can be StructureStorage, but if i cast that it will be sad (different type of <Store>)
-            else if (target.hits < target.hitsMax)
-              workType = "repair";
-            else
-              target = null;
+          if (bee.target) {
+            target = Game.getObjectById(bee.target);
+            if (target) {
+              if (target instanceof ConstructionSite)
+                workType = "build";
+              else if (target.structureType === STRUCTURE_CONTROLLER)
+                workType = "upgrade";
+              else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
+                || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
+                && (<StructureSpawn | StructureExtension | StructureTower>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+                workType = "refill"; // also can be StructureStorage, but if i cast that it will be sad (different type of <Store>)
+              else if (target.hits < target.hitsMax)
+                workType = "repair";
+              else
+                target = null;
+            }
+            if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
+              this.hive.shouldRecalc = 2;
           }
-          if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
-            this.hive.shouldRecalc = 2;
-        }
 
-        if (!target) {
-          let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
-            (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-          target = bee.pos.findClosest(targets);
-          workType = "refill";
-        }
-
-        if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] === 0) {
-          target = this.cell.controller;
-          workType = "upgrade";
-        }
-
-        if (!target) {
-          let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
-          targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
-            (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-          target = bee.pos.findClosest(targets);
-          workType = "refill";
-        }
-
-        if (!target && this.hive.room.storage) {
-          target = this.hive.room.storage;
-          workType = "refill";
-        }
-
-        if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
-          let pos = bee.pos.findClosest(this.hive.structuresConst);
-          while (pos && !target) {
-            target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-            if (!target)
-              target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
-            else
-              workType = "build";
-            if (!target) {
-              for (let k = 0; k < this.hive.structuresConst.length; ++k)
-                if (this.hive.structuresConst[k].x == pos.x && this.hive.structuresConst[k].y == pos.y) {
-                  this.hive.structuresConst.splice(k, 1);
-                  break;
-                }
-              pos = bee.pos.findClosest(this.hive.structuresConst);
-            } else
-              workType = "repair";
+          if (!target) {
+            let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
+              (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+            target = bee.pos.findClosest(targets);
+            workType = "refill";
           }
-        }
 
-        if (!target) {
-          target = this.cell.controller;
-          workType = "upgrade";
-        }
+          if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] === 0) {
+            target = this.cell.controller;
+            workType = "upgrade";
+          }
 
-        let ans;
-        if (workType === "repair")
-          ans = bee.repair(<Structure>target);
-        else if (workType === "build")
-          ans = bee.build(<ConstructionSite>target);
-        else if (workType === "refill")
-          ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
-        else if (workType === "upgrade")
-          ans = bee.upgradeController(<StructureController>target);
-        if (ans === ERR_NOT_IN_RANGE)
-          bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+          if (!target) {
+            let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
+            targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
+              (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+            target = bee.pos.findClosest(targets);
+            workType = "refill";
+          }
 
-        count[workType] += 1;
-        bee.target = target.id;
+          if (!target && this.hive.room.storage) {
+            target = this.hive.room.storage;
+            workType = "refill";
+          }
+
+          if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
+            let pos = bee.pos.findClosest(this.hive.structuresConst);
+            while (pos && !target) {
+              target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+              if (!target)
+                target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
+              else
+                workType = "build";
+              if (!target) {
+                for (let k = 0; k < this.hive.structuresConst.length; ++k)
+                  if (this.hive.structuresConst[k].x == pos.x && this.hive.structuresConst[k].y == pos.y) {
+                    this.hive.structuresConst.splice(k, 1);
+                    break;
+                  }
+                pos = bee.pos.findClosest(this.hive.structuresConst);
+              } else
+                workType = "repair";
+            }
+          }
+
+          if (!target) {
+            target = this.cell.controller;
+            workType = "upgrade";
+          }
+
+          let ans;
+          if (workType === "repair")
+            ans = bee.repair(<Structure>target);
+          else if (workType === "build")
+            ans = bee.build(<ConstructionSite>target);
+          else if (workType === "refill")
+            ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
+          else if (workType === "upgrade")
+            ans = bee.upgradeController(<StructureController>target);
+          if (ans === ERR_NOT_IN_RANGE)
+            bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+
+          count[workType] += 1;
+          bee.target = target.id;
+          break;
+        case states.chill:
+          bee.goRest(this.hive.pos);
       }
-
-      if (bee.state === states.chill)
-        bee.goRest(this.hive.pos);
     });
 
     for (const sourceId in sourceTargetingCurrent)

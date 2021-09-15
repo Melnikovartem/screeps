@@ -38,7 +38,7 @@ export class minerMaster extends Master {
 
   run() {
     if (this.cell.operational)
-      _.forEach(this.bees, (bee) => {
+      _.forEach(this.activeBees, (bee) => {
         bee.state = states.work;
         if (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
           bee.state = states.chill;

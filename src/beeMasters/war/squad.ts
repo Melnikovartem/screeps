@@ -55,7 +55,7 @@ export class squadMaster extends SwarmMaster {
         this.wish(tankOrder, this.ref + "_knight");
       }
       if (this.knights.length !== 2 || this.healers.length !== 2)
-        _.forEach(this.bees, (bee) => bee.state = states.refill);
+        _.forEach(this.activeBees, (bee) => bee.state = states.refill);
     }
   }
 
@@ -65,7 +65,7 @@ export class squadMaster extends SwarmMaster {
     let healer1: Bee | undefined = this.healers[0];
     let healer2: Bee | undefined = this.healers[1];
 
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       if (bee.state === states.refill)
         bee.goRest(this.hive.pos);
     });
@@ -83,7 +83,7 @@ export class squadMaster extends SwarmMaster {
       }
     }
 
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       // if reconstructed while they all spawned, but not met yet or one was lost
       if (bee.state === states.chill && this.beesAmount < 4)
         bee.state = states.work;

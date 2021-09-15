@@ -25,7 +25,7 @@ export class claimerMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       if (bee.pos.roomName !== this.order.pos.roomName)
         bee.goTo(this.order.pos);
       else {

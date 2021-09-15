@@ -41,7 +41,7 @@ export class queenMaster extends Master {
     let targets: (StructureSpawn | StructureExtension)[] = _.map(this.cell.spawns);
     targets = _.filter(targets.concat(_.map(this.cell.extensions)), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case states.refill:
           if (bee.withdraw(storage, RESOURCE_ENERGY) === OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {

@@ -49,7 +49,7 @@ export class dupletMaster extends SwarmMaster {
           master: this.ref,
         }, this.ref + "_knight");
 
-      _.forEach(this.bees, (bee) => bee.state = states.refill);
+      _.forEach(this.activeBees, (bee) => bee.state = states.refill);
     }
   }
 
@@ -70,7 +70,7 @@ export class dupletMaster extends SwarmMaster {
   run() {
     let knight = this.knight;
     let healer = this.healer;
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       if (bee.state === states.refill)
         bee.goRest(this.hive.pos);
     });

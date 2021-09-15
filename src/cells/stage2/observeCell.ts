@@ -16,27 +16,21 @@ export class observeCell extends Cell {
     super(hive, "ObserveCell_" + hive.room.name);
     this.obeserver = obeserver;
 
-    let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(hive.roomName);
-    let x = 0;
-    let y = 0;
-    if (parsed) {
-      x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
-      y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
+    let [x, y, we, ns] = this.hive.pos.getRoomCoorinates();
 
-      let minx = Math.floor(x / 10) * 10;
-      let miny = Math.floor(y / 10) * 10;
-      let maxx = Math.ceil(x / 10) * 10;
-      let maxy = Math.ceil(y / 10) * 10;
+    let minx = Math.floor(x / 10) * 10;
+    let miny = Math.floor(y / 10) * 10;
+    let maxx = Math.ceil(x / 10) * 10;
+    let maxy = Math.ceil(y / 10) * 10;
 
-      for (let i = minx; i < maxx; ++i)
-        this.powerRooms.push(parsed[1] + i + parsed[3] + miny);
-      for (let i = minx; i < maxx; ++i)
-        this.powerRooms.push(parsed[1] + i + parsed[3] + maxy);
-      for (let j = miny; j < maxy; ++j)
-        this.powerRooms.push(parsed[1] + minx + parsed[3] + j);
-      for (let j = miny; j < maxy; ++j)
-        this.powerRooms.push(parsed[1] + maxx + parsed[3] + j);
-    }
+    for (let i = minx; i < maxx; ++i)
+      this.powerRooms.push(we + i + ns + miny);
+    for (let i = minx; i < maxx; ++i)
+      this.powerRooms.push(we + i + ns + maxy);
+    for (let j = miny; j < maxy; ++j)
+      this.powerRooms.push(we + minx + ns + j);
+    for (let j = miny; j < maxy; ++j)
+      this.powerRooms.push(we + maxx + ns + j);
   }
 
   update() {

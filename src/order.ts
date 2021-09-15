@@ -107,13 +107,13 @@ export class Order {
   }
 
   fixedName(name: string) {
-    if (this.ref !== name) {
-      let ans = this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
-      if (typeof ans == "string")
+    if (this.pos.roomName in Game.rooms) {
+      if (this.ref !== name) {
+        this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
         this.delete();
-      return ERR_INVALID_ARGS;
-    }
-    return OK;
+      }
+    } else
+      this.acted = false;
   }
 
   act() {
@@ -160,9 +160,24 @@ export class Order {
       case COLOR_PURPLE:
         switch (this.flag.secondaryColor) {
           case COLOR_PURPLE:
-            let bassboost = this.hive.room.find(FIND_FLAGS).filter((f) => f.color === COLOR_PURPLE && f.secondaryColor === COLOR_WHITE).length;
-            if (!this.master && !bassboost)
-              this.master = new annexMaster(this);
+            let getmaster = true;
+            if (!this.hive.bassboost) {
+              if (this.hive.room.find(FIND_FLAGS).filter((f) => f.color === COLOR_PURPLE && f.secondaryColor === COLOR_WHITE).length) {
+                this.acted = false;
+                break;
+              }
+            } else
+              getmaster = this.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
+
+            if (!this.master && getmaster) {
+              let [x, y] = this.pos.getRoomCoorinates();
+              x %= 10;
+              y %= 10;
+              if (4 <= x && x <= 6 && 4 <= y && y <= 6)
+                console.log("SK room");
+              else if (x > 0 && y > 0)
+                this.master = new annexMaster(this);
+            }
             if (this.hive.addAnex(this.pos.roomName) !== OK)
               this.acted = false;
             break;

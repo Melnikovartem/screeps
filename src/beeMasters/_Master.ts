@@ -27,6 +27,7 @@ export abstract class Master {
   oldestSpawn: number;
   beesAmount: number = 0;
   bees: { [id: string]: Bee } = {};
+  activeBees: Bee[] = [];
   boost: boolean = false;
 
   constructor(hive: Hive, ref: string) {
@@ -67,12 +68,11 @@ export abstract class Master {
 
   // first stage of decision making like do i need to spawn new creeps
   update() {
-    this.beesAmount = 0; // Object.keys(this.bees).length
-    for (const ref in this.bees) {
-      this.beesAmount += 1;
+    for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref])
         this.deleteBee(ref);
-    }
+    this.beesAmount = Object.keys(this.bees).length;
+    this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning)
   }
 
   wish(order: SpawnOrder, ref: string = this.ref) {

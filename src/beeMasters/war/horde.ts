@@ -45,7 +45,7 @@ export class hordeMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.activeBees, (bee) => {
       Apiary.intel.getInfo(this.order.pos.roomName, 25);
       if (bee.state === states.work) {
         if (bee.pos.roomName !== this.order.pos.roomName)

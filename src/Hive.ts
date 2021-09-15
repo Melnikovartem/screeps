@@ -102,7 +102,7 @@ export class Hive {
     else {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
-      // this.cells.excavation = new excavationCell(this);
+      this.cells.excavation = new excavationCell(this);
       this.cells.lab = new laboratoryCell(this);
 
       this.builder = new builderMaster(this);

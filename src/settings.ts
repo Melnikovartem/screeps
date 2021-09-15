@@ -1,5 +1,5 @@
-export const DEVELOPING = false;
-export const UPDATE_EACH_TICK = DEVELOPING;
+export const DEVELOPING = true;
+export const UPDATE_EACH_TICK = false;
 export const VISUALS_TRAVELER = false;
 export const PROFILER = DEVELOPING;
 
