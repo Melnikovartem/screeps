@@ -14,6 +14,8 @@ import { puppetMaster } from "./beeMasters/civil/puppet";
 import { annexMaster } from "./beeMasters/civil/annexer";
 import { pickupMaster } from "./beeMasters/civil/pickup";
 import { claimerMaster } from "./beeMasters/civil/claimer";
+import { skMaster } from "./beeMasters/civil/safeSK";
+
 import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 
 import { makeId } from "./abstract/utils";
@@ -39,9 +41,11 @@ export class Order {
     this.flag = flag;
     this.pos = flag.pos;
 
-    if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive])
+    if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive]) {
       this.hive = Apiary.hives[this.flag.memory.hive];
-    else {
+      if (!this.hive)
+        this.delete();
+    } else {
       let filter: (h: Hive) => boolean = (h) => h.stage >= 2;;
       switch (this.flag.color) {
         case COLOR_CYAN:
@@ -53,10 +57,9 @@ export class Order {
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE:
-          filter = (h) => h.stage >= 0;
+          filter = (_) => true;
           break;
       }
-
       this.hive = this.findHive(filter);
     }
     let newMemory: FlagMemory = { hive: this.hive.roomName };
@@ -152,6 +155,9 @@ export class Order {
             case COLOR_YELLOW:
               this.master = new dupletMaster(this);
               break;
+            case COLOR_CYAN:
+              this.master = new skMaster(this);
+              break;
             case COLOR_WHITE:
               this.fixedName(prefix.surrender + this.hive.roomName);
               break;
@@ -160,26 +166,26 @@ export class Order {
       case COLOR_PURPLE:
         switch (this.flag.secondaryColor) {
           case COLOR_PURPLE:
-            let getmaster = true;
-            if (!this.hive.bassboost) {
-              if (this.hive.room.find(FIND_FLAGS).filter((f) => f.color === COLOR_PURPLE && f.secondaryColor === COLOR_WHITE).length) {
-                this.acted = false;
-                break;
-              }
-            } else
-              getmaster = this.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
-
-            if (!this.master && getmaster) {
+            if (this.pos.getRoomRangeTo(this.hive) > 5) {
+              this.delete(true);
+              break;
+            }
+            if (!this.master) {
               let [x, y] = this.pos.getRoomCoorinates();
               x %= 10;
               y %= 10;
-              if (4 <= x && x <= 6 && 4 <= y && y <= 6)
-                console.log("SK room");
-              else if (x > 0 && y > 0)
+              if (4 <= x && x <= 6 && 4 <= y && y <= 6) {
+                if (x != 5 || y != 5)
+                  this.master = new skMaster(this);
+              } else if (x > 0 && y > 0)
                 this.master = new annexMaster(this);
             }
-            if (this.hive.addAnex(this.pos.roomName) !== OK)
+
+            if (this.hive.addAnex(this.pos.roomName) !== OK) {
+              if (!this.master)
+                this.master = new puppetMaster(this);
               this.acted = false;
+            }
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
@@ -329,12 +335,16 @@ export class Order {
             } else
               this.delete();
             break;
-          case COLOR_ORANGE:
+          case COLOR_YELLOW:
             this.fixedName(prefix.upgrade + this.hive.roomName);
             break;
         }
         break;
       case COLOR_YELLOW:
+        if (this.pos.getRoomRangeTo(this.hive) > 5) {
+          this.delete(true);
+          break;
+        }
         if (this.pos.roomName in Game.rooms) {
           let resource: Source | Mineral | undefined;
           switch (this.flag.secondaryColor) {
@@ -364,8 +374,8 @@ export class Order {
   }
 
   // what to do when delete if something neede
-  delete() {
-    if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
+  delete(force = false) {
+    if (!force && this.flag.memory.repeat && this.flag.memory.repeat > 0) {
       if (!Memory.log.orders)
         Memory.log.orders = {};
       if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
@@ -414,6 +424,10 @@ export class Order {
                 newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
               }
             }
+            break;
+          case COLOR_PURPLE:
+            if (!force)
+              return;
             break;
         }
         break;

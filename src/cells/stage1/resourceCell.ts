@@ -68,8 +68,11 @@ export class resourceCell extends Cell {
 
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
-    if ((!this.container && !this.link) || (this.resource instanceof Mineral && !this.extractor))
+
+    if (this.container && !Game.getObjectById(this.container.id)) {
+      this.container = undefined;
       this.operational = false;
+    }
 
     if (this.resource instanceof Mineral && Game.time % 10 === 0)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;

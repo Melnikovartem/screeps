@@ -81,8 +81,12 @@ export class Hive {
   constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
-    let pos = this.getPos("hive");
-    this.pos = pos ? pos : this.room.controller!.pos;
+
+    if (!Memory.cache.positions[this.roomName]) {
+      let pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y }
+      Memory.cache.positions[this.roomName] = { hive: pos, storage: pos, spawn: pos, lab: pos }
+    }
+    this.pos = this.getPos("hive");
 
     this.stage = 0;
     if (this.room.storage && this.room.storage.isActive())
@@ -129,11 +133,6 @@ export class Hive {
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
-
-    if (!Memory.cache.positions[this.roomName]) {
-      let pos = { x: this.pos.x, y: this.pos.y }
-      Memory.cache.positions[this.roomName] = { hive: pos, storage: pos, spawn: pos, lab: pos }
-    }
   }
 
   addAnex(annexName: string) {
@@ -168,12 +167,16 @@ export class Hive {
       });
     });
 
-    _.forEach(this.room.find(FIND_MINERALS), (s) => {
-      if (!Game.flags["mine_" + s.id]) {
-        let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
-        if (typeof flag === "string")
-          Game.flags[flag].memory.hive = this.roomName;
-      }
+    _.forEach(this.rooms, (room) => {
+      _.forEach(room.find(FIND_MINERALS), (s) => {
+        if (room.name !== this.roomName && !s.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()).length)
+          return;
+        if (!Game.flags["mine_" + s.id]) {
+          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+          if (typeof flag === "string")
+            Game.flags[flag].memory.hive = this.roomName;
+        }
+      });
     });
   }
 

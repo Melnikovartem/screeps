@@ -1,6 +1,6 @@
 // import { makeId } from "../utils/other";
-import { SpawnOrder, Hive } from "../Hive";
-import { Bee } from "../bees/bee";
+import type { SpawnOrder, Hive } from "../Hive";
+import type { Bee } from "../bees/bee";
 import { profile } from "../profiler/decorator";
 
 // some states that masters can use in different ways
@@ -11,7 +11,10 @@ export enum states {
   fflush = 3,
   refill = 4,
   boosting = 5,
+  flee = 6,
 }
+
+const MASTER_PREFIX = "master"
 
 // i will need to do something so i can build up structure from memory
 @profile
@@ -32,7 +35,7 @@ export abstract class Master {
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
-    this.ref = "master" + ref;
+    this.ref = MASTER_PREFIX + ref;
 
     this.oldestSpawn = -1;
 

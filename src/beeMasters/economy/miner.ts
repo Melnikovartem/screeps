@@ -39,45 +39,48 @@ export class minerMaster extends Master {
   run() {
     if (this.cell.operational)
       _.forEach(this.activeBees, (bee) => {
-        bee.state = states.work;
-        if (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
-          bee.state = states.chill;
-        if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0))
-          bee.state = states.chill;
-        if ((this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType) === 0)
-          || (!this.cell.link && this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType) === 0))
-          bee.state = states.chill;
-
-        if (bee.state === states.work) {
-          if (this.cell.pos.isFree() && bee.pos !== this.cell.pos)
-            bee.goTo(this.cell.pos);
-          else
-            bee.harvest(this.cell.resource);
-          if (bee.creep.store[this.cell.resourceType] >= 25)
-            bee.state = states.fflush;
-        }
-
-        if (bee.state === states.fflush) {
-          let target: StructureLink | StructureContainer | undefined;
-          if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
-            target = this.cell.link;
-          else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
-            target = this.cell.container;
-
-          bee.transfer(target, this.cell.resourceType);
-
-          if (!target)
+        if (bee.state === states.work)
+          if (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
             bee.state = states.chill;
-        }
+          else if (this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0))
+            bee.state = states.chill;
 
-        if (bee.state === states.chill && this.cell.resourceType === RESOURCE_ENERGY) {
-          let target = this.cell.container;
-          if (target && target.hits < target.hitsMax) {
-            if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-              bee.repair(target);
-            if (bee.store.getUsedCapacity(RESOURCE_ENERGY) < 24 && target.store.getUsedCapacity(RESOURCE_ENERGY) >= 18)
-              bee.withdraw(target, RESOURCE_ENERGY, 18);
-          }
+
+        switch (bee.state) {
+          case states.work:
+            if (this.cell.pos.isFree() && bee.pos.isNearTo(this.cell.pos))
+              bee.goTo(this.cell.pos);
+            bee.harvest(this.cell.resource);
+            if (bee.creep.store[this.cell.resourceType] < 25)
+              break;
+
+            let target;
+            if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
+              target = this.cell.link;
+            else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
+              target = this.cell.container;
+            bee.transfer(target, this.cell.resourceType);
+            if (target)
+              break;
+
+          case states.chill:
+            if (this.cell.resourceType === RESOURCE_ENERGY) {
+              let target = this.cell.container;
+              if (target && target.hits < target.hitsMax) {
+                if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+                  bee.repair(target);
+                if (bee.store.getUsedCapacity(RESOURCE_ENERGY) < 24 && target.store.getUsedCapacity(RESOURCE_ENERGY) >= 18)
+                  bee.withdraw(target, RESOURCE_ENERGY, 18);
+              }
+            }
+            bee.state = states.work;
+            break;
+          case states.flee:
+            let lair = this.cell.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
+            if (lair && lair.pos.getRangeTo(bee) < 6)
+              bee.goTo(this.hive.pos);
+            bee.state = states.work;
+            break;
         }
       });
   }

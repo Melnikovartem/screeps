@@ -1,10 +1,10 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
 
-import { Bee } from "../bees/bee";
 import { Master } from "./_Master";
 
-import { Order } from "../order";
+import type { Bee } from "../bees/bee";
+import type{ Order } from "../order";
 import { profile } from "../profiler/decorator";
 
 @profile

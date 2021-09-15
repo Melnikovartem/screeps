@@ -30,41 +30,45 @@ export class defenseCell extends Cell {
 
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
-      let roomInfo = Apiary.intel.getInfo(roomName, 10);
-      if (roomInfo.enemies.length > 0 && !Apiary.defenseSwarms[roomName]
-        && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
+      let roomInfo = Apiary.intel.getInfo(roomName, 25);
+      if (roomInfo.enemies.length > 0) {
         let enemy = roomInfo.enemies[0];
-        let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
-        if (!pos)
-          pos = enemy.pos;
+        let [x, y] = enemy.pos.getRoomCoorinates();
+        if ((4 <= x && x <= 6 && 4 <= y && y <= 6) && enemy instanceof Creep && enemy.owner.username === "Source Keeper")
+          return;
         if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)
           return;
-        let freeSwarms: Order[] = [];
-        for (const roomDefName in Apiary.defenseSwarms) {
-          let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
-          if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-            && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, (bee) => bee.hits >= bee.hitsMax * 0.5).length > 0)
-            freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
-        }
-        let ans: number | string | undefined;
-        if (freeSwarms.length) {
-          let swarm = freeSwarms.reduce((prev, curr) => prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
-          if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
-            ans = swarm.flag.setPosition(roomInfo.enemies[0].pos);
-            if (ans === OK) {
-              Apiary.defenseSwarms[roomName] = swarm;
-              delete Apiary.defenseSwarms[swarm.pos.roomName];
+        if (!Apiary.defenseSwarms[roomName] && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
+          let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
+          if (!pos)
+            pos = enemy.pos;
+          let freeSwarms: Order[] = [];
+          for (const roomDefName in Apiary.defenseSwarms) {
+            let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
+            if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
+              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, (bee) => bee.hits >= bee.hitsMax * 0.5).length > 0)
+              freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
+          }
+          let ans: number | string | undefined;
+          if (freeSwarms.length) {
+            let swarm = freeSwarms.reduce((prev, curr) => prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
+            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
+              ans = swarm.flag.setPosition(roomInfo.enemies[0].pos);
+              if (ans === OK) {
+                Apiary.defenseSwarms[roomName] = swarm;
+                delete Apiary.defenseSwarms[swarm.pos.roomName];
+              }
             }
           }
-        }
-        if (ans !== OK) {
-          if ((enemy instanceof Creep && enemy.owner.username === "Invader")
-            || enemy instanceof StructureInvaderCore)
-            ans = pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
-          else if (enemy instanceof Creep)
-            ans = pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
-          if (typeof ans === "string")
-            Game.flags[ans].memory = { hive: this.hive.roomName };
+          if (ans !== OK) {
+            if ((enemy instanceof Creep && enemy.owner.username === "Invader")
+              || enemy instanceof StructureInvaderCore)
+              ans = pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
+            else if (enemy instanceof Creep)
+              ans = pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
+            if (typeof ans === "string")
+              Game.flags[ans].memory = { hive: this.hive.roomName };
+          }
         }
       }
     }

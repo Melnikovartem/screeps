@@ -189,7 +189,7 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
     let currentRoom = this.roomName;
 
     if (route === -2)
-      newDistance = Infinity
+      newDistance = Infinity;
     else
       for (let i in route) {
         let room = Game.rooms[currentRoom];

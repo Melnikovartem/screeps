@@ -20,6 +20,24 @@ const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amo
   [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } },
   [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } }
 }
+const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
+  STRUCTURE_TOWER,
+  STRUCTURE_SPAWN,
+  STRUCTURE_STORAGE,
+  STRUCTURE_TERMINAL,
+  STRUCTURE_EXTENSION,
+  STRUCTURE_EXTRACTOR,
+  STRUCTURE_CONTAINER,
+  STRUCTURE_LINK,
+  STRUCTURE_LAB,
+  STRUCTURE_OBSERVER,
+  STRUCTURE_POWER_SPAWN,
+  STRUCTURE_FACTORY,
+  STRUCTURE_NUKER,
+  STRUCTURE_ROAD,
+  STRUCTURE_WALL,
+  STRUCTURE_RAMPART,
+];
 export type Pos = { x: number, y: number };
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
@@ -378,8 +396,10 @@ export class RoomPlanner {
     let ans: RoomPosition[] = [];
     let sum = 0;
     let constructions = 0;
-    for (let t in Memory.cache.roomPlanner[roomName]) {
-      let sType = <BuildableStructureConstant>t;
+    for (let i = 0; i < BUILDABLE_PRIORITY.length; ++i) {
+      let sType = BUILDABLE_PRIORITY[i];
+      if (!(sType in Memory.cache.roomPlanner[roomName]))
+        continue;
       let cc = this.getCase({ structureType: sType, pos: { roomName: roomName }, hitsMax: 0 });
       let toadd: RoomPosition[] = [];
       let placed = 0;

@@ -1,6 +1,5 @@
 import { Setups } from "../../bees/creepSetups"
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -9,17 +8,12 @@ export class puppetMaster extends SwarmMaster {
   update() {
     super.update();
     if (this.checkBees()) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: Setups.puppet,
         amount: 1,
         priority: 2, // well it is cheap -_-
-      };
-
-      this.wish(order);
+      });
     }
-
-    if (this.beesAmount === 0 && !this.waitingForBees && this.spawned === this.maxSpawns)
-      this.order.delete();
   }
 
   run() {

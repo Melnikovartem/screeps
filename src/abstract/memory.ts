@@ -34,7 +34,7 @@ export class Mem {
     for (const name in Memory.flags)
       if (!(name in Game.flags)) {
         delete Memory.flags[name];
-        if (Apiary.orders[name]) Apiary.orders[name].delete();
+        if (Apiary.orders[name]) Apiary.orders[name].delete(true);
       }
 
     if (Apiary.logger)
