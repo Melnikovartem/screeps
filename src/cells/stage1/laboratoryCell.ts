@@ -82,6 +82,7 @@ export class laboratoryCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, "LaboratoryCell_" + hive.room.name);
+    this.pos = this.hive.getPos("lab");
   }
 
   updateProductionLabs() {

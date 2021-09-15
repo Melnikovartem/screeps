@@ -8,7 +8,7 @@ import { squadMaster } from "./beeMasters/war/squad";
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 
 import type { Master } from "./beeMasters/_Master";
-import type { Hive } from "./Hive";
+import type { Hive, HivePositions } from "./Hive";
 import { dupletMaster } from "./beeMasters/civil/miningDuplet";
 import { puppetMaster } from "./beeMasters/civil/puppet";
 import { annexMaster } from "./beeMasters/civil/annexer";
@@ -20,12 +20,9 @@ import { makeId } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
-export enum posPrefix {
+export enum prefix {
   upgrade = "polen",
-  chill = "chillZone",
-  queen = "brood",
-  manager = "crown",
-  lab = "lab",
+  surrender = "fff"
 }
 
 @profile
@@ -109,6 +106,15 @@ export class Order {
     return ERR_NOT_FOUND;
   }
 
+  fixedName(name: string) {
+    if (this.ref !== name) {
+      this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
+      this.delete();
+      return ERR_INVALID_ARGS;
+    }
+    return OK;
+  }
+
   act() {
     this.acted = true;
     switch (this.flag.color) {
@@ -143,10 +149,7 @@ export class Order {
               this.master = new squadMaster(this);
               break;
             case COLOR_WHITE:
-              if (this.ref !== "surrender_" + this.hive.roomName) {
-                this.pos.createFlag("surrender_" + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
-                this.delete();
-              }
+              this.fixedName(prefix.surrender + this.hive.roomName);
               break;
             case COLOR_YELLOW:
               this.master = new dupletMaster(this);
@@ -189,40 +192,33 @@ export class Order {
       case COLOR_CYAN:
         this.uniqueFlag();
         if (this.hive.roomName === this.pos.roomName) {
-          let prefix = "";
+          let cell;
+          let type: keyof HivePositions | undefined;
           switch (this.flag.secondaryColor) {
             case COLOR_CYAN:
+              type = "hive";
               this.hive.pos = this.pos;
-              if (this.hive.cells.excavation)
-                this.hive.cells.excavation.pos = this.pos;
-              prefix = posPrefix.chill;
+              cell = this.hive.cells.excavation;
               break;
             case COLOR_GREEN:
-              if (this.hive)
-                this.hive.cells.spawn.pos = this.pos;
-              prefix = posPrefix.queen;
+              type = "spawn";
+              cell = this.hive.cells.spawn;
               break;
             case COLOR_YELLOW:
-              if (this.hive.cells.storage)
-                this.hive.cells.storage.pos = this.pos;
-              prefix = posPrefix.manager;
+              type = "storage";
+              cell = this.hive.cells.storage;
               break;
             case COLOR_GREY:
-              if (this.hive.cells.lab)
-                this.hive.cells.lab.pos = this.pos;
-              prefix = posPrefix.lab;
-              break;
-            case COLOR_ORANGE:
-              prefix = posPrefix.upgrade;
+              type = "lab";
+              cell = this.hive.cells.lab;
               break;
           }
-          if (prefix !== "" && this.ref !== prefix + this.hive.roomName) {
-            this.pos.createFlag(prefix + this.hive.roomName, this.flag.color, this.flag.secondaryColor);
-            this.delete();
-          }
-        } else
-          this.delete();
-        // this.delete(); if need to get rid of tone of flags
+          if (cell)
+            cell.pos = this.pos;
+          if (type)
+            Memory.cache.positions[this.hive.roomName][type] = { x: this.pos.x, y: this.pos.y };
+        }
+        this.delete();
         break;
       case COLOR_WHITE:
         _.forEach(Game.flags, (f) => {
@@ -317,6 +313,9 @@ export class Order {
             } else
               this.delete();
             break;
+          case COLOR_ORANGE:
+            this.fixedName(prefix.upgrade + this.hive.roomName);
+            break;
         }
         break;
       case COLOR_YELLOW:
@@ -396,7 +395,7 @@ export class Order {
               if (pos) {
                 let newPos = [new RoomPosition(pos.x, pos.y + 1, pos.roomName), new RoomPosition(pos.x, pos.y - 1, pos.roomName)]
                   .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
-                newPos.createFlag("fast" + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
+                newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
               }
             }
             break;

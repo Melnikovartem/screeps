@@ -19,6 +19,7 @@ export class respawnCell extends Cell {
     super(hive, "RespawnCell_" + hive.room.name);
     if (this.hive.stage > 0)
       this.master = new queenMaster(this);
+    this.pos = this.hive.getPos("spawn");
   }
 
   update() {

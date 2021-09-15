@@ -16,6 +16,8 @@ import { powerCell } from "./cells/stage2/powerCell";
 
 import { builderMaster } from "./beeMasters/economy/builder";
 
+import type { Pos } from "./abstract/roomPlanner";
+
 import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { DEVELOPING } from "./settings";
@@ -25,6 +27,13 @@ export interface SpawnOrder {
   setup: CreepSetup;
   priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this creep
   master?: string;
+}
+
+export interface HivePositions {
+  hive: Pos,
+  storage: Pos,
+  spawn: Pos,
+  lab: Pos,
 }
 
 interface hiveCells {
@@ -119,6 +128,11 @@ export class Hive {
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
+
+    if (!Memory.cache.positions[this.roomName]) {
+      let pos = { x: this.pos.x, y: this.pos.y }
+      Memory.cache.positions[this.roomName] = { hive: pos, storage: pos, spawn: pos, lab: pos }
+    }
   }
 
   addAnex(annexName: string) {
@@ -160,6 +174,10 @@ export class Hive {
           Game.flags[flag].memory.hive = this.roomName;
       }
     });
+  }
+
+  getPos(type: keyof HivePositions) {
+    return new RoomPosition(Memory.cache.positions[this.roomName][type].x, Memory.cache.positions[this.roomName][type].y, this.roomName);
   }
 
   private updateCellData() {

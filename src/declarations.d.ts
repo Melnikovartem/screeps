@@ -1,6 +1,7 @@
 import type { _Apiary } from "./Apiary";
 import type { CustomConsole } from "./convenience/console";
 import type { RoomSetup } from "./abstract/roomPlanner";
+import type { HivePositions } from "./Hive";
 import type { states } from "./beeMasters/_Master";
 
 declare global {
@@ -31,6 +32,9 @@ declare global {
       intellegence: any;
       roomPlanner: { [id: string]: RoomSetup }
       avoid: { [id: string]: number };
+      positions: {
+        [id: string]: HivePositions,
+      }
     },
     masters: { [id: string]: any };
 

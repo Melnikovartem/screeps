@@ -5,10 +5,11 @@ import { Logger } from "../convenience/logger";
 export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
-    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {} };
+    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, positions: {} };
     if (!Memory.cache.intellegence) Memory.cache.intellegence = {};
     if (!Memory.cache.roomPlanner) Memory.cache.roomPlanner = {};
     if (!Memory.cache.avoid) Memory.cache.avoid = {};
+    if (!Memory.cache.positions) Memory.cache.positions = {};
     if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0 };
 
     Logger.init();
@@ -17,7 +18,7 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = {};
-    Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {} };
+    Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, positions: {} };
     Memory.settings = { framerate: 10, forceBucket: 0 };
 
     Logger.init(true);

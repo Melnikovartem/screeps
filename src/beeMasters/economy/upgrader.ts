@@ -1,6 +1,6 @@
 import { upgradeCell } from "../../cells/stage1/upgradeCell";
 
-import { posPrefix } from "../../order";
+import { prefix } from "../../order";
 import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
@@ -30,7 +30,7 @@ export class upgraderMaster extends Master {
     this.patternPerBee = 0;
 
     this.fastMode = true;
-    if (!(posPrefix.upgrade + this.hive.roomName in Game.flags)) {
+    if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
       this.fastMode = false;
       return;
     }
