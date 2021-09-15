@@ -215,7 +215,7 @@ export class Hive {
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
     }
-    if (checkAnnexes)
+    if (checkAnnexes && this.stage > 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);

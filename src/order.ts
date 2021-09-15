@@ -59,6 +59,9 @@ export class Order {
         case COLOR_YELLOW: case COLOR_WHITE:
           filter = (_) => true;
           break;
+        case COLOR_GREY:
+          if (this.flag.secondaryColor === COLOR_YELLOW)
+            filter = (_) => true;
       }
       this.hive = this.findHive(filter);
     }

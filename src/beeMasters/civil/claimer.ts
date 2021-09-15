@@ -11,13 +11,10 @@ export class claimerMaster extends SwarmMaster {
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
-        setup: Setups.claimer.normal,
+        setup: Setups.claimer,
         amount: 1,
         priority: 6,
       };
-
-      if (this.hive.pos.getRoomRangeTo(this.order.pos) > 6)
-        order.setup = Setups.claimer.carapaced;
 
       this.wish(order);
       this.spawned += 1;

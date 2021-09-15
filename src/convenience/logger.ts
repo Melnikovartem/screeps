@@ -214,14 +214,15 @@ export class Logger {
 
     ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + SetupsNames.upgrader), revenue: getRate("upgrade") };
     ans["mineral"] = { profit: getRate("spawn_" + SetupsNames.miner + " M") };
-    type civilRoles = "queen" | "queen";
-    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "bootstrap", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
     ans["build"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.builder), revenue: getRate("build") };
     ans["defense"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.defender) };
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
+
+    type civilRoles = "queen" | "manager" | "claimer";
+    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
 
     return ans;
   }

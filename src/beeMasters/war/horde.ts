@@ -62,7 +62,7 @@ export class hordeMaster extends SwarmMaster {
         if (enemies.length)
           ans = this.attackOrFlee(bee, enemies[0]);
         if (ans === OK) {
-          bee.goTo(this.order.pos, { range: 5 });
+          bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
           if (bee.pos.getRangeTo(this.order.pos) <= 5)
             bee.state = states.work;
         }

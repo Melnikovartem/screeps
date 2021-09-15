@@ -60,9 +60,13 @@ export class skMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, (bee) => {
-
       if (bee.pos.roomName !== this.order.pos.roomName) {
-        bee.goTo(this.order.pos);
+        let ans: number = OK;
+        let enemy = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3)[0];
+        if (enemy)
+          ans = this.attackOrFlee(bee, enemy);
+        if (ans === OK)
+          bee.goTo(this.order.pos);
         return;
       }
 

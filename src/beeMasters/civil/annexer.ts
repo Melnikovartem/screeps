@@ -14,13 +14,13 @@ export class annexMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
 
-    let checkAnnex = roomInfo.safePlace && !roomInfo.ownedByEnemy && this.operational;
+    let checkAnnex = roomInfo.safePlace && !roomInfo.ownedByEnemy && this.operational && (this.hive.room.energyAvailable > 650);
     if (checkAnnex && this.hive.bassboost)
       checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && checkAnnex) {
       let order: SpawnOrder = {
-        setup: Setups.claimer.normal,
+        setup: Setups.claimer,
         amount: 1,
         priority: 6,
       };
@@ -30,7 +30,7 @@ export class annexMaster extends SwarmMaster {
 
         // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
         if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200))
-          order.setup = Setups.claimer.double;
+          order.setup.patternLimit = 2;
       }
 
       this.wish(order);
