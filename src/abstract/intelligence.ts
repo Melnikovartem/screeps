@@ -61,7 +61,7 @@ export class Intel {
         this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 :
       if (!room.controller.my && room.controller.owner) {
         this.roomInfo[room.name].ownedByEnemy = room.controller.owner.username;
-        Memory.cache.avoid[room.name] = Game.time + 10000;
+        Memory.cache.avoid[room.name] = Game.time + 100000;
       } else
         this.roomInfo[room.name].ownedByEnemy = undefined;
     }

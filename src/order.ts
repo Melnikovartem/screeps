@@ -108,8 +108,9 @@ export class Order {
 
   fixedName(name: string) {
     if (this.ref !== name) {
-      this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
-      this.delete();
+      let ans = this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
+      if (typeof ans == "string")
+        this.delete();
       return ERR_INVALID_ARGS;
     }
     return OK;
@@ -148,11 +149,11 @@ export class Order {
             case COLOR_ORANGE:
               this.master = new squadMaster(this);
               break;
-            case COLOR_WHITE:
-              this.fixedName(prefix.surrender + this.hive.roomName);
-              break;
             case COLOR_YELLOW:
               this.master = new dupletMaster(this);
+              break;
+            case COLOR_WHITE:
+              this.fixedName(prefix.surrender + this.hive.roomName);
               break;
           }
         break;

@@ -90,11 +90,13 @@ export class Bee {
 
   goTo(target: RoomPosition | RoomObject, opt: TravelToOptions = {}): number {
     opt.allowSK = true;
-    if (Game.shard.name === "shard3" && Game.cpu.bucket < 20) {
+    opt.repath = 0;
+    if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {
       // extreme low on cpu
-      opt.maxOps = 500;
+      opt.maxOps = 2000;
       opt.maxRooms = 3;
       opt.useFindRoute = false;
+      opt.ignoreCreeps = false;
     }
     return this.creep.travelTo(target, opt);
   }

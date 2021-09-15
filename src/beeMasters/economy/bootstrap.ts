@@ -22,10 +22,11 @@ export class bootstrapMaster extends Master {
     this.cell = developmentCell;
     this.recalculateTargetBee();
 
-    this.handAddedResources = [this.romPos(22, 15)]
+    if (this.hive.roomName === "E13S56")
+      this.handAddedResources = [this.roomPos(22, 15), this.roomPos(15, 22, "E13S55")]
   }
 
-  romPos(x: number, y: number, r?: string) {
+  roomPos(x: number, y: number, r?: string) {
     return new RoomPosition(x, y, r ? r : this.hive.roomName);
   }
 
@@ -102,23 +103,34 @@ export class bootstrapMaster extends Master {
     _.forEach(this.cell.sources, (source) => {
       sourceTargetingCurrent[source.id] = 0;
     });
-
     _.forEach(this.bees, (bee) => {
+      if (Game.cpu.bucket < 500 && Game.shard.name === "shard3")
+        return;
 
-      if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-        bee.state = states.refill;
+      switch (bee.state) {
+        case states.work:
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
+            bee.state = states.refill;
+          break;
+        case states.refill:
+          if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+            bee.target = null;
+            bee.state = states.work;
+          }
+          break;
+        case states.chill:
+          if (bee.pos.roomName === this.hive.roomName)
+            bee.state = states.refill;
 
-      if ((bee.state === states.refill || bee.state === states.chill) && bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-        bee.target = null;
-        bee.state = states.work;
       }
 
-      if (bee.state === states.refill || bee.state === states.chill) {
+      if (bee.state === states.refill) {
         let source: Source | null;
 
         if (this.handAddedResources.length) {
           let pos = this.handAddedResources[0];
-          if (bee.pos.roomName != pos.roomName)
+
+          if (bee.pos.roomName !== pos.roomName)
             bee.goTo(pos);
           else {
             let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
@@ -154,7 +166,6 @@ export class bootstrapMaster extends Master {
             source = Game.getObjectById(bee.target);
 
           if (source instanceof Source) {
-            bee.state = states.refill;
             if (source.energy === 0)
               bee.target = null;
             else {

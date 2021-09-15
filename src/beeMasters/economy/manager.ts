@@ -18,7 +18,21 @@ export class managerMaster extends Master {
 
   update() {
     super.update();
-    if (!this.manager)
+
+    if (this.checkBees()) {
+      let order: SpawnOrder = {
+        setup: Setups.manager,
+        amount: 1,
+        priority: 7,
+      };
+      // desired linear regex from desmos))
+      let lvl = this.hive.room.controller!.level;
+      order.setup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
+
+      this.wish(order);
+    }
+
+    if (!this.manager || !Apiary.bees[this.manager.ref])
       if (this.beesAmount)
         this.manager = this.bees[Object.keys(this.bees)[0]];
       else
@@ -54,19 +68,6 @@ export class managerMaster extends Master {
             : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
         }
       }
-    }
-
-    if (this.checkBees()) {
-      let order: SpawnOrder = {
-        setup: Setups.manager,
-        amount: 1,
-        priority: 7,
-      };
-      // desired linear regex from desmos))
-      let lvl = this.hive.room.controller!.level;
-      order.setup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
-
-      this.wish(order);
     }
   }
 

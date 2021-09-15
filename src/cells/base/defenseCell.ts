@@ -21,9 +21,9 @@ export class defenseCell extends Cell {
     if (storageCell) {
       _.forEach(this.towers, (tower) => {
         if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage("tower_" + tower.id, tower, 1);
+          storageCell!.requestFromStorage("tower_" + tower.id, tower, 1, RESOURCE_ENERGY, 1000);
         else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage("tower_" + tower.id, tower, 3);
+          storageCell!.requestFromStorage("tower_" + tower.id, tower, 3, RESOURCE_ENERGY, 1000);
       });
     }
   }
@@ -34,7 +34,7 @@ export class defenseCell extends Cell {
       if (roomInfo.enemies.length > 0 && !Apiary.defenseSwarms[roomName]
         && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
         let enemy = roomInfo.enemies[0];
-        let pos = enemy.pos.getPositionsInRange().filter((p) => !p.getEnteranceToRoom())[0];
+        let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
         if (!pos)
           pos = enemy.pos;
         if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)

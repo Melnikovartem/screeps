@@ -81,7 +81,8 @@ export class Hive {
   constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
-    this.pos = this.room.controller!.pos;
+    let pos = this.getPos("hive");
+    this.pos = pos ? pos : this.room.controller!.pos;
 
     this.stage = 0;
     if (this.room.storage && this.room.storage.isActive())
@@ -101,7 +102,7 @@ export class Hive {
     else {
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
-      this.cells.excavation = new excavationCell(this);
+      // this.cells.excavation = new excavationCell(this);
       this.cells.lab = new laboratoryCell(this);
 
       this.builder = new builderMaster(this);

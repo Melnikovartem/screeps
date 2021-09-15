@@ -52,7 +52,7 @@ export class observeCell extends Cell {
     let power = <StructurePowerBank>Game.rooms[this.prevRoom].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
     if (power && power.ticksToDecay > 1500) {
       let open = power.pos.getOpenPositions(true).length;
-      let needed = Math.ceil(power.hits / (30 * 20) / power.ticksToDecay + 0.5);
+      let needed = Math.ceil((power.hits / (30 * 20) + (power.pos.getRoomRangeTo(this.hive) - 1) * 50) / power.ticksToDecay + 0.5);
       let flags = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_RED && f.secondaryColor === COLOR_YELLOW);
       let working = flags.length;
       let nums = [...Array(open).keys()];

@@ -38,7 +38,7 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
   } else {
     let c1 = getRoomCoorinates(this.roomName);
     let c2 = getRoomCoorinates(toRoom);
-    return Math.max(Math.abs(c1[0] - c2[0]), Math.abs(c1[1] - c2[1]));
+    return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]);
   }
 }
 
