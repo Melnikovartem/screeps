@@ -59,6 +59,8 @@ export class bootstrapMaster extends Master {
     });
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
     if (this.hive.bassboost)
+      this.targetBeeCount = Math.min(this.targetBeeCount, 6);
+    if (Game.shard.name === "shard3")
       this.targetBeeCount = Math.min(this.targetBeeCount, 10);
   }
 
@@ -77,7 +79,7 @@ export class bootstrapMaster extends Master {
     if (this.checkBees() && this.hive.stage === 0 && roomInfo.safePlace) {
       let order: SpawnOrder = {
         setup: Setups.bootstrap,
-        amount: this.targetBeeCount - this.beesAmount,
+        amount: Math.max(this.targetBeeCount - this.beesAmount, 1),
         priority: 9,
       };
 

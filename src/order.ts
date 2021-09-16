@@ -60,7 +60,7 @@ export class Order {
           filter = (_) => true;
           break;
         case COLOR_GREY:
-          if (this.flag.secondaryColor === COLOR_YELLOW)
+          if (this.flag.secondaryColor === COLOR_YELLOW || this.flag.secondaryColor === COLOR_PURPLE)
             filter = (_) => true;
       }
       this.hive = this.findHive(filter);
@@ -290,17 +290,19 @@ export class Order {
             }
             if (!del || /^force/.exec(this.ref)) {
               for (let name in Apiary.planner.activePlanning) {
-                Apiary.planner.saveActive(name);
+                let anchor = Apiary.planner.activePlanning[name].anchor;
+                console.log("SAVED: ", name, anchor ? anchor : this.pos);
+                Apiary.planner.saveActive(name, anchor ? anchor : this.pos);
                 delete Apiary.planner.activePlanning[name];
               }
               if (!Object.keys(Apiary.planner.activePlanning).length)
                 del = 2;
             }
-            if (del) {
+            if (del > 1) {
               this.delete();
-              if (del > 1)
-                this.pos.createFlag(this.ref + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
-            }
+              this.pos.createFlag("OK_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+            } else if (del === 1)
+              this.pos.createFlag("FAIL_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
             break;
           case COLOR_CYAN:
             break;

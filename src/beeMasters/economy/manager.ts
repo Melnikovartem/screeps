@@ -73,12 +73,12 @@ export class managerMaster extends Master {
 
   run() {
     let bee = this.manager;
-    if (!bee)
+    if (!bee || !bee.creep.ticksToLive)
       return;
 
     if (bee.pos.roomName !== this.cell.pos.roomName)
       bee.state = states.chill;
-    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 15)
+    if (bee.creep.ticksToLive && bee.creep.ticksToLive < 10)
       bee.state = states.fflush;
 
     if (bee.target) {

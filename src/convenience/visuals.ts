@@ -1,3 +1,4 @@
+import type { PossiblePositions } from "../hive";
 import { profile } from "../profiler/decorator";
 
 const TEXT_SIZE = 0.8;
@@ -140,6 +141,31 @@ export class Visuals {
             });
           }
         }
+
+      for (let t in Apiary.planner.activePlanning[roomName].poss) {
+        let type = <keyof PossiblePositions>t
+        let pos = Apiary.planner.activePlanning[roomName].poss[type]!;
+        let style: LineStyle = {
+          opacity: 0.8,
+        };
+        switch (type) {
+          case "lab":
+            style.color = "#91EFD8";
+            break;
+          case "storage":
+            style.color = "#FBA31C";
+            break;
+          case "spawn":
+            style.color = "#9E1393";
+            break;
+          case "hive":
+            style.color = "#000000";
+            break;
+        };
+        const SIZE = 0.3;
+        vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
+        vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
+      }
     }
   }
 

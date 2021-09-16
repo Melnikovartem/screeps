@@ -9,7 +9,7 @@ import { profile } from "../../profiler/decorator";
 export class observeCell extends Cell {
   obeserver: StructureObserver;
   roomsToCheck: string[] = [];
-  prevRoom: string | undefined;
+  prevRoom: string;
   powerRooms: string[] = [];
 
   constructor(hive: Hive, obeserver: StructureObserver) {
@@ -23,21 +23,27 @@ export class observeCell extends Cell {
     let maxx = Math.ceil(x / 10) * 10;
     let maxy = Math.ceil(y / 10) * 10;
 
-    for (let i = minx; i < maxx; ++i)
-      this.powerRooms.push(we + i + ns + miny);
-    for (let i = minx; i < maxx; ++i)
-      this.powerRooms.push(we + i + ns + maxy);
-    for (let j = miny; j < maxy; ++j)
-      this.powerRooms.push(we + minx + ns + j);
-    for (let j = miny; j < maxy; ++j)
-      this.powerRooms.push(we + maxx + ns + j);
+    if (miny == Math.round(y / 10) * 10)
+      for (let i = minx; i < maxx; ++i)
+        this.powerRooms.push(we + i + ns + miny);
+    else
+      for (let i = minx; i < maxx; ++i)
+        this.powerRooms.push(we + i + ns + maxy);
+    if (minx == Math.round(x / 10) * 10)
+      for (let j = miny; j < maxy; ++j)
+        this.powerRooms.push(we + minx + ns + j);
+    else
+      for (let j = miny; j < maxy; ++j)
+        this.powerRooms.push(we + maxx + ns + j);
+
+    this.prevRoom = this.powerRooms[Math.floor(Math.random() * this.powerRooms.length)];
   }
 
   update() {
     super.update();
     this.roomsToCheck = this.powerRooms;
 
-    if (!this.prevRoom || !(this.prevRoom in Game.rooms))
+    if (!(this.prevRoom in Game.rooms))
       return;
     let storage = this.hive.cells && this.hive.cells.storage && this.hive.cells.storage.storage;
     if (!storage || storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[RESOURCE_ENERGY]! / 2)
@@ -78,7 +84,6 @@ export class observeCell extends Cell {
     if (this.roomsToCheck.length > 0) {
       this.prevRoom = this.roomsToCheck[index];
       this.obeserver.observeRoom(this.prevRoom);
-    } else
-      this.prevRoom = undefined;
+    }
   }
 }

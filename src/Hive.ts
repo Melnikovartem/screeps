@@ -35,6 +35,7 @@ export interface HivePositions {
   spawn: Pos,
   lab: Pos,
 }
+export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
 
 interface hiveCells {
   storage?: storageCell;
@@ -207,7 +208,7 @@ export class Hive {
   }
 
   updateStructures() {
-    let checkAnnexes = this.sumCost > 0 || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0;
+    let oldCost = this.sumCost > 0;
     this.structuresConst = [];
     this.sumCost = 0;
     let check = (r: Room) => {
@@ -215,7 +216,7 @@ export class Hive {
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
     }
-    if (checkAnnexes && this.stage > 0)
+    if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.stage > 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);
