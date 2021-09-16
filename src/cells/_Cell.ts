@@ -27,7 +27,7 @@ export abstract class Cell {
     _.forEach(Object.keys(this), (key: K) => {
       let data = this[key];
       if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
-        let gameObject = Game.getObjectById(data.id)
+        let gameObject = Game.getObjectById(data.id);
         if (gameObject)
           this[key] = <typeof data>gameObject;
       }
@@ -38,7 +38,7 @@ export abstract class Cell {
         for (const inMap in this[key]) {
           let data = this[key][inMap];
           if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
-            let gameObject = Game.getObjectById(data.id)
+            let gameObject = Game.getObjectById(data.id);
             if (gameObject)
               this[key][inMap] = <typeof data>gameObject;
           }

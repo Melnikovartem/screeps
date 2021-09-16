@@ -31,7 +31,7 @@ export class defenseCell extends Cell {
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.enemies.length > 0) {
+      if (!roomInfo.safePlace) {
         let enemy = roomInfo.enemies[0];
         let [x, y] = enemy.pos.getRoomCoorinates();
         if ((4 <= x && x <= 6 && 4 <= y && y <= 6) && enemy instanceof Creep && enemy.owner.username === "Source Keeper")
