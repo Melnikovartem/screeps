@@ -111,6 +111,12 @@ export class Visuals {
               style.fill = "#FBA31C";
               style.opacity = 0.8;
               break;
+            case STRUCTURE_FACTORY:
+              style.fill = "#D88E54"
+              break;
+            case STRUCTURE_POWER_SPAWN:
+              style.fill = "#9E2413";
+              break;
             case STRUCTURE_TOWER:
               style.fill = "#F988AE";
               style.opacity = 0.8;

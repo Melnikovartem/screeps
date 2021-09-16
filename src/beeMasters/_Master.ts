@@ -58,7 +58,9 @@ export abstract class Master {
 
   deleteBee(ref: string) {
     delete this.bees[ref];
-    this.oldestSpawn = _.reduce(this.bees, (result, bee) => result > bee.creep.memory.born ? bee.creep.memory.born : result);
+    this.beesAmount = Object.keys(this.bees).length;
+    if (this.beesAmount)
+      this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
   }
 
   checkBees(spawnCycle?: number): boolean {
@@ -74,7 +76,6 @@ export abstract class Master {
     for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref])
         this.deleteBee(ref);
-    this.beesAmount = Object.keys(this.bees).length;
     this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning)
   }
 

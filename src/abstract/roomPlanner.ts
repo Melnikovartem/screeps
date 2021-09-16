@@ -159,7 +159,12 @@ export class RoomPlanner {
     this.addModule(anchor, baseRotation > 1 ? BASE_VERTICAL : BASE_HORIZONTAL, (a) => rotate(a, baseRotation));
 
     let futureResourceCells = _.filter(Game.flags, (f) => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
-    futureResourceCells.sort((a, b) => a.pos.getRoomRangeTo(anchor) - b.pos.getRoomRangeTo(anchor))
+    futureResourceCells.sort((a, b) => {
+      let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
+      if (ans === 0)
+        return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
+      return ans;
+    });
     _.forEach(futureResourceCells, (f) => {
       jobs.push({
         context: `resource roads for ${f.pos}`,
@@ -183,24 +188,38 @@ export class RoomPlanner {
         context: `placing ${sType}`,
         func: () => {
           let free = this.activePlanning[anchor.roomName].freeSpaces;
-          free.sort((a, b) => {
-            if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, a) <= 1)
-              return 1;
-            let ans = anchorDist(anchor, a) - anchorDist(anchor, b) * (sType === STRUCTURE_OBSERVER ? -1 : 1);
-            if (ans === 0)
-              ans = a.y - b.y * (baseRotation !== 3 ? -1 : 1);
-            if (ans === 0)
-              ans = a.x - b.x * (baseRotation !== 1 ? -1 : 1);
-            return ans;
-          });
-
           if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
-            let pos = free.shift();
-            while (pos)
+            let red = ((a: Pos, b: Pos) => {
+              if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, b) <= 1)
+                return a;
+              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b)) * (sType === STRUCTURE_OBSERVER ? -1 : 1);
+              if (ans === 0) {
+                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), PATH_ARGS);
+                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), PATH_ARGS);
+                ans = pathA.length - pathB.length;
+              }
+              if (ans === 0)
+                ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
+              if (ans === 0)
+                ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
+              return ans < 0 ? a : b;
+            });
+            let pos = free.reduce(red);
+
+            let br = false;
+            while (pos) {
               if ((sType === STRUCTURE_OBSERVER || this.roadNearBy(pos, anchor.roomName)) && this.addToPlan(pos, anchor.roomName, sType) === ERR_FULL)
-                break;
+                br = true;
               else
-                pos = this.activePlanning[anchor.roomName].freeSpaces.shift();
+                pos = free.reduce(red);
+              for (let i = 0; i < free.length; ++i)
+                if (free[i].x === pos.x && free[i].y === pos.y) {
+                  free.splice(i, 1);
+                  break;
+                }
+              if (br)
+                break;
+            }
             if (this.activePlanning[anchor.roomName].placed[sType]! < CONTROLLER_STRUCTURES[sType][8])
               return ERR_FULL;
           }
@@ -353,17 +372,19 @@ export class RoomPlanner {
       context: "adding module",
       func: () => {
         this.activePlanning[anchor.roomName].freeSpaces = this.activePlanning[anchor.roomName].freeSpaces
-          .concat(_.filter(_.map(configuration.freeSpaces, (p) => transformPos(p))));
+          .concat(configuration.freeSpaces.map((p) => transformPos(p)).filter((p) => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
 
         this.activePlanning[anchor.roomName].exits = this.activePlanning[anchor.roomName].exits
-          .concat(_.map(configuration.exits, (p) => {
+          .concat(configuration.exits.map((p) => {
             let ans = transformPos(p);
             return new RoomPosition(ans.x, ans.y, anchor.roomName);
-          }));
+          }).filter((p) => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
 
-        for (let type in configuration.poss)
-          this.activePlanning[anchor.roomName].poss[<keyof PossiblePositions>type] = transformPos(configuration.poss[<keyof PossiblePositions>type]!);
-
+        for (let type in configuration.poss) {
+          let p = transformPos(configuration.poss[<keyof PossiblePositions>type]!)
+          if (Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL)
+            this.activePlanning[anchor.roomName].poss[<keyof PossiblePositions>type] = p;
+        }
 
         for (let t in configuration.setup) {
           let sType = <BuildableStructureConstant>t;
