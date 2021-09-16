@@ -11,6 +11,7 @@ import type { Master } from "./beeMasters/_Master";
 import type { Hive, HivePositions } from "./Hive";
 import { dupletMaster } from "./beeMasters/civil/miningDuplet";
 import { puppetMaster } from "./beeMasters/civil/puppet";
+import { portalMaster } from "./beeMasters/civil/portal";
 import { annexMaster } from "./beeMasters/civil/annexer";
 import { pickupMaster } from "./beeMasters/civil/pickup";
 import { claimerMaster } from "./beeMasters/civil/claimer";
@@ -56,12 +57,9 @@ export class Order {
             filter = (h) => h.roomName !== this.pos.roomName;
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
-        case COLOR_YELLOW: case COLOR_WHITE:
+        case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
           filter = (_) => true;
           break;
-        case COLOR_GREY:
-          if (this.flag.secondaryColor === COLOR_YELLOW || this.flag.secondaryColor === COLOR_PURPLE)
-            filter = (_) => true;
       }
       this.hive = this.findHive(filter);
     }
@@ -308,6 +306,20 @@ export class Order {
             break;
         }
         break;
+      case COLOR_ORANGE:
+        switch (this.flag.secondaryColor) {
+          case COLOR_GREEN:
+            if (!this.master) {
+              let master = new pickupMaster(this);
+              let regex = /^\d*/.exec(this.ref);
+              if (regex && regex[0])
+                master.maxSpawns = +regex[0];
+              master.targetBeeCount = master.maxSpawns;
+              this.master = master;
+            }
+            break;
+        }
+        break;
       case COLOR_GREY:
         switch (this.flag.secondaryColor) {
           case COLOR_RED:
@@ -319,15 +331,9 @@ export class Order {
             if (!this.master)
               this.master = new puppetMaster(this);
             break;
-          case COLOR_GREEN:
-            if (!this.master) {
-              let master = new pickupMaster(this);
-              let regex = /^\d*/.exec(this.ref);
-              if (regex && regex[0])
-                master.maxSpawns = +regex[0];
-              master.targetBeeCount = master.maxSpawns;
-              this.master = master;
-            }
+          case COLOR_BLUE:
+            if (!this.master)
+              this.master = new portalMaster(this);
             break;
           case COLOR_CYAN:
             this.acted = false;

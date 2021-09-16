@@ -63,8 +63,8 @@ export class dupletMaster extends SwarmMaster {
   }
 
   callPickUp(power: number) {
-    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY).length)
-      this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
+    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE).length)
+      this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
   }
 
   run() {
