@@ -17,26 +17,29 @@ export class observeCell extends Cell {
     this.obeserver = obeserver;
 
     let [x, y, we, ns] = this.hive.pos.getRoomCoorinates();
-
-    let minx = Math.floor(x / 10) * 10;
-    let miny = Math.floor(y / 10) * 10;
-    let maxx = Math.ceil(x / 10) * 10;
-    let maxy = Math.ceil(y / 10) * 10;
-
-    if (miny == Math.round(y / 10) * 10)
-      for (let i = minx; i < maxx; ++i)
-        this.powerRooms.push(we + i + ns + miny);
+    if (Math.abs(Math.round(x / 10) - x) <= Math.abs(Math.round(y / 10) - y))
+      x = Math.round(x / 10) * 10
     else
-      for (let i = minx; i < maxx; ++i)
-        this.powerRooms.push(we + i + ns + maxy);
-    if (minx == Math.round(x / 10) * 10)
-      for (let j = miny; j < maxy; ++j)
-        this.powerRooms.push(we + minx + ns + j);
-    else
-      for (let j = miny; j < maxy; ++j)
-        this.powerRooms.push(we + maxx + ns + j);
+      y = Math.round(y / 10) * 10
+    let closest = we + x + ns + y;
 
+    this.dfs(closest, this.powerRooms, this.hive.pos.getRoomRangeTo(closest, true));
     this.prevRoom = this.powerRooms[Math.floor(Math.random() * this.powerRooms.length)];
+  }
+
+  dfs(roomName: string, checked: string[], depth: number = 0, maxDepth: number = 12) {
+    if (depth >= maxDepth)
+      return;
+    checked.push(roomName);
+    let exits = Game.map.describeExits(roomName);
+    for (let num in exits) {
+      let exitName = exits[<ExitKey>num]!;
+      if (checked.indexOf(exitName) !== -1)
+        continue;
+      let [x, y] = new RoomPosition(25, 25, exitName).getRoomCoorinates();
+      if (x % 10 === 0 || y % 10 === 0)
+        this.dfs(exitName, checked, depth + 1, maxDepth);
+    }
   }
 
   update() {
@@ -50,33 +53,22 @@ export class observeCell extends Cell {
       return;
 
     let power = <StructurePowerBank>Game.rooms[this.prevRoom].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
-    if (power && power.ticksToDecay > 1500) {
-      let open = power.pos.getOpenPositions(true).length;
-      let needed = Math.ceil((power.hits / (30 * 20) + (power.pos.getRoomRangeTo(this.hive) - 1) * 50) / power.ticksToDecay + 0.5);
-      let flags = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_RED && f.secondaryColor === COLOR_YELLOW);
-      let working = flags.length;
-      let nums = [...Array(open).keys()];
-      _.forEach(flags, (f) => {
-        let regex = /^power_\w*_(\d)/.exec(f.name);
-        if (regex) {
-          var index = nums.indexOf(+regex[1]);
-          if (index !== -1)
-            nums.splice(index, 1);
-        }
-      });
-      for (; working < Math.min(needed, open) && nums.length; ++working) {
-        let ref = "mining_" + power.id + "_" + nums.pop();
-        if (!Game.flags[ref]) {
-          power.pos.createFlag(ref, COLOR_RED, COLOR_YELLOW);
-        }
-      }
-    }
+    if (!power)
+      return;
+    let open = power.pos.getOpenPositions(true).length;
+    let dmgPerDupl = (CREEP_LIFE_TIME - (power.pos.getRoomRangeTo(this.hive) - 1) * 50) * (30 * 20);
+    let amountNeeded = power.hits / dmgPerDupl;
+    if (Math.floor(amountNeeded / open) * CREEP_LIFE_TIME > power.ticksToDecay)
+      return;
+    let flags = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_YELLOW).length;
+    if (!flags)
+      power.pos.createFlag("power_" + power.id, COLOR_ORANGE, COLOR_YELLOW);
   }
 
   run() {
     let index = 0;
     if (this.prevRoom)
-      index = this.roomsToCheck.indexOf(this.prevRoom);
+      index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
 
     if (index < 0 || index >= this.roomsToCheck.length)
       index = 0;

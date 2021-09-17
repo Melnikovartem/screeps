@@ -62,6 +62,7 @@ export class bootstrapMaster extends Master {
       this.targetBeeCount = Math.min(this.targetBeeCount, 6);
     if (Game.shard.name === "shard3")
       this.targetBeeCount = Math.min(this.targetBeeCount, 10);
+    this.cell.shouldRecalc = false;
   }
 
   newBee(bee: Bee): void {

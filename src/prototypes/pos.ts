@@ -144,7 +144,7 @@ RoomPosition.prototype.getTimeForPath = function(target: RoomPosition | { pos: R
           newEnterance = exit.getEnteranceToRoom();
         }
       } else
-        len += 15;
+        len += 50;
 
 
       if (!newEnterance)

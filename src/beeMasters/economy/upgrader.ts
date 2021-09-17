@@ -81,7 +81,7 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, (bee) => {
-      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) && bee.state !== states.boosting) {
+      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25) || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0 && bee.state !== states.boosting) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;
@@ -106,7 +106,7 @@ export class upgraderMaster extends Master {
 
       switch (bee.state) {
         case states.work:
-          bee.upgradeController(this.cell.controller);
+          bee.upgradeController(this.cell.controller)
           break;
         case states.chill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)

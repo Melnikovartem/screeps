@@ -247,20 +247,32 @@ export class CustomConsole {
   }
 
   printHives() {
-    _.forEach(_.map(Apiary.hives, (o) => o.print), (s) => console.log(s));
+    return _.map(Apiary.hives, (o) => o.print).join('\n');
   }
 
-  printMasters(hiveName?: string) {
-    _.forEach(_.map(_.filter(Apiary.masters, (m) => !hiveName || m.hive.roomName === hiveName), (o) => o.print), (s) => console.log(s));
+  printByHive(obj: { print: string, hive: { roomName: string } }[]) {
+    return _.compact(_.map(Apiary.hives, (h) => {
+      let objHive = _.map(_.filter(obj, (o) => o.hive.roomName === h.roomName), (o) => o.print);
+      if (!objHive.length)
+        return;
+      return `${h.print}: \n${objHive.join('\n')} \n`;
+    })).join('\n');
   }
 
-  printOrders(hiveName?: string, masters: boolean = true) {
-    _.forEach(_.map(_.filter(Apiary.orders, (o) => (!hiveName || o.hive.roomName === hiveName) && (!masters || o.master)), (o) => o.print), (s) => console.log(s));
+  printMasters(ref?: string) {
+    let obj = _.filter(Apiary.masters, (m) => !ref || m.hive.roomName === ref || m.ref.includes(ref));
+    return this.printByHive(obj);
   }
 
-  printBees(masterName?: string) {
-    _.forEach(_.map(_.filter(Apiary.bees, (b) => !masterName || b.creep.memory.refMaster.includes(masterName)), (b) => b.print), (s) => console.log(s));
-    return "";
+  printOrders(ref?: string) {
+    let obj = _.filter(Apiary.orders, (o) => !ref || o.hive.roomName === ref || o.ref.includes(ref));
+    return this.printByHive(obj);
+  }
+
+  printBees(ref?: string) {
+    let obj = _.map(_.filter(Apiary.bees, (b) => !ref || b.creep.memory.refMaster.includes(ref)),
+      (b) => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
+    return this.printByHive(obj);
   }
 
   formatRoom(roomNae: string) {
@@ -269,9 +281,7 @@ export class CustomConsole {
 
   printSpawnOrders(hiveName?: string) {
     // i know this is messy, but this is print so it is ok
-    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName), (h) => `${
-      h.print
-      }: \n${
+    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName), (h) => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
         (o) => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')

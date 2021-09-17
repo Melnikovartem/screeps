@@ -9,51 +9,83 @@ import { profile } from "../../profiler/decorator";
 //first tandem btw
 @profile
 export class dupletMaster extends SwarmMaster {
-  healer: Bee | undefined;
-  knight: Bee | undefined;
-  maxSpawns = 2;
-  targetBeeCount = 2;
-  roadTime = 0;
+  calledOneMore = false;
+  duplets: [Bee, Bee][] = [];
+  healers: Bee[] = [];
+  knights: Bee[] = [];
+  target: StructurePowerBank | undefined;
+  targetBeeCount = this.order.pos.getOpenPositions(true).length * 2;
+  maxSpawns = this.order.pos.getOpenPositions(true).length * 2;
+  roadTime = this.order.pos.getTimeForPath(this.hive);
+  dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
+  pickupTime = (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 + this.roadTime;
 
   newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.getBodyParts(HEAL))
-      this.healer = bee;
+      this.healers.push(bee);
     else
-      this.knight = bee;
+      this.knights.push(bee);
   }
 
   update() {
     super.update();
 
-    if (this.knight && !Apiary.bees[this.knight.ref])
-      delete this.knight;
+    if (this.knights.length && this.healers.length) {
+      let knight = this.knights.shift()!;
+      let healer = knight.pos.findClosest(this.healers)!;
 
-    if (this.healer && !Apiary.bees[this.healer.ref])
-      delete this.healer;
+      for (let i = 0; i < this.healers.length; ++i)
+        if (this.healers[i].ref === healer.ref) {
+          this.healers.splice(i, 1);
+          break;
+        }
+      this.duplets.push([knight, healer]);
+    }
 
-    if (this.checkBees()) {
-      if (!this.healer)
-        this.wish({
-          setup: Setups.healer,
-          amount: 1,
-          priority: 4,
-          master: this.ref,
-        }, this.ref + "_healer");
+    if (this.order.pos.roomName in Game.rooms) {
+      let firstTime = !this.target;
+      this.target = <StructurePowerBank | undefined>this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
+      if (!this.target) {
+        let res = this.order.pos.lookFor(LOOK_RESOURCES)[0];
+        if (res)
+          this.callPickUp(res.amount);
+        _.forEach(this.bees, (b) => b.creep.suicide());
+        this.maxSpawns = 0;
+        return;
+      }
+      if (firstTime)
+        this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
+      if (this.target.hits / (this.duplets.length * 600) <= this.pickupTime)
+        this.callPickUp(this.target.power);
+    } else if (this.target)
+      --this.target.ticksToDecay;
 
-      if (!this.knight)
-        this.wish({
-          setup: Setups.tank,
-          amount: 1,
-          priority: 4,
-          master: this.ref,
-        }, this.ref + "_knight");
+    let damageWillBeMax = 0;
+    for (let i = 0; i < this.duplets.length; ++i) {
+      let ticks = this.duplets[i][0].creep.ticksToLive;
+      if (!ticks)
+        ticks = CREEP_LIFE_TIME;
+      damageWillBeMax += ticks * (30 * 20);
+    }
 
-      _.forEach(this.activeBees, (bee) => bee.state = states.refill);
+    if (this.checkBees() && (!this.target || this.target.hits - damageWillBeMax > 0)) {
+      this.wish({
+        setup: Setups.healer,
+        amount: 1,
+        priority: 4,
+        master: this.ref,
+      }, this.ref + "_healer");
+      this.wish({
+        setup: Setups.tank,
+        amount: 1,
+        priority: 4,
+        master: this.ref,
+      }, this.ref + "_knight");
     }
   }
 
-  healerFollow(healer: Bee | undefined, ans: number | undefined, pos: RoomPosition) {
+  healerFollow(healer: Bee, ans: number | undefined, pos: RoomPosition) {
     if (!healer)
       return;
     if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE && healer.pos.roomName == pos.roomName)
@@ -63,46 +95,40 @@ export class dupletMaster extends SwarmMaster {
   }
 
   callPickUp(power: number) {
-    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE).length)
-      this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    if (!this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
+      return;
+    this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
   }
 
   run() {
-    let knight = this.knight;
-    let healer = this.healer;
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.refill)
+      if (bee.state === states.chill)
         bee.goRest(this.hive.pos);
     });
 
+    let [knight, healer] = this.duplets[0];
 
-    if (knight && healer) {
-      knight.state = states.work;
-      healer.state = states.work;
+    if (knight && healer && !knight.creep.spawning && !healer.creep.spawning) {
+      if (knight.pos.isNearTo(healer)) {
+        knight.state = states.work;
+        healer.state = states.work;
+      } else {
+        knight.goTo(healer.pos);
+        healer.goTo(knight.pos);
+      }
     }
 
     if (knight && knight.state === states.work) {
       let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
       let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
         && !(e instanceof Creep && e.owner.username === "Source Keeper")))
-      if (knight.pos.roomName === this.order.pos.roomName) {
-        enemies = enemies.concat(this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK));
-        if (!enemies.length) {
-          let res = this.order.pos.lookFor(LOOK_RESOURCES)[0]
-          if (res)
-            this.callPickUp(res.amount);
-        }
-      }
-      let target = knight.pos.findClosest(enemies);
+      if (knight.pos.roomName === this.order.pos.roomName && this.target)
+        enemies = enemies.concat(this.target);
 
+      let target = knight.pos.findClosest(enemies);
       let ans;
       if (target) {
         if (target instanceof StructurePowerBank) {
-          if (!this.roadTime)
-            this.roadTime = target!.pos.getTimeForPath(this.hive.pos);
-          let attack = knight.getBodyParts(ATTACK);
-          if (this.roadTime + (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 >= target.hits / attack)
-            this.callPickUp(target.power)
           if (knight.hits > knight.hitsMax * 0.5)
             ans = knight.attack(target);
         } else
@@ -110,7 +136,7 @@ export class dupletMaster extends SwarmMaster {
       } else if (knight.hits === knight.hitsMax)
         ans = knight.goRest(this.order.pos, { preferHighway: true });
 
-      this.healerFollow(this.healer, ans, knight.pos);
+      this.healerFollow(healer, ans, knight.pos);
     }
 
     if (healer && healer.state === states.work) {

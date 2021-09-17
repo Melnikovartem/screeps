@@ -153,9 +153,6 @@ export class Order {
             case COLOR_ORANGE:
               this.master = new squadMaster(this);
               break;
-            case COLOR_YELLOW:
-              this.master = new dupletMaster(this);
-              break;
             case COLOR_CYAN:
               this.master = new skMaster(this);
               break;
@@ -199,14 +196,19 @@ export class Order {
             let hiveToBoos = Apiary.hives[this.pos.roomName];
             if (hiveToBoos && this.pos.roomName !== this.hive.roomName
               && (hiveToBoos.stage === 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
-              hiveToBoos.bassboost = this.hive;
-              hiveToBoos.spawOrders = {};
-              _.forEach(this.hive.cells, (c) => {
-                if (c.master)
-                  c.master.waitingForBees = 0;
-              });
-              if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
-                (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
+              if (hiveToBoos.pos.getRoomRangeTo(this.hive.pos) <= 6) {
+                hiveToBoos.bassboost = this.hive;
+                hiveToBoos.spawOrders = {};
+                _.forEach(this.hive.cells, (c) => {
+                  if (c.master)
+                    c.master.waitingForBees = 0;
+                });
+                if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
+                  (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
+              } else if (hiveToBoos.cells.storage) {
+                this.delete();
+                Apiary.destroyTime = Game.time;
+              }
             } else
               this.delete();
             break;
@@ -307,18 +309,20 @@ export class Order {
         }
         break;
       case COLOR_ORANGE:
-        switch (this.flag.secondaryColor) {
-          case COLOR_GREEN:
-            if (!this.master) {
+        if (!this.master)
+          switch (this.flag.secondaryColor) {
+            case COLOR_GREEN:
               let master = new pickupMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
                 master.maxSpawns = +regex[0];
               master.targetBeeCount = master.maxSpawns;
               this.master = master;
-            }
-            break;
-        }
+              break;
+            case COLOR_YELLOW:
+              this.master = new dupletMaster(this);
+              break;
+          }
         break;
       case COLOR_GREY:
         switch (this.flag.secondaryColor) {
