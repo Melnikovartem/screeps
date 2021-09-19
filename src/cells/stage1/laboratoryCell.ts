@@ -145,25 +145,26 @@ export class laboratoryCell extends Cell {
         if (!inLabMax)
           inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "production"), (l) => l.store.getUsedCapacity(res)));
       }
-    sum += inLabMax;
+    sum += Math.max(inLabMax, 0);
     return sum;
   }
 
   getBoostInfo(r: BoostRequest) {
     let storageCell = this.hive.cells.storage;
-    if (storageCell && storageCell!.master.manager)
+    if (storageCell && storageCell.master.manager)
       _.some(BOOST_MINERAL[r.type], (resIter, k) => {
         let sum = this.getMineralSum(resIter);
         if (sum > LAB_BOOST_MINERAL) {
           r.res = resIter;
-          if (!r.amount)
-            r.amount = 1;
-          r.amount = Math.min(r.amount!, Math.floor(sum / LAB_BOOST_MINERAL));
+          if (r.amount)
+            r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
         }
         if ((r.lowLvl ? r.lowLvl : 0) - k <= 0)
           return true;
         return r.res;
       });
+    else
+      r.amount = 0;
     return r;
   }
 
@@ -183,8 +184,6 @@ export class laboratoryCell extends Cell {
       for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
         let r = this.boostRequests[bee.ref][k];
         let lab: StructureLab | undefined;
-
-        console.log(JSON.stringify(r));
 
         if (!r.res || !r.amount)
           continue;

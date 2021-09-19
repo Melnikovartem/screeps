@@ -47,7 +47,6 @@ export abstract class Master {
     bee.creep.notifyWhenAttacked(this.notify);
     if (bee.state === states.idle)
       bee.state = this.boost ? states.boosting : states.chill;
-    // bee.state = this.boost ? states.boosting : states.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;

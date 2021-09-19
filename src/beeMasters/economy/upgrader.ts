@@ -21,8 +21,10 @@ export class upgraderMaster extends Master {
 
   recalculateTargetBee() {
     let storageCell = this.hive.cells.storage;
-    if (!storageCell)
+    if (!storageCell) {
+      this.targetBeeCount = 0;
       return;
+    }
 
     this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
 
@@ -79,7 +81,8 @@ export class upgraderMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, (bee) => {
-      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25) || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0 && bee.state !== states.boosting) {
+      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
+        && bee.state !== states.boosting) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;

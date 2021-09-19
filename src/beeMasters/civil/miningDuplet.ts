@@ -49,7 +49,9 @@ export class dupletMaster extends SwarmMaster {
         let res = this.order.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
           this.callPickUp(res.amount);
-        this.order.delete();
+        this.maxSpawns = 0;
+        if (!this.order.pos.isFree())
+          this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
         return;
       }
       this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
@@ -65,7 +67,7 @@ export class dupletMaster extends SwarmMaster {
       damageWillBeMax += ticks * 600;
     }
 
-    if (this.checkBees() && (!this.target || this.target.hits - damageWillBeMax > 0)) {
+    if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
         setup: Setups.healer,
         amount: 1,
@@ -91,7 +93,7 @@ export class dupletMaster extends SwarmMaster {
   }
 
   callPickUp(power: number) {
-    if (!this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
+    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
     this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
   }
@@ -119,7 +121,7 @@ export class dupletMaster extends SwarmMaster {
         let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
         let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
           && !(e instanceof Creep && e.owner.username === "Source Keeper")))
-        if (knight.pos.roomName === this.order.pos.roomName && this.target)
+        if (knight.pos.roomName === this.order.pos.roomName && this.target && !enemies.filter((e) => e.pos.getRangeTo(this.order) < 6).length)
           enemies = enemies.concat(this.target);
 
         let target = knight.pos.findClosest(enemies);
@@ -157,10 +159,5 @@ export class dupletMaster extends SwarmMaster {
         }
       }
     }));
-  }
-
-  delete() {
-    super.delete();
-    _.forEach(this.bees, (b) => b.creep.suicide());
   }
 }
