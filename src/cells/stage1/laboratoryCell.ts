@@ -184,6 +184,8 @@ export class laboratoryCell extends Cell {
         let r = this.boostRequests[bee.ref][k];
         let lab: StructureLab | undefined;
 
+        console.log(JSON.stringify(r));
+
         if (!r.res || !r.amount)
           continue;
         r.amount = Math.min(r.amount, bee.getBodyParts(BOOST_PARTS[r.type], -1));

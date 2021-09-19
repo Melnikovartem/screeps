@@ -44,29 +44,25 @@ export class dupletMaster extends SwarmMaster {
     }
 
     if (this.order.pos.roomName in Game.rooms) {
-      let firstTime = !this.target;
       this.target = <StructurePowerBank | undefined>this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
       if (!this.target) {
         let res = this.order.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
           this.callPickUp(res.amount);
-        _.forEach(this.bees, (b) => b.creep.suicide());
-        this.maxSpawns = 0;
+        this.order.delete();
         return;
       }
-      if (firstTime)
-        this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
+      this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
       if (this.target.hits / (this.duplets.length * 600) <= this.pickupTime)
         this.callPickUp(this.target.power);
-    } else if (this.target)
-      --this.target.ticksToDecay;
+    }
 
     let damageWillBeMax = 0;
     for (let i = 0; i < this.duplets.length; ++i) {
       let ticks = this.duplets[i][0].creep.ticksToLive;
       if (!ticks)
         ticks = CREEP_LIFE_TIME;
-      damageWillBeMax += ticks * (30 * 20);
+      damageWillBeMax += ticks * 600;
     }
 
     if (this.checkBees() && (!this.target || this.target.hits - damageWillBeMax > 0)) {
@@ -106,58 +102,65 @@ export class dupletMaster extends SwarmMaster {
         bee.goRest(this.hive.pos);
     });
 
-    let [knight, healer] = this.duplets[0];
+    _.forEach(this.duplets, (couple => {
+      let [knight, healer] = couple;
 
-    if (knight && healer && !knight.creep.spawning && !healer.creep.spawning) {
-      if (knight.pos.isNearTo(healer)) {
-        knight.state = states.work;
-        healer.state = states.work;
-      } else {
-        knight.goTo(healer.pos);
-        healer.goTo(knight.pos);
+      if (knight && healer && !knight.creep.spawning && !healer.creep.spawning) {
+        if (knight.pos.isNearTo(healer)) {
+          knight.state = states.work;
+          healer.state = states.work;
+        } else {
+          knight.goTo(healer.pos);
+          healer.goTo(knight.pos);
+        }
       }
-    }
 
-    if (knight && knight.state === states.work) {
-      let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
-      let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
-        && !(e instanceof Creep && e.owner.username === "Source Keeper")))
-      if (knight.pos.roomName === this.order.pos.roomName && this.target)
-        enemies = enemies.concat(this.target);
+      if (knight && knight.state === states.work) {
+        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
+        let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
+          && !(e instanceof Creep && e.owner.username === "Source Keeper")))
+        if (knight.pos.roomName === this.order.pos.roomName && this.target)
+          enemies = enemies.concat(this.target);
 
-      let target = knight.pos.findClosest(enemies);
-      let ans;
-      if (target) {
-        if (target instanceof StructurePowerBank) {
-          if (knight.hits > knight.hitsMax * 0.5)
+        let target = knight.pos.findClosest(enemies);
+        let ans;
+        if (target) {
+          if (target instanceof StructurePowerBank) {
+            if (knight.hits > knight.hitsMax * 0.5)
+              ans = knight.attack(target);
+          } else
             ans = knight.attack(target);
-        } else
-          ans = knight.attack(target);
-      } else if (knight.hits === knight.hitsMax)
-        ans = knight.goRest(this.order.pos, { preferHighway: true });
+        } else if (knight.hits === knight.hitsMax)
+          ans = knight.goRest(this.order.pos, { preferHighway: true });
 
-      this.healerFollow(healer, ans, knight.pos);
-    }
-
-    if (healer && healer.state === states.work) {
-      if (healer.hits < healer.hitsMax) {
-        healer.heal(healer);
-      } if (knight && knight.hits < knight.hitsMax) {
-        if (healer.pos.isNearTo(knight))
-          healer.heal(knight);
-        else
-          healer.rangedHeal(knight);
-      } else {
-        let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, knight ? 3 : 10),
-          (bee) => bee.hits < bee.hitsMax));
-        if (healingTarget) {
-          if (healer.pos.isNearTo(healingTarget))
-            healer.heal(healingTarget);
-          else
-            healer.rangedHeal(healingTarget);
-        } else if (!knight)
-          healer.goTo(this.order.pos);
+        this.healerFollow(healer, ans, knight.pos);
       }
-    }
+
+      if (healer && healer.state === states.work) {
+        if (healer.hits < healer.hitsMax) {
+          healer.heal(healer);
+        } if (knight && knight.hits < knight.hitsMax) {
+          if (healer.pos.isNearTo(knight))
+            healer.heal(knight);
+          else
+            healer.rangedHeal(knight);
+        } else {
+          let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, knight ? 3 : 10),
+            (bee) => bee.hits < bee.hitsMax));
+          if (healingTarget) {
+            if (healer.pos.isNearTo(healingTarget))
+              healer.heal(healingTarget);
+            else
+              healer.rangedHeal(healingTarget);
+          } else if (!knight)
+            healer.goTo(this.order.pos);
+        }
+      }
+    }));
+  }
+
+  delete() {
+    super.delete();
+    _.forEach(this.bees, (b) => b.creep.suicide());
   }
 }

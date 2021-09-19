@@ -3,13 +3,13 @@ import { upgradeCell } from "../../cells/stage1/upgradeCell";
 import { prefix } from "../../order";
 import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
+import { STORAGE_BALANCE } from "../../cells/stage1/storageCell"
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class upgraderMaster extends Master {
   cell: upgradeCell;
-  boost = true;
   patternPerBee = 0;
   fastMode = false;
   fastModePossible = false;
@@ -28,6 +28,7 @@ export class upgraderMaster extends Master {
 
     this.targetBeeCount = 1;
     this.patternPerBee = 0;
+    this.boost = false;
 
     this.fastMode = true;
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
@@ -35,21 +36,18 @@ export class upgraderMaster extends Master {
       return;
     }
 
+    this.boost = true;
+
     if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000)
       return;
 
     let desiredRate = this.cell.maxRate;
-    if (this.cell.link && Object.keys(storageCell.links).length > 1
-      && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000)
-      desiredRate *= Object.keys(storageCell.links).length;
     let rounding = Math.floor;
-    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 900000)
+    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= STORAGE_BALANCE[RESOURCE_ENERGY])
       rounding = Math.ceil;
-    else if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 400000)
-      rounding = Math.round;
 
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
-    this.patternPerBee = rounding(desiredRate / 5 / this.targetBeeCount);
+    this.patternPerBee = rounding(desiredRate / 3 / this.targetBeeCount);
   }
 
   update() {

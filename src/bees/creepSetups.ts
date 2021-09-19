@@ -108,9 +108,8 @@ export const Setups = {
       patternLimit: 10,
     }),
     fast: new CreepSetup(SetupsNames.upgrader, {
-      fixed: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE],
-      pattern: [WORK, WORK, WORK, WORK, WORK, MOVE],
-      patternLimit: 5,
+      fixed: [WORK, WORK, WORK, CARRY, MOVE],
+      pattern: [WORK, WORK, WORK, MOVE],
     }),
   },
   builder: new CreepSetup(SetupsNames.builder, {
@@ -142,7 +141,6 @@ export const Setups = {
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL, MOVE, MOVE, MOVE],
   }),
   tank: new CreepSetup(SetupsNames.tank, {
-    fixed: [TOUGH, MOVE],
     pattern: [ATTACK, MOVE],
     patternLimit: 20,
   }),

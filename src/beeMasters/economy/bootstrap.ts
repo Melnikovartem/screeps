@@ -85,7 +85,7 @@ export class bootstrapMaster extends Master {
       };
 
       if (this.beesAmount < this.targetBeeCount * 0.2) {
-        order.priority = 2;
+        order.priority = this.hive.bassboost ? 2 : 0;
         order.amount = Math.ceil(this.targetBeeCount * 0.2 - this.beesAmount);
       }
 
@@ -220,7 +220,7 @@ export class bootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.hive.room.storage) {
+          if (!target && this.hive.room.storage && this.hive.room.storage.isActive()) {
             target = this.hive.room.storage;
             workType = "refill";
           }
