@@ -25,13 +25,8 @@ export class queenMaster extends Master {
         priority: 0,
       };
 
-      // can refill in 1 run
-      order.setup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 2 / 50);
-
-      /* i thought to make the same trick as with haulers, but in this case math is bad cause //50
-      if (this.hive.room.energyAvailable >= 1500)
-        order.setup.fixed = [WORK, MOVE];
-      */
+      // can refill in 2 run
+      order.setup.patternLimit = Math.ceil(this.hive.room.energyCapacityAvailable / 50 / 2);
 
       this.wish(order);
     }

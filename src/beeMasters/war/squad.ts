@@ -4,7 +4,6 @@ import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
 
 import { states } from "../_Master";
-import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 
 //first tandem btw
@@ -47,7 +46,7 @@ export class squadMaster extends SwarmMaster {
       }
       if (this.knights.length < 2) {
         let tankOrder: SpawnOrder = {
-          setup: Setups.tank,
+          setup: Setups.knight,
           amount: 2 - this.knights.length,
           priority: 1,
           master: this.ref,
@@ -105,18 +104,7 @@ export class squadMaster extends SwarmMaster {
         target = this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
 
       if (target) {
-        let miningMode = target instanceof StructurePowerBank;
-        if (miningMode) {
-          if (!this.roadTime)
-            this.roadTime = target.pos.getTimeForPath(this.hive.pos);
-          let attack = (knight1.getBodyParts(ATTACK) + (knight2 ? knight2.getBodyParts(ATTACK) : 0)) * 24 // 30/15*12
-          if (!target.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY).length && this.roadTime + (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 >= target.hits / attack)
-            target.pos.createFlag(Math.ceil((<StructurePowerBank>target).power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_GREY, COLOR_GREEN);
-        }
-
-        if (!miningMode || knight1.hits > knight1.hitsMax * 0.5)
-          ans1 = knight1.attack(target, { returnData: nextPos, ignoreCreeps: false });
-
+        ans1 = knight1.attack(target, { returnData: nextPos, ignoreCreeps: false });
         if (knight2) {
           if (nextPos.nextPos)
             newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => knight2!.pos.isNearTo(p)
@@ -126,8 +114,7 @@ export class squadMaster extends SwarmMaster {
             knight2.creep.move(knight2.pos.getDirectionTo(newPos));
           }
           if (knight2.pos.isNearTo(target) || !newPos)
-            if (!miningMode || knight2.hits > knight2.hitsMax * 0.5)
-              ans2 = knight2.attack(target, { ignoreCreeps: false });
+            ans2 = knight2.attack(target, { ignoreCreeps: false });
         }
       } else if (!needsHealing) {
         ans1 = knight1.goRest(this.order.pos, { returnData: nextPos });

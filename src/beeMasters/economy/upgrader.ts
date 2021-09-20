@@ -49,7 +49,7 @@ export class upgraderMaster extends Master {
       rounding = Math.ceil;
 
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
-    this.patternPerBee = rounding(desiredRate / 3 / this.targetBeeCount);
+    this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
   }
 
   update() {

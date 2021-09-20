@@ -1,7 +1,6 @@
 import { hordeMaster } from "./horde";
 import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 // most basic of bitches a horde full of wasps
@@ -19,16 +18,11 @@ export class hordeDefenseMaster extends hordeMaster {
     }
 
     if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: Setups.defender.normal,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
-      };
-
-      if (this.hive.stage < 1)
-        order.setup.fixed = [];
-
-      this.wish(order);
+      });
     }
   }
 }

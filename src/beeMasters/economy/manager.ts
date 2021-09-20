@@ -27,7 +27,7 @@ export class managerMaster extends Master {
       };
       // desired linear regex from desmos))
       let lvl = this.hive.room.controller!.level;
-      order.setup.patternLimit = lvl * lvl * 0.5 - lvl * 4.5 + 15;
+      order.setup.patternLimit = lvl * lvl - lvl * 9 + 30;
 
       this.wish(order);
     }
@@ -38,35 +38,19 @@ export class managerMaster extends Master {
       else
         return;
 
-    let emergencyRequests = _.filter(this.cell.requests, (r) => r.priority < 2);
     let bee = this.manager;
 
-    if (bee.state === states.chill || emergencyRequests.length) {
-      if (bee.target && this.cell.requests[bee.target]) {
-        if (emergencyRequests.length) {
-          let closest = this.cell.storage.pos.findClosest(_.map(emergencyRequests, (r) => r.to))!;
-          let target = _.filter(emergencyRequests, (r) => r.to.id === closest.id)[0];
-          if (this.cell.requests[bee.target].priority > target.priority
-            || this.cell.pos.getRangeTo(target.to.pos) > this.cell.pos.getRangeTo(target.to.pos)) {
-            bee.target = target.ref;
-            let res = this.cell.requests[bee.target].resource;
-            bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
-              : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
-          }
-        }
-      } else {
-        bee.target = null;
-        let targets: string[] = [];
-        for (let k in this.cell.requests)
-          if (this.cell.requests[k].amount > 0
-            && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
-            targets.push(k);
-        if (targets.length) {
-          bee.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
-          let res = this.cell.requests[bee.target].resource;
-          bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
-            : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
-        }
+    if (bee.state === states.chill) {
+      let targets: string[] = [];
+      for (let k in this.cell.requests)
+        if (this.cell.requests[k].amount > 0
+          && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
+          targets.push(k);
+      if (targets.length) {
+        bee.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
+        let res = this.cell.requests[bee.target].resource;
+        bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
+          : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
       }
     }
   }

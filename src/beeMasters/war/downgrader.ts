@@ -1,6 +1,5 @@
 import { Setups } from "../../bees/creepSetups"
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -16,13 +15,11 @@ export class downgradeMaster extends SwarmMaster {
       this.order.delete();
 
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: Setups.claimer,
         amount: 1,
         priority: 9,
-      };
-
-      this.wish(order);
+      });
     }
   }
 

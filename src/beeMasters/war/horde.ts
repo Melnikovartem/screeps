@@ -1,7 +1,6 @@
 import { Setups } from "../../bees/creepSetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
-import type { SpawnOrder } from "../../Hive";
 import { states } from "../_Master";
 import { profile } from "../../profiler/decorator";
 
@@ -15,13 +14,11 @@ export class hordeMaster extends SwarmMaster {
     super.update();
 
     if (this.checkBees()) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: Setups.knight,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
-      };
-
-      this.wish(order);
+      });
     }
   }
 

@@ -49,18 +49,7 @@ export class minerMaster extends Master {
           if (this.cell.pos.isFree() && bee.pos.isNearTo(this.cell.pos))
             bee.goTo(this.cell.pos);
           bee.harvest(this.cell.resource);
-          if (bee.creep.store[this.cell.resourceType] < 25)
-            break;
-
-          let target;
-          if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
-            target = this.cell.link;
-          else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
-            target = this.cell.container;
-          bee.transfer(target, this.cell.resourceType);
-          if (target)
-            break;
-
+          break;
         case states.chill:
           if (bee.goRest(this.cell.pos) === OK && this.cell.resourceType === RESOURCE_ENERGY) {
             let target = this.cell.container;
@@ -74,13 +63,21 @@ export class minerMaster extends Master {
           bee.state = states.work;
           break;
         case states.flee:
-          if (this.cell.container && bee.pos.isNearTo(this.cell.container))
-            bee.transfer(this.cell.container, RESOURCE_ENERGY);
           let lair = this.cell.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
           if (lair && lair.pos.getRangeTo(bee) < 6)
             bee.goTo(this.hive.pos);
           bee.state = states.work;
           break;
+      }
+
+      if (bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25) {
+        let target;
+        if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
+          target = this.cell.link;
+        else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
+          target = this.cell.container;
+        if (target && bee.pos.isNearTo(target) || bee.store.getFreeCapacity(this.cell.resourceType) === 0)
+          bee.transfer(target, this.cell.resourceType);
       }
     });
   }

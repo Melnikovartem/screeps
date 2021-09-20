@@ -18,7 +18,7 @@ export class dupletMaster extends SwarmMaster {
   maxSpawns = this.order.pos.getOpenPositions(true).length * 2;
   roadTime = this.order.pos.getTimeForPath(this.hive);
   dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
-  pickupTime = (Setups.pickup.pattern.length * Setups.pickup.patternLimit + Setups.pickup.fixed.length) * 3 + this.roadTime;
+  pickupTime = Setups.pickup.patternLimit * 4.5 + this.roadTime;
 
   newBee(bee: Bee) {
     super.newBee(bee);
@@ -75,11 +75,11 @@ export class dupletMaster extends SwarmMaster {
         master: this.ref,
       }, this.ref + "_healer");
       this.wish({
-        setup: Setups.tank,
+        setup: Setups.miner.power,
         amount: 1,
         priority: 4,
         master: this.ref,
-      }, this.ref + "_knight");
+      }, this.ref + "_miner");
     }
   }
 
@@ -95,7 +95,7 @@ export class dupletMaster extends SwarmMaster {
   callPickUp(power: number) {
     if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    let name = this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 50)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
     if (typeof name === "string")
       Game.flags[name].memory.hive = this.hive.roomName;
   }

@@ -8,6 +8,7 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class pickupMaster extends SwarmMaster {
+  waitPos = this.order.pos.getOpenPositions(true, 5)[0];
 
   update() {
     super.update();
@@ -57,8 +58,11 @@ export class pickupMaster extends SwarmMaster {
                 bee.withdraw(target, findOptimalResource(target.store));
           } else if (bee.store.getUsedCapacity() > 0)
             bee.state = states.fflush;
-          else
-            bee.goRest(this.order.pos);
+          else {
+            if (!this.waitPos)
+              this.waitPos = this.order.pos;
+            bee.goRest(this.waitPos);
+          }
           break;
         case states.fflush:
           if (!bee.target)
