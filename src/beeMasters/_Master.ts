@@ -81,8 +81,8 @@ export abstract class Master {
   wish(order: SpawnOrder, ref: string = this.ref) {
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
-      if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyAvailable ||
-        Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0) {
+      if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable, 25).cost <= this.hive.room.energyAvailable ||
+        Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable, 25).body.length > 0) {
         order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
         this.hive.spawOrders[ref] = order;
       } else

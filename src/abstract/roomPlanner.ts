@@ -521,7 +521,7 @@ export class RoomPlanner {
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
-          if ((structure.hits < heal * 0.8 && !constructions) || structure.hits < heal * 0.3) {
+          if ((structure.hits < heal * 0.5 && !constructions) || structure.hits < heal * 0.25) {
             sum += Math.ceil((heal - structure.hits) / 100);
             ans.push(pos);
           }

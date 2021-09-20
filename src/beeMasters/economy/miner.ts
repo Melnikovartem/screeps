@@ -74,6 +74,8 @@ export class minerMaster extends Master {
           bee.state = states.work;
           break;
         case states.flee:
+          if (this.cell.container && bee.pos.isNearTo(this.cell.container))
+            bee.transfer(this.cell.container, RESOURCE_ENERGY);
           let lair = this.cell.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
           if (lair && lair.pos.getRangeTo(bee) < 6)
             bee.goTo(this.hive.pos);

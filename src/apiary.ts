@@ -40,6 +40,7 @@ export class _Apiary {
     this.hives = {};
     this.orders = {};
     this.masters = {};
+
   }
 
   init() {
