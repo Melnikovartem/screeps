@@ -52,11 +52,11 @@ export class dupletMaster extends SwarmMaster {
         this.maxSpawns = 0;
         if (!this.order.pos.isFree())
           this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
-        return;
+      } else {
+        this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
+        if (this.target.hits / (this.duplets.length * 600) <= this.pickupTime)
+          this.callPickUp(this.target.power);
       }
-      this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
-      if (this.target.hits / (this.duplets.length * 600) <= this.pickupTime)
-        this.callPickUp(this.target.power);
     }
 
     let damageWillBeMax = 0;
@@ -95,7 +95,9 @@ export class dupletMaster extends SwarmMaster {
   callPickUp(power: number) {
     if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.order.pos.createFlag(Math.ceil(power / (Setups.pickup.patternLimit * 100)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    if (typeof name === "string")
+      Game.flags[name].memory.hive = this.hive.roomName;
   }
 
   run() {

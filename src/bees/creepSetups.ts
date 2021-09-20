@@ -88,7 +88,7 @@ export const Setups = {
     fixed: [WORK, CARRY, MOVE],
     pattern: [CARRY, CARRY, MOVE],
   }),
-  pickup: new CreepSetup(SetupsNames.hauler, {
+  pickup: new CreepSetup(SetupsNames.hauler + " P", {
     pattern: [CARRY, CARRY, MOVE],
     patternLimit: 15,
   }),

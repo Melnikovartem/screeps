@@ -60,7 +60,7 @@ export class upgraderMaster extends Master {
       if (this.checkBees()) {
         let order: SpawnOrder = {
           setup: Setups.upgrader.manual,
-          amount: Math.max(1, this.targetBeeCount - this.beesAmount),
+          amount: 1,
           priority: 8,
         };
 
@@ -80,9 +80,17 @@ export class upgraderMaster extends Master {
   }
 
   run() {
+    if (this.boost)
+      _.forEach(this.bees, (bee) => {
+        if (bee.state === states.boosting)
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
+            bee.state = states.chill;
+      });
+
     _.forEach(this.activeBees, (bee) => {
-      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-        && bee.state !== states.boosting) {
+      if (bee.state === states.boosting)
+        return;
+      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;
@@ -113,10 +121,6 @@ export class upgraderMaster extends Master {
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             bee.state = states.work;
           bee.goRest(this.cell.pos);
-          break;
-        case states.boosting:
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
-            bee.state = states.chill;
           break;
         case states.refill:
           if (bee.store.getFreeCapacity(RESOURCE_ENERGY) === 0)

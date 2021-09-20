@@ -227,6 +227,9 @@ export class laboratoryCell extends Cell {
         if (!lab)
           continue;
 
+        if (bee.creep.spawning)
+          return ERR_BUSY;
+
         if (lab.store.getUsedCapacity(r.res) >= LAB_BOOST_MINERAL && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= LAB_BOOST_ENERGY) {
           if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
             && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {

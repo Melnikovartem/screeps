@@ -16,9 +16,9 @@ export class builderMaster extends Master {
     let constSum = this.hive.sumCost;
     if (!storage || constSum < 100 && constLen <= 1 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
       this.targetBeeCount = 0;
-    else if ((constSum < 13000 && constLen < 10) || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
+    else if (constSum < 13000 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
       this.targetBeeCount = 1;
-    else if ((constSum < 22000 || constLen < 20) || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000)
+    else if (constSum < 22000 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000)
       this.targetBeeCount = 2;
     else
       this.targetBeeCount = 3;
@@ -32,7 +32,7 @@ export class builderMaster extends Master {
       if (this.checkBees()) {
         let order: SpawnOrder = {
           setup: Setups.builder,
-          amount: this.targetBeeCount - this.beesAmount,
+          amount: 1,
           priority: 8,
         };
         this.wish(order);

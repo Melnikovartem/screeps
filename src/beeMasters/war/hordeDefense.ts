@@ -25,6 +25,9 @@ export class hordeDefenseMaster extends hordeMaster {
         priority: 1,
       };
 
+      if (this.hive.stage < 1)
+        order.setup.fixed = [];
+
       this.wish(order);
     }
   }

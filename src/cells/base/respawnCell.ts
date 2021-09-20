@@ -51,6 +51,9 @@ export class respawnCell extends Cell {
       else
         setup = order.setup.getBody(energyAvailable);
 
+      if (this.hive.roomName === "E13S56" && order.priority === 5)
+        setup = order.setup.getBody(energyAvailable);
+
       if (setup.body.length) {
         let name = order.setup.name + " " + makeId(4);
         let memory: CreepMemory = {
@@ -59,6 +62,9 @@ export class respawnCell extends Cell {
           state: states.idle,
           target: null,
         };
+
+        if (setup.cost > energyAvailable)
+          break;
 
         let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 

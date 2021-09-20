@@ -4,7 +4,6 @@ import type { developmentCell } from "../../cells/stage0/developmentCell";
 import { Setups } from "../../bees/creepSetups";
 import { Master, states } from "../_Master";
 import type { Bee } from "../../bees/Bee";
-import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
@@ -77,19 +76,12 @@ export class bootstrapMaster extends Master {
       this.recalculateTargetBee(); // just to check if expansions are done
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
-    if (this.checkBees() && this.hive.stage === 0 && roomInfo.safePlace) {
-      let order: SpawnOrder = {
+    if (this.checkBees() && roomInfo.safePlace) {
+      this.wish({
         setup: Setups.bootstrap,
-        amount: Math.max(this.targetBeeCount - this.beesAmount, 1),
-        priority: 9,
-      };
-
-      if (this.beesAmount < this.targetBeeCount * 0.2) {
-        order.priority = this.hive.bassboost ? 2 : 0;
-        order.amount = Math.ceil(this.targetBeeCount * 0.2 - this.beesAmount);
-      }
-
-      this.wish(order);
+        amount: 1,
+        priority: this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5),
+      });
     }
   }
 
