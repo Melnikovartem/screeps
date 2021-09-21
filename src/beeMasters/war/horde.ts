@@ -22,7 +22,7 @@ export class hordeMaster extends SwarmMaster {
     }
   }
 
-  attackOrFlee(bee: Bee, target: Creep | Structure) {
+  attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
     if (bee.pos.getRangeTo(target) <= 3)
       bee.rangedAttack(target);
     else if (bee.hits === bee.hitsMax)
@@ -48,7 +48,7 @@ export class hordeMaster extends SwarmMaster {
         if (bee.pos.roomName !== this.order.pos.roomName)
           bee.state = states.chill;
         let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-        let target = bee.pos.findClosest(roomInfo.enemies);
+        let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
         if (target) {
           this.attackOrFlee(bee, target);
         } else

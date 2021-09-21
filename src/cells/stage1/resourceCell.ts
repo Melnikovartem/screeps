@@ -46,7 +46,7 @@ export class resourceCell extends Cell {
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);
-    if (roomInfo.ownedByEnemy)
+    if (roomInfo.currentOwner !== Apiary.username)
       this.operational = false;
 
     if (this.operational) {
@@ -64,7 +64,7 @@ export class resourceCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(undefined, false);
 
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();

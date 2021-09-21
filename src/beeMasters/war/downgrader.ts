@@ -11,7 +11,7 @@ export class downgradeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-    if (!roomInfo.ownedByEnemy)
+    if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username)
       this.order.delete();
 
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
@@ -31,9 +31,9 @@ export class downgradeMaster extends SwarmMaster {
         bee.goTo(this.order.pos);
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
         let room = Game.rooms[this.order.pos.roomName];
-        if (room && room.controller && roomInfo.ownedByEnemy) {
+        if (room && room.controller && roomInfo.currentOwner) {
           if (!roomInfo.safePlace && !Game.flags["attack_" + room.name])
-            roomInfo.enemies[0].pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
+            roomInfo.enemies[0].object.pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
 
           let ans = bee.attackController(room.controller);
           if (ans === OK) {

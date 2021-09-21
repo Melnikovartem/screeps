@@ -90,7 +90,7 @@ export class Hive {
     this.pos = this.getPos("hive");
 
     this.stage = 0;
-    if (this.room.storage && this.room.storage.isActive() && this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)
+    if (this.room.storage && this.room.storage.isActive())
       this.stage = 1;
 
     if (this.stage === 1 && this.room.controller!.level === 8)
@@ -105,6 +105,8 @@ export class Hive {
     if (this.stage === 0)
       this.cells.dev = new developmentCell(this);
     else {
+      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
+        this.cells.dev = new developmentCell(this);
       this.cells.storage = new storageCell(this, this.room.storage!);
       this.cells.upgrade = new upgradeCell(this, this.room.controller!);
       this.cells.excavation = new excavationCell(this);

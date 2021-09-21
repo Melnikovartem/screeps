@@ -121,8 +121,9 @@ export class dupletMaster extends SwarmMaster {
 
       if (knight && knight.state === states.work) {
         let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
-        let enemies = _.filter(roomInfo.enemies, (e) => (e.pos.getRangeTo(knight!) < 3 || (knight!.pos.roomName === this.order.pos.roomName)
-          && !(e instanceof Creep && e.owner.username === "Source Keeper")))
+        let knightPos = knight.pos;
+        let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
+          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.order.pos.roomName))), (e) => e.object);
         if (knight.pos.roomName === this.order.pos.roomName && this.target && !enemies.filter((e) => e.pos.getRangeTo(this.order) < 6).length)
           enemies = enemies.concat(this.target);
 

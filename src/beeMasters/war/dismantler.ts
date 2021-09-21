@@ -45,7 +45,7 @@ export class dismantlerMaster extends SwarmMaster {
 
       if (bee.state === states.work && bee.pos.roomName !== this.order.pos.roomName) {
         let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
-        let target = bee.pos.findClosest(roomInfo.enemies);
+        let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
 
         // not sure what to do if there will be smart towers
         if (target instanceof Structure && !(target instanceof StructureTower && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0))

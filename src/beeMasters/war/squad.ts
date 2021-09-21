@@ -92,9 +92,9 @@ export class squadMaster extends SwarmMaster {
 
     if (knight1 && knight1.state === states.work && !this.waitingForBees) {
       let roomInfo = Apiary.intel.getInfo(knight1.pos.roomName);
-      let target: Structure | Creep | null = knight1.pos.findClosest(_.filter(roomInfo.enemies,
-        (e) => (e.pos.getRangeTo(knight1!) < 4 || (knight1!.pos.roomName === this.order.pos.roomName
-          && !(e instanceof Creep && e.owner.username === "Source Keeper")))));
+      let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
+        && (knight1!.pos.getRangeTo(e.object) < 4 || knight1!.pos.roomName === this.order.pos.roomName))), (e) => e.object);
+      let target = knight1.pos.findClosest(enemies);
       let nextPos: TravelToReturnData = {};
       let newPos: RoomPosition | undefined;
       let ans1, ans2;

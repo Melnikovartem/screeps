@@ -13,7 +13,7 @@ export class annexMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
 
-    let checkAnnex = roomInfo.safePlace && !roomInfo.ownedByEnemy && (this.hive.room.energyAvailable > 650);
+    let checkAnnex = roomInfo.safePlace && !roomInfo.currentOwner && (this.hive.room.energyAvailable > 650);
     if (checkAnnex && this.hive.bassboost)
       checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 

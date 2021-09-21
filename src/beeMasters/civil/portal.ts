@@ -8,6 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class portalMaster extends SwarmMaster {
   maxSpawns = Infinity;
+  notify = false;
 
   update() {
     super.update();

@@ -51,13 +51,10 @@ export class respawnCell extends Cell {
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 
-      if (order.priority > 3 || order.priority === 1)
-        setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);
+      if (order.priority === 0)
+        setup = order.setup.getBody(energyAvailable, moveMax);
       else
-        setup = order.setup.getBody(energyAvailable, moveMax);
-
-      if (this.hive.roomName === "E13S56" && order.priority === 5)
-        setup = order.setup.getBody(energyAvailable, moveMax);
+        setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);
 
       if (setup.body.length) {
         let name = order.setup.name + " " + makeId(4);
