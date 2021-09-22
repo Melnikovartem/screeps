@@ -1,13 +1,10 @@
-import { Cell } from "./cells/_Cell";
-import type { CreepSetup } from "./bees/creepSetups";
-
 import { respawnCell } from "./cells/base/respawnCell";
 import { defenseCell } from "./cells/base/defenseCell";
 
 import { developmentCell } from "./cells/stage0/developmentCell";
 
 import { storageCell } from "./cells/stage1/storageCell";
-import { upgradeCell } from "./cells/stage1/upgradeCell";
+import { UpgradeCell } from "./cells/stage1/upgradeCell";
 import { excavationCell } from "./cells/stage1/excavationCell";
 import { laboratoryCell } from "./cells/stage1/laboratoryCell";
 
@@ -16,11 +13,11 @@ import { powerCell } from "./cells/stage2/powerCell";
 
 import { builderMaster } from "./beeMasters/economy/builder";
 
-import type { Pos } from "./abstract/roomPlanner";
-
 import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
-import { DEVELOPING } from "./settings";
+
+import type { Pos } from "./abstract/roomPlanner";
+import type { CreepSetup } from "./bees/creepSetups";
 
 export interface SpawnOrder {
   amount: number;
@@ -35,18 +32,27 @@ export interface HivePositions {
   spawn: Pos,
   lab: Pos,
 }
+
 export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
 
 interface hiveCells {
   storage?: storageCell;
   defense: defenseCell;
   spawn: respawnCell;
-  upgrade?: upgradeCell;
+  upgrade?: UpgradeCell;
   excavation?: excavationCell;
   dev?: developmentCell;
   lab?: laboratoryCell;
   observe?: observeCell;
   power?: powerCell;
+}
+
+export enum hiveStates {
+  economy = 0,
+  lowenergy = 1,
+  nospawn = 2,
+  nukealert = 6,
+  war = 9,
 }
 
 @profile
@@ -77,7 +83,7 @@ export class Hive {
   structuresConst: RoomPosition[] = [];
   sumCost: number = 0;
 
-  // help grow creeps from other colony
+  state: hiveStates = hiveStates.economy;
 
   constructor(roomName: string) {
     this.roomName = roomName;
@@ -108,7 +114,7 @@ export class Hive {
       if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
         this.cells.dev = new developmentCell(this);
       this.cells.storage = new storageCell(this, this.room.storage!);
-      this.cells.upgrade = new upgradeCell(this, this.room.controller!);
+      this.cells.upgrade = new UpgradeCell(this, this.room.controller!);
       this.cells.excavation = new excavationCell(this);
       this.cells.lab = new laboratoryCell(this);
 
@@ -244,8 +250,15 @@ export class Hive {
     if (Apiary.logger)
       Apiary.logger.hiveLog(this);
 
-    if (DEVELOPING)
-      _.forEach(this.cells, (cell) => { Cell.prototype.update.call(cell); });
+    // ask for boost
+    if ((this.state === hiveStates.nospawn
+      || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
+      && !Apiary.orders["boost_" + this.roomName]) {
+      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRangeTo(h) < 5 && h.stage > 0)
+      if (validHives.length)
+        this.pos.createFlag("boost_" + this.roomName, COLOR_PURPLE, COLOR_WHITE);
+    }
+
 
     _.forEach(this.cells, (cell) => {
       safeWrap(() => cell.update(), cell.print + " update");

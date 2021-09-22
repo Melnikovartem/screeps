@@ -1,11 +1,14 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
 
+import { hiveStates } from "../../Hive";
 import { states } from "../../beeMasters/_Master";
 
 import { makeId } from "../../abstract/utils";
 import { queenMaster } from "../../beeMasters/economy/queen";
 import { profile } from "../../profiler/decorator";
+
+
+import type { Hive } from "../../Hive";
 
 @profile
 export class respawnCell extends Cell {
@@ -27,8 +30,17 @@ export class respawnCell extends Cell {
 
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
-    if (!Object.keys(this.spawns).length)
-      this.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
+
+    switch (this.hive.state) {
+      case hiveStates.economy:
+        if (!Object.keys(this.spawns).length)
+          this.hive.state = hiveStates.nospawn;
+        break;
+      case hiveStates.nospawn:
+        if (Object.keys(this.spawns).length)
+          this.hive.state = hiveStates.economy;
+        break;
+    }
   };
 
   run() {

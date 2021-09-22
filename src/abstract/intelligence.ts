@@ -4,12 +4,12 @@
 import { profile } from "../profiler/decorator";
 import { UPDATE_EACH_TICK } from "../settings";
 
-enum types {
+export enum types {
   static = 0,
   moving = 1,
 }
 
-enum roomStates {
+export enum roomStates {
   ownedByMe = 0,
   reservedByMe = 1,
   noOwner = 2,

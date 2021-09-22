@@ -1,8 +1,8 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
+import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 
-import { upgraderMaster } from "../../beeMasters/economy/upgrader";
 import { profile } from "../../profiler/decorator";
+import type { Hive } from "../../Hive";
 
 @profile
 export class upgradeCell extends Cell {
@@ -10,7 +10,7 @@ export class upgradeCell extends Cell {
   controller: StructureController;
   link: StructureLink | undefined;
   storageLink: StructureLink | undefined;
-  master: upgraderMaster;
+  master: UpgraderMaster;
 
   maxRate = 1;
   ratePerCreepMax = 1;
@@ -27,7 +27,7 @@ export class upgradeCell extends Cell {
     else
       this.pos = this.controller.pos;
 
-    this.master = new upgraderMaster(this);
+    this.master = new UpgraderMaster(this);
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {

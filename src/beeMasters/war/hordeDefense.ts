@@ -1,5 +1,5 @@
 import { hordeMaster } from "./horde";
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import { profile } from "../../profiler/decorator";
 
@@ -19,7 +19,7 @@ export class hordeDefenseMaster extends hordeMaster {
 
     if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
       this.wish({
-        setup: Setups.defender.normal,
+        setup: setups.defender.normal,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
       });

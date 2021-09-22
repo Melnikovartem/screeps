@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups"
+import { setups } from "../../bees/creepsetups"
 import { SwarmMaster } from "../_SwarmMaster";
 import { profile } from "../../profiler/decorator";
 
@@ -16,7 +16,7 @@ export class downgradeMaster extends SwarmMaster {
 
     if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
       this.wish({
-        setup: Setups.claimer,
+        setup: setups.claimer,
         amount: 1,
         priority: 9,
       });

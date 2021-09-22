@@ -5,10 +5,7 @@ import { dismantlerMaster } from "./beeMasters/war/dismantler";
 import { waiterMaster } from "./beeMasters/war/waiter";
 import { squadMaster } from "./beeMasters/war/squad";
 
-import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
-
-import type { Master } from "./beeMasters/_Master";
-import type { Hive, HivePositions } from "./Hive";
+import { hiveStates } from "./Hive";
 import { dupletMaster } from "./beeMasters/civil/miningDuplet";
 import { puppetMaster } from "./beeMasters/civil/puppet";
 import { portalMaster } from "./beeMasters/civil/portal";
@@ -22,6 +19,10 @@ import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
 import { makeId } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
+
+import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
+import type { Master } from "./beeMasters/_Master";
+import type { Hive, HivePositions } from "./Hive";
 
 export enum prefix {
   upgrade = "polen",
@@ -54,7 +55,7 @@ export class Order {
           break;
         case COLOR_PURPLE:
           if (this.flag.secondaryColor === COLOR_WHITE)
-            filter = (h) => h.roomName !== this.pos.roomName;
+            filter = (h) => h.roomName !== this.pos.roomName && h.stage === hiveStates.economy;
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
@@ -193,22 +194,21 @@ export class Order {
               this.delete();
             break;
           case COLOR_WHITE:
+            if (this.hive.stage !== hiveStates.economy) {
+              this.acted = false;
+              break;
+            }
+
             let hiveToBoos = Apiary.hives[this.pos.roomName];
-            if (hiveToBoos && this.pos.roomName !== this.hive.roomName
-              && (hiveToBoos.stage === 0 || (hiveToBoos.cells.storage && hiveToBoos.cells.storage.storage.store[RESOURCE_ENERGY] < 10000))) {
-              if (hiveToBoos.pos.getRoomRangeTo(this.hive.pos) <= 6) {
-                hiveToBoos.bassboost = this.hive;
-                hiveToBoos.spawOrders = {};
-                _.forEach(this.hive.cells, (c) => {
-                  if (c.master)
-                    c.master.waitingForBees = 0;
-                });
-                if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
-                  (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee();
-              } else if (hiveToBoos.cells.storage) {
-                this.delete();
-                Apiary.destroyTime = Game.time;
-              }
+            if (hiveToBoos && this.pos.roomName !== this.hive.roomName) {
+              hiveToBoos.bassboost = this.hive;
+              hiveToBoos.spawOrders = {};
+              _.forEach(this.hive.cells, (c) => {
+                if (c.master)
+                  c.master.waitingForBees = 0;
+              });
+              if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
+                (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee()
             } else
               this.delete();
             break;
@@ -368,7 +368,7 @@ export class Order {
               if (resource) {
                 if (this.hive.cells.excavation)
                   this.hive.cells.excavation.addResource(resource);
-                else if (this.hive.cells.dev)
+                if (this.hive.cells.dev)
                   this.hive.cells.dev.addResource(resource);
               } else
                 this.delete();

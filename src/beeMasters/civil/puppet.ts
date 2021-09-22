@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups"
+import { setups } from "../../bees/creepsetups"
 import { SwarmMaster } from "../_SwarmMaster";
 import { profile } from "../../profiler/decorator";
 
@@ -9,7 +9,7 @@ export class puppetMaster extends SwarmMaster {
     super.update();
     if (this.checkBees()) {
       this.wish({
-        setup: Setups.puppet,
+        setup: setups.puppet,
         amount: 1,
         priority: 2, // well it is cheap -_-
       });

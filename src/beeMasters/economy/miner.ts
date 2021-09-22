@@ -1,6 +1,6 @@
 import type { resourceCell } from "../../cells/stage1/resourceCell";
 
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
@@ -21,13 +21,13 @@ export class minerMaster extends Master {
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
     if (this.checkBees() && this.cell.perSecondNeeded > 0 && roomInfo.safePlace && this.cell.operational) {
       let order: SpawnOrder = {
-        setup: Setups.miner.energy,
+        setup: setups.miner.energy,
         amount: 1,
         priority: 2,
       };
 
       if (this.cell.resourceType !== RESOURCE_ENERGY) {
-        order.setup = Setups.miner.minerals;
+        order.setup = setups.miner.minerals;
         order.priority = 6;
       } else if (this.cell.pos.roomName !== this.hive.roomName)
         order.priority = 5;

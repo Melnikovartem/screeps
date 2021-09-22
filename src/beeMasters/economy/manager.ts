@@ -1,6 +1,6 @@
 import type { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
 import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
@@ -21,7 +21,7 @@ export class managerMaster extends Master {
 
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        setup: Setups.manager,
+        setup: setups.manager,
         amount: 1,
         priority: 7,
       };

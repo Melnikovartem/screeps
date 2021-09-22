@@ -1,6 +1,6 @@
 import type { excavationCell } from "../../cells/stage1/excavationCell";
 
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
 import { findOptimalResource } from "../../abstract/utils"
 import { profile } from "../../profiler/decorator";
@@ -68,7 +68,7 @@ export class haulerMaster extends Master {
 
     if (this.checkBees()) {
       this.wish({
-        setup: Setups.hauler,
+        setup: setups.hauler,
         amount: 1,
         priority: 6,
       });

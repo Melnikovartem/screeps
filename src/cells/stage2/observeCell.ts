@@ -11,6 +11,7 @@ export class observeCell extends Cell {
   roomsToCheck: string[] = [];
   prevRoom: string;
   powerRooms: string[] = [];
+  doPowerCheck = false;
 
   constructor(hive: Hive, obeserver: StructureObserver) {
     super(hive, "ObserveCell_" + hive.room.name);
@@ -52,7 +53,14 @@ export class observeCell extends Cell {
     if (!storage || storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[RESOURCE_ENERGY]! / 2)
       return;
 
-    let power = <StructurePowerBank>Game.rooms[this.prevRoom].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
+    this.powerCheck(this.prevRoom);
+
+  }
+
+  powerCheck(roomName: string) {
+    if (!this.doPowerCheck)
+      return;
+    let power = <StructurePowerBank>Game.rooms[roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
     if (!power)
       return;
     let open = power.pos.getOpenPositions(true).length;

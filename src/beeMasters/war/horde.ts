@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
 import { states } from "../_Master";
@@ -15,7 +15,7 @@ export class hordeMaster extends SwarmMaster {
 
     if (this.checkBees()) {
       this.wish({
-        setup: Setups.knight,
+        setup: setups.knight,
         amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
       });

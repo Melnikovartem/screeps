@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 
@@ -14,7 +14,7 @@ export class pickupMaster extends SwarmMaster {
     super.update();
     if (this.checkBees()) {
       let order: SpawnOrder = {
-        setup: Setups.pickup,
+        setup: setups.pickup,
         amount: 1,
         priority: 4,
       };

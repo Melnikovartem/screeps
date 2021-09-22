@@ -7,6 +7,8 @@ import { makeId } from "../../abstract/utils";
 @profile
 export class defenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
+  nukes: RoomPosition[] = [];
+  nukesDefenseMap = {};
 
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
@@ -38,7 +40,7 @@ export class defenseCell extends Cell {
           return;
         if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)
           return;
-        if (!Apiary.defenseSwarms[roomName] && _.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length === 0) {
+        if (this.notDef(roomName)) {
           let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
           if (!pos)
             pos = enemy.pos;
@@ -83,12 +85,16 @@ export class defenseCell extends Cell {
       Game.flags[ans].memory = { hive: this.hive.roomName };
   }
 
+  notDef(roomName: string) {
+    return !Apiary.defenseSwarms[roomName] && !_.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length;
+  }
+
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
-        if (roomInfo.dangerlvlmax > 6)
+        if (roomInfo.dangerlvlmax > 6 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
         if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length) {
           if (this.hive.stage < 2)

@@ -1,10 +1,10 @@
 // manages colony untill storage lvl
 import type { developmentCell } from "../../cells/stage0/developmentCell";
-
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
-import type { Bee } from "../../bees/Bee";
+
 import { profile } from "../../profiler/decorator";
+import type { Bee } from "../../bees/Bee";
 
 type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
 
@@ -13,16 +13,12 @@ type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill
 export class bootstrapMaster extends Master {
   cell: developmentCell;
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
-  handAddedResources: RoomPosition[] = [];
 
   constructor(developmentCell: developmentCell) {
     super(developmentCell.hive, developmentCell.ref);
 
     this.cell = developmentCell;
     this.recalculateTargetBee();
-
-    /* if (this.hive.roomName === "E13S56")
-      this.handAddedResources = [this.roomPos(22, 15), this.roomPos(15, 22, "E13S55")] */
   }
 
   roomPos(x: number, y: number, r?: string) {
@@ -34,8 +30,8 @@ export class bootstrapMaster extends Master {
     let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200);
     if (this.hive.bassboost)
       workBodyParts = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
-    if (Setups.bootstrap.patternLimit)
-      workBodyParts = Math.min(Setups.bootstrap.patternLimit, workBodyParts);
+    if (setups.bootstrap.patternLimit)
+      workBodyParts = Math.min(setups.bootstrap.patternLimit, workBodyParts);
 
     // theoretically i should count road from minerals to controller, but this is good enough
     let magicNumber = [0.5, 0.666];
@@ -78,7 +74,7 @@ export class bootstrapMaster extends Master {
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
     if (this.checkBees() && roomInfo.safePlace) {
       this.wish({
-        setup: Setups.bootstrap,
+        setup: setups.bootstrap,
         amount: 1,
         priority: this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5),
       });
@@ -118,8 +114,8 @@ export class bootstrapMaster extends Master {
       switch (bee.state) {
         case states.refill:
           let source: Source | null;
-          if (this.handAddedResources.length) {
-            let pos = this.handAddedResources[0];
+          if (this.cell.handAddedResources.length) {
+            let pos = this.cell.handAddedResources[0];
             if (bee.pos.roomName !== pos.roomName)
               bee.goTo(pos);
             else {
@@ -131,14 +127,15 @@ export class bootstrapMaster extends Master {
                 target = pos.lookFor(LOOK_RESOURCES).filter((r) => r.resourceType === RESOURCE_ENERGY && r.amount > 0)[0];
               if (!target)
                 target = <StructureStorage>pos.lookFor(LOOK_STRUCTURES)
-                  .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+                  .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0
+                    && (!this.hive.room.storage || s.id !== this.hive.room.storage.id))[0];
               if (target) {
                 if (target instanceof Resource)
                   bee.pickup(target)
                 else
                   bee.withdraw(target, RESOURCE_ENERGY);
               } else
-                this.handAddedResources.shift();
+                this.cell.handAddedResources.shift();
             }
             return;
           }
@@ -181,8 +178,8 @@ export class bootstrapMaster extends Master {
                 workType = "upgrade";
               else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
                 || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
-                && (<StructureSpawn | StructureExtension | StructureTower>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
-                workType = "refill"; // also can be StructureStorage, but if i cast that it will be sad (different type of <Store>)
+                && (<StructureStorage>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
+                workType = "refill"; // also can be different types of <Store>, so just storage for easy check
               else if (target.hits < target.hitsMax)
                 workType = "repair";
               else

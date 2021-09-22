@@ -1,7 +1,8 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
-import type { SpawnOrder, Hive } from "../../Hive";
+
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder, Hive } from "../../Hive";
 
 @profile
 export class builderMaster extends Master {
@@ -31,7 +32,7 @@ export class builderMaster extends Master {
       this.recalculateTargetBee();
       if (this.checkBees()) {
         let order: SpawnOrder = {
-          setup: Setups.builder,
+          setup: setups.builder,
           amount: 1,
           priority: 8,
         };

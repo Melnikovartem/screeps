@@ -1,10 +1,9 @@
-import type { respawnCell } from "../../cells/base/respawnCell";
-
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
-import type { SpawnOrder } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
+import type { respawnCell } from "../../cells/base/respawnCell";
+import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class queenMaster extends Master {
@@ -20,7 +19,7 @@ export class queenMaster extends Master {
 
     if (this.checkBees(CREEP_LIFE_TIME)) {
       let order: SpawnOrder = {
-        setup: Setups.queen,
+        setup: setups.queen,
         amount: 1,
         priority: 0,
       };

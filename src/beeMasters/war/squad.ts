@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { Bee } from "../../bees/bee";
 import type { SpawnOrder } from "../../Hive";
@@ -37,7 +37,7 @@ export class squadMaster extends SwarmMaster {
       // if ever automated, then make priority 3
       if (this.healers.length < 2) {
         let healerOrder: SpawnOrder = {
-          setup: Setups.healer,
+          setup: setups.healer,
           amount: 2 - this.healers.length,
           priority: 1,
           master: this.ref,
@@ -46,7 +46,7 @@ export class squadMaster extends SwarmMaster {
       }
       if (this.knights.length < 2) {
         let tankOrder: SpawnOrder = {
-          setup: Setups.knight,
+          setup: setups.knight,
           amount: 2 - this.knights.length,
           priority: 1,
           master: this.ref,

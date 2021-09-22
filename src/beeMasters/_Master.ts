@@ -87,9 +87,6 @@ export abstract class Master {
         this.hive.spawOrders[ref] = order;
       } else
         this.hive.bassboost.spawOrders[ref] = order;
-      if (this.hive.room.energyCapacityAvailable >= 1000 && Apiary.orders["boost_" + this.hive.roomName] &&
-        (this.hive.cells.storage && this.hive.cells.storage.storage.store[RESOURCE_ENERGY] > 15000))
-        Apiary.orders["boost_" + this.hive.roomName].delete();
     } else
       this.hive.spawOrders[ref] = order;
     this.waitingForBees += order.amount;

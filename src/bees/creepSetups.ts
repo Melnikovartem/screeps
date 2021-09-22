@@ -77,7 +77,7 @@ export class CreepSetup {
   }
 }
 
-export const SetupsNames = {
+export const setupsNames = {
   // Civilian
   claimer: 'Bee drone',
   manager: 'Stingless bee',
@@ -97,83 +97,83 @@ export const SetupsNames = {
 }
 
 
-export const Setups = {
-  claimer: new CreepSetup(SetupsNames.claimer, {
+export const setups = {
+  claimer: new CreepSetup(setupsNames.claimer, {
     pattern: [CLAIM],
     patternLimit: 1,
   }, 25),
-  queen: new CreepSetup(SetupsNames.queen, {
+  queen: new CreepSetup(setupsNames.queen, {
     pattern: [CARRY],
   }, 50 / 3),
-  manager: new CreepSetup(SetupsNames.manager, {
+  manager: new CreepSetup(setupsNames.manager, {
     pattern: [CARRY],
     patternLimit: 14,
   }, 50 / 3),
-  hauler: new CreepSetup(SetupsNames.hauler, {
+  hauler: new CreepSetup(setupsNames.hauler, {
     fixed: [WORK],
     pattern: [CARRY],
   }, 50 / 3),
-  pickup: new CreepSetup(SetupsNames.hauler + " P", {
+  pickup: new CreepSetup(setupsNames.hauler + " P", {
     pattern: [CARRY],
     patternLimit: 16,
   }, 50 / 3),
   miner: {
-    energy: new CreepSetup(SetupsNames.miner, {
+    energy: new CreepSetup(setupsNames.miner, {
       fixed: [CARRY],
       pattern: [WORK],
       patternLimit: 6,
     }, 15),
-    minerals: new CreepSetup(SetupsNames.miner + " M", {
+    minerals: new CreepSetup(setupsNames.miner + " M", {
       fixed: [CARRY],
       pattern: [WORK],
     }, 10),
-    power: new CreepSetup(SetupsNames.miner + " P", {
+    power: new CreepSetup(setupsNames.miner + " P", {
       pattern: [ATTACK],
       patternLimit: 20,
     }, 25)
   },
   upgrader: {
-    manual: new CreepSetup(SetupsNames.upgrader, {
+    manual: new CreepSetup(setupsNames.upgrader, {
       pattern: [WORK, CARRY],
       patternLimit: 10,
     }, 50 / 3),
-    fast: new CreepSetup(SetupsNames.upgrader, {
+    fast: new CreepSetup(setupsNames.upgrader, {
       fixed: [CARRY],
       pattern: [WORK],
     }, 10),
   },
-  builder: new CreepSetup(SetupsNames.builder, {
+  builder: new CreepSetup(setupsNames.builder, {
     pattern: [WORK, CARRY],
     patternLimit: 10, // not sure if you need anyone bigger than that
   }, 50 / 3),
-  bootstrap: new CreepSetup(SetupsNames.bootstrap, {
+  bootstrap: new CreepSetup(setupsNames.bootstrap, {
     pattern: [WORK, CARRY],
     patternLimit: 6,
   }, 50 / 3),
-  puppet: new CreepSetup(SetupsNames.scout, {
+  puppet: new CreepSetup(setupsNames.scout, {
     pattern: [MOVE],
     patternLimit: 1,
   }, 25),
   defender: {
-    normal: new CreepSetup(SetupsNames.defender, {
+    normal: new CreepSetup(setupsNames.defender, {
       fixed: [HEAL],
       pattern: [RANGED_ATTACK],
       patternLimit: 4,
     }, "best"),
-    sk: new CreepSetup(SetupsNames.defender + " SK", {
+    sk: new CreepSetup(setupsNames.defender + " SK", {
       fixed: [RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
       pattern: [RANGED_ATTACK, HEAL],
       patternLimit: 9,
     }, 25),
   },
-  knight: new CreepSetup(SetupsNames.knight, {
+  knight: new CreepSetup(setupsNames.knight, {
     fixed: [TOUGH],
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL],
   }, "best"),
-  dismantler: new CreepSetup(SetupsNames.dismantler, {
+  dismantler: new CreepSetup(setupsNames.dismantler, {
     pattern: [WORK, TOUGH],
   }, 50 / 3),
-  healer: new CreepSetup(SetupsNames.healer, {
+  healer: new CreepSetup(setupsNames.healer, {
     pattern: [HEAL],
   }, "best"),
 }

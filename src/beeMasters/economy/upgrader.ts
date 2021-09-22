@@ -1,15 +1,16 @@
 import { upgradeCell } from "../../cells/stage1/upgradeCell";
-
 import { prefix } from "../../order";
-import { Setups } from "../../bees/creepSetups";
+import { hiveStates } from "../../Hive";
+import { setups } from "../../bees/creepsetups";
 import { Master, states } from "../_Master";
-import { STORAGE_BALANCE } from "../../cells/stage1/storageCell"
-import type { SpawnOrder } from "../../Hive";
+import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
+
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder } from "../../Hive";
 
 @profile
-export class upgraderMaster extends Master {
-  cell: upgradeCell;
+export class UpgraderMaster extends Master {
+  cell: UpgradeCell;
   patternPerBee = 0;
   fastMode = false;
   fastModePossible = false;
@@ -55,22 +56,21 @@ export class upgraderMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees()) {
+    if (this.checkBees() && (this.cell.controller.ticksToDowngrade < 6000 || this.hive.state === hiveStates.economy)) {
       this.recalculateTargetBee();
       if (this.checkBees()) {
         let order: SpawnOrder = {
-          setup: Setups.upgrader.manual,
+          setup: setups.upgrader.manual,
           amount: 1,
           priority: 8,
         };
 
         if (this.fastModePossible)
-          order.setup = Setups.upgrader.fast;
+          order.setup = setups.upgrader.fast;
 
-        if (this.cell.controller.ticksToDowngrade < 1500) {
-          // idk how but we failed miserably
+        if (this.cell.controller.ticksToDowngrade < 2000) {
           order.priority = 2;
-          order.setup = Setups.upgrader.manual;
+          order.setup = setups.upgrader.manual;
         }
 
         order.setup.patternLimit = this.patternPerBee;

@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 import { profile } from "../../profiler/decorator";
@@ -11,7 +11,7 @@ export class waiterMaster extends SwarmMaster {
     super.update();
     if (this.checkBees()) {
       let healerOrder: SpawnOrder = {
-        setup: Setups.healer,
+        setup: setups.healer,
         amount: 1,
         priority: 4,
         master: this.ref,

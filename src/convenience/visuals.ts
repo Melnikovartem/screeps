@@ -1,3 +1,4 @@
+import { hiveStates } from "../hive";
 import type { PossiblePositions } from "../hive";
 import { profile } from "../profiler/decorator";
 
@@ -222,7 +223,28 @@ export class Visuals {
 
   statsHives(hiveName: string) {
     let hive = Apiary.hives[hiveName];
-    let ans: string[][] = [["hive " + hiveName], ["", "❓", "🐝"]];
+    let hiveState = " ";
+    switch (hive.state) {
+      case hiveStates.economy:
+        hiveState += "💹";
+        break;
+      case hiveStates.lowenergy:
+        hiveState += "📉";
+        break;
+      case hiveStates.nospawn:
+        hiveState += "🚨";
+        break;
+      case hiveStates.nukealert:
+        hiveState += "☢️";
+        break;
+      case hiveStates.war:
+        hiveState += "⚔️";
+        break;
+      default:
+        hiveState += "❔";
+        break;
+    }
+    let ans: string[][] = [["hive " + hiveName + hiveState], ["", "❓", "🐝"]];
     let cell;
     cell = hive.cells.spawn;
     if (cell) {

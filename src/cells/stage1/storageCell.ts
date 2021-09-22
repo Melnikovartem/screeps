@@ -1,8 +1,9 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
-
+import { hiveStates } from "../../Hive";
 import { managerMaster } from "../../beeMasters/economy/manager";
 import { profile } from "../../profiler/decorator";
+
+import type { Hive } from "../../Hive";
 
 export interface StorageRequest {
   ref: string;
@@ -100,8 +101,10 @@ export class storageCell extends Cell {
   update() {
     super.update(["links"]);
 
-    if (!this.storage)
+    if (!this.storage) {
       Apiary.destroyTime = Game.time;
+      return;
+    }
 
     for (let k in this.requests) {
       let from = <StorageRequest["from"] | null>Game.getObjectById(this.requests[k].from.id);
@@ -161,8 +164,17 @@ export class storageCell extends Cell {
       if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
         this.requestToStorage("link_" + link.id, link, 3);
     }
-    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000 && !this.hive.cells.dev && Object.keys(Apiary.hives).length > 1)
-      this.storage.pos.createFlag("boost_" + this.hive.roomName, COLOR_PURPLE, COLOR_WHITE);
+
+    switch (this.hive.state) {
+      case hiveStates.economy:
+        if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
+          this.hive.state = hiveStates.lowenergy;
+        break;
+      case hiveStates.lowenergy:
+        if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= 50000)
+          this.hive.state = hiveStates.economy;
+        break;
+    }
   }
 
   run() {

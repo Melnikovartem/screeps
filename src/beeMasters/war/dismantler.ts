@@ -1,4 +1,4 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 import type { SpawnOrder } from "../../Hive";
 import { states } from "../_Master";
@@ -15,7 +15,7 @@ export class dismantlerMaster extends SwarmMaster {
 
     if (this.checkBees()) {
       let beeOrder: SpawnOrder = {
-        setup: Setups.dismantler,
+        setup: setups.dismantler,
         amount: 1,
         priority: 4,
         master: this.ref,

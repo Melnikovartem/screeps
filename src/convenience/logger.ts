@@ -1,5 +1,5 @@
 import type { Hive } from "../hive";
-import { SetupsNames } from "../bees/creepSetups";
+import { setupsNames } from "../bees/creepSetups";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
@@ -178,9 +178,9 @@ export class Logger {
     let excavation = Apiary.hives[hiveName].cells.excavation;
     if (excavation) {
       // well here is also the mineral hauling cost but fuck it
-      let haulerExp = getRate("spawn_" + SetupsNames.hauler);
-      let minerExp = getRate("spawn_" + SetupsNames.miner);
-      let annexExp = getRate("spawn_" + SetupsNames.claimer);
+      let haulerExp = getRate("spawn_" + setupsNames.hauler);
+      let minerExp = getRate("spawn_" + setupsNames.miner);
+      let annexExp = getRate("spawn_" + setupsNames.claimer);
       if (extra) {
         ans["hauler"] = { profit: haulerExp };
         ans["miner"] = { profit: minerExp };
@@ -212,17 +212,17 @@ export class Logger {
       });
     }
 
-    ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + SetupsNames.upgrader), revenue: getRate("upgrade") };
-    ans["mineral"] = { profit: getRate("spawn_" + SetupsNames.miner + " M") };
-    ans["build"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.builder), revenue: getRate("build") };
-    ans["defense"] = { profit: getRate("build") + getRate("spawn_" + SetupsNames.defender) };
+    ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + setupsNames.upgrader), revenue: getRate("upgrade") };
+    ans["mineral"] = { profit: getRate("spawn_" + setupsNames.miner + " M") };
+    ans["build"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.builder), revenue: getRate("build") };
+    ans["defense"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.defender) };
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
 
     type civilRoles = "queen" | "manager" | "claimer";
-    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], (s) => getRate("spawn_" + SetupsNames[s])) };
+    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], (s) => getRate("spawn_" + setupsNames[s])) };
 
     return ans;
   }

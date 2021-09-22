@@ -1,8 +1,8 @@
-import { Setups } from "../../bees/creepSetups";
+import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class annexMaster extends SwarmMaster {
@@ -19,7 +19,7 @@ export class annexMaster extends SwarmMaster {
 
     if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && checkAnnex) {
       let order: SpawnOrder = {
-        setup: Setups.claimer,
+        setup: setups.claimer,
         amount: 1,
         priority: 6,
       };
