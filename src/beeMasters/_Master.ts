@@ -54,11 +54,14 @@ export abstract class Master {
   }
 
   checkBees(onlySafeState: boolean = true, spawnCycle: number = CREEP_LIFE_TIME): boolean {
+    // in 4 ifs to be able to read...
+    if (this.waitingForBees || this.targetBeeCount === 0)
+      return false;
     if (onlySafeState && this.hive.state !== hiveStates.economy)
       return false;
-
-    return !this.waitingForBees && this.targetBeeCount > 0 && this.hive.cells.defense.timeToLand > spawnCycle / 2
-      && (this.targetBeeCount > this.beesAmount || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle));
+    if (this.hive.cells.defense.timeToLand < spawnCycle / 2 || this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < spawnCycle / 2)
+      return false;
+    return this.targetBeeCount > this.beesAmount || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle);
   }
 
   // first stage of decision making like do i need to spawn new creeps

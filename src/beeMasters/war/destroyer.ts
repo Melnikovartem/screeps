@@ -1,35 +1,42 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { beeStates } from "../../enums";
+import { beeStates, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 
 // most basic of bitches a horde full of wasps
 @profile
-export class HordeMaster extends SwarmMaster {
+export class DestroyerMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 5;
 
   update() {
     super.update();
 
-    if (this.checkBees()) {
-      this.wish({
-        setup: setups.knight,
+    if (this.checkBees(true)) {
+      let order = {
+        setup: setups.destroyer,
         amount: Math.max(this.targetBeeCount - this.beesAmount, 1),
-        priority: 1,
-      });
+        priority: <7>7,
+      };
+
+      let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
+
+      if (roomInfo.roomState != roomStates.ownedByEnemy && roomInfo.dangerlvlmax < 3)
+        order.setup.patternLimit = 1;
+
+      this.wish(order);
     }
   }
 
   attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
-    if (bee.pos.getRangeTo(target) <= 3)
-      bee.rangedAttack(target);
+    if (bee.pos.isNearTo(target))
+      bee.attack(target);
     else if (bee.hits === bee.hitsMax)
-      bee.rangedAttack(target);
-    if (bee.pos.getRangeTo(target) < 3 && target instanceof Creep || bee.hits <= bee.hitsMax * 0.7) {
+      bee.attack(target);
+    if (bee.pos.isNearTo(target) && target instanceof Creep && bee.hits <= bee.hitsMax * 0.7) {
       let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
         let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
         if (ans === 0)
@@ -66,8 +73,6 @@ export class HordeMaster extends SwarmMaster {
             bee.state = beeStates.work;
         }
       }
-      if (bee.hits < bee.hitsMax)
-        bee.heal(bee);
     });
   }
 }

@@ -59,7 +59,7 @@ export class BootstrapMaster extends Master {
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
     if (this.hive.bassboost)
       this.targetBeeCount = Math.min(this.targetBeeCount, 6);
-    if (Game.shard.name === "shard3")
+    else if (Game.shard.name === "shard3")
       this.targetBeeCount = Math.min(this.targetBeeCount, 10);
     this.cell.shouldRecalc = false;
   }
@@ -75,8 +75,7 @@ export class BootstrapMaster extends Master {
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee(); // just to check if expansions are done
 
-    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
-    if (this.checkBees(false) && roomInfo.safePlace && (this.hive.stage === 0 || this.hive.state >= hiveStates.economy)) {
+    if (this.checkBees(false) && (this.hive.stage === 0 || this.hive.state > hiveStates.economy)) {
       this.wish({
         setup: setups.bootstrap,
         amount: 1,
@@ -124,11 +123,11 @@ export class BootstrapMaster extends Master {
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case beeStates.work:
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
+          if (!bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
             bee.state = beeStates.refill;
           break;
         case beeStates.refill:
-          if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+          if (!bee.creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
             delete bee.target;
             bee.state = beeStates.work;
           }
@@ -168,15 +167,17 @@ export class BootstrapMaster extends Master {
             source = Game.getObjectById(bee.target);
 
           if (source instanceof Source) {
-            if (source.energy === 0)
+            if (source.energy === 0 || !source.pos.getOpenPositions())
               delete bee.target;
             else {
               if (bee.pos.isNearTo(source))
                 bee.harvest(source);
               else {
-                let pos = source.pos.getOpenPositions(false)[0];
+                let pos = source.pos.getOpenPositions()[0];
                 if (pos)
-                  bee.goTo(pos, { ignoreCreeps: true, ignoreRoads: true });
+                  bee.goTo(pos, { ignoreRoads: true });
+                else
+                  bee.goTo(source.pos, { ignoreRoads: true, range: 3 })
               }
               sourceTargetingCurrent[source.id] += 1;
             }
@@ -184,7 +185,10 @@ export class BootstrapMaster extends Master {
             bee.state = beeStates.chill;
             delete bee.target;
           }
-          break;
+          if (source)
+            break;
+        case beeStates.chill:
+          bee.goRest(this.hive.pos);
         case beeStates.work:
           let target: Structure | ConstructionSite | null = null;
           let workType: workTypes = "working";
@@ -216,21 +220,16 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.cell.controller.ticksToDowngrade <= 2000 && count["upgrade"] === 0) {
+          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && count["upgrade"] === 0) {
             target = this.cell.controller;
             workType = "upgrade";
           }
 
-          if (!target) {
+          if (!target && count["refill"] < 2) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
             target = bee.pos.findClosest(targets);
-            workType = "refill";
-          }
-
-          if (!target && this.hive.room.storage && this.hive.room.storage.isActive()) {
-            target = this.hive.room.storage;
             workType = "refill";
           }
 
@@ -239,7 +238,8 @@ export class BootstrapMaster extends Master {
             while (proj && !target) {
               target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
               if (!target)
-                target = _.filter(proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType), (s) => s.hits < proj!.targetHits)[0];
+                target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
+                  && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
               else
                 workType = "build";
               if (!target) {
@@ -252,6 +252,11 @@ export class BootstrapMaster extends Master {
               } else
                 workType = "repair";
             }
+          }
+
+          if (!target && this.hive.room.storage && this.hive.room.storage.isActive()) {
+            target = this.hive.room.storage;
+            workType = "refill";
           }
 
           if (!target) {
@@ -274,8 +279,6 @@ export class BootstrapMaster extends Master {
           count[workType] += 1;
           bee.target = target.id;
           break;
-        case beeStates.chill:
-          bee.goRest(this.hive.pos);
       }
     });
 

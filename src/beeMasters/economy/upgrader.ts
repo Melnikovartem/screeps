@@ -31,7 +31,7 @@ export class UpgraderMaster extends Master {
     this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
 
     this.targetBeeCount = 1;
-    this.patternPerBee = 0;
+    this.patternPerBee = 10;
     this.boost = false;
 
     this.fastMode = true;
@@ -52,31 +52,35 @@ export class UpgraderMaster extends Master {
 
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
+
+    if (this.cell.controller.ticksToDowngrade < 6000)
+      this.targetBeeCount = Math.max(1, this.targetBeeCount);
+
+    return true;
   }
 
   update() {
     super.update();
 
-    if (this.checkBees() && (this.cell.controller.ticksToDowngrade < 6000)) {
-      this.recalculateTargetBee();
-      if (this.checkBees()) {
-        let order: SpawnOrder = {
-          setup: setups.upgrader.manual,
-          amount: 1,
-          priority: 8,
-        };
+    let extreme = this.cell.controller.ticksToDowngrade < 6000;
+    if (this.checkBees(!extreme) && this.recalculateTargetBee() && this.checkBees(!extreme)) {
+      let order: SpawnOrder = {
+        setup: setups.upgrader.manual,
+        amount: 1,
+        priority: 8,
+      };
 
-        if (this.fastModePossible)
-          order.setup = setups.upgrader.fast;
+      if (this.fastModePossible)
+        order.setup = setups.upgrader.fast;
 
-        if (this.cell.controller.ticksToDowngrade < 2000) {
-          order.priority = 2;
-          order.setup = setups.upgrader.manual;
-        }
+      order.setup.patternLimit = this.patternPerBee;
 
-        order.setup.patternLimit = this.patternPerBee;
-        this.wish(order);
+      if (extreme) {
+        order.priority = 2;
+        order.setup = setups.upgrader.manual;
       }
+
+      this.wish(order);
     }
   }
 
@@ -91,7 +95,8 @@ export class UpgraderMaster extends Master {
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting)
         return;
-      if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
+      if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > 6000
+        && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
         let suckerTarget;
         if (this.cell.link)
           suckerTarget = this.cell.link;

@@ -69,9 +69,9 @@ export class BuilderMaster extends Master {
             let target: Structure | ConstructionSite | null = null;
             if (bee.target) {
               target = Game.getObjectById(bee.target);
-              if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal) {
+              if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal)
                 target = null;
-              }
+
               if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
                 this.hive.shouldRecalc = 2;
             }
@@ -81,7 +81,8 @@ export class BuilderMaster extends Master {
               while (proj && !target) {
                 target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
                 if (!target)
-                  target = _.filter(proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType), (s) => s.hits < proj!.targetHits)[0];
+                  target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
+                    && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
                 if (!target) {
                   for (let k = 0; k < this.hive.structuresConst.length; ++k)
                     if (this.hive.structuresConst[k].pos.x == proj.pos.x && this.hive.structuresConst[k].pos.y == proj.pos.y) {

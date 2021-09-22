@@ -39,8 +39,10 @@ export abstract class Cell {
           let data = this[key][inMap];
           if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
             let gameObject = Game.getObjectById(data.id);
-            if (force || gameObject)
+            if (gameObject)
               this[key][inMap] = <typeof data>gameObject;
+            else if (force)
+              delete this[key][inMap];
           }
         }
       });

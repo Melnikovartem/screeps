@@ -71,25 +71,19 @@ RoomPosition.prototype.getPositionsInRange = function(range: number = 1): RoomPo
 }
 
 RoomPosition.prototype.getOpenPositions = function(ignoreCreeps?: boolean, range: number = 1): RoomPosition[] {
-  let nearbyPositions: RoomPosition[] = this.getPositionsInRange(range);
-
-  return _.filter(nearbyPositions, (pos) => pos.isFree(ignoreCreeps));
+  return _.filter(this.getPositionsInRange(range), (pos) => pos.isFree(ignoreCreeps));
 }
 
 RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
-  let ans = true;
+  let ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) !== TERRAIN_MASK_WALL;
 
-  if (ans)
-    ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) !== TERRAIN_MASK_WALL;
+  if (ans && this.roomName in Game.rooms) {
+    ans = !_.filter(this.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_ROAD
+      && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my)
+      && s.structureType !== STRUCTURE_CONTAINER).length;
 
-  if (this.roomName in Game.rooms) {
     if (ans && !ignoreCreeps)
-      ans = this.lookFor(LOOK_CREEPS).length === 0
-
-    if (ans)
-      ans = _.filter(this.lookFor(LOOK_STRUCTURES), (structure) => !(structure instanceof StructureRoad)
-        && !(structure instanceof StructureContainer)
-        && !(structure instanceof StructureRampart && structure.my)).length === 0
+      ans = this.lookFor(LOOK_CREEPS).length === 0;
   }
 
   return ans;

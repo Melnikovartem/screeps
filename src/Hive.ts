@@ -107,7 +107,7 @@ export class Hive {
     if (this.stage === 0)
       this.cells.dev = new DevelopmentCell(this);
     else {
-      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
+      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000 || this.roomName === "E13S56")
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!);

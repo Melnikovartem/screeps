@@ -1,6 +1,8 @@
 import { Cell } from "../_Cell";
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
 
+import { hiveStates } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
@@ -37,8 +39,13 @@ export class DevelopmentCell extends Cell {
   }
 
   update() {
-    super.update(["sources"]);
+    super.update(["sources"], false);
+    if (this.hive.room.storage && this.hive.stage === 0)
+      Apiary.destroyTime = Game.time;
   }
 
-  run() { }
+  run() {
+    if (!this.master.beesAmount && this.hive.stage > 0 && this.hive.state === hiveStates.economy)
+      Apiary.destroyTime = Game.time;
+  }
 }

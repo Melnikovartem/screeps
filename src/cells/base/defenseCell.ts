@@ -40,7 +40,7 @@ export class DefenseCell extends Cell {
         if (!map[p.x])
           map[p.x] = {};
         if (!map[p.x][p.y])
-          map[p.x][p.y] = 0;
+          map[p.x][p.y] = 10000;
         map[p.x][p.y] += 5000000;
       });
       map[pp.x][pp.y] += 10000000;
@@ -48,19 +48,25 @@ export class DefenseCell extends Cell {
 
     let ans: BuildProject[] = [];
     let sum = 0;
+    // todo?? save some of the extensions / not all spawns
     for (let x in map)
       for (let y in map[x]) {
         let pos = new RoomPosition(+x, +y, this.hive.roomName);
         let structures = pos.lookFor(LOOK_STRUCTURES)
         if (structures.filter((s) => CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= 15000).length) {
-          sum += map[x][y] / 100;
           ans.push({
             pos: pos,
             sType: STRUCTURE_RAMPART,
             targetHits: map[x][y],
           });
-          if (!structures.filter((s) => s.structureType === STRUCTURE_RAMPART).length && !pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
-            pos.createConstructionSite(STRUCTURE_RAMPART);
+          let rampart = structures.filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
+          if (rampart)
+            sum += Math.max(map[x][y] - rampart.hits, 0) / 100;
+          else {
+            sum += map[x][y] / 100;
+            if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
+              pos.createConstructionSite(STRUCTURE_RAMPART);
+          }
         }
       }
     return { pos: ans, sum: sum };
@@ -68,15 +74,14 @@ export class DefenseCell extends Cell {
 
   update() {
     super.update(["towers"]);
-    this.timeToLand -= 1;
-    if (this.timeToLand < 0)
-      this.updateNukes();
-
-    _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
 
     if (Game.time % 500 === 333)
       this.updateNukes();
+    if (this.timeToLand-- < 0)
+      this.updateNukes();
     this.hive.stateChange("nukealert", !!this.nukes.length);
+
+    _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
@@ -92,7 +97,7 @@ export class DefenseCell extends Cell {
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (!roomInfo.safePlace) {
+      if (roomInfo.dangerlvlmax > 2) {
         let enemy = roomInfo.enemies[0].object;
         let [x, y] = enemy.pos.getRoomCoorinates();
         if ((4 <= x && x <= 6 && 4 <= y && y <= 6) && enemy instanceof Creep && enemy.owner.username === "Source Keeper")
@@ -123,10 +128,9 @@ export class DefenseCell extends Cell {
             }
           }
           if (ans !== OK) {
-            if ((enemy instanceof Creep && enemy.owner.username === "Invader")
-              || enemy instanceof StructureInvaderCore)
+            if (roomInfo.dangerlvlmax < 6)
               this.createDefFlag(enemy.pos);
-            else if (enemy instanceof Creep)
+            else
               this.createDefFlag(enemy.pos, true);
           }
         }
@@ -150,11 +154,13 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    this.hive.stateChange("war", roomInfo.dangerlvlmax > 6);
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
         if (roomInfo.dangerlvlmax > 6 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
+
         if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length) {
           if (this.hive.stage < 2)
             this.checkOrDefendSwarms(this.hive.roomName);
@@ -164,7 +170,7 @@ export class DefenseCell extends Cell {
           let enemies = _.map(roomInfo.enemies, (e) => e.object);
           _.forEach(this.towers, (tower) => {
             let closest = tower.pos.findClosestByRange(enemies);
-            if (closest && (closest.pos.getRangeTo(tower) < 15 || closest.pos.getRangeTo(this.hive.pos) < 5
+            if (closest && (closest.pos.getRangeTo(tower) < 8 || closest.pos.getRangeTo(this.hive.pos) < 5
               || (closest instanceof Creep && closest.owner.username === "Invader")))
               tower.attack(closest);
           });

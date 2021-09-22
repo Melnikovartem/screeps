@@ -67,10 +67,10 @@ export class Intel {
 
     if (!(roomName in Game.rooms)) {
       roomInfo.enemies = [];
-
-      if (!roomInfo.safePlace && roomInfo.roomState < roomStates.reservedByEnemy
-        && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME * 1.5)
+      if (!roomInfo.safePlace && roomInfo.roomState < roomStates.reservedByEnemy && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME) {
         roomInfo.safePlace = true;
+        roomInfo.dangerlvlmax = 0;
+      }
       return roomInfo;
     }
 
@@ -144,7 +144,7 @@ export class Intel {
     roomInfo.enemies = [];
 
     _.forEach(room.find(FIND_HOSTILE_CREEPS), (c) => {
-      let dangerlvl: DangerLvl = 3;
+      let dangerlvl: DangerLvl = 2;
       if (c.getBodyParts(ATTACK) || c.getBodyParts(RANGED_ATTACK)) {
         dangerlvl = 5;
         if (c.getBodyParts(HEAL, 1))
@@ -152,7 +152,7 @@ export class Intel {
       } else if (c.getBodyParts(HEAL))
         dangerlvl = 4;
       if (c.owner.username === "Source Keeper")
-        dangerlvl = 3;
+        dangerlvl = 2;
       roomInfo.enemies.push({
         object: c,
         dangerlvl: dangerlvl,
@@ -164,7 +164,7 @@ export class Intel {
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE)
-          dangerlvl = 6;
+          dangerlvl = 3;
         else if (s.structureType === STRUCTURE_TOWER)
           dangerlvl = 8;
         else if (s.structureType === STRUCTURE_EXTENSION)

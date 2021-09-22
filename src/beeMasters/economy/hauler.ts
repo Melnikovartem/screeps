@@ -24,7 +24,9 @@ export class HaulerMaster extends Master {
     let energyCap = this.hive.room.energyCapacityAvailable;
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, (cell) => {
-        if (cell.container && !cell.link) {
+        if (cell.container && !cell.link
+          && !(this.hive.cells.dev && cell.pos.roomName === this.hive.roomName && cell.resourceType === RESOURCE_ENERGY)
+          && !(cell.resourceType !== RESOURCE_ENERGY && !cell.extractor)) {
           let coef = 10; // mineral production
           if (cell.resourceType !== RESOURCE_ENERGY)
             coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup (workPart * 5) / 5

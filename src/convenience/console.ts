@@ -1,6 +1,7 @@
 import { makeId } from "../abstract/utils";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import type { RoomSetup } from "../abstract/roomPlanner";
+import type { Master } from "../beeMasters/_Master";
 
 export class CustomConsole {
   vis(framerate?: number, force: number = 0) {
@@ -255,7 +256,16 @@ export class CustomConsole {
       let objHive = _.map(_.filter(obj, (o) => o.hive.roomName === h.roomName), (o) => o.print);
       if (!objHive.length)
         return;
-      return `${h.print}: \n${objHive.join('\n')} \n`;
+      return `${h.print}:\n\n${objHive.join('\n')}----------\n`;
+    })).join('\n');
+  }
+
+  printByMasters(obj: { print: string, master?: { ref: string } }[]) {
+    return _.compact((<(Master | undefined)[]>_.map(Apiary.masters).concat([undefined])).map((m) => {
+      let objHive = _.map(_.filter(obj, (o) => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)), (o) => o.print);
+      if (!objHive.length)
+        return;
+      return `----------\n${m ? m.print : "None"}:\n\n${objHive.join('\n')}\n`;
     })).join('\n');
   }
 
@@ -269,14 +279,18 @@ export class CustomConsole {
     return this.printByHive(obj);
   }
 
-  printBees(ref?: string) {
-    let obj = _.map(_.filter(Apiary.bees, (b) => !ref || b.creep.memory.refMaster.includes(ref)),
-      (b) => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
-    return this.printByHive(obj);
+  printBees(ref?: string, byHives: boolean = false) {
+    let bees = _.filter(Apiary.bees, (b) => !ref || b.creep.memory.refMaster.includes(ref));
+    if (byHives) {
+      let obj = _.map(bees, (b) => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
+      return this.printByHive(obj);
+    }
+    let obj = _.map(bees, (b) => { return { print: b.print, master: b.master } });
+    return this.printByMasters(obj);
   }
 
-  formatRoom(roomNae: string) {
-    return `<a href=#!/room/${Game.shard.name}/${roomNae}>${roomNae}</a>`
+  formatRoom(roomName: string, text: string = roomName) {
+    return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`
   }
 
   printSpawnOrders(hiveName?: string) {
