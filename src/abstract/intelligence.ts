@@ -29,8 +29,11 @@ interface RoomInfo {
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
 
-  getEnemy(pos: RoomPosition, roomName: string, lag?: number) {
-    let roomInfo = this.getInfo(roomName, lag);
+  getEnemy(pos: RoomPosition | { pos: RoomPosition }, lag?: number) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let roomInfo = this.getInfo(pos.roomName, lag);
 
     if (!roomInfo.enemies.length)
       return;
@@ -38,7 +41,7 @@ export class Intel {
     return roomInfo.enemies.reduce((prev, curr) => {
       let ans = prev.dangerlvl - curr.dangerlvl
       if (curr.dangerlvl === roomInfo.dangerlvlmax && ans === 0)
-        ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
+        ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
 
       return ans < 0 ? curr : prev;
     }).object
@@ -90,6 +93,8 @@ export class Intel {
 
     let room = Game.rooms[roomName];
 
+    roomInfo.roomState = roomStates.noOwner;
+    roomInfo.currentOwner = undefined;
     if (room.controller) {
       if (room.controller.safeMode)
         this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 :
@@ -100,6 +105,7 @@ export class Intel {
         else {
           roomInfo.roomState = roomStates.ownedByEnemy;
           Memory.cache.avoid[room.name] = Game.time + 100000;
+          Memory.cache.avoid.E19S54 = -1; // remove
         }
       } else if (room.controller.reservation) {
         owner = room.controller.reservation.username;
@@ -109,9 +115,9 @@ export class Intel {
           roomInfo.roomState = roomStates.reservedByInvaider;
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
-      }
+      } else
 
-      roomInfo.currentOwner = owner;
+        roomInfo.currentOwner = owner;
     }
 
     this.updateEnemiesInRoom(room);

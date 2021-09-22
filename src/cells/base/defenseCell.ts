@@ -150,23 +150,24 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    this.hive.stateChange("war", roomInfo.dangerlvlmax > 6);
+    this.hive.stateChange("war", roomInfo.dangerlvlmax > 5);
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (roomInfo.enemies.length > 0) {
-        if (roomInfo.dangerlvlmax > 6 && this.notDef(this.hive.roomName))
+        // for now i will just sit back ...
+        if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
 
         if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
-          if (this.hive.phase < 2)
+          // let closest = Apiary.intel.getEnemy(this.pos)!; if this one have route
+          if (roomInfo.dangerlvlmax < 5)
             this.checkOrDefendSwarms(this.hive.roomName);
-          else if (!_.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)// TODO remove
+          else if (!_.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length) // remove
             this.hive.room.controller!.activateSafeMode(); // red button
         } else {
-          let enemies = _.map(roomInfo.enemies, (e) => e.object);
           _.forEach(this.towers, (tower) => {
-            let closest = tower.pos.findClosestByRange(enemies)!;
-            if (roomInfo.dangerlvlmax < 7) {
+            let closest = Apiary.intel.getEnemy(tower)!;
+            if (roomInfo.dangerlvlmax < 6) {
               if (closest.pos.getRangeTo(tower) < 10 || closest.pos.getRangeTo(this.hive.pos) < 5
                 || closest instanceof Creep && closest.owner.username === "Invader")
                 tower.attack(closest);
@@ -175,7 +176,6 @@ export class DefenseCell extends Cell {
               if (target)
                 tower.repair(target);
             }
-            tower.attack(closest);
           });
         }
       }

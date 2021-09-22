@@ -107,6 +107,10 @@ export class BuilderMaster extends Master {
           } else
             bee.goRest(this.hive.pos);
           break;
+        case beeStates.boosting:
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }]) === OK)
+            bee.state = beeStates.chill;
+          break;
       }
     });
   }

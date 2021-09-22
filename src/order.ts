@@ -14,7 +14,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates, roomStates } from "./enums";
+import { hiveStates } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";
@@ -184,8 +184,10 @@ export class Order {
               break;
             }
 
-            if (this.master instanceof PuppetMaster)
+            if (this.master instanceof PuppetMaster) {
+              this.master.delete();
               this.master = undefined;
+            }
 
             if (!this.master) {
               let [x, y] = this.pos.getRoomCoorinates();
@@ -196,8 +198,9 @@ export class Order {
                   this.master = new SKMaster(this);
               } else if (x > 0 && y > 0)
                 this.master = new AnnexMaster(this);
+              else
+                this.delete();
             }
-
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
@@ -472,7 +475,7 @@ export class Order {
             delete Apiary.planner.activePlanning[name];
         break;
       case COLOR_ORANGE:
-        if (this.flag.secondaryColor === COLOR_GREEN && this.master) {
+        if (this.flag.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
           let master = <PickupMaster>this.master;
           let ans = master.getTarget();
           if (ans.target && ans.amount > 500)

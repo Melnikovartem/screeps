@@ -54,29 +54,35 @@ export class HordeMaster extends SwarmMaster {
     return OK;
   }
 
+
   run() {
     _.forEach(this.activeBees, (bee) => {
-      Apiary.intel.getInfo(this.order.pos.roomName, 25);
-      if (bee.state === beeStates.work) {
-        if (bee.pos.roomName !== this.order.pos.roomName)
-          bee.state = beeStates.chill;
-        let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-        let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
+      switch (bee.state) {
+        case beeStates.work:
+          if (bee.pos.roomName !== this.order.pos.roomName)
+            bee.state = beeStates.chill;
+          let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
+          let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
 
-        if (target) {
-          this.attackOrFlee(bee, target);
-        } else
-          bee.goRest(this.order.pos);
-      } else {
-        let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
-        let ans: number = OK;
-        if (enemies.length)
-          ans = this.attackOrFlee(bee, enemies[0]);
-        if (ans === OK) {
-          bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
-          if (bee.pos.getRangeTo(this.order.pos) <= 5)
-            bee.state = beeStates.work;
-        }
+          if (target) {
+            this.attackOrFlee(bee, target);
+          } else
+            bee.goRest(this.order.pos);
+          break;
+        case beeStates.boosting:
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }]) === OK)
+            bee.state = beeStates.chill;
+          break;
+        default:
+          let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
+          let ans: number = OK;
+          if (enemies.length)
+            ans = this.attackOrFlee(bee, enemies[0]);
+          if (ans === OK) {
+            bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
+            if (bee.pos.getRangeTo(this.order.pos) <= 5)
+              bee.state = beeStates.work;
+          }
       }
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
