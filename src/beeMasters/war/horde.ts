@@ -18,28 +18,28 @@ export class HordeMaster extends SwarmMaster {
     if (this.checkBees()) {
       this.wish({
         setup: setups.knight,
-        amount: Math.max(this.targetBeeCount - this.beesAmount, 1),
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
       });
     }
   }
 
   attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
-    if (bee.pos.getRangeTo(target) <= 3)
+    if (bee.pos.getRangeTo(target) <= 3) {
       bee.rangedAttack(target);
-    else if (bee.hits === bee.hitsMax)
+      if (bee.hits <= bee.hitsMax * 0.7) {
+        let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
+          let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
+          if (ans === 0)
+            ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+          return ans < 0 ? curr : prev;
+        });
+        if (open)
+          bee.goTo(open);
+        return ERR_BUSY;
+      }
+    } else if (bee.hits === bee.hitsMax)
       bee.rangedAttack(target);
-    if (bee.pos.getRangeTo(target) < 3 && target instanceof Creep || bee.hits <= bee.hitsMax * 0.7) {
-      let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
-        let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
-        if (ans === 0)
-          ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
-        return ans < 0 ? curr : prev;
-      });
-      if (open)
-        bee.goTo(open);
-      return ERR_BUSY;
-    }
     return OK;
   }
 

@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { QueenMaster } from "../../beeMasters/economy/queen";
 
-import { beeStates, hivePhases } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -23,7 +23,7 @@ export class RespawnCell extends Cell {
   update() {
     super.update(["extensions", "spawns"]);
 
-    if (!this.master && (!this.hive.cells.dev || (this.hive.phase > 0 && this.hive.state === hivePhases.economy)))
+    if (!this.master && (!this.hive.cells.dev || (this.hive.phase > 0 && this.hive.state === hiveStates.economy)))
       this.master = new QueenMaster(this);
 
     // find free spawners

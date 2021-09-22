@@ -93,6 +93,8 @@ export class Intel {
         owner = room.controller.reservation.username;
         if (owner === Apiary.username)
           roomInfo.roomState = roomStates.reservedByMe;
+        else if (owner === "Invader")
+          roomInfo.roomState = roomStates.reservedByInvaider;
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
       }
@@ -160,17 +162,18 @@ export class Intel {
       });
     });
 
-    if (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.dangerlvlmax >= 6 || Game.time % 500 === 0)
+    if (roomInfo.roomState >= roomStates.reservedByEnemy || Game.time % 500 === 0)
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE)
           dangerlvl = 3;
-        else if (s.structureType === STRUCTURE_TOWER)
-          dangerlvl = 8;
-        else if (s.structureType === STRUCTURE_EXTENSION)
-          dangerlvl = 1
-        else if (s.structureType === STRUCTURE_SPAWN)
-          dangerlvl = 2;
+        if (roomInfo.roomState === roomStates.ownedByEnemy)
+          if (s.structureType === STRUCTURE_TOWER)
+            dangerlvl = 8;
+          else if (s.structureType === STRUCTURE_EXTENSION)
+            dangerlvl = 1
+          else if (s.structureType === STRUCTURE_SPAWN)
+            dangerlvl = 2;
 
         roomInfo.enemies.push({
           object: s,
@@ -190,5 +193,33 @@ export class Intel {
       let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
       let flagTargets = _.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
     */
+  }
+
+  getStats(creep: Creep) {
+    let ans = {
+      dmgClose: 0,
+      dmgRange: 0,
+      heal: 0,
+    }
+
+    _.forEach(creep.body, (b) => {
+      if (!b.hits)
+        return;
+      switch (b.type) {
+        case RANGED_ATTACK:
+          let dmg = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;
+          ans.dmgRange += dmg;
+          ans.dmgClose += dmg;
+          break;
+        case ATTACK:
+          ans.dmgClose += ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost] : { attack: 1 }).attack;
+          break;
+        case HEAL:
+          ans.heal += HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost] : { heal: 1 }).heal;
+          break;
+      }
+    });
+
+    return ans;
   }
 }

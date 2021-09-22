@@ -1,4 +1,4 @@
-export enum hivePhases {
+export enum hiveStates {
   economy = 0,
   lowenergy = 1,
   nospawn = 2,
@@ -15,8 +15,9 @@ export enum roomStates {
   ownedByMe = 0,
   reservedByMe = 1,
   noOwner = 2,
-  reservedByEnemy = 3,
-  ownedByEnemy = 4,
+  reservedByInvaider = 3,
+  reservedByEnemy = 4,
+  ownedByEnemy = 5,
 }
 
 export enum beeStates {

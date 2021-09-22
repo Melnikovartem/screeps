@@ -12,7 +12,7 @@ import { BuilderMaster } from "./beeMasters/economy/builder";
 
 import { prefix } from "./order";
 import { safeWrap } from "./abstract/utils";
-import { hivePhases } from "./enums";
+import { hiveStates } from "./enums";
 import { profile } from "./profiler/decorator";
 
 import type { Pos } from "./abstract/roomPlanner";
@@ -80,7 +80,7 @@ export class Hive {
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
-  state: hivePhases = hivePhases.economy;
+  state: hiveStates = hiveStates.economy;
 
   constructor(roomName: string) {
     this.roomName = roomName;
@@ -152,13 +152,13 @@ export class Hive {
       return ERR_NOT_FOUND;
   }
 
-  stateChange(state: keyof typeof hivePhases, trigger: boolean) {
-    let st = hivePhases[state];
+  stateChange(state: keyof typeof hiveStates, trigger: boolean) {
+    let st = hiveStates[state];
     if (trigger) {
       if (st > this.state)
         this.state = st;
     } else if (this.state === st)
-      this.state = hivePhases.economy;
+      this.state = hiveStates.economy;
   }
 
   updateRooms(): void {
@@ -260,10 +260,10 @@ export class Hive {
       Apiary.logger.hiveLog(this);
 
     // ask for boost
-    if ((this.state === hivePhases.nospawn
-      || (this.state === hivePhases.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
+    if ((this.state === hiveStates.nospawn
+      || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
       && !Apiary.orders[prefix.boost + this.roomName]) {
-      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hivePhases.economy && this.pos.getRangeTo(h) < 5 && h.phase > 0)
+      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRangeTo(h) < 5 && h.phase > 0)
       if (validHives.length)
         this.pos.createFlag(prefix.boost + this.roomName, COLOR_PURPLE, COLOR_WHITE);
     }

@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
 
-import { hivePhases } from "../../enums";
+import { hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -45,7 +45,7 @@ export class DevelopmentCell extends Cell {
   }
 
   run() {
-    if (!this.master.beesAmount && this.hive.phase > 0 && this.hive.state === hivePhases.economy)
+    if (!this.master.beesAmount && this.hive.phase > 0 && this.hive.state === hiveStates.economy)
       Apiary.destroyTime = Game.time;
   }
 }

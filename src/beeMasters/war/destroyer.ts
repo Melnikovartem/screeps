@@ -18,7 +18,7 @@ export class DestroyerMaster extends SwarmMaster {
     if (this.checkBees(true)) {
       let order = {
         setup: setups.destroyer,
-        amount: Math.max(this.targetBeeCount - this.beesAmount, 1),
+        amount: this.targetBeeCount - this.beesAmount,
         priority: <7>7,
       };
 
@@ -32,21 +32,21 @@ export class DestroyerMaster extends SwarmMaster {
   }
 
   attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
-    if (bee.pos.isNearTo(target))
+    if (bee.pos.isNearTo(target)) {
       bee.attack(target);
-    else if (bee.hits === bee.hitsMax)
+      if (target instanceof Creep && bee.hits <= bee.hitsMax * 0.7) {
+        let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
+          let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
+          if (ans === 0)
+            ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+          return ans < 0 ? curr : prev;
+        });
+        if (open)
+          bee.goTo(open);
+        return ERR_BUSY;
+      }
+    } else if (bee.hits === bee.hitsMax)
       bee.attack(target);
-    if (bee.pos.isNearTo(target) && target instanceof Creep && bee.hits <= bee.hitsMax * 0.7) {
-      let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
-        let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
-        if (ans === 0)
-          ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
-        return ans < 0 ? curr : prev;
-      });
-      if (open)
-        bee.goTo(open);
-      return ERR_BUSY;
-    }
     return OK;
   }
 

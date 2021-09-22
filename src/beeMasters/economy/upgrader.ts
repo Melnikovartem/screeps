@@ -52,8 +52,7 @@ export class UpgraderMaster extends Master {
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
 
-    if (this.cell.controller.ticksToDowngrade < 6000)
-      this.targetBeeCount = Math.max(1, this.targetBeeCount);
+    this.targetBeeCount = Math.min(6, Math.max(1, this.targetBeeCount));
 
     return true;
   }

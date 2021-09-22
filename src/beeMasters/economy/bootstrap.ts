@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { beeStates, hivePhases } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -41,7 +41,7 @@ export class BootstrapMaster extends Master {
       magicNumber = [0.35, 0.45]; // more upgrading less mining
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getOpenPositions(true).length;
-      if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hivePhases.nospawn)
+      if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
         --walkablePositions;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
@@ -75,10 +75,10 @@ export class BootstrapMaster extends Master {
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee(); // just to check if expansions are done
 
-    if (this.checkBees(false) && (this.hive.phase === 0 || this.hive.state > hivePhases.economy)) {
+    if (this.checkBees(false) && (this.hive.phase === 0 || this.hive.state > hiveStates.economy)) {
       this.wish({
         setup: setups.bootstrap,
-        amount: 1,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5),
       });
     }

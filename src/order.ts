@@ -14,7 +14,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hivePhases } from "./enums";
+import { hiveStates } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";
@@ -57,7 +57,7 @@ export class Order {
           break;
         case COLOR_PURPLE:
           if (this.flag.secondaryColor === COLOR_WHITE)
-            filter = (h) => h.roomName !== this.pos.roomName && h.state === hivePhases.economy;
+            filter = (h) => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
@@ -205,7 +205,7 @@ export class Order {
             if (!this.fixedName(prefix.boost + this.pos.roomName))
               break;
 
-            if (this.hive.state !== hivePhases.economy) {
+            if (this.hive.state !== hiveStates.economy) {
               this.acted = false;
               break;
             }
@@ -362,7 +362,9 @@ export class Order {
               this.delete();
             break;
           case COLOR_YELLOW:
-            this.fixedName(prefix.upgrade + this.hive.roomName);
+            if (this.fixedName(prefix.upgrade + this.hive.roomName))
+              if (this.hive.cells.upgrade)
+                this.hive.cells.upgrade.master.recalculateTargetBee();
             break;
         }
         break;

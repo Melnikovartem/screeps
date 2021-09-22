@@ -1,5 +1,5 @@
 // import { makeId } from "../utils/other";
-import { hivePhases, beeStates } from "../enums";
+import { hiveStates, beeStates, } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
@@ -57,7 +57,7 @@ export abstract class Master {
     // in 4 ifs to be able to read...
     if (this.waitingForBees || this.targetBeeCount === 0)
       return false;
-    if (onlySafeState && this.hive.state !== hivePhases.economy)
+    if (onlySafeState && this.hive.state !== hiveStates.economy)
       return false;
     if (this.hive.cells.defense.timeToLand < spawnCycle / 2 || this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < spawnCycle / 2)
       return false;
@@ -75,8 +75,9 @@ export abstract class Master {
   wish(order: SpawnOrder, ref: string = this.ref) {
     order.amount = Math.max(order.amount, 1);
     if (this.hive.bassboost) {
-      if (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable, 25).cost <= this.hive.room.energyAvailable ||
-        Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable, 25).body.length > 0) {
+      if (this.hive.state !== hiveStates.nospawn
+        && (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable, 25).cost <= this.hive.room.energyAvailable ||
+          Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).body.length > 0)) {
         order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
         this.hive.spawOrders[ref] = order;
       } else

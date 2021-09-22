@@ -42,8 +42,8 @@ export class UpgradeCell extends Cell {
         this.ratePerCreepMax = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
         this.ratePerCreepMax = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2));
       } else if (storageCell) {
-        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 4), 800);
-        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 5000, 100);
+        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 150), 10) * 50;
+        this.maxRate = Math.min(storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 6000, 100);
         this.ratePerCreepMax = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2 + 50);
       }
       if (this.hive.phase === 2)
