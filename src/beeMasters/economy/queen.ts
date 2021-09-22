@@ -5,7 +5,6 @@ import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { RespawnCell } from "../../cells/base/respawnCell";
-import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class QueenMaster extends Master {
@@ -20,10 +19,10 @@ export class QueenMaster extends Master {
     super.update();
 
     if (this.checkBees(false)) {
-      let order: SpawnOrder = {
+      let order = {
         setup: setups.queen,
         amount: 1,
-        priority: 0,
+        priority: <0>0,
       };
 
       // can refill in 2 run

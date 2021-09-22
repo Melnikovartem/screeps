@@ -72,7 +72,7 @@ export class CreepSetup {
 
     return {
       body: body,
-      cost: fixedCosts + segmentCost * maxSegment,
+      cost: _.sum(body, s => BODYPART_COST[s]),
     };
   }
 }

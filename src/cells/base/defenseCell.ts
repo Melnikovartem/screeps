@@ -99,11 +99,6 @@ export class DefenseCell extends Cell {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
       if (roomInfo.dangerlvlmax > 2) {
         let enemy = roomInfo.enemies[0].object;
-        let [x, y] = enemy.pos.getRoomCoorinates();
-        if ((4 <= x && x <= 6 && 4 <= y && y <= 6) && enemy instanceof Creep && enemy.owner.username === "Source Keeper")
-          return;
-        if (enemy instanceof Creep && enemy.getBodyParts(ATTACK) + enemy.getBodyParts(RANGED_ATTACK) + enemy.getBodyParts(HEAL) === 0)
-          return;
         if (this.notDef(roomName)) {
           let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
           if (!pos)
@@ -161,10 +156,10 @@ export class DefenseCell extends Cell {
         if (roomInfo.dangerlvlmax > 6 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
 
-        if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) > 0).length) {
-          if (this.hive.stage < 2)
+        if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
+          if (this.hive.phase < 2)
             this.checkOrDefendSwarms(this.hive.roomName);
-          else
+          else if (!_.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)// TODO remove
             this.hive.room.controller!.activateSafeMode(); // red button
         } else {
           let enemies = _.map(roomInfo.enemies, (e) => e.object);

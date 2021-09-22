@@ -1,5 +1,5 @@
 // import { makeId } from "../utils/other";
-import { hiveStates, beeStates } from "../enums";
+import { hivePhases, beeStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
@@ -57,7 +57,7 @@ export abstract class Master {
     // in 4 ifs to be able to read...
     if (this.waitingForBees || this.targetBeeCount === 0)
       return false;
-    if (onlySafeState && this.hive.state !== hiveStates.economy)
+    if (onlySafeState && this.hive.state !== hivePhases.economy)
       return false;
     if (this.hive.cells.defense.timeToLand < spawnCycle / 2 || this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < spawnCycle / 2)
       return false;

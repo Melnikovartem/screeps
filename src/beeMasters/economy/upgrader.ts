@@ -7,7 +7,6 @@ import { prefix } from "../../order";
 import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class UpgraderMaster extends Master {
@@ -25,7 +24,7 @@ export class UpgraderMaster extends Master {
     let storageCell = this.hive.cells.storage;
     if (!storageCell) {
       this.targetBeeCount = 0;
-      return;
+      return false;
     }
 
     this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
@@ -37,7 +36,7 @@ export class UpgraderMaster extends Master {
     this.fastMode = true;
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
       this.fastMode = false;
-      return;
+      return true;
     }
 
     this.boost = true;
@@ -64,10 +63,10 @@ export class UpgraderMaster extends Master {
 
     let extreme = this.cell.controller.ticksToDowngrade < 6000;
     if (this.checkBees(!extreme) && this.recalculateTargetBee() && this.checkBees(!extreme)) {
-      let order: SpawnOrder = {
+      let order = {
         setup: setups.upgrader.manual,
         amount: 1,
-        priority: 8,
+        priority: <8 | 2>8,
       };
 
       if (this.fastModePossible)

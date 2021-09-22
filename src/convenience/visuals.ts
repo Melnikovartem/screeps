@@ -1,4 +1,4 @@
-import { hiveStates } from "../enums";
+import { hivePhases } from "../enums";
 import type { PossiblePositions } from "../hive";
 import { profile } from "../profiler/decorator";
 
@@ -225,19 +225,19 @@ export class Visuals {
     let hive = Apiary.hives[hiveName];
     let hiveState = " ";
     switch (hive.state) {
-      case hiveStates.economy:
+      case hivePhases.economy:
         hiveState += "💹";
         break;
-      case hiveStates.lowenergy:
+      case hivePhases.lowenergy:
         hiveState += "📉";
         break;
-      case hiveStates.nospawn:
+      case hivePhases.nospawn:
         hiveState += "🚨";
         break;
-      case hiveStates.nukealert:
+      case hivePhases.nukealert:
         hiveState += "☢️";
         break;
-      case hiveStates.war:
+      case hivePhases.war:
         hiveState += "⚔️";
         break;
       default:

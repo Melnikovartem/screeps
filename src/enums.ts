@@ -1,4 +1,4 @@
-export enum hiveStates {
+export enum hivePhases {
   economy = 0,
   lowenergy = 1,
   nospawn = 2,

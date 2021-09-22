@@ -14,7 +14,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates } from "./enums";
+import { hivePhases } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";
@@ -26,7 +26,9 @@ import type { Hive, HivePositions } from "./Hive";
 
 export enum prefix {
   upgrade = "polen",
-  surrender = "fff"
+  surrender = "FFF",
+  boost = "boost_",
+  def = "def_"
 }
 
 @profile
@@ -48,14 +50,14 @@ export class Order {
       if (!this.hive)
         this.delete();
     } else {
-      let filter: (h: Hive) => boolean = (h) => h.stage >= 2;;
+      let filter: (h: Hive) => boolean = (h) => h.phase >= 2;;
       switch (this.flag.color) {
         case COLOR_CYAN:
-          filter = (h) => h.roomName === this.pos.roomName && h.stage >= 1;
+          filter = (h) => h.roomName === this.pos.roomName && h.phase >= 1;
           break;
         case COLOR_PURPLE:
           if (this.flag.secondaryColor === COLOR_WHITE)
-            filter = (h) => h.roomName !== this.pos.roomName && h.stage === hiveStates.economy;
+            filter = (h) => h.roomName !== this.pos.roomName && h.state === hivePhases.economy;
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
@@ -116,9 +118,11 @@ export class Order {
       if (this.ref !== name) {
         this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
         this.delete();
+        return false;
       }
     } else
       this.acted = false;
+    return true;
   }
 
   act() {
@@ -198,7 +202,10 @@ export class Order {
               this.delete();
             break;
           case COLOR_WHITE:
-            if (this.hive.stage !== hiveStates.economy) {
+            if (!this.fixedName(prefix.boost + this.pos.roomName))
+              break;
+
+            if (this.hive.state !== hivePhases.economy) {
               this.acted = false;
               break;
             }

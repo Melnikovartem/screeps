@@ -10,8 +10,9 @@ import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
 
+import { prefix } from "./order";
 import { safeWrap } from "./abstract/utils";
-import { hiveStates } from "./enums";
+import { hivePhases } from "./enums";
 import { profile } from "./profiler/decorator";
 
 import type { Pos } from "./abstract/roomPlanner";
@@ -68,7 +69,7 @@ export class Hive {
 
   pos: RoomPosition; // aka idle pos for creeps
 
-  stage: 0 | 1 | 2;
+  phase: 0 | 1 | 2;
   // 0 up to storage tech
   // 1 storage - 7lvl
   // max
@@ -79,7 +80,7 @@ export class Hive {
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
-  state: hiveStates = hiveStates.economy;
+  state: hivePhases = hivePhases.economy;
 
   constructor(roomName: string) {
     this.roomName = roomName;
@@ -91,12 +92,12 @@ export class Hive {
     }
     this.pos = this.getPos("hive");
 
-    this.stage = 0;
+    this.phase = 0;
     if (this.room.storage && this.room.storage.isActive())
-      this.stage = 1;
+      this.phase = 1;
 
-    if (this.stage === 1 && this.room.controller!.level === 8)
-      this.stage = 2;
+    if (this.phase === 1 && this.room.controller!.level === 8)
+      this.phase = 2;
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -104,10 +105,10 @@ export class Hive {
       defense: new DefenseCell(this),
     };
 
-    if (this.stage === 0)
+    if (this.phase === 0)
       this.cells.dev = new DevelopmentCell(this);
     else {
-      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000 || this.roomName === "E13S56")
+      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!);
@@ -115,7 +116,7 @@ export class Hive {
       this.cells.lab = new LaboratoryCell(this);
 
       this.builder = new BuilderMaster(this);
-      if (this.stage === 2) {
+      if (this.phase === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
         _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
@@ -151,13 +152,13 @@ export class Hive {
       return ERR_NOT_FOUND;
   }
 
-  stateChange(state: keyof typeof hiveStates, trigger: boolean) {
-    let st = hiveStates[state];
+  stateChange(state: keyof typeof hivePhases, trigger: boolean) {
+    let st = hivePhases[state];
     if (trigger) {
       if (st > this.state)
         this.state = st;
     } else if (this.state === st)
-      this.state = hiveStates.economy;
+      this.state = hivePhases.economy;
   }
 
   updateRooms(): void {
@@ -232,7 +233,7 @@ export class Hive {
       this.structuresConst = this.structuresConst.concat(ans.pos);
       this.sumCost += ans.sum;
     }
-    if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.stage > 0)
+    if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.phase > 0)
       _.forEach(this.rooms, check);
     else
       check(this.room);
@@ -259,12 +260,12 @@ export class Hive {
       Apiary.logger.hiveLog(this);
 
     // ask for boost
-    if ((this.state === hiveStates.nospawn
-      || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
-      && !Apiary.orders["boost_" + this.roomName]) {
-      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRangeTo(h) < 5 && h.stage > 0)
+    if ((this.state === hivePhases.nospawn
+      || (this.state === hivePhases.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
+      && !Apiary.orders[prefix.boost + this.roomName]) {
+      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hivePhases.economy && this.pos.getRangeTo(h) < 5 && h.phase > 0)
       if (validHives.length)
-        this.pos.createFlag("boost_" + this.roomName, COLOR_PURPLE, COLOR_WHITE);
+        this.pos.createFlag(prefix.boost + this.roomName, COLOR_PURPLE, COLOR_WHITE);
     }
 
 
