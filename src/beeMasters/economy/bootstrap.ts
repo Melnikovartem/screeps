@@ -76,11 +76,16 @@ export class BootstrapMaster extends Master {
       this.recalculateTargetBee(); // just to check if expansions are done
 
     if (this.checkBees(false) && (this.hive.phase === 0 || this.hive.state > hiveStates.economy)) {
-      this.wish({
+      let order = {
         setup: setups.bootstrap,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5),
-      });
+        priority: <0 | 5 | 9>(this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5)),
+      }
+
+      if (this.hive.bassboost && this.hive.pos.getRoomRangeTo(this.hive.bassboost) > 8)
+        order.setup.fixed = [TOUGH, TOUGH, TOUGH];
+
+      this.wish(order);
     }
   }
 
@@ -188,7 +193,23 @@ export class BootstrapMaster extends Master {
           if (source)
             break;
         case beeStates.chill:
-          bee.goRest(this.hive.pos);
+          bee.goRest(this.hive.pos, {
+            allowSK: true, roomCallback: (roomName, matrix) => {
+              if (roomName === bee.pos.roomName) {
+                let [x, y] = bee.pos.getRoomCoorinates();
+                x %= 10;
+                y %= 10;
+                if (4 <= x && x <= 6 && 4 <= y && y <= 6 && (x != 5 || y != 5)) {
+                  let creeps = Game.rooms[bee.pos.roomName].find(FIND_HOSTILE_CREEPS);
+                  _.forEach(creeps, (c) => {
+                    _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, 15));
+                  });
+                }
+              }
+              console.log(JSON.stringify(matrix));
+              return matrix;
+            }
+          });
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "working";

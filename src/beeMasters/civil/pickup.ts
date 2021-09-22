@@ -4,6 +4,7 @@ import { setups } from "../../bees/creepsetups";
 import { beeStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
 
+import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 import type { SpawnOrder } from "../../Hive";
 
@@ -24,12 +25,9 @@ export class PickupMaster extends SwarmMaster {
     }
   }
 
-  run() {
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    if (!storage)
-      return;
-
+  getTarget() {
     let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
+    let amount = 0;
     if (this.order.pos.roomName in Game.rooms) {
       target = this.order.pos.lookFor(LOOK_RUINS).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
       if (!target)
@@ -39,7 +37,34 @@ export class PickupMaster extends SwarmMaster {
       if (!target)
         target = <StructureStorage>this.order.pos.lookFor(LOOK_STRUCTURES)
           .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+
+      if (target)
+        if (target instanceof Resource)
+          amount = target.amount;
+        else
+          amount = target.store.getUsedCapacity(RESOURCE_ENERGY)
+      else if (Game.time % 100 === 0) {
+        // this is ?
+        let room = Game.rooms[this.order.pos.roomName];
+        target = room.find(FIND_DROPPED_RESOURCES)[0];
+        if (!target)
+          target = <StructureStorage>room.find(FIND_STRUCTURES)
+            .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+        if (!target && this.order.pos.roomName !== this.hive.roomName)
+          target = this.hive.room.find(FIND_DROPPED_RESOURCES)[0];
+        if (target)
+          this.order.flag.setPosition(target.pos);
+      }
     }
+    return { target: target, amount: amount };
+  }
+
+  run() {
+    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
+    if (!storage)
+      return;
+
+    let target = this.getTarget().target;
 
     _.forEach(this.activeBees, (bee) => {
       if (bee.store.getFreeCapacity() === 0)
@@ -84,5 +109,12 @@ export class PickupMaster extends SwarmMaster {
       // if (!target && bee.pos.roomName === this.order.pos.roomName && (this.order.pos.x !== this.hive.pos.x || this.order.pos.y !== this.hive.pos.y))
       // this.order.flag.setPosition(this.hive.pos);
     });
+  }
+
+  delete() {
+    super.delete();
+    let ans = this.getTarget();
+    if (ans.target && ans.amount > 100)
+      ans.target.pos.createFlag(Math.ceil(ans.amount / 3000) + "_pickup_" + makeId(4), COLOR_GREEN, COLOR_ORANGE);
   }
 }

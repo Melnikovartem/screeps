@@ -210,16 +210,16 @@ export class Hive {
   }
 
   findProject(pos: RoomPosition | { pos: RoomPosition }, ignoreConstruction: boolean = false) {
+    if (!this.structuresConst.length)
+      return;
+
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
-
     let target: Structure | ConstructionSite | undefined;
     let projects = this.structuresConst;
     let getProj = () => (<RoomPosition>pos).findClosest(projects);
-
-    if (this.state >= hiveStates.war) {
-      projects = projects.filter((pr) => pr.targetHits > 0 && pr.pos.roomName === this.roomName);
-    }
+    if (this.state >= hiveStates.war)
+      getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
     let proj = getProj();
     while (proj && !target) {
