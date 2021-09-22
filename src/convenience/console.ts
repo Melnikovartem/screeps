@@ -256,7 +256,7 @@ export class CustomConsole {
       let objHive = _.map(_.filter(obj, (o) => o.hive.roomName === h.roomName), (o) => o.print);
       if (!objHive.length)
         return;
-      return `${h.print}:\n\n${objHive.join('\n')}----------\n`;
+      return `${h.print}:\n${objHive.join('\n')}\n----------`;
     })).join('\n');
   }
 
@@ -265,7 +265,7 @@ export class CustomConsole {
       let objHive = _.map(_.filter(obj, (o) => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)), (o) => o.print);
       if (!objHive.length)
         return;
-      return `----------\n${m ? m.print : "None"}:\n\n${objHive.join('\n')}\n`;
+      return `${m ? m.print : "None"}:\n${objHive.join('\n')}\n----------`;
     })).join('\n');
   }
 

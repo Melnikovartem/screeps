@@ -17,14 +17,16 @@ export class CreepSetup {
   pattern: BodyPartConstant[];
   patternLimit: number;
   moveMax: number | "best";
+  ignoreCarry: boolean;
 
-  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best") {
+  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", ignoreCarry = false) {
     this.name = setupName;
 
     this.moveMax = moveMax;
     this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
     this.pattern = bodySetup.pattern;
     this.patternLimit = bodySetup.patternLimit ? bodySetup.patternLimit : Infinity;
+    this.ignoreCarry = ignoreCarry;
   }
 
   getBody(energy: number, moveMax: number = this.moveMax === "best" ? 25 : this.moveMax): { body: BodyPartConstant[], cost: number } {
@@ -41,7 +43,7 @@ export class CreepSetup {
 
           if (nonMove < nonMoveMax) {
             body.push(s);
-            if (s !== MOVE)
+            if (s !== MOVE && (!this.ignoreCarry || s !== CARRY))
               ++nonMove;
           }
 

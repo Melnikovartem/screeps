@@ -7,7 +7,7 @@ import type { Hive } from "../../Hive";
 export interface StorageRequest {
   ref: string;
   from: StructureLink | StructureTerminal | StructureStorage | StructureLab;
-  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab | StructurePowerSpawn;
+  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn;
   resource: ResourceConstant;
   amount: number;
   priority: 0 | 1 | 2 | 3 | 4 | 5;

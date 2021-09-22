@@ -193,23 +193,39 @@ export class BootstrapMaster extends Master {
           if (source)
             break;
         case beeStates.chill:
-          bee.goRest(this.hive.pos, {
-            allowSK: true, roomCallback: (roomName, matrix) => {
-              if (roomName === bee.pos.roomName) {
-                let [x, y] = bee.pos.getRoomCoorinates();
-                x %= 10;
-                y %= 10;
-                if (4 <= x && x <= 6 && 4 <= y && y <= 6 && (x != 5 || y != 5)) {
-                  let creeps = Game.rooms[bee.pos.roomName].find(FIND_HOSTILE_CREEPS);
-                  _.forEach(creeps, (c) => {
-                    _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, 15));
-                  });
+          let roomCallback;
+
+          let [xx, yy] = bee.pos.getRoomCoorinates();
+          xx %= 10;
+          yy %= 10;
+          if (4 <= xx && xx <= 6 && 4 <= yy && yy <= 6 && (xx != 5 || yy != 5))
+            roomCallback = (roomName: string, matrix: CostMatrix) => {
+              let room = Game.rooms[roomName];
+              for (let x = 0; x < 50; ++x)
+                for (let y = 0; y < 50; ++y) {
+                  switch (room.getTerrain().get(x, y)) {
+                    case TERRAIN_MASK_WALL:
+                      matrix.set(x, y, 255);
+                      break;
+                    case TERRAIN_MASK_SWAMP:
+                      matrix.set(x, y, 5);
+                      break;
+                    default:
+                      matrix.set(x, y, 1);
+                      break;
+                  }
+                  if (!new RoomPosition(x, y, roomName).isFree())
+                    matrix.set(x, y, 255);
                 }
-              }
-              console.log(JSON.stringify(matrix));
+
+              let creeps = room.find(FIND_HOSTILE_CREEPS);
+              _.forEach(creeps, (c) => {
+                _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, 15));
+              });
+
               return matrix;
-            }
-          });
+            };
+          bee.goRest(this.hive.pos, { allowSK: true, roomCallback: roomCallback });
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "working";

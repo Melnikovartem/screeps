@@ -114,7 +114,7 @@ export class PickupMaster extends SwarmMaster {
   delete() {
     super.delete();
     let ans = this.getTarget();
-    if (ans.target && ans.amount > 100)
-      ans.target.pos.createFlag(Math.ceil(ans.amount / 3000) + "_pickup_" + makeId(4), COLOR_GREEN, COLOR_ORANGE);
+    if (ans.target && ans.amount > 500)
+      ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), this.maxSpawns) + "_pickup_" + makeId(4), COLOR_GREEN, COLOR_ORANGE);
   }
 }

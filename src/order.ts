@@ -14,7 +14,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates } from "./enums";
+import { hiveStates, roomStates } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";
@@ -177,7 +177,9 @@ export class Order {
               this.delete(true);
               break;
             }
-            if (!this.master) {
+
+            let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 10);
+            if (!this.master && (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner)) {
               let [x, y] = this.pos.getRoomCoorinates();
               x %= 10;
               y %= 10;
@@ -189,8 +191,7 @@ export class Order {
             }
 
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
-              if (!this.master)
-                this.master = new PuppetMaster(this);
+              this.master = new PuppetMaster(this);
               this.acted = false;
             }
             break;
@@ -370,7 +371,7 @@ export class Order {
         break;
       case COLOR_YELLOW:
         if (this.pos.getRoomRangeTo(this.hive) > 5) {
-          this.delete(true);
+          this.delete();
           break;
         }
         if (this.pos.roomName in Game.rooms) {
@@ -433,7 +434,8 @@ export class Order {
     }
 
     if (this.master)
-      Apiary.masters[this.master.ref].delete();
+      this.master.delete();
+    this.master = undefined;
 
     switch (this.flag.color) {
       case COLOR_PURPLE:
@@ -454,6 +456,7 @@ export class Order {
             }
             break;
           case COLOR_PURPLE:
+            this.acted = false;
             if (!force)
               return;
             break;

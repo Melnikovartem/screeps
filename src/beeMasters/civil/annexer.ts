@@ -4,7 +4,6 @@ import { setups } from "../../bees/creepsetups";
 import { roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class AnnexMaster extends SwarmMaster {
@@ -15,15 +14,15 @@ export class AnnexMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
 
-    let checkAnnex = roomInfo.safePlace && (roomInfo.roomState == roomStates.reservedByMe || roomStates.noOwner) && (this.hive.room.energyAvailable >= 650);
+    let checkAnnex = roomInfo.safePlace && (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && this.hive.room.energyAvailable >= 650;
     if (checkAnnex && this.hive.bassboost)
       checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 
     if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME) && checkAnnex) {
-      let order: SpawnOrder = {
+      let order = {
         setup: setups.claimer,
         amount: 1,
-        priority: 6,
+        priority: <6>6,
       };
 
       if (this.order.pos.roomName in Game.rooms) {
