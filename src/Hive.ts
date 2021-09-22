@@ -1,17 +1,17 @@
-import { respawnCell } from "./cells/base/respawnCell";
-import { defenseCell } from "./cells/base/defenseCell";
+import { RespawnCell } from "./cells/base/respawnCell";
+import { DefenseCell } from "./cells/base/defenseCell";
 
-import { developmentCell } from "./cells/stage0/developmentCell";
+import { DevelopmentCell } from "./cells/stage0/developmentCell";
 
-import { storageCell } from "./cells/stage1/storageCell";
+import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";
-import { excavationCell } from "./cells/stage1/excavationCell";
-import { laboratoryCell } from "./cells/stage1/laboratoryCell";
+import { ExcavationCell } from "./cells/stage1/excavationCell";
+import { LaboratoryCell } from "./cells/stage1/laboratoryCell";
 
-import { observeCell } from "./cells/stage2/observeCell";
-import { powerCell } from "./cells/stage2/powerCell";
+import { ObserveCell } from "./cells/stage2/observeCell";
+import { PowerCell } from "./cells/stage2/powerCell";
 
-import { builderMaster } from "./beeMasters/economy/builder";
+import { BuilderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
@@ -35,16 +35,16 @@ export interface HivePositions {
 
 export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
 
-interface hiveCells {
-  storage?: storageCell;
-  defense: defenseCell;
-  spawn: respawnCell;
+interface HiveCells {
+  storage?: StorageCell;
+  defense: DefenseCell;
+  spawn: RespawnCell;
   upgrade?: UpgradeCell;
-  excavation?: excavationCell;
-  dev?: developmentCell;
-  lab?: laboratoryCell;
-  observe?: observeCell;
-  power?: powerCell;
+  excavation?: ExcavationCell;
+  dev?: DevelopmentCell;
+  lab?: LaboratoryCell;
+  observe?: ObserveCell;
+  power?: PowerCell;
 }
 
 export enum hiveStates {
@@ -64,11 +64,11 @@ export class Hive {
   room: Room;
   annexes: Room[] = []; // this room and annexes
   rooms: Room[] = []; //this room and annexes
-  cells: hiveCells;
+  cells: HiveCells;
 
   spawOrders: { [id: string]: SpawnOrder } = {};
 
-  builder?: builderMaster;
+  builder?: BuilderMaster;
 
   pos: RoomPosition; // aka idle pos for creeps
 
@@ -104,21 +104,21 @@ export class Hive {
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
-      spawn: new respawnCell(this),
-      defense: new defenseCell(this),
+      spawn: new RespawnCell(this),
+      defense: new DefenseCell(this),
     };
 
     if (this.stage === 0)
-      this.cells.dev = new developmentCell(this);
+      this.cells.dev = new DevelopmentCell(this);
     else {
       if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
-        this.cells.dev = new developmentCell(this);
-      this.cells.storage = new storageCell(this, this.room.storage!);
+        this.cells.dev = new DevelopmentCell(this);
+      this.cells.storage = new StorageCell(this, this.room.storage!);
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!);
-      this.cells.excavation = new excavationCell(this);
-      this.cells.lab = new laboratoryCell(this);
+      this.cells.excavation = new ExcavationCell(this);
+      this.cells.lab = new LaboratoryCell(this);
 
-      this.builder = new builderMaster(this);
+      this.builder = new BuilderMaster(this);
       if (this.stage === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
@@ -129,9 +129,9 @@ export class Hive {
             powerSpawn = s;
         });
         if (obeserver)
-          this.cells.observe = new observeCell(this, obeserver);
+          this.cells.observe = new ObserveCell(this, obeserver);
         if (powerSpawn)
-          this.cells.power = new powerCell(this, powerSpawn)
+          this.cells.power = new PowerCell(this, powerSpawn)
         // TODO cause i haven' reached yet
       }
     }

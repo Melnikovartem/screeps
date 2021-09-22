@@ -5,7 +5,7 @@ import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
 @profile
-export class upgradeCell extends Cell {
+export class UpgradeCell extends Cell {
 
   controller: StructureController;
   link: StructureLink | undefined;

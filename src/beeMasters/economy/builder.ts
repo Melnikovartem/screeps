@@ -1,11 +1,13 @@
+import { Master } from "../_Master";
+
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
 import type { SpawnOrder, Hive } from "../../Hive";
 
 @profile
-export class builderMaster extends Master {
+export class BuilderMaster extends Master {
 
   constructor(hive: Hive) {
     super(hive, "BuilderHive_" + hive.room.name);

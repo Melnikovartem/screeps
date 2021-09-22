@@ -1,11 +1,13 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
-import type { Order } from "../../order";
-import { profile } from "../../profiler/decorator";
+
 import { makeId } from "../../abstract/utils";
 
+import { profile } from "../../profiler/decorator";
+import type { Hive } from "../../Hive";
+import type { Order } from "../../order";
+
 @profile
-export class defenseCell extends Cell {
+export class DefenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
   nukes: RoomPosition[] = [];
   nukesDefenseMap = {};

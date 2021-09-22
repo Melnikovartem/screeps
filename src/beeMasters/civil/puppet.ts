@@ -1,9 +1,11 @@
-import { setups } from "../../bees/creepsetups"
 import { SwarmMaster } from "../_SwarmMaster";
+
+import { setups } from "../../bees/creepsetups";
+
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class puppetMaster extends SwarmMaster {
+export class PuppetMaster extends SwarmMaster {
 
   update() {
     super.update();

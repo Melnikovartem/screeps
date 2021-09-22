@@ -1,13 +1,14 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
+
+import { setups } from "../../bees/creepsetups";
+import { states } from "../_Master";
+import { findOptimalResource } from "../../abstract/utils";
+
+import { profile } from "../../profiler/decorator";
 import type { SpawnOrder } from "../../Hive";
 
-import { states } from "../_Master";
-import { findOptimalResource } from "../../abstract/utils"
-import { profile } from "../../profiler/decorator";
-
 @profile
-export class pickupMaster extends SwarmMaster {
+export class PickupMaster extends SwarmMaster {
   waitPos = this.order.pos.getOpenPositions(true, 5)[0];
 
   update() {

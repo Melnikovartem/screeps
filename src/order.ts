@@ -1,24 +1,23 @@
-import { hordeDefenseMaster } from "./beeMasters/war/hordeDefense";
-import { hordeMaster } from "./beeMasters/war/horde";
-import { downgradeMaster } from "./beeMasters/war/downgrader";
-import { dismantlerMaster } from "./beeMasters/war/dismantler";
-import { waiterMaster } from "./beeMasters/war/waiter";
-import { squadMaster } from "./beeMasters/war/squad";
+import { HordeDefenseMaster } from "./beeMasters/war/hordeDefense";
+import { HordeMaster } from "./beeMasters/war/horde";
+import { DowngradeMaster } from "./beeMasters/war/downgrader";
+import { DismantlerMaster } from "./beeMasters/war/dismantler";
+import { WaiterMaster } from "./beeMasters/war/waiter";
+import { SquadMaster } from "./beeMasters/war/squad";
+
+import { DupletMaster } from "./beeMasters/civil/miningDuplet";
+import { PuppetMaster } from "./beeMasters/civil/puppet";
+import { PortalMaster } from "./beeMasters/civil/portal";
+import { AnnexMaster } from "./beeMasters/civil/annexer";
+import { PickupMaster } from "./beeMasters/civil/pickup";
+import { ClaimerMaster } from "./beeMasters/civil/claimer";
+import { SKMaster } from "./beeMasters/civil/safeSK";
 
 import { hiveStates } from "./Hive";
-import { dupletMaster } from "./beeMasters/civil/miningDuplet";
-import { puppetMaster } from "./beeMasters/civil/puppet";
-import { portalMaster } from "./beeMasters/civil/portal";
-import { annexMaster } from "./beeMasters/civil/annexer";
-import { pickupMaster } from "./beeMasters/civil/pickup";
-import { claimerMaster } from "./beeMasters/civil/claimer";
-import { skMaster } from "./beeMasters/civil/safeSK";
-
-import { bootstrapMaster } from "./beeMasters/economy/bootstrap";
-
 import { makeId } from "./abstract/utils";
-import { profile } from "./profiler/decorator";
+
 import { LOGGING_CYCLE } from "./settings";
+import { profile } from "./profiler/decorator";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 import type { Master } from "./beeMasters/_Master";
@@ -131,10 +130,10 @@ export class Order {
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_BLUE:
-              this.master = new hordeDefenseMaster(this);
+              this.master = new HordeDefenseMaster(this);
               break;
             case COLOR_RED:
-              let master = new hordeMaster(this);
+              let master = new HordeMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
                 master.maxSpawns = +regex[0];
@@ -143,19 +142,19 @@ export class Order {
               this.master = master;
               break;
             case COLOR_PURPLE:
-              this.master = new downgradeMaster(this);
+              this.master = new DowngradeMaster(this);
               break;
             case COLOR_BROWN:
-              this.master = new dismantlerMaster(this);
+              this.master = new DismantlerMaster(this);
               break;
             case COLOR_GREEN:
-              this.master = new waiterMaster(this);
+              this.master = new WaiterMaster(this);
               break;
             case COLOR_ORANGE:
-              this.master = new squadMaster(this);
+              this.master = new SquadMaster(this);
               break;
             case COLOR_CYAN:
-              this.master = new skMaster(this);
+              this.master = new SKMaster(this);
               break;
             case COLOR_WHITE:
               this.fixedName(prefix.surrender + this.hive.roomName);
@@ -175,21 +174,21 @@ export class Order {
               y %= 10;
               if (4 <= x && x <= 6 && 4 <= y && y <= 6) {
                 if (x != 5 || y != 5)
-                  this.master = new skMaster(this);
+                  this.master = new SKMaster(this);
               } else if (x > 0 && y > 0)
-                this.master = new annexMaster(this);
+                this.master = new AnnexMaster(this);
             }
 
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
               if (!this.master)
-                this.master = new puppetMaster(this);
+                this.master = new PuppetMaster(this);
               this.acted = false;
             }
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
               if (!this.master)
-                this.master = new claimerMaster(this);
+                this.master = new ClaimerMaster(this);
             } else
               this.delete();
             break;
@@ -208,7 +207,7 @@ export class Order {
                   c.master.waitingForBees = 0;
               });
               if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
-                (<bootstrapMaster>hiveToBoos.cells.dev.master).recalculateTargetBee()
+                hiveToBoos.cells.dev.master.recalculateTargetBee()
             } else
               this.delete();
             break;
@@ -312,7 +311,7 @@ export class Order {
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_GREEN:
-              let master = new pickupMaster(this);
+              let master = new PickupMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
                 master.maxSpawns = +regex[0];
@@ -320,7 +319,7 @@ export class Order {
               this.master = master;
               break;
             case COLOR_YELLOW:
-              this.master = new dupletMaster(this);
+              this.master = new DupletMaster(this);
               break;
           }
         break;
@@ -333,11 +332,11 @@ export class Order {
             break;
           case COLOR_PURPLE:
             if (!this.master)
-              this.master = new puppetMaster(this);
+              this.master = new PuppetMaster(this);
             break;
           case COLOR_BLUE:
             if (!this.master)
-              this.master = new portalMaster(this);
+              this.master = new PortalMaster(this);
             break;
           case COLOR_CYAN:
             this.acted = false;
@@ -430,7 +429,7 @@ export class Order {
             if (hiveBoosted) {
               hiveBoosted.bassboost = null;
               if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
-                (<bootstrapMaster>hiveBoosted.cells.dev.master).recalculateTargetBee();
+                hiveBoosted.cells.dev.master.recalculateTargetBee();
 
               let pos = hiveBoosted.room.controller && hiveBoosted.room.controller.pos;
               if (pos) {

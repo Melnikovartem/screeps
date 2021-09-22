@@ -1,12 +1,13 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
+
+import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 
 // this will become outdated soon
 
 @profile
-export class portalMaster extends SwarmMaster {
+export class PortalMaster extends SwarmMaster {
   maxSpawns = Infinity;
   notify = false;
 

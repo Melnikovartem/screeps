@@ -1,17 +1,19 @@
-import type { excavationCell } from "../../cells/stage1/excavationCell";
+import { Master } from "../_Master";
 
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
 import { findOptimalResource } from "../../abstract/utils"
+
 import { profile } from "../../profiler/decorator";
+import type { ExcavationCell } from "../../cells/stage1/excavationCell";
 
 @profile
-export class haulerMaster extends Master {
-  cell: excavationCell;
+export class HaulerMaster extends Master {
+  cell: ExcavationCell;
   targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
   roadUpkeepCost: { [id: string]: number } = {};
 
-  constructor(excavationCell: excavationCell) {
+  constructor(excavationCell: ExcavationCell) {
     super(excavationCell.hive, excavationCell.ref);
 
     this.cell = excavationCell;

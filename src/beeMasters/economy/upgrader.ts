@@ -1,8 +1,10 @@
-import { upgradeCell } from "../../cells/stage1/upgradeCell";
+import { UpgradeCell } from "../../cells/stage1/upgradeCell";
+import { Master } from "../_Master";
+
+import { states } from "../_Master";
+import { setups } from "../../bees/creepsetups";
 import { prefix } from "../../order";
 import { hiveStates } from "../../Hive";
-import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
 import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
 
 import { profile } from "../../profiler/decorator";
@@ -15,7 +17,7 @@ export class UpgraderMaster extends Master {
   fastMode = false;
   fastModePossible = false;
 
-  constructor(upgradeCell: upgradeCell) {
+  constructor(upgradeCell: UpgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
     this.cell = upgradeCell;
   }

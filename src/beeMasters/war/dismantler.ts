@@ -1,12 +1,14 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
+
+import { setups } from "../../bees/creepsetups";
 import { states } from "../_Master";
+
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder } from "../../Hive";
 
 //first tandem btw
 @profile
-export class dismantlerMaster extends SwarmMaster {
+export class DismantlerMaster extends SwarmMaster {
   // for last stage
   exit: RoomPosition | undefined;
 

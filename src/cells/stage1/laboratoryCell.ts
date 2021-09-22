@@ -1,8 +1,8 @@
 import { Cell } from "../_Cell";
-import type { Bee } from "../../bees/bee";
-import type { Hive } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
+import type { Bee } from "../../bees/bee";
+import type { Hive } from "../../Hive";
 
 /*
 // i rly don't like to type in all the reactions;
@@ -38,8 +38,6 @@ console.log(`{${ss}}`);
 console.log(JSON.stringify(s));
 */
 
-
-
 type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "rangedAttack" | "heal" | "capacity" | "fatigue" | "damage";
@@ -70,7 +68,7 @@ interface SynthesizeRequest {
 type BoostRequest = { type: BoostType, res?: ReactionConstant, amount?: number, lowLvl?: 0 | 1 | 2 }
 
 @profile
-export class laboratoryCell extends Cell {
+export class LaboratoryCell extends Cell {
   laboratories: { [id: string]: StructureLab } = {};
   // inLab check for delivery system
   boostLabs: { [key in ResourceConstant]?: string } = {};

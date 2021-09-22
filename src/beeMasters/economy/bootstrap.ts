@@ -1,20 +1,21 @@
-// manages colony untill storage lvl
-import type { developmentCell } from "../../cells/stage0/developmentCell";
+import { Master } from "../_Master";
+
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
+import type { DevelopmentCell } from "../../cells/stage0/developmentCell";
 import type { Bee } from "../../bees/Bee";
 
 type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
 
 
 @profile
-export class bootstrapMaster extends Master {
-  cell: developmentCell;
+export class BootstrapMaster extends Master {
+  cell: DevelopmentCell;
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
 
-  constructor(developmentCell: developmentCell) {
+  constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
 
     this.cell = developmentCell;

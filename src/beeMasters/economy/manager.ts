@@ -1,17 +1,20 @@
-import type { storageCell, StorageRequest } from "../../cells/stage1/storageCell";
 
+
+import { Master } from "../_Master";
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
-import type { Bee } from "../../bees/bee";
-import type { SpawnOrder } from "../../Hive";
+
 import { profile } from "../../profiler/decorator";
+import type { StorageCell, StorageRequest } from "../../cells/stage1/storageCell";
+import type { SpawnOrder } from "../../Hive";
+import type { Bee } from "../../bees/bee";
 
 @profile
-export class managerMaster extends Master {
-  cell: storageCell;
+export class ManagerMaster extends Master {
+  cell: StorageCell;
   manager: Bee | undefined;
 
-  constructor(storageCell: storageCell) {
+  constructor(storageCell: StorageCell) {
     super(storageCell.hive, storageCell.ref);
     this.cell = storageCell;
   }

@@ -1,11 +1,12 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
+
+import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { SpawnOrder } from "../../Hive";
 
 @profile
-export class annexMaster extends SwarmMaster {
+export class AnnexMaster extends SwarmMaster {
   maxSpawns = Infinity;
 
   update() {

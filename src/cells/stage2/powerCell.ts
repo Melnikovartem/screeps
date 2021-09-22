@@ -4,7 +4,7 @@ import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class powerCell extends Cell {
+export class PowerCell extends Cell {
   powerSpawn: StructurePowerSpawn;
   roomsToCheck: string[] = [];
 

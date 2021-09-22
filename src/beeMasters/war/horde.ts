@@ -1,12 +1,14 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { Bee } from "../../bees/bee";
+
+import { setups } from "../../bees/creepsetups";
 import { states } from "../_Master";
+
 import { profile } from "../../profiler/decorator";
+import type { Bee } from "../../bees/bee";
 
 // most basic of bitches a horde full of wasps
 @profile
-export class hordeMaster extends SwarmMaster {
+export class HordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 5;
 

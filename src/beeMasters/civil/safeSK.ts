@@ -1,16 +1,17 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
 
-import type { Bee } from "../../bees/bee";
+import { setups } from "../../bees/creepsetups";
 import { states } from "../_Master";
+
 import { profile } from "../../profiler/decorator";
+import type { Bee } from "../../bees/bee";
 
 // most basic of bitches a horde full of wasps
 
 const ticksToSpawn = (x: StructureKeeperLair) => x.ticksToSpawn ? x.ticksToSpawn : 0;
 
 @profile
-export class skMaster extends SwarmMaster {
+export class SKMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];

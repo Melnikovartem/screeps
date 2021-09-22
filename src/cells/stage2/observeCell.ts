@@ -6,7 +6,7 @@ import { STORAGE_BALANCE } from "../stage1/storageCell"
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class observeCell extends Cell {
+export class ObserveCell extends Cell {
   obeserver: StructureObserver;
   roomsToCheck: string[] = [];
   prevRoom: string;

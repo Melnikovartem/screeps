@@ -1,9 +1,11 @@
-import { setups } from "../../bees/creepsetups"
 import { SwarmMaster } from "../_SwarmMaster";
+
+import { setups } from "../../bees/creepsetups";
+
 import { profile } from "../../profiler/decorator";
 
 @profile
-export class downgradeMaster extends SwarmMaster {
+export class DowngradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
   maxSpawns = Infinity;
 

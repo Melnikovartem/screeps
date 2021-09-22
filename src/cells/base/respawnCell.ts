@@ -1,27 +1,25 @@
 import { Cell } from "../_Cell";
+import { QueenMaster } from "../../beeMasters/economy/queen";
 
 import { hiveStates } from "../../Hive";
 import { states } from "../../beeMasters/_Master";
-
 import { makeId } from "../../abstract/utils";
-import { queenMaster } from "../../beeMasters/economy/queen";
+
 import { profile } from "../../profiler/decorator";
-
-
 import type { Hive } from "../../Hive";
 
 @profile
-export class respawnCell extends Cell {
+export class RespawnCell extends Cell {
   spawns: { [id: string]: StructureSpawn } = {};
   freeSpawns: StructureSpawn[] = [];
   extensions: { [id: string]: StructureExtension } = {};
-  master: queenMaster | undefined;
+  master: QueenMaster | undefined;
 
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
     if (this.hive.stage > 0)
-      this.master = new queenMaster(this);
+      this.master = new QueenMaster(this);
     this.pos = this.hive.getPos("spawn");
   }
 

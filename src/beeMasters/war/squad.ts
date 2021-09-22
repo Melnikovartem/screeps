@@ -1,14 +1,15 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { Bee } from "../../bees/bee";
-import type { SpawnOrder } from "../../Hive";
 
+import { setups } from "../../bees/creepsetups";
 import { states } from "../_Master";
+
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder } from "../../Hive";
+import type { Bee } from "../../bees/bee";
 
 //first tandem btw
 @profile
-export class squadMaster extends SwarmMaster {
+export class SquadMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
   maxSpawns = 4;

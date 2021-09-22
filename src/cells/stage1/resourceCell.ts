@@ -1,13 +1,13 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
+import { MinerMaster } from "../../beeMasters/economy/miner";
 
-import type { excavationCell } from "./excavationCell";
-import { minerMaster } from "../../beeMasters/economy/miner";
 import { profile } from "../../profiler/decorator";
+import type { ExcavationCell } from "./excavationCell";
+import type { Hive } from "../../Hive";
 
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
-export class resourceCell extends Cell {
+export class ResourceCell extends Cell {
 
   perSecondNeeded: number = 5; // aka 3000/300/2 for energy
   resource: Source | Mineral;
@@ -15,18 +15,18 @@ export class resourceCell extends Cell {
   link: StructureLink | undefined;
   container: StructureContainer | undefined;
   extractor: StructureExtractor | undefined;
-  parentCell: excavationCell;
-  master: minerMaster;
+  parentCell: ExcavationCell;
+  master: MinerMaster;
 
   operational: boolean = false;
 
-  constructor(hive: Hive, resource: Source | Mineral, excavationCell: excavationCell) {
+  constructor(hive: Hive, resource: Source | Mineral, excavationCell: ExcavationCell) {
     super(hive, "ResourceCell_" + resource.id);
 
     this.resource = resource;
     this.pos = this.resource.pos;
     this.parentCell = excavationCell;
-    this.master = new minerMaster(this);
+    this.master = new MinerMaster(this);
     this.updateStructure();
   }
 

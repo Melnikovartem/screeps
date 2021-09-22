@@ -1,24 +1,25 @@
 import { Cell } from "../_Cell";
+import { ResourceCell } from "./resourceCell";
+import { HaulerMaster } from "../../beeMasters/economy/hauler";
+
+import { safeWrap } from "../../abstract/utils";
+
+import { DEVELOPING } from "../../settings";
+import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
-import { resourceCell } from "./resourceCell";
-import { haulerMaster } from "../../beeMasters/economy/hauler";
-import { safeWrap } from "../../abstract/utils";
-import { profile } from "../../profiler/decorator";
-import { DEVELOPING } from "../../settings";
-
 @profile
-export class excavationCell extends Cell {
-  resourceCells: { [id: string]: resourceCell } = {};
+export class ExcavationCell extends Cell {
+  resourceCells: { [id: string]: ResourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
   shouldRecalc: boolean = true;
-  master: haulerMaster;
+  master: HaulerMaster;
   dropOff: StructureStorage // | StructureContainer | StructureLink;
   roomResources: { [id: string]: number } = {};
 
   constructor(hive: Hive) {
     super(hive, "ExcavationCell_" + hive.room.name);
-    this.master = new haulerMaster(this);
+    this.master = new HaulerMaster(this);
     this.dropOff = this.hive.cells.storage!.storage;
   }
 
@@ -27,7 +28,7 @@ export class excavationCell extends Cell {
       if (!this.roomResources[resource.pos.roomName])
         this.roomResources[resource.pos.roomName] = 0;
       this.roomResources[resource.pos.roomName] += 1;
-      this.resourceCells[resource.id] = new resourceCell(this.hive, resource, this);
+      this.resourceCells[resource.id] = new ResourceCell(this.hive, resource, this);
       this.shouldRecalc = true;
     }
   }

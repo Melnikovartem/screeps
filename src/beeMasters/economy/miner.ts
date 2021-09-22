@@ -1,16 +1,18 @@
-import type { resourceCell } from "../../cells/stage1/resourceCell";
+import { Master } from "../_Master";
 
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
-import type { SpawnOrder } from "../../Hive";
+
 import { profile } from "../../profiler/decorator";
+import type { ResourceCell } from "../../cells/stage1/resourceCell";
+import type { SpawnOrder } from "../../Hive";
 
 @profile
-export class minerMaster extends Master {
-  cell: resourceCell;
+export class MinerMaster extends Master {
+  cell: ResourceCell;
   cooldown: number = 0;
 
-  constructor(resourceCell: resourceCell) {
+  constructor(resourceCell: ResourceCell) {
     super(resourceCell.hive, resourceCell.ref);
     this.cell = resourceCell;
   }

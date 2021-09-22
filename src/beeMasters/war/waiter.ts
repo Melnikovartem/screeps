@@ -1,11 +1,13 @@
-import { setups } from "../../bees/creepsetups";
 import { SwarmMaster } from "../_SwarmMaster";
-import type { SpawnOrder } from "../../Hive";
+
+import { setups } from "../../bees/creepsetups";
+
 import { profile } from "../../profiler/decorator";
+import type { SpawnOrder } from "../../Hive";
 
 //first tandem btw
 @profile
-export class waiterMaster extends SwarmMaster {
+export class WaiterMaster extends SwarmMaster {
 
   update() {
     super.update();

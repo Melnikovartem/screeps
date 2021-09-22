@@ -1,8 +1,8 @@
 import { Cell } from "../_Cell";
+import { ManagerMaster } from "../../beeMasters/economy/manager";
 import { hiveStates } from "../../Hive";
-import { managerMaster } from "../../beeMasters/economy/manager";
-import { profile } from "../../profiler/decorator";
 
+import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
 export interface StorageRequest {
@@ -21,13 +21,13 @@ export const STORAGE_BALANCE: { [key in StorageResource]: number } = {
 };
 
 @profile
-export class storageCell extends Cell {
+export class StorageCell extends Cell {
 
   storage: StructureStorage;
   links: { [id: string]: StructureLink } = {};
   linksState: { [id: string]: "idle" | "busy" } = {};
   terminal: StructureTerminal | undefined;
-  master: managerMaster;
+  master: ManagerMaster;
 
   requests: { [id: string]: StorageRequest } = {};
 
@@ -48,7 +48,7 @@ export class storageCell extends Cell {
       (structure) => structure.structureType === STRUCTURE_TERMINAL)[0];
 
     this.pos = this.hive.getPos("storage");
-    this.master = new managerMaster(this);
+    this.master = new ManagerMaster(this);
   }
 
   requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]

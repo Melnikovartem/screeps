@@ -1,15 +1,17 @@
+import { Master } from "../_Master";
+
+import { states } from "../_Master";
 import { setups } from "../../bees/creepsetups";
-import { Master, states } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
-import type { respawnCell } from "../../cells/base/respawnCell";
+import type { RespawnCell } from "../../cells/base/respawnCell";
 import type { SpawnOrder } from "../../Hive";
 
 @profile
-export class queenMaster extends Master {
-  cell: respawnCell;
+export class QueenMaster extends Master {
+  cell: RespawnCell;
 
-  constructor(respawnCell: respawnCell) {
+  constructor(respawnCell: RespawnCell) {
     super(respawnCell.hive, respawnCell.ref);
     this.cell = respawnCell;
   }
