@@ -1,7 +1,8 @@
-import type { PossiblePositions } from "../Hive";
-
 import { makeId } from "./utils";
+
 import { profile } from "../profiler/decorator";
+
+import type { PossiblePositions, BuildProject } from "../Hive";
 
 export type Pos = { x: number, y: number };
 export type RoomSetup = { [key in BuildableStructureConstant]?: { "pos": { "x": number, "y": number }[] } };
@@ -485,7 +486,7 @@ export class RoomPlanner {
     if (!controller)
       controller = { level: 0 };
 
-    let ans: RoomPosition[] = [];
+    let ans: BuildProject[] = [];
     let sum = 0;
     let constructions = 0;
     for (let i = 0; i < BUILDABLE_PRIORITY.length; ++i) {
@@ -514,7 +515,11 @@ export class RoomPlanner {
                 toadd.push(pos);
             } else {
               sum += constructionSite.progressTotal - constructionSite.progress;
-              ans.push(pos);
+              ans.push({
+                pos: pos,
+                sType: sType,
+                targetHits: -1,
+              });
               constructions++;
             }
           }
@@ -523,7 +528,11 @@ export class RoomPlanner {
           let heal = this.getCase(structure).heal;
           if ((structure.hits < heal * 0.5 && !constructions) || structure.hits < heal * 0.25) {
             sum += Math.ceil((heal - structure.hits) / 100);
-            ans.push(pos);
+            ans.push({
+              pos: pos,
+              sType: sType,
+              targetHits: heal,
+            });
           }
         }
       }
@@ -537,6 +546,7 @@ export class RoomPlanner {
       }
 
     }
+
     return { pos: ans, sum: sum };
   }
 }

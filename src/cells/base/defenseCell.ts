@@ -14,12 +14,22 @@ export class DefenseCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
+    this.updateNukes();
+  }
+
+  updateNukes() {
+    this.nukes = [];
+    _.forEach(this.hive.room.find(FIND_NUKES), (n) => this.nukes.push(n.pos));
   }
 
   update() {
     super.update(["towers"]);
 
     _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
+
+    if (Game.time % 500 === 333)
+      this.updateNukes();
+    this.hive.stateFromEconomy("nukealert", !!this.nukes.length);
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {

@@ -18,7 +18,7 @@ export class AnnexMaster extends SwarmMaster {
     if (checkAnnex && this.hive.bassboost)
       checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 
-    if (this.checkBees(CREEP_CLAIM_LIFE_TIME) && checkAnnex) {
+    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME) && checkAnnex) {
       let order: SpawnOrder = {
         setup: setups.claimer,
         amount: 1,

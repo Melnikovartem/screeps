@@ -1,10 +1,9 @@
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import { Master } from "../_Master";
 
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { prefix } from "../../order";
-import { hiveStates } from "../../Hive";
 import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
 
 import { profile } from "../../profiler/decorator";
@@ -58,7 +57,7 @@ export class UpgraderMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees() && (this.cell.controller.ticksToDowngrade < 6000 || this.hive.state === hiveStates.economy)) {
+    if (this.checkBees() && (this.cell.controller.ticksToDowngrade < 6000)) {
       this.recalculateTargetBee();
       if (this.checkBees()) {
         let order: SpawnOrder = {
@@ -84,13 +83,13 @@ export class UpgraderMaster extends Master {
   run() {
     if (this.boost)
       _.forEach(this.bees, (bee) => {
-        if (bee.state === states.boosting)
+        if (bee.state === beeStates.boosting)
           if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
-            bee.state = states.chill;
+            bee.state = beeStates.chill;
       });
 
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.boosting)
+      if (bee.state === beeStates.boosting)
         return;
       if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
         let suckerTarget;
@@ -104,29 +103,29 @@ export class UpgraderMaster extends Master {
         let ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         switch (ans) {
           case OK:
-            bee.state = states.work;
+            bee.state = beeStates.work;
             break;
           case ERR_NOT_FOUND:
-            bee.state = states.chill;
+            bee.state = beeStates.chill;
             break;
           default:
-            bee.state = states.refill;
+            bee.state = beeStates.refill;
             break;
         }
       }
 
       switch (bee.state) {
-        case states.work:
+        case beeStates.work:
           bee.upgradeController(this.cell.controller)
           break;
-        case states.chill:
+        case beeStates.chill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-            bee.state = states.work;
+            bee.state = beeStates.work;
           bee.goRest(this.cell.pos);
           break;
-        case states.refill:
+        case beeStates.refill:
           if (bee.store.getFreeCapacity(RESOURCE_ENERGY) === 0)
-            bee.state = states.work;
+            bee.state = beeStates.work;
       }
     });
   }

@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { SpawnOrder } from "../../Hive";
@@ -55,7 +55,7 @@ export class SquadMaster extends SwarmMaster {
         this.wish(tankOrder, this.ref + "_knight");
       }
       if (this.knights.length !== 2 || this.healers.length !== 2)
-        _.forEach(this.activeBees, (bee) => bee.state = states.refill);
+        _.forEach(this.activeBees, (bee) => bee.state = beeStates.refill);
     }
   }
 
@@ -66,16 +66,16 @@ export class SquadMaster extends SwarmMaster {
     let healer2: Bee | undefined = this.healers[1];
 
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.refill)
+      if (bee.state === beeStates.refill)
         bee.goRest(this.hive.pos);
     });
 
     if (knight1 && knight2 && healer1 && healer2) {
       if (knight2.pos.isNearTo(knight1) && healer1.pos.isNearTo(knight1) && healer2.pos.isNearTo(knight2)) {
-        knight1.state = states.work;
-        knight2.state = states.work;
-        healer1.state = states.work;
-        healer2.state = states.work;
+        knight1.state = beeStates.work;
+        knight2.state = beeStates.work;
+        healer1.state = beeStates.work;
+        healer2.state = beeStates.work;
       } else {
         knight2.goTo(knight1.pos, { ignoreCreeps: false });
         healer1.goTo(knight1.pos, { ignoreCreeps: false });
@@ -85,13 +85,13 @@ export class SquadMaster extends SwarmMaster {
 
     _.forEach(this.activeBees, (bee) => {
       // if reconstructed while they all spawned, but not met yet or one was lost
-      if (bee.state === states.chill && this.beesAmount < 4)
-        bee.state = states.work;
+      if (bee.state === beeStates.chill && this.beesAmount < 4)
+        bee.state = beeStates.work;
     });
 
     let needsHealing: boolean | undefined;
 
-    if (knight1 && knight1.state === states.work && !this.waitingForBees) {
+    if (knight1 && knight1.state === beeStates.work && !this.waitingForBees) {
       let roomInfo = Apiary.intel.getInfo(knight1.pos.roomName);
       let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
         && (knight1!.pos.getRangeTo(e.object) < 4 || knight1!.pos.roomName === this.order.pos.roomName))), (e) => e.object);

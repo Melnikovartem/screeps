@@ -16,7 +16,7 @@ export class DowngradeMaster extends SwarmMaster {
     if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username)
       this.order.delete();
 
-    if (this.checkBees(CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
+    if (this.checkBees(true, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
       this.wish({
         setup: setups.claimer,
         amount: 1,

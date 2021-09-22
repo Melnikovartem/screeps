@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -86,7 +86,7 @@ export class SKMaster extends SwarmMaster {
         _.forEach(runaway, (b) => {
           let bee = Apiary.bees[b.name];
           if (bee && bee.master && bee.master.ref.includes("ResourceCell_"))
-            bee.state = states.flee;
+            bee.state = beeStates.flee;
         });
 
         if (ticksToSpawn(lair) < 1) {

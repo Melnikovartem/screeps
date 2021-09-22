@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils"
 
@@ -53,9 +53,9 @@ export class HaulerMaster extends Master {
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state === states.chill && Game.time - b.memory.born > 100));
+      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state === beeStates.chill && Game.time - b.memory.born > 100));
       if (bee) {
-        bee.state = states.refill;
+        bee.state = beeStates.refill;
         bee.target = container.id;
         this.roadUpkeepCost[bee.ref] = 0;
         this.targetMap[container.id] = {
@@ -79,12 +79,12 @@ export class HaulerMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.refill && bee.store.getFreeCapacity() === 0)
-        bee.state = states.work;
-      if (bee.state === states.chill && bee.store.getUsedCapacity() > 0)
-        bee.state = states.work;
+      if (bee.state === beeStates.refill && bee.store.getFreeCapacity() === 0)
+        bee.state = beeStates.work;
+      if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
+        bee.state = beeStates.work;
 
-      if (bee.state === states.work) {
+      if (bee.state === beeStates.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
         if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && bee.repairRoadOnMove() === OK)
@@ -104,27 +104,27 @@ export class HaulerMaster extends Master {
         }
 
         if (bee.store.getUsedCapacity() === 0) {
-          bee.state = states.chill;
+          bee.state = beeStates.chill;
           bee.target = null;
         }
       }
 
-      if (bee.state === states.refill) {
+      if (bee.state === beeStates.refill) {
         if (bee.target && this.targetMap[bee.target]) {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
           if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) === OK) {
             this.targetMap[bee.target] = undefined;
-            bee.state = states.work;
+            bee.state = beeStates.work;
             let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));
             if (!res)
               res = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 2));
             bee.target = res ? res.id : null;
           }
         } else
-          bee.state = states.chill; //failsafe
+          bee.state = beeStates.chill; //failsafe
       }
 
-      if (bee.state === states.chill)
+      if (bee.state === beeStates.chill)
         bee.goRest(this.cell.pos, { offRoad: true });
     });
   }

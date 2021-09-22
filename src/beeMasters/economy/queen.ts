@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -19,7 +19,7 @@ export class QueenMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees(CREEP_LIFE_TIME)) {
+    if (this.checkBees(false)) {
       let order: SpawnOrder = {
         setup: setups.queen,
         amount: 1,
@@ -39,17 +39,17 @@ export class QueenMaster extends Master {
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
-        case states.refill:
+        case beeStates.refill:
           if (bee.withdraw(storage, RESOURCE_ENERGY) === OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-            bee.state = states.work;
+            bee.state = beeStates.work;
             let target = bee.pos.findClosest(targets)!;
             if (!bee.pos.isNearTo(target))
               bee.goTo(target);
           }
           break;
-        case states.work:
+        case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-            bee.state = states.refill;
+            bee.state = beeStates.refill;
             if (storage && !bee.pos.isNearTo(storage))
               bee.goTo(storage);
           } else {
@@ -60,23 +60,23 @@ export class QueenMaster extends Master {
               if (nearByTargets.length > 0 && !_.filter(nearByTargets, (s) => s.pos.getRangeTo(bee.pos) === 1).length)
                 bee.goTo(nearByTargets[0]);
             } else if (ans === ERR_NOT_FOUND)
-              bee.state = states.fflush;
+              bee.state = beeStates.fflush;
           }
           break;
-        case states.fflush:
+        case beeStates.fflush:
           if (bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-            bee.state = states.chill;
+            bee.state = beeStates.chill;
           else if (bee.transfer(storage, RESOURCE_ENERGY) !== OK)
             break;
-        case states.chill:
+        case beeStates.chill:
           if (targets.length)
-            bee.state = states.work;
+            bee.state = beeStates.work;
           else
             bee.goRest(this.cell.pos);
           break;
-        case states.boosting:
+        case beeStates.boosting:
           if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "capacity" }]) === OK)
-            bee.state = states.chill;
+            bee.state = beeStates.chill;
           break;
       }
     });

@@ -13,7 +13,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates } from "./Hive";
+import { hiveStates } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";

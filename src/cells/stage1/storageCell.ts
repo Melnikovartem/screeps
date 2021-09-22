@@ -1,6 +1,5 @@
 import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
-import { hiveStates } from "../../Hive";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -165,16 +164,7 @@ export class StorageCell extends Cell {
         this.requestToStorage("link_" + link.id, link, 3);
     }
 
-    switch (this.hive.state) {
-      case hiveStates.economy:
-        if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
-          this.hive.state = hiveStates.lowenergy;
-        break;
-      case hiveStates.lowenergy:
-        if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= 50000)
-          this.hive.state = hiveStates.economy;
-        break;
-    }
+    this.hive.stateFromEconomy("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);
   }
 
   run() {

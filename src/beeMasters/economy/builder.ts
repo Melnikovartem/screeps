@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -49,22 +49,22 @@ export class BuilderMaster extends Master {
       return;
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
-        case states.refill:
+        case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-            bee.state = states.work;
+            bee.state = beeStates.work;
           else if (bee.withdraw(storage, RESOURCE_ENERGY) === OK) {
-            bee.state = states.work;
+            bee.state = beeStates.work;
             bee.target = null;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
-            if (target && target.getRangeTo(bee.pos) > 3)
-              bee.goTo(target);
+            if (target && target.pos.getRangeTo(bee) > 3)
+              bee.goTo(target.pos);
           }
           break;
-        case states.work:
+        case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
-            bee.state = states.refill;
+            bee.state = beeStates.refill;
           else {
             let target: Structure | ConstructionSite | null = null;
             if (bee.target) {
@@ -77,18 +77,18 @@ export class BuilderMaster extends Master {
             }
 
             if (!target) {
-              let pos = bee.pos.findClosest(this.hive.structuresConst);
-              while (pos && !target) {
-                target = pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+              let proj = bee.pos.findClosest(this.hive.structuresConst);
+              while (proj && !target) {
+                target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
                 if (!target)
-                  target = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0];
+                  target = _.filter(proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType), (s) => s.hits < proj!.targetHits)[0];
                 if (!target) {
                   for (let k = 0; k < this.hive.structuresConst.length; ++k)
-                    if (this.hive.structuresConst[k].x == pos.x && this.hive.structuresConst[k].y == pos.y) {
+                    if (this.hive.structuresConst[k].pos.x == proj.pos.x && this.hive.structuresConst[k].pos.y == proj.pos.y) {
                       this.hive.structuresConst.splice(k, 1);
                       break;
                     }
-                  pos = bee.pos.findClosest(this.hive.structuresConst);
+                  proj = bee.pos.findClosest(this.hive.structuresConst);
                 }
               }
             }
@@ -103,14 +103,14 @@ export class BuilderMaster extends Master {
               bee.repairRoadOnMove(ans);
             } else {
               bee.target = null;
-              bee.state = states.chill;
+              bee.state = beeStates.chill;
             }
           }
-          if (bee.state !== states.chill)
+          if (bee.state !== beeStates.chill)
             break;
-        case states.chill:
+        case beeStates.chill:
           if (this.hive.sumCost)
-            bee.state = states.work;
+            bee.state = beeStates.work;
           else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
             let ans = bee.transfer(storage, RESOURCE_ENERGY);
             if (ans === OK && Apiary.logger)

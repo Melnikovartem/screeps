@@ -1,19 +1,17 @@
 import { RespawnCell } from "./cells/base/respawnCell";
 import { DefenseCell } from "./cells/base/defenseCell";
-
 import { DevelopmentCell } from "./cells/stage0/developmentCell";
-
 import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";
 import { ExcavationCell } from "./cells/stage1/excavationCell";
 import { LaboratoryCell } from "./cells/stage1/laboratoryCell";
-
 import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./abstract/utils";
+import { hiveStates } from "./enums";
 import { profile } from "./profiler/decorator";
 
 import type { Pos } from "./abstract/roomPlanner";
@@ -33,26 +31,24 @@ export interface HivePositions {
   lab: Pos,
 }
 
+export interface BuildProject {
+  pos: RoomPosition,
+  sType: StructureConstant,
+  targetHits: number,
+}
+
 export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
 
 interface HiveCells {
-  storage?: StorageCell;
-  defense: DefenseCell;
-  spawn: RespawnCell;
-  upgrade?: UpgradeCell;
-  excavation?: ExcavationCell;
-  dev?: DevelopmentCell;
-  lab?: LaboratoryCell;
-  observe?: ObserveCell;
-  power?: PowerCell;
-}
-
-export enum hiveStates {
-  economy = 0,
-  lowenergy = 1,
-  nospawn = 2,
-  nukealert = 6,
-  war = 9,
+  storage?: StorageCell,
+  defense: DefenseCell,
+  spawn: RespawnCell,
+  upgrade?: UpgradeCell,
+  excavation?: ExcavationCell,
+  dev?: DevelopmentCell,
+  lab?: LaboratoryCell,
+  observe?: ObserveCell,
+  power?: PowerCell,
 }
 
 @profile
@@ -80,7 +76,7 @@ export class Hive {
   shouldRecalc: 0 | 1 | 2 | 3;
   bassboost: Hive | null = null;
 
-  structuresConst: RoomPosition[] = [];
+  structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
   state: hiveStates = hiveStates.economy;
@@ -153,6 +149,19 @@ export class Hive {
       return OK;
     } else
       return ERR_NOT_FOUND;
+  }
+
+  stateFromEconomy(state: keyof typeof hiveStates, trigger: boolean) {
+    switch (this.state) {
+      case hiveStates.economy:
+        if (trigger)
+          this.state = hiveStates[state];
+        break;
+      case hiveStates[state]:
+        if (!trigger)
+          this.state = hiveStates.economy;
+        break;
+    }
   }
 
   updateRooms(): void {

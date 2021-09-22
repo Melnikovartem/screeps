@@ -1,8 +1,7 @@
 import { Cell } from "../_Cell";
 import { QueenMaster } from "../../beeMasters/economy/queen";
 
-import { hiveStates } from "../../Hive";
-import { states } from "../../beeMasters/_Master";
+import { beeStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -29,16 +28,7 @@ export class RespawnCell extends Cell {
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
 
-    switch (this.hive.state) {
-      case hiveStates.economy:
-        if (!Object.keys(this.spawns).length)
-          this.hive.state = hiveStates.nospawn;
-        break;
-      case hiveStates.nospawn:
-        if (Object.keys(this.spawns).length)
-          this.hive.state = hiveStates.economy;
-        break;
-    }
+    this.hive.stateFromEconomy("nospawn", !Object.keys(this.spawns).length);
   };
 
   run() {
@@ -71,7 +61,7 @@ export class RespawnCell extends Cell {
         let memory: CreepMemory = {
           refMaster: sortedOrders[key].master,
           born: Game.time,
-          state: states.idle,
+          state: beeStates.idle,
           target: null,
         };
 

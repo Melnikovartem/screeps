@@ -1,28 +1,17 @@
 // same as goverment intelligence
 // we collect data about enemy
 // in this case on battlefield
+
+import { enemyTypes, roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { UPDATE_EACH_TICK } from "../settings";
-
-export enum types {
-  static = 0,
-  moving = 1,
-}
-
-export enum roomStates {
-  ownedByMe = 0,
-  reservedByMe = 1,
-  noOwner = 2,
-  reservedByEnemy = 3,
-  ownedByEnemy = 4,
-}
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 interface Enemy {
   object: Creep | PowerCreep | Structure,
   dangerlvl: DangerLvl,
-  type: types,
+  type: enemyTypes,
 }
 
 interface RoomInfo {
@@ -167,7 +156,7 @@ export class Intel {
       roomInfo.enemies.push({
         object: c,
         dangerlvl: dangerlvl,
-        type: types.static,
+        type: enemyTypes.moving,
       });
     });
 
@@ -186,7 +175,7 @@ export class Intel {
         roomInfo.enemies.push({
           object: s,
           dangerlvl: dangerlvl,
-          type: types.static,
+          type: enemyTypes.static,
         });
       });
 

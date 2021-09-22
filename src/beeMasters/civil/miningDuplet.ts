@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -68,7 +68,7 @@ export class DupletMaster extends SwarmMaster {
       damageWillBeMax += ticks * 600;
     }
 
-    if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
+    if (this.checkBees(true) && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
         setup: setups.healer,
         amount: 1,
@@ -103,7 +103,7 @@ export class DupletMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.chill)
+      if (bee.state === beeStates.chill)
         bee.goRest(this.hive.pos);
     });
 
@@ -112,15 +112,15 @@ export class DupletMaster extends SwarmMaster {
 
       if (knight && healer && !knight.creep.spawning && !healer.creep.spawning) {
         if (knight.pos.isNearTo(healer)) {
-          knight.state = states.work;
-          healer.state = states.work;
+          knight.state = beeStates.work;
+          healer.state = beeStates.work;
         } else {
           knight.goTo(healer.pos);
           healer.goTo(knight.pos);
         }
       }
 
-      if (knight && knight.state === states.work) {
+      if (knight && knight.state === beeStates.work) {
         let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
         let knightPos = knight.pos;
         let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
@@ -142,7 +142,7 @@ export class DupletMaster extends SwarmMaster {
         this.healerFollow(healer, ans, knight.pos);
       }
 
-      if (healer && healer.state === states.work) {
+      if (healer && healer.state === beeStates.work) {
         if (healer.hits < healer.hitsMax) {
           healer.heal(healer);
         } if (knight && knight.hits < knight.hitsMax) {

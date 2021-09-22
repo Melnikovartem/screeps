@@ -24,7 +24,7 @@ export class DevelopmentCell extends Cell {
     });
 
     _.forEach(this.hive.room.find(FIND_STRUCTURES), (s) => {
-      if (s.structureType === STRUCTURE_CONTAINER && s.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+      if (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_LINK)
         this.handAddedResources.push(s.pos);
     });
   }

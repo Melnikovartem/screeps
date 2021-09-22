@@ -1,7 +1,7 @@
 
 
 import { Master } from "../_Master";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -43,7 +43,7 @@ export class ManagerMaster extends Master {
 
     let bee = this.manager;
 
-    if (bee.state === states.chill) {
+    if (bee.state === beeStates.chill) {
       let targets: string[] = [];
       for (let k in this.cell.requests)
         if (this.cell.requests[k].amount > 0
@@ -52,8 +52,8 @@ export class ManagerMaster extends Master {
       if (targets.length) {
         bee.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
         let res = this.cell.requests[bee.target].resource;
-        bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? states.fflush
-          : bee.store.getUsedCapacity() === 0 ? states.refill : states.work;
+        bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? beeStates.fflush
+          : bee.store.getUsedCapacity() === 0 ? beeStates.refill : beeStates.work;
       }
     }
   }
@@ -64,27 +64,27 @@ export class ManagerMaster extends Master {
       return;
 
     if (bee.pos.roomName !== this.cell.pos.roomName)
-      bee.state = states.chill;
+      bee.state = beeStates.chill;
     if (bee.creep.ticksToLive && bee.creep.ticksToLive < 10)
-      bee.state = states.fflush;
+      bee.state = beeStates.fflush;
 
     if (bee.target) {
       let request: StorageRequest = this.cell.requests[bee.target];
       if (request) {
-        if (bee.state === states.refill) {
+        if (bee.state === beeStates.refill) {
           if (bee.store.getUsedCapacity(request.resource) >= request.amount)
-            bee.state = states.work;
+            bee.state = beeStates.work;
           if (!bee.store.getFreeCapacity(request.resource))
-            bee.state = states.work;
+            bee.state = beeStates.work;
           if (bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(request.resource))
-            bee.state = states.fflush;
+            bee.state = beeStates.fflush;
         }
-        if (bee.state === states.work) {
+        if (bee.state === beeStates.work) {
           if (bee.store.getUsedCapacity(request.resource) === 0)
-            bee.state = states.refill;
+            bee.state = beeStates.refill;
         }
 
-        if (bee.state === states.refill) {
+        if (bee.state === beeStates.refill) {
           let amountBee = Math.min(bee.store.getFreeCapacity(request.resource),
             (<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource),
             request.amount - bee.store.getUsedCapacity(request.resource));
@@ -92,7 +92,7 @@ export class ManagerMaster extends Master {
           if (amountBee > 0)
             bee.withdraw(request.from, request.resource, amountBee) === OK
         }
-        if (bee.state === states.work) {
+        if (bee.state === beeStates.work) {
           let amountBee = Math.min(request.amount,
             bee.store.getUsedCapacity(request.resource),
             (<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource));
@@ -101,23 +101,23 @@ export class ManagerMaster extends Master {
             request.amount -= amountBee;
         }
       } else {
-        bee.state = states.fflush;
+        bee.state = beeStates.fflush;
         bee.target = null;
       }
     } else
-      bee.state = states.fflush;
+      bee.state = beeStates.fflush;
 
-    if (bee.state === states.fflush)
+    if (bee.state === beeStates.fflush)
       if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
         let resource = <ResourceConstant>Object.keys(bee.store)[0];
         bee.transfer(this.cell.storage, resource);
       } else
         if (bee.target)
-          bee.state = states.refill;
+          bee.state = beeStates.refill;
         else
-          bee.state = states.chill;
+          bee.state = beeStates.chill;
 
-    if (bee.state === states.chill)
+    if (bee.state === beeStates.chill)
       bee.goRest(this.cell.pos);
 
     /* drop off extra res in sim

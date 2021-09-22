@@ -1,4 +1,4 @@
-import { hiveStates } from "../hive";
+import { hiveStates } from "../enums";
 import type { PossiblePositions } from "../hive";
 import { profile } from "../profiler/decorator";
 

@@ -1,18 +1,9 @@
 // import { makeId } from "../utils/other";
+import { hiveStates, beeStates } from "../enums";
+
+import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
 import type { Bee } from "../bees/bee";
-import { profile } from "../profiler/decorator";
-
-// some states that masters can use in different ways
-export enum states {
-  idle = 0,
-  chill = 1,
-  work = 2,
-  fflush = 3,
-  refill = 4,
-  boosting = 5,
-  flee = 6,
-}
 
 const MASTER_PREFIX = "master"
 
@@ -45,8 +36,8 @@ export abstract class Master {
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
     bee.creep.notifyWhenAttacked(this.notify);
-    if (bee.state === states.idle)
-      bee.state = this.boost ? states.boosting : states.chill;
+    if (bee.state === beeStates.idle)
+      bee.state = this.boost ? beeStates.boosting : beeStates.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;
@@ -62,9 +53,9 @@ export abstract class Master {
       this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
   }
 
-  checkBees(spawnCycle?: number): boolean {
-    if (!spawnCycle)
-      spawnCycle = CREEP_LIFE_TIME;
+  checkBees(onlySafeState: boolean = true, spawnCycle: number = CREEP_LIFE_TIME): boolean {
+    if (onlySafeState && this.hive.state !== hiveStates.economy)
+      return false;
 
     return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
       || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle));
@@ -99,7 +90,7 @@ export abstract class Master {
   delete() {
     for (const key in this.bees) {
       this.bees[key].master = undefined;
-      this.bees[key].state = states.idle;
+      this.bees[key].state = beeStates.idle;
       this.bees[key].target = null;
     }
     for (const key in this.hive.spawOrders)

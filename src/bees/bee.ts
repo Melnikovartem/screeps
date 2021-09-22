@@ -1,6 +1,6 @@
-import { states } from "../beeMasters/_Master";
-import type { Master } from "../beeMasters/_Master";
+import { beeStates } from "../enums";
 import { profile } from "../profiler/decorator";
+import type { Master } from "../beeMasters/_Master";
 
 @profile
 export class Bee {
@@ -18,7 +18,7 @@ export class Bee {
   lifeTime: number = CREEP_LIFE_TIME;
 
   // target caching and states to have some tools to work with in masters
-  state: states;
+  state: beeStates;
   target: string | null;
 
   // for now it will be forever binded
@@ -200,21 +200,12 @@ export class Bee {
   }
 
   static checkBees() {
-    // after all the masters where created and retrived if it was needed
     for (const name in Game.creeps) {
       let bee = Apiary.bees[name];
       if (!bee)
         Apiary.bees[name] = new Bee(Game.creeps[name]);
-      else if (bee.state === states.idle) {
-        let regex = /^masterDevelopmentCell_(.*)/.exec(bee.memory.refMaster);
-        if (regex) {
-          let viableMasters = _.map(_.filter(Apiary.masters, (m) => m.hive.roomName === regex![1]), (m) => m.ref);
-          let randomMaster = viableMasters[Math.floor(Math.random() * viableMasters.length)];
-          if (randomMaster) {
-            bee.memory.refMaster = randomMaster;
-            Apiary.masters[randomMaster].newBee(bee);
-          }
-        }
+      else if (bee.state === beeStates.idle) {
+        // F bee is list
       }
     }
   }

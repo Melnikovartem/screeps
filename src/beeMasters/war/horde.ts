@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -46,9 +46,9 @@ export class HordeMaster extends SwarmMaster {
   run() {
     _.forEach(this.activeBees, (bee) => {
       Apiary.intel.getInfo(this.order.pos.roomName, 25);
-      if (bee.state === states.work) {
+      if (bee.state === beeStates.work) {
         if (bee.pos.roomName !== this.order.pos.roomName)
-          bee.state = states.chill;
+          bee.state = beeStates.chill;
         let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
         let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
         if (target) {
@@ -63,7 +63,7 @@ export class HordeMaster extends SwarmMaster {
         if (ans === OK) {
           bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
           if (bee.pos.getRangeTo(this.order.pos) <= 5)
-            bee.state = states.work;
+            bee.state = beeStates.work;
         }
       }
       if (bee.hits < bee.hitsMax)

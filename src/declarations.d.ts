@@ -1,8 +1,8 @@
 import type { _Apiary } from "./Apiary";
+import type { beeStates } from "./enums";
 import type { CustomConsole } from "./convenience/console";
 import type { RoomSetup } from "./abstract/roomPlanner";
 import type { HivePositions } from "./Hive";
-import type { states } from "./beeMasters/_Master";
 
 declare global {
   var Apiary: _Apiary;
@@ -11,7 +11,7 @@ declare global {
   interface CreepMemory {
     refMaster: string;
     born: number;
-    state: states;
+    state: beeStates;
     target: string | null;
 
     //for TRAVELER

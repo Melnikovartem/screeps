@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -43,16 +43,16 @@ export class MinerMaster extends Master {
       || this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0)
       || !this.cell.operational;
     _.forEach(this.activeBees, (bee) => {
-      if (bee.state === states.work && sourceOff)
-        bee.state = states.chill;
+      if (bee.state === beeStates.work && sourceOff)
+        bee.state = beeStates.chill;
 
       switch (bee.state) {
-        case states.work:
+        case beeStates.work:
           if (this.cell.pos.isFree() && bee.pos.isNearTo(this.cell.pos))
             bee.goTo(this.cell.pos);
           bee.harvest(this.cell.resource);
           break;
-        case states.chill:
+        case beeStates.chill:
           if (bee.goRest(this.cell.pos) === OK && this.cell.resourceType === RESOURCE_ENERGY) {
             let target = this.cell.container;
             if (target && target.hits < target.hitsMax) {
@@ -62,13 +62,13 @@ export class MinerMaster extends Master {
                 bee.withdraw(target, RESOURCE_ENERGY, 18);
             }
           }
-          bee.state = states.work;
+          bee.state = beeStates.work;
           break;
-        case states.flee:
+        case beeStates.flee:
           let lair = this.cell.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
           if (lair && lair.pos.getRangeTo(bee) < 6)
             bee.goTo(this.hive.pos);
-          bee.state = states.work;
+          bee.state = beeStates.work;
           break;
       }
 

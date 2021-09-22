@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { states } from "../_Master";
+import { beeStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -43,14 +43,14 @@ export class PickupMaster extends SwarmMaster {
 
     _.forEach(this.activeBees, (bee) => {
       if (bee.store.getFreeCapacity() === 0)
-        bee.state = states.fflush;
+        bee.state = beeStates.fflush;
       else if (bee.store.getUsedCapacity() === 0)
-        bee.state = states.refill;
+        bee.state = beeStates.refill;
 
       switch (bee.state) {
-        case states.chill:
-          bee.state = states.refill;
-        case states.refill:
+        case beeStates.chill:
+          bee.state = beeStates.refill;
+        case beeStates.refill:
           if (target) {
             if (bee.store.getFreeCapacity() > 0)
               if (target instanceof Resource)
@@ -58,14 +58,14 @@ export class PickupMaster extends SwarmMaster {
               else
                 bee.withdraw(target, findOptimalResource(target.store));
           } else if (bee.store.getUsedCapacity() > 0)
-            bee.state = states.fflush;
+            bee.state = beeStates.fflush;
           else {
             if (!this.waitPos)
               this.waitPos = this.order.pos;
             bee.goRest(this.waitPos);
           }
           break;
-        case states.fflush:
+        case beeStates.fflush:
           if (!bee.target)
             bee.target = findOptimalResource(bee.store);
           if (bee.target) {
@@ -77,7 +77,7 @@ export class PickupMaster extends SwarmMaster {
                 Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, storage!.store, res, 1);
             }
           } else
-            bee.state = states.chill;
+            bee.state = beeStates.chill;
           break;
       }
 
