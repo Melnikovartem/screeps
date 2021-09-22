@@ -21,7 +21,8 @@ export class MinerMaster extends Master {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
-    if (this.checkBees() && this.cell.perSecondNeeded > 0 && roomInfo.safePlace && this.cell.operational) {
+    if (this.checkBees(this.cell.pos.roomName === this.hive.roomName && this.cell.resourceType === RESOURCE_ENERGY)
+      && this.cell.perSecondNeeded > 0 && roomInfo.safePlace && this.cell.operational) {
       let order: SpawnOrder = {
         setup: setups.miner.energy,
         amount: 1,

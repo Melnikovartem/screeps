@@ -72,7 +72,7 @@ export class PickupMaster extends SwarmMaster {
             let res = <ResourceConstant>bee.target;
             let ans = bee.transfer(storage, res);
             if (ans === OK) {
-              bee.target = null;
+              delete bee.target;
               if (Apiary.logger)
                 Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, storage!.store, res, 1);
             }

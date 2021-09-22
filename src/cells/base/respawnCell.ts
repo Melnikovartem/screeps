@@ -17,18 +17,18 @@ export class RespawnCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
-    if (this.hive.stage > 0)
-      this.master = new QueenMaster(this);
     this.pos = this.hive.getPos("spawn");
   }
 
   update() {
     super.update(["extensions", "spawns"]);
 
+    if (!this.master && !this.hive.cells.dev)
+      this.master = new QueenMaster(this);
+
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), (structure) => structure.spawning === null);
-
-    this.hive.stateFromEconomy("nospawn", !Object.keys(this.spawns).length);
+    this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
   };
 
   run() {
@@ -62,7 +62,6 @@ export class RespawnCell extends Cell {
           refMaster: sortedOrders[key].master,
           born: Game.time,
           state: beeStates.idle,
-          target: null,
         };
 
         if (setup.cost > energyAvailable)

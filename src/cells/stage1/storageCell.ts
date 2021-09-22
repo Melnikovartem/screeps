@@ -164,7 +164,7 @@ export class StorageCell extends Cell {
         this.requestToStorage("link_" + link.id, link, 3);
     }
 
-    this.hive.stateFromEconomy("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);
+    this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);
   }
 
   run() {

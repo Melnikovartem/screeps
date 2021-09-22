@@ -105,7 +105,7 @@ export class HaulerMaster extends Master {
 
         if (bee.store.getUsedCapacity() === 0) {
           bee.state = beeStates.chill;
-          bee.target = null;
+          delete bee.target;
         }
       }
 
@@ -118,7 +118,7 @@ export class HaulerMaster extends Master {
             let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));
             if (!res)
               res = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 2));
-            bee.target = res ? res.id : null;
+            bee.target = res ? res.id : undefined;
           }
         } else
           bee.state = beeStates.chill; //failsafe

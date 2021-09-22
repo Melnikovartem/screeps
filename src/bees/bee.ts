@@ -19,7 +19,7 @@ export class Bee {
 
   // target caching and states to have some tools to work with in masters
   state: beeStates;
-  target: string | null;
+  target?: string;
 
   // for now it will be forever binded
   constructor(creep: Creep) {

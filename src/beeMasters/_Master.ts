@@ -57,8 +57,8 @@ export abstract class Master {
     if (onlySafeState && this.hive.state !== hiveStates.economy)
       return false;
 
-    return !this.waitingForBees && this.targetBeeCount > 0 && (this.targetBeeCount > this.beesAmount
-      || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle));
+    return !this.waitingForBees && this.targetBeeCount > 0 && this.hive.cells.defense.timeToLand > spawnCycle / 2
+      && (this.targetBeeCount > this.beesAmount || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle));
   }
 
   // first stage of decision making like do i need to spawn new creeps
@@ -91,7 +91,7 @@ export abstract class Master {
     for (const key in this.bees) {
       this.bees[key].master = undefined;
       this.bees[key].state = beeStates.idle;
-      this.bees[key].target = null;
+      delete this.bees[key].target;
     }
     for (const key in this.hive.spawOrders)
       if (key.includes(this.ref))

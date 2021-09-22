@@ -14,6 +14,7 @@ type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 export class BootstrapMaster extends Master {
   cell: DevelopmentCell;
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
+  patternCount = 1;
 
   constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
@@ -28,24 +29,26 @@ export class BootstrapMaster extends Master {
 
   recalculateTargetBee() {
     this.targetBeeCount = 0;
-    let workBodyParts = Math.floor(this.hive.room.energyCapacityAvailable / 200);
+    this.patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
     if (this.hive.bassboost)
-      workBodyParts = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
+      this.patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
     if (setups.bootstrap.patternLimit)
-      workBodyParts = Math.min(setups.bootstrap.patternLimit, workBodyParts);
+      this.patternCount = Math.min(setups.bootstrap.patternLimit, this.patternCount);
 
     // theoretically i should count road from minerals to controller, but this is good enough
     let magicNumber = [0.5, 0.666];
-    if (workBodyParts > 3)
+    if (this.patternCount > 3)
       magicNumber = [0.35, 0.45]; // more upgrading less mining
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getOpenPositions(true).length;
+      if (this.hive.stage > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
+        --walkablePositions;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
       if (source.room.name === this.hive.roomName)
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[0];
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (this.patternCount * 2)) / magicNumber[0];
       else
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (workBodyParts * 2)) / magicNumber[1]; // they need to walk more;
+        this.targetBeeCount += Math.min(walkablePositions, 10 / (this.patternCount * 2)) / magicNumber[1]; // they need to walk more;
 
       if (!this.sourceTargeting[source.id])
         this.sourceTargeting[source.id] = {
@@ -73,8 +76,7 @@ export class BootstrapMaster extends Master {
       this.recalculateTargetBee(); // just to check if expansions are done
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
-    if (this.checkBees() && roomInfo.safePlace
-      && (this.hive.stage === 0 || (hiveStates.nospawn >= this.hive.state && this.hive.state >= hiveStates.lowenergy))) {
+    if (this.checkBees(false) && roomInfo.safePlace && (this.hive.stage === 0 || this.hive.state >= hiveStates.economy)) {
       this.wish({
         setup: setups.bootstrap,
         amount: 1,
@@ -113,7 +115,7 @@ export class BootstrapMaster extends Master {
           this.cell.handAddedResources.splice(i, 1);
           --i;
         } else
-          target = structures.filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+          target = structures.filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= this.patternCount * 50)[0];
       }
       if (target)
         handTargets.push(target);
@@ -127,7 +129,7 @@ export class BootstrapMaster extends Master {
           break;
         case beeStates.refill:
           if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-            bee.target = null;
+            delete bee.target;
             bee.state = beeStates.work;
           }
           break;
@@ -149,6 +151,7 @@ export class BootstrapMaster extends Master {
               else
                 bee.withdraw(extraTarget, RESOURCE_ENERGY);
             }
+            return;
           }
 
           if (!bee.target) {
@@ -166,14 +169,20 @@ export class BootstrapMaster extends Master {
 
           if (source instanceof Source) {
             if (source.energy === 0)
-              bee.target = null;
+              delete bee.target;
             else {
-              bee.harvest(source, { ignoreCreeps: true, ignoreRoads: true });
+              if (bee.pos.isNearTo(source))
+                bee.harvest(source);
+              else {
+                let pos = source.pos.getOpenPositions(false)[0];
+                if (pos)
+                  bee.goTo(pos, { ignoreCreeps: true, ignoreRoads: true });
+              }
               sourceTargetingCurrent[source.id] += 1;
             }
           } else {
             bee.state = beeStates.chill;
-            bee.target = null;
+            delete bee.target;
           }
           break;
         case beeStates.work:

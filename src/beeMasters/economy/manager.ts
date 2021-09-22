@@ -22,7 +22,7 @@ export class ManagerMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees()) {
+    if (this.checkBees(false)) {
       let order: SpawnOrder = {
         setup: setups.manager,
         amount: 1,
@@ -102,7 +102,7 @@ export class ManagerMaster extends Master {
         }
       } else {
         bee.state = beeStates.fflush;
-        bee.target = null;
+        delete bee.target;
       }
     } else
       bee.state = beeStates.fflush;

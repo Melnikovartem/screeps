@@ -12,7 +12,8 @@ declare global {
     refMaster: string;
     born: number;
     state: beeStates;
-    target: string | null;
+    target?: string;
+
 
     //for TRAVELER
     _trav?: any;

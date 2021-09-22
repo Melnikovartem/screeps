@@ -54,7 +54,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.work;
           else if (bee.withdraw(storage, RESOURCE_ENERGY) === OK) {
             bee.state = beeStates.work;
-            bee.target = null;
+            delete bee.target;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
@@ -102,7 +102,7 @@ export class BuilderMaster extends Master {
               bee.target = target.id;
               bee.repairRoadOnMove(ans);
             } else {
-              bee.target = null;
+              delete bee.target;
               bee.state = beeStates.chill;
             }
           }

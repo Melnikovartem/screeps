@@ -57,6 +57,8 @@ export class UpgradeCell extends Cell {
     if (!this.link && Game.time % 30 === 7)
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
 
+    if (!this.master.beesAmount)
+      return;
     let storageCell = this.hive.cells.storage;
     let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
     if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 2) {
@@ -74,6 +76,8 @@ export class UpgradeCell extends Cell {
   }
 
   run() {
+    if (!this.master.beesAmount)
+      return;
     if (this.link && this.storageLink) {
       let freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
       if (freeCap <= this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY) || freeCap >= LINK_CAPACITY / 1.05) {

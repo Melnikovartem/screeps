@@ -151,17 +151,13 @@ export class Hive {
       return ERR_NOT_FOUND;
   }
 
-  stateFromEconomy(state: keyof typeof hiveStates, trigger: boolean) {
-    switch (this.state) {
-      case hiveStates.economy:
-        if (trigger)
-          this.state = hiveStates[state];
-        break;
-      case hiveStates[state]:
-        if (!trigger)
-          this.state = hiveStates.economy;
-        break;
-    }
+  stateChange(state: keyof typeof hiveStates, trigger: boolean) {
+    let st = hiveStates[state];
+    if (trigger) {
+      if (st > this.state)
+        this.state = st;
+    } else if (this.state === st)
+      this.state = hiveStates.economy;
   }
 
   updateRooms(): void {
@@ -226,8 +222,11 @@ export class Hive {
 
   updateStructures() {
     let oldCost = this.sumCost > 0;
-    this.structuresConst = [];
-    this.sumCost = 0;
+    let ans = this.cells.defense.getNukeDefMap();
+    this.structuresConst = ans.pos;
+    this.sumCost = ans.sum;
+    if (this.sumCost > 0)
+      return;
     let check = (r: Room) => {
       let ans = Apiary.planner.checkBuildings(r.name);
       this.structuresConst = this.structuresConst.concat(ans.pos);
