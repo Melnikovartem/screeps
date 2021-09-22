@@ -89,6 +89,7 @@ export class Bee {
   }
 
   goTo(target: RoomPosition | RoomObject, opt: TravelToOptions = {}): number {
+    Apiary.intel.getInfo(this.pos.roomName, 50); // collect intel
     // opt.allowSK = true;
     /* Not sure how useful is this
     if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {

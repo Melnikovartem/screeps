@@ -24,8 +24,6 @@ export class PortalMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
-      bee.goTo(this.order.pos, { preferHighway: true });
-    });
+    _.forEach(this.activeBees, (bee) => bee.goTo(this.order.pos, { preferHighway: true }));
   }
 }

@@ -105,14 +105,26 @@ export class StorageCell extends Cell {
       return;
     }
 
+
     for (let k in this.requests) {
-      let from = <StorageRequest["from"] | null>Game.getObjectById(this.requests[k].from.id);
+      let request = this.requests[k];
+
+      let from = <StorageRequest["from"] | null>Game.getObjectById(request.from.id);
       if (from)
         this.requests[k].from = from;
-      let to = <StorageRequest["to"] | null>Game.getObjectById(this.requests[k].to.id);
+      let to = <StorageRequest["to"] | null>Game.getObjectById(request.to.id);
       if (to)
         this.requests[k].to = to;
+
+      if (request.amount > 0 && !(<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource)
+        && !(this.master.manager && this.master.manager.store.getUsedCapacity(request.resource)))
+        delete this.requests[k];
+      else if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
+        delete this.requests[k];
+      else if (request.amount <= 0)
+        delete this.requests[k];
     }
+
 
     if ((!Object.keys(this.requests).length || this.storage.store.getFreeCapacity() < 10000) && this.terminal) {
       if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.1) {
@@ -168,17 +180,6 @@ export class StorageCell extends Cell {
   }
 
   run() {
-    for (let k in this.requests) {
-      let request = this.requests[k];
-      if (request.amount > 0 && !(<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource)
-        && !(this.master.manager && this.master.manager.store.getUsedCapacity(request.resource)))
-        delete this.requests[k];
-      else if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
-        delete this.requests[k];
-      else if (request.amount <= 0)
-        delete this.requests[k];
-    }
-
     if (this.terminal && this.terminal.store.getUsedCapacity() > this.terminal.store.getCapacity() * 0.7 && !this.terminal.cooldown) {
       let res: ResourceConstant = RESOURCE_ENERGY;
       let amount: number = 0;

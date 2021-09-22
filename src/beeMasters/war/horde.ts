@@ -62,6 +62,7 @@ export class HordeMaster extends SwarmMaster {
           bee.state = beeStates.chill;
         let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
         let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
+
         if (target) {
           this.attackOrFlee(bee, target);
         } else

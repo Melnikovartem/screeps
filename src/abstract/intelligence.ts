@@ -29,7 +29,22 @@ interface RoomInfo {
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
 
-  getInfo(roomName: string, lag?: number): RoomInfo {
+  getEnemy(pos: RoomPosition, roomName: string, lag?: number) {
+    let roomInfo = this.getInfo(roomName, lag);
+
+    if (!roomInfo.enemies.length)
+      return;
+
+    return roomInfo.enemies.reduce((prev, curr) => {
+      let ans = prev.dangerlvl - curr.dangerlvl
+      if (curr.dangerlvl === roomInfo.dangerlvlmax && ans === 0)
+        ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
+
+      return ans < 0 ? curr : prev;
+    }).object
+  }
+
+  getInfo(roomName: string, lag: number = 0): RoomInfo {
     let roomInfo = this.roomInfo[roomName];
     if (!roomInfo) {
       let cache = Memory.cache.intellegence[roomName];
@@ -37,8 +52,8 @@ export class Intel {
         this.roomInfo[roomName] = {
           enemies: [],
           dangerlvlmax: 0,
+          lastUpdated: -1,
 
-          lastUpdated: cache.lastUpdated,
           roomState: cache.roomState,
           currentOwner: cache.currentOwner,
           safePlace: cache.safePlace,
@@ -48,8 +63,8 @@ export class Intel {
         this.roomInfo[roomName] = {
           enemies: [],
           dangerlvlmax: 0,
-
           lastUpdated: -1,
+
           roomState: roomStates.noOwner,
           currentOwner: undefined,
           safePlace: true,
@@ -58,7 +73,6 @@ export class Intel {
       roomInfo = this.roomInfo[roomName];
     }
     // it is cached after first check
-    lag = lag ? lag : 0;
     if (!Apiary.useBucket)
       lag = Math.max(4, lag);
     if (UPDATE_EACH_TICK) lag = 0;
@@ -75,8 +89,6 @@ export class Intel {
     }
 
     let room = Game.rooms[roomName];
-
-    this.updateEnemiesInRoom(room);
 
     if (room.controller) {
       if (room.controller.safeMode)
@@ -101,6 +113,8 @@ export class Intel {
 
       roomInfo.currentOwner = owner;
     }
+
+    this.updateEnemiesInRoom(room);
 
     /*
     if (Game.time % LOGGING_CYCLE === 0 && !this.roomInfo[room.name].safePlace) {
@@ -131,7 +145,6 @@ export class Intel {
     for (const roomName in this.roomInfo) {
       let roomInfo = this.roomInfo[roomName];
       Memory.cache.intellegence[roomName] = {
-        lastUpdated: roomInfo.lastUpdated,
         roomState: roomInfo.roomState,
         currentOwner: roomInfo.currentOwner,
         safePlace: roomInfo.safePlace,
@@ -147,11 +160,14 @@ export class Intel {
 
     _.forEach(room.find(FIND_HOSTILE_CREEPS), (c) => {
       let dangerlvl: DangerLvl = 2;
-      if (c.getBodyParts(ATTACK) || c.getBodyParts(RANGED_ATTACK)) {
+      let info = this.getStats(c);
+      if (info.dmgRange >= 1000 || info.dmgClose > 2000)
+        dangerlvl = 8;
+      else if (info.heal >= 800)
+        dangerlvl = 6;
+      else if (info.dmgRange >= 500 || info.dmgClose > 1000 || info.heal > 400)
         dangerlvl = 5;
-        if (c.getBodyParts(HEAL, 1))
-          dangerlvl = 7;
-      } else if (c.getBodyParts(HEAL))
+      else if (info.dmgRange >= 0 || info.dmgClose > 0 || info.heal > 0)
         dangerlvl = 4;
       if (c.owner.username === "Source Keeper")
         dangerlvl = 2;
@@ -162,24 +178,25 @@ export class Intel {
       });
     });
 
-    if (roomInfo.roomState >= roomStates.reservedByEnemy || Game.time % 500 === 0)
+    if (roomInfo.roomState === roomStates.reservedByInvaider || roomInfo.roomState === roomStates.ownedByEnemy || Game.time % 500 === 0)
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE)
           dangerlvl = 3;
-        if (roomInfo.roomState === roomStates.ownedByEnemy)
+        else if (roomInfo.roomState === roomStates.ownedByEnemy)
           if (s.structureType === STRUCTURE_TOWER)
-            dangerlvl = 8;
+            dangerlvl = 7;
           else if (s.structureType === STRUCTURE_EXTENSION)
             dangerlvl = 1
           else if (s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
 
-        roomInfo.enemies.push({
-          object: s,
-          dangerlvl: dangerlvl,
-          type: enemyTypes.static,
-        });
+        if (dangerlvl > 0 || roomInfo.roomState === roomStates.ownedByEnemy)
+          roomInfo.enemies.push({
+            object: s,
+            dangerlvl: dangerlvl,
+            type: enemyTypes.static,
+          });
       });
 
     if (roomInfo.enemies.length)
@@ -203,8 +220,6 @@ export class Intel {
     }
 
     _.forEach(creep.body, (b) => {
-      if (!b.hits)
-        return;
       switch (b.type) {
         case RANGED_ATTACK:
           let dmg = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;

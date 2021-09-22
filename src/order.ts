@@ -177,9 +177,17 @@ export class Order {
               this.delete(true);
               break;
             }
+            if (this.hive.addAnex(this.pos.roomName) !== OK) {
+              if (!this.master)
+                this.master = new PuppetMaster(this);
+              this.acted = false;
+              break;
+            }
 
-            let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 10);
-            if (!this.master && (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner)) {
+            if (this.master instanceof PuppetMaster)
+              this.master = undefined;
+
+            if (!this.master) {
               let [x, y] = this.pos.getRoomCoorinates();
               x %= 10;
               y %= 10;
@@ -190,10 +198,6 @@ export class Order {
                 this.master = new AnnexMaster(this);
             }
 
-            if (this.hive.addAnex(this.pos.roomName) !== OK) {
-              this.master = new PuppetMaster(this);
-              this.acted = false;
-            }
             break;
           case COLOR_GREY:
             if (Object.keys(Apiary.hives).length < Game.gcl.level) {
@@ -267,9 +271,9 @@ export class Order {
             let baseRotation: 0 | 1 | 2 | 3 = 0;
             if (this.ref.includes("right"))
               baseRotation = 1;
-            else if (this.ref.includes("top"))
+            else if (this.ref.includes("up"))
               baseRotation = 2;
-            else if (this.ref.includes("bottom"))
+            else if (this.ref.includes("down"))
               baseRotation = 3;
 
             Apiary.planner.generatePlan(this.pos, baseRotation);
@@ -433,10 +437,6 @@ export class Order {
       }
     }
 
-    if (this.master)
-      this.master.delete();
-    this.master = undefined;
-
     switch (this.flag.color) {
       case COLOR_PURPLE:
         switch (this.flag.secondaryColor) {
@@ -456,7 +456,6 @@ export class Order {
             }
             break;
           case COLOR_PURPLE:
-            this.acted = false;
             if (!force)
               return;
             break;
@@ -472,10 +471,23 @@ export class Order {
           for (let name in Apiary.planner.activePlanning)
             delete Apiary.planner.activePlanning[name];
         break;
+      case COLOR_ORANGE:
+        if (this.flag.secondaryColor === COLOR_GREEN && this.master) {
+          let master = <PickupMaster>this.master;
+          let ans = master.getTarget();
+          if (ans.target && ans.amount > 500)
+            ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), master.maxSpawns) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+        }
     }
+
+    if (this.master)
+      this.master.delete();
+    this.master = undefined;
+
     this.flag.remove();
     delete Apiary.orders[this.ref];
   }
+
 
   update() {
     this.flag = Game.flags[this.ref];

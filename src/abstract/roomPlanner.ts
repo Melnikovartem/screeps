@@ -5,24 +5,29 @@ import { profile } from "../profiler/decorator";
 import type { PossiblePositions, BuildProject } from "../Hive";
 
 export type Pos = { x: number, y: number };
-export type RoomSetup = { [key in BuildableStructureConstant]?: { "pos": { "x": number, "y": number }[] } };
+export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: number, y: number }[] } };
 
 type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: PossiblePositions };
 
-const BASE_HORIZONTAL: Module = { poss: { storage: { "x": 25, "y": 25 }, lab: { "x": 20, "y": 26 } }, exits: [{ x: 20, y: 24 }, { x: 20, y: 26 }], freeSpaces: [{ "x": 19, "y": 23 }, { "x": 19, "y": 24 }, { "x": 19, "y": 25 }, { "x": 19, "y": 26 }, { "x": 19, "y": 27 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
+const BASE_HORIZONTAL: Module = { poss: { storage: { x: 25, y: 25 }, lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 24 }, { x: 20, y: 26 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
 
-const BASE_VERTICAL: Module = { poss: { storage: { "x": 25, "y": 25 }, lab: { "x": 20, "y": 26 } }, exits: [{ x: 20, y: 26 }, { x: 20, y: 24 }], freeSpaces: [{ "x": 19, "y": 23 }, { "x": 19, "y": 24 }, { "x": 19, "y": 25 }, { "x": 19, "y": 26 }, { "x": 19, "y": 27 }, { x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
+const BASE_VERTICAL: Module = { poss: { storage: { x: 25, y: 25 }, lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 26 }, { x: 20, y: 24 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
 
-const EXTRA_VERTICAL: Module = { poss: {}, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ "x": 22, "y": 21 }, { "x": 23, "y": 21 }, { "x": 24, "y": 21 }, { "x": 25, "y": 21 }, { "x": 26, "y": 21 }, { "x": 27, "y": 21 }, { "x": 28, "y": 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, lab: { pos: [] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
+const EXTRA_VERTICAL: Module = { poss: {}, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ x: 22, y: 21 }, { x: 23, y: 21 }, { x: 24, y: 21 }, { x: 25, y: 21 }, { x: 26, y: 21 }, { x: 27, y: 21 }, { x: 28, y: 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, lab: { pos: [] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
 
-const EXTRA_HORIZONTAL: Module = { poss: { spawn: { "x": 23, "y": 22 } }, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ "x": 19, "y": 24 }, { "x": 19, "y": 23 }, { "x": 19, "y": 22 }, { "x": 19, "y": 26 }, { "x": 19, "y": 27 }, { "x": 19, "y": 28 }, { x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, lab: { pos: [] }, storage: { pos: [] }, link: { pos: [] }, terminal: { pos: [] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
+const EXTRA_HORIZONTAL: Module = { poss: { spawn: { x: 23, y: 22 } }, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 19, y: 24 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, lab: { pos: [] }, storage: { pos: [] }, link: { pos: [] }, terminal: { pos: [] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
 
-const WALLS: Module = { poss: {}, exits: [], freeSpaces: [], setup: { "constructedWall": { "pos": [{ "x": 17, "y": 20 }, { "x": 17, "y": 22 }, { "x": 17, "y": 23 }, { "x": 17, "y": 24 }, { "x": 17, "y": 25 }, { "x": 17, "y": 21 }, { "x": 17, "y": 27 }, { "x": 17, "y": 28 }, { "x": 17, "y": 29 }, { "x": 17, "y": 30 }, { "x": 17, "y": 31 }, { "x": 17, "y": 26 }, { "x": 17, "y": 32 }, { "x": 17, "y": 33 }, { "x": 19, "y": 33 }, { "x": 20, "y": 33 }, { "x": 21, "y": 33 }, { "x": 22, "y": 33 }, { "x": 23, "y": 33 }, { "x": 24, "y": 33 }, { "x": 25, "y": 33 }, { "x": 26, "y": 33 }, { "x": 27, "y": 33 }, { "x": 28, "y": 33 }, { "x": 29, "y": 33 }, { "x": 30, "y": 33 }, { "x": 31, "y": 33 }, { "x": 32, "y": 33 }, { "x": 33, "y": 33 }, { "x": 18, "y": 33 }, { "x": 17, "y": 18 }, { "x": 17, "y": 17 }, { "x": 18, "y": 17 }, { "x": 19, "y": 17 }, { "x": 20, "y": 17 }, { "x": 21, "y": 17 }, { "x": 22, "y": 17 }, { "x": 23, "y": 17 }, { "x": 24, "y": 17 }, { "x": 25, "y": 17 }, { "x": 26, "y": 17 }, { "x": 27, "y": 17 }, { "x": 28, "y": 17 }, { "x": 29, "y": 17 }, { "x": 30, "y": 17 }, { "x": 31, "y": 17 }, { "x": 32, "y": 17 }, { "x": 33, "y": 17 }, { "x": 17, "y": 19 }, { "x": 34, "y": 33 }, { "x": 34, "y": 31 }, { "x": 34, "y": 30 }, { "x": 34, "y": 29 }, { "x": 34, "y": 28 }, { "x": 34, "y": 27 }, { "x": 34, "y": 26 }, { "x": 34, "y": 25 }, { "x": 34, "y": 24 }, { "x": 34, "y": 23 }, { "x": 34, "y": 22 }, { "x": 34, "y": 21 }, { "x": 34, "y": 20 }, { "x": 34, "y": 19 }, { "x": 34, "y": 18 }, { "x": 34, "y": 17 }, { "x": 34, "y": 32 }, { "x": 18, "y": 19 }, { "x": 18, "y": 20 }, { "x": 18, "y": 21 }, { "x": 18, "y": 22 }, { "x": 18, "y": 23 }, { "x": 18, "y": 24 }, { "x": 18, "y": 25 }, { "x": 18, "y": 26 }, { "x": 18, "y": 27 }, { "x": 18, "y": 28 }, { "x": 18, "y": 29 }, { "x": 18, "y": 30 }, { "x": 18, "y": 31 }, { "x": 18, "y": 32 }, { "x": 19, "y": 32 }, { "x": 20, "y": 32 }, { "x": 21, "y": 32 }, { "x": 22, "y": 32 }, { "x": 23, "y": 32 }, { "x": 24, "y": 32 }, { "x": 25, "y": 32 }, { "x": 26, "y": 32 }, { "x": 27, "y": 32 }, { "x": 28, "y": 32 }, { "x": 29, "y": 32 }, { "x": 30, "y": 32 }, { "x": 31, "y": 32 }, { "x": 32, "y": 32 }, { "x": 33, "y": 32 }, { "x": 33, "y": 31 }, { "x": 33, "y": 30 }, { "x": 33, "y": 29 }, { "x": 33, "y": 28 }, { "x": 33, "y": 27 }, { "x": 33, "y": 26 }, { "x": 33, "y": 25 }, { "x": 33, "y": 24 }, { "x": 33, "y": 23 }, { "x": 33, "y": 22 }, { "x": 33, "y": 21 }, { "x": 33, "y": 20 }, { "x": 33, "y": 19 }, { "x": 33, "y": 18 }, { "x": 32, "y": 18 }, { "x": 31, "y": 18 }, { "x": 30, "y": 18 }, { "x": 29, "y": 18 }, { "x": 28, "y": 18 }, { "x": 27, "y": 18 }, { "x": 26, "y": 18 }, { "x": 25, "y": 18 }, { "x": 24, "y": 18 }, { "x": 23, "y": 18 }, { "x": 22, "y": 18 }, { "x": 21, "y": 18 }, { "x": 20, "y": 18 }, { "x": 19, "y": 18 }, { "x": 18, "y": 18 }] } } };
+const WALLS: Module = { poss: {}, exits: [], freeSpaces: [], setup: { constructedWall: { pos: [{ x: 17, y: 20 }, { x: 17, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 24 }, { x: 17, y: 25 }, { x: 17, y: 21 }, { x: 17, y: 27 }, { x: 17, y: 28 }, { x: 17, y: 29 }, { x: 17, y: 30 }, { x: 17, y: 31 }, { x: 17, y: 26 }, { x: 17, y: 32 }, { x: 17, y: 33 }, { x: 19, y: 33 }, { x: 20, y: 33 }, { x: 21, y: 33 }, { x: 22, y: 33 }, { x: 23, y: 33 }, { x: 24, y: 33 }, { x: 25, y: 33 }, { x: 26, y: 33 }, { x: 27, y: 33 }, { x: 28, y: 33 }, { x: 29, y: 33 }, { x: 30, y: 33 }, { x: 31, y: 33 }, { x: 32, y: 33 }, { x: 33, y: 33 }, { x: 18, y: 33 }, { x: 17, y: 18 }, { x: 17, y: 17 }, { x: 18, y: 17 }, { x: 19, y: 17 }, { x: 20, y: 17 }, { x: 21, y: 17 }, { x: 22, y: 17 }, { x: 23, y: 17 }, { x: 27, y: 17 }, { x: 28, y: 17 }, { x: 29, y: 17 }, { x: 30, y: 17 }, { x: 31, y: 17 }, { x: 32, y: 17 }, { x: 33, y: 17 }, { x: 17, y: 19 }, { x: 34, y: 33 }, { x: 34, y: 31 }, { x: 34, y: 30 }, { x: 34, y: 29 }, { x: 34, y: 28 }, { x: 34, y: 27 }, { x: 34, y: 26 }, { x: 34, y: 25 }, { x: 34, y: 24 }, { x: 34, y: 23 }, { x: 34, y: 22 }, { x: 34, y: 21 }, { x: 34, y: 20 }, { x: 34, y: 19 }, { x: 34, y: 18 }, { x: 34, y: 17 }, { x: 34, y: 32 }, { x: 18, y: 19 }, { x: 18, y: 20 }, { x: 18, y: 21 }, { x: 18, y: 22 }, { x: 18, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 25 }, { x: 18, y: 26 }, { x: 18, y: 27 }, { x: 18, y: 28 }, { x: 18, y: 29 }, { x: 18, y: 30 }, { x: 18, y: 31 }, { x: 18, y: 32 }, { x: 33, y: 32 }, { x: 33, y: 31 }, { x: 33, y: 30 }, { x: 33, y: 29 }, { x: 33, y: 28 }, { x: 33, y: 27 }, { x: 33, y: 26 }, { x: 33, y: 25 }, { x: 33, y: 24 }, { x: 33, y: 23 }, { x: 33, y: 22 }, { x: 33, y: 21 }, { x: 33, y: 20 }, { x: 33, y: 19 }, { x: 33, y: 18 }, { x: 18, y: 18 }, { x: 27, y: 18 }, { x: 32, y: 18 }, { x: 31, y: 18 }, { x: 30, y: 18 }, { x: 29, y: 18 }, { x: 28, y: 18 }, { x: 26, y: 18 }, { x: 25, y: 18 }, { x: 24, y: 18 }, { x: 23, y: 18 }, { x: 22, y: 18 }, { x: 21, y: 18 }, { x: 20, y: 18 }, { x: 19, y: 18 }, { x: 27, y: 32 }, { x: 30, y: 32 }, { x: 32, y: 32 }, { x: 31, y: 32 }, { x: 29, y: 32 }, { x: 28, y: 32 }, { x: 26, y: 32 }, { x: 25, y: 32 }, { x: 24, y: 32 }, { x: 23, y: 32 }, { x: 22, y: 32 }, { x: 21, y: 32 }, { x: 20, y: 32 }, { x: 19, y: 32 }, { x: 25, y: 17 }, { x: 26, y: 17 }, { x: 24, y: 17 }] } } };
+
+const WALL_HEALTH = {
+  small: 200000,
+  big: 1000000,
+}
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS } },
-  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } },
-  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 10000 }, 2: { amount: 2500, heal: 10000 }, 3: { amount: 2500, heal: 10000 }, 4: { amount: 2500, heal: 100000 }, 5: { amount: 2500, heal: 100000 }, 6: { amount: 2500, heal: 500000 }, 7: { amount: 2500, heal: 500000 }, 8: { amount: 2500, heal: 1000000 } }
+  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 0 }, 2: { amount: 2500, heal: WALL_HEALTH.small }, 3: { amount: 2500, heal: WALL_HEALTH.small }, 4: { amount: 2500, heal: WALL_HEALTH.small }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
+  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 0 }, 2: { amount: 2500, heal: WALL_HEALTH.small }, 3: { amount: 2500, heal: WALL_HEALTH.small }, 4: { amount: 2500, heal: WALL_HEALTH.small }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
 }
 const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
   STRUCTURE_TOWER,
@@ -39,8 +44,8 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
   STRUCTURE_FACTORY,
   STRUCTURE_NUKER,
   STRUCTURE_ROAD,
-  STRUCTURE_WALL,
   STRUCTURE_RAMPART,
+  STRUCTURE_WALL,
 ];
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
@@ -76,7 +81,7 @@ console.log(`{${ss}}`);
 */
 
 function anchorDist(anchor: RoomPosition, x: Pos, roomName: string = anchor.roomName) {
-  return anchor.getRangeTo(new RoomPosition(x.x, x.y, roomName));
+  return anchor.getTimeForPath(new RoomPosition(x.x, x.y, roomName));
 }
 
 @profile
@@ -173,62 +178,14 @@ export class RoomPlanner {
           let ans = this.connectWithRoad(anchor, f.pos, true);
           if (ans === ERR_FULL || ans === ERR_BUSY)
             return ans;
-          this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-          if (f.color === COLOR_CYAN)
+          if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter((s) => s.structureType === STRUCTURE_LINK).length)
+            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+          if (f.secondaryColor === COLOR_CYAN)
             this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
           return OK;
         }
       });
     });
-
-    let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_FACTORY];
-
-    for (let i in fillTypes) {
-      let sType = fillTypes[i];
-      jobs.push({
-        context: `placing ${sType}`,
-        func: () => {
-          let free = this.activePlanning[anchor.roomName].freeSpaces;
-          if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
-            let red = ((a: Pos, b: Pos) => {
-              if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, b) <= 1)
-                return a;
-              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b)) * (sType === STRUCTURE_OBSERVER ? -1 : 1);
-              if (ans === 0) {
-                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), PATH_ARGS);
-                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), PATH_ARGS);
-                ans = pathA.length - pathB.length;
-              }
-              if (ans === 0)
-                ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
-              if (ans === 0)
-                ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
-              return ans < 0 ? a : b;
-            });
-            let pos = free.reduce(red);
-
-            let br = false;
-            while (pos) {
-              if ((sType === STRUCTURE_OBSERVER || this.roadNearBy(pos, anchor.roomName)) && this.addToPlan(pos, anchor.roomName, sType) === ERR_FULL)
-                br = true;
-              else
-                pos = free.reduce(red);
-              for (let i = 0; i < free.length; ++i)
-                if (free[i].x === pos.x && free[i].y === pos.y) {
-                  free.splice(i, 1);
-                  break;
-                }
-              if (br)
-                break;
-            }
-            if (this.activePlanning[anchor.roomName].placed[sType]! < CONTROLLER_STRUCTURES[sType][8])
-              return ERR_FULL;
-          }
-          this.activePlanning[anchor.roomName].freeSpaces = free;
-          return OK;
-        }
-      });
-    }
 
     jobs.push({
       context: "upgrade site",
@@ -282,6 +239,57 @@ export class RoomPlanner {
       }
     });
 
+    let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_FACTORY];
+
+    for (let i in fillTypes) {
+      let sType = fillTypes[i];
+      jobs.push({
+        context: `placing ${sType}`,
+        func: () => {
+          let free = this.activePlanning[anchor.roomName].freeSpaces;
+          if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
+            let red = ((a: Pos, b: Pos) => {
+              if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, b) <= 1)
+                return a;
+              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b)) * (sType === STRUCTURE_OBSERVER ? -1 : 1);
+              if (ans === 0) {
+                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), PATH_ARGS);
+                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), PATH_ARGS);
+                ans = pathA.length - pathB.length;
+              }
+              if (ans === 0)
+                ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
+              if (ans === 0)
+                ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
+              return ans < 0 ? a : b;
+            });
+            let pos;
+            if (free.length)
+              pos = free.reduce(red);
+
+            let br = false;
+            while (pos) {
+              if ((sType === STRUCTURE_OBSERVER || this.roadNearBy(pos, anchor.roomName)) && this.addToPlan(pos, anchor.roomName, sType) === ERR_FULL)
+                br = true;
+              else if (free.length)
+                pos = free.reduce(red);
+              for (let i = 0; i < free.length; ++i)
+                if (free[i].x === pos.x && free[i].y === pos.y) {
+                  free.splice(i, 1);
+                  break;
+                }
+              if (br)
+                break;
+            }
+            if (this.activePlanning[anchor.roomName].placed[sType]! < CONTROLLER_STRUCTURES[sType][8])
+              return ERR_FULL;
+          }
+          this.activePlanning[anchor.roomName].freeSpaces = free;
+          return OK;
+        }
+      });
+    }
+
     this.addModule(anchor, WALLS, (a) => rotate(a, baseRotation));
   }
 
@@ -297,6 +305,8 @@ export class RoomPlanner {
   }
 
   pathFromExit(pos: RoomPosition, roomName: string): ERR_FULL | [PathStep[], RoomPosition] {
+    if (!(pos.roomName in Game.rooms))
+      return ERR_FULL;
     let exit: RoomPosition | undefined | null;
     if (pos.roomName === roomName)
       exit = pos.findClosestByPath(this.activePlanning[roomName].exits, PATH_ARGS);
@@ -461,7 +471,7 @@ export class RoomPlanner {
 
   addToCache(pos: Pos, roomName: string, sType: BuildableStructureConstant) {
     if (!Memory.cache.roomPlanner[roomName][sType])
-      Memory.cache.roomPlanner[roomName][sType] = { "pos": [] };
+      Memory.cache.roomPlanner[roomName][sType] = { pos: [] };
     Memory.cache.roomPlanner[roomName][sType]!.pos.push({ x: pos.x, y: pos.y });
   }
 

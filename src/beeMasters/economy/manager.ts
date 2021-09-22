@@ -3,6 +3,7 @@
 import { Master } from "../_Master";
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { StorageCell, StorageRequest } from "../../cells/stage1/storageCell";
@@ -43,16 +44,23 @@ export class ManagerMaster extends Master {
 
     let bee = this.manager;
 
-    if (bee.state === beeStates.chill) {
-      let targets: string[] = [];
-      for (let k in this.cell.requests)
-        if (this.cell.requests[k].amount > 0
-          && (this.cell.requests[k].to.id === this.cell.storage.id || this.cell.requests[k].from.id === this.cell.storage.id))
-          targets.push(k);
-      if (targets.length) {
-        bee.target = targets.reduce((prev, curr) => { return this.cell.requests[curr].priority < this.cell.requests[prev].priority ? curr : prev });
-        let res = this.cell.requests[bee.target].resource;
-        bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(res) ? beeStates.fflush
+    if (!bee.target || !this.cell.requests[bee.target]) {
+      if (Object.keys(this.cell.requests).length) {
+        let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
+        let request = _.reduce(this.cell.requests, (prev: StorageRequest, curr) => {
+          let ans = curr.priority - prev.priority;
+          if (!ans) {
+            let refPoint = curr.resource === beeRes ? bee.pos : this.cell.storage.pos;
+            let nonStoragePrev = prev.to.id === this.cell.storage.id ? prev.from : prev.to;
+            let nonStorageCurr = curr.to.id === this.cell.storage.id ? curr.from : curr.to;
+            ans = refPoint.getRangeTo(nonStorageCurr) - refPoint.getRangeTo(nonStoragePrev);
+          }
+          if (!ans)
+            ans = curr.amount - prev.amount;
+          return ans < 0 ? curr : prev;
+        });
+        bee.target = request.ref;
+        bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(request.resource) ? beeStates.fflush
           : bee.store.getUsedCapacity() === 0 ? beeStates.refill : beeStates.work;
       }
     }
@@ -67,6 +75,16 @@ export class ManagerMaster extends Master {
       bee.state = beeStates.chill;
     if (bee.creep.ticksToLive && bee.creep.ticksToLive < 10)
       bee.state = beeStates.fflush;
+
+    if (bee.state === beeStates.fflush)
+      if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
+        let resource = <ResourceConstant>Object.keys(bee.store)[0];
+        bee.transfer(this.cell.storage, resource);
+      } else
+        if (bee.target)
+          bee.state = beeStates.refill;
+        else
+          bee.state = beeStates.chill;
 
     if (bee.target) {
       let request: StorageRequest = this.cell.requests[bee.target];
@@ -90,7 +108,9 @@ export class ManagerMaster extends Master {
             request.amount - bee.store.getUsedCapacity(request.resource));
 
           if (amountBee > 0)
-            bee.withdraw(request.from, request.resource, amountBee) === OK
+            if (bee.withdraw(request.from, request.resource, amountBee) === OK && !bee.pos.isNearTo(request.to))
+              bee.goTo(request.to)
+
         }
         if (bee.state === beeStates.work) {
           let amountBee = Math.min(request.amount,
@@ -104,18 +124,7 @@ export class ManagerMaster extends Master {
         bee.state = beeStates.fflush;
         delete bee.target;
       }
-    } else
-      bee.state = beeStates.fflush;
-
-    if (bee.state === beeStates.fflush)
-      if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
-        let resource = <ResourceConstant>Object.keys(bee.store)[0];
-        bee.transfer(this.cell.storage, resource);
-      } else
-        if (bee.target)
-          bee.state = beeStates.refill;
-        else
-          bee.state = beeStates.chill;
+    }
 
     if (bee.state === beeStates.chill)
       bee.goRest(this.cell.pos);

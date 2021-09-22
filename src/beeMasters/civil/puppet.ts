@@ -19,9 +19,6 @@ export class PuppetMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
-      Apiary.intel.getInfo(bee.pos.roomName, 50); // get intel for stuff
-      bee.goRest(this.order.pos);
-    });
+    _.forEach(this.activeBees, (bee) => bee.goRest(this.order.pos));
   }
 }

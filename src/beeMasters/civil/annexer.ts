@@ -12,9 +12,10 @@ export class AnnexMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 10);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
 
-    let checkAnnex = roomInfo.safePlace && (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && this.hive.room.energyAvailable >= 650;
+    let checkAnnex = (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && roomInfo.safePlace;
+
     if (checkAnnex && this.hive.bassboost)
       checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 

@@ -1,4 +1,5 @@
 import { HordeMaster } from "./horde";
+import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
 import { roomStates } from "../../enums";
@@ -9,7 +10,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class DestroyerMaster extends HordeMaster {
   update() {
-    super.update();
+    SwarmMaster.prototype.update.call(this);
 
     if (this.checkBees(true)) {
       let order = {

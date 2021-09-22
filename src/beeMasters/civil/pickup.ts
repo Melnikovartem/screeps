@@ -4,7 +4,6 @@ import { setups } from "../../bees/creepsetups";
 import { beeStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
 
-import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 import type { SpawnOrder } from "../../Hive";
 
@@ -109,12 +108,5 @@ export class PickupMaster extends SwarmMaster {
       // if (!target && bee.pos.roomName === this.order.pos.roomName && (this.order.pos.x !== this.hive.pos.x || this.order.pos.y !== this.hive.pos.y))
       // this.order.flag.setPosition(this.hive.pos);
     });
-  }
-
-  delete() {
-    super.delete();
-    let ans = this.getTarget();
-    if (ans.target && ans.amount > 500)
-      ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), this.maxSpawns) + "_pickup_" + makeId(4), COLOR_GREEN, COLOR_ORANGE);
   }
 }

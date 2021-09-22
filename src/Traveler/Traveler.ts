@@ -2,7 +2,7 @@
  * To start using Traveler, require it in main.js:
  * Example: var Traveler = require('Traveler.js');
  */
-import { VISUALS_TRAVELER } from "../settings";
+import { VISUALS_TRAVELER, TRAVELER_MESSAGE } from "../settings";
 import { profile } from "../profiler/decorator";
 
 @profile
@@ -111,7 +111,7 @@ export class Traveler {
 
       let cpuUsed = Game.cpu.getUsed() - cpu;
       state.cpu = _.round(cpuUsed + state.cpu);
-      if (state.cpu > REPORT_CPU_THRESHOLD) {
+      if (state.cpu > REPORT_CPU_THRESHOLD && TRAVELER_MESSAGE) {
         // see note at end of file for more info on this
         console.log(`TRAVELER: heavy cpu use: ${creep.name}, cpu: ${state.cpu} origin: ${
           creep.pos}, dest: ${destination}`);
