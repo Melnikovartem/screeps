@@ -42,12 +42,17 @@ export class RespawnCell extends Cell {
         break;
 
       let order = sortedOrders[key].order;
+      if (!Apiary.masters[sortedOrders[key].master]) {
+        this.hive.spawOrders[sortedOrders[key].ref].amount = 0;
+        continue
+      }
+
       let spawn = this.freeSpawns.pop()!;
 
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       let moveMax = undefined;
-      if (moveMax === "best" && Apiary.masters[sortedOrders[key].master] && Apiary.masters[sortedOrders[key].master].boost
+      if (moveMax === "best" && Apiary.masters[sortedOrders[key].master] && Apiary.masters[sortedOrders[key].master].boostMove
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 

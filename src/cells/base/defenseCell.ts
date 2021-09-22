@@ -32,7 +32,7 @@ export class DefenseCell extends Cell {
   // mini roomPlanner
   getNukeDefMap() {
     if (!this.nukes.length)
-      return { pos: [], sum: 0 };
+      return [];
     let map: { [id: number]: { [id: number]: number } } = {};
     _.forEach(this.nukes, (pp) => {
       let poss = pp.getPositionsInRange(2);
@@ -47,29 +47,30 @@ export class DefenseCell extends Cell {
     });
 
     let ans: BuildProject[] = [];
-    let sum = 0;
     // todo?? save some of the extensions / not all spawns
     for (let x in map)
       for (let y in map[x]) {
         let pos = new RoomPosition(+x, +y, this.hive.roomName);
         let structures = pos.lookFor(LOOK_STRUCTURES)
         if (structures.filter((s) => CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= 15000).length) {
+          let rampart = structures.filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
+          let energy;
+          if (rampart)
+            energy = Math.max(map[x][y] - rampart.hits, 0) / 100;
+          else {
+            energy = map[x][y] / 100;
+            if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
+              pos.createConstructionSite(STRUCTURE_RAMPART);
+          }
           ans.push({
             pos: pos,
             sType: STRUCTURE_RAMPART,
             targetHits: map[x][y],
+            energyCost: Math.ceil(energy),
           });
-          let rampart = structures.filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
-          if (rampart)
-            sum += Math.max(map[x][y] - rampart.hits, 0) / 100;
-          else {
-            sum += map[x][y] / 100;
-            if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
-              pos.createConstructionSite(STRUCTURE_RAMPART);
-          }
         }
       }
-    return { pos: ans, sum: sum };
+    return ans;
   }
 
   update() {
@@ -164,10 +165,17 @@ export class DefenseCell extends Cell {
         } else {
           let enemies = _.map(roomInfo.enemies, (e) => e.object);
           _.forEach(this.towers, (tower) => {
-            let closest = tower.pos.findClosestByRange(enemies);
-            if (closest && (closest.pos.getRangeTo(tower) < 8 || closest.pos.getRangeTo(this.hive.pos) < 5
-              || (closest instanceof Creep && closest.owner.username === "Invader")))
-              tower.attack(closest);
+            let closest = tower.pos.findClosestByRange(enemies)!;
+            if (roomInfo.dangerlvlmax < 7) {
+              if (closest.pos.getRangeTo(tower) < 10 || closest.pos.getRangeTo(this.hive.pos) < 5
+                || closest instanceof Creep && closest.owner.username === "Invader")
+                tower.attack(closest);
+            } else {
+              let target = <Structure | undefined>this.hive.findProject(closest, true);
+              if (target)
+                tower.repair(target);
+            }
+            tower.attack(closest);
           });
         }
       }

@@ -476,9 +476,9 @@ export class RoomPlanner {
     };
   }
 
-  checkBuildings(roomName: string) {
+  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
-      return { pos: [], sum: 0 };
+      return [];
 
     let contr = Game.rooms[roomName].controller
     let myRoom = contr && contr.my;
@@ -487,10 +487,9 @@ export class RoomPlanner {
       controller = { level: 0 };
 
     let ans: BuildProject[] = [];
-    let sum = 0;
     let constructions = 0;
-    for (let i = 0; i < BUILDABLE_PRIORITY.length; ++i) {
-      let sType = BUILDABLE_PRIORITY[i];
+    for (let i = 0; i < priorityQue.length; ++i) {
+      let sType = priorityQue[i];
       if (!(sType in Memory.cache.roomPlanner[roomName]))
         continue;
       let cc = this.getCase({ structureType: sType, pos: { roomName: roomName }, hitsMax: 0 });
@@ -514,11 +513,11 @@ export class RoomPlanner {
               } else
                 toadd.push(pos);
             } else {
-              sum += constructionSite.progressTotal - constructionSite.progress;
               ans.push({
                 pos: pos,
                 sType: sType,
-                targetHits: -1,
+                targetHits: 0,
+                energyCost: constructionSite.progressTotal - constructionSite.progress,
               });
               constructions++;
             }
@@ -526,27 +525,24 @@ export class RoomPlanner {
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
-          if ((structure.hits < heal * 0.5 && !constructions) || structure.hits < heal * 0.25) {
-            sum += Math.ceil((heal - structure.hits) / 100);
+          if ((structure.hits < heal * 0.5 && !constructions) || structure.hits < heal * 0.25)
             ans.push({
               pos: pos,
               sType: sType,
               targetHits: heal,
+              energyCost: Math.ceil((heal - structure.hits) / 100),
             });
-          }
         }
       }
       for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < 10; ++i) {
-        sum += CONSTRUCTION_COST[sType];
         if (sType === STRUCTURE_SPAWN)
           toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
         else
           toadd[i].createConstructionSite(sType);
         constructions++;
       }
-
     }
 
-    return { pos: ans, sum: sum };
+    return ans;
   }
 }

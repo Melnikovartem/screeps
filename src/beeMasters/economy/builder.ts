@@ -1,10 +1,10 @@
 import { Master } from "../_Master";
 
-import { beeStates } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder, Hive } from "../../Hive";
+import type { Hive } from "../../Hive";
 
 @profile
 export class BuilderMaster extends Master {
@@ -25,21 +25,24 @@ export class BuilderMaster extends Master {
       this.targetBeeCount = 2;
     else
       this.targetBeeCount = 3;
+
+    if (storage && this.hive.state >= hiveStates.war && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
+      this.targetBeeCount = 4;
+
+    return true;
   }
 
   update() {
     super.update();
     this.recalculateTargetBee();
-    if (this.checkBees()) {
-      this.recalculateTargetBee();
-      if (this.checkBees()) {
-        let order: SpawnOrder = {
-          setup: setups.builder,
-          amount: 1,
-          priority: 8,
-        };
-        this.wish(order);
-      }
+    this.boost = this.hive.state >= hiveStates.war;
+    if (this.checkBees(false) && this.recalculateTargetBee() && this.checkBees(false)) {
+      let order = {
+        setup: setups.builder,
+        amount: 1,
+        priority: <1 | 8>(this.hive.state >= hiveStates.war ? 8 : 0),
+      };
+      this.wish(order);
     }
   }
 
@@ -66,33 +69,17 @@ export class BuilderMaster extends Master {
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
             bee.state = beeStates.refill;
           else {
-            let target: Structure | ConstructionSite | null = null;
+            let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
               target = Game.getObjectById(bee.target);
               if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal)
-                target = null;
-
+                target = undefined;
               if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
                 this.hive.shouldRecalc = 2;
             }
 
-            if (!target) {
-              let proj = bee.pos.findClosest(this.hive.structuresConst);
-              while (proj && !target) {
-                target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-                if (!target)
-                  target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
-                    && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
-                if (!target) {
-                  for (let k = 0; k < this.hive.structuresConst.length; ++k)
-                    if (this.hive.structuresConst[k].pos.x == proj.pos.x && this.hive.structuresConst[k].pos.y == proj.pos.y) {
-                      this.hive.structuresConst.splice(k, 1);
-                      break;
-                    }
-                  proj = bee.pos.findClosest(this.hive.structuresConst);
-                }
-              }
-            }
+            if (!target)
+              target = this.hive.findProject(bee);
 
             if (target) {
               let ans;

@@ -14,7 +14,7 @@ export class PortalMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100) {
+    if (this.checkBees() && Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100) {
       this.wish({
         setup: setups.puppet,
         amount: 1,

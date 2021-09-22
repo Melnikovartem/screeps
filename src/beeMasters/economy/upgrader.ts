@@ -64,7 +64,7 @@ export class UpgraderMaster extends Master {
     if (this.checkBees(!extreme) && this.recalculateTargetBee() && this.checkBees(!extreme)) {
       let order = {
         setup: setups.upgrader.manual,
-        amount: 1,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: <8 | 2>8,
       };
 

@@ -36,6 +36,7 @@ export interface BuildProject {
   pos: RoomPosition,
   sType: StructureConstant,
   targetHits: number,
+  energyCost: number,
 }
 
 export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
@@ -161,8 +162,7 @@ export class Hive {
       this.state = hiveStates.economy;
   }
 
-  updateRooms(): void {
-    this.room = Game.rooms[this.roomName];
+  updateAnnexes(): void {
     this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
       let annex = Game.rooms[annexName];
       return annex;
@@ -209,6 +209,41 @@ export class Hive {
     });
   }
 
+  findProject(pos: RoomPosition | { pos: RoomPosition }, ignoreConstruction: boolean = false) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let target: Structure | ConstructionSite | undefined;
+    let projects = this.structuresConst;
+    let getProj = () => (<RoomPosition>pos).findClosest(projects);
+
+    if (this.state >= hiveStates.war) {
+      projects = projects.filter((pr) => pr.targetHits > 0 && pr.pos.roomName === this.roomName);
+    }
+
+    let proj = getProj();
+    while (proj && !target) {
+      if (!ignoreConstruction)
+        target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+      if (!target)
+        target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
+          && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
+      if (!target) {
+        for (let k = 0; k < projects.length; ++k)
+          if (projects[k].pos.x == proj.pos.x && projects[k].pos.y == proj.pos.y) {
+            projects.splice(k, 1);
+            break;
+          }
+        proj = getProj();
+      }
+    }
+
+    if (!ignoreConstruction && this.state < hiveStates.war)
+      this.structuresConst = projects;
+
+    return target;
+  }
+
   private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
     if (structureMap)
       if (type === structure.structureType) {
@@ -223,27 +258,37 @@ export class Hive {
 
   updateStructures() {
     let oldCost = this.sumCost > 0;
-    let ans = this.cells.defense.getNukeDefMap();
-    this.structuresConst = ans.pos;
-    this.sumCost = ans.sum;
-    if (this.sumCost > 0)
-      return;
-    let check = (r: Room) => {
-      let ans = Apiary.planner.checkBuildings(r.name);
-      this.structuresConst = this.structuresConst.concat(ans.pos);
-      this.sumCost += ans.sum;
+    this.structuresConst = [];
+    this.sumCost = 0;
+    let add = (ans: BuildProject[]) => {
+      this.structuresConst = this.structuresConst.concat(ans);
+      this.sumCost += _.sum(ans, (pr) => pr.energyCost);
     }
-    if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.phase > 0)
-      _.forEach(this.rooms, check);
-    else
-      check(this.room);
+
+    switch (this.state) {
+      case hiveStates.nukealert:
+        add(this.cells.defense.getNukeDefMap());
+      case hiveStates.war:
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
+        break;
+      case hiveStates.nospawn:
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]))
+        break;
+      default:
+        if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.phase > 0)
+          _.forEach(this.rooms, (r) => add(Apiary.planner.checkBuildings(r.name)));
+        else
+          add(Apiary.planner.checkBuildings(this.roomName));
+    }
   }
 
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (Game.time % 40 === 5 || this.shouldRecalc) {
-      this.updateRooms();
+    if (this.state >= hiveStates.war)
+      this.updateStructures();
+    else if (Game.time % 40 === 5 || this.shouldRecalc) {
+      this.updateAnnexes();
       this.updateStructures();
       if (this.shouldRecalc > 2) {
         this.markResources();

@@ -20,6 +20,7 @@ export abstract class SwarmMaster extends Master {
 
     if (this.order.flag.memory.info)
       this.spawned = this.order.flag.memory.info;
+    this.boostMove = this.boost;
   }
 
   checkBees(onlySafeState: boolean = false, spawnCycle?: number) {

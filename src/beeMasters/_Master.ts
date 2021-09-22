@@ -23,6 +23,7 @@ export abstract class Master {
   bees: { [id: string]: Bee } = {};
   activeBees: Bee[] = [];
   boost: boolean = false;
+  boostMove: boolean = false;
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;

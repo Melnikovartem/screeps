@@ -73,7 +73,7 @@ export class HaulerMaster extends Master {
     if (this.checkBees()) {
       this.wish({
         setup: setups.hauler,
-        amount: 1,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: 6,
       });
     }

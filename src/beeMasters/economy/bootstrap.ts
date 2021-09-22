@@ -190,7 +190,7 @@ export class BootstrapMaster extends Master {
         case beeStates.chill:
           bee.goRest(this.hive.pos);
         case beeStates.work:
-          let target: Structure | ConstructionSite | null = null;
+          let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "working";
 
           if (bee.target) {
@@ -207,7 +207,7 @@ export class BootstrapMaster extends Master {
               else if (target.hits < target.hitsMax)
                 workType = "repair";
               else
-                target = null;
+                target = undefined;
             }
             if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
               this.hive.shouldRecalc = 2;
@@ -234,24 +234,12 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
-            let proj = bee.pos.findClosest(this.hive.structuresConst);
-            while (proj && !target) {
-              target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-              if (!target)
-                target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
-                  && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
+            target = this.hive.findProject(bee);
+            if (target)
+              if (target instanceof Structure)
+                workType = "repair";
               else
                 workType = "build";
-              if (!target) {
-                for (let k = 0; k < this.hive.structuresConst.length; ++k)
-                  if (this.hive.structuresConst[k].pos.x == proj.pos.x && this.hive.structuresConst[k].pos.y == proj.pos.y) {
-                    this.hive.structuresConst.splice(k, 1);
-                    break;
-                  }
-                proj = bee.pos.findClosest(this.hive.structuresConst);
-              } else
-                workType = "repair";
-            }
           }
 
           if (!target && this.hive.room.storage && this.hive.room.storage.isActive()) {
