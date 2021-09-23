@@ -72,8 +72,8 @@ export class BootstrapMaster extends Master {
   update() {
     super.update();
 
-    if (this.cell.shouldRecalc)
-      this.recalculateTargetBee(); // just to check if expansions are done
+    if (this.cell.shouldRecalc || Game.time % 100 === 33)
+      this.recalculateTargetBee();
 
     if (this.checkBees(false) && (this.hive.phase === 0 || this.hive.state > hiveStates.economy)) {
       let order = {
@@ -260,7 +260,7 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          if (!target && count["refill"] < 2) {
+          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.25, 3)) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);

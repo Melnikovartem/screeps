@@ -28,7 +28,7 @@ export enum prefix {
   upgrade = "polen",
   surrender = "FFF",
   boost = "boost_",
-  def = "def_"
+  def = "def_",
 }
 
 @profile
@@ -185,6 +185,7 @@ export class Order {
             }
 
             if (this.master instanceof PuppetMaster) {
+              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.memory.refMaster = "puppet" : void (0));
               this.master.delete();
               this.master = undefined;
             }
@@ -355,8 +356,14 @@ export class Order {
               this.master = new PuppetMaster(this);
             break;
           case COLOR_BLUE:
-            if (!this.master)
-              this.master = new PortalMaster(this);
+            if (!this.master) {
+              let mode: "boost" | "claim" | undefined;
+              if (this.ref.includes("boost_"))
+                mode = "boost";
+              else if (this.ref.includes("claim_"))
+                mode = "claim";
+              this.master = new PortalMaster(this, mode);
+            }
             break;
           case COLOR_CYAN:
             this.acted = false;
