@@ -245,11 +245,11 @@ export class Order {
               cell = this.hive.cells.excavation;
               break;
             case COLOR_GREEN:
-              type = "spawn";
+              type = "queen1";
               cell = this.hive.cells.spawn;
               break;
             case COLOR_YELLOW:
-              type = "storage";
+              type = "queen2";
               cell = this.hive.cells.storage;
               break;
             case COLOR_GREY:

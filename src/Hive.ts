@@ -27,8 +27,8 @@ export interface SpawnOrder {
 
 export interface HivePositions {
   hive: Pos,
-  storage: Pos,
-  spawn: Pos,
+  queen1: Pos,
+  queen2: Pos,
   lab: Pos,
 }
 
@@ -89,7 +89,7 @@ export class Hive {
 
     if (!Memory.cache.positions[this.roomName]) {
       let pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y }
-      Memory.cache.positions[this.roomName] = { hive: pos, storage: pos, spawn: pos, lab: pos }
+      Memory.cache.positions[this.roomName] = { hive: pos, queen1: pos, queen2: pos, lab: pos }
     }
     this.pos = this.getPos("hive");
 
@@ -187,7 +187,7 @@ export class Hive {
         if (room.name !== this.roomName && !s.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()).length)
           return;
         if (!Game.flags["mine_" + s.id]) {
-          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
           if (typeof flag === "string")
             Game.flags[flag].memory.hive = this.roomName;
         }
@@ -272,7 +272,7 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
         break;
       case hiveStates.nospawn:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]))
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN, STRUCTURE_ROAD]))
         break;
       default:
         if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.phase > 0)

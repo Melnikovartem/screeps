@@ -46,7 +46,7 @@ export class StorageCell extends Cell {
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
       (structure) => structure.structureType === STRUCTURE_TERMINAL)[0];
 
-    this.pos = this.hive.getPos("storage");
+    this.pos = this.hive.getPos("queen2");
     this.master = new ManagerMaster(this);
   }
 

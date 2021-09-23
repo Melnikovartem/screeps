@@ -17,7 +17,7 @@ export class RespawnCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, "RespawnCell_" + hive.room.name);
-    this.pos = this.hive.getPos("spawn");
+    this.pos = this.hive.getPos("queen1");
   }
 
   update() {

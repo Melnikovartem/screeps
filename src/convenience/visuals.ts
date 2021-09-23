@@ -159,12 +159,6 @@ export class Visuals {
           case "lab":
             style.color = "#91EFD8";
             break;
-          case "storage":
-            style.color = "#FBA31C";
-            break;
-          case "spawn":
-            style.color = "#9E1393";
-            break;
           case "hive":
             style.color = "#000000";
             break;
