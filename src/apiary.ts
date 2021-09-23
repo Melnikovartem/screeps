@@ -50,6 +50,11 @@ export class _Apiary {
         this.hives[room.name] = new Hive(room.name);
       }
     });
+    if (!Object.keys(this.hives).length) {
+      // case inter-shard migration
+      let roomName = Object.keys(Game.rooms)[0];
+      this.hives[roomName] = new Hive(roomName);
+    }
   }
 
   // update phase

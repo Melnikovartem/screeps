@@ -88,7 +88,9 @@ export class Hive {
     this.room = Game.rooms[roomName];
 
     if (!Memory.cache.positions[this.roomName]) {
-      let pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y }
+      let pos = { x: 25, y: 25 };
+      if (this.room.controller)
+        pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y };
       Memory.cache.positions[this.roomName] = { hive: pos, queen1: pos, queen2: pos, lab: pos }
     }
     this.pos = this.getPos("hive");

@@ -96,10 +96,10 @@ export class RespawnCell extends Cell {
         break;
     }
 
-    if (this.hive.phase === 0)
+    if (this.hive.phase === 0 && (this.hive.bassboost || this.hive.room.energyCapacityAvailable < 600))
       _.forEach(this.freeSpawns, (s) => {
         let creep = s.pos.findInRange(FIND_MY_CREEPS, 1)[0];
-        if (creep)
+        if (creep && creep.ticksToLive && creep.ticksToLive <= CREEP_LIFE_TIME / 2)
           s.renewCreep(creep);
       });
   }

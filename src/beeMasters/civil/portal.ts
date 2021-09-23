@@ -21,15 +21,12 @@ export class PortalMaster extends SwarmMaster {
         this.setup = setups.bootstrap;
         break;
       case "claim":
-        this.targetBeeCount = 1;
         this.setup = setups.claimer;
         break;
-      case "destr":
-        this.targetBeeCount = 1;
+      case "dest_":
         this.setup = setups.destroyer;
         break;
       default:
-        this.targetBeeCount = 1;
         this.setup = setups.puppet;
         this.priority = 2; // well it IS cheap -_-
         break;
@@ -60,6 +57,21 @@ export class PortalMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => bee.goTo(this.order.pos, { preferHighway: true }));
+    _.forEach(this.activeBees, (bee) => {
+      bee.goTo(this.order.pos, { preferHighway: true });
+      if (bee.pos.isNearTo(this.order.pos)) {
+        let parsed;
+        switch (this.order.ref.slice(0, 5)) {
+          case "boost":
+            parsed = /_([WE][0-9]+[NS][0-9]+)$/.exec(this.order.ref);
+            if (parsed)
+              bee.memory.refMaster = "masterDevelopmentCell_" + parsed[1];
+            break;
+          default:
+            // only for boost for now
+            break;
+        }
+      }
+    });
   }
 }
