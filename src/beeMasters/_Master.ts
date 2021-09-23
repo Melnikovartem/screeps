@@ -24,6 +24,7 @@ export abstract class Master {
   activeBees: Bee[] = [];
   boost: boolean = false;
   boostMove: boolean = false;
+  movePriority: 0 | 1 | 2 | 3 | 4 | 5 = 5;
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;

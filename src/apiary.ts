@@ -92,6 +92,8 @@ export class _Apiary {
       safeWrap(() => master.run(), master.print + " run");
     });
 
+    Bee.beesMove();
+
     if (this.useBucket) {
       Apiary.planner.run();
       if (this.visuals)

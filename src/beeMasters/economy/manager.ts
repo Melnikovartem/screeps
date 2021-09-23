@@ -14,6 +14,7 @@ import type { Bee } from "../../bees/bee";
 export class ManagerMaster extends Master {
   cell: StorageCell;
   manager: Bee | undefined;
+  movePriority = <3>3;
 
   constructor(storageCell: StorageCell) {
     super(storageCell.hive, storageCell.ref);

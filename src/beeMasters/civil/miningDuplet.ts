@@ -21,6 +21,8 @@ export class DupletMaster extends SwarmMaster {
   dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
   pickupTime = setups.pickup.patternLimit * 4.5 + this.roadTime;
 
+  movePriority = <1>1;
+
   newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.getBodyParts(HEAL))
@@ -84,15 +86,6 @@ export class DupletMaster extends SwarmMaster {
     }
   }
 
-  healerFollow(healer: Bee, ans: number | undefined, pos: RoomPosition) {
-    if (!healer)
-      return;
-    if (healer.pos.isNearTo(pos) && ans === ERR_NOT_IN_RANGE && healer.pos.roomName == pos.roomName)
-      healer.creep.move(healer.pos.getDirectionTo(pos));
-    else if (!healer.pos.isNearTo(pos))
-      healer.goTo(pos, { ignoreCreeps: false });
-  }
-
   callPickUp(power: number) {
     if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
@@ -129,17 +122,17 @@ export class DupletMaster extends SwarmMaster {
           enemies = enemies.concat(this.target);
 
         let target = knight.pos.findClosest(enemies);
-        let ans;
         if (target) {
           if (target instanceof StructurePowerBank) {
             if (knight.hits > knight.hitsMax * 0.5)
-              ans = knight.attack(target);
+              knight.attack(target);
           } else
-            ans = knight.attack(target);
+            knight.attack(target);
         } else if (knight.hits === knight.hitsMax)
-          ans = knight.goRest(this.order.pos, { preferHighway: true });
+          knight.goRest(this.order.pos, { preferHighway: true });
 
-        this.healerFollow(healer, ans, knight.pos);
+        if (healer)
+          healer.goTo(knight.pos, { ignoreCreeps: false, movingTarget: true });
       }
 
       if (healer && healer.state === beeStates.work) {

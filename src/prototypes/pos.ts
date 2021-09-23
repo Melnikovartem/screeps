@@ -5,6 +5,7 @@ interface RoomPosition {
   getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
   getEnteranceToRoom(): RoomPosition | null;
+  getPosInDirection(direction: DirectionConstant): RoomPosition;
   getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number;
   findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
 }
@@ -15,7 +16,7 @@ function getRoomCoorinates(roomName: string): [number, number] {
   let y = 0;
   if (parsed) {
     x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
-    y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
+    y = (+parsed[4]) * (parsed[3] === "S" ? -1 : 1);
   }
   return [x, y];
 }
@@ -26,7 +27,7 @@ RoomPosition.prototype.getRoomCoorinates = function getRoomCoorinates() {
   let y = 0;
   if (parsed) {
     x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
-    y = (+parsed[4]) * (parsed[3] === "s" ? -1 : 1);
+    y = (+parsed[4]) * (parsed[3] === "S" ? -1 : 1);
     return [x, y, parsed[1], parsed[3]];
   }
   return [0, 0, "E", "S"];
@@ -79,14 +80,11 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
 
   if (ans && this.roomName in Game.rooms) {
     ans = !_.filter(this.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_ROAD
-      && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my)
+      && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my || (<StructureRampart>s).isPublic)
       && s.structureType !== STRUCTURE_CONTAINER).length;
 
-    if (ans)
-      ans = this.lookFor(LOOK_CREEPS).filter((c) => !c.my).length === 0;
-
     if (ans && !ignoreCreeps)
-      ans = this.lookFor(LOOK_CREEPS).length === 0;
+      ans = !this.lookFor(LOOK_CREEPS).length
   }
 
   return ans;
@@ -110,6 +108,66 @@ RoomPosition.prototype.getEnteranceToRoom = function(): RoomPosition | null {
   else if (exits[FIND_EXIT_RIGHT] && this.x === 49)
     return new RoomPosition(0, this.y, exits[FIND_EXIT_RIGHT]!);
   return null;
+}
+
+RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant): RoomPosition {
+  let cc: [number, number] = [this.x, this.y];
+  switch (direction) {
+    case TOP:
+      --cc[1];
+      break;
+    case TOP_RIGHT:
+      ++cc[0];
+      --cc[1];
+      break;
+    case RIGHT:
+      ++cc[0];
+      break;
+    case BOTTOM_RIGHT:
+      ++cc[0];
+      ++cc[1];
+      break;
+    case BOTTOM:
+      ++cc[1];
+      break;
+    case BOTTOM_LEFT:
+      --cc[0];
+      ++cc[1];
+      break;
+    case LEFT:
+      --cc[0];
+      break;
+    case TOP_LEFT:
+      --cc[0];
+      --cc[1];
+      break;
+  }
+
+  let [x, y, we, ns] = [0, 0, "E", "S"];
+  let par = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(this.roomName);
+  if (par) // well the types are right
+    [we, x, ns, y] = [par[1], +par[2], par[3], +par[4]];
+  if (cc[0] < 0) {
+    x += (we === "E" ? -1 : 1);
+    cc[0] = 49;
+  } else if (cc[0] > 49) {
+    x -= (we === "E" ? -1 : 1);
+    cc[0] = 0;
+  }
+  if (cc[1] < 0) {
+    y += (ns === "S" ? -1 : 1);
+    cc[1] = 49;
+  } else if (cc[1] > 49) {
+    y -= (ns === "S" ? -1 : 1);
+    cc[1] = 0;
+  }
+
+  if (x < 0)
+    we = (we === "E" ? "W" : "E");
+  if (y < 0)
+    ns = (we === "S" ? "N" : "S");
+
+  return new RoomPosition(cc[0], cc[1], we + x + ns + y);
 }
 
 // costly be careful

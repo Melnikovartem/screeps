@@ -21,6 +21,9 @@ export class Bee {
   state: beeStates;
   target?: string;
 
+  targetPosition: RoomPosition | undefined;
+  actionPosition: RoomPosition | undefined;
+
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
@@ -53,6 +56,9 @@ export class Bee {
     this.creep.memory.state = this.state;
     this.creep.memory.target = this.target;
 
+    this.targetPosition = undefined;
+    this.actionPosition = undefined;
+
     if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
       this.master.newBee(this);
@@ -61,19 +67,19 @@ export class Bee {
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
-  actionCheck<Obj extends RoomObject | RoomPosition | undefined>(target: Obj, opt: TravelToOptions = {}, range: number = 1): number {
+  actionCheck<Obj extends RoomObject | undefined>(target: Obj, opt: TravelToOptions = {}, range: number = 1): number {
     if (!target)
       return ERR_NOT_FOUND;
-    if (this.creep.pos.inRangeTo(target!, range))
+    if (this.creep.pos.inRangeTo(target!, range)) {
+      this.actionPosition = target.pos;
       return OK;
-    else {
+    } else {
       let targetPos = <RoomPosition>(target instanceof RoomObject && target.pos) || (target instanceof RoomPosition && target);
       if (range > 1 && targetPos.roomName !== this.pos.roomName)
         range = 1;
       opt.range = range;
-      this.goTo(targetPos, opt);
+      return this.goTo(targetPos, opt);
     }
-    return ERR_NOT_IN_RANGE;
   }
 
   goRest(pos: RoomPosition, opt?: TravelToOptions): number {
@@ -88,9 +94,9 @@ export class Bee {
     return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
-  goTo(target: RoomPosition | RoomObject, opt: TravelToOptions = {}): number {
+  goTo(target: RoomPosition | { pos: RoomPosition }, opt: TravelToOptions = {}): number {
     Apiary.intel.getInfo(this.pos.roomName, 50); // collect intel
-    // opt.allowSK = true;
+    opt.allowSK = true;
     /* Not sure how useful is this
     if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {
       // extreme low on cpu
@@ -99,7 +105,17 @@ export class Bee {
       opt.useFindRoute = false;
       opt.ignoreCreeps = false;
     } */
-    return this.creep.travelTo(target, opt);
+    let ans = this.creep.travelTo(target, opt);
+    if (typeof ans === "number")
+      return ans;
+    else
+      this.targetPosition = ans;
+    if (target instanceof RoomPosition)
+      target = { pos: target };
+    if (target.pos.x === this.pos.x && target.pos.y === this.pos.y)
+      console.log("wtf");
+
+    return ERR_NOT_IN_RANGE;
   }
 
   getBodyParts(partType: BodyPartConstant, boosted: 1 | 0 | -1 = 0): number {
@@ -127,18 +143,21 @@ export class Bee {
 
   attack(t: Creep | Structure | PowerCreep | undefined, opt: TravelToOptions = {}): number {
     opt.movingTarget = true;
+    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.attack(t!) : ans;
   }
 
   rangedAttack(t: Creep | Structure | PowerCreep | undefined, opt: TravelToOptions = {}): number {
     opt.movingTarget = true;
+    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt, 3);
     return ans === OK ? this.creep.rangedAttack(t!) : ans;
   }
 
   heal(t: Creep | PowerCreep | Bee | undefined, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
+    opt.goInDanger = true;
     if (t instanceof Bee)
       t = t.creep;
     let ans = this.actionCheck(t, opt);
@@ -147,13 +166,15 @@ export class Bee {
 
   rangedHeal(t: Creep | PowerCreep | Bee | undefined, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
+    opt.goInDanger = true;
     if (t instanceof Bee)
       t = t.creep;
     let ans = this.actionCheck(t, opt, 3);
     return ans === OK ? this.creep.rangedHeal(<Creep | PowerCreep>t) : ans;
   }
 
-  dismantle(t: Structure | undefined, opt?: TravelToOptions): number {
+  dismantle(t: Structure | undefined, opt: TravelToOptions = {}): number {
+    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.dismantle(t!) : ans;
   }
@@ -208,6 +229,60 @@ export class Bee {
       else if (bee.state === beeStates.idle) {
         // F bee is list
       }
+    }
+  }
+
+  static beesMove() {
+    type InfoMove = { bee: Bee, priority: number };
+    let moveMap: { [id: string]: InfoMove[] } = {};
+    for (const name in Apiary.bees) {
+      let bee = Apiary.bees[name];
+      let p = bee.targetPosition;
+      let priority = bee.master ? bee.master.movePriority : 6;
+      if (priority < 3 && !p)
+        p = bee.pos; // 0 and 1 and 2 won't move
+      if (!p)
+        continue;
+      let nodeId = p.roomName + "_" + p.x + "_" + p.y;
+      if (!moveMap[nodeId])
+        moveMap[nodeId] = [];
+      moveMap[nodeId].push({ bee: bee, priority: priority });
+    }
+
+    for (const nodeId in moveMap) {
+      let [, roomName, x, y] = /(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
+      let pos = new RoomPosition(+x, +y, roomName);
+      let creepIn = pos.lookFor(LOOK_CREEPS).filter((c) => c.my)[0];
+      let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
+      let bee;
+      if (creepIn) {
+        let beeIn = Apiary.bees[creepIn.name];
+        if (!beeIn.targetPosition) {
+          bee = moveMap[nodeId].reduce(red).bee;
+          if (bee.ref === creepIn.name)
+            continue;
+          let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
+          let pp = beeIn.pos.getOpenPositions(true).filter((p) => !moveMap[p.roomName + "_" + p.x + "_" + p.y])
+            .reduce((prev, curr) => curr.getRangeTo(target) < prev.getRangeTo(target) ? curr : prev);
+          if (pp) {
+            moveMap[pp.roomName + "_" + pp.x + "_" + pp.y] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+            beeIn.creep.move(bee.pos.getDirectionTo(pp))
+          } else
+            continue;
+        } else {
+          let outPos = beeIn.targetPosition;
+          red = (prev: InfoMove, curr: InfoMove) => {
+            if (curr.bee.pos.x === outPos.x && curr.bee.pos.y === outPos.y)
+              return curr;
+            if (prev.bee.pos.x === outPos.x && prev.bee.pos.y === outPos.y)
+              return prev;
+            return curr.priority < prev.priority ? curr : prev
+          };
+          bee = moveMap[nodeId].reduce(red).bee;
+        }
+      } else
+        bee = moveMap[nodeId].reduce(red).bee;
+      bee.creep.move(bee.pos.getDirectionTo(pos));
     }
   }
 

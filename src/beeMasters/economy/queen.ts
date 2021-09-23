@@ -9,6 +9,7 @@ import type { RespawnCell } from "../../cells/base/respawnCell";
 @profile
 export class QueenMaster extends Master {
   cell: RespawnCell;
+  movePriority = <3>3;
 
   constructor(respawnCell: RespawnCell) {
     super(respawnCell.hive, respawnCell.ref);

@@ -36,6 +36,8 @@ interface TravelToOptions {
   repath?: number;
   route?: { [roomName: string]: boolean };
   ensurePath?: boolean;
+  // mine
+  goInDanger?: boolean;
 }
 
 interface TravelData {
@@ -51,7 +53,7 @@ interface TravelState {
 }
 
 interface Creep {
-  travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): number;
+  travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): number | RoomPosition;
 }
 
 type Coord = { x: number, y: number };

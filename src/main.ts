@@ -1,7 +1,7 @@
 import { Mem } from "./abstract/memory";
 import { CustomConsole } from "./convenience/console";
 
-import "./Traveler/Traveler";
+import "./Traveler/TravelerModified";
 
 import "./prototypes/creeps";
 import "./prototypes/pos";

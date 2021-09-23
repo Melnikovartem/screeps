@@ -21,7 +21,7 @@ export class Traveler {
    * @returns {number}
    */
 
-  public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): number {
+  public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): number | RoomPosition {
 
     // uncomment if you would like to register hostile rooms entered
     // this.updateRoomStatus(creep.room);
@@ -48,7 +48,7 @@ export class Traveler {
           options.returnData.nextPos = destination;
           options.returnData.path = direction.toString();
         }
-        return creep.move(direction);
+        return destination;
       }
       return OK;
     }
@@ -153,7 +153,7 @@ export class Traveler {
       options.returnData.path = travelData.path;
     }
 
-    return creep.move(<DirectionConstant>nextDirection);
+    return creep.pos.getPosInDirection(<DirectionConstant>nextDirection);
   }
 
   /**
@@ -311,6 +311,10 @@ export class Traveler {
             matrix.set(obstacle.pos.x, obstacle.pos.y, 0xff);
           }
         }
+      }
+
+      if (!options.goInDanger && matrix) {
+        matrix = this.addDangerZonesToMatrix(roomName, matrix);
       }
 
       if (options.roomCallback) {
@@ -534,6 +538,15 @@ export class Traveler {
 
   public static addCreepsToMatrix(room: Room, matrix: CostMatrix): CostMatrix {
     room.find(FIND_CREEPS).forEach((creep: Creep) => matrix.set(creep.pos.x, creep.pos.y, 0xff));
+    return matrix;
+  }
+
+  public static addDangerZonesToMatrix(roomName: string, matrix: CostMatrix): CostMatrix {
+    let enemies = Apiary.intel.getInfo(roomName, 25).enemies.filter((e) => e.dangerlvl > 1).map((e) => e.object);
+    _.forEach(enemies, (c) => {
+      _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 30 * p.getRangeTo(c))));
+      matrix.set(c.pos.x, c.pos.y, 255);
+    });
     return matrix;
   }
 

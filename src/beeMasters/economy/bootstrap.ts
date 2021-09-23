@@ -195,34 +195,7 @@ export class BootstrapMaster extends Master {
           if (source)
             break;
         case beeStates.chill:
-          bee.goRest(this.hive.pos, {
-            allowSK: true, roomCallback: (roomName: string, matrix: CostMatrix) => {
-              let terrain = Game.map.getRoomTerrain(roomName);
-              for (let x = 0; x < 50; ++x)
-                for (let y = 0; y < 50; ++y) {
-                  switch (terrain.get(x, y)) {
-                    case TERRAIN_MASK_WALL:
-                      matrix.set(x, y, 255);
-                      break;
-                    case TERRAIN_MASK_SWAMP:
-                      matrix.set(x, y, 5);
-                      break;
-                    default:
-                      matrix.set(x, y, 1);
-                      break;
-                  }
-                  if (!new RoomPosition(x, y, roomName).isFree())
-                    matrix.set(x, y, 255);
-                }
-
-              let creeps = Apiary.intel.getInfo(roomName, 25).enemies.filter((e) => e.dangerlvl > 1).map((e) => e.object);
-              _.forEach(creeps, (c) => {
-                _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, 30 * p.getRangeTo(c)));
-                matrix.set(c.pos.x, c.pos.y, 255);
-              });
-              return matrix;
-            }
-          });
+          bee.goRest(this.hive.pos);
           break;
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
