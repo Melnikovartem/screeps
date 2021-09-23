@@ -13,7 +13,7 @@ export abstract class SwarmMaster extends Master {
   order: Order;
   spawned: number = 0;
   maxSpawns: number = 1;
-  movePriority = <0 | 1 | 2 | 3 | 4 | 5>2;
+  movePriority = <0 | 1 | 2 | 3 | 4 | 5>2; // wont move untill more important will come
 
   constructor(order: Order) {
     super(order.hive, "Swarm_" + order.ref);
@@ -36,9 +36,8 @@ export abstract class SwarmMaster extends Master {
 
   newBee(bee: Bee) {
     super.newBee(bee);
-    if (bee.creep.memory.born + 1 === Game.time) {
+    if (bee.creep.memory.born + 1 === Game.time)
       this.spawned += 1;
-      this.order.flag.memory.info = this.spawned;
-    }
+    this.order.flag.memory.info = this.spawned;
   }
 }

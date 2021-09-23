@@ -21,7 +21,7 @@ import { LOGGING_CYCLE } from "./settings";
 import { profile } from "./profiler/decorator";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
-import type { Master } from "./beeMasters/_Master";
+import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
 import type { Hive, HivePositions } from "./Hive";
 
 export enum prefix {
@@ -29,6 +29,7 @@ export enum prefix {
   surrender = "FFF",
   boost = "boost_",
   def = "def_",
+  puppet = "puppet_"
 }
 
 @profile
@@ -36,7 +37,7 @@ export class Order {
   ref: string;
   flag: Flag;
   pos: RoomPosition;
-  master?: Master;
+  master?: SwarmMaster;
   hive: Hive;
   acted: boolean = false;
 
@@ -142,13 +143,10 @@ export class Order {
                 this.master = new DestroyerMaster(this);
               break;
             case COLOR_RED:
-              let master = new HordeMaster(this);
+              this.master = new HordeMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
-                master.maxSpawns = +regex[0];
-              else if (/^def_/.exec(this.ref) !== null)
-                master.maxSpawns = 1;
-              this.master = master;
+                this.master.maxSpawns = +regex[0];
               break;
             case COLOR_PURPLE:
               this.master = new DowngradeMaster(this);
@@ -178,14 +176,22 @@ export class Order {
               break;
             }
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
-              if (!this.master)
+              if (!this.master) {
                 this.master = new PuppetMaster(this);
+                this.master.maxSpawns = this.master.spawned + 1;
+              }
               this.acted = false;
               break;
             }
 
             if (this.master instanceof PuppetMaster) {
-              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.memory.refMaster = "puppet" : void (0));
+              let nonClaim = this.master.beesAmount;
+              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.memory.refMaster = prefix.puppet + this.pos.roomName : --nonClaim);
+              if (nonClaim) {
+                let ans = this.pos.createFlag(prefix.puppet + this.pos.roomName, COLOR_GREY, COLOR_PURPLE);
+                if (typeof ans === "string")
+                  Game.flags[ans].memory = { hive: this.hive.roomName, info: this.master.spawned };
+              }
               this.master.delete();
               this.master = undefined;
             }
@@ -332,12 +338,11 @@ export class Order {
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_GREEN:
-              let master = new PickupMaster(this);
+              this.master = new PickupMaster(this);
               let regex = /^\d*/.exec(this.ref);
               if (regex && regex[0])
-                master.maxSpawns = +regex[0];
-              master.targetBeeCount = master.maxSpawns;
-              this.master = master;
+                this.master.maxSpawns = +regex[0];
+              this.master.targetBeeCount = this.master.maxSpawns;
               break;
             case COLOR_YELLOW:
               this.master = new DupletMaster(this);
@@ -356,14 +361,8 @@ export class Order {
               this.master = new PuppetMaster(this);
             break;
           case COLOR_BLUE:
-            if (!this.master) {
-              let mode: "boost" | "claim" | undefined;
-              if (this.ref.includes("boost_"))
-                mode = "boost";
-              else if (this.ref.includes("claim_"))
-                mode = "claim";
-              this.master = new PortalMaster(this, mode);
-            }
+            if (!this.master)
+              this.master = new PortalMaster(this);
             break;
           case COLOR_CYAN:
             this.acted = false;

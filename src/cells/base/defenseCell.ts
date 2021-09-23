@@ -159,10 +159,10 @@ export class DefenseCell extends Cell {
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
 
         if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
-          // let closest = Apiary.intel.getEnemy(this.pos)!; if this one have route
-          if (roomInfo.dangerlvlmax < 5)
+          if (roomInfo.dangerlvlmax < 5
+            || _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)
             this.checkOrDefendSwarms(this.hive.roomName);
-          else if (!_.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length) // remove
+          else
             this.hive.room.controller!.activateSafeMode(); // red button
         } else {
           _.forEach(this.towers, (tower) => {

@@ -105,7 +105,6 @@ export class Intel {
         else {
           roomInfo.roomState = roomStates.ownedByEnemy;
           Memory.cache.avoid[room.name] = Game.time + 100000;
-          Memory.cache.avoid.E19S54 = -1; // remove
         }
       } else if (room.controller.reservation) {
         owner = room.controller.reservation.username;

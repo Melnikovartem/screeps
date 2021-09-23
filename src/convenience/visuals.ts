@@ -283,18 +283,25 @@ export class Visuals {
     let annexOrders = _.filter(Apiary.orders, (o) => o.hive === hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {
       let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
+      let statsPuppet = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
       let all = 0;
       _.forEach(annexOrders, (o) => {
         all += 1;
         operational += o.acted ? 1 : 0;
-        if (o.master) {
-          stats.beesAmount += o.master.beesAmount;
-          stats.waitingForBees += o.master.waitingForBees;
-          stats.targetBeeCount += o.master.targetBeeCount;
-        }
+        if (o.master)
+          if (o.master.maxSpawns === Infinity) {
+            stats.beesAmount += o.master.beesAmount;
+            stats.waitingForBees += o.master.waitingForBees;
+            stats.targetBeeCount += o.master.targetBeeCount;
+          } else {
+            statsPuppet.beesAmount += o.master.beesAmount;
+            statsPuppet.waitingForBees += o.master.waitingForBees;
+            statsPuppet.targetBeeCount += o.master.targetBeeCount;
+          }
       });
-      ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
+      ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)
+        + (operational !== all ? this.getBeesAmount(statsPuppet) : "")]);
     }
 
     let constLen = hive.structuresConst.length;

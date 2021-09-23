@@ -6,6 +6,7 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class PuppetMaster extends SwarmMaster {
+  movePriority = <5>5;
 
   update() {
     super.update();

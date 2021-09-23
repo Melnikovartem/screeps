@@ -19,7 +19,7 @@ export class HordeDefenseMaster extends HordeMaster {
       return;
     }
 
-    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 100) && !roomInfo.safePlace) {
+    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 250) && !roomInfo.safePlace) {
       this.wish({
         setup: setups.defender.normal,
         amount: this.targetBeeCount - this.beesAmount,

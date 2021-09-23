@@ -14,12 +14,17 @@ export class AnnexMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
 
-    let checkAnnex = (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && roomInfo.safePlace;
+    let doAnnex = (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && roomInfo.safePlace;
 
-    if (checkAnnex && this.hive.bassboost)
-      checkAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5 && this.hive.bassboost.room.energyCapacityAvailable >= 650;
+    if (doAnnex)
+      if (this.hive.bassboost)
+        doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5 && this.hive.bassboost.room.energyCapacityAvailable >= 650;
+      else
+        doAnnex = this.hive.room.energyCapacityAvailable >= 650;
 
-    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME) && checkAnnex && this.hive.room.energyCapacityAvailable >= 650) {
+    this.targetBeeCount = doAnnex ? 1 : 0;
+
+    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME)) {
       let order = {
         setup: setups.claimer,
         amount: 1,

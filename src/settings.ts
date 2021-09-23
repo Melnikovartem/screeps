@@ -1,4 +1,4 @@
-export const DEVELOPING = true;
+export const DEVELOPING = false;
 export const PROFILER = DEVELOPING;
 export const UPDATE_EACH_TICK = false;
 

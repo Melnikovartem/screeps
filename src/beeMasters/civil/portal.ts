@@ -11,20 +11,22 @@ import type { Order } from "../../order";
 export class PortalMaster extends SwarmMaster {
   maxSpawns = Infinity;
   setup = setups.puppet;
-  priority: 2 | 9 = 2;
+  priority: 2 | 9 = 9;
 
-  constructor(order: Order, mode?: "boost" | "claim") {
+  constructor(order: Order) {
     super(order);
-    switch (mode) {
+    switch (this.order.ref.slice(0, 5)) {
       case "boost":
         this.targetBeeCount = 3;
         this.setup = setups.bootstrap;
-        this.priority = 9;
         break;
       case "claim":
         this.targetBeeCount = 1;
         this.setup = setups.claimer;
-        this.priority = 9;
+        break;
+      case "destr":
+        this.targetBeeCount = 1;
+        this.setup = setups.destroyer;
         break;
       default:
         this.targetBeeCount = 1;
@@ -36,6 +38,17 @@ export class PortalMaster extends SwarmMaster {
 
   update() {
     super.update();
+
+    if (this.order.pos.roomName in Game.rooms) {
+      let portal = this.order.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0]
+      if (!portal) {
+        portal = Game.rooms[this.order.pos.roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+        if (portal)
+          this.order.flag.setPosition(portal.pos.x, portal.pos.y)
+        else
+          this.order.delete();
+      }
+    }
 
     if (this.checkBees() && Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100) {
       this.wish({

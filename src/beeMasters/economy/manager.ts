@@ -24,8 +24,7 @@ export class ManagerMaster extends Master {
   update() {
     super.update();
 
-    // remove
-    if (2 % 1 == 3 && this.checkBees(false)) {
+    if (this.checkBees(false)) {
       let order: SpawnOrder = {
         setup: setups.manager,
         amount: 1,
