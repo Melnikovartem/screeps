@@ -28,6 +28,7 @@ export class _Apiary {
   orders: { [id: string]: Order };
 
   defenseSwarms: { [id: string]: Order } = {};
+  requestRoomSight: string[] = [];
 
   constructor() {
     this.destroyTime = Game.time + 6000;
@@ -55,6 +56,11 @@ export class _Apiary {
       let roomName = Object.keys(Game.rooms)[0];
       this.hives[roomName] = new Hive(roomName);
     }
+  }
+
+  requestSight(roomName: string) {
+    if (!this.requestRoomSight.includes(roomName))
+      this.requestRoomSight.push(roomName);
   }
 
   // update phase
@@ -96,8 +102,8 @@ export class _Apiary {
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.run(), master.print + " run");
     });
-
     Bee.beesMove();
+    this.requestRoomSight = [];
 
     if (this.useBucket) {
       Apiary.planner.run();

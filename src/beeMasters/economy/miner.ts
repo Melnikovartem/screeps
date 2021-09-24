@@ -11,7 +11,7 @@ import type { SpawnOrder } from "../../Hive";
 export class MinerMaster extends Master {
   cell: ResourceCell;
   cooldown: number = 0;
-  movePriority = <2>2;
+  movePriority = <3>3;
 
   constructor(resourceCell: ResourceCell) {
     super(resourceCell.hive, resourceCell.ref);

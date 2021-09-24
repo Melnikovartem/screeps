@@ -242,8 +242,8 @@ export class Bee {
         continue;
       let p = bee.targetPosition;
       let priority = bee.master ? bee.master.movePriority : 6;
-      if (priority < 3 && !p)
-        p = bee.pos; // 0 and 1 and 2 won't move
+      if (priority < 2 && !p)
+        p = bee.pos; // 0 and 1 won't move
       if (!p)
         continue;
       let nodeId = p.roomName + "_" + p.x + "_" + p.y;

@@ -168,7 +168,7 @@ export class BootstrapMaster extends Master {
             source = this.cell.sources[bee.target];
 
           if (source instanceof Source) {
-            if (source.energy === 0 || !source.pos.getOpenPositions())
+            if (source.energy === 0)
               delete bee.target;
             else {
               if (bee.pos.isNearTo(source))

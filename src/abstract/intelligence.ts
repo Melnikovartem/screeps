@@ -83,6 +83,7 @@ export class Intel {
       return roomInfo;
 
     if (!(roomName in Game.rooms)) {
+      Apiary.requestSight(roomName);
       roomInfo.enemies = [];
       if (!roomInfo.safePlace && roomInfo.roomState < roomStates.reservedByEnemy && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME) {
         roomInfo.safePlace = true;

@@ -20,7 +20,6 @@ export class DupletMaster extends SwarmMaster {
   roadTime = this.order.pos.getTimeForPath(this.hive);
   dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
   pickupTime = setups.pickup.patternLimit * 4.5 + this.roadTime;
-
   movePriority = <1>1;
 
   newBee(bee: Bee) {

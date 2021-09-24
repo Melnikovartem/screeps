@@ -1,6 +1,5 @@
 import { HordeDefenseMaster } from "./beeMasters/war/hordeDefense";
 import { HordeMaster } from "./beeMasters/war/horde";
-import { DestroyerMaster } from "./beeMasters/war/destroyer";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismantlerMaster } from "./beeMasters/war/dismantler";
 import { WaiterMaster } from "./beeMasters/war/waiter";
@@ -136,11 +135,7 @@ export class Order {
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_BLUE:
-              let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
-              if (roomInfo.dangerlvlmax > 3)
-                this.master = new HordeDefenseMaster(this);
-              else
-                this.master = new DestroyerMaster(this);
+              this.master = new HordeDefenseMaster(this);
               break;
             case COLOR_RED:
               this.master = new HordeMaster(this);
@@ -176,7 +171,9 @@ export class Order {
               break;
             }
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
-              if (!this.master) {
+              if (this.hive.cells.observe)
+                Apiary.requestSight(this.pos.roomName)
+              else if (!this.master) {
                 this.master = new PuppetMaster(this);
                 this.master.maxSpawns = this.master.spawned + 1;
               }

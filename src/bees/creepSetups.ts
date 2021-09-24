@@ -156,15 +156,15 @@ export const setups = {
     pattern: [MOVE],
     patternLimit: 1,
   }, 25),
-  destroyer: new CreepSetup(setupsNames.defender, {
-    pattern: [ATTACK],
-    patternLimit: 10,
-  }, 25),
   defender: {
     normal: new CreepSetup(setupsNames.defender, {
-      fixed: [HEAL],
+      fixed: [HEAL, RANGED_ATTACK],
       pattern: [RANGED_ATTACK],
-      patternLimit: 4,
+      patternLimit: 3,
+    }, 25),
+    destroyer: new CreepSetup(setupsNames.defender, {
+      pattern: [ATTACK],
+      patternLimit: 10,
     }, 25),
     sk: new CreepSetup(setupsNames.defender + " SK", {
       fixed: [RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
@@ -184,28 +184,31 @@ export const setups = {
   }, "best"),
 }
 
-/*
-let printSetup = (s: CreepSetup) => {
-  let bbody = s.getBody(Infinity).body;
+
+let printSetup = (s: CreepSetup, energy = Infinity) => {
+  let bbody = s.getBody(energy).body;
   console.log(s.name, ":", bbody.length, bbody.filter((s) => s != MOVE).length)
+  return bbody
 }
 
-printSetup(Setups.claimer)
-printSetup(Setups.queen)
-printSetup(Setups.manager)
-printSetup(Setups.hauler)
-printSetup(Setups.pickup)
-printSetup(Setups.miner.energy)
-printSetup(Setups.miner.minerals)
-printSetup(Setups.miner.power)
-printSetup(Setups.upgrader.fast)
-printSetup(Setups.upgrader.manual)
-printSetup(Setups.builder)
-printSetup(Setups.bootstrap)
-printSetup(Setups.puppet)
-printSetup(Setups.defender.normal)
-printSetup(Setups.defender.sk)
-printSetup(Setups.knight)
-printSetup(Setups.dismantler)
-printSetup(Setups.healer)
+console.log(printSetup(setups.bootstrap, 600))
+
+/*
+printSetup(setups.claimer)
+printSetup(setups.queen)
+printSetup(setups.manager)
+printSetup(setups.hauler)
+printSetup(setups.pickup)
+printSetup(setups.miner.energy)
+printSetup(setups.miner.minerals)
+printSetup(setups.miner.power)
+printSetup(setups.upgrader.fast)
+printSetup(setups.upgrader.manual)
+printSetup(setups.builder)
+printSetup(setups.puppet)
+printSetup(setups.defender.normal)
+printSetup(setups.defender.sk)
+printSetup(setups.knight)
+printSetup(setups.dismantler)
+printSetup(setups.healer)
 */

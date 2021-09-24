@@ -197,7 +197,7 @@ export class Logger {
       });
       haulerExp /= Math.max(haulerNum, 1);
       minerExp /= Math.max(minerNum, 1);
-      annexExp /= hive.annexes.length;
+      annexExp /= hive.annexNames.length;
 
       _.forEach(excavation.resourceCells, (cell) => {
         if (cell.resourceType === RESOURCE_ENERGY) {

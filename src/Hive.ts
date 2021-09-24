@@ -273,7 +273,7 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
         break;
       case hiveStates.nospawn:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN, STRUCTURE_ROAD]))
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]))
         break;
       case hiveStates.economy:
         if (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)

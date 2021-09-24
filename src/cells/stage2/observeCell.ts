@@ -16,6 +16,7 @@ export class ObserveCell extends Cell {
   constructor(hive: Hive, obeserver: StructureObserver) {
     super(hive, "ObserveCell_" + hive.room.name);
     this.obeserver = obeserver;
+    this.pos = obeserver.pos;
 
     let [x, y, we, ns] = this.hive.pos.getRoomCoorinates();
     if (Math.abs(Math.round(x / 10) - x) <= Math.abs(Math.round(y / 10) - y))

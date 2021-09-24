@@ -24,7 +24,7 @@ export class PortalMaster extends SwarmMaster {
         this.setup = setups.claimer;
         break;
       case "dest_":
-        this.setup = setups.destroyer;
+        this.setup = setups.defender.destroyer;
         break;
       default:
         this.setup = setups.puppet;
