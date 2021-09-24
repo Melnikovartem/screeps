@@ -36,6 +36,7 @@ export class BuilderMaster extends Master {
     super.update();
     this.recalculateTargetBee();
     this.boost = this.hive.state >= hiveStates.war;
+    this.movePriority = this.hive.state >= hiveStates.war ? 1 : 5;
     if (this.checkBees(false) && this.recalculateTargetBee() && this.checkBees(false)) {
       let order = {
         setup: setups.builder,

@@ -83,6 +83,7 @@ export class Bee {
   }
 
   goRest(pos: RoomPosition, opt?: TravelToOptions): number {
+    this.actionPosition = pos;
     if ((this.pos.x !== pos.x || this.pos.y !== pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName !== pos.roomName)
       this.goTo(pos, opt);
     else
@@ -237,6 +238,8 @@ export class Bee {
     let moveMap: { [id: string]: InfoMove[] } = {};
     for (const name in Apiary.bees) {
       let bee = Apiary.bees[name];
+      if (bee.creep.fatigue > 0)
+        continue;
       let p = bee.targetPosition;
       let priority = bee.master ? bee.master.movePriority : 6;
       if (priority < 3 && !p)
@@ -256,6 +259,8 @@ export class Bee {
       let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
       let bee;
       if (creepIn) {
+        if (creepIn.fatigue > 0)
+          continue;
         let beeIn = Apiary.bees[creepIn.name];
         if (!beeIn.targetPosition) {
           bee = moveMap[nodeId].reduce(red).bee;

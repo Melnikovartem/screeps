@@ -5,7 +5,6 @@ import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { DevelopmentCell } from "../../cells/stage0/developmentCell";
-import type { Bee } from "../../bees/Bee";
 
 type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
 type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
@@ -62,11 +61,6 @@ export class BootstrapMaster extends Master {
     else if (Game.shard.name === "shard3")
       this.targetBeeCount = Math.min(this.targetBeeCount, 10);
     this.cell.shouldRecalc = false;
-  }
-
-  newBee(bee: Bee): void {
-    super.newBee(bee);
-    bee.reusePath = 1;
   }
 
   update() {
@@ -165,13 +159,13 @@ export class BootstrapMaster extends Master {
             // but that is too much for too little
             source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
               (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                && (source.pos.getOpenPositions().length || bee.pos.isNearTo(source)) && source.energy > 0));
+                && (source.pos.getOpenPositions(true).length || bee.pos.isNearTo(source)) && source.energy > 0));
             if (source) {
               this.sourceTargeting[source.id].current += 1;
               bee.target = source.id;
             }
           } else
-            source = Game.getObjectById(bee.target);
+            source = this.cell.sources[bee.target];
 
           if (source instanceof Source) {
             if (source.energy === 0 || !source.pos.getOpenPositions())
@@ -233,7 +227,7 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.25, 3)) {
+          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.2, 2)) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -241,7 +235,7 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
+          if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.8)) {
             target = this.hive.findProject(bee);
             if (target)
               if (target instanceof Structure)

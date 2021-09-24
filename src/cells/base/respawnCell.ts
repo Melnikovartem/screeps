@@ -95,11 +95,10 @@ export class RespawnCell extends Cell {
       } else
         break;
     }
-
-    if (this.hive.phase === 0 && (this.hive.bassboost || this.hive.room.energyCapacityAvailable < 600))
+    if (this.hive.phase === 0) // renewing Boost creeps if they are better than we can spawn
       _.forEach(this.freeSpawns, (s) => {
-        let creep = s.pos.findInRange(FIND_MY_CREEPS, 1)[0];
-        if (creep && creep.ticksToLive && creep.ticksToLive <= CREEP_LIFE_TIME / 2)
+        let creep = s.pos.findInRange(FIND_MY_CREEPS, 1).filter(c => c.body.length > Math.floor(this.hive.room.energyCapacityAvailable / 200) * 3)[0];
+        if (creep && creep.ticksToLive && CREEP_LIFE_TIME - creep.ticksToLive >= 200)
           s.renewCreep(creep);
       });
   }

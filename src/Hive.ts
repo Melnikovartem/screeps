@@ -60,7 +60,6 @@ export class Hive {
   annexNames: string[] = [];
 
   room: Room;
-  annexes: Room[] = []; // this room and annexes
   rooms: Room[] = []; //this room and annexes
   cells: HiveCells;
 
@@ -165,11 +164,11 @@ export class Hive {
   }
 
   updateAnnexes(): void {
-    this.annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
+    let annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
       let annex = Game.rooms[annexName];
       return annex;
     }));
-    this.rooms = [this.room].concat(this.annexes);
+    this.rooms = [this.room].concat(annexes);
   }
 
   // actually needs to be done only once, but well couple times each reboot is not worst scenario
@@ -259,7 +258,7 @@ export class Hive {
   }
 
   updateStructures() {
-    let oldCost = this.sumCost > 0;
+    let oldCost = this.sumCost;
     this.structuresConst = [];
     this.sumCost = 0;
     let add = (ans: BuildProject[]) => {
@@ -276,11 +275,12 @@ export class Hive {
       case hiveStates.nospawn:
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN, STRUCTURE_ROAD]))
         break;
+      case hiveStates.economy:
+        if (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
+          _.forEach(this.annexNames, (annexName) =>
+            add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined)));
       default:
-        if (this.sumCost == 0 && (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0) && this.phase > 0)
-          _.forEach(this.rooms, (r) => add(Apiary.planner.checkBuildings(r.name)));
-        else
-          add(Apiary.planner.checkBuildings(this.roomName));
+        add(Apiary.planner.checkBuildings(this.roomName))
     }
   }
 
