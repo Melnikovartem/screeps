@@ -210,7 +210,7 @@ export class Hive {
     });
   }
 
-  findProject(pos: RoomPosition | { pos: RoomPosition }, ignoreConstruction: boolean = false) {
+  findProject(pos: RoomPosition | { pos: RoomPosition }, ignore?: "repairs" | "constructions") {
     if (!this.structuresConst.length)
       return;
 
@@ -224,9 +224,9 @@ export class Hive {
 
     let proj = getProj();
     while (proj && !target) {
-      if (!ignoreConstruction)
+      if (ignore !== "constructions")
         target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-      if (!target)
+      if (!target && ignore !== "repairs")
         target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
           && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
       if (!target) {
@@ -239,7 +239,7 @@ export class Hive {
       }
     }
 
-    if (!ignoreConstruction && this.state < hiveStates.war)
+    if (!ignore)
       this.structuresConst = projects;
 
     return target;
@@ -273,7 +273,7 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
         break;
       case hiveStates.nospawn:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]))
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
         break;
       case hiveStates.economy:
         if (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
@@ -287,11 +287,10 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (this.state >= hiveStates.war)
-      this.updateStructures();
-    else if (Game.time % 40 === 5 || this.shouldRecalc) {
+    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.war) {
       this.updateAnnexes();
-      this.updateStructures();
+      if (this.shouldRecalc)
+        this.updateStructures();
       if (this.shouldRecalc > 2) {
         this.markResources();
         _.forEach(this.rooms, (r) => {

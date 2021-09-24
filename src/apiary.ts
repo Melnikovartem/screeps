@@ -99,6 +99,7 @@ export class _Apiary {
     _.forEach(this.hives, (hive) => {
       safeWrap(() => hive.run(), hive.print + " run");
     });
+
     _.forEach(this.masters, (master) => {
       safeWrap(() => master.run(), master.print + " run");
     });

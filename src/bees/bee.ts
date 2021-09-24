@@ -255,7 +255,9 @@ export class Bee {
     for (const nodeId in moveMap) {
       let [, roomName, x, y] = /(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
       let pos = new RoomPosition(+x, +y, roomName);
-      let creepIn = pos.lookFor(LOOK_CREEPS).filter((c) => c.my)[0];
+      let creepIn: Creep | undefined;
+      if (roomName in Game.rooms)
+        creepIn = pos.lookFor(LOOK_CREEPS).filter((c) => c.my)[0];
       let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
       let bee;
       if (creepIn) {

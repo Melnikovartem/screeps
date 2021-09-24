@@ -12,6 +12,7 @@ export class DefenseCell extends Cell {
   nukes: RoomPosition[] = [];
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
+  nukeCoverReady: boolean = true;
 
   constructor(hive: Hive) {
     super(hive, "DefenseCell_" + hive.room.name);
@@ -20,13 +21,16 @@ export class DefenseCell extends Cell {
 
   updateNukes() {
     this.nukes = [];
+    this.nukeCoverReady = false;
     _.forEach(this.hive.room.find(FIND_NUKES), (n) => {
       this.nukes.push(n.pos);
       if (this.timeToLand > n.timeToLand)
         this.timeToLand = n.timeToLand;
     });
-    if (!this.nukes.length)
+    if (!this.nukes.length) {
+      this.nukeCoverReady = true;
       this.timeToLand = Infinity;
+    }
   }
 
   // mini roomPlanner
@@ -68,6 +72,8 @@ export class DefenseCell extends Cell {
             targetHits: map[x][y],
             energyCost: Math.ceil(energy),
           });
+          if (energy > 0)
+            this.nukeCoverReady = false;
         }
       }
     return ans;
@@ -80,7 +86,8 @@ export class DefenseCell extends Cell {
       this.updateNukes();
     if (this.timeToLand-- < 0)
       this.updateNukes();
-    this.hive.stateChange("nukealert", !!this.nukes.length);
+    // cant't survive a nuke if your controller lvl is below 5
+    this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
 
     _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
 
@@ -98,7 +105,7 @@ export class DefenseCell extends Cell {
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.dangerlvlmax > 2) {
+      if (roomInfo.dangerlvlmax > 1) {
         let enemy = roomInfo.enemies[0].object;
         if (this.notDef(roomName)) {
           let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
@@ -172,7 +179,7 @@ export class DefenseCell extends Cell {
                 || closest instanceof Creep && closest.owner.username === "Invader")
                 tower.attack(closest);
             } else {
-              let target = <Structure | undefined>this.hive.findProject(closest, true);
+              let target = <Structure | undefined>this.hive.findProject(closest, "constructions");
               if (target)
                 tower.repair(target);
             }

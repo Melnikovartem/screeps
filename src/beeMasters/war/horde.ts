@@ -29,15 +29,18 @@ export class HordeMaster extends SwarmMaster {
     let range = 3;
     if (bee.getActiveBodyParts(RANGED_ATTACK))
       action = () => bee.rangedAttack(target)
-    else if (bee.getActiveBodyParts(ATTACK)) {
-      action = () => bee.attack(target);
+    if (bee.getActiveBodyParts(ATTACK)) {
+      if (action)
+        action = () => bee.attack(target) && bee.rangedAttack(target);
+      else
+        action = () => bee.attack(target);
       range = 1;
     }
 
     if (action)
       if (bee.pos.getRangeTo(target) <= range) {
         action();
-      } else if (bee.hits === bee.hitsMax)
+      } else if (bee.hits === bee.hitsMax || !bee.getActiveBodyParts(HEAL))
         action();
 
     if ((!action || bee.pos.getRangeTo(target) <= 3) && bee.hits <= bee.hitsMax * 0.7) {
@@ -84,7 +87,7 @@ export class HordeMaster extends SwarmMaster {
               bee.state = beeStates.work;
           }
       }
-      if (bee.hits < bee.hitsMax)
+      if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
         bee.heal(bee);
     });
   }

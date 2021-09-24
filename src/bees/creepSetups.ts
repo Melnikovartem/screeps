@@ -9,6 +9,7 @@ interface BodySetup {
 }
 
 const partsImportance = [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK, HEAL];
+const ROUNDING_ERROR = 0.0001;
 
 @profile
 export class CreepSetup {
@@ -33,7 +34,7 @@ export class CreepSetup {
     let body: BodyPartConstant[] = [];
     let nonMoveMax = MAX_CREEP_SIZE - moveMax;
     let nonMove = 0;
-
+    let moveAmount = (nonMoveCurrent: number) => Math.ceil(nonMoveCurrent * moveMax / nonMoveMax - ROUNDING_ERROR)
     let addPattern = (pattern: BodyPartConstant[]) => {
       if (nonMove + pattern.length <= nonMoveMax)
         _.forEach(pattern, (s) => {
@@ -47,20 +48,19 @@ export class CreepSetup {
               ++nonMove;
           }
 
-          if (Math.ceil(nonMove / nonMoveMax * moveMax - 0.0001) > body.length - nonMove && body.length < MAX_CREEP_SIZE)
+          if (moveAmount(nonMove) > body.length - nonMove && body.length < MAX_CREEP_SIZE)
             body.push(MOVE);
         });
     };
 
-    energy = Math.floor(energy * (MAX_CREEP_SIZE - moveMax) / MAX_CREEP_SIZE);
-    let fixedCosts = _.sum(this.fixed, s => BODYPART_COST[s]);
+    let fixedCosts = _.sum(this.fixed, s => BODYPART_COST[s]) + moveAmount(this.fixed.length) * BODYPART_COST[MOVE];
     if (fixedCosts <= energy)
       addPattern(this.fixed);
     else
       fixedCosts = 0;
 
-    let segmentCost = _.sum(this.pattern, s => BODYPART_COST[s]);
-    let maxSegment = Math.min(this.patternLimit, Math.floor(nonMoveMax - nonMove) / this.pattern.length, Math.floor((energy - fixedCosts) / segmentCost));
+    let segmentCost = _.sum(this.pattern, s => BODYPART_COST[s]) + moveAmount(this.pattern.length) * BODYPART_COST[MOVE];
+    let maxSegment = Math.min(this.patternLimit, Math.floor(nonMoveMax - nonMove + ROUNDING_ERROR) / this.pattern.length, Math.floor((energy - fixedCosts) / segmentCost));
     _.times(maxSegment, () => {
       addPattern(this.pattern);
     });
@@ -185,17 +185,18 @@ export const setups = {
 }
 
 
+/*
 let printSetup = (s: CreepSetup, energy = Infinity) => {
   let bbody = s.getBody(energy).body;
   console.log(s.name, ":", bbody.length, bbody.filter((s) => s != MOVE).length)
-  return bbody
+  return bbody;
 }
 
-console.log(printSetup(setups.bootstrap, 600))
-
 /*
-printSetup(setups.claimer)
+printSetup(setups.defender.destroyer, 650)
+printSetup(setups.bootstrap, 600)
 printSetup(setups.queen)
+printSetup(setups.claimer)
 printSetup(setups.manager)
 printSetup(setups.hauler)
 printSetup(setups.pickup)

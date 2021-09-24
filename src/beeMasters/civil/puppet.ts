@@ -10,6 +10,7 @@ export class PuppetMaster extends SwarmMaster {
 
   update() {
     super.update();
+    console.log(this.beesAmount, this.spawned, this.maxSpawns);
     if (this.checkBees()) {
       this.wish({
         setup: setups.puppet,

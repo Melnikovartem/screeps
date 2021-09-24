@@ -46,9 +46,18 @@ export class ObserveCell extends Cell {
 
   update() {
     super.update();
-    this.roomsToCheck = this.powerRooms;
+    let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName) <= OBSERVER_RANGE)[0];
+    if (roomName) {
+      this.roomsToCheck = [roomName];
+      for (let i = 0; i < Apiary.requestRoomSight.length; ++i)
+        if (Apiary.requestRoomSight[i] === roomName) {
+          Apiary.requestRoomSight.splice(i, 1);
+          break;
+        }
+    } else
+      this.roomsToCheck = this.powerRooms;
 
-    if (!(this.prevRoom in Game.rooms))
+    if (!(this.prevRoom in Game.rooms) || !this.powerRooms.includes(this.prevRoom))
       return;
     let storage = this.hive.cells && this.hive.cells.storage && this.hive.cells.storage.storage;
     if (!storage || storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[RESOURCE_ENERGY]! / 2)

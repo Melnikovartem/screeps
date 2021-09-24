@@ -13,7 +13,7 @@ export abstract class SwarmMaster extends Master {
   order: Order;
   spawned: number = 0;
   maxSpawns: number = 1;
-  movePriority = <0 | 1 | 2 | 3 | 4 | 5>2; // wont move untill more important will come
+  movePriority = <0 | 1 | 2 | 3 | 4 | 5>3;
 
   constructor(order: Order) {
     super(order.hive, "Swarm_" + order.ref);

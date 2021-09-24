@@ -227,7 +227,16 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.2, 2)) {
+          if (!target && bee.pos.roomName !== this.hive.roomName && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
+            target = this.hive.findProject(bee, "repairs");
+            if (target)
+              if (target instanceof Structure)
+                workType = "repair";
+              else
+                workType = "build";
+          }
+
+          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.25, 2)) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -235,7 +244,7 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.8)) {
+          if (!target) {
             target = this.hive.findProject(bee);
             if (target)
               if (target instanceof Structure)

@@ -8,6 +8,8 @@ import { UPDATE_EACH_TICK } from "../settings";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
+const NOT_ATTACK_LIST = ["Tigga"]
+
 interface Enemy {
   object: Creep | PowerCreep | Structure,
   dangerlvl: DangerLvl,
@@ -98,8 +100,8 @@ export class Intel {
     roomInfo.currentOwner = undefined;
     if (room.controller) {
       if (room.controller.safeMode)
-        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode; // room.controller.my ? -1 :
-      let owner = room.controller.owner && room.controller.owner.username
+        this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode;
+      let owner = room.controller.owner && room.controller.owner.username;
       if (owner) {
         if (owner === Apiary.username)
           roomInfo.roomState = roomStates.ownedByMe;
@@ -177,6 +179,8 @@ export class Intel {
         dangerlvl = 4;
       if (c.owner.username === "Source Keeper")
         dangerlvl = 2;
+      if (NOT_ATTACK_LIST.includes(c.owner.username))
+        dangerlvl = 0;
       roomInfo.enemies.push({
         object: c,
         dangerlvl: dangerlvl,
