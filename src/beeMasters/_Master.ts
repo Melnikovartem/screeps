@@ -1,11 +1,9 @@
 // import { makeId } from "../utils/other";
-import { hiveStates, beeStates, } from "../enums";
+import { hiveStates, beeStates, prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
 import type { Bee } from "../bees/bee";
-
-const MASTER_PREFIX = "master"
 
 // i will need to do something so i can build up structure from memory
 @profile
@@ -28,7 +26,7 @@ export abstract class Master {
 
   constructor(hive: Hive, ref: string) {
     this.hive = hive;
-    this.ref = MASTER_PREFIX + ref;
+    this.ref = prefix.master + ref;
 
     this.oldestSpawn = -1;
 

@@ -1,9 +1,8 @@
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import { Master } from "../_Master";
 
-import { beeStates } from "../../enums";
+import { beeStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
-import { prefix } from "../../order";
 import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
 
 import { profile } from "../../profiler/decorator";

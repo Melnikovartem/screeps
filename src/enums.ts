@@ -29,3 +29,29 @@ export enum beeStates {
   boosting = 5,
   flee = 6,
 }
+
+export enum prefix {
+  // orders
+  upgrade = "polen",
+  surrender = "FFF",
+  boost = "boost_",
+  def = "def_",
+  puppet = "pup_",
+
+  //cells
+  defenseCell = "DefenseCell_",
+  respawnCell = "RespawnCell_",
+  developmentCell = "DevelopmentCell_",
+  excavationCell = "ExcavationCell_",
+  laboratoryCell = "LaboratoryCell_",
+  resourceCells = "ResourceCell_",
+  storageCell = "StorageCell_",
+  upgradeCell = "UpgradeCell_",
+  observerCell = "ObserveCell_",
+  powerCell = "PowerCell_",
+
+
+  // game constants
+  master = "master",
+  swarm = "Swarm_",
+}

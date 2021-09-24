@@ -594,6 +594,7 @@ export class RoomPlanner {
             });
         }
       }
+
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_ROOM; ++i) {
           if (sType === STRUCTURE_SPAWN)

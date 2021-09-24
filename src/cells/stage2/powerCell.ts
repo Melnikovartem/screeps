@@ -1,6 +1,8 @@
 import { Cell } from "../_Cell";
 import type { Hive } from "../../Hive";
 
+import { prefix } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 
 @profile
@@ -9,7 +11,7 @@ export class PowerCell extends Cell {
   roomsToCheck: string[] = [];
 
   constructor(hive: Hive, powerSpawn: StructurePowerSpawn) {
-    super(hive, "PowerCell_" + hive.room.name);
+    super(hive, prefix.powerCell + hive.room.name);
     this.powerSpawn = powerSpawn;
   }
 

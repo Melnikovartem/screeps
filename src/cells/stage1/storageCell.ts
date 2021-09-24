@@ -1,6 +1,8 @@
 import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
 
+import { prefix } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
@@ -31,7 +33,7 @@ export class StorageCell extends Cell {
   requests: { [id: string]: StorageRequest } = {};
 
   constructor(hive: Hive, storage: StructureStorage) {
-    super(hive, "StorageCell_" + hive.room.name);
+    super(hive, prefix.storageCell + hive.room.name);
 
     this.storage = storage;
 

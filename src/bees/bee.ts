@@ -113,8 +113,6 @@ export class Bee {
       this.targetPosition = ans;
     if (target instanceof RoomPosition)
       target = { pos: target };
-    if (target.pos.x === this.pos.x && target.pos.y === this.pos.y)
-      console.log("wtf");
 
     return ERR_NOT_IN_RANGE;
   }

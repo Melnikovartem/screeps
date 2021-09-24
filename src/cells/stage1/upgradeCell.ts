@@ -1,6 +1,8 @@
 import { Cell } from "../_Cell";
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 
+import { prefix } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
@@ -16,7 +18,7 @@ export class UpgradeCell extends Cell {
   ratePerCreepMax = 1;
 
   constructor(hive: Hive, controller: StructureController) {
-    super(hive, "UpgradeCell_" + hive.room.name);
+    super(hive, prefix.upgradeCell + hive.room.name);
 
     this.controller = controller;
 

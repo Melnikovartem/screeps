@@ -3,6 +3,7 @@ import { ResourceCell } from "./resourceCell";
 import { HaulerMaster } from "../../beeMasters/economy/hauler";
 
 import { safeWrap } from "../../abstract/utils";
+import { prefix } from "../../enums";
 
 import { DEVELOPING } from "../../settings";
 import { profile } from "../../profiler/decorator";
@@ -18,7 +19,7 @@ export class ExcavationCell extends Cell {
   roomResources: { [id: string]: number } = {};
 
   constructor(hive: Hive) {
-    super(hive, "ExcavationCell_" + hive.room.name);
+    super(hive, prefix.excavationCell + hive.room.name);
     this.master = new HaulerMaster(this);
     this.dropOff = this.hive.cells.storage!.storage;
   }

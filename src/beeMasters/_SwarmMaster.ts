@@ -3,6 +3,8 @@
 
 import { Master } from "./_Master";
 
+import { prefix } from "../enums";
+
 import type { Bee } from "../bees/bee";
 import type{ Order } from "../order";
 import { profile } from "../profiler/decorator";
@@ -13,10 +15,9 @@ export abstract class SwarmMaster extends Master {
   order: Order;
   spawned: number = 0;
   maxSpawns: number = 1;
-  movePriority = <0 | 1 | 2 | 3 | 4 | 5>3;
 
   constructor(order: Order) {
-    super(order.hive, "Swarm_" + order.ref);
+    super(order.hive, prefix.swarm + order.ref);
     this.order = order;
 
     if (this.order.flag.memory.info)

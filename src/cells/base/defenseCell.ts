@@ -1,6 +1,7 @@
 import { Cell } from "../_Cell";
 
 import { makeId } from "../../abstract/utils";
+import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
@@ -15,26 +16,25 @@ export class DefenseCell extends Cell {
   nukeCoverReady: boolean = true;
 
   constructor(hive: Hive) {
-    super(hive, "DefenseCell_" + hive.room.name);
+    super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
   }
 
   updateNukes() {
     this.nukes = [];
-    this.nukeCoverReady = false;
     _.forEach(this.hive.room.find(FIND_NUKES), (n) => {
       this.nukes.push(n.pos);
       if (this.timeToLand > n.timeToLand)
         this.timeToLand = n.timeToLand;
     });
-    if (!this.nukes.length) {
-      this.nukeCoverReady = true;
+    if (!this.nukes.length)
       this.timeToLand = Infinity;
-    }
+    this.getNukeDefMap();
   }
 
   // mini roomPlanner
   getNukeDefMap() {
+    this.nukeCoverReady = true;
     if (!this.nukes.length)
       return [];
     let map: { [id: number]: { [id: number]: number } } = {};
@@ -82,10 +82,9 @@ export class DefenseCell extends Cell {
   update() {
     super.update(["towers"]);
 
-    if (Game.time % 500 === 333)
+    if (Game.time % 500 === 333 || this.timeToLand-- < 0 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady))
       this.updateNukes();
-    if (this.timeToLand-- < 0)
-      this.updateNukes();
+
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
 
@@ -143,10 +142,12 @@ export class DefenseCell extends Cell {
 
   createDefFlag(pos: RoomPosition, powerfull: boolean = false) {
     let ans;
+    if (pos.getEnteranceToRoom())
+      pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
     if (powerfull)
-      ans = pos.createFlag("def_D_" + makeId(4), COLOR_RED, COLOR_RED);
+      ans = pos.createFlag(prefix.def + "D_" + makeId(4), COLOR_RED, COLOR_RED);
     else
-      ans = pos.createFlag("def_" + makeId(4), COLOR_RED, COLOR_BLUE);
+      ans = pos.createFlag(prefix.def + makeId(4), COLOR_RED, COLOR_BLUE);
     if (typeof ans === "string")
       Game.flags[ans].memory = { hive: this.hive.roomName };
   }

@@ -188,7 +188,7 @@ export const setups = {
 /*
 let printSetup = (s: CreepSetup, energy = Infinity) => {
   let bbody = s.getBody(energy).body;
-  console.log(s.name, ":", bbody.length, bbody.filter((s) => s != MOVE).length)
+  console .log(s.name, ":", bbody.length, bbody.filter((s) => s != MOVE).length)
   return bbody;
 }
 

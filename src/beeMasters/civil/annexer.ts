@@ -7,6 +7,7 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class AnnexMaster extends SwarmMaster {
+  movePriority = <3>3;
   maxSpawns = Infinity;
 
   update() {

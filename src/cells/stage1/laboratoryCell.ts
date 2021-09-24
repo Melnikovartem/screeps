@@ -1,5 +1,7 @@
 import { Cell } from "../_Cell";
 
+import { prefix } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Hive } from "../../Hive";
@@ -17,7 +19,7 @@ for (let key in REACTION_TIME) {
 let ss = "";
 for (let key in s)
   ss += " | " + '"' + s[key] + '"';
-console.log(ss);
+console. log(""ss);
 ===========================================
 let s: { [action: string]: string[] } = {};
 for (let key in BOOSTS)
@@ -34,8 +36,8 @@ for (let action in s) {
   ss += action + ", ";
   s[action].reverse();
 }
-console.log(`{${ss}}`);
-console.log(JSON.stringify(s));
+console. log(`{${ss}}`);
+console. log(JSON.stringify(s));
 */
 
 type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
@@ -79,7 +81,7 @@ export class LaboratoryCell extends Cell {
   sourceLabs: [string, string] | undefined;
 
   constructor(hive: Hive) {
-    super(hive, "LaboratoryCell_" + hive.room.name);
+    super(hive, prefix.laboratoryCell + hive.room.name);
     this.pos = this.hive.getPos("lab");
   }
 

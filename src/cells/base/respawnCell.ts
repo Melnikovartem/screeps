@@ -3,6 +3,7 @@ import { QueenMaster } from "../../beeMasters/economy/queen";
 
 import { beeStates, hiveStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
+import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -16,7 +17,7 @@ export class RespawnCell extends Cell {
 
 
   constructor(hive: Hive) {
-    super(hive, "RespawnCell_" + hive.room.name);
+    super(hive, prefix.respawnCell + hive.room.name);
     this.pos = this.hive.getPos("queen1");
   }
 

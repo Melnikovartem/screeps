@@ -13,7 +13,7 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates } from "./enums";
+import { hiveStates, prefix } from "./enums";
 import { makeId } from "./abstract/utils";
 
 import { LOGGING_CYCLE } from "./settings";
@@ -22,14 +22,6 @@ import { profile } from "./profiler/decorator";
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
 import type { Hive, HivePositions } from "./Hive";
-
-export enum prefix {
-  upgrade = "polen",
-  surrender = "FFF",
-  boost = "boost_",
-  def = "def_",
-  puppet = "puppet_"
-}
 
 @profile
 export class Order {
@@ -183,7 +175,7 @@ export class Order {
 
             if (this.master instanceof PuppetMaster) {
               let nonClaim = this.master.beesAmount;
-              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.memory.refMaster = prefix.puppet + this.pos.roomName : --nonClaim);
+              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.creep.memory.refMaster = prefix.master + prefix.swarm + prefix.puppet + this.pos.roomName : --nonClaim);
               if (nonClaim) {
                 let ans = this.pos.createFlag(prefix.puppet + this.pos.roomName, COLOR_GREY, COLOR_PURPLE);
                 if (typeof ans === "string")

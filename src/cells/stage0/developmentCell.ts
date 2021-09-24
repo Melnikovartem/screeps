@@ -2,6 +2,7 @@ import { Cell } from "../_Cell";
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
 
 import { hiveStates } from "../../enums";
+import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -16,7 +17,7 @@ export class DevelopmentCell extends Cell {
   handAddedResources: RoomPosition[] = [];
 
   constructor(hive: Hive) {
-    super(hive, "DevelopmentCell_" + hive.room.name);
+    super(hive, prefix.developmentCell + hive.room.name);
     this.controller = this.hive.room.controller!;
     this.master = new BootstrapMaster(this);
 

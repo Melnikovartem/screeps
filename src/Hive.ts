@@ -10,9 +10,8 @@ import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
 
-import { prefix } from "./order";
 import { safeWrap } from "./abstract/utils";
-import { hiveStates } from "./enums";
+import { hiveStates, prefix } from "./enums";
 import { profile } from "./profiler/decorator";
 
 import type { Pos } from "./abstract/roomPlanner";
@@ -280,7 +279,7 @@ export class Hive {
           _.forEach(this.annexNames, (annexName) =>
             add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined)));
       default:
-        add(Apiary.planner.checkBuildings(this.roomName))
+        add(Apiary.planner.checkBuildings(this.roomName));
     }
   }
 
@@ -289,8 +288,7 @@ export class Hive {
     this.room = Game.rooms[this.roomName];
     if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.war) {
       this.updateAnnexes();
-      if (this.shouldRecalc)
-        this.updateStructures();
+      this.updateStructures();
       if (this.shouldRecalc > 2) {
         this.markResources();
         _.forEach(this.rooms, (r) => {

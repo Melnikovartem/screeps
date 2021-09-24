@@ -1,5 +1,8 @@
 import { Hive } from "../Hive";
 import { Master } from "../beeMasters/_Master";
+
+import { prefix } from "../enums";
+
 import { profile } from "../profiler/decorator";
 
 @profile
@@ -17,8 +20,8 @@ export abstract class Cell {
     this.time = Game.time;
     this.pos = hive.pos;
 
-    if (Apiary.masters["master" + this.ref])
-      this.master = Apiary.masters["master" + this.ref];
+    if (Apiary.masters[prefix.master + this.ref])
+      this.master = Apiary.masters[prefix.master + this.ref];
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters

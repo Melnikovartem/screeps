@@ -1,6 +1,8 @@
 import { Cell } from "../_Cell";
 import { MinerMaster } from "../../beeMasters/economy/miner";
 
+import { prefix } from "../../enums";
+
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "./excavationCell";
 import type { Hive } from "../../Hive";
@@ -21,7 +23,7 @@ export class ResourceCell extends Cell {
   operational: boolean = false;
 
   constructor(hive: Hive, resource: Source | Mineral, excavationCell: ExcavationCell) {
-    super(hive, "ResourceCell_" + resource.id);
+    super(hive, prefix.resourceCells + resource.id);
 
     this.resource = resource;
     this.pos = this.resource.pos;

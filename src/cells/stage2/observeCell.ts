@@ -1,7 +1,8 @@
 import { Cell } from "../_Cell";
 import type { Hive } from "../../Hive";
 
-import { STORAGE_BALANCE } from "../stage1/storageCell"
+import { STORAGE_BALANCE } from "../stage1/storageCell";
+import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 
@@ -14,7 +15,7 @@ export class ObserveCell extends Cell {
   doPowerCheck = false;
 
   constructor(hive: Hive, obeserver: StructureObserver) {
-    super(hive, "ObserveCell_" + hive.room.name);
+    super(hive, prefix.observerCell + hive.room.name);
     this.obeserver = obeserver;
     this.pos = obeserver.pos;
 
