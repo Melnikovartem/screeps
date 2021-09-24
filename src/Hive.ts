@@ -218,7 +218,7 @@ export class Hive {
     let target: Structure | ConstructionSite | undefined;
     let projects = this.structuresConst;
     let getProj = () => (<RoomPosition>pos).findClosest(projects);
-    if (this.state >= hiveStates.war)
+    if (this.state >= hiveStates.nukealert)
       getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
     let proj = getProj();
@@ -226,8 +226,7 @@ export class Hive {
       if (ignore !== "constructions")
         target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
       if (!target && ignore !== "repairs")
-        target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType
-          && s.hits < s.hitsMax && s.hits < proj!.targetHits + 5000)[0];
+        target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
           if (projects[k].pos.x == proj.pos.x && projects[k].pos.y == proj.pos.y) {
@@ -257,7 +256,7 @@ export class Hive {
   }
 
   updateStructures() {
-    let oldCost = this.sumCost;
+    let builderReCheck = this.sumCost > 0;
     this.structuresConst = [];
     this.sumCost = 0;
     let add = (ans: BuildProject[]) => {
@@ -266,16 +265,17 @@ export class Hive {
     }
 
     switch (this.state) {
+      case hiveStates.battle:
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
+        break;
       case hiveStates.nukealert:
         add(this.cells.defense.getNukeDefMap());
-      case hiveStates.war:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
         break;
       case hiveStates.nospawn:
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
         break;
       case hiveStates.economy:
-        if (oldCost || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
+        if (builderReCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
           _.forEach(this.annexNames, (annexName) =>
             add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined)));
       default:
@@ -286,7 +286,7 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.war) {
+    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.nukealert) {
       this.updateAnnexes();
       this.updateStructures();
       if (this.shouldRecalc > 2) {

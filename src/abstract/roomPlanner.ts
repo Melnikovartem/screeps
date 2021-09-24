@@ -27,9 +27,10 @@ const WALL_HEALTH = {
 }
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
-  [STRUCTURE_ROAD]: { 0: { amount: 2500, heal: ROAD_HITS / 2 }, 1: { amount: 8, heal: ROAD_HITS / 2 }, 2: { amount: 16, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 }, 4: { amount: 2500, heal: ROAD_HITS / 2 }, 5: { amount: 2500, heal: ROAD_HITS / 2 }, 6: { amount: 2500, heal: ROAD_HITS / 2 }, 7: { amount: 2500, heal: ROAD_HITS / 2 }, 8: { amount: 2500, heal: ROAD_HITS } },
-  [STRUCTURE_WALL]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
-  [STRUCTURE_RAMPART]: { 0: { amount: 0, heal: 0 }, 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
+  [STRUCTURE_ROAD]: { 1: { amount: 8, heal: ROAD_HITS / 2 }, 2: { amount: 16, heal: ROAD_HITS / 2 } },
+  [STRUCTURE_CONTAINER]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 5, heal: CONTAINER_HITS / 2 } },
+  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
+  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
 }
 
 const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
@@ -81,7 +82,7 @@ for (let t in [STRUCTURE_ROAD, STRUCTURE_WALL, STRUCTURE_RAMPART]) {
   ss += `STRUCTURE_${type.toUpperCase()}: {${sss}},`;
 }
 ss = ss.substring(0, ss.length - 1);
-console.log(`{${ss}}`);
+console. log(`{${ss}}`);
 */
 
 function anchorDist(anchor: RoomPosition, x: Pos, roomName: string = anchor.roomName, pathfind = false) {
@@ -338,6 +339,8 @@ export class RoomPlanner {
     }
 
     this.addModule(anchor, WALLS, (a) => rotate(a, baseRotation));
+
+    // remove useless walls and give walls layer one more round
   }
 
   roadNearBy(p: Pos, roomName: string) {
@@ -378,7 +381,7 @@ export class RoomPlanner {
     else
       _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, null));
 
-    // console.log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
+    // console. log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
     exit = new RoomPosition(lastPath.x, lastPath.y, exit.roomName);
     if (pos.x !== lastPath.x || pos.y !== lastPath.y || pos.roomName !== exit.roomName) {
       let ent = exit.getEnteranceToRoom();
@@ -531,11 +534,12 @@ export class RoomPlanner {
     let controller: StructureController | { level: number } | undefined = Game.rooms[structure.pos.roomName] && Game.rooms[structure.pos.roomName].controller;
     if (!controller)
       controller = { level: 0 };
-    let specialCase = SPECIAL_STRUCTURE[structure.structureType] && SPECIAL_STRUCTURE[structure.structureType]![controller!.level];
-    return specialCase ? specialCase : {
-      amount: CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType][controller!.level]
-      , heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax,
-    };
+    let specialCase = SPECIAL_STRUCTURE[structure.structureType];
+    if (specialCase && specialCase[controller.level])
+      return specialCase[controller.level]
+
+    let amount = CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType][controller.level];
+    return { amount: amount ? amount : 0, heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax };
   }
 
   checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY) {
@@ -585,7 +589,10 @@ export class RoomPlanner {
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
-          if ((structure.hits < heal * 0.75 && (!constructions || sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL)) || structure.hits < heal * 0.3)
+          if (structure.hits < heal * 0.3
+            || (structure.hits < heal * 0.75 && !constructions)
+            || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * 0.75))
+            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal, heal - 5000)))
             ans.push({
               pos: pos,
               sType: sType,
@@ -601,10 +608,15 @@ export class RoomPlanner {
             toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
           else
             toadd[i].createConstructionSite(sType);
+          ans.push({
+            pos: toadd[i],
+            sType: sType,
+            targetHits: 0,
+            energyCost: CONSTRUCTION_COST[sType],
+          });
           constructions++;
         }
     }
-
     return ans;
   }
 }

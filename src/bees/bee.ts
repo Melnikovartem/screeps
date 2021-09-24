@@ -276,6 +276,7 @@ export class Bee {
             continue;
         } else {
           let outPos = beeIn.targetPosition;
+          // should i check that beeIn will be the max priority in outPos or it is too edge case?
           red = (prev: InfoMove, curr: InfoMove) => {
             if (curr.bee.pos.x === outPos.x && curr.bee.pos.y === outPos.y)
               return curr;

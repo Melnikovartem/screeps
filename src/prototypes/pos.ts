@@ -260,7 +260,7 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
             newEnterance = exit.getEnteranceToRoom();
           }
         } else
-          newDistance += 15;
+          newDistance += 25;
 
 
         if (!newEnterance)

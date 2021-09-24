@@ -26,7 +26,7 @@ export class BuilderMaster extends Master {
     else
       this.targetBeeCount = 3;
 
-    if (storage && this.hive.state >= hiveStates.war && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
+    if (storage && this.hive.state >= hiveStates.nukealert && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
       this.targetBeeCount = 4;
 
     return true;
@@ -35,14 +35,15 @@ export class BuilderMaster extends Master {
   update() {
     super.update();
     this.recalculateTargetBee();
-    this.boost = this.hive.state >= hiveStates.war;
-    this.movePriority = this.hive.state >= hiveStates.war ? 1 : 5;
+    this.boost = this.hive.state >= hiveStates.nukealert;
+    this.movePriority = this.hive.state >= hiveStates.nukealert ? 1 : 5;
     if (this.checkBees(false) && this.recalculateTargetBee() && this.checkBees(false)) {
       let order = {
         setup: setups.builder,
         amount: 1,
-        priority: <1 | 8>(this.hive.state >= hiveStates.war ? 8 : 0),
+        priority: <1 | 8>(this.hive.state >= hiveStates.nukealert ? 8 : 0),
       };
+      order.setup.patternLimit = 10;
       this.wish(order);
     }
   }

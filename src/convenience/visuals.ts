@@ -231,7 +231,7 @@ export class Visuals {
       case hiveStates.nukealert:
         hiveState += "☢️";
         break;
-      case hiveStates.war:
+      case hiveStates.battle:
         hiveState += "⚔️";
         break;
       default:

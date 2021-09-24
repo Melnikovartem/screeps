@@ -13,7 +13,6 @@ type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 export class BootstrapMaster extends Master {
   cell: DevelopmentCell;
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
-  patternCount = 1;
 
   constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
@@ -28,26 +27,29 @@ export class BootstrapMaster extends Master {
 
   recalculateTargetBee() {
     this.targetBeeCount = 0;
-    this.patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
+    let patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
     if (this.hive.bassboost)
-      this.patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
+      patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
     if (setups.bootstrap.patternLimit)
-      this.patternCount = Math.min(setups.bootstrap.patternLimit, this.patternCount);
+      patternCount = Math.min(setups.bootstrap.patternLimit, patternCount);
 
-    // theoretically i should count road from minerals to controller, but this is good enough
-    let magicNumber = [0.5, 0.666];
-    if (this.patternCount > 3)
-      magicNumber = [0.35, 0.45]; // more upgrading less mining
     _.forEach(this.cell.sources, (source) => {
       let walkablePositions = source.pos.getOpenPositions(true).length;
       if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
         --walkablePositions;
       // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
       // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
-      if (source.room.name === this.hive.roomName)
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (this.patternCount * 2)) / magicNumber[0];
-      else
-        this.targetBeeCount += Math.min(walkablePositions, 10 / (this.patternCount * 2)) / magicNumber[1]; // they need to walk more;
+
+      // harvestTime + roadTime + workTime(upgrade)
+      let openPos = source.pos.getOpenPositions(true).length;
+      let cycleWithoutEnergy = (source.pos.getTimeForPath(this.cell.pos) - 2) * 2 + patternCount;
+      // energy produce per tick / energy a bee takes
+      // very bald assumption for not best code so i will round and * 0.75
+      let maxCycleByEnergy = Math.ceil(10 / (2 * patternCount * openPos * 25 / (cycleWithoutEnergy + 25) * 0.75));
+      // amount of positions * bees can 1 position support
+      let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / 25));
+      console.log(source.pos, " energy:", maxCycleByEnergy, " pos:", maxcycleByPos);
+      this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
 
       if (!this.sourceTargeting[source.id])
         this.sourceTargeting[source.id] = {
@@ -55,6 +57,7 @@ export class BootstrapMaster extends Master {
           current: 0,
         };
     });
+    console.log("-----\n")
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
     if (this.hive.bassboost)
       this.targetBeeCount = Math.min(this.targetBeeCount, 6);
@@ -73,7 +76,7 @@ export class BootstrapMaster extends Master {
       let order = {
         setup: setups.bootstrap,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: <0 | 5 | 9>(this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.2 ? 0 : 5)),
+        priority: <0 | 5 | 9>(this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.35 ? 0 : 5)),
       }
 
       if (this.hive.bassboost && this.hive.pos.getRoomRangeTo(this.hive.bassboost) > 8) {
@@ -115,7 +118,7 @@ export class BootstrapMaster extends Master {
           this.cell.handAddedResources.splice(i, 1);
           --i;
         } else
-          target = structures.filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= this.patternCount * 50)[0];
+          target = structures.filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 100)[0];
       }
       if (target)
         handTargets.push(target);
@@ -159,7 +162,8 @@ export class BootstrapMaster extends Master {
             // but that is too much for too little
             source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
               (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
-                && (source.pos.getOpenPositions(true).length || bee.pos.isNearTo(source)) && source.energy > 0));
+                && (source.pos.getOpenPositions(true).length || bee.pos.isNearTo(source))
+                && (source.energy > 0 || source.ticksToRegeneration < 20 || source.ticksToRegeneration < bee.pos.getTimeForPath(source))));
             if (source) {
               this.sourceTargeting[source.id].current += 1;
               bee.target = source.id;
@@ -168,7 +172,7 @@ export class BootstrapMaster extends Master {
             source = this.cell.sources[bee.target];
 
           if (source instanceof Source) {
-            if (source.energy === 0)
+            if (source.energy === 0 && source.ticksToRegeneration > 20 && source.ticksToRegeneration > bee.pos.getTimeForPath(source))
               delete bee.target;
             else {
               if (bee.pos.isNearTo(source))
@@ -206,7 +210,7 @@ export class BootstrapMaster extends Master {
                 || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
                 && (<StructureStorage>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
                 workType = "refill"; // also can be different types of <Store>, so just storage for easy check
-              else if (target.hits < target.hitsMax)
+              else if (target.hits < Apiary.planner.getCase(target).heal)
                 workType = "repair";
               else
                 target = undefined;

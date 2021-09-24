@@ -146,11 +146,10 @@ export const setups = {
   },
   builder: new CreepSetup(setupsNames.builder, {
     pattern: [WORK, CARRY],
-    patternLimit: 10, // not sure if you need anyone bigger than that
   }, 50 / 3),
   bootstrap: new CreepSetup(setupsNames.bootstrap, {
     pattern: [WORK, CARRY],
-    patternLimit: 6,
+    patternLimit: 7,
   }, 50 / 3),
   puppet: new CreepSetup(setupsNames.scout, {
     pattern: [MOVE],

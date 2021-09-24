@@ -2,8 +2,8 @@ export enum hiveStates {
   economy = 0,
   lowenergy = 1,
   nospawn = 2,
-  war = 5,
   nukealert = 6,
+  battle = 7,
 }
 
 export enum enemyTypes {

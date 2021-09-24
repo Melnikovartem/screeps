@@ -20,7 +20,11 @@ export class DevelopmentCell extends Cell {
     super(hive, prefix.developmentCell + hive.room.name);
     this.controller = this.hive.room.controller!;
     this.master = new BootstrapMaster(this);
+    this.pos = this.hive.room.controller ? this.hive.room.controller.pos : this.hive.pos;
+  }
 
+  addResources() {
+    this.handAddedResources = [];
     _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), (r) => {
       if (r.resourceType === RESOURCE_ENERGY)
         this.handAddedResources.push(r.pos);
@@ -36,6 +40,7 @@ export class DevelopmentCell extends Cell {
     if (!this.sources[resource.id]) {
       this.sources[resource.id] = resource;
       this.shouldRecalc = true;
+      this.addResources();
     }
   }
 
