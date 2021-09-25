@@ -12,6 +12,7 @@ export class HaulerMaster extends Master {
   cell: ExcavationCell;
   targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
   roadUpkeepCost: { [id: string]: number } = {};
+  accumRoadTime = 0;
 
   constructor(excavationCell: ExcavationCell) {
     super(excavationCell.hive, excavationCell.ref);
@@ -19,9 +20,13 @@ export class HaulerMaster extends Master {
     this.cell = excavationCell;
   }
 
-  recalculateTargetBee() {
-    let accumRoadTime = 0; // roadTime * minePotential
-    let energyCap = this.hive.room.energyCapacityAvailable;
+  deleteBee(ref: string) {
+    super.deleteBee(ref);
+    delete this.roadUpkeepCost[ref];
+  }
+
+  recalculateRoadTime() {
+    this.accumRoadTime = 0; // roadTime * minePotential
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
         if (cell.container && !cell.link
@@ -29,19 +34,17 @@ export class HaulerMaster extends Master {
           && !(cell.resourceType !== RESOURCE_ENERGY && !cell.extractor)) {
           let coef = 10; // mineral production
           if (cell.resourceType !== RESOURCE_ENERGY)
-            coef = Math.floor(energyCap / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
-          accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef * 2;
+            coef = Math.floor(this.hive.room.energyCapacityAvailable / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
+          this.accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef * 2;
         }
       });
-
-    //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
-    this.targetBeeCount = Math.ceil(accumRoadTime / Math.min(Math.floor(energyCap / 150) * 100, 1600));
     this.cell.shouldRecalc = false;
   }
 
-  deleteBee(ref: string) {
-    super.deleteBee(ref);
-    delete this.roadUpkeepCost[ref];
+  recalculateTargetBee() {
+    //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
+    this.targetBeeCount = Math.ceil(this.accumRoadTime / Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 150) * 100, 1600));
+    return this.checkBees();
   }
 
   update() {
@@ -70,7 +73,7 @@ export class HaulerMaster extends Master {
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
 
-    if (this.checkBees()) {
+    if (this.checkBees() && this.recalculateTargetBee()) {
       this.wish({
         setup: setups.hauler,
         amount: this.targetBeeCount - this.beesAmount,

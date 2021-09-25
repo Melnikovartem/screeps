@@ -53,14 +53,15 @@ export class UpgraderMaster extends Master {
 
     this.targetBeeCount = Math.min(6, Math.max(1, this.targetBeeCount));
 
-    return true;
+    let extreme = this.cell.controller.ticksToDowngrade < 6000;
+    return this.checkBees(!extreme);
   }
 
   update() {
     super.update();
 
     let extreme = this.cell.controller.ticksToDowngrade < 6000;
-    if (this.checkBees(!extreme) && this.recalculateTargetBee() && this.checkBees(!extreme)) {
+    if (this.checkBees(!extreme) && this.recalculateTargetBee()) {
       let order = {
         setup: setups.upgrader.manual,
         amount: this.targetBeeCount - this.beesAmount,

@@ -11,6 +11,7 @@ import type { Bee } from "../../bees/bee";
 export class HordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 5;
+  movePriority = <2>2;
 
   update() {
     super.update();
@@ -79,10 +80,11 @@ export class HordeMaster extends SwarmMaster {
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.work:
-          if (bee.pos.roomName !== this.order.pos.roomName)
+          if (bee.pos.roomName !== this.order.pos.roomName) {
             bee.state = beeStates.chill;
+            break;
+          }
           let target = Apiary.intel.getEnemy(bee.pos);
-
           if (target) {
             this.attackOrFlee(bee, target);
           } else
@@ -92,7 +94,7 @@ export class HordeMaster extends SwarmMaster {
           if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }]) === OK)
             bee.state = beeStates.chill;
           break;
-        default:
+        case beeStates.chill:
           let enemiy = Apiary.intel.getEnemy(bee.pos, 10);
           let ans: number = OK;
           if (enemiy && bee.pos.getRangeTo(enemiy) <= 3) {

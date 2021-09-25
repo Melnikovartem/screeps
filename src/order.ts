@@ -254,6 +254,7 @@ export class Order {
               break;
             case COLOR_WHITE:
               type = "center";
+              cell = this.hive.cells.defense;
               break;
           }
           if (cell)

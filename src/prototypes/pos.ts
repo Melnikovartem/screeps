@@ -254,19 +254,33 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
         let room = Game.rooms[currentRoom];
         let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
         if (room) {
-          if (!(enterance instanceof RoomPosition))
-            enterance = room.find(enterance)[0];
+          if (!(enterance instanceof RoomPosition)) {
+            let entrss = <RoomPosition[]>room.find(enterance);
+            enterance = entrss[Math.round(entrss.length / 2)];
+          }
           // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
-          let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByRange(room.find(route[i].exit));
 
-          if (exit) {
-
+          if (enterance) {
+            let exit: RoomPosition = new RoomPosition(Math.min(Math.max(enterance.x, 5), 44), Math.min(Math.max(enterance.y, 5), 44), room.name);
+            switch (route[i].exit) {
+              case TOP:
+                exit.y = 0;
+                break;
+              case BOTTOM:
+                exit.y = 49;
+                break;
+              case LEFT:
+                exit.x = 0;
+                break;
+              case RIGHT:
+                exit.x = 49;
+                break;
+            }
             newDistance += calc(enterance, exit);
             newEnterance = exit.getEnteranceToRoom();
           }
         } else
           newDistance += 25;
-
 
         if (!newEnterance)
           newEnterance = oppositeExit[route[i].exit];

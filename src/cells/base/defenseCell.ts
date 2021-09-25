@@ -18,6 +18,7 @@ export class DefenseCell extends Cell {
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
+    this.pos = this.hive.getPos("center");
   }
 
   updateNukes() {
@@ -140,12 +141,30 @@ export class DefenseCell extends Cell {
     }
   }
 
+  wasBreached(pos: RoomPosition) {
+    let path = pos.findPathTo(this, {
+      maxRooms: 1,
+      costCallback: (roomName, matrix) => {
+        if (!(roomName in Game.rooms))
+          return matrix;
+        let obstacles = Game.rooms[roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART);
+        _.forEach(obstacles, s => matrix.set(s.pos.x, s.pos.y, 255));
+        return matrix;
+      }
+    });
+
+    return !!path.length && path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y
+  }
+
   createDefFlag(pos: RoomPosition, powerfull: boolean = false) {
     let ans;
-    let centerPos = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8)[0];
-    if (centerPos)
-      pos = centerPos;
-    else if (pos.getEnteranceToRoom())
+    let terrain = Game.map.getRoomTerrain(pos.roomName);
+    let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8);
+    if (centerPoss.length) {
+      pos = centerPoss.filter(p => terrain.get(p.x, p.y) !== TERRAIN_MASK_SWAMP)[0];
+      if (!pos)
+        pos = centerPoss[0];
+    } else if (pos.getEnteranceToRoom())
       pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
 
     if (powerfull)
@@ -162,21 +181,26 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
+
+    /*
+      if (this.time === Game.time) {
+        A.vis(1000, 1);
+        for (let x = 0; x <= 49; ++x)
+          for (let y = 0; y <= 49; ++y)
+            if (x % 3 === 0 && y % 3 === 0 && this.wasBreached(new RoomPosition(x, y, this.pos.roomName)))
+              new RoomVisual(this.pos.roomName).text("F", x, y);
+      }
+    */
+
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+      this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
       if (roomInfo.enemies.length > 0) {
         // for now i will just sit back ...
         if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
 
         if (!_.filter(this.towers, t => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
-          if (roomInfo.dangerlvlmax < 5
-            || _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), f => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)
-            this.checkOrDefendSwarms(this.hive.roomName);
-          else
-            this.hive.room.controller!.activateSafeMode(); // red button
-        } else {
           _.forEach(this.towers, tower => {
             let closest = Apiary.intel.getEnemy(tower)!;
             if (roomInfo.dangerlvlmax < 6) {
@@ -189,6 +213,22 @@ export class DefenseCell extends Cell {
                 tower.repair(target);
             }
           });
+        }
+
+        if (roomInfo.dangerlvlmax > 5 && Game.time % 10 === 6) {
+          let contr = this.hive.room.controller!;
+          if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
+            _.forEach(roomInfo.enemies, enemy => {
+              if (!(enemy instanceof Creep))
+                return;
+
+              let info = Apiary.intel.getStats(enemy).current;
+              if (info.dism < 100 && info.dmgClose < 100)
+                return;
+
+              if (this.wasBreached(enemy.pos))
+                this.hive.room.controller!.activateSafeMode(); // red button
+            });
         }
       }
     }
