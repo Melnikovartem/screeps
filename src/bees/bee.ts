@@ -251,7 +251,7 @@ export class Bee {
     }
 
     for (const nodeId in moveMap) {
-      let [, roomName, x, y] = /(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
+      let [, roomName, x, y] = /^(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
       let pos = new RoomPosition(+x, +y, roomName);
       let creepIn: Creep | undefined;
       if (roomName in Game.rooms)

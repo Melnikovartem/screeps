@@ -42,13 +42,16 @@ export class BootstrapMaster extends Master {
 
       // harvestTime + roadTime + workTime(upgrade)
       let openPos = source.pos.getOpenPositions(true).length;
-      let cycleWithoutEnergy = (source.pos.getTimeForPath(this.cell.pos) - 2) * 2 + patternCount;
+      let roadTime = source.pos.getTimeForPath(this.cell.pos) - 2
+      let cycleWithoutEnergy = roadTime * 2 + patternCount;
       // energy produce per tick / energy a bee takes
       // very bald assumption for not best code so i will round and * 0.75
-      let maxCycleByEnergy = Math.ceil(10 / (2 * patternCount * openPos * 25 / (cycleWithoutEnergy + 25) * 0.75));
+      let energyPerTick = 10;
+      if (source.pos.roomName === this.hive.roomName && this.hive.room.energyCapacityAvailable < 650)
+        energyPerTick = 5;
+      let maxCycleByEnergy = Math.ceil(energyPerTick / (2 * patternCount * openPos * 25 / (cycleWithoutEnergy + 25) * 0.75));
       // amount of positions * bees can 1 position support
-      let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / 25));
-      console.log(source.pos, " energy:", maxCycleByEnergy, " pos:", maxcycleByPos);
+      let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / (25 + roadTime)));
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
 
       if (!this.sourceTargeting[source.id])
@@ -57,7 +60,6 @@ export class BootstrapMaster extends Master {
           current: 0,
         };
     });
-    console.log("-----\n")
     this.targetBeeCount = Math.ceil(this.targetBeeCount);
     if (this.hive.bassboost)
       this.targetBeeCount = Math.min(this.targetBeeCount, 6);
@@ -163,7 +165,7 @@ export class BootstrapMaster extends Master {
             source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
               (source) => this.sourceTargeting[source.id].current < this.sourceTargeting[source.id].max
                 && (source.pos.getOpenPositions(true).length || bee.pos.isNearTo(source))
-                && (source.energy > 0 || source.ticksToRegeneration < 20 || source.ticksToRegeneration < bee.pos.getTimeForPath(source))));
+                && (source.energy > 0 || source.ticksToRegeneration < 20)));
             if (source) {
               this.sourceTargeting[source.id].current += 1;
               bee.target = source.id;
@@ -240,7 +242,7 @@ export class BootstrapMaster extends Master {
                 workType = "build";
           }
 
-          if (!target && count["refill"] < Math.max(this.targetBeeCount * 0.25, 2)) {
+          if (!target) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);

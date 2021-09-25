@@ -22,7 +22,7 @@ export class Visuals {
   }
 
   create() {
-    if (Game.time % Memory.settings.framerate === 0) {
+    if (Game.time % Memory.settings.framerate === 0 || !this.caching["global"]) {
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(49, null, 1), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6);
       // bucket size same as PIXEL_CPU_COST
       this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(49), Game.cpu.bucket / 10000, { align: "right" }, 6);
@@ -71,7 +71,7 @@ export class Visuals {
   }
 
   createLight() {
-    if (Game.time % Memory.settings.framerate === 0) {
+    if (Game.time % Memory.settings.framerate === 0 || !this.caching["global"]) {
       this.anchor = this.label("LOW CPU MODE", this.getAnchor(48, null, 1), { align: "right" }, 8);
       this.anchor = this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.getAnchor(48), Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 8);
       this.anchor = this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.getAnchor(48), Game.cpu.bucket / 10000, { align: "right" }, 8);
@@ -306,7 +306,7 @@ export class Visuals {
 
     let constLen = hive.structuresConst.length;
     if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
-      ans.push(["build", !hive.sumCost ? "" : ` ${hive.sumCost >= 1000 ? Math.round(hive.sumCost / 1000) : Math.round(hive.sumCost / 1000 * 10) / 10}K/${hive.structuresConst.length}`,
+      ans.push(["build", !hive.sumCost ? "" : ` ${hive.sumCost >= 5000 ? Math.round(hive.sumCost / 1000) : Math.round(hive.sumCost / 1000 * 10) / 10}K/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder)])
     }
 

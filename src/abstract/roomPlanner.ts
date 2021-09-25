@@ -17,8 +17,6 @@ const EXTRA_VERTICAL: Module = { poss: { queen1: { x: 23, y: 25 }, queen2: { x: 
 
 const EXTRA_HORIZONTAL: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 19, y: 24 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, lab: { pos: [] }, storage: { pos: [] }, link: { pos: [] }, terminal: { pos: [] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
 
-const WALLS: Module = { poss: {}, exits: [], freeSpaces: [], setup: { constructedWall: { pos: [{ x: 17, y: 20 }, { x: 17, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 24 }, { x: 17, y: 25 }, { x: 17, y: 21 }, { x: 17, y: 27 }, { x: 17, y: 28 }, { x: 17, y: 29 }, { x: 17, y: 30 }, { x: 17, y: 31 }, { x: 17, y: 26 }, { x: 17, y: 32 }, { x: 17, y: 33 }, { x: 19, y: 33 }, { x: 20, y: 33 }, { x: 21, y: 33 }, { x: 22, y: 33 }, { x: 23, y: 33 }, { x: 24, y: 33 }, { x: 25, y: 33 }, { x: 26, y: 33 }, { x: 27, y: 33 }, { x: 28, y: 33 }, { x: 29, y: 33 }, { x: 30, y: 33 }, { x: 31, y: 33 }, { x: 32, y: 33 }, { x: 33, y: 33 }, { x: 18, y: 33 }, { x: 17, y: 18 }, { x: 17, y: 17 }, { x: 18, y: 17 }, { x: 19, y: 17 }, { x: 20, y: 17 }, { x: 21, y: 17 }, { x: 22, y: 17 }, { x: 23, y: 17 }, { x: 27, y: 17 }, { x: 28, y: 17 }, { x: 29, y: 17 }, { x: 30, y: 17 }, { x: 31, y: 17 }, { x: 32, y: 17 }, { x: 33, y: 17 }, { x: 17, y: 19 }, { x: 18, y: 19 }, { x: 18, y: 20 }, { x: 18, y: 21 }, { x: 18, y: 22 }, { x: 18, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 25 }, { x: 18, y: 26 }, { x: 18, y: 27 }, { x: 18, y: 28 }, { x: 18, y: 29 }, { x: 18, y: 30 }, { x: 18, y: 31 }, { x: 18, y: 32 }, { x: 33, y: 32 }, { x: 33, y: 31 }, { x: 33, y: 30 }, { x: 33, y: 29 }, { x: 33, y: 28 }, { x: 33, y: 27 }, { x: 33, y: 26 }, { x: 33, y: 25 }, { x: 33, y: 24 }, { x: 33, y: 23 }, { x: 33, y: 22 }, { x: 33, y: 21 }, { x: 33, y: 20 }, { x: 33, y: 19 }, { x: 33, y: 18 }, { x: 18, y: 18 }, { x: 27, y: 32 }, { x: 30, y: 32 }, { x: 32, y: 32 }, { x: 31, y: 32 }, { x: 29, y: 32 }, { x: 28, y: 32 }, { x: 26, y: 32 }, { x: 25, y: 32 }, { x: 24, y: 32 }, { x: 23, y: 32 }, { x: 22, y: 32 }, { x: 21, y: 32 }, { x: 20, y: 32 }, { x: 19, y: 32 }, { x: 24, y: 17 }, { x: 17, y: 16 }, { x: 19, y: 16 }, { x: 20, y: 16 }, { x: 21, y: 16 }, { x: 22, y: 16 }, { x: 23, y: 16 }, { x: 24, y: 16 }, { x: 25, y: 16 }, { x: 26, y: 16 }, { x: 27, y: 16 }, { x: 28, y: 16 }, { x: 29, y: 16 }, { x: 30, y: 16 }, { x: 31, y: 16 }, { x: 32, y: 16 }, { x: 33, y: 16 }, { x: 18, y: 16 }, { x: 25, y: 17 }, { x: 26, y: 17 }, { x: 34, y: 17 }, { x: 34, y: 18 }, { x: 34, y: 19 }, { x: 34, y: 20 }, { x: 34, y: 21 }, { x: 34, y: 22 }, { x: 34, y: 23 }, { x: 34, y: 24 }, { x: 34, y: 16 }, { x: 34, y: 26 }, { x: 34, y: 28 }, { x: 34, y: 29 }, { x: 34, y: 30 }, { x: 34, y: 31 }, { x: 34, y: 32 }, { x: 34, y: 33 }, { x: 34, y: 27 }, { x: 34, y: 25 }] } } };
-
 const CONSTRUCTIONS_PER_ROOM = 5;
 
 const WALL_HEALTH = {
@@ -54,21 +52,25 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
-const PATH_ARGS: FindPathOpts = {
-  plainCost: 2, swampCost: 4, ignoreCreeps: true,
-  costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
-    if (Apiary.planner.activePlanning[roomName]) {
-      let plan = Apiary.planner.activePlanning[roomName].plan;
-      for (let x in plan)
-        for (let y in plan[x]) {
-          if (plan[x][y].s === STRUCTURE_ROAD)
-            costMatrix.set(+x, +y, 1);
-          else if (plan[x][y].s)
-            costMatrix.set(+x, +y, 255);
-        }
-      return costMatrix;
+function getPathArgs(costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
+  return {
+    plainCost: 2, swampCost: 4, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false,
+    costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
+      if (Apiary.planner.activePlanning[roomName]) {
+        let plan = Apiary.planner.activePlanning[roomName].plan;
+        for (let x in plan)
+          for (let y in plan[x]) {
+            if (plan[x][y].s === STRUCTURE_ROAD)
+              costMatrix.set(+x, +y, 1);
+            else if (plan[x][y].s === STRUCTURE_WALL)
+              costMatrix.set(+x, +y, 4);
+            else if (plan[x][y].s)
+              costMatrix.set(+x, +y, 255);
+          }
+        return costCallbackExtra(roomName, costMatrix);
+      }
     }
-  }
+  };
 }
 
 /*
@@ -136,7 +138,7 @@ export class RoomPlanner {
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
 
-  generatePlan(anchor: RoomPosition, baseRotation: 0 | 1 | 2 | 3 = 0) {
+  generatePlan(anchor: RoomPosition, baseRotation: 0 | 1 | 2 | 3 = 0, warchance = true) {
     this.initPlanning(anchor.roomName);
     let jobs = this.activePlanning[anchor.roomName].jobsToDo;
     this.activePlanning[anchor.roomName].anchor = anchor;
@@ -195,6 +197,7 @@ export class RoomPlanner {
         return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;
     });
+
     _.forEach(futureResourceCells, (f) => {
       jobs.push({
         context: `resource roads for ${f.pos}`,
@@ -202,32 +205,37 @@ export class RoomPlanner {
           let ans = this.connectWithRoad(anchor, f.pos, true);
           if (ans === ERR_FULL || ans === ERR_BUSY)
             return ans;
-          if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK).length)
-            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-          else
-            this.addToPlan(ans, f.pos.roomName, null, true);
+          this.addToPlan(ans, f.pos.roomName, null, true);
+          jobs.push({
+            context: `miner container for ${f.pos}`,
+            func: () => {
+              if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK).length)
+                this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+              return OK;
+            }
+          });
           if (f.pos.roomName === anchor.roomName && f.secondaryColor === COLOR_YELLOW) {
             let poss = f.pos.getOpenPositions(true, 2);
             if (!poss.length)
               return ERR_FULL;
-            let len = this.pathFromExit(poss[0], anchor.roomName);
-            if (this.addToPlan(poss[0], anchor.roomName, STRUCTURE_LINK, false, true) !== OK)
-              len = ERR_FULL;
             let pos = poss.reduce((prev, curr) => {
-              if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK) {
-                let pathCurr = this.pathFromExit(curr, anchor.roomName);
-                if (len === ERR_FULL || pathCurr !== ERR_FULL && pathCurr[0].length < len[0].length) {
-                  len = pathCurr;
-                  return curr;
-                }
-              }
+              if (this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+                return curr;
               return prev;
             });
-            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
+            // plcaeholder
+            if (this.addToPlan(pos, anchor.roomName, null) !== OK)
               return ERR_FULL;
+            jobs.push({
+              context: `miner link for ${f.pos}`,
+              func: () => this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) === OK ? OK : ERR_FULL
+            });
           }
           if (f.secondaryColor === COLOR_CYAN)
-            this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
+            jobs.push({
+              context: "extractor",
+              func: () => this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR) === OK ? OK : ERR_FULL
+            });
           return OK;
         }
       });
@@ -245,45 +253,50 @@ export class RoomPlanner {
           poss = contr.pos.getPositionsInRange(3);
           if (!poss.length)
             return ERR_FULL;
-          let len = this.pathFromExit(poss[0], anchor.roomName);
-          if (this.addToPlan(poss[0], anchor.roomName, STRUCTURE_LINK, false, true) !== OK)
-            len = ERR_FULL;
-
           let pos = poss.reduce((prev, curr) => {
-            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK) {
-              let pathCurr = this.pathFromExit(curr, anchor.roomName);
-              if (len === ERR_FULL || pathCurr !== ERR_FULL && pathCurr[0].length < len[0].length) {
-                len = pathCurr;
-                return curr;
-              }
-            }
+            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK
+              && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+              return curr;
             return prev;
           });
-          if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
+          // plcaeholder
+          if (this.addToPlan(pos, anchor.roomName, null) !== OK)
             return ERR_FULL;
-          this.connectWithRoad(anchor, pos);
+          jobs.push({
+            context: "upgrade link",
+            func: () => this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) === OK ? OK : ERR_FULL
+          });
+          let ans = this.connectWithRoad(anchor, pos);
+          if (typeof ans === "number")
+            return ans;
+          return OK;
         }
-        return OK;
+        return ERR_FULL;
       }
     });
 
+
     jobs.push({
-      context: "exits to rooms",
+      context: "outer ring + exits",
       func: () => {
         let exitsGlobal = Game.map.describeExits(anchor.roomName);
+        let last: undefined | RoomPosition;
         for (let e in exitsGlobal) {
-          let exits = false
-          for (let e in this.activePlanning[anchor.roomName].exits)
-            if (exitsGlobal[<ExitConstant>+e] === this.activePlanning[anchor.roomName].exits[e].roomName)
-              exits = true;
-          if (!exits) {
-            let exit = anchor.findClosest(Game.rooms[anchor.roomName].find(<ExitConstant>+e));
-            if (exit)
-              this.connectWithRoad(anchor, exit, false);
+          let exits = Game.rooms[anchor.roomName].find(<ExitConstant>+e);
+          exits.sort((a, b) => anchor.getTimeForPath(a) - anchor.getTimeForPath(b));
+          for (let i = 0; i < exits.length; ++i) {
+            _.forEach(exits[i].getPositionsInRange(2), p => p.getRangeTo(exits[i]) === 2 ? this.addToPlan(p, p.roomName, STRUCTURE_WALL) : void (0));
+            if (!last || last.getRangeTo(exits[i]) > 10) {
+              let ans = this.connectWithRoad(anchor, exits[i], false);
+              if (typeof ans === "number")
+                return ans;
+              else
+                last = exits[i];
+            }
           }
         }
         return OK;
-      }
+      },
     });
 
     let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
@@ -300,15 +313,15 @@ export class RoomPlanner {
                 return a;
               let ans = (anchorDist(anchor, a) - anchorDist(anchor, b)) * (sType === STRUCTURE_OBSERVER ? -1 : 1);
               if (ans === 0) {
-                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), PATH_ARGS);
-                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), PATH_ARGS);
+                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), getPathArgs());
+                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), getPathArgs());
                 ans = pathA.length - pathB.length;
               }
               if (ans === 0)
                 ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
               if (ans === 0)
                 ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
-              return ans < 0 ? a : b;
+              return ans < 0 ? a : b; // * (sType === STRUCTURE_OBSERVER ? -1 : 1)
             });
             let pos;
             if (free.length)
@@ -338,9 +351,150 @@ export class RoomPlanner {
       });
     }
 
-    this.addModule(anchor, WALLS, (a) => rotate(a, baseRotation));
+    if (warchance)
+      jobs.push({
+        context: "adding walls adding jobs",
+        func: () => this.addWalls(anchor, [4, 3, 2]),
+      });
+  }
 
-    // remove useless walls and give walls layer one more round
+  addWalls(anchor: RoomPosition, ranges: number[]) {
+    let plan = this.activePlanning[anchor.roomName].plan;
+    let xx: number[] = [];
+    let yy: number[] = [];
+    for (let x in plan)
+      for (let y in plan[x])
+        switch (plan[x][y].s) {
+          case STRUCTURE_WALL:
+          case STRUCTURE_RAMPART:
+          case STRUCTURE_ROAD:
+          case undefined:
+          case null:
+            break;
+          case STRUCTURE_OBSERVER:
+            break;
+          default:
+            if (!xx.includes(+x))
+              xx.push(+x);
+            if (!yy.includes(+y))
+              yy.push(+y);
+        }
+    ranges.sort((a, b) => b - a);
+    let terrain = Game.map.getRoomTerrain(anchor.roomName);
+    ranges.forEach(range => {
+      this.activePlanning[anchor.roomName].jobsToDo.push({
+        context: "adding walls in range " + range,
+        func: () => {
+          let addedWalls: Pos[] = [];
+          let minx = Math.max(Math.min(...xx) - range, 2);
+          let maxx = Math.min(Math.max(...xx) + range, 47);
+          let miny = Math.max(Math.min(...yy) - range, 2);
+          let maxy = Math.min(Math.max(...yy) + range, 47);
+          // console .log(range, ":", minx, maxx, miny, maxy);
+
+          let color: { [id: string]: number } = {};
+          let colorInterest: { [id: number]: 1 | 0 } = {};
+          let colorCount = 0;
+          let toCheck: string[] = [];
+
+          for (let x = minx; x < maxx; ++x) {
+            toCheck.push(x + "_" + miny);
+            toCheck.push(x + "_" + maxy);
+          }
+          for (let y = miny; y < maxy; ++y) {
+            toCheck.push(minx + "_" + y);
+            toCheck.push(maxx + "_" + y);
+          }
+          while (toCheck.length) {
+            let str = toCheck.pop()!;
+            let pos = /^(\d*)_(\d*)/.exec(str)!;
+            if (!color[str])
+              if (terrain.get(+pos[1], +pos[2]) !== TERRAIN_MASK_WALL) {
+                color[str] = colorCount++;
+                colorInterest[color[str]] = 0;
+              } else
+                continue;
+            for (let x = +pos[1] - 1; x <= +pos[1] + 1 && x <= 49; x++)
+              for (let y = +pos[2] - 1; y <= +pos[2] + 1 && y <= 49; y++) {
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL)
+                  continue;
+                if (y <= maxy && y >= miny && x <= maxx && x >= minx)
+                  continue;
+                let str1 = x + "_" + y;
+                if (!color[str1]) {
+                  if (!toCheck.includes(str1) && x > 0 && y > 0 && x < 49 && y < 49)
+                    toCheck.push(str1);
+                  color[str1] = color[str];
+                } else if (color[str1] !== color[str]) {
+                  let state = <0 | 1>Math.max(colorInterest[color[str]], colorInterest[color[str1]]);
+                  colorInterest[color[str]] = state;
+                  colorInterest[color[str1]] = state;
+                }
+
+                if (x === 0 || y === 0 || x === 49 || y === 49)
+                  colorInterest[color[str1]] = 1;
+              }
+          }
+
+          /*
+          for (let x = 0; x <= 49; ++x)
+            for (let y = 0; y <= 49; ++y)
+              if (color[x + "_" + y])
+                new RoomVisual().text("" + color[x + "_" + y], x, y);
+          */
+
+          let addWall = (x_x: number, y_y: number) => {
+            if (!colorInterest[color[x_x + "_" + y_y]])
+              return;
+            let ans = this.addToPlan({ x: x_x, y: y_y }, anchor.roomName, STRUCTURE_WALL);
+            if (ans === OK)
+              addedWalls.push({ x: x_x, y: y_y });
+          };
+
+          for (let x = minx; x < maxx; ++x) {
+            addWall(x, miny);
+            addWall(x, maxy);
+          }
+          for (let y = miny; y < maxy; ++y) {
+            addWall(minx, y);
+            addWall(maxx, y);
+          }
+
+          _.forEach(addedWalls, p => {
+            let pos = new RoomPosition(p.x, p.y, anchor.roomName);
+            let path = anchor.findPathTo(pos, getPathArgs((roomName: string, costMatrix: CostMatrix) => {
+              let plan = Apiary.planner.activePlanning[roomName].plan;
+              for (let x in plan)
+                for (let y in plan[x]) {
+                  if (plan[x][y].s === STRUCTURE_WALL)
+                    costMatrix.set(+x, +y, 255);
+                  else if (plan[x][y].r)
+                    costMatrix.set(+x, +y, 255);
+                }
+              return costMatrix;
+            }));
+            while (path.length > 1)
+              path = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName).findPathTo(pos, getPathArgs((roomName: string, costMatrix: CostMatrix) => {
+                let plan = Apiary.planner.activePlanning[roomName].plan;
+                for (let x in plan)
+                  for (let y in plan[x]) {
+                    if (plan[x][y].s === STRUCTURE_WALL)
+                      costMatrix.set(+x, +y, 255);
+                    else if (plan[x][y].r)
+                      costMatrix.set(+x, +y, 255);
+                  }
+                return costMatrix;
+              }));
+
+            if (path.length && (p.x == path[path.length - 1].x || p.y !== path[path.length - 1].y)) {
+              this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
+            }
+          });
+          return OK;
+        }
+      });
+    });
+    return OK;
   }
 
   roadNearBy(p: Pos, roomName: string) {
@@ -359,12 +513,12 @@ export class RoomPlanner {
       return ERR_FULL;
     let exit: RoomPosition | undefined | null;
     if (pos.roomName === roomName)
-      exit = pos.findClosestByPath(this.activePlanning[roomName].exits, PATH_ARGS);
+      exit = pos.findClosestByPath(this.activePlanning[roomName].exits, getPathArgs());
     if (!exit)
       exit = pos.findClosest(this.activePlanning[roomName].exits);
     if (!exit)
       return ERR_FULL;
-    return [exit.findPathTo(pos, PATH_ARGS), exit];
+    return [exit.findPathTo(pos, getPathArgs()), exit];
   }
 
   connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean = anchor.roomName === pos.roomName): Pos | ERR_BUSY | ERR_FULL {
@@ -391,9 +545,9 @@ export class RoomPlanner {
     return path.length > 0 ? new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, exit.roomName) : exit;
   }
 
-  addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null, force: boolean = false, check: boolean = false) {
+  addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null | undefined, force: boolean = false, check: boolean = false) {
     if (!this.activePlanning[roomName])
-      this.initPlanning(roomName);
+      this.initPlanning(roomName, true);
     if (check && (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL || force))
       return ERR_INVALID_ARGS;
     if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType !== STRUCTURE_EXTRACTOR)
@@ -415,6 +569,8 @@ export class RoomPlanner {
         placed[sType]!++;
       }
       plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
+    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL && sType !== undefined) {
+      plan[pos.x][pos.y] = { s: sType, r: true };
     } else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (force) {
@@ -584,7 +740,7 @@ export class RoomPlanner {
               targetHits: 0,
               energyCost: constructionSite.progressTotal - constructionSite.progress,
             });
-            constructions++;
+            console.log(sType, pos);
           }
         } else if (structure) {
           placed++;
@@ -592,7 +748,7 @@ export class RoomPlanner {
           if (structure.hits < heal * 0.3
             || (structure.hits < heal * 0.75 && !constructions)
             || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * 0.75))
-            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal, heal - 5000)))
+            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal - 5000, heal * 0.75)))
             ans.push({
               pos: pos,
               sType: sType,
@@ -601,20 +757,24 @@ export class RoomPlanner {
             });
         }
       }
-
+      if (ans.length || toadd.length)
+        console.log(`${roomName} ${sType} : ${ans.length}/(${constructions}+${toadd.length}) : ${_.sum(ans, e => e.targetHits / 100)}/${_.sum(ans, e => e.energyCost)}`);
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_ROOM; ++i) {
+          let anss;
           if (sType === STRUCTURE_SPAWN)
-            toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
+            anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
           else
-            toadd[i].createConstructionSite(sType);
-          ans.push({
-            pos: toadd[i],
-            sType: sType,
-            targetHits: 0,
-            energyCost: CONSTRUCTION_COST[sType],
-          });
-          constructions++;
+            anss = console.log(sType, toadd[i].createConstructionSite(sType));
+          if (anss === OK) {
+            ans.push({
+              pos: toadd[i],
+              sType: sType,
+              targetHits: 0,
+              energyCost: CONSTRUCTION_COST[sType],
+            });
+            constructions++;
+          }
         }
     }
     return ans;
