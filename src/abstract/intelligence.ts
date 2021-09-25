@@ -8,7 +8,8 @@ import { UPDATE_EACH_TICK } from "../settings";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-const NOT_ATTACK_LIST: string[] = [];
+const PEACE_PACKS: string[] = ["Hi_Melnikov"];
+const NON_AGRESSION_PACKS: string[] = ["Bulletproof"];
 
 interface Enemy {
   object: Creep | PowerCreep | Structure,
@@ -41,7 +42,7 @@ export class Intel {
       return;
 
     return roomInfo.enemies.reduce((prev, curr) => {
-      let ans = prev.dangerlvl - curr.dangerlvl
+      let ans = prev.dangerlvl - curr.dangerlvl;
       if (curr.dangerlvl === roomInfo.dangerlvlmax && ans === 0)
         ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
 
@@ -181,7 +182,9 @@ export class Intel {
         dangerlvl = 4;
       if (c.owner.username === "Source Keeper")
         dangerlvl = 2;
-      if (NOT_ATTACK_LIST.includes(c.owner.username))
+      if (PEACE_PACKS.includes(c.owner.username))
+        dangerlvl = 0;
+      else if (NON_AGRESSION_PACKS.includes(c.owner.username) && dangerlvl < 4)
         dangerlvl = 0;
       roomInfo.enemies.push({
         object: c,
@@ -209,6 +212,22 @@ export class Intel {
             type: enemyTypes.static,
           });
       });
+
+    _.forEach(room.find(FIND_FLAGS), (f) => {
+      if (f.color !== COLOR_GREY || f.secondaryColor !== COLOR_RED)
+        return;
+      let s = f.pos.lookFor(LOOK_STRUCTURES)[0];
+      if (!s)
+        return;
+      let dangerlvl: DangerLvl = 3;
+      if (roomInfo.roomState === roomStates.ownedByEnemy)
+        dangerlvl = 8;
+      roomInfo.enemies.push({
+        object: s,
+        dangerlvl: dangerlvl,
+        type: enemyTypes.static,
+      });
+    });
 
     if (roomInfo.enemies.length)
       roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev).dangerlvl;

@@ -43,7 +43,24 @@ export class HordeMaster extends SwarmMaster {
       } else if (bee.hits === bee.hitsMax || !bee.getActiveBodyParts(HEAL))
         action();
 
-    if ((!action || bee.pos.getRangeTo(target) <= 3) && bee.hits <= bee.hitsMax * 0.7) {
+    let targetRange = 1;
+    let shouldFlee = !action;
+    if (!shouldFlee)
+      if (target instanceof Creep) {
+        let info = Apiary.intel.getStats(target).current;
+        if (info.dmgRange)
+          targetRange = 3;
+        else if (info.dmgClose)
+          targetRange = 1;
+        else
+          targetRange = 0;
+        shouldFlee = targetRange > 0;
+      } else if (target instanceof StructureTower) {
+        // prob should calc if i will be able to get out of range with current healing
+        shouldFlee = target.store.getUsedCapacity(RESOURCE_ENERGY) >= 10;
+        targetRange = 20;
+      }
+    if (shouldFlee && bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.7) {
       let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
         let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
         if (ans === 0)
@@ -64,8 +81,7 @@ export class HordeMaster extends SwarmMaster {
         case beeStates.work:
           if (bee.pos.roomName !== this.order.pos.roomName)
             bee.state = beeStates.chill;
-          let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-          let target = bee.pos.findClosest(roomInfo.enemies.map((e) => e.object));
+          let target = Apiary.intel.getEnemy(bee.pos);
 
           if (target) {
             this.attackOrFlee(bee, target);
@@ -77,10 +93,13 @@ export class HordeMaster extends SwarmMaster {
             bee.state = beeStates.chill;
           break;
         default:
-          let enemies = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
+          let enemiy = Apiary.intel.getEnemy(bee.pos, 10);
           let ans: number = OK;
-          if (enemies.length)
-            ans = this.attackOrFlee(bee, enemies[0]);
+          if (enemiy && bee.pos.getRangeTo(enemiy) <= 3) {
+            enemiy = Apiary.intel.getEnemy(bee.pos);
+            if (enemiy && bee.pos.getRangeTo(enemiy) <= 3)
+              ans = this.attackOrFlee(bee, enemiy);
+          }
           if (ans === OK) {
             bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
             if (bee.pos.getRangeTo(this.order.pos) <= 5)

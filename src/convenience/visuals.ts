@@ -32,7 +32,7 @@ export class Visuals {
         this.anchor = this.progressbar("HEAP", this.getAnchor(49), heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6);
       }
 
-      let battleInfo: string[][] = [["bee squads"], ["", "🎯", "💀", "🐝"]];
+      let battleInfo: string[][] = [["bee squads"], ["", "🎯", "☠️❗", "💀", "🐝"]];
       for (const name in Apiary.hives) {
         let stats = this.statsBattle(name);
         if (stats.length > 0) {
@@ -162,6 +162,15 @@ export class Visuals {
           case "hive":
             style.color = "#000000";
             break;
+          case "center":
+            style.color = "#ffdd80";
+            break;
+          case "queen1":
+            style.color = "#CAFABE";
+            break;
+          case "queen2":
+            style.color = "#FAE4BE";
+            break;
         };
         const SIZE = 0.3;
         vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
@@ -202,16 +211,28 @@ export class Visuals {
 
   statsBattle(hiveName: string): string[][] {
     let orders = _.filter(Apiary.orders, (o) => o.hive.roomName === hiveName && o.flag.color !== COLOR_PURPLE && o.master);
+    let length = orders.length;
+    const MAX_STATS = 4;
     let ans: string[][] = [];
+    if (orders.length > MAX_STATS)
+      orders = orders.filter(o => Apiary.intel.getInfo(o.pos.roomName).dangerlvlmax > 0);
+    if (orders.length > MAX_STATS)
+      orders = orders.filter(o => o.master && (o.master.activeBees.length || o.master.waitingForBees));
+    if (orders.length > MAX_STATS)
+      orders = orders.filter(o => o.master && o.master.activeBees.length);
+    if (orders.length > MAX_STATS)
+      orders = orders.slice(0, MAX_STATS);
     _.forEach(orders, (order) => {
       let roomInfo = Apiary.intel.getInfo(order.pos.roomName);
-      let info = [order.ref, " " + order.pos.roomName, " " + roomInfo.enemies.length];
+      let info = [order.ref, " " + order.pos.roomName, " " + roomInfo.dangerlvlmax, " " + roomInfo.enemies.length];
       if (order.master) {
         info.push(`: ${order.master.waitingForBees ? "(" : ""}${order.master.beesAmount}${order.master.waitingForBees ?
           "+" + order.master.waitingForBees + ")" : ""}/${order.master.targetBeeCount}`)
       }
       ans.push(info);
     });
+    if (length !== orders.length)
+      ans.push(["+ " + (length - orders.length)])
     return ans;
   }
 

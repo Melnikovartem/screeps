@@ -142,8 +142,12 @@ export class DefenseCell extends Cell {
 
   createDefFlag(pos: RoomPosition, powerfull: boolean = false) {
     let ans;
-    if (pos.getEnteranceToRoom())
+    let centerPos = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8)[0];
+    if (centerPos)
+      pos = centerPos;
+    else if (pos.getEnteranceToRoom())
       pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
+
     if (powerfull)
       ans = pos.createFlag(prefix.def + "D_" + makeId(4), COLOR_RED, COLOR_RED);
     else

@@ -6,13 +6,20 @@ import { setups } from "../../bees/creepsetups";
 import { profile } from "../../profiler/decorator";
 import type { DevelopmentCell } from "../../cells/stage0/developmentCell";
 
-type workTypes = "upgrade" | "repair" | "build" | "mining" | "working" | "refill";
+type workTypes = "upgrade" | "repair" | "build" | "working" | "refill";
 type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 
 @profile
 export class BootstrapMaster extends Master {
   cell: DevelopmentCell;
   sourceTargeting: { [id: string]: { max: number, current: number } } = {};
+  count: { [key in workTypes]: number } = {
+    upgrade: 0,
+    repair: 0,
+    build: 0,
+    refill: 0,
+    working: 0,
+  };
 
   constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
@@ -34,16 +41,13 @@ export class BootstrapMaster extends Master {
       patternCount = Math.min(setups.bootstrap.patternLimit, patternCount);
 
     _.forEach(this.cell.sources, (source) => {
-      let walkablePositions = source.pos.getOpenPositions(true).length;
-      if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
-        --walkablePositions;
-      // 3000/300 /(workBodyParts * 2) / kk , where kk - how much of life will be wasted on harvesting (aka magic number)
-      // how many creeps the source can support at a time: Math.min(walkablePositions, 10 / (workBodyParts * 2))
 
       // harvestTime + roadTime + workTime(upgrade)
       let openPos = source.pos.getOpenPositions(true).length;
-      let roadTime = source.pos.getTimeForPath(this.cell.pos) - 2
-      let cycleWithoutEnergy = roadTime * 2 + patternCount;
+      if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
+        openPos--;
+      let roadTime = source.pos.getTimeForPath(this.cell.pos) - 2;
+      let cycleWithoutEnergy = roadTime * 2 + patternCount * 0.75;
       // energy produce per tick / energy a bee takes
       // very bald assumption for not best code so i will round and * 0.75
       let energyPerTick = 10;
@@ -56,7 +60,7 @@ export class BootstrapMaster extends Master {
 
       if (!this.sourceTargeting[source.id])
         this.sourceTargeting[source.id] = {
-          max: walkablePositions,
+          max: openPos,
           current: 0,
         };
     });
@@ -91,11 +95,12 @@ export class BootstrapMaster extends Master {
   }
 
   run() {
-    let count: { [id: string]: number } = {
+    let countCurrent: { [key in workTypes]: number } = {
       upgrade: 0,
       repair: 0,
       build: 0,
       refill: 0,
+      working: 0,
     };
 
     let sourceTargetingCurrent: { [id: string]: number } = {};
@@ -200,6 +205,7 @@ export class BootstrapMaster extends Master {
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "working";
+          let oldTarget = false;
 
           if (bee.target) {
             target = Game.getObjectById(bee.target);
@@ -217,7 +223,9 @@ export class BootstrapMaster extends Master {
               else
                 target = undefined;
             }
-            if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
+            if (target)
+              oldTarget = true;
+            else if (!this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
               this.hive.shouldRecalc = 2;
           }
 
@@ -228,12 +236,12 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && count["upgrade"] === 0) {
+          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && this.count["upgrade"] === 0) {
             target = this.cell.controller;
             workType = "upgrade";
           }
 
-          if (!target && bee.pos.roomName !== this.hive.roomName && count["build"] + count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
+          if (!target && bee.pos.roomName !== this.hive.roomName && this.count["build"] + this.count["repair"] <= Math.ceil(this.targetBeeCount * 0.75)) {
             target = this.hive.findProject(bee, "repairs");
             if (target)
               if (target instanceof Structure)
@@ -242,7 +250,7 @@ export class BootstrapMaster extends Master {
                 workType = "build";
           }
 
-          if (!target) {
+          if (!target && this.count["refill"] < Math.max(2, this.targetBeeCount * 0.35)) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -281,7 +289,9 @@ export class BootstrapMaster extends Master {
           if (ans === ERR_NOT_IN_RANGE)
             bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
 
-          count[workType] += 1;
+          if (!oldTarget)
+            this.count[workType] += 1;
+          countCurrent[workType] += 1;
           bee.target = target.id;
           break;
       }
@@ -289,5 +299,6 @@ export class BootstrapMaster extends Master {
 
     for (const sourceId in sourceTargetingCurrent)
       this.sourceTargeting[sourceId].current = sourceTargetingCurrent[sourceId];
+    this.count = countCurrent;
   }
 }

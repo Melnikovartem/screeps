@@ -744,7 +744,7 @@ export class RoomPlanner {
         let ans = anchorDist(anchor, a, roomName) - anchorDist(anchor, b, roomName);
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        return ans;
+        return ans * (sType === STRUCTURE_ROAD ? -1 : 1);
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }
@@ -814,10 +814,8 @@ export class RoomPlanner {
               targetHits: 0,
               energyCost: constructionSite.progressTotal - constructionSite.progress,
             });
-            /*
-            if (!constructionSite.progress)
-              constructionSite.remove();
-            */
+            // if (!constructionSite.progress)
+            //  constructionSite.remove();
             ++constructions;
           }
         } else if (structure) {

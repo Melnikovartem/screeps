@@ -107,9 +107,23 @@ export class Hive {
       defense: new DefenseCell(this),
     };
 
-    if (this.phase === 0)
+    if (this.phase === 0) {
       this.cells.dev = new DevelopmentCell(this);
-    else {
+      if (Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road)
+        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, (r) => {
+          let pos = new RoomPosition(r.x, r.y, roomName);
+          if (pos.getRangeTo(this.getPos("center")) <= 6)
+            return;
+          let structures = pos.lookFor(LOOK_STRUCTURES);
+          if (structures.filter(s => s.structureType === STRUCTURE_ROAD).length)
+            return;
+          if (structures.length)
+            structures[0].destroy();
+          if (pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
+            return;
+          pos.createConstructionSite(STRUCTURE_ROAD);
+        });
+    } else {
       if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
@@ -277,8 +291,10 @@ export class Hive {
         break;
       case hiveStates.economy:
         if (builderReCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
-          _.forEach(this.annexNames, (annexName) =>
-            add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined)));
+          _.forEach(this.annexNames, (annexName) => {
+            if (Apiary.intel.getInfo(annexName).safePlace)
+              add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined))
+          });
       default:
         add(Apiary.planner.checkBuildings(this.roomName));
     }
