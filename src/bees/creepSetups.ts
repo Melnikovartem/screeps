@@ -37,7 +37,7 @@ export class CreepSetup {
     let moveAmount = (nonMoveCurrent: number) => Math.ceil(nonMoveCurrent * moveMax / nonMoveMax - ROUNDING_ERROR)
     let addPattern = (pattern: BodyPartConstant[]) => {
       if (nonMove + pattern.length <= nonMoveMax)
-        _.forEach(pattern, (s) => {
+        _.forEach(pattern, s => {
 
           if (body.length >= MAX_CREEP_SIZE)
             return;
@@ -187,7 +187,7 @@ export const setups = {
 /*
 let printSetup = (s: CreepSetup, energy = Infinity) => {
   let bbody = s.getBody(energy).body;
-  console .log(s.name, ":", bbody.length, bbody.filter((s) => s != MOVE).length)
+  console .log(s.name, ":", bbody.length, bbody.filter(s => s != MOVE).length)
   return bbody;
 }
 

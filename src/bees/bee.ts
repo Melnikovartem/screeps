@@ -216,7 +216,7 @@ export class Bee {
 
   repairRoadOnMove(ans: number = ERR_NOT_IN_RANGE) {
     if (ans === ERR_NOT_IN_RANGE)
-      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), (s) => s.hits < s.hitsMax)[0]);
+      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax)[0]);
     return ans;
   }
 
@@ -255,7 +255,7 @@ export class Bee {
       let pos = new RoomPosition(+x, +y, roomName);
       let creepIn: Creep | undefined;
       if (roomName in Game.rooms)
-        creepIn = pos.lookFor(LOOK_CREEPS).filter((c) => c.my)[0];
+        creepIn = pos.lookFor(LOOK_CREEPS).filter(c => c.my)[0];
       let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
       let bee;
       if (creepIn) {
@@ -267,7 +267,7 @@ export class Bee {
           if (bee.ref === creepIn.name)
             continue;
           let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
-          let open = beeIn.pos.getOpenPositions(true).filter((p) => !moveMap[p.roomName + "_" + p.x + "_" + p.y])
+          let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y])
           if (!open.length)
             continue;
           let pp = open.reduce((prev, curr) => curr.getRangeTo(target) < prev.getRangeTo(target) ? curr : prev);

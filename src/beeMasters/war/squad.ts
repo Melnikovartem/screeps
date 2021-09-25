@@ -55,7 +55,7 @@ export class SquadMaster extends SwarmMaster {
         this.wish(tankOrder, this.ref + "_knight");
       }
       if (this.knights.length !== 2 || this.healers.length !== 2)
-        _.forEach(this.activeBees, (bee) => bee.state = beeStates.refill);
+        _.forEach(this.activeBees, bee => bee.state = beeStates.refill);
     }
   }
 
@@ -65,7 +65,7 @@ export class SquadMaster extends SwarmMaster {
     let healer1: Bee | undefined = this.healers[0];
     let healer2: Bee | undefined = this.healers[1];
 
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.refill)
         bee.goRest(this.hive.pos);
     });
@@ -83,7 +83,7 @@ export class SquadMaster extends SwarmMaster {
       }
     }
 
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       // if reconstructed while they all spawned, but not met yet or one was lost
       if (bee.state === beeStates.chill && this.beesAmount < 4)
         bee.state = beeStates.work;
@@ -93,8 +93,8 @@ export class SquadMaster extends SwarmMaster {
 
     if (knight1 && knight1.state === beeStates.work && !this.waitingForBees) {
       let roomInfo = Apiary.intel.getInfo(knight1.pos.roomName);
-      let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
-        && (knight1!.pos.getRangeTo(e.object) < 4 || knight1!.pos.roomName === this.order.pos.roomName))), (e) => e.object);
+      let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
+        && (knight1!.pos.getRangeTo(e.object) < 4 || knight1!.pos.roomName === this.order.pos.roomName))), e => e.object);
       let target = knight1.pos.findClosest(enemies);
       let nextPos: TravelToReturnData = {};
       let newPos: RoomPosition | undefined;
@@ -102,13 +102,13 @@ export class SquadMaster extends SwarmMaster {
 
       needsHealing = knight1.hits < knight1.hitsMax || (knight2 && knight2.hits < knight2.hitsMax);
       if (!target)
-        target = this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
+        target = this.order.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
 
       if (target) {
         ans1 = knight1.attack(target, { returnData: nextPos, ignoreCreeps: false });
         if (knight2) {
           if (nextPos.nextPos)
-            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), (p) => knight2!.pos.isNearTo(p)
+            newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(), p => knight2!.pos.isNearTo(p)
               && (!healer1 || knight1!.pos !== p))[0];
           if (newPos) {
             ans2 = ERR_NOT_IN_RANGE;
@@ -122,7 +122,7 @@ export class SquadMaster extends SwarmMaster {
         if (knight2) {
           if (nextPos.nextPos)
             newPos = _.filter((<RoomPosition>nextPos.nextPos).getOpenPositions(),
-              (p) => knight2!.pos.isNearTo(p) && (!healer1 || knight1!.pos !== p))[0];
+              p => knight2!.pos.isNearTo(p) && (!healer1 || knight1!.pos !== p))[0];
           if (newPos) {
             ans2 = ERR_NOT_IN_RANGE;
             knight2.creep.move(knight2.pos.getDirectionTo(newPos));
@@ -135,9 +135,9 @@ export class SquadMaster extends SwarmMaster {
       this.healerFollow(healer2, knight2 ? ans2 : ans1, (knight2 ? knight2 : knight1).pos);
     }
 
-    _.forEach(this.healers, (healer) => {
+    _.forEach(this.healers, healer => {
       let healed = false;
-      _.forEach(this.healers.concat(this.knights), (b) => {
+      _.forEach(this.healers.concat(this.knights), b => {
         if (!healed && b.hits < b.hitsMax * 0.75)
           if (healer.pos.isNearTo(b!))
             healed = healer.heal(b) === OK;
@@ -145,7 +145,7 @@ export class SquadMaster extends SwarmMaster {
             healed = healer.rangedHeal(b) === OK;
       });
       if (!!healed)
-        _.forEach(this.healers.concat(this.knights), (b) => {
+        _.forEach(this.healers.concat(this.knights), b => {
           if (!healed && b.hits < b.hitsMax)
             if (healer.pos.isNearTo(b!))
               healed = healer.heal(b) === OK;
@@ -154,7 +154,7 @@ export class SquadMaster extends SwarmMaster {
         });
       if (!healed) {
         let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, knight1 ? 3 : 10),
-          (bee) => bee.hits < bee.hitsMax));
+          bee => bee.hits < bee.hitsMax));
         if (healingTarget) {
           if (healer.pos.isNearTo(healingTarget))
             healer.heal(healingTarget);

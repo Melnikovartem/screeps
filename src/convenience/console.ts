@@ -121,7 +121,7 @@ export class CustomConsole {
       if (roomName)
         hive = Apiary.hives[roomName];
       else {
-        let validHives = _.filter(Apiary.hives, (h) => h.cells.storage && h.cells.storage.terminal && validateTerminal(h.cells.storage.terminal));
+        let validHives = _.filter(Apiary.hives, h => h.cells.storage && h.cells.storage.terminal && validateTerminal(h.cells.storage.terminal));
         hive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(100, prev.roomName, order!.roomName!) >
           Game.market.calcTransactionCost(100, curr.roomName, order!.roomName!) ? curr : prev);
       }
@@ -160,7 +160,7 @@ export class CustomConsole {
     let targetPrice = -1;
     let sum = 0, count = 0;
     let anchor = new RoomPosition(25, 25, hiveName);
-    let orders = Game.market.getAllOrders((order) => {
+    let orders = Game.market.getAllOrders(order => {
       if (order.type === ORDER_BUY || order.resourceType !== resource || !order.roomName)
         return false;
       if (targetPrice < order.price)
@@ -171,7 +171,7 @@ export class CustomConsole {
     })
     targetPrice = Math.min(targetPrice, (sum / count) * 1.2);
     if (orders.length)
-      orders = orders.filter((order) => order.price < targetPrice * 0.9);
+      orders = orders.filter(order => order.price < targetPrice * 0.9);
     if (orders.length) {
       let order = orders.reduce((prev, curr) => prev.price > curr.price ? curr : prev);
       return this.completeOrder(order.id, hiveName, amount);
@@ -204,7 +204,7 @@ export class CustomConsole {
       }
     if (create) {
       let pos = [new RoomPosition(cell.pos.x, cell.pos.y + 1, cell.pos.roomName), new RoomPosition(cell.pos.x, cell.pos.y - 1, cell.pos.roomName)]
-        .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0];
+        .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0];
       if (pos)
         pos.createFlag(ref, COLOR_GREY, COLOR_CYAN);
       else
@@ -239,7 +239,7 @@ export class CustomConsole {
     }
     let contr = Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
     let pos = contr && [new RoomPosition(contr.x, contr.y + 1, roomName), new RoomPosition(contr.x, contr.y - 1, roomName)]
-      .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0];
+      .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0];
     if (pos)
       pos.createFlag("change_" + roomName + "_" + makeId(4), COLOR_WHITE, COLOR_CYAN);
     else
@@ -249,12 +249,12 @@ export class CustomConsole {
   }
 
   printHives() {
-    return _.map(Apiary.hives, (o) => o.print).join('\n');
+    return _.map(Apiary.hives, o => o.print).join('\n');
   }
 
   printByHive(obj: { print: string, hive: { roomName: string } }[]) {
-    return _.compact(_.map(Apiary.hives, (h) => {
-      let objHive = _.map(_.filter(obj, (o) => o.hive.roomName === h.roomName), (o) => o.print);
+    return _.compact(_.map(Apiary.hives, h => {
+      let objHive = _.map(_.filter(obj, o => o.hive.roomName === h.roomName), o => o.print);
       if (!objHive.length)
         return;
       return `${h.print}:\n${objHive.join('\n')}\n----------`;
@@ -262,8 +262,8 @@ export class CustomConsole {
   }
 
   printByMasters(obj: { print: string, master?: { ref: string } }[]) {
-    return _.compact((<(Master | undefined)[]>_.map(Apiary.masters).concat([undefined])).map((m) => {
-      let objHive = _.map(_.filter(obj, (o) => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)), (o) => o.print);
+    return _.compact((<(Master | undefined)[]>_.map(Apiary.masters).concat([undefined])).map(m => {
+      let objHive = _.map(_.filter(obj, o => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)), o => o.print);
       if (!objHive.length)
         return;
       return `${m ? m.print : "None"}:\n${objHive.join('\n')}\n----------`;
@@ -271,22 +271,22 @@ export class CustomConsole {
   }
 
   printMasters(ref?: string) {
-    let obj = _.filter(Apiary.masters, (m) => !ref || m.hive.roomName === ref || m.ref.includes(ref));
+    let obj = _.filter(Apiary.masters, m => !ref || m.hive.roomName === ref || m.ref.includes(ref));
     return this.printByHive(obj);
   }
 
   printOrders(ref?: string) {
-    let obj = _.filter(Apiary.orders, (o) => !ref || o.hive.roomName === ref || o.ref.includes(ref));
+    let obj = _.filter(Apiary.orders, o => !ref || o.hive.roomName === ref || o.ref.includes(ref));
     return this.printByHive(obj);
   }
 
   printBees(ref?: string, byHives: boolean = false) {
-    let bees = _.filter(Apiary.bees, (b) => !ref || b.creep.memory.refMaster.includes(ref));
+    let bees = _.filter(Apiary.bees, b => !ref || b.creep.memory.refMaster.includes(ref));
     if (byHives) {
-      let obj = _.map(bees, (b) => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
+      let obj = _.map(bees, b => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
       return this.printByHive(obj);
     }
-    let obj = _.map(bees, (b) => { return { print: b.print, master: b.master } });
+    let obj = _.map(bees, b => { return { print: b.print, master: b.master } });
     return this.printByMasters(obj);
   }
 
@@ -296,10 +296,10 @@ export class CustomConsole {
 
   printSpawnOrders(hiveName?: string) {
     // i know this is messy, but this is print so it is ok
-    return _.map(_.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName), (h) => `${h.print}: \n${
+    return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
-        (o) => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')
+        o => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')
       } \n`).join('\n');
   }
 }

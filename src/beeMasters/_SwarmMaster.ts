@@ -38,7 +38,7 @@ export abstract class SwarmMaster extends Master {
   newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.memory.born + 1 === Game.time)
-      this.spawned += 1;
+      ++this.spawned;
     this.order.flag.memory.info = this.spawned;
   }
 }

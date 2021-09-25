@@ -28,7 +28,7 @@ export class ExcavationCell extends Cell {
     if (!this.resourceCells[resource.id]) {
       if (!this.roomResources[resource.pos.roomName])
         this.roomResources[resource.pos.roomName] = 0;
-      this.roomResources[resource.pos.roomName] += 1;
+      ++this.roomResources[resource.pos.roomName];
       this.resourceCells[resource.id] = new ResourceCell(this.hive, resource, this);
       this.shouldRecalc = true;
     }
@@ -36,7 +36,7 @@ export class ExcavationCell extends Cell {
 
   update() {
     this.quitefullContainers = [];
-    _.forEach(this.resourceCells, (cell) => {
+    _.forEach(this.resourceCells, cell => {
       safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
@@ -51,7 +51,7 @@ export class ExcavationCell extends Cell {
   };
 
   run() {
-    _.forEach(this.resourceCells, (cell) => {
+    _.forEach(this.resourceCells, cell => {
       safeWrap(() => { cell.run() }, cell.print + " run");
     });
   };

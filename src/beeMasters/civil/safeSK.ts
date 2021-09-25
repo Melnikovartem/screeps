@@ -60,7 +60,7 @@ export class SKMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.pos.roomName !== this.order.pos.roomName) {
         let ans: number = OK;
         let enemy = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3)[0];
@@ -83,7 +83,7 @@ export class SKMaster extends SwarmMaster {
 
       if (ticksToSpawn(lair) < 10) {
         let runaway = lair.pos.findInRange(FIND_MY_CREEPS, 6);
-        _.forEach(runaway, (b) => {
+        _.forEach(runaway, b => {
           let bee = Apiary.bees[b.name];
           if (bee && bee.master && bee.master.ref.includes("ResourceCell_"))
             bee.state = beeStates.flee;
@@ -100,7 +100,7 @@ export class SKMaster extends SwarmMaster {
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
       else {
-        let healingTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_MY_CREEPS, 3).filter((b) => b.hits < b.hitsMax));
+        let healingTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_MY_CREEPS, 3).filter(b => b.hits < b.hitsMax));
         if (healingTarget)
           if (bee.pos.isNearTo(healingTarget))
             bee.heal(healingTarget);

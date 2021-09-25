@@ -46,7 +46,7 @@ export class DupletMaster extends SwarmMaster {
     }
 
     if (this.order.pos.roomName in Game.rooms) {
-      this.target = <StructurePowerBank | undefined>this.order.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0];
+      this.target = <StructurePowerBank | undefined>this.order.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
       if (!this.target) {
         let res = this.order.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
@@ -94,7 +94,7 @@ export class DupletMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.chill)
         bee.goRest(this.hive.pos);
     });
@@ -115,9 +115,9 @@ export class DupletMaster extends SwarmMaster {
       if (knight && knight.state === beeStates.work) {
         let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
         let knightPos = knight.pos;
-        let enemies = _.map(_.filter(roomInfo.enemies, (e) => (e.dangerlvl > 3
-          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.order.pos.roomName))), (e) => e.object);
-        if (knight.pos.roomName === this.order.pos.roomName && this.target && !enemies.filter((e) => e.pos.getRangeTo(this.order) < 6).length)
+        let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
+          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.order.pos.roomName))), e => e.object);
+        if (knight.pos.roomName === this.order.pos.roomName && this.target && !enemies.filter(e => e.pos.getRangeTo(this.order) < 6).length)
           enemies = enemies.concat(this.target);
 
         let target = knight.pos.findClosest(enemies);
@@ -144,7 +144,7 @@ export class DupletMaster extends SwarmMaster {
             healer.rangedHeal(knight);
         } else {
           let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, knight ? 3 : 10),
-            (bee) => bee.hits < bee.hitsMax));
+            bee => bee.hits < bee.hitsMax));
           if (healingTarget) {
             if (healer.pos.isNearTo(healingTarget))
               healer.heal(healingTarget);

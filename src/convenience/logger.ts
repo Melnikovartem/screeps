@@ -111,7 +111,7 @@ export class Logger {
         let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates)
           .sort((a, b) => +b - +a);
         let j = sortedKeys.length - 10;
-        _.some(sortedKeys, (i) => {
+        _.some(sortedKeys, i => {
           if (--j <= 0) return true;
           delete Memory.log.hives[key].loggedStates[+i];
           return false;
@@ -120,7 +120,7 @@ export class Logger {
         sortedKeys = Object.keys(Memory.log.hives[key].spawns)
           .sort((a, b) => Memory.log.hives[key].spawns[b].time - Memory.log.hives[key].spawns[a].time);
         j = sortedKeys.length - 10;
-        _.some(sortedKeys, (i) => {
+        _.some(sortedKeys, i => {
           if (--j <= 0) return true;
           delete Memory.log.hives[key].spawns[i];
           return false;
@@ -141,7 +141,7 @@ export class Logger {
       if (Object.keys(Memory.log.orders).length > 50) {
         let sortedKeys = Object.keys(Memory.log.orders).sort((a, b) => Memory.log.orders[b].time - Memory.log.orders[a].time);
         let j = sortedKeys.length - 25;
-        _.some(sortedKeys, (i) => {
+        _.some(sortedKeys, i => {
           if (--j <= 0) return true;
           if (Memory.log.orders[i].destroyTime !== -1)
             delete Memory.log.orders[i];
@@ -153,7 +153,7 @@ export class Logger {
         if (Object.keys(Memory.log.crashes).length > 100) {
           let sortedKeys = Object.keys(Memory.log.crashes).sort((a, b) => Memory.log.crashes[b].time - Memory.log.crashes[a].time);
           let j = sortedKeys.length - 25;
-          _.some(sortedKeys, (i) => {
+          _.some(sortedKeys, i => {
             if (--j <= 0) return true;
             delete Memory.log.crashes[i];
             return false;
@@ -189,7 +189,7 @@ export class Logger {
 
       let minerNum = 0;
       let haulerNum = 0;
-      _.forEach(hive.cells.excavation!.resourceCells, (cell) => {
+      _.forEach(hive.cells.excavation!.resourceCells, cell => {
         if (cell.resourceType === RESOURCE_ENERGY) {
           minerNum++;
           if (!cell.link) haulerNum++;
@@ -199,7 +199,7 @@ export class Logger {
       minerExp /= Math.max(minerNum, 1);
       annexExp /= hive.annexNames.length;
 
-      _.forEach(excavation.resourceCells, (cell) => {
+      _.forEach(excavation.resourceCells, cell => {
         if (cell.resourceType === RESOURCE_ENERGY) {
           let ref = "mining_" + cell.resource.id.slice(cell.resource.id.length - 4);
           ans[ref] = {
@@ -222,7 +222,7 @@ export class Logger {
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
 
     type civilRoles = "queen" | "manager" | "claimer";
-    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], (s) => getRate("spawn_" + setupsNames[s])) };
+    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], s => getRate("spawn_" + setupsNames[s])) };
 
     return ans;
   }

@@ -83,13 +83,13 @@ export class UpgraderMaster extends Master {
 
   run() {
     if (this.boost)
-      _.forEach(this.bees, (bee) => {
+      _.forEach(this.bees, bee => {
         if (bee.state === beeStates.boosting)
           if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
             bee.state = beeStates.chill;
       });
 
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting)
         return;
       if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > 6000

@@ -28,14 +28,14 @@ export class PickupMaster extends SwarmMaster {
     let target: Tombstone | Ruin | Resource | StructureStorage | undefined;
     let amount = 0;
     if (this.order.pos.roomName in Game.rooms) {
-      target = this.order.pos.lookFor(LOOK_RUINS).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+      target = this.order.pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
       if (!target)
-        target = this.order.pos.lookFor(LOOK_TOMBSTONES).filter((r) => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+        target = this.order.pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
       if (!target)
-        target = this.order.pos.lookFor(LOOK_RESOURCES).filter((r) => r.amount > 0)[0];
+        target = this.order.pos.lookFor(LOOK_RESOURCES).filter(r => r.amount > 0)[0];
       if (!target)
         target = <StructureStorage>this.order.pos.lookFor(LOOK_STRUCTURES)
-          .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+          .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
 
       if (target)
         if (target instanceof Resource)
@@ -48,7 +48,7 @@ export class PickupMaster extends SwarmMaster {
         target = room.find(FIND_DROPPED_RESOURCES)[0];
         if (!target)
           target = <StructureStorage>room.find(FIND_STRUCTURES)
-            .filter((s) => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+            .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
         if (!target && this.order.pos.roomName !== this.hive.roomName)
           target = this.hive.room.find(FIND_DROPPED_RESOURCES)[0];
         if (target)
@@ -65,7 +65,7 @@ export class PickupMaster extends SwarmMaster {
 
     let target = this.getTarget().target;
 
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.store.getFreeCapacity() === 0)
         bee.state = beeStates.fflush;
       else if (bee.store.getUsedCapacity() === 0)

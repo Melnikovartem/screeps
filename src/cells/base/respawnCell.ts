@@ -28,15 +28,15 @@ export class RespawnCell extends Cell {
       this.master = new QueenMaster(this);
 
     // find free spawners
-    this.freeSpawns = _.filter(_.map(this.spawns), (structure) => !structure.spawning);
+    this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
     /* // remove
     let targets: (StructureSpawn | StructureExtension)[] = _.map(this.spawns);
-    targets = _.filter(targets.concat(_.map(this.extensions)), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    targets = _.filter(targets.concat(_.map(this.extensions)), structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     let storageCell = this.hive.cells.storage;
     if (storageCell)
-      _.forEach(targets, (s) => storageCell!.requestFromStorage(s.structureType + "_" + s.id, s, 0, RESOURCE_ENERGY, 10000));
+      _.forEach(targets, s => storageCell!.requestFromStorage(s.structureType + "_" + s.id, s, 0, RESOURCE_ENERGY, 10000));
     */
   };
 
@@ -97,7 +97,7 @@ export class RespawnCell extends Cell {
         break;
     }
     if (this.hive.phase === 0) // renewing Boost creeps if they are better than we can spawn
-      _.forEach(this.freeSpawns, (s) => {
+      _.forEach(this.freeSpawns, s => {
         let creep = s.pos.findInRange(FIND_MY_CREEPS, 1).filter(c => c.body.length > Math.floor(this.hive.room.energyCapacityAvailable / 200) * 3)[0];
         if (creep && creep.ticksToLive && CREEP_LIFE_TIME - creep.ticksToLive >= 200)
           s.renewCreep(creep);

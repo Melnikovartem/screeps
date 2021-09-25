@@ -22,7 +22,7 @@ export class UpgradeCell extends Cell {
 
     this.controller = controller;
 
-    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
+    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
 
     if (this.link)
       this.pos = this.link.pos;
@@ -57,7 +57,7 @@ export class UpgradeCell extends Cell {
   update() {
     super.update();
     if (!this.link && Game.time % 30 === 7)
-      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), (structure) => structure.structureType === STRUCTURE_LINK)[0];
+      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
 
     if (!this.master.beesAmount)
       return;

@@ -28,7 +28,7 @@ export class DowngradeMaster extends SwarmMaster {
   run() {
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
 
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (!bee.pos.isNearTo(this.order.pos))
         bee.goTo(this.order.pos);
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {

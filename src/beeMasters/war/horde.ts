@@ -76,7 +76,7 @@ export class HordeMaster extends SwarmMaster {
 
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.work:
           if (bee.pos.roomName !== this.order.pos.roomName)

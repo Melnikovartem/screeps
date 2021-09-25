@@ -79,7 +79,7 @@ export class ObserveCell extends Cell {
     let amountNeeded = power.hits / dmgPerDupl;
     if (Math.floor(amountNeeded / open) * CREEP_LIFE_TIME > power.ticksToDecay)
       return;
-    let flags = power.pos.lookFor(LOOK_FLAGS).filter((f) => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_YELLOW).length;
+    let flags = power.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_YELLOW).length;
     if (!flags) {
       let name = power.pos.createFlag("power_" + power.id, COLOR_ORANGE, COLOR_YELLOW);
       if (typeof name === "string")

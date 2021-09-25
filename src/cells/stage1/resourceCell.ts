@@ -34,14 +34,14 @@ export class ResourceCell extends Cell {
 
   updateStructure() {
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
-      (structure) => structure.structureType === STRUCTURE_CONTAINER)[0];
+      structure => structure.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
-        (structure) => structure.structureType === STRUCTURE_LINK)[0];
+        structure => structure.structureType === STRUCTURE_LINK)[0];
       this.operational = this.container || this.link ? true : false;
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
-        (structure) => structure.structureType === STRUCTURE_EXTRACTOR)[0];
+        structure => structure.structureType === STRUCTURE_EXTRACTOR)[0];
       this.operational = this.extractor && this.container ? true : false;
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
       this.resourceType = this.resource.mineralType;
@@ -59,7 +59,7 @@ export class ResourceCell extends Cell {
       if (this.link)
         posNear = this.link.pos.getOpenPositions(true);
       this.pos = _.filter(this.resource.pos.getOpenPositions(true),
-        (p) => _.filter(posNear, (pp) => pp.x === p.x && pp.y === p.y).length > 0)[0];
+        p => _.filter(posNear, pp => pp.x === p.x && pp.y === p.y).length > 0)[0];
       if (!this.pos)
         this.pos = this.resource.pos;
     }

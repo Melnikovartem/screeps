@@ -52,7 +52,7 @@ export class BuilderMaster extends Master {
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     if (!storage)
       return;
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)

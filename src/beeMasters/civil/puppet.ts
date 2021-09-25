@@ -20,6 +20,6 @@ export class PuppetMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => bee.goRest(this.order.pos));
+    _.forEach(this.activeBees, bee => bee.goRest(this.order.pos));
   }
 }

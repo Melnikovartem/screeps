@@ -23,7 +23,7 @@ export class HaulerMaster extends Master {
     let accumRoadTime = 0; // roadTime * minePotential
     let energyCap = this.hive.room.energyCapacityAvailable;
     if (this.hive.cells.storage)
-      _.forEach(this.cell.resourceCells, (cell) => {
+      _.forEach(this.cell.resourceCells, cell => {
         if (cell.container && !cell.link
           && !(this.hive.cells.dev && cell.pos.roomName === this.hive.roomName && cell.resourceType === RESOURCE_ENERGY)
           && !(cell.resourceType !== RESOURCE_ENERGY && !cell.extractor)) {
@@ -50,12 +50,12 @@ export class HaulerMaster extends Master {
     if ((<Store<ResourceConstant, false>>this.cell.dropOff.store).getFreeCapacity() <= 0)
       return;
 
-    _.forEach(this.cell.quitefullContainers, (container) => {
+    _.forEach(this.cell.quitefullContainers, container => {
       let target = this.targetMap[container.id];
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.bees, (b) => b.state === beeStates.chill && Game.time - b.memory.born > 100));
+      let bee = container.pos.findClosest(_.filter(this.bees, b => b.state === beeStates.chill && Game.time - b.memory.born > 100));
       if (bee) {
         bee.state = beeStates.refill;
         bee.target = container.id;
@@ -80,7 +80,7 @@ export class HaulerMaster extends Master {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.refill && bee.store.getFreeCapacity() === 0)
         bee.state = beeStates.work;
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)

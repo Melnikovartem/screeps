@@ -53,7 +53,7 @@ export class Visuals {
         this.visualizeEnergy(name);
 
         this.caching[name] = new RoomVisual(name).export();
-        _.forEach(Apiary.hives[name].annexNames, (annex) => {
+        _.forEach(Apiary.hives[name].annexNames, annex => {
           new RoomVisual(annex).import(this.caching![name]);
         });
       }
@@ -62,7 +62,7 @@ export class Visuals {
       for (const name in Apiary.hives)
         if (this.caching[name]) {
           new RoomVisual(name).import(this.caching[name]);
-          _.forEach(Apiary.hives[name].annexNames, (annex) => {
+          _.forEach(Apiary.hives[name].annexNames, annex => {
             new RoomVisual(annex).import(this.caching![name]);
           });
         }
@@ -210,7 +210,7 @@ export class Visuals {
   }
 
   statsBattle(hiveName: string): string[][] {
-    let orders = _.filter(Apiary.orders, (o) => o.hive.roomName === hiveName && o.flag.color !== COLOR_PURPLE && o.master);
+    let orders = _.filter(Apiary.orders, o => o.hive.roomName === hiveName && o.flag.color !== COLOR_PURPLE && o.master);
     let length = orders.length;
     const MAX_STATS = 4;
     let ans: string[][] = [];
@@ -222,7 +222,7 @@ export class Visuals {
       orders = orders.filter(o => o.master && o.master.activeBees.length);
     if (orders.length > MAX_STATS)
       orders = orders.slice(0, MAX_STATS);
-    _.forEach(orders, (order) => {
+    _.forEach(orders, order => {
       let roomInfo = Apiary.intel.getInfo(order.pos.roomName);
       let info = [order.ref, " " + order.pos.roomName, " " + roomInfo.dangerlvlmax, " " + roomInfo.enemies.length];
       if (order.master) {
@@ -283,14 +283,14 @@ export class Visuals {
     cell = hive.cells.excavation;
     if (cell) {
       ans.push(["excav", !cell.quitefullContainers.length ? "" :
-        ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, (c) => c.container && c.operational && !c.link ? 1 : 0)}`,
+        ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, c => c.container && c.operational && !c.link ? 1 : 0)}`,
         this.getBeesAmount(cell.master)]);
 
       let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
       let all = 0;
-      _.forEach(cell.resourceCells, (rcell) => {
-        all += 1;
+      _.forEach(cell.resourceCells, rcell => {
+        ++all;
         operational += rcell.operational ? 1 : 0;
         if (rcell.master && rcell.perSecondNeeded) {
           stats.beesAmount += rcell.master.beesAmount;
@@ -301,14 +301,14 @@ export class Visuals {
       ans.push(["resource", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
 
-    let annexOrders = _.filter(Apiary.orders, (o) => o.hive === hive && /^annex_/.exec(o.ref))
+    let annexOrders = _.filter(Apiary.orders, o => o.hive === hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {
       let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let statsPuppet = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let operational = 0;
       let all = 0;
-      _.forEach(annexOrders, (o) => {
-        all += 1;
+      _.forEach(annexOrders, o => {
+        ++all;
         operational += o.acted ? 1 : 0;
         if (o.master)
           if (o.master.maxSpawns === Infinity) {
@@ -348,7 +348,7 @@ export class Visuals {
       }
       if (Object.keys(labCell.boostRequests).length) {
         let boosts: { [id: string]: { [id: string]: number } } = {};
-        _.forEach(labCell.boostRequests, (rr) => _.forEach(rr, (r) => {
+        _.forEach(labCell.boostRequests, rr => _.forEach(rr, r => {
           if (!r.amount || !r.res)
             return;
           if (!boosts[r.type])
@@ -420,7 +420,7 @@ export class Visuals {
       label = strings.shift()![0];
 
     let widths: number[] = [];
-    _.forEach(strings, (s) => {
+    _.forEach(strings, s => {
       for (let i = 0; i < s.length; ++i) {
         if (!widths[i])
           widths[i] = 0;
@@ -441,7 +441,7 @@ export class Visuals {
     if (snap === "bottom")
       strings.reverse();
 
-    _.forEach(strings, (s) => {
+    _.forEach(strings, s => {
       let tab = pad * 2;
       for (const i in s) {
         vis.text(s[i], xMin + tab, yMin + height, this.textStyle(style));

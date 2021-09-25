@@ -18,16 +18,16 @@ export class ClaimerMaster extends SwarmMaster {
       };
 
       this.wish(order);
-      this.spawned += 1;
+      ++this.spawned;
     }
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.pos.roomName !== this.order.pos.roomName)
         bee.goTo(this.order.pos);
       else {
-        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType === STRUCTURE_CONTROLLER)[0];
+        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner) {
           if (bee.claimController(controller) === OK)
             bee.pos.createFlag("boost_" + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);

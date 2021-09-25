@@ -38,15 +38,15 @@ export class StorageCell extends Cell {
     this.storage = storage;
 
     let links = <StructureLink[]>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      (structure) => structure.structureType === STRUCTURE_LINK);
+      structure => structure.structureType === STRUCTURE_LINK);
 
-    _.forEach(links, (l) => {
+    _.forEach(links, l => {
       this.links[l.id] = l;
       this.linksState[l.id] = "idle";
     });
 
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      (structure) => structure.structureType === STRUCTURE_TERMINAL)[0];
+      structure => structure.structureType === STRUCTURE_TERMINAL)[0];
 
     this.pos = this.hive.getPos("queen2");
     this.master = new ManagerMaster(this);
@@ -91,7 +91,7 @@ export class StorageCell extends Cell {
   }
 
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
-    let links = _.filter(this.links, (l) => !sendIn || this.linksState[l.id] === "idle").sort(
+    let links = _.filter(this.links, l => !sendIn || this.linksState[l.id] === "idle").sort(
       (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1));
     if (sendIn || !links.length)
       return links[0];
@@ -209,7 +209,7 @@ export class StorageCell extends Cell {
     if (!this.terminal)
       return 0;
     let targetPrice = -1;
-    let orders = Game.market.getAllOrders((order) => {
+    let orders = Game.market.getAllOrders(order => {
       if (order.type === ORDER_SELL || order.resourceType !== res)
         return false;
       if (targetPrice < order.price)
@@ -217,7 +217,7 @@ export class StorageCell extends Cell {
       return this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25;
     });
     if (orders.length)
-      orders = orders.filter((order) => order.price > targetPrice * 0.9);
+      orders = orders.filter(order => order.price > targetPrice * 0.9);
     if (orders.length) {
       let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
       let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, order.roomName!) / 10000;
@@ -239,7 +239,7 @@ export class StorageCell extends Cell {
     let amoundSend: number = 0;
     if (!this.terminal)
       return amoundSend;
-    let hives = _.filter(Apiary.hives, (h) => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
+    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
       && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[res])
     if (hives.length) {
       let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);

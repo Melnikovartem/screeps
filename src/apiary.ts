@@ -45,7 +45,7 @@ export class _Apiary {
   }
 
   init() {
-    _.forEach(Game.rooms, (room) => {
+    _.forEach(Game.rooms, room => {
       if (room.controller && room.controller.my) {
         this.username = room.controller.owner!.username;
         this.hives[room.name] = new Hive(room.name);
@@ -67,21 +67,21 @@ export class _Apiary {
   update() {
     this.useBucket = Game.cpu.bucket > 1500 || Memory.settings.forceBucket > 0;
     Order.checkFlags();
-    _.forEach(Apiary.orders, (order) => {
+    _.forEach(Apiary.orders, order => {
       if (order)
         safeWrap(() => order.update(), order.print + " update");
     });
 
-    _.forEach(this.hives, (hive) => {
+    _.forEach(this.hives, hive => {
       safeWrap(() => hive.update(), hive.print + " update");
     });
 
     Bee.checkBees();
-    _.forEach(this.bees, (bee) => {
+    _.forEach(this.bees, bee => {
       bee.update();
     });
 
-    _.forEach(this.masters, (master) => {
+    _.forEach(this.masters, master => {
       safeWrap(() => master.update(), master.print + " update");
     });
 
@@ -96,11 +96,11 @@ export class _Apiary {
 
   // run phase
   run() {
-    _.forEach(this.hives, (hive) => {
+    _.forEach(this.hives, hive => {
       safeWrap(() => hive.run(), hive.print + " run");
     });
 
-    _.forEach(this.masters, (master) => {
+    _.forEach(this.masters, master => {
       safeWrap(() => master.run(), master.print + " run");
     });
     Bee.beesMove();

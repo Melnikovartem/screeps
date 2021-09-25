@@ -57,7 +57,7 @@ export class PortalMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       bee.goTo(this.order.pos, { preferHighway: true });
       if (bee.pos.isNearTo(this.order.pos)) {
         let parsed;

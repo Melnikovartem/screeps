@@ -88,7 +88,7 @@ export class LaboratoryCell extends Cell {
   updateProductionLabs() {
     if (this.currentProduction && this.sourceLabs) {
       let ans: StructureLab[] = [];
-      _.forEach(this.laboratories, (l) => {
+      _.forEach(this.laboratories, l => {
         if (this.labsStates[l.id] === "idle" && (!l.mineralType || l.mineralType === this.currentProduction!.res)
           && l.pos.getRangeTo(this.laboratories[this.sourceLabs![0]]) <= 2
           && l.pos.getRangeTo(this.laboratories[this.sourceLabs![1]]) <= 2) {
@@ -135,15 +135,15 @@ export class LaboratoryCell extends Cell {
     }
     let inLabMax;
     if (source)
-      inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"
-        || this.labsStates[l.id] === "production" || this.labsStates[l.id] === "source"), (l) => l.store.getUsedCapacity(res)));
+      inLabMax = Math.max(..._.map(_.filter(this.laboratories, l => this.labsStates[l.id] === "idle"
+        || this.labsStates[l.id] === "production" || this.labsStates[l.id] === "source"), l => l.store.getUsedCapacity(res)));
     else
       if (this.boostLabs[res])
         inLabMax = this.laboratories[this.boostLabs[res]!].store.getUsedCapacity(res);
       else {
-        inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "idle"), (l) => l.store.getUsedCapacity(res)));
+        inLabMax = Math.max(..._.map(_.filter(this.laboratories, l => this.labsStates[l.id] === "idle"), l => l.store.getUsedCapacity(res)));
         if (!inLabMax)
-          inLabMax = Math.max(..._.map(_.filter(this.laboratories, (l) => this.labsStates[l.id] === "production"), (l) => l.store.getUsedCapacity(res)));
+          inLabMax = Math.max(..._.map(_.filter(this.laboratories, l => this.labsStates[l.id] === "production"), l => l.store.getUsedCapacity(res)));
       }
     sum += Math.max(inLabMax, 0);
     return sum;
@@ -194,25 +194,25 @@ export class LaboratoryCell extends Cell {
         if (this.boostLabs[r.res])
           lab = this.laboratories[this.boostLabs[r.res]!];
         else {
-          _.some(this.laboratories, (l) => {
+          _.some(this.laboratories, l => {
             if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
               lab = l;
             return lab;
           });
           if (!lab)
-            _.some(this.laboratories, (l) => {
+            _.some(this.laboratories, l => {
               if (this.labsStates[l.id] === "idle")
                 lab = l;
               return lab;
             });
           if (!lab)
-            _.some(this.laboratories, (l) => {
+            _.some(this.laboratories, l => {
               if (this.labsStates[l.id] === "production" && l.mineralType === r.res)
                 lab = l;
               return lab;
             });
           if (!lab)
-            _.some(this.laboratories, (l) => {
+            _.some(this.laboratories, l => {
               if (this.labsStates[l.id] === "production")
                 lab = l;
               return lab;
@@ -317,7 +317,7 @@ export class LaboratoryCell extends Cell {
           this.labsStates[lab2.id] = "idle";
           this.currentProduction = undefined;
           this.sourceLabs = undefined;
-          _.forEach(this.laboratories, (l) => {
+          _.forEach(this.laboratories, l => {
             if (this.labsStates[l.id] === "production")
               this.labsStates[l.id] = "idle";
           });
@@ -335,7 +335,7 @@ export class LaboratoryCell extends Cell {
 
           let maxDists: { [id: string]: number } = {}
           for (let id in this.laboratories)
-            maxDists[id] = Math.max(..._.map(this.laboratories, (l) => this.laboratories[id].pos.getRangeTo(l)));
+            maxDists[id] = Math.max(..._.map(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l)));
           let comp = (prev: StructureLab, curr: StructureLab, res: BaseMineral | ReactionConstant) => {
             let cond = maxDists[prev.id] - maxDists[curr.id];
             if (cond === 0)
@@ -345,10 +345,10 @@ export class LaboratoryCell extends Cell {
             return cond > 0 ? curr : prev;
           }
 
-          let lab1 = _.filter(this.laboratories, (l) => check(l, res1)).reduce((prev, curr) => comp(prev, curr, res1));
+          let lab1 = _.filter(this.laboratories, l => check(l, res1)).reduce((prev, curr) => comp(prev, curr, res1));
           let lab2;
           if (lab1)
-            lab2 = _.filter(this.laboratories, (l) => check(l, res2) && l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
+            lab2 = _.filter(this.laboratories, l => check(l, res2) && l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
 
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";
@@ -360,7 +360,7 @@ export class LaboratoryCell extends Cell {
           }
         }
 
-        _.forEach(this.laboratories, (lab) => {
+        _.forEach(this.laboratories, lab => {
           if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
             storageCell!.requestFromStorage("lab_" + lab.id, lab, lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
         });
@@ -377,7 +377,7 @@ export class LaboratoryCell extends Cell {
         if (amount >= 5) {
           if (Game.time % this.currentProduction.cooldown * 4 === 0)
             this.updateProductionLabs();
-          let labs = _.filter(this.laboratories, (lab) => this.labsStates[lab.id] === "production"
+          let labs = _.filter(this.laboratories, lab => this.labsStates[lab.id] === "production"
             && !lab.cooldown && lab.store.getFreeCapacity(this.currentProduction!.res) >= 5);
 
           for (let k = 0; k < labs.length && amount >= 5; ++k) {

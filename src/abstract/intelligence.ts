@@ -133,7 +133,7 @@ export class Intel {
         Memory.log.enemies[room.name] = {};
       if (+_.min(Object.keys(Memory.log.enemies[room.name])) + CREEP_LIFE_TIME / 2 < Game.time)
         Memory.log.enemies[room.name][Game.time] = _.map(this.roomInfo[room.name].enemies,
-          (e) => {
+          e => {
             let ans: any = { hits: e.hits, hitsMax: e.hitsMax }
             if (e instanceof Creep) {
               ans.owner = e.owner.username;
@@ -167,7 +167,7 @@ export class Intel {
     roomInfo.lastUpdated = Game.time;
     roomInfo.enemies = [];
 
-    _.forEach(room.find(FIND_HOSTILE_CREEPS), (c) => {
+    _.forEach(room.find(FIND_HOSTILE_CREEPS), c => {
       let dangerlvl: DangerLvl = 2;
       let info = this.getStats(c).max;
       if (info.dmgRange >= 1000 || info.dmgClose > 2000)
@@ -194,7 +194,7 @@ export class Intel {
     });
 
     if (roomInfo.roomState === roomStates.reservedByInvaider || roomInfo.roomState === roomStates.ownedByEnemy || Game.time % 500 === 0)
-      _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => {
+      _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE)
           dangerlvl = 3;
@@ -213,7 +213,7 @@ export class Intel {
           });
       });
 
-    _.forEach(room.find(FIND_FLAGS), (f) => {
+    _.forEach(room.find(FIND_FLAGS), f => {
       if (f.color !== COLOR_GREY || f.secondaryColor !== COLOR_RED)
         return;
       let s = f.pos.lookFor(LOOK_STRUCTURES)[0];
@@ -237,8 +237,8 @@ export class Intel {
     roomInfo.safePlace = roomInfo.dangerlvlmax < 4;
 
     /*
-      let targetFlags = _.filter(room.find(FIND_FLAGS), (flag) => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
-      let flagTargets = _.compact(_.map(targetFlags, (flag) => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
+      let targetFlags = _.filter(room.find(FIND_FLAGS), flag => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
+      let flagTargets = _.compact(_.map(targetFlags, flag => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
     */
   }
 
@@ -264,7 +264,7 @@ export class Intel {
       }
     }
 
-    _.forEach(creep.body, (b) => {
+    _.forEach(creep.body, b => {
       let stat;
       switch (b.type) {
         case RANGED_ATTACK:

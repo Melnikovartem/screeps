@@ -22,7 +22,7 @@ export class DefenseCell extends Cell {
 
   updateNukes() {
     this.nukes = [];
-    _.forEach(this.hive.room.find(FIND_NUKES), (n) => {
+    _.forEach(this.hive.room.find(FIND_NUKES), n => {
       this.nukes.push(n.pos);
       if (this.timeToLand > n.timeToLand)
         this.timeToLand = n.timeToLand;
@@ -38,9 +38,9 @@ export class DefenseCell extends Cell {
     if (!this.nukes.length)
       return [];
     let map: { [id: number]: { [id: number]: number } } = {};
-    _.forEach(this.nukes, (pp) => {
+    _.forEach(this.nukes, pp => {
       let poss = pp.getPositionsInRange(2);
-      _.forEach(poss, (p) => {
+      _.forEach(poss, p => {
         if (!map[p.x])
           map[p.x] = {};
         if (!map[p.x][p.y])
@@ -56,8 +56,8 @@ export class DefenseCell extends Cell {
       for (let y in map[x]) {
         let pos = new RoomPosition(+x, +y, this.hive.roomName);
         let structures = pos.lookFor(LOOK_STRUCTURES)
-        if (structures.filter((s) => CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= 15000).length) {
-          let rampart = structures.filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
+        if (structures.filter(s => CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= 15000).length) {
+          let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
           if (rampart)
             energy = Math.max(map[x][y] - rampart.hits, 0) / 100;
@@ -88,11 +88,11 @@ export class DefenseCell extends Cell {
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
 
-    _.forEach(this.hive.annexNames, (h) => this.checkOrDefendSwarms(h));
+    _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      _.forEach(this.towers, (tower) => {
+      _.forEach(this.towers, tower => {
         if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
           storageCell!.requestFromStorage("tower_" + tower.id, tower, 1, RESOURCE_ENERGY, 1000);
         else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY))
@@ -107,14 +107,14 @@ export class DefenseCell extends Cell {
       if (roomInfo.dangerlvlmax > 1) {
         let enemy = roomInfo.enemies[0].object;
         if (this.notDef(roomName)) {
-          let pos = enemy.pos.getOpenPositions(true).filter((p) => !p.getEnteranceToRoom())[0];
+          let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
           if (!pos)
             pos = enemy.pos;
           let freeSwarms: Order[] = [];
           for (const roomDefName in Apiary.defenseSwarms) {
             let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
             if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, (bee) => bee.hits >= bee.hitsMax * 0.5).length > 0)
+              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5).length > 0)
               freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
           }
           let ans: number | string | undefined;
@@ -157,7 +157,7 @@ export class DefenseCell extends Cell {
   }
 
   notDef(roomName: string) {
-    return !Apiary.defenseSwarms[roomName] && !_.filter(Game.rooms[roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED).length;
+    return !Apiary.defenseSwarms[roomName] && !_.filter(Game.rooms[roomName].find(FIND_FLAGS), f => f.color === COLOR_RED).length;
   }
 
   run() {
@@ -170,14 +170,14 @@ export class DefenseCell extends Cell {
         if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
           this.createDefFlag(roomInfo.enemies[0].object.pos, true);
 
-        if (!_.filter(this.towers, (t) => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
+        if (!_.filter(this.towers, t => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
           if (roomInfo.dangerlvlmax < 5
-            || _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), (f) => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)
+            || _.filter(Game.rooms[this.hive.roomName].find(FIND_FLAGS), f => f.color === COLOR_RED && f.secondaryColor === COLOR_WHITE).length)
             this.checkOrDefendSwarms(this.hive.roomName);
           else
             this.hive.room.controller!.activateSafeMode(); // red button
         } else {
-          _.forEach(this.towers, (tower) => {
+          _.forEach(this.towers, tower => {
             let closest = Apiary.intel.getEnemy(tower)!;
             if (roomInfo.dangerlvlmax < 6) {
               if (closest.pos.getRangeTo(tower) < 10 || closest.pos.getRangeTo(this.hive.pos) < 5

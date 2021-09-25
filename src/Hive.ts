@@ -110,7 +110,7 @@ export class Hive {
     if (this.phase === 0) {
       this.cells.dev = new DevelopmentCell(this);
       if (Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road)
-        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, (r) => {
+        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, r => {
           let pos = new RoomPosition(r.x, r.y, roomName);
           if (pos.getRangeTo(this.getPos("center")) <= 6)
             return;
@@ -135,7 +135,7 @@ export class Hive {
       if (this.phase === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
-        _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
+        _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
           if (s.structureType === STRUCTURE_OBSERVER)
             obeserver = s;
           else if (s.structureType == STRUCTURE_POWER_SPAWN)
@@ -178,7 +178,7 @@ export class Hive {
   }
 
   updateAnnexes(): void {
-    let annexes = <Room[]>_.compact(_.map(this.annexNames, (annexName) => {
+    let annexes = <Room[]>_.compact(_.map(this.annexNames, annexName => {
       let annex = Game.rooms[annexName];
       return annex;
     }));
@@ -187,8 +187,8 @@ export class Hive {
 
   // actually needs to be done only once, but well couple times each reboot is not worst scenario
   markResources() {
-    _.forEach(this.rooms, (room) => {
-      _.forEach(room.find(FIND_SOURCES), (s) => {
+    _.forEach(this.rooms, room => {
+      _.forEach(room.find(FIND_SOURCES), s => {
         if (!Game.flags["mine_" + s.id]) {
           let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
           if (typeof flag === "string")
@@ -197,9 +197,9 @@ export class Hive {
       });
     });
 
-    _.forEach(this.rooms, (room) => {
-      _.forEach(room.find(FIND_MINERALS), (s) => {
-        if (room.name !== this.roomName && !s.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()).length)
+    _.forEach(this.rooms, room => {
+      _.forEach(room.find(FIND_MINERALS), s => {
+        if (room.name !== this.roomName && !s.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()).length)
           return;
         if (!Game.flags["mine_" + s.id]) {
           let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
@@ -215,7 +215,7 @@ export class Hive {
   }
 
   private updateCellData() {
-    _.forEach(this.room.find(FIND_MY_STRUCTURES), (structure) => {
+    _.forEach(this.room.find(FIND_MY_STRUCTURES), structure => {
       if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) === ERR_INVALID_ARGS)
         if (this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN) === ERR_INVALID_ARGS)
           if (this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER) === ERR_INVALID_ARGS)
@@ -241,7 +241,7 @@ export class Hive {
       if (ignore !== "constructions")
         target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
       if (!target && ignore !== "repairs")
-        target = proj.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
+        target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
           if (projects[k].pos.x == proj.pos.x && projects[k].pos.y == proj.pos.y) {
@@ -276,7 +276,7 @@ export class Hive {
     this.sumCost = 0;
     let add = (ans: BuildProject[]) => {
       this.structuresConst = this.structuresConst.concat(ans);
-      this.sumCost += _.sum(ans, (pr) => pr.energyCost);
+      this.sumCost += _.sum(ans, pr => pr.energyCost);
     }
 
     switch (this.state) {
@@ -291,7 +291,7 @@ export class Hive {
         break;
       case hiveStates.economy:
         if (builderReCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
-          _.forEach(this.annexNames, (annexName) => {
+          _.forEach(this.annexNames, annexName => {
             if (Apiary.intel.getInfo(annexName).safePlace)
               add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined))
           });
@@ -308,7 +308,7 @@ export class Hive {
       this.updateStructures();
       if (this.shouldRecalc > 2) {
         this.markResources();
-        _.forEach(this.rooms, (r) => {
+        _.forEach(this.rooms, r => {
           if (!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length)
             Apiary.planner.resetPlanner(r.name);
         });
@@ -324,19 +324,19 @@ export class Hive {
     if ((this.state === hiveStates.nospawn
       || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
       && !Apiary.orders[prefix.boost + this.roomName]) {
-      let validHives = _.filter(Apiary.hives, (h) => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRangeTo(h) < 5 && h.phase > 0)
+      let validHives = _.filter(Apiary.hives, h => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRangeTo(h) < 5 && h.phase > 0)
       if (validHives.length)
         this.pos.createFlag(prefix.boost + this.roomName, COLOR_PURPLE, COLOR_WHITE);
     }
 
 
-    _.forEach(this.cells, (cell) => {
+    _.forEach(this.cells, cell => {
       safeWrap(() => cell.update(), cell.print + " update");
     });
   }
 
   run() {
-    _.forEach(this.cells, (cell) => {
+    _.forEach(this.cells, cell => {
       safeWrap(() => cell.run(), cell.print + " run");
     });
   }

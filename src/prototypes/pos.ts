@@ -74,14 +74,14 @@ RoomPosition.prototype.getPositionsInRange = function(range: number = 1): RoomPo
 }
 
 RoomPosition.prototype.getOpenPositions = function(ignoreCreeps?: boolean, range: number = 1): RoomPosition[] {
-  return _.filter(this.getPositionsInRange(range), (pos) => pos.isFree(ignoreCreeps));
+  return _.filter(this.getPositionsInRange(range), pos => pos.isFree(ignoreCreeps));
 }
 
 RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
   let ans = Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) !== TERRAIN_MASK_WALL;
 
   if (ans && this.roomName in Game.rooms) {
-    ans = !_.filter(this.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_ROAD
+    ans = !_.filter(this.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_ROAD
       && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my || (<StructureRampart>s).isPublic)
       && s.structureType !== STRUCTURE_CONTAINER).length;
 
@@ -221,10 +221,10 @@ RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
 }
 
 let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
-  [FIND_EXIT_TOP]: (pos) => pos.y,
-  [FIND_EXIT_BOTTOM]: (pos) => 49 - pos.y,
-  [FIND_EXIT_LEFT]: (pos) => pos.x,
-  [FIND_EXIT_RIGHT]: (pos) => 49 - pos.x,
+  [FIND_EXIT_TOP]: pos => pos.y,
+  [FIND_EXIT_BOTTOM]: pos => 49 - pos.y,
+  [FIND_EXIT_LEFT]: pos => pos.x,
+  [FIND_EXIT_RIGHT]: pos => 49 - pos.x,
 }
 
 // couple of optimizations to make usability of getClosestByRange, but better

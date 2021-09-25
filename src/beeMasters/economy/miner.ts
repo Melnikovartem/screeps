@@ -44,7 +44,7 @@ export class MinerMaster extends Master {
     let sourceOff = this.cell.resource instanceof Source && this.cell.resource.energy === 0
       || this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0)
       || !this.cell.operational;
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 

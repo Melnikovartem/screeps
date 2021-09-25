@@ -42,18 +42,18 @@ export class Order {
       if (!this.hive)
         this.delete();
     } else {
-      let filter: (h: Hive) => boolean = (h) => h.phase >= 2;;
+      let filter: (h: Hive) => boolean = h => h.phase >= 2;;
       switch (this.flag.color) {
         case COLOR_CYAN:
-          filter = (h) => h.roomName === this.pos.roomName && h.phase >= 1;
+          filter = h => h.roomName === this.pos.roomName && h.phase >= 1;
           break;
         case COLOR_PURPLE:
           if (this.flag.secondaryColor === COLOR_WHITE)
-            filter = (h) => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
+            filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
           if (this.flag.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
-          filter = (_) => true;
+          filter = _ => true;
           break;
       }
       this.hive = this.findHive(filter);
@@ -83,7 +83,7 @@ export class Order {
 
     let bestHive = validHives.pop()!; // if i don't have a single hive wtf am i doing
     let dist = this.pos.getRoomRangeTo(bestHive);
-    _.forEach(validHives, (h) => {
+    _.forEach(validHives, h => {
       let newDist = this.pos.getRoomRangeTo(h);
       if (newDist < dist) {
         dist = newDist;
@@ -95,7 +95,7 @@ export class Order {
 
   uniqueFlag(local: boolean = true) {
     if (this.pos.roomName in Game.rooms) {
-      _.forEach(Game.flags, (f) => {
+      _.forEach(Game.flags, f => {
         if (f.color === this.flag.color && f.secondaryColor === this.flag.secondaryColor
           && (!local || f.pos.roomName === this.pos.roomName) && f.name !== this.ref && Apiary.orders[f.name])
           Apiary.orders[f.name].delete();
@@ -175,7 +175,7 @@ export class Order {
 
             if (this.master instanceof PuppetMaster) {
               let nonClaim = this.master.beesAmount;
-              _.forEach(this.master.bees, (b) => !b.getBodyParts(CLAIM) ? b.creep.memory.refMaster = prefix.master + prefix.swarm + prefix.puppet + this.pos.roomName : --nonClaim);
+              _.forEach(this.master.bees, b => !b.getBodyParts(CLAIM) ? b.creep.memory.refMaster = prefix.master + prefix.swarm + prefix.puppet + this.pos.roomName : --nonClaim);
               if (nonClaim) {
                 let ans = this.pos.createFlag(prefix.puppet + this.pos.roomName, COLOR_GREY, COLOR_PURPLE);
                 if (typeof ans === "string")
@@ -218,7 +218,7 @@ export class Order {
             if (hiveToBoos && this.pos.roomName !== this.hive.roomName) {
               hiveToBoos.bassboost = this.hive;
               hiveToBoos.spawOrders = {};
-              _.forEach(this.hive.cells, (c) => {
+              _.forEach(this.hive.cells, c => {
                 if (c.master)
                   c.master.waitingForBees = 0;
               });
@@ -268,7 +268,7 @@ export class Order {
         this.delete();
         break;
       case COLOR_WHITE:
-        _.forEach(Game.flags, (f) => {
+        _.forEach(Game.flags, f => {
           if (f.color === COLOR_WHITE && f.name !== this.ref && Apiary.orders[f.name])
             Apiary.orders[f.name].delete();
         });
@@ -369,7 +369,7 @@ export class Order {
             this.acted = false;
             if (this.pos.roomName === this.hive.roomName && this.hive.cells.lab) {
               if (!Object.keys(this.hive.cells.lab.synthesizeRequests).length) {
-                let ans = _.some(this.flag.name.split("_"), (res) => this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res));
+                let ans = _.some(this.flag.name.split("_"), res => this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res));
                 if (!ans && this.hive.cells.lab.time !== Game.time)
                   this.delete();
               }
@@ -460,7 +460,7 @@ export class Order {
               let pos = hiveBoosted.room.controller && hiveBoosted.room.controller.pos;
               if (pos) {
                 let newPos = [new RoomPosition(pos.x, pos.y + 1, pos.roomName), new RoomPosition(pos.x, pos.y - 1, pos.roomName)]
-                  .filter((p) => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
+                  .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
                 newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
               }
             }
@@ -477,7 +477,7 @@ export class Order {
             delete Apiary.defenseSwarms[key];
         break;
       case COLOR_WHITE:
-        if (!_.filter(Apiary.orders, (o) => o.flag.color === COLOR_WHITE && o.ref !== this.ref).length)
+        if (!_.filter(Apiary.orders, o => o.flag.color === COLOR_WHITE && o.ref !== this.ref).length)
           for (let name in Apiary.planner.activePlanning)
             delete Apiary.planner.activePlanning[name];
         break;

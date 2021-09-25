@@ -25,12 +25,12 @@ export class DevelopmentCell extends Cell {
 
   addResources() {
     this.handAddedResources = [];
-    _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), (r) => {
+    _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), r => {
       if (r.resourceType === RESOURCE_ENERGY)
         this.handAddedResources.push(r.pos);
     });
 
-    _.forEach(this.hive.room.find(FIND_STRUCTURES), (s) => {
+    _.forEach(this.hive.room.find(FIND_STRUCTURES), s => {
       if (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_LINK)
         this.handAddedResources.push(s.pos);
     });

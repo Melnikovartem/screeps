@@ -183,10 +183,10 @@ export class RoomPlanner {
     }
 
     const extra_modules = {
-      1: () => this.addModule(anchor, EXTRA_VERTICAL, (a) => rotate(a, 0, -3)),
-      5: () => this.addModule(anchor, EXTRA_VERTICAL, (a) => rotate(a, 1, 3)),
-      3: () => this.addModule(anchor, EXTRA_HORIZONTAL, (a) => rotate(a, 1, 0)),
-      7: () => this.addModule(anchor, EXTRA_HORIZONTAL, (a) => rotate(a, 0)),
+      1: () => this.addModule(anchor, EXTRA_VERTICAL, a => rotate(a, 0, -3)),
+      5: () => this.addModule(anchor, EXTRA_VERTICAL, a => rotate(a, 1, 3)),
+      3: () => this.addModule(anchor, EXTRA_HORIZONTAL, a => rotate(a, 1, 0)),
+      7: () => this.addModule(anchor, EXTRA_HORIZONTAL, a => rotate(a, 0)),
     }
     let baseRotationRemove: { [id in number]: ExitConstant } = {
       2: TOP,
@@ -217,9 +217,9 @@ export class RoomPlanner {
       return timeForA - timeForB;
     });
     _.forEach(order, oo => extra_modules[oo]());
-    this.addModule(anchor, BASE, (a) => rotate(a, baseRotation));
+    this.addModule(anchor, BASE, a => rotate(a, baseRotation));
 
-    let futureResourceCells = _.filter(Game.flags, (f) => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
+    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
       let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
       if (ans === 0)
@@ -301,7 +301,7 @@ export class RoomPlanner {
     });
 
 
-    _.forEach(futureResourceCells, (f) => {
+    _.forEach(futureResourceCells, f => {
       jobs.push({
         context: `resource roads for ${f.pos}`,
         func: () => {
@@ -345,7 +345,7 @@ export class RoomPlanner {
           if (typeof ans === "number")
             return ans;
           let poss = contr.pos.getOpenPositions(true);
-          _.forEach(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+          _.forEach(poss, p => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
           poss = contr.pos.getPositionsInRange(3);
           if (!poss.length)
             return ERR_FULL;
@@ -603,9 +603,9 @@ export class RoomPlanner {
 
     let lastPath = path.pop()!;
     if (addRoads)
-      _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, STRUCTURE_ROAD));
+      _.forEach(path, pos => this.addToPlan(pos, exit!.roomName, STRUCTURE_ROAD));
     else
-      _.forEach(path, (pos) => this.addToPlan(pos, exit!.roomName, null));
+      _.forEach(path, pos => this.addToPlan(pos, exit!.roomName, null));
 
     // console. log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
     exit = new RoomPosition(lastPath.x, lastPath.y, exit.roomName);
@@ -663,13 +663,13 @@ export class RoomPlanner {
       context: "adding module",
       func: () => {
         this.activePlanning[anchor.roomName].freeSpaces = this.activePlanning[anchor.roomName].freeSpaces
-          .concat(configuration.freeSpaces.map((p) => transformPos(p)).filter((p) => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
+          .concat(configuration.freeSpaces.map(p => transformPos(p)).filter(p => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
 
         this.activePlanning[anchor.roomName].exits = this.activePlanning[anchor.roomName].exits
-          .concat(configuration.exits.map((p) => {
+          .concat(configuration.exits.map(p => {
             let ans = transformPos(p);
             return new RoomPosition(ans.x, ans.y, anchor.roomName);
-          }).filter((p) => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
+          }).filter(p => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
 
         for (let type in configuration.poss) {
           let p = transformPos(configuration.poss[<keyof PossiblePositions>type]!)
@@ -713,7 +713,7 @@ export class RoomPlanner {
     Memory.cache.roomPlanner[roomName] = {};
     _.forEach((<(Structure | ConstructionSite)[]>Game.rooms[roomName].find(FIND_STRUCTURES))
       .concat(Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES)),
-      (s) => {
+      s => {
         if (!(s.structureType in CONTROLLER_STRUCTURES))
           return;
         if (this.getCase(s).amount === 0)
@@ -795,11 +795,11 @@ export class RoomPlanner {
       for (let i = 0; i < positions.length; ++i) {
         let pos = new RoomPosition(positions[i].x, positions[i].y, roomName);
         let structure = <Structure<BuildableStructureConstant> | undefined>_.filter(pos.lookFor(LOOK_STRUCTURES),
-          (s) => s.structureType === sType)[0];
+          s => s.structureType === sType)[0];
         if (!structure) {
-          let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), (s) => s.structureType === sType)[0];
+          let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), s => s.structureType === sType)[0];
           if (!constructionSite) {
-            let place = _.filter(pos.lookFor(LOOK_STRUCTURES), (s) => s.structureType !== STRUCTURE_RAMPART)[0];
+            let place = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_RAMPART)[0];
             if (place && sType !== STRUCTURE_RAMPART) {
               if (myRoom)
                 place.destroy();

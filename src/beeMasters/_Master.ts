@@ -42,7 +42,7 @@ export abstract class Master {
     if (this.waitingForBees)
       this.waitingForBees -= 1;
 
-    this.beesAmount += 1;
+    ++this.beesAmount;
     this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
   }
 
@@ -69,7 +69,7 @@ export abstract class Master {
     for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref])
         this.deleteBee(ref);
-    this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning)
+    this.activeBees = _.filter(this.bees, b => !b.creep.spawning)
   }
 
   wish(order: SpawnOrder, ref: string = this.ref) {

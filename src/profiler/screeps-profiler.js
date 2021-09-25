@@ -51,7 +51,7 @@ function setupProfiler() {
 </script>
       `;
             /* eslint-enable */
-            console.log(download.split('\n').map((s) => s.trim()).join(''));
+            console.log(download.split('\n').map(s => s.trim()).join(''));
         },
         restart() {
             if (Profiler.isProfiling()) {

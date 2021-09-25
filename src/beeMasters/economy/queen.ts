@@ -35,9 +35,9 @@ export class QueenMaster extends Master {
 
   run() {
     let targets: (StructureSpawn | StructureExtension)[] = _.map(this.cell.spawns);
-    targets = _.filter(targets.concat(_.map(this.cell.extensions)), (structure) => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    targets = _.filter(targets.concat(_.map(this.cell.extensions)), structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    _.forEach(this.activeBees, (bee) => {
+    _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.refill:
           if (bee.withdraw(storage, RESOURCE_ENERGY) === OK || bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
@@ -55,9 +55,9 @@ export class QueenMaster extends Master {
           } else {
             let ans = bee.transfer(bee.pos.findClosest(targets)!, RESOURCE_ENERGY);
             if (ans === OK) {
-              let nearByTargets = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), (s) =>
+              let nearByTargets = _.filter(bee.pos.findInRange(FIND_STRUCTURES, 2), s =>
                 s.structureType === STRUCTURE_EXTENSION && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-              if (nearByTargets.length > 0 && !_.filter(nearByTargets, (s) => s.pos.getRangeTo(bee.pos) === 1).length)
+              if (nearByTargets.length > 0 && !_.filter(nearByTargets, s => s.pos.getRangeTo(bee.pos) === 1).length)
                 bee.goTo(nearByTargets[0]);
             } else if (ans === ERR_NOT_FOUND)
               bee.state = beeStates.fflush;
