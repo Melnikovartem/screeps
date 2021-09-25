@@ -252,11 +252,18 @@ export class Order {
               type = "lab";
               cell = this.hive.cells.lab;
               break;
+            case COLOR_WHITE:
+              type = "center";
+              break;
           }
           if (cell)
             cell.pos = this.pos;
-          if (type)
+          if (type) {
             Memory.cache.positions[this.hive.roomName][type] = { x: this.pos.x, y: this.pos.y };
+            let active = Apiary.planner.activePlanning[this.hive.roomName];
+            if (active)
+              active.poss[type] = { x: this.pos.x, y: this.pos.y }
+          }
         }
         this.delete();
         break;
@@ -306,8 +313,13 @@ export class Order {
             if (!del || /^force/.exec(this.ref)) {
               for (let name in Apiary.planner.activePlanning) {
                 let anchor = Apiary.planner.activePlanning[name].anchor;
-                console.log("SAVED: ", name, anchor ? anchor : this.pos);
-                Apiary.planner.saveActive(name, anchor ? anchor : this.pos);
+                if (!anchor)
+                  if (this.pos.roomName === this.hive.roomName)
+                    anchor = this.hive.getPos("center");
+                  else
+                    anchor = this.pos;
+                console.log("SAVED: ", name, anchor);
+                Apiary.planner.saveActive(name, anchor);
                 delete Apiary.planner.activePlanning[name];
               }
               if (!Object.keys(Apiary.planner.activePlanning).length)

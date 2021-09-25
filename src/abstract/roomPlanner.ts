@@ -9,13 +9,16 @@ export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: numb
 
 type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: PossiblePositions };
 
-const BASE_HORIZONTAL: Module = { poss: { lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 24 }, { x: 20, y: 26 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
+// len 6 including center
+const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 26 }, { x: 20, y: 24 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }, { x: 19, y: 21 }, { x: 19, y: 22 }, { x: 19, y: 20 }, { x: 19, y: 29 }, { x: 19, y: 30 }, { x: 19, y: 28 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
 
-const BASE_VERTICAL: Module = { poss: { lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 26 }, { x: 20, y: 24 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
+// len 7 including center
+const EXTRA_VERTICAL: Module = { poss: { queen1: { x: 23, y: 25 }, queen2: { x: 27, y: 25 } }, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ x: 22, y: 21 }, { x: 23, y: 21 }, { x: 24, y: 21 }, { x: 25, y: 21 }, { x: 26, y: 21 }, { x: 27, y: 21 }, { x: 28, y: 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }, { x: 30, y: 21 }, { x: 29, y: 21 }, { x: 21, y: 21 }, { x: 20, y: 21 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
 
-const EXTRA_VERTICAL: Module = { poss: { queen1: { x: 23, y: 25 }, queen2: { x: 27, y: 25 } }, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ x: 22, y: 21 }, { x: 23, y: 21 }, { x: 24, y: 21 }, { x: 25, y: 21 }, { x: 26, y: 21 }, { x: 27, y: 21 }, { x: 28, y: 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, lab: { pos: [] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
+// len 6 including center
+const EXTRA_HORIZONTAL: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 19, y: 24 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
 
-const EXTRA_HORIZONTAL: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 19, y: 24 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, lab: { pos: [] }, storage: { pos: [] }, link: { pos: [] }, terminal: { pos: [] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
+// box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
 const CONSTRUCTIONS_PER_ROOM = 5;
 
@@ -25,7 +28,7 @@ const WALL_HEALTH = {
 }
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
-  [STRUCTURE_ROAD]: { 1: { amount: 8, heal: ROAD_HITS / 2 }, 2: { amount: 16, heal: ROAD_HITS / 2 } },
+  [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 10, heal: ROAD_HITS / 2 } },
   [STRUCTURE_CONTAINER]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 5, heal: CONTAINER_HITS / 2 } },
   [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
   [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
@@ -68,7 +71,7 @@ for (let x = 0; x <= 49; ++x)
 */
 function getPathArgs(costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
   return {
-    plainCost: 2, swampCost: 4, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false,
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -77,7 +80,7 @@ function getPathArgs(costCallbackExtra = (_: string, c: CostMatrix) => c): FindP
             if (plan[x][y].s === STRUCTURE_ROAD)
               costMatrix.set(+x, +y, 1);
             else if (plan[x][y].s === STRUCTURE_WALL)
-              costMatrix.set(+x, +y, 4);
+              costMatrix.set(+x, +y, 6);
             else if (plan[x][y].s)
               costMatrix.set(+x, +y, 255);
           }
@@ -128,7 +131,7 @@ export class RoomPlanner {
         let jobs = this.activePlanning[roomName].jobsToDo;
         while (jobs.length) {
           let ans;
-          console.log("?:", jobs[0].context)
+          // console .log("?:", jobs[0].context)
           ans = jobs[0].func();
           if (ans === ERR_FULL) {
             this.activePlanning[roomName].correct = "fail";
@@ -186,10 +189,10 @@ export class RoomPlanner {
       7: () => this.addModule(anchor, EXTRA_HORIZONTAL, (a) => rotate(a, 0)),
     }
     let baseRotationRemove: { [id in number]: ExitConstant } = {
-      2: 1,
-      3: 5,
-      1: 3,
-      0: 7,
+      2: TOP,
+      3: BOTTOM,
+      1: RIGHT,
+      0: LEFT,
     }
     let order: ExitConstant[] = [1, 5, 3, 7];
     order.splice(order.indexOf(baseRotationRemove[baseRotation]), 1);
@@ -199,10 +202,22 @@ export class RoomPlanner {
           return -1;
       } else if (Game.map.describeExits(anchor.roomName)[b])
         return 1;
-      return 0;
+      let room = Game.rooms[anchor.roomName];
+      if (!room)
+        return 0;
+
+      let closeA = anchor.findClosest(room.find(a));
+      let timeForA = Infinity;
+      if (closeA)
+        timeForA = anchorDist(anchor, closeA, undefined, true);
+      let closeB = anchor.findClosest(room.find(b));
+      let timeForB = Infinity;
+      if (closeB)
+        timeForB = anchorDist(anchor, closeB, undefined, true);
+      return timeForA - timeForB;
     });
     _.forEach(order, oo => extra_modules[oo]());
-    this.addModule(anchor, baseRotation > 1 ? BASE_VERTICAL : BASE_HORIZONTAL, (a) => rotate(a, baseRotation));
+    this.addModule(anchor, BASE, (a) => rotate(a, baseRotation));
 
     let futureResourceCells = _.filter(Game.flags, (f) => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
@@ -212,90 +227,10 @@ export class RoomPlanner {
       return ans;
     });
 
-
-    _.forEach(futureResourceCells, (f) => {
-      jobs.push({
-        context: `resource roads for ${f.pos}`,
-        func: () => {
-          let ans = this.connectWithRoad(anchor, f.pos, true);
-          if (ans === ERR_FULL || ans === ERR_BUSY)
-            return ans;
-          this.addToPlan(ans, f.pos.roomName, null, true);
-          jobs.push({
-            context: `miner container for ${f.pos}`,
-            func: () => {
-              if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK).length)
-                this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-              return OK;
-            }
-          });
-          if (f.pos.roomName === anchor.roomName && f.secondaryColor === COLOR_YELLOW) {
-            let poss = f.pos.getOpenPositions(true, 2);
-            if (!poss.length)
-              return ERR_FULL;
-            let pos = poss.reduce((prev, curr) => {
-              if (this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
-                return curr;
-              return prev;
-            });
-            // plcaeholder
-            if (this.addToPlan(pos, anchor.roomName, null) !== OK)
-              return ERR_FULL;
-            jobs.push({
-              context: `miner link for ${f.pos}`,
-              func: () => this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) === OK ? OK : ERR_FULL
-            });
-          }
-          if (f.secondaryColor === COLOR_CYAN)
-            jobs.push({
-              context: "extractor",
-              func: () => this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR) === OK ? OK : ERR_FULL
-            });
-          return OK;
-        }
-      });
-    });
-
-    jobs.push({
-      context: "upgrade site",
-      func: () => {
-        if (!(anchor.roomName in Game.rooms))
-          return ERR_FULL;
-        let contr = Game.rooms[anchor.roomName].controller;
-        if (contr) {
-          let poss = contr.pos.getOpenPositions(true);
-          _.forEach(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
-          poss = contr.pos.getPositionsInRange(3);
-          if (!poss.length)
-            return ERR_FULL;
-          let pos = poss.reduce((prev, curr) => {
-            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK
-              && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
-              return curr;
-            return prev;
-          });
-          // plcaeholder
-          if (this.addToPlan(pos, anchor.roomName, null) !== OK)
-            return ERR_FULL;
-          jobs.push({
-            context: "upgrade link",
-            func: () => this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) === OK ? OK : ERR_FULL
-          });
-          let ans = this.connectWithRoad(anchor, pos);
-          if (typeof ans === "number")
-            return ans;
-          return OK;
-        }
-        return ERR_FULL;
-      }
-    });
-
     jobs.push({
       context: "outer ring",
       func: () => {
         let terrain = Game.map.getRoomTerrain(anchor.roomName);
-
-
         let addXEnd = (coef: number, x: number, y: number) => {
           this.addToPlan({ x: x - 2 * coef, y: y === 0 ? y + 1 : y - 1 }, anchor.roomName, STRUCTURE_WALL);
           this.addToPlan({ x: x - 2 * coef, y: y === 0 ? y + 2 : y - 2 }, anchor.roomName, STRUCTURE_WALL);
@@ -365,7 +300,70 @@ export class RoomPlanner {
       },
     });
 
-    let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
+
+    _.forEach(futureResourceCells, (f) => {
+      jobs.push({
+        context: `resource roads for ${f.pos}`,
+        func: () => {
+          let ans = this.connectWithRoad(anchor, f.pos, true);
+          if (typeof ans === "number")
+            return ans;
+          this.addToPlan(ans, f.pos.roomName, null, true);
+          if (f.pos.roomName === anchor.roomName && f.secondaryColor === COLOR_YELLOW) {
+            if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK).length)
+              this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            let poss = f.pos.getOpenPositions(true, 2);
+            if (!poss.length)
+              return ERR_FULL;
+            let pos = poss.reduce((prev, curr) => {
+              if (this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+                return curr;
+              return prev;
+            });
+            // plcaeholder
+            if (this.addToPlan(pos, anchor.roomName, null) !== OK)
+              return ERR_FULL;
+            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) !== OK)
+              return ERR_FULL;
+          } else if (f.secondaryColor === COLOR_CYAN) {
+            this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
+          }
+          return OK;
+        }
+      });
+    });
+
+    jobs.push({
+      context: "upgrade site",
+      func: () => {
+        if (!(anchor.roomName in Game.rooms))
+          return ERR_FULL;
+        let contr = Game.rooms[anchor.roomName].controller;
+        if (contr) {
+          let ans = this.connectWithRoad(anchor, contr.pos, false);
+          if (typeof ans === "number")
+            return ans;
+          let poss = contr.pos.getOpenPositions(true);
+          _.forEach(poss, (p) => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+          poss = contr.pos.getPositionsInRange(3);
+          if (!poss.length)
+            return ERR_FULL;
+          let pos = poss.reduce((prev, curr) => {
+            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK
+              && anchor.getRangeTo(prev) > anchor.getRangeTo(curr) || this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK)
+              return curr;
+            return prev;
+          });
+          if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) !== OK)
+            return ERR_FULL;
+          return OK;
+        }
+        return ERR_FULL;
+      }
+    });
+
+    let fillTypes = [STRUCTURE_OBSERVER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY];
 
     for (let i in fillTypes) {
       let sType = fillTypes[i];
@@ -377,17 +375,18 @@ export class RoomPlanner {
             let red = ((a: Pos, b: Pos) => {
               if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, b) <= 1)
                 return a;
-              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b)) * (sType === STRUCTURE_OBSERVER ? -1 : 1); // remove
+              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b));
               if (ans === 0) {
                 let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), getPathArgs());
                 let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), getPathArgs());
                 ans = pathA.length - pathB.length;
               }
+              ans *= sType === STRUCTURE_OBSERVER ? -1 : 1;
               if (ans === 0)
                 ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
               if (ans === 0)
                 ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
-              return ans < 0 ? a : b; // * (sType === STRUCTURE_OBSERVER ? -1 : 1)
+              return ans < 0 ? a : b;
             });
             let pos;
             if (free.length)
@@ -434,10 +433,14 @@ export class RoomPlanner {
           case STRUCTURE_WALL:
           case STRUCTURE_RAMPART:
           case STRUCTURE_ROAD:
+          case STRUCTURE_LINK:
+          case STRUCTURE_CONTAINER:
+          case STRUCTURE_EXTRACTOR:
+          case STRUCTURE_OBSERVER:
+          case STRUCTURE_WALL:
+          case STRUCTURE_RAMPART:
           case undefined:
           case null:
-            break;
-          case STRUCTURE_OBSERVER: // remove
             break;
           default:
             if (!xx.includes(+x))
@@ -460,7 +463,7 @@ export class RoomPlanner {
 
           let color: { [id: string]: number } = {};
           let colorInterest: { [id: number]: 1 | 0 } = {};
-          let colorCount = 0;
+          let colorCount = 1;
           let toCheck: string[] = [];
 
           for (let x = minx; x < maxx; ++x) {
@@ -503,11 +506,11 @@ export class RoomPlanner {
           }
 
           /*
-          for (let x = 0; x <= 49; ++x)
-            for (let y = 0; y <= 49; ++y)
-              if (color[x + "_" + y])
-                new RoomVisual().text("" + color[x + "_" + y], x, y);
-          */
+            for (let x = 0; x <= 49; ++x)
+              for (let y = 0; y <= 49; ++y)
+                if (color[x + "_" + y])
+                  new RoomVisual().text("" + color[x + "_" + y], x, y);
+            */
 
           let addWall = (x_x: number, y_y: number) => {
             if (!colorInterest[color[x_x + "_" + y_y]])
@@ -617,21 +620,21 @@ export class RoomPlanner {
   addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null | undefined, force: boolean = false, check: boolean = false) {
     if (!this.activePlanning[roomName])
       this.initPlanning(roomName, true);
-    if (check && (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL || force))
-      return ERR_INVALID_ARGS;
     if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType !== STRUCTURE_EXTRACTOR)
       return ERR_NO_PATH;
     let placed = this.activePlanning[roomName].placed;
     let plan = this.activePlanning[roomName].plan;
+
+    if (check && (!plan[pos.x] || !plan[pos.x][pos.y]))
+      return OK;
     if (!plan[pos.x])
       plan[pos.x] = {};
     if (!plan[pos.x][pos.y])
       plan[pos.x][pos.y] = { s: undefined, r: false };
+    let oldState = { s: plan[pos.x][pos.y].s, r: plan[pos.x][pos.y].r };
     if (sType === STRUCTURE_RAMPART)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (plan[pos.x][pos.y].s === undefined) {
-      if (check)
-        return OK;
       if (sType) {
         if (placed[sType]! >= CONTROLLER_STRUCTURES[sType][8])
           return ERR_FULL;
@@ -650,6 +653,8 @@ export class RoomPlanner {
         placed[sType]!++;
     } else
       return ERR_NO_PATH;
+    if (check)
+      plan[pos.x][pos.y] = oldState;
     return OK;
   }
 
@@ -809,6 +814,11 @@ export class RoomPlanner {
               targetHits: 0,
               energyCost: constructionSite.progressTotal - constructionSite.progress,
             });
+            /*
+            if (!constructionSite.progress)
+              constructionSite.remove();
+            */
+            ++constructions;
           }
         } else if (structure) {
           placed++;
@@ -835,7 +845,7 @@ export class RoomPlanner {
           if (sType === STRUCTURE_SPAWN)
             anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
           else
-            anss = sType, toadd[i].createConstructionSite(sType);
+            anss = toadd[i].createConstructionSite(sType);
           if (anss === OK) {
             ans.push({
               pos: toadd[i],

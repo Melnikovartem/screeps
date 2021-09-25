@@ -29,6 +29,7 @@ export interface HivePositions {
   queen1: Pos,
   queen2: Pos,
   lab: Pos,
+  center: Pos,
 }
 
 export interface BuildProject {
@@ -89,7 +90,7 @@ export class Hive {
       let pos = { x: 25, y: 25 };
       if (this.room.controller)
         pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y };
-      Memory.cache.positions[this.roomName] = { hive: pos, queen1: pos, queen2: pos, lab: pos }
+      Memory.cache.positions[this.roomName] = { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos }
     }
     this.pos = this.getPos("hive");
 

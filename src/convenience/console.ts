@@ -10,6 +10,7 @@ export class CustomConsole {
     else
       Memory.settings.framerate = framerate ? framerate : (!Memory.settings.framerate ? 1 : 0);
     Memory.settings.forceBucket = force;
+    return Memory.settings.framerate, Memory.settings.forceBucket;
   }
 
   format(s: string) {

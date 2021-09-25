@@ -8,7 +8,7 @@ import { UPDATE_EACH_TICK } from "../settings";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-const NOT_ATTACK_LIST = ["Tigga"]
+const NOT_ATTACK_LIST: string[] = [];
 
 interface Enemy {
   object: Creep | PowerCreep | Structure,
@@ -168,10 +168,12 @@ export class Intel {
 
     _.forEach(room.find(FIND_HOSTILE_CREEPS), (c) => {
       let dangerlvl: DangerLvl = 2;
-      let info = this.getStats(c);
+      let info = this.getStats(c).max;
       if (info.dmgRange >= 1000 || info.dmgClose > 2000)
         dangerlvl = 8;
       else if (info.heal >= 800)
+        dangerlvl = 6;
+      else if (info.dism >= 3500)
         dangerlvl = 6;
       else if (info.dmgRange >= 500 || info.dmgClose > 1000 || info.heal > 400)
         dangerlvl = 5;
@@ -200,7 +202,6 @@ export class Intel {
             dangerlvl = 1
           else if (s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
-
         if (dangerlvl > 0 || roomInfo.roomState === roomStates.ownedByEnemy)
           roomInfo.enemies.push({
             object: s,
@@ -223,24 +224,57 @@ export class Intel {
   }
 
   getStats(creep: Creep) {
-    let ans = {
-      dmgClose: 0,
-      dmgRange: 0,
-      heal: 0,
+    type CreepBattleInfo = {
+      dmgClose: number,
+      dmgRange: number,
+      dism: number,
+      heal: number,
+    };
+
+    let ans: { max: CreepBattleInfo, current: CreepBattleInfo } = {
+      max: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+      }, current: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+      }
     }
 
     _.forEach(creep.body, (b) => {
+      let stat;
       switch (b.type) {
         case RANGED_ATTACK:
-          let dmg = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;
-          ans.dmgRange += dmg;
-          ans.dmgClose += dmg;
+          stat = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;
+          ans.max.dmgRange += stat;
+          ans.max.dmgClose += stat;
+          if (b.hits) {
+            ans.current.dmgRange += stat;
+            ans.current.dmgClose += stat;
+          }
           break;
         case ATTACK:
-          ans.dmgClose += ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost] : { attack: 1 }).attack;
+          stat = ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost] : { attack: 1 }).attack;
+          ans.max.dmgClose += stat;
+          if (b.hits)
+            ans.current.dmgClose += stat;
           break;
         case HEAL:
-          ans.heal += HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost] : { heal: 1 }).heal;
+          stat = HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost] : { heal: 1 }).heal;
+          ans.max.heal += stat;
+          if (b.hits)
+            ans.current.heal += stat;
+          break;
+        case WORK:
+          let boost = b.boost && BOOSTS.work[b.boost] && BOOSTS.work[b.boost];
+          stat = DISMANTLE_POWER * (boost && "dismantle" in boost ? boost.dismantle : 1);
+          ans.max.dism += stat;
+          if (b.hits)
+            ans.current.dism += stat;
           break;
       }
     });

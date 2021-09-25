@@ -544,7 +544,7 @@ export class Traveler {
   public static addDangerZonesToMatrix(roomName: string, matrix: CostMatrix): CostMatrix {
     let enemies = Apiary.intel.getInfo(roomName, 25).enemies.filter((e) => e.dangerlvl > 1).map((e) => e.object);
     _.forEach(enemies, (c) => {
-      _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 30 * p.getRangeTo(c))));
+      _.forEach(c.pos.getOpenPositions(false, 3), (p) => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 30 * (4 - p.getRangeTo(c)))));
       matrix.set(c.pos.x, c.pos.y, 255);
     });
     return matrix;

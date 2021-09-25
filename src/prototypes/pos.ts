@@ -1,13 +1,15 @@
+type ProtoPos = RoomPosition | { pos: RoomPosition };
+
 interface RoomPosition {
   getRoomCoorinates(): [number, number, string, string];
-  getRoomRangeTo(pos: RoomPosition | Room | { pos: RoomPosition } | string, pathfind?: boolean): number;
+  getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
   getPositionsInRange(range?: number): RoomPosition[];
   getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
   getEnteranceToRoom(): RoomPosition | null;
   getPosInDirection(direction: DirectionConstant): RoomPosition;
-  getTimeForPath(pos: RoomPosition | { pos: RoomPosition }): number;
-  findClosest<Obj extends RoomPosition | { pos: RoomPosition }>(structures: Obj[]): Obj | null;
+  getTimeForPath(pos: ProtoPos): number;
+  findClosest<Obj extends ProtoPos>(structures: Obj[]): Obj | null;
 }
 
 function getRoomCoorinates(roomName: string): [number, number] {
@@ -171,7 +173,7 @@ RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant
 }
 
 // costly be careful
-RoomPosition.prototype.getTimeForPath = function(target: RoomPosition | { pos: RoomPosition }): number {
+RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
   let pos: RoomPosition;
   if (target instanceof RoomPosition)
     pos = target;
@@ -226,19 +228,21 @@ let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
 }
 
 // couple of optimizations to make usability of getClosestByRange, but better
-RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos: RoomPosition }>(objects: Obj[]): Obj | null {
+RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Obj[]): Obj | null {
   if (objects.length === 0)
     return null;
 
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  _.some(objects, (obj: Obj) => {
+  let getLinSq = (pos: RoomPosition, a: ProtoPos) => {
+    let posA = "pos" in a ? (<{ pos: RoomPosition }>a).pos : <RoomPosition>a;
+    return Math.pow(pos.x - posA.x, 2) + Math.pow(pos.y - posA.y, 2);
+  }
+
+  let getDistForRoute = (obj: Obj, calc = (p: RoomPosition, obj: ProtoPos) => p.getRangeTo(obj)) => {
     let pos = "pos" in obj ? (<{ pos: RoomPosition }>obj).pos : <RoomPosition>obj;
-
     let newDistance = 0;
-    //cheap (in terms of CPU) est of dist
-
     let route = Game.map.findRoute(this.roomName, pos.roomName);
     let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
     let currentRoom = this.roomName;
@@ -256,7 +260,8 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
           let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByRange(room.find(route[i].exit));
 
           if (exit) {
-            newDistance += enterance.getRangeTo(exit);
+
+            newDistance += calc(enterance, exit);
             newEnterance = exit.getEnteranceToRoom();
           }
         } else
@@ -274,16 +279,22 @@ RoomPosition.prototype.findClosest = function <Obj extends RoomPosition | { pos:
         enterance = Game.rooms[pos.roomName].find(enterance)[0];
       newDistance += enterance.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
     }
+    return newDistance;
+  }
 
+  _.some(objects, (obj: Obj) => {
+
+    //cheap (in terms of CPU) est of dist
+
+    let newDistance = getDistForRoute(obj);
     if (newDistance < distance) {
       ans = obj;
       distance = newDistance;
     } else if (newDistance === distance) {
-      // i thought of linear dist but it is not good at all in this world
-      if (Math.random() > 0.8)
-        ans = obj; // just a random chance to invalidate this object (so getClosest wouldn't prefer the top left ones)
-      //i didn't rly calculate the E of this ans, but surely it is satisfactory
+      if (getDistForRoute(ans, getLinSq) > getDistForRoute(obj, getLinSq))
+        ans = obj;
     }
+
 
     return distance <= 1;
   });
