@@ -163,7 +163,7 @@ export class BootstrapMaster extends Master {
             // but that is too much for too little
             source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
               source => (source.pos.getOpenPositions().length || bee.pos.isNearTo(source))
-                && (source.energy > 0 || source.ticksToRegeneration < 20)));
+                && (source.energy > bee.store.getFreeCapacity(RESOURCE_ENERGY) || source.ticksToRegeneration < 20)));
             if (source)
               bee.target = source.id;
           } else
@@ -212,9 +212,9 @@ export class BootstrapMaster extends Master {
                 || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
                 && (<StructureStorage>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
                 workType = "refill"; // also can be different types of <Store>, so just storage for easy check
-              else if (target.hits < Apiary.planner.getCase(target).heal)
+              else if (target.hits < Apiary.planner.getCase(target).heal) {
                 workType = "repair";
-              else
+              } else
                 target = undefined;
             }
             if (target)
@@ -280,8 +280,7 @@ export class BootstrapMaster extends Master {
             ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
           else if (workType === "upgrade")
             ans = bee.upgradeController(<StructureController>target);
-          if (ans === ERR_NOT_IN_RANGE)
-            bee.repair(_.filter(bee.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax)[0]);
+          bee.repairRoadOnMove(ans);
 
           if (!oldTarget)
             ++this.count[workType];

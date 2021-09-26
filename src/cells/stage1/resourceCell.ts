@@ -33,7 +33,7 @@ export class ResourceCell extends Cell {
   }
 
   updateStructure() {
-    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 2),
+    this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
       structure => structure.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
@@ -53,14 +53,9 @@ export class ResourceCell extends Cell {
 
     if (this.operational) {
       this.parentCell.shouldRecalc = true;
-      let posNear: RoomPosition[] = [];
       if (this.container)
-        posNear = this.container.pos.getOpenPositions(true);
-      if (this.link)
-        posNear = this.link.pos.getOpenPositions(true);
-      this.pos = _.filter(this.resource.pos.getOpenPositions(true),
-        p => _.filter(posNear, pp => pp.x === p.x && pp.y === p.y).length > 0)[0];
-      if (!this.pos)
+        this.pos = this.container.pos;
+      else
         this.pos = this.resource.pos;
     }
   }

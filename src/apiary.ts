@@ -14,13 +14,14 @@ import { LOGGING_CYCLE } from "./settings";
 
 @profile
 export class _Apiary {
+  createTime: number;
   destroyTime: number;
   useBucket: boolean = false;
   username: string = "";
   intel: Intel;
   planner: RoomPlanner;
   logger: Logger | undefined;
-  visuals: Visuals | undefined;
+  visuals: Visuals = new Visuals;
 
   bees: { [id: string]: Bee };
   hives: { [id: string]: Hive };
@@ -31,7 +32,8 @@ export class _Apiary {
   requestRoomSight: string[] = [];
 
   constructor() {
-    this.destroyTime = Game.time + 6000;
+    this.createTime = Game.time;
+    this.destroyTime = this.createTime + 6000;
     this.intel = new Intel();
     this.planner = new RoomPlanner();
     if (LOGGING_CYCLE)
@@ -65,7 +67,7 @@ export class _Apiary {
 
   // update phase
   update() {
-    this.useBucket = Game.cpu.bucket > 1500 || Memory.settings.forceBucket > 0;
+    this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
     Order.checkFlags();
     _.forEach(Apiary.orders, order => {
       if (order)
@@ -87,11 +89,6 @@ export class _Apiary {
 
     if (Game.time % 50 === 0)
       this.intel.toCache();
-
-    if (this.visuals && !Memory.settings.framerate)
-      this.visuals = undefined;
-    else if (!this.visuals && Memory.settings.framerate)
-      this.visuals = new Visuals();
   }
 
   // run phase
@@ -106,11 +103,9 @@ export class _Apiary {
     Bee.beesMove();
     this.requestRoomSight = [];
 
-    if (this.useBucket) {
+    if (this.useBucket)
       Apiary.planner.run();
-      if (this.visuals)
-        this.visuals.create();
-    } else if (this.visuals)
-      this.visuals.createLight();
+
+    this.visuals.create();
   }
 }

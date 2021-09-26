@@ -269,19 +269,26 @@ export class Order {
         this.delete();
         break;
       case COLOR_WHITE:
-        _.forEach(Game.flags, f => {
-          if (f.color === COLOR_WHITE && f.name !== this.ref && Apiary.orders[f.name])
-            Apiary.orders[f.name].delete();
-        });
+        if (this.flag.secondaryColor !== COLOR_PURPLE)
+          _.forEach(Game.flags, f => {
+            if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
+              Apiary.orders[f.name].delete();
+          });
+        else
+          _.forEach(Game.flags, f => {
+            if (f.color === COLOR_WHITE && f.secondaryColor === COLOR_WHITE && Apiary.orders[f.name] && Game.time !== Apiary.createTime)
+              Apiary.orders[f.name].acted = false;
+          });
+
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
-            let baseRotation: 0 | 1 | 2 | 3 = 0;
+            let baseRotation: ExitConstant = BOTTOM;
             if (this.ref.includes("right"))
-              baseRotation = 1;
+              baseRotation = RIGHT;
             else if (this.ref.includes("up"))
-              baseRotation = 2;
-            else if (this.ref.includes("down"))
-              baseRotation = 3;
+              baseRotation = TOP;
+            else if (this.ref.includes("left"))
+              baseRotation = LEFT;
 
             Apiary.planner.generatePlan(this.pos, baseRotation);
             break;
@@ -332,7 +339,7 @@ export class Order {
             } else if (del === 1)
               this.pos.createFlag("FAIL_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
             break;
-          case COLOR_CYAN:
+          case COLOR_PURPLE:
             break;
         }
         break;
@@ -478,9 +485,18 @@ export class Order {
             delete Apiary.defenseSwarms[key];
         break;
       case COLOR_WHITE:
-        if (!_.filter(Apiary.orders, o => o.flag.color === COLOR_WHITE && o.ref !== this.ref).length)
+        if (!_.filter(Apiary.orders, o => {
+          if (o.flag.color !== COLOR_WHITE)
+            return false;
+          if (o.flag.secondaryColor === COLOR_PURPLE) {
+            o.flag.remove();
+            return false;
+          }
+          return o.ref !== this.ref;
+        }).length) {
           for (let name in Apiary.planner.activePlanning)
             delete Apiary.planner.activePlanning[name];
+        }
         break;
       case COLOR_ORANGE:
         if (this.flag.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {

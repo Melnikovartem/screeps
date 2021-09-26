@@ -144,16 +144,25 @@ export class DefenseCell extends Cell {
   wasBreached(pos: RoomPosition) {
     let path = pos.findPathTo(this, {
       maxRooms: 1,
+      swampCost: 1,
+      plainCost: 1,
+      ignoreDestructibleStructures: true,
+      ignoreCreeps: true,
+      ignoreRoads: true,
       costCallback: (roomName, matrix) => {
         if (!(roomName in Game.rooms))
           return matrix;
         let obstacles = Game.rooms[roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART);
-        _.forEach(obstacles, s => matrix.set(s.pos.x, s.pos.y, 255));
+        _.forEach(obstacles, s => {
+          if (s.hits > 1000)
+            matrix.set(s.pos.x, s.pos.y, 255)
+        });
         return matrix;
       }
     });
-
-    return !!path.length && path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y
+    if (!path.length)
+      return pos.x === this.pos.x && this.pos.y === pos.y;
+    return path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y;
   }
 
   createDefFlag(pos: RoomPosition, powerfull: boolean = false) {
@@ -181,16 +190,6 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-
-    /*
-      if (this.time === Game.time) {
-        A.vis(1000, 1);
-        for (let x = 0; x <= 49; ++x)
-          for (let y = 0; y <= 49; ++y)
-            if (x % 3 === 0 && y % 3 === 0 && this.wasBreached(new RoomPosition(x, y, this.pos.roomName)))
-              new RoomVisual(this.pos.roomName).text("F", x, y);
-      }
-    */
 
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
