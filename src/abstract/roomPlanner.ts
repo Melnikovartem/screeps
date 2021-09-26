@@ -9,14 +9,15 @@ export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: numb
 
 type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: PossiblePositions };
 
+// well i can add more
 // len 6 including center
 const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 } }, exits: [{ x: 20, y: 26 }, { x: 20, y: 24 }], freeSpaces: [{ x: 19, y: 23 }, { x: 19, y: 24 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }, { x: 19, y: 21 }, { x: 19, y: 22 }, { x: 19, y: 20 }, { x: 19, y: 29 }, { x: 19, y: 30 }, { x: 19, y: 28 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
 
 // len 7 including center
-const EXTRA_VERTICAL: Module = { poss: { queen1: { x: 23, y: 25 }, queen2: { x: 27, y: 25 } }, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ x: 22, y: 21 }, { x: 23, y: 21 }, { x: 24, y: 21 }, { x: 25, y: 21 }, { x: 26, y: 21 }, { x: 27, y: 21 }, { x: 28, y: 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }, { x: 30, y: 21 }, { x: 29, y: 21 }, { x: 21, y: 21 }, { x: 20, y: 21 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
+const EXTRA_OPPOSITE: Module = { poss: { queen1: { x: 23, y: 25 }, queen2: { x: 27, y: 25 } }, exits: [{ x: 23, y: 22 }, { x: 25, y: 22 }, { x: 27, y: 22 }], freeSpaces: [{ x: 22, y: 21 }, { x: 23, y: 21 }, { x: 24, y: 21 }, { x: 25, y: 21 }, { x: 26, y: 21 }, { x: 27, y: 21 }, { x: 28, y: 21 }, { x: 23, y: 26 }, { x: 24, y: 25 }, { x: 26, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 25 }, { x: 29, y: 24 }, { x: 30, y: 24 }, { x: 30, y: 23 }, { x: 30, y: 22 }, { x: 29, y: 22 }, { x: 28, y: 22 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 23 }, { x: 21, y: 24 }, { x: 21, y: 25 }, { x: 22, y: 25 }, { x: 22, y: 26 }, { x: 20, y: 24 }, { x: 30, y: 21 }, { x: 29, y: 21 }, { x: 21, y: 21 }, { x: 20, y: 21 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 25, y: 22 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }] }, spawn: { pos: [{ x: 25, y: 26 }] }, tower: { pos: [{ x: 25, y: 23 }, { x: 24, y: 22 }, { x: 26, y: 22 }] } } };
 
 // len 6 including center
-const EXTRA_HORIZONTAL: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 19, y: 24 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
+const EXTRA_SIDE: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 }], freeSpaces: [{ x: 21, y: 25 }, { x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 20, y: 28 }, { x: 20, y: 22 }, { x: 21, y: 23 }, { x: 19, y: 23 }, { x: 19, y: 22 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 27 }, { x: 19, y: 28 }, { x: 19, y: 24 }, { x: 19, y: 21 }, { x: 19, y: 29 }, { x: 19, y: 30 }, { x: 19, y: 20 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }] }, spawn: { pos: [{ x: 23, y: 25 }] }, tower: { pos: [{ x: 20, y: 24 }, { x: 20, y: 26 }, { x: 20, y: 25 }] } } };
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
@@ -28,10 +29,10 @@ const WALL_HEALTH = {
 }
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
-  [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 10, heal: ROAD_HITS / 2 } },
+  [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 } },
   [STRUCTURE_CONTAINER]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 5, heal: CONTAINER_HITS / 2 } },
-  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
-  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 2500, heal: WALL_HEALTH.small / 4 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
+  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 1000 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
+  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 1000 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
 }
 
 const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
@@ -69,9 +70,9 @@ for (let x = 0; x <= 49; ++x)
         matrix.set(x, y, 1);
     }
 */
-function getPathArgs(costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
+function getPathArgs(sameRoom: boolean = true, costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
   return {
-    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false,
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: sameRoom ? 1 : undefined,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -155,7 +156,7 @@ export class RoomPlanner {
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
 
-  generatePlan(anchor: RoomPosition, baseRotation: 0 | 1 | 2 | 3 = 0, warchance = true) {
+  generatePlan(anchor: RoomPosition, rotation: ExitConstant, warchance = true) {
     this.initPlanning(anchor.roomName);
     let jobs = this.activePlanning[anchor.roomName].jobsToDo;
     this.activePlanning[anchor.roomName].anchor = anchor;
@@ -182,49 +183,86 @@ export class RoomPlanner {
       return { x: x + (anchor.x + shiftX), y: y + (anchor.y + shiftY) };
     }
 
-    const extra_modules = {
-      1: () => this.addModule(anchor, EXTRA_VERTICAL, a => rotate(a, 0, -3)),
-      5: () => this.addModule(anchor, EXTRA_VERTICAL, a => rotate(a, 1, 3)),
-      3: () => this.addModule(anchor, EXTRA_HORIZONTAL, a => rotate(a, 1, 0)),
-      7: () => this.addModule(anchor, EXTRA_HORIZONTAL, a => rotate(a, 0)),
+    let rotationBase: { [id in ExitConstant]: 0 | 1 | 2 | 3 } = {
+      [TOP]: 2,
+      [BOTTOM]: 3,
+      [RIGHT]: 1,
+      [LEFT]: 0,
     }
-    let baseRotationRemove: { [id in number]: ExitConstant } = {
-      2: TOP,
-      3: BOTTOM,
-      1: RIGHT,
-      0: LEFT,
+    const extra_modules: { [key in ExitConstant]: [Module, (a: Pos) => Pos] } = {
+      [TOP]: [EXTRA_SIDE, (a: Pos) => rotate(a, 2)],
+      [BOTTOM]: [EXTRA_SIDE, (a: Pos) => rotate(a, 3)],
+      [RIGHT]: [EXTRA_SIDE, (a: Pos) => rotate(a, 1)],
+      [LEFT]: [EXTRA_SIDE, (a: Pos) => rotate(a, 0)],
     }
+    switch (rotation) {
+      case TOP:
+        extra_modules[BOTTOM] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 1, 3)];
+        break;
+      case BOTTOM:
+        extra_modules[TOP] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 0, -3)];
+        break;
+      case RIGHT:
+        extra_modules[LEFT] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 3, 0, -3)];
+        break;
+      case LEFT:
+        extra_modules[RIGHT] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 2, 0, 3)];
+        break;
+    }
+
     let order: ExitConstant[] = [1, 5, 3, 7];
-    order.splice(order.indexOf(baseRotationRemove[baseRotation]), 1);
+    order.splice(order.indexOf(rotation), 1);
     order.sort((a, b) => {
-      if (Game.map.describeExits(anchor.roomName)[a]) {
-        if (!Game.map.describeExits(anchor.roomName)[b])
+      let exits = Game.map.describeExits(anchor.roomName);
+      if (exits[a]) {
+        if (!exits[b])
           return -1;
-      } else if (Game.map.describeExits(anchor.roomName)[b])
+      } else if (exits[b])
         return 1;
       let room = Game.rooms[anchor.roomName];
       if (!room)
         return 0;
 
-      let closeA = anchor.findClosest(room.find(a));
-      let timeForA = Infinity;
-      if (closeA)
-        timeForA = anchorDist(anchor, closeA, undefined, true);
-      let closeB = anchor.findClosest(room.find(b));
-      let timeForB = Infinity;
-      if (closeB)
-        timeForB = anchorDist(anchor, closeB, undefined, true);
-      return timeForA - timeForB;
-    });
-    _.forEach(order, oo => extra_modules[oo]());
-    this.addModule(anchor, BASE, a => rotate(a, baseRotation));
+      let getTime = (x: ExitConstant) => {
+        let tower = extra_modules[x][0].setup.tower;
+        let anchorTemp = tower ? new RoomPosition(tower.pos[0].x, tower.pos[0].y, anchor.roomName) : anchor;
+        let close = anchorTemp.findClosest(room.find(x));
+        if (!close)
+          return Infinity;
+        let path = close.findPathTo(anchorTemp, getPathArgs());
+        if (!path.length)
+          return Infinity;
+        let last = path[path.length - 1];
+        if (last.x === anchorTemp.x && last.y === anchorTemp.y)
+          return path.length;
+        return anchorDist(close, last);
+      }
 
-    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
-    futureResourceCells.sort((a, b) => {
+      return getTime(a) - getTime(b);
+    });
+
+    _.forEach(order, oo => this.addModule(anchor, extra_modules[oo][0], extra_modules[oo][1]));
+    this.addModule(anchor, BASE, a => rotate(a, rotationBase[rotation]));
+
+    let customRoads = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_PURPLE);
+    customRoads.sort((a, b) => {
       let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
       if (ans === 0)
         return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;
+    });
+
+    _.forEach(customRoads, f => {
+      jobs.push({
+        context: `custom road for ${f.pos}`,
+        func: () => {
+          let ans = this.connectWithRoad(anchor, f.pos, true);
+          if (typeof ans === "number")
+            return ans;
+          this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_ROAD);
+          return OK;
+        }
+      });
     });
 
     jobs.push({
@@ -232,9 +270,14 @@ export class RoomPlanner {
       func: () => {
         let terrain = Game.map.getRoomTerrain(anchor.roomName);
         let addXEnd = (coef: number, x: number, y: number) => {
-          this.addToPlan({ x: x - 2 * coef, y: y === 0 ? y + 1 : y - 1 }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ x: x - 2 * coef, y: y === 0 ? y + 2 : y - 2 }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ x: x - 1 * coef, y: y === 0 ? y + 2 : y - 2 }, anchor.roomName, STRUCTURE_WALL);
+          let close = y === 0 ? y + 1 : y - 1;
+          let far = y === 0 ? y + 2 : y - 2;
+          this.addToPlan({ x: x - 2 * coef, y: close }, anchor.roomName, STRUCTURE_WALL);
+          let outer = [x - 1 * coef, x - 2 * coef];
+          if (terrain.get(outer[0], close) === TERRAIN_MASK_WALL && terrain.get(outer[1], close) === TERRAIN_MASK_WALL)
+            return;
+          this.addToPlan({ x: outer[0], y: far }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ x: outer[1], y: far }, anchor.roomName, STRUCTURE_WALL);
         };
         for (let y in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -265,9 +308,14 @@ export class RoomPlanner {
         }
 
         let addYEnd = (coef: number, x: number, y: number) => {
-          this.addToPlan({ y: y - 2 * coef, x: x === 0 ? x + 1 : x - 1 }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ y: y - 2 * coef, x: x === 0 ? x + 2 : x - 2 }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ y: y - 1 * coef, x: x === 0 ? x + 2 : x - 2 }, anchor.roomName, STRUCTURE_WALL);
+          let close = x === 0 ? x + 1 : x - 1;
+          let far = x === 0 ? x + 2 : x - 2;
+          this.addToPlan({ y: y - 2 * coef, x: close }, anchor.roomName, STRUCTURE_WALL);
+          let outer = [y - 1 * coef, y - 2 * coef];
+          if (terrain.get(close, outer[0]) === TERRAIN_MASK_WALL && terrain.get(close, outer[1]) === TERRAIN_MASK_WALL)
+            return;
+          this.addToPlan({ y: outer[0], x: far }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ y: outer[1], x: far }, anchor.roomName, STRUCTURE_WALL);
         };
         for (let x in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -301,29 +349,36 @@ export class RoomPlanner {
     });
 
 
+    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
+    futureResourceCells.sort((a, b) => {
+      let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
+      if (ans === 0)
+        return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
+      return ans;
+    });
+
     _.forEach(futureResourceCells, f => {
       jobs.push({
-        context: `resource roads for ${f.pos}`,
+        context: `resource road for ${f.pos}`,
         func: () => {
           let ans = this.connectWithRoad(anchor, f.pos, true);
           if (typeof ans === "number")
             return ans;
-          this.addToPlan(ans, f.pos.roomName, null, true);
-          if (f.pos.roomName === anchor.roomName && f.secondaryColor === COLOR_YELLOW) {
-            if (!f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK).length)
-              this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-            let poss = f.pos.getOpenPositions(true, 2);
+          if (f.secondaryColor === COLOR_YELLOW) {
+            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            if (f.pos.roomName !== anchor.roomName)
+              return OK;
+            let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getOpenPositions(true, 1);
             if (!poss.length)
               return ERR_FULL;
             let pos = poss.reduce((prev, curr) => {
-              if (this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+              if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
+                || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
                 return curr;
               return prev;
             });
             // plcaeholder
-            if (this.addToPlan(pos, anchor.roomName, null) !== OK)
-              return ERR_FULL;
-            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) !== OK)
+            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
               return ERR_FULL;
           } else if (f.secondaryColor === COLOR_CYAN) {
             this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
@@ -363,7 +418,7 @@ export class RoomPlanner {
       }
     });
 
-    let fillTypes = [STRUCTURE_OBSERVER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY];
+    let fillTypes = [STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
 
     for (let i in fillTypes) {
       let sType = fillTypes[i];
@@ -372,20 +427,31 @@ export class RoomPlanner {
         func: () => {
           let free = this.activePlanning[anchor.roomName].freeSpaces;
           if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
+            let anchorTemp = anchor;
+            if (sType === STRUCTURE_EXTENSION) {
+              // in this setup cause whant to get extensions away from labs
+              let t = rotate({ x: 26, y: 25 }, rotationBase[rotation])
+              anchorTemp = new RoomPosition(t.x, t.y, anchor.roomName);
+            }
             let red = ((a: Pos, b: Pos) => {
-              if (sType === STRUCTURE_EXTENSION && anchorDist(anchor, b) <= 1)
+              if (sType === STRUCTURE_EXTENSION && anchorDist(anchorTemp, b) <= 1)
                 return a;
-              let ans = (anchorDist(anchor, a) - anchorDist(anchor, b));
-              if (ans === 0) {
-                let pathA = anchor.findPathTo(new RoomPosition(a.x, a.y, anchor.roomName), getPathArgs());
-                let pathB = anchor.findPathTo(new RoomPosition(b.x, b.y, anchor.roomName), getPathArgs());
-                ans = pathA.length - pathB.length;
+              let ans = (anchorDist(anchorTemp, a) - anchorDist(anchorTemp, b));
+              if (ans === 0 || sType === STRUCTURE_OBSERVER) {
+                let pathA = new RoomPosition(a.x, a.y, anchor.roomName).findPathTo(anchorTemp, getPathArgs());
+                if (!pathA.length || pathA[pathA.length - 1].x !== anchorTemp.x || pathA[pathA.length - 1].y !== anchorTemp.y)
+                  ans = 1;
+                let pathB = new RoomPosition(b.x, b.y, anchor.roomName).findPathTo(anchorTemp, getPathArgs());
+                if (!pathB.length || pathB[pathB.length - 1].x !== anchorTemp.x || pathB[pathB.length - 1].y !== anchorTemp.y)
+                  ans = -1;
+                if (ans === 0)
+                  ans = pathA.length - pathB.length;
               }
               ans *= sType === STRUCTURE_OBSERVER ? -1 : 1;
               if (ans === 0)
-                ans = (a.y - b.y) * (baseRotation !== 3 ? -1 : 1);
+                ans = (a.y - b.y) * (rotation === TOP ? -1 : 1);
               if (ans === 0)
-                ans = (a.x - b.x) * (baseRotation !== 1 ? -1 : 1);
+                ans = (a.x - b.x) * (rotation === LEFT ? -1 : 1);
               return ans < 0 ? a : b;
             });
             let pos;
@@ -402,7 +468,9 @@ export class RoomPlanner {
                     free.splice(i, 1);
                     break;
                   }
-                pos = free.reduce(red);
+                pos = undefined;
+                if (free.length)
+                  pos = free.reduce(red);
               }
               if (br)
                 break;
@@ -410,7 +478,6 @@ export class RoomPlanner {
             if (this.activePlanning[anchor.roomName].placed[sType]! < CONTROLLER_STRUCTURES[sType][8])
               return ERR_FULL;
           }
-          this.activePlanning[anchor.roomName].freeSpaces = free;
           return OK;
         }
       });
@@ -531,7 +598,7 @@ export class RoomPlanner {
 
           _.forEach(addedWalls, p => {
             let pos = new RoomPosition(p.x, p.y, anchor.roomName);
-            let path = anchor.findPathTo(pos, getPathArgs((roomName: string, costMatrix: CostMatrix) => {
+            let path = anchor.findPathTo(pos, getPathArgs(true, (roomName: string, costMatrix: CostMatrix) => {
               let plan = Apiary.planner.activePlanning[roomName].plan;
               for (let x in plan)
                 for (let y in plan[x]) {
@@ -543,17 +610,18 @@ export class RoomPlanner {
               return costMatrix;
             }));
             while (path.length > 1)
-              path = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName).findPathTo(pos, getPathArgs((roomName: string, costMatrix: CostMatrix) => {
-                let plan = Apiary.planner.activePlanning[roomName].plan;
-                for (let x in plan)
-                  for (let y in plan[x]) {
-                    if (plan[x][y].s === STRUCTURE_WALL)
-                      costMatrix.set(+x, +y, 255);
-                    else if (plan[x][y].r)
-                      costMatrix.set(+x, +y, 255);
-                  }
-                return costMatrix;
-              }));
+              path = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName)
+                .findPathTo(pos, getPathArgs(true, (roomName: string, costMatrix: CostMatrix) => {
+                  let plan = Apiary.planner.activePlanning[roomName].plan;
+                  for (let x in plan)
+                    for (let y in plan[x]) {
+                      if (plan[x][y].s === STRUCTURE_WALL)
+                        costMatrix.set(+x, +y, 255);
+                      else if (plan[x][y].r)
+                        costMatrix.set(+x, +y, 255);
+                    }
+                  return costMatrix;
+                }));
 
             if (path.length && (p.x == path[path.length - 1].x || p.y !== path[path.length - 1].y)) {
               this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
@@ -577,29 +645,21 @@ export class RoomPlanner {
     return false;
   }
 
-  pathFromExit(pos: RoomPosition, roomName: string): ERR_FULL | [PathStep[], RoomPosition] {
+  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean): Pos | ERR_BUSY | ERR_FULL {
+    let roomName = anchor.roomName;
     if (!(pos.roomName in Game.rooms))
       return ERR_FULL;
     let exit: RoomPosition | undefined | null;
     let exits = this.activePlanning[roomName].exits;
-    if (pos.x === 0 || pos.y === 0 || pos.x === 49 || pos.y === 49)
-      exits = exits.filter(e => e.roomName === pos.roomName);
     if (pos.roomName === roomName)
-      exit = pos.findClosestByPath(exits, getPathArgs());
+      exit = pos.findClosestByPath(exits, getPathArgs(roomName === pos.roomName));
     if (!exit)
       exit = pos.findClosest(exits);
     if (!exit)
       return ERR_FULL;
-    return [exit.findPathTo(pos, getPathArgs()), exit];
-  }
-
-  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean = anchor.roomName === pos.roomName): Pos | ERR_BUSY | ERR_FULL {
-    let ans = this.pathFromExit(pos, anchor.roomName);
-    if (ans === ERR_FULL)
-      return ans;
-    let [path, exit] = ans;
+    let path = exit.findPathTo(pos, getPathArgs(roomName === pos.roomName));
     if (!path.length)
-      return ERR_FULL;
+      return exit.x === pos.x && exit.y === pos.y ? exit : ERR_FULL;
 
     let lastPath = path.pop()!;
     if (addRoads)
@@ -611,7 +671,7 @@ export class RoomPlanner {
     exit = new RoomPosition(lastPath.x, lastPath.y, exit.roomName);
     if (pos.x !== lastPath.x || pos.y !== lastPath.y || pos.roomName !== exit.roomName) {
       let ent = exit.getEnteranceToRoom();
-      this.activePlanning[anchor.roomName].exits.push(ent ? ent : exit);
+      this.activePlanning[roomName].exits.push(ent ? ent : exit);
       return ERR_BUSY;
     }
     return path.length > 0 ? new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, exit.roomName) : exit;
