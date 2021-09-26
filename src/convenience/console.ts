@@ -1,16 +1,22 @@
-import { makeId } from "../abstract/utils";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
+import { makeId } from "../abstract/utils";
+
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
 
 export class CustomConsole {
   vis(framerate?: number, force: number = 0) {
-    if (Memory.settings.framerate && framerate === undefined)
-      Memory.settings.framerate = 0;
-    else
-      Memory.settings.framerate = framerate ? framerate : (!Memory.settings.framerate ? 1 : 0);
+    if (Apiary.visuals)
+      for (let name in Apiary.visuals.caching) {
+        if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc === Infinity)
+          framerate = Memory.settings.framerate;
+        Apiary.visuals.caching[name].lastRecalc = Game.time;
+      }
+
+    Memory.settings.framerate = framerate !== undefined ? framerate : (!Memory.settings.framerate || Memory.settings.framerate > 1 ? 1 : 0);
     Memory.settings.forceBucket = force;
-    return Memory.settings.framerate, Memory.settings.forceBucket;
+
+    return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
   }
 
   format(s: string) {
@@ -20,12 +26,32 @@ export class CustomConsole {
       return s.toLowerCase();
   }
 
+  showBreach(hiveName: string, keep = false) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    let terrain = Game.map.getRoomTerrain(hiveName);
+    let mask = Apiary.useBucket ? 1 : 3;
+    Apiary.visuals.changeAnchor(0, 0, hiveName);
+    for (let x = 0; x <= 49; ++x)
+      for (let y = 0; y <= 49; ++y) {
+        let pos = new RoomPosition(x, y, hiveName);
+        if (x % mask === 0 && y % mask === 0 && terrain.get(x, y) !== TERRAIN_MASK_WALL
+          && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
+          && !hive.cells.defense.wasBreached(pos))
+          Apiary.visuals.anchor.vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
+      }
+
+    Apiary.visuals.exportAnchor(hiveName, keep ? Infinity : 20);
+    return "OK";
+  }
+
   // some hand used functions
   terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
     hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
     if (!hive)
-      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${hiveName}>${hiveName}</a>`;
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
 
     let cell = hive && hive.cells.storage;
     if (!cell || !cell.terminal)
@@ -241,7 +267,7 @@ export class CustomConsole {
     let pos = contr && [new RoomPosition(contr.x, contr.y + 1, roomName), new RoomPosition(contr.x, contr.y - 1, roomName)]
       .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0];
     if (pos)
-      pos.createFlag("change_" + roomName + "_" + makeId(4), COLOR_WHITE, COLOR_CYAN);
+      pos.createFlag("change_" + roomName + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
     else
       return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
 
