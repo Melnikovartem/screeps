@@ -39,19 +39,18 @@ export class UpgraderMaster extends Master {
     }
 
     this.boost = true;
-
-    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000)
-      return;
-
     let desiredRate = this.cell.maxRate;
+    let storeAmount = storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY)
     let rounding = Math.floor;
-    if (storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= STORAGE_BALANCE[RESOURCE_ENERGY])
+    if (storeAmount >= STORAGE_BALANCE[RESOURCE_ENERGY])
       rounding = Math.ceil;
 
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
 
-    this.targetBeeCount = Math.min(6, Math.max(1, this.targetBeeCount));
+    this.targetBeeCount = Math.min(Math.max(1, this.targetBeeCount),
+      Math.ceil(4.15 * Math.pow(10, -17) * Math.pow(storeAmount, 3) - 7.6 * Math.pow(10, -11) * Math.pow(storeAmount, 2)
+        + 4.8 * Math.pow(10, -5) * storeAmount - 1)); // cool math function
   }
 
 
@@ -66,12 +65,12 @@ export class UpgraderMaster extends Master {
   update() {
     super.update();
 
-    let extreme = this.cell.controller.ticksToDowngrade < 6000;
+    let extreme = this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2;
     if (this.checkBeesWithRecalc(extreme)) {
       let order = {
         setup: setups.upgrader.manual,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: <8 | 2>8,
+        priority: <8 | 3>8,
       };
 
       if (this.fastModePossible)
@@ -80,7 +79,7 @@ export class UpgraderMaster extends Master {
       order.setup.patternLimit = this.patternPerBee;
 
       if (extreme) {
-        order.priority = 2;
+        order.priority = 3;
         order.setup = setups.upgrader.manual;
       }
 
@@ -99,7 +98,7 @@ export class UpgraderMaster extends Master {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting)
         return;
-      if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > 6000
+      if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME
         && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
         let suckerTarget;
         if (this.cell.link)

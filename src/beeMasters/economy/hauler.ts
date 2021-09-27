@@ -15,10 +15,10 @@ export class HaulerMaster extends Master {
   accumRoadTime = 0;
   dropOff: StructureStorage // | StructureContainer | StructureLink;
 
-  constructor(excavationCell: ExcavationCell) {
+  constructor(excavationCell: ExcavationCell, storage: StructureStorage) {
     super(excavationCell.hive, excavationCell.ref);
     this.cell = excavationCell;
-    this.dropOff = this.hive.cells.storage!.storage;
+    this.dropOff = storage;
   }
 
   deleteBee(ref: string) {
@@ -39,7 +39,6 @@ export class HaulerMaster extends Master {
         }
       });
     this.cell.shouldRecalc = false;
-    console.log(this.accumRoadTime);
   }
 
   recalculateTargetBee() {

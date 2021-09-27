@@ -8,12 +8,12 @@ export class CustomConsole {
   vis(framerate?: number, force: number = 0) {
     if (Apiary.visuals)
       for (let name in Apiary.visuals.caching) {
-        if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc === Infinity)
-          framerate = Memory.settings.framerate;
+        if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc - Game.time > 5)
+          framerate = Memory.settings.framerate; // updating some sticky state
         Apiary.visuals.caching[name].lastRecalc = Game.time;
       }
 
-    Memory.settings.framerate = framerate !== undefined ? framerate : (!Memory.settings.framerate || Memory.settings.framerate > 1 ? 1 : 0);
+    Memory.settings.framerate = framerate !== undefined ? framerate : (Memory.settings.framerate !== 1 ? 1 : 0);
     Memory.settings.forceBucket = force;
 
     return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;

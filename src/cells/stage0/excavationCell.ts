@@ -19,8 +19,8 @@ export class ExcavationCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, prefix.excavationCell + hive.room.name);
-    if (this.hive.phase > 0)
-      this.master = new HaulerMaster(this);
+    if (this.hive.phase > 0 && this.hive.room.storage)
+      this.master = new HaulerMaster(this, this.hive.room.storage);
   }
 
   addResource(resource: Source | Mineral) {
