@@ -402,10 +402,7 @@ export class Order {
             case COLOR_YELLOW:
               resource = this.pos.lookFor(LOOK_SOURCES)[0];
               if (resource) {
-                if (this.hive.cells.excavation)
-                  this.hive.cells.excavation.addResource(resource);
-                if (this.hive.cells.dev)
-                  this.hive.cells.dev.addResource(resource);
+                this.hive.cells.excavation.addResource(resource);
               } else
                 this.delete();
               break;

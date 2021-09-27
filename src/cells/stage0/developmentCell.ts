@@ -9,43 +9,43 @@ import type { Hive } from "../../Hive";
 
 @profile
 export class DevelopmentCell extends Cell {
-
   controller: StructureController;
-  sources: { [id: string]: Source } = {};
   master: BootstrapMaster;
   shouldRecalc: boolean = true;
   handAddedResources: RoomPosition[] = [];
+  addedRooms: string[] = [];
 
   constructor(hive: Hive) {
     super(hive, prefix.developmentCell + hive.room.name);
     this.controller = this.hive.room.controller!;
     this.master = new BootstrapMaster(this);
     this.pos = this.hive.room.controller ? this.hive.room.controller.pos : this.hive.pos;
-  }
 
-  addResources() {
-    this.handAddedResources = [];
     _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), r => {
       if (r.resourceType === RESOURCE_ENERGY)
         this.handAddedResources.push(r.pos);
     });
 
     _.forEach(this.hive.room.find(FIND_STRUCTURES), s => {
-      if (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_LINK)
+      if (s.structureType === STRUCTURE_LINK || s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
         this.handAddedResources.push(s.pos);
     });
   }
 
-  addResource(resource: Source) {
-    if (!this.sources[resource.id]) {
-      this.sources[resource.id] = resource;
-      this.shouldRecalc = true;
-      this.addResources();
-    }
+  addRoom(room: Room) {
+    _.forEach(room.find(FIND_DROPPED_RESOURCES), r => {
+      if (r.resourceType === RESOURCE_ENERGY)
+        this.handAddedResources.push(r.pos);
+    });
+
+    _.forEach(room.find(FIND_STRUCTURES), s => {
+      if (s.structureType === STRUCTURE_LINK || s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
+        this.handAddedResources.push(s.pos);
+    });
   }
 
   update() {
-    super.update(["sources"], false);
+    super.update();
     if (this.hive.room.storage && this.hive.phase === 0)
       Apiary.destroyTime = Game.time;
   }

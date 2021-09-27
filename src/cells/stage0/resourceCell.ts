@@ -34,21 +34,21 @@ export class ResourceCell extends Cell {
 
   updateStructure() {
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
-      structure => structure.structureType === STRUCTURE_CONTAINER)[0];
+      s => s.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
-        structure => structure.structureType === STRUCTURE_LINK)[0];
+        s => s.structureType === STRUCTURE_LINK && s.isActive())[0];
       this.operational = this.container || this.link ? true : false;
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
-        structure => structure.structureType === STRUCTURE_EXTRACTOR)[0];
+        s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
       this.operational = this.extractor && this.container ? true : false;
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
       this.resourceType = this.resource.mineralType;
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);
-    if (roomInfo.currentOwner !== Apiary.username)
+    if (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
       this.operational = false;
 
     if (this.operational) {
@@ -58,6 +58,10 @@ export class ResourceCell extends Cell {
       else
         this.pos = this.resource.pos;
     }
+
+    if (this.hive.cells.dev)
+      this.hive.cells.dev.shouldRecalc = true;
+    this.hive.cells.excavation.shouldRecalc = true;
   }
 
   update() {
@@ -71,7 +75,7 @@ export class ResourceCell extends Cell {
       this.operational = false;
     }
 
-    if (this.resource instanceof Mineral && Game.time % 10 === 0)
+    if (this.resourceType !== RESOURCE_ENERGY)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
   }
 

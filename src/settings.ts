@@ -7,4 +7,4 @@ export const VISUALS_TRAVELER = true;
 
 export const GENERATE_PIXEL = !DEVELOPING;
 export const LOGGING_CYCLE = 250;
-export const SAFE_DEV = true;
+export const SAFE_DEV = !DEVELOPING;

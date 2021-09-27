@@ -14,14 +14,13 @@ export class ExcavationCell extends Cell {
   resourceCells: { [id: string]: ResourceCell } = {};
   quitefullContainers: StructureContainer[] = [];
   shouldRecalc: boolean = true;
-  master: HaulerMaster;
-  dropOff: StructureStorage // | StructureContainer | StructureLink;
+  master: HaulerMaster | undefined;
   roomResources: { [id: string]: number } = {};
 
   constructor(hive: Hive) {
     super(hive, prefix.excavationCell + hive.room.name);
-    this.master = new HaulerMaster(this);
-    this.dropOff = this.hive.cells.storage!.storage;
+    if (this.hive.phase > 0)
+      this.master = new HaulerMaster(this);
   }
 
   addResource(resource: Source | Mineral) {
