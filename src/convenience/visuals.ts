@@ -3,7 +3,6 @@ import { makeId } from "../abstract/utils";
 
 import { profile } from "../profiler/decorator";
 import type { PossiblePositions, Hive } from "../hive";
-import type { LaboratoryCell } from "../cells/stage1/laboratoryCell";
 
 const TEXT_SIZE = 0.8;
 const TEXT_WIDTH = TEXT_SIZE * 0.46;
@@ -71,24 +70,29 @@ export class Visuals {
         this.exportAnchor();
       }
 
-      for (const name in Apiary.hives) {
-        let hive = Apiary.hives[name];
-        this.changeAnchor(1, 1, name);
-
-        if (Apiary.useBucket) {
+      if (Apiary.useBucket)
+        for (const name in Apiary.hives) {
+          let hive = Apiary.hives[name];
+          this.changeAnchor(1, 1, name);
           this.statsHive(hive);
-          this.statsLab(hive.cells.lab);
+          this.statsLab(hive);
           this.changeAnchor(0.5, 48.5);
           this.visualizeEnergy(name);
         }
 
-        if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
-          this.exportAnchor();
+      for (const name in Apiary.hives) {
+        let hive = Apiary.hives[name];
 
         _.forEach(hive.annexNames, annex => {
           if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
             this.exportAnchor(0, annex);
         });
+
+        this.changeAnchor(1, 1, name);
+        this.spawnInfo(hive);
+
+        if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
+          this.exportAnchor();
       }
     }
 
@@ -380,16 +384,16 @@ export class Visuals {
     minSize = Math.max(minSize, this.anchor.x - 1);
   }
 
-  statsLab(labCell: LaboratoryCell | undefined) {
-    if (!labCell)
+  statsLab(hive: Hive) {
+    if (!hive.cells.lab)
       return;
-    let labRequest = labCell.currentProduction;
+    let labRequest = hive.cells.lab.currentProduction;
     if (labRequest) {
       this.updateAnchor(this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.anchor, undefined));
     }
-    if (Object.keys(labCell.boostRequests).length) {
+    if (Object.keys(hive.cells.lab.boostRequests).length) {
       let boosts: { [id: string]: { [id: string]: number } } = {};
-      _.forEach(labCell.boostRequests, rr => _.forEach(rr, r => {
+      _.forEach(hive.cells.lab.boostRequests, rr => _.forEach(rr, r => {
         if (!r.amount || !r.res)
           return;
         if (!boosts[r.type])
@@ -403,6 +407,14 @@ export class Visuals {
         ans.push([action].concat(_.map(boosts[action], (num, res) => `${res}: ${num}`)));
       this.updateAnchor(this.table(ans, this.anchor, undefined));
     }
+  }
+
+  spawnInfo(hive: Hive) {
+    _.forEach(hive.cells.spawn.spawns, s => {
+      if (s.spawning)
+        this.anchor.vis.text(`⚒️ ${s.spawning.name.slice(0, s.spawning.name.length - 5)} ${
+          Math.round((1 - s.spawning.remainingTime / s.spawning.needTime) * 100)}%`, s.pos.x + 1, s.pos.y + 0.25, this.textStyle());
+    });
   }
 
   getBeesAmount(master: { waitingForBees: number, beesAmount: number, targetBeeCount: number } | undefined): string {

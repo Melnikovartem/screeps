@@ -122,19 +122,16 @@ export class DefenseCell extends Cell {
           if (freeSwarms.length) {
             let swarm = freeSwarms.reduce((prev, curr) =>
               prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
-            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5) {
-              ans = swarm.flag.setPosition(enemy.pos);
-              if (ans === OK) {
-                Apiary.defenseSwarms[roomName] = swarm;
-                delete Apiary.defenseSwarms[swarm.pos.roomName];
-              }
+            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5 && this.setDefFlag(enemy.pos) === OK) {
+              Apiary.defenseSwarms[roomName] = swarm;
+              delete Apiary.defenseSwarms[swarm.pos.roomName];
             }
           }
           if (ans !== OK) {
             if (roomInfo.dangerlvlmax < 6)
-              this.createDefFlag(enemy.pos);
+              this.setDefFlag(enemy.pos);
             else
-              this.createDefFlag(enemy.pos, true);
+              this.setDefFlag(enemy.pos, true);
           }
         }
       }
@@ -165,7 +162,7 @@ export class DefenseCell extends Cell {
     return path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y;
   }
 
-  createDefFlag(pos: RoomPosition, powerfull: boolean = false) {
+  setDefFlag(pos: RoomPosition, info: boolean | Flag = false) {
     let ans;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8);
@@ -176,12 +173,15 @@ export class DefenseCell extends Cell {
     } else if (pos.getEnteranceToRoom())
       pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
 
-    if (powerfull)
+    if (info instanceof Flag) {
+      return info.setPosition(pos.x, pos.y)
+    } else if (info)
       ans = pos.createFlag(prefix.def + "D_" + makeId(4), COLOR_RED, COLOR_RED);
     else
       ans = pos.createFlag(prefix.def + makeId(4), COLOR_RED, COLOR_BLUE);
     if (typeof ans === "string")
       Game.flags[ans].memory = { hive: this.hive.roomName };
+    return ans;
   }
 
   notDef(roomName: string) {
@@ -197,7 +197,7 @@ export class DefenseCell extends Cell {
       if (roomInfo.enemies.length > 0) {
         // for now i will just sit back ...
         if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
-          this.createDefFlag(roomInfo.enemies[0].object.pos, true);
+          this.setDefFlag(roomInfo.enemies[0].object.pos, true);
 
         if (!_.filter(this.towers, t => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
           _.forEach(this.towers, tower => {

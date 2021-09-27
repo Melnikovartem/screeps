@@ -61,7 +61,7 @@ export class HordeMaster extends SwarmMaster {
         shouldFlee = target.store.getUsedCapacity(RESOURCE_ENERGY) >= 10;
         targetRange = 20;
       }
-    if (shouldFlee && bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.7) {
+    if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.7 || bee.pos.getRangeTo(target) < range)) {
       let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
         let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
         if (ans === 0)
@@ -104,7 +104,7 @@ export class HordeMaster extends SwarmMaster {
           }
           if (ans === OK) {
             bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
-            if (bee.pos.getRangeTo(this.order.pos) <= 5)
+            if (bee.pos.getRangeTo(this.order.pos) <= (enemiy ? 20 : 5))
               bee.state = beeStates.work;
           }
       }

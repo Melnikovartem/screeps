@@ -220,9 +220,10 @@ export class Logger {
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
+    ans["larva"] = { profit: getRate("larva"), revenue: getRate("larva") + getRate("spawn_" + setupsNames.bootstrap) };
 
-    type civilRoles = "queen" | "manager" | "claimer";
-    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager", "claimer"], s => getRate("spawn_" + setupsNames[s])) };
+    type civilRoles = "queen" | "manager";
+    ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager"], s => getRate("spawn_" + setupsNames[s])) };
 
     return ans;
   }

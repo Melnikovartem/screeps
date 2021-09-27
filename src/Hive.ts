@@ -165,6 +165,8 @@ export class Hive {
     if (!this.annexNames.includes(annexName))
       this.annexNames.push(annexName);
     if (annexName in Game.rooms) {
+      if (this.cells.dev)
+        this.cells.dev.addRoom(Game.rooms[annexName]);
       if (this.shouldRecalc < 3)
         this.shouldRecalc = 3;
       return OK;

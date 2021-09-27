@@ -47,6 +47,16 @@ export class MinerMaster extends Master {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 
+      if (bee.state !== beeStates.chill && bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25) {
+        let target;
+        if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
+          target = this.cell.link;
+        else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
+          target = this.cell.container;
+        if (target && bee.pos.isNearTo(target) || bee.store.getFreeCapacity(this.cell.resourceType) === 0)
+          bee.transfer(target, this.cell.resourceType);
+      }
+
       switch (bee.state) {
         case beeStates.work:
           if (this.cell.pos.isFree() && bee.pos.isNearTo(this.cell.pos))
@@ -71,16 +81,6 @@ export class MinerMaster extends Master {
             bee.goTo(this.hive.pos);
           bee.state = beeStates.work;
           break;
-      }
-
-      if (bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25) {
-        let target;
-        if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
-          target = this.cell.link;
-        else if (this.cell.container && this.cell.container.store.getFreeCapacity(this.cell.resourceType))
-          target = this.cell.container;
-        if (target && bee.pos.isNearTo(target) || bee.store.getFreeCapacity(this.cell.resourceType) === 0)
-          bee.transfer(target, this.cell.resourceType);
       }
     });
   }
