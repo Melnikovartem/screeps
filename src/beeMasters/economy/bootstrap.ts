@@ -6,7 +6,7 @@ import { setups } from "../../bees/creepsetups";
 import { profile } from "../../profiler/decorator";
 import type { DevelopmentCell } from "../../cells/stage0/developmentCell";
 
-type workTypes = "upgrade" | "repair" | "build" | "refill" | "chilling" | "mining" | "stealing";
+type workTypes = "upgrade" | "repair" | "build" | "refill" | "chilling" | "mining";
 type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 
 @profile
@@ -19,8 +19,8 @@ export class BootstrapMaster extends Master {
     refill: 0,
     chilling: 0,
     mining: 0,
-    stealing: 0,
   };
+  patternCount = 0;
 
   constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
@@ -34,31 +34,46 @@ export class BootstrapMaster extends Master {
 
   recalculateTargetBee() {
     this.targetBeeCount = 0;
-    let patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
-    if (this.hive.bassboost)
-      patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
-    if (setups.bootstrap.patternLimit)
-      patternCount = Math.min(setups.bootstrap.patternLimit, patternCount);
 
-    _.forEach(this.cell.sources, source => {
-      // harvestTime + roadTime + workTime(upgrade)
-      let openPos = source.pos.getOpenPositions(true).length;
-      if (this.hive.phase > 0 && source.pos.roomName === this.hive.roomName && this.hive.state !== hiveStates.nospawn)
-        openPos--;
+    this.patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
+    if (this.hive.bassboost)
+      this.patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
+    if (setups.bootstrap.patternLimit)
+      this.patternCount = Math.min(setups.bootstrap.patternLimit, this.patternCount);
+
+    _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+      let source = cell.resource;
+      if (cell.resourceType !== RESOURCE_ENERGY)
+        return;
+
       let roadTime = source.pos.getTimeForPath(this.cell.pos) - 2;
-      let cycleWithoutEnergy = roadTime * 2 + patternCount;
+      let cycleWithoutEnergy = roadTime * 2 + this.patternCount;
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
-      if (source.pos.roomName === this.hive.roomName && this.hive.room.energyCapacityAvailable < 650)
+      let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
+      if (roomInfo.currentOwner === Apiary.username)
         energyPerTick = 5;
-      let maxCycleByEnergy = Math.ceil(energyPerTick / (2 * patternCount * openPos * 25 / (cycleWithoutEnergy + 25) * 0.75));
+      let openPos = source.pos.getOpenPositions(true).length;
+
+      if (cell.operational) {
+        let miningPower = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 150), setups.miner.energy.patternLimit);
+        this.targetBeeCount += Math.min(energyPerTick, miningPower * 2)
+          / (this.patternCount * 50 / cycleWithoutEnergy);
+        energyPerTick -= miningPower * 2;
+        --openPos;
+        if (!openPos)
+          return;
+      }
+
+      let maxCycleByEnergy = Math.max(energyPerTick, 0) / (2 * this.patternCount * openPos * 25 / (cycleWithoutEnergy + 25))
+        * (cell.pos.roomName === this.hive.pos.roomName ? 1.5 : 0.5); // much higher chance to mine in same room then in faraway
       // amount of positions * bees can 1 position support
       let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / (25 + roadTime * 0.5)));
       // console.log(source.pos, "pos:", maxcycleByPos, "energy:", maxCycleByEnergy);
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 
-    this.targetBeeCount = Math.ceil(this.targetBeeCount);
+    this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
     if (this.hive.bassboost)
       this.targetBeeCount = Math.min(this.targetBeeCount, 6);
     else if (Game.shard.name === "shard3")
@@ -68,14 +83,23 @@ export class BootstrapMaster extends Master {
     return this.checkBees(false);
   }
 
+  checkBeesWithRecalc() {
+    if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
+      return false;
+    let check = () => this.checkBees(false);
+    if (!check())
+      return false;
+    this.recalculateTargetBee();
+    return check();
+  }
+
   update() {
     super.update();
 
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
 
-    if (this.checkBees(false) && (this.hive.phase === 0 || this.hive.state > hiveStates.economy)
-      && !this.count.chilling && this.recalculateTargetBee()) {
+    if (this.checkBeesWithRecalc()) {
       let order = {
         setup: setups.bootstrap,
         amount: 1,
@@ -99,41 +123,49 @@ export class BootstrapMaster extends Master {
       refill: 0,
       chilling: 0,
       mining: 0,
-      stealing: 0,
     };
 
-    let handTargets: extraTarget[] = [];
+    let soruces = (<Source[]>_.compact(_.map(this.hive.cells.excavation.resourceCells,
+      cell => !cell.master.beesAmount && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
+      .filter(s => s.pos.getOpenPositions().length && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20));
+
+    let targets: extraTarget[] = []
+
     for (let i = 0; i < this.cell.handAddedResources.length; ++i) {
       let target: extraTarget | undefined;
       let pos = this.cell.handAddedResources[i];
-      target = pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+      target = pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 25)[0];
       if (!target)
-        target = pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0)[0];
+        target = pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 25)[0];
       if (!target)
-        target = pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY && r.amount > 0)[0];
+        target = pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY && r.amount > 25)[0];
       if (!target) {
         let structures = <StructureStorage[]>pos.lookFor(LOOK_STRUCTURES)
-          .filter(s => (<StructureStorage>s).store && (!this.hive.room.storage || s.id !== this.hive.room.storage.id));
+          .filter(s => (<StructureStorage>s).store);
         if (!structures.length) {
           this.cell.handAddedResources.splice(i, 1);
           --i;
         } else
-          target = structures.filter(s => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 100)[0];
+          target = structures.filter(s => s.store.getUsedCapacity(RESOURCE_ENERGY) >= this.patternCount * 50
+            && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.battle))[0];
       }
+
       if (target)
-        handTargets.push(target);
+        targets.push(target);
     }
 
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.work:
-          if (!bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
+          if (!bee.creep.store.getUsedCapacity(RESOURCE_ENERGY)) {
             bee.state = beeStates.refill;
+            delete bee.target;
+          }
           break;
         case beeStates.refill:
           if (!bee.creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
-            delete bee.target;
             bee.state = beeStates.work;
+            delete bee.target;
           }
           break;
         case beeStates.chill:
@@ -143,31 +175,22 @@ export class BootstrapMaster extends Master {
 
       switch (bee.state) {
         case beeStates.refill:
-          let source: Source | null;
-          let extraTarget = bee.pos.findClosest(handTargets);
-          if (extraTarget) {
-            if (bee.pos.roomName !== extraTarget.pos.roomName)
-              bee.goTo(extraTarget);
-            else {
-              if (extraTarget instanceof Resource)
-                bee.pickup(extraTarget)
-              else
-                bee.withdraw(extraTarget, RESOURCE_ENERGY);
-            }
-            ++countCurrent.stealing;
-            return;
-          }
-
+          let source: Source | null | undefined | extraTarget;
           if (!bee.target) {
-            // next lvl caching would be to calculate all the remaining time to fill up and route to source and check on that
-            // but that is too much for too little
-            source = <Source>bee.pos.findClosest(_.filter(this.cell.sources,
-              source => (source.pos.getOpenPositions().length || bee.pos.isNearTo(source))
-                && (source.energy > bee.store.getFreeCapacity(RESOURCE_ENERGY) || source.ticksToRegeneration < 20)));
+            source = bee.pos.findClosest(soruces);
             if (source)
               bee.target = source.id;
           } else
-            source = this.cell.sources[bee.target];
+            source = Game.getObjectById(bee.target);
+
+          if (!source || source instanceof Source) {
+            let pickupTarget = bee.pos.findClosest(targets);
+            if (pickupTarget && (bee.pos.getRangeTo(pickupTarget) < 6
+              || !source || source.pos.getRangeApprox(bee) + 30 > source.pos.getRangeApprox(pickupTarget))) {
+              source = pickupTarget;
+              bee.target = source.id;
+            }
+          }
 
           if (source instanceof Source) {
             if (source.energy === 0 && source.ticksToRegeneration > 20)
@@ -183,6 +206,13 @@ export class BootstrapMaster extends Master {
                   delete bee.target;
               }
             }
+          } else if (source instanceof Resource)
+            bee.pickup(source)
+          else if (source) {
+            if (source.store.getUsedCapacity(RESOURCE_ENERGY) < 25)
+              delete bee.target;
+            else
+              bee.withdraw(source, RESOURCE_ENERGY);
           } else {
             bee.state = beeStates.chill;
             delete bee.target;
@@ -235,7 +265,7 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          if (!target && bee.pos.roomName !== this.hive.roomName && this.count.build + this.count.repair <= Math.ceil(this.targetBeeCount * 0.75)) {
+          if (!target && bee.pos.roomName !== this.hive.roomName) {
             target = this.hive.findProject(bee, "repairs");
             if (target)
               if (target instanceof Structure)
@@ -244,7 +274,7 @@ export class BootstrapMaster extends Master {
                 workType = "build";
           }
 
-          if (!target && (this.count.refill < Math.max(2, this.targetBeeCount * 0.2) || bee.pos.roomName === this.hive.roomName)) {
+          if (!target) {
             let targets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
             targets = _.filter(targets.concat(_.map(this.hive.cells.spawn.extensions)),
               structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);

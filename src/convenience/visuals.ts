@@ -10,7 +10,7 @@ const TEXT_WIDTH = TEXT_SIZE * 0.46;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 const SPACING = 0.3;
 
-type VisInfo = { x: number, y: number, vis: RoomVisual }
+type VisInfo = { x: number, y: number, vis: RoomVisual, ref: string }
 
 const GLOBAL_VISUALS = "global";
 const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
@@ -18,16 +18,18 @@ const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
 @profile
 export class Visuals {
   caching: { [id: string]: { data: string, lastRecalc: number } } = {};
-  anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(GLOBAL_VISUALS) };
+  anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(GLOBAL_VISUALS), ref: GLOBAL_VISUALS };
 
-  changeAnchor(x?: number, y?: number, ref?: string) {
+  changeAnchor(x?: number, y?: number, roomName?: string) {
     if (x !== undefined)
       this.anchor.x = x;
     this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y >= 0 ? y : this.anchor.y;
     this.anchor.vis.roomName;
 
-    if (ref && this.anchor.vis.roomName !== ref)
-      this.anchor.vis = ref ? new RoomVisual(ref + makeId(4)) : new RoomVisual(GLOBAL_VISUALS);
+    if (roomName && this.anchor.ref !== roomName) {
+      this.anchor.vis = new RoomVisual(makeId(8));
+      this.anchor.ref = roomName;
+    }
 
     return this.anchor;
   }
@@ -36,7 +38,7 @@ export class Visuals {
     this.anchor.y = info.y + SPACING;
   }
 
-  exportAnchor(ref: string, offset = 0) {
+  exportAnchor(offset = 0, ref = this.anchor.ref) {
     this.caching[ref] = { data: this.anchor.vis.export(), lastRecalc: Game.time + offset };
   }
 
@@ -45,8 +47,11 @@ export class Visuals {
       if (name !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);
         vis.import(this.caching[name].data);
-        if (this.caching[name].lastRecalc === Game.time)
+        if (this.caching[name].lastRecalc === Game.time) {
           vis.import(this.caching[GLOBAL_VISUALS].data);
+          if (this.caching[GLOBAL_VISUALS_HEAVY])
+            vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
+        }
       }
     return true;
   }
@@ -56,30 +61,33 @@ export class Visuals {
       return;
 
     this.visualizePlanner();
-    if (Game.time % Memory.settings.framerate === 0 || this.caching[GLOBAL_VISUALS] === undefined) {
+    if (Game.time % Memory.settings.framerate === 0 || Game.time === Apiary.createTime) {
       this.changeAnchor(49, 1, GLOBAL_VISUALS);
       this.global();
+      this.exportAnchor();
       if (Apiary.useBucket) {
         this.changeAnchor(25, 1, GLOBAL_VISUALS_HEAVY);
         this.battleInfo();
+        this.exportAnchor();
       }
-
-      this.caching[GLOBAL_VISUALS] = { data: this.anchor.vis.export(), lastRecalc: Game.time };
 
       for (const name in Apiary.hives) {
         let hive = Apiary.hives[name];
         this.changeAnchor(1, 1, name);
-        this.statsHive(hive);
-        this.statsLab(hive.cells.lab);
-        this.changeAnchor(0.5, 48.5);
-        this.visualizeEnergy(name);
+
+        if (Apiary.useBucket) {
+          this.statsHive(hive);
+          this.statsLab(hive.cells.lab);
+          this.changeAnchor(0.5, 48.5);
+          this.visualizeEnergy(name);
+        }
 
         if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
-          this.exportAnchor(name);
+          this.exportAnchor();
 
         _.forEach(hive.annexNames, annex => {
           if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
-            this.exportAnchor(annex);
+            this.exportAnchor(0, annex);
         });
       }
     }
@@ -88,14 +96,15 @@ export class Visuals {
   }
 
   global() {
+    const minLen = 6;
     if (!Apiary.useBucket)
-      this.updateAnchor(this.label("LOW CPU MODE", this.anchor, { align: "right" }, 8));
-    this.updateAnchor(this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.anchor, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, 6));
-    this.updateAnchor(this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.anchor, Game.cpu.bucket / PIXEL_CPU_COST, { align: "right" }, 6));
-    this.updateAnchor(this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.anchor, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, 6));
+      this.updateAnchor(this.label("LOW CPU", this.anchor, { align: "right" }, minLen));
+    this.updateAnchor(this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.anchor, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, minLen));
+    this.updateAnchor(this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.anchor, Game.cpu.bucket / PIXEL_CPU_COST, { align: "right" }, minLen));
+    this.updateAnchor(this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.anchor, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, minLen));
     let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
     if (heapStat)
-      this.updateAnchor(this.progressbar("HEAP", this.anchor, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, 6));
+      this.updateAnchor(this.progressbar("HEAP", this.anchor, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, minLen));
   }
 
   battleInfo() {
@@ -209,7 +218,7 @@ export class Visuals {
         vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
         vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
       }
-      this.exportAnchor(roomName, 1);
+      this.exportAnchor(1);
     }
   }
 
@@ -310,29 +319,27 @@ export class Visuals {
         this.getBeesAmount(cell.master)]);
     cell = hive.cells.dev;
     if (cell)
-      ans.push(["develop",
-        !cell.sources.length ? "" : ` ${Object.keys(cell.sources).length}`,
-        this.getBeesAmount(cell.master)]);
-    cell = hive.cells.excavation;
-    if (cell) {
+      ans.push(["develop", "", this.getBeesAmount(cell.master)]);
+    else {
+      cell = hive.cells.excavation;
       ans.push(["excav", !cell.quitefullContainers.length ? "" :
         ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, c => c.container && c.operational && !c.link ? 1 : 0)}`,
         this.getBeesAmount(cell.master)]);
-
-      let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
-      let operational = 0;
-      let all = 0;
-      _.forEach(cell.resourceCells, rcell => {
-        ++all;
-        operational += rcell.operational ? 1 : 0;
-        if (rcell.master && rcell.perSecondNeeded) {
-          stats.beesAmount += rcell.master.beesAmount;
-          stats.waitingForBees += rcell.master.waitingForBees;
-          stats.targetBeeCount += rcell.master.targetBeeCount;
-        }
-      });
-      ans.push(["resource", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
     }
+
+    let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
+    let operational = 0;
+    let all = 0;
+    _.forEach(hive.cells.excavation.resourceCells, rcell => {
+      ++all;
+      operational += rcell.operational ? 1 : 0;
+      if (rcell.master && rcell.perSecondNeeded) {
+        stats.beesAmount += rcell.master.beesAmount;
+        stats.waitingForBees += rcell.master.waitingForBees;
+        stats.targetBeeCount += rcell.master.targetBeeCount;
+      }
+    });
+    ans.push(["resource", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
 
     let annexOrders = _.filter(Apiary.orders, o => o.hive === hive && /^annex_/.exec(o.ref))
     if (annexOrders.length) {

@@ -23,7 +23,7 @@ export class UpgraderMaster extends Master {
     let storageCell = this.hive.cells.storage;
     if (!storageCell) {
       this.targetBeeCount = 0;
-      return false;
+      return;
     }
 
     this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
@@ -35,7 +35,7 @@ export class UpgraderMaster extends Master {
     this.fastMode = true;
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
       this.fastMode = false;
-      return true;
+      return;
     }
 
     this.boost = true;
@@ -52,16 +52,22 @@ export class UpgraderMaster extends Master {
     this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
 
     this.targetBeeCount = Math.min(6, Math.max(1, this.targetBeeCount));
+  }
 
-    let extreme = this.cell.controller.ticksToDowngrade < 6000;
-    return this.checkBees(!extreme);
+
+  checkBeesWithRecalc(extreme: boolean) {
+    let check = () => this.checkBees(!extreme);
+    if (!check())
+      return false;
+    this.recalculateTargetBee();
+    return check();
   }
 
   update() {
     super.update();
 
     let extreme = this.cell.controller.ticksToDowngrade < 6000;
-    if (this.checkBees(!extreme) && this.recalculateTargetBee()) {
+    if (this.checkBeesWithRecalc(extreme)) {
       let order = {
         setup: setups.upgrader.manual,
         amount: this.targetBeeCount - this.beesAmount,

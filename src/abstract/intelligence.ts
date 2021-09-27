@@ -118,9 +118,8 @@ export class Intel {
           roomInfo.roomState = roomStates.reservedByInvaider;
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
-      } else
-
-        roomInfo.currentOwner = owner;
+      }
+      roomInfo.currentOwner = owner;
     }
 
     this.updateEnemiesInRoom(room);

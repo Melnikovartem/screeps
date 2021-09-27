@@ -1,7 +1,6 @@
-
-
 import { Master } from "../_Master";
-import { beeStates } from "../../enums";
+
+import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
 
@@ -24,7 +23,7 @@ export class ManagerMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees(false)) {
+    if (this.checkBees(this.hive.state === hiveStates.lowenergy)) {
       let order: SpawnOrder = {
         setup: setups.manager,
         amount: 1,

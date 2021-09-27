@@ -60,7 +60,9 @@ export class CreepSetup {
       fixedCosts = 0;
 
     let segmentCost = _.sum(this.pattern, s => BODYPART_COST[s]) + moveAmount(this.pattern.length) * BODYPART_COST[MOVE];
-    let maxSegment = Math.min(this.patternLimit, Math.floor(nonMoveMax - nonMove + ROUNDING_ERROR) / this.pattern.length, Math.floor((energy - fixedCosts) / segmentCost));
+    let maxSegment = Math.min(this.patternLimit,
+      Math.floor(nonMoveMax - nonMove + ROUNDING_ERROR) / this.pattern.length, Math.floor((energy - fixedCosts) / segmentCost));
+
     _.times(maxSegment, () => {
       addPattern(this.pattern);
     });

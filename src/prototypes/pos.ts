@@ -9,7 +9,8 @@ interface RoomPosition {
   getEnteranceToRoom(): RoomPosition | null;
   getPosInDirection(direction: DirectionConstant): RoomPosition;
   getTimeForPath(pos: ProtoPos): number;
-  findClosest<Obj extends ProtoPos>(structures: Obj[]): Obj | null;
+  findClosest<Obj extends ProtoPos>(structures: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
+  getRangeApprox(obj: ProtoPos, calcType?: "linear"): number
 }
 
 function getRoomCoorinates(roomName: string): [number, number] {
@@ -227,6 +228,70 @@ let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
   [FIND_EXIT_RIGHT]: pos => 49 - pos.x,
 }
 
+//cheap (in terms of CPU) est of dist
+RoomPosition.prototype.getRangeApprox = function(obj: ProtoPos, calcType?: "linear") {
+  let calc = (p: RoomPosition, obj: ProtoPos) => p.getRangeTo(obj)
+  if (calcType === "linear")
+    calc = (pos: RoomPosition, a: ProtoPos) => {
+      let posA = "pos" in a ? (<{ pos: RoomPosition }>a).pos : <RoomPosition>a;
+      return Math.pow(pos.x - posA.x, 2) + Math.pow(pos.y - posA.y, 2);
+    };
+
+  let pos = "pos" in obj ? (<{ pos: RoomPosition }>obj).pos : <RoomPosition>obj;
+  let newDistance = 0;
+  let route = Game.map.findRoute(this.roomName, pos.roomName);
+  let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
+  let currentRoom = this.roomName;
+
+  if (route === -2)
+    newDistance = Infinity;
+  else
+    for (let i in route) {
+      let room = Game.rooms[currentRoom];
+      let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
+      if (room) {
+        if (!(enterance instanceof RoomPosition)) {
+          let entrss = <RoomPosition[]>room.find(enterance);
+          enterance = entrss[Math.round(entrss.length / 2)];
+        }
+        // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
+
+        if (enterance) {
+          let exit: RoomPosition = new RoomPosition(Math.min(Math.max(enterance.x, 5), 44), Math.min(Math.max(enterance.y, 5), 44), room.name);
+          switch (route[i].exit) {
+            case TOP:
+              exit.y = 0;
+              break;
+            case BOTTOM:
+              exit.y = 49;
+              break;
+            case LEFT:
+              exit.x = 0;
+              break;
+            case RIGHT:
+              exit.x = 49;
+              break;
+          }
+          newDistance += calc(enterance, exit);
+          newEnterance = exit.getEnteranceToRoom();
+        }
+      } else
+        newDistance += 25;
+
+      if (!newEnterance)
+        newEnterance = oppositeExit[route[i].exit];
+      enterance = newEnterance;
+      currentRoom = route[i].room;
+    }
+
+  if (pos.roomName in Game.rooms) {
+    if (!(enterance instanceof RoomPosition))
+      enterance = Game.rooms[pos.roomName].find(enterance)[0];
+    newDistance += enterance.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
+  }
+  return newDistance;
+}
+
 // couple of optimizations to make usability of getClosestByRange, but better
 RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Obj[]): Obj | null {
   if (objects.length === 0)
@@ -235,81 +300,15 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  let getLinSq = (pos: RoomPosition, a: ProtoPos) => {
-    let posA = "pos" in a ? (<{ pos: RoomPosition }>a).pos : <RoomPosition>a;
-    return Math.pow(pos.x - posA.x, 2) + Math.pow(pos.y - posA.y, 2);
-  }
-
-  let getDistForRoute = (obj: Obj, calc = (p: RoomPosition, obj: ProtoPos) => p.getRangeTo(obj)) => {
-    let pos = "pos" in obj ? (<{ pos: RoomPosition }>obj).pos : <RoomPosition>obj;
-    let newDistance = 0;
-    let route = Game.map.findRoute(this.roomName, pos.roomName);
-    let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
-    let currentRoom = this.roomName;
-
-    if (route === -2)
-      newDistance = Infinity;
-    else
-      for (let i in route) {
-        let room = Game.rooms[currentRoom];
-        let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
-        if (room) {
-          if (!(enterance instanceof RoomPosition)) {
-            let entrss = <RoomPosition[]>room.find(enterance);
-            enterance = entrss[Math.round(entrss.length / 2)];
-          }
-          // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
-
-          if (enterance) {
-            let exit: RoomPosition = new RoomPosition(Math.min(Math.max(enterance.x, 5), 44), Math.min(Math.max(enterance.y, 5), 44), room.name);
-            switch (route[i].exit) {
-              case TOP:
-                exit.y = 0;
-                break;
-              case BOTTOM:
-                exit.y = 49;
-                break;
-              case LEFT:
-                exit.x = 0;
-                break;
-              case RIGHT:
-                exit.x = 49;
-                break;
-            }
-            newDistance += calc(enterance, exit);
-            newEnterance = exit.getEnteranceToRoom();
-          }
-        } else
-          newDistance += 25;
-
-        if (!newEnterance)
-          newEnterance = oppositeExit[route[i].exit];
-        enterance = newEnterance;
-        currentRoom = route[i].room;
-      }
-
-    if (pos.roomName in Game.rooms) {
-      if (!(enterance instanceof RoomPosition))
-        enterance = Game.rooms[pos.roomName].find(enterance)[0];
-      newDistance += enterance.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
-    }
-    return newDistance;
-  }
-
   _.some(objects, (obj: Obj) => {
-
-    //cheap (in terms of CPU) est of dist
-
-    let newDistance = getDistForRoute(obj);
+    let newDistance = this.getRangeApprox(obj);
     if (newDistance < distance) {
       ans = obj;
       distance = newDistance;
     } else if (newDistance === distance) {
-      if (getDistForRoute(ans, getLinSq) > getDistForRoute(obj, getLinSq))
+      if (this.getRangeApprox(ans, "linear") > this.getRangeApprox(obj, "linear"))
         ans = obj;
     }
-
-
     return distance <= 1;
   });
 

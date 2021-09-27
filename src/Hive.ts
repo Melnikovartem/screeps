@@ -1,9 +1,10 @@
 import { RespawnCell } from "./cells/base/respawnCell";
 import { DefenseCell } from "./cells/base/defenseCell";
 import { DevelopmentCell } from "./cells/stage0/developmentCell";
+import { ExcavationCell } from "./cells/stage0/excavationCell";
+
 import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";
-import { ExcavationCell } from "./cells/stage1/excavationCell";
 import { LaboratoryCell } from "./cells/stage1/laboratoryCell";
 import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
@@ -46,7 +47,7 @@ interface HiveCells {
   defense: DefenseCell,
   spawn: RespawnCell,
   upgrade?: UpgradeCell,
-  excavation?: ExcavationCell,
+  excavation: ExcavationCell,
   dev?: DevelopmentCell,
   lab?: LaboratoryCell,
   observe?: ObserveCell,
@@ -108,6 +109,7 @@ export class Hive {
     this.cells = {
       spawn: new RespawnCell(this),
       defense: new DefenseCell(this),
+      excavation: new ExcavationCell(this),
     };
 
     if (this.phase === 0) {
@@ -131,7 +133,6 @@ export class Hive {
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!);
-      this.cells.excavation = new ExcavationCell(this);
       this.cells.lab = new LaboratoryCell(this);
 
       this.builder = new BuilderMaster(this);
@@ -227,6 +228,18 @@ export class Hive {
     });
   }
 
+  private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
+    if (structureMap)
+      if (type === structure.structureType) {
+        if (structure.isActive())
+          structureMap[structure.id] = <S>structure;
+        else
+          return ERR_FULL;
+        return OK;
+      }
+    return ERR_INVALID_ARGS;
+  }
+
   findProject(pos: RoomPosition | { pos: RoomPosition }, ignore?: "repairs" | "constructions") {
     if (!this.structuresConst.length)
       return;
@@ -261,18 +274,6 @@ export class Hive {
     return target;
   }
 
-  private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
-    if (structureMap)
-      if (type === structure.structureType) {
-        if (structure.isActive())
-          structureMap[structure.id] = <S>structure;
-        else
-          delete structureMap[structure.id];
-        return OK;
-      }
-    return ERR_INVALID_ARGS;
-  }
-
   updateStructures() {
     let builderReCheck = this.sumCost > 0;
     this.structuresConst = [];
@@ -296,7 +297,7 @@ export class Hive {
         if (builderReCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
           _.forEach(this.annexNames, annexName => {
             if (Apiary.intel.getInfo(annexName).safePlace)
-              add(Apiary.planner.checkBuildings(annexName, this.phase === 0 ? [STRUCTURE_ROAD] : undefined))
+              add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
       default:
         add(Apiary.planner.checkBuildings(this.roomName));

@@ -38,11 +38,11 @@ export class CustomConsole {
         let pos = new RoomPosition(x, y, hiveName);
         if (x % mask === 0 && y % mask === 0 && terrain.get(x, y) !== TERRAIN_MASK_WALL
           && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
-          && !hive.cells.defense.wasBreached(pos))
+          && hive.cells.defense.wasBreached(pos))
           Apiary.visuals.anchor.vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
       }
 
-    Apiary.visuals.exportAnchor(hiveName, keep ? Infinity : 20);
+    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
     return "OK";
   }
 
