@@ -205,11 +205,12 @@ export class DefenseCell extends Cell {
             if (roomInfo.dangerlvlmax < 6) {
               if (closest.pos.getRangeTo(tower) < 10 || closest.pos.getRangeTo(this.hive.pos) < 5
                 || closest instanceof Creep && closest.owner.username === "Invader")
-                tower.attack(closest);
+                if (tower.attack(closest) === OK && Apiary.logger)
+                  Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
             } else {
               let target = <Structure | undefined>this.hive.findProject(closest, "constructions");
-              if (target)
-                tower.repair(target);
+              if (target && tower.repair(target) === OK && Apiary.logger)
+                Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
             }
           });
         }

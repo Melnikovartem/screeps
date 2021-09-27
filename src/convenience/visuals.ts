@@ -17,18 +17,23 @@ const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
 @profile
 export class Visuals {
   caching: { [id: string]: { data: string, lastRecalc: number } } = {};
-  anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(GLOBAL_VISUALS), ref: GLOBAL_VISUALS };
+  anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
+  anchorsAll: { [id: string]: VisInfo } = {};
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
+    if (roomName && this.anchor.ref !== roomName) {
+      if (this.anchorsAll[roomName])
+        this.anchor = this.anchorsAll[roomName]
+      else {
+        this.anchorsAll[this.anchor.ref] = this.anchor;
+        this.anchor = { x: x ? x : this.anchor.x, y: y ? y : this.anchor.y, vis: new RoomVisual(makeId(8)), ref: roomName }
+        return this.anchor;
+      }
+    }
+
     if (x !== undefined)
       this.anchor.x = x;
-    this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y >= 0 ? y : this.anchor.y;
-    this.anchor.vis.roomName;
-
-    if (roomName && this.anchor.ref !== roomName) {
-      this.anchor.vis = new RoomVisual(makeId(8));
-      this.anchor.ref = roomName;
-    }
+    this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y;
 
     return this.anchor;
   }
@@ -52,7 +57,7 @@ export class Visuals {
             vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
       }
-    return true;
+    this.anchorsAll = {};
   }
 
   create() {
@@ -104,7 +109,7 @@ export class Visuals {
     if (!Apiary.useBucket)
       this.updateAnchor(this.label("LOW CPU", this.anchor, { align: "right" }, minLen));
     this.updateAnchor(this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.anchor, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, minLen));
-    this.updateAnchor(this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.anchor, Game.cpu.bucket / PIXEL_CPU_COST, { align: "right" }, minLen));
+    this.updateAnchor(this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.anchor, Game.cpu.bucket / 10000, { align: "right" }, minLen)); // PIXEL_CPU_COST but not everywhere exists
     this.updateAnchor(this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.anchor, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, minLen));
     let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
     if (heapStat)

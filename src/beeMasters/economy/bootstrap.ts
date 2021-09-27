@@ -6,7 +6,7 @@ import { setups } from "../../bees/creepsetups";
 import { profile } from "../../profiler/decorator";
 import type { DevelopmentCell } from "../../cells/stage0/developmentCell";
 
-type workTypes = "upgrade" | "repair" | "build" | "refill" | "chilling" | "mining";
+type workTypes = "upgrade" | "repair" | "build" | "refill" | "chilling" | "mining" | "picking";
 type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 
 @profile
@@ -19,6 +19,7 @@ export class BootstrapMaster extends Master {
     refill: 0,
     chilling: 0,
     mining: 0,
+    picking: 0,
   };
   patternCount = 0;
   containerTargeting: { [id: string]: { current: number, max: number } } = {};
@@ -70,15 +71,16 @@ export class BootstrapMaster extends Master {
         * (cell.pos.roomName === this.hive.pos.roomName ? 1.5 : 0.5); // much higher chance to mine in same room then in faraway
       // amount of positions * bees can 1 position support
       let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / (25 + roadTime * 0.5)));
-      // console.log(source.pos, "pos:", maxcycleByPos, "energy:", maxCycleByEnergy);
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
-    if (this.hive.bassboost)
-      this.targetBeeCount = Math.min(this.targetBeeCount, 6);
-    else if (Game.shard.name === "shard3")
-      this.targetBeeCount = Math.min(this.targetBeeCount, 10);
+    /*
+      if (this.hive.bassboost)
+        this.targetBeeCount = Math.min(this.targetBeeCount, 6);
+      else if (Game.shard.name === "shard3")
+        this.targetBeeCount = Math.min(this.targetBeeCount, 10);
+    */
     this.cell.shouldRecalc = false;
 
     return this.checkBees(false);
@@ -124,6 +126,7 @@ export class BootstrapMaster extends Master {
       refill: 0,
       chilling: 0,
       mining: 0,
+      picking: 0,
     };
 
     let soruces = (<Source[]>_.compact(_.map(this.hive.cells.excavation.resourceCells,
@@ -167,7 +170,6 @@ export class BootstrapMaster extends Master {
       }
     }
 
-
     let refillTargets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
     refillTargets = _.filter(refillTargets.concat(_.map(this.hive.cells.spawn.extensions)),
       structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
@@ -206,7 +208,7 @@ export class BootstrapMaster extends Master {
           if (!source || source instanceof Resource) {
             let pickupTarget = bee.pos.findClosest(targets);
             if (pickupTarget && this.containerTargeting[pickupTarget.id].current < this.containerTargeting[pickupTarget.id].max
-              && (!source || bee.pos.getRangeApprox(pickupTarget) < bee.pos.getRangeApprox(source) + 30)) {
+              && (!source || bee.pos.getRangeApprox(pickupTarget) < bee.pos.getRangeApprox(source) + 50)) {
               source = pickupTarget;
               bee.target = source.id;
               ++this.containerTargeting[source.id].current;
@@ -223,10 +225,12 @@ export class BootstrapMaster extends Master {
                 let pos = source.pos.getOpenPositions()[0];
                 if (pos)
                   bee.goTo(pos, { ignoreRoads: true });
-                else if (bee.pos.getRangeTo(source) > 6)
+                else if (bee.pos.getRangeTo(source) > 4)
                   delete bee.target;
               }
             }
+            ++countCurrent.mining;
+            break;
           } else if (source) {
             if (!containerTargetingCur[source.id])
               delete bee.target;
@@ -243,14 +247,11 @@ export class BootstrapMaster extends Master {
               else
                 bee.withdraw(source, RESOURCE_ENERGY);
             }
+            ++countCurrent.picking;
+            break;
           } else {
             bee.state = beeStates.chill;
             delete bee.target;
-          }
-
-          if (bee.target) {
-            ++countCurrent.mining;
-            break;
           }
         case beeStates.chill:
           ++countCurrent.chilling;
@@ -284,9 +285,9 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target) {
-            let targets: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
+            let tt: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
               structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-            target = bee.pos.findClosest(targets);
+            target = bee.pos.findClosest(tt);
             workType = "refill";
           }
 
@@ -298,7 +299,7 @@ export class BootstrapMaster extends Master {
           if (!target && bee.pos.roomName !== this.hive.roomName) {
             target = this.hive.findProject(bee, "repairs");
             if (target && target.pos.roomName !== bee.pos.roomName)
-              target = undefined;
+              target = null;
             if (target)
               if (target instanceof Structure)
                 workType = "repair";

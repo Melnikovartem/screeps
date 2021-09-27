@@ -215,12 +215,12 @@ export class Logger {
     ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + setupsNames.upgrader), revenue: getRate("upgrade") };
     ans["mineral"] = { profit: getRate("spawn_" + setupsNames.miner + " M") };
     ans["build"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.builder), revenue: getRate("build") };
-    ans["defense"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.defender) };
+    ans["defense"] = { profit: getRate("defense") + getRate("spawn_" + setupsNames.defender), revenue: getRate("defense") };
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
-    ans["larva"] = { profit: getRate("larva"), revenue: getRate("larva") + getRate("spawn_" + setupsNames.bootstrap) };
+    ans["larva"] = { profit: getRate("larva") + getRate("spawn_" + setupsNames.bootstrap), revenue: getRate("larva") };
 
     type civilRoles = "queen" | "manager";
     ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager"], s => getRate("spawn_" + setupsNames[s])) };
