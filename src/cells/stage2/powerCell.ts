@@ -9,6 +9,7 @@ import { profile } from "../../profiler/decorator";
 export class PowerCell extends Cell {
   powerSpawn: StructurePowerSpawn;
   roomsToCheck: string[] = [];
+  master: undefined;
 
   constructor(hive: Hive, powerSpawn: StructurePowerSpawn) {
     super(hive, prefix.powerCell + hive.room.name);
@@ -23,10 +24,10 @@ export class PowerCell extends Cell {
       return;
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > POWER_SPAWN_POWER_CAPACITY / 2 && storageCell.storage.store.getCapacity(RESOURCE_POWER) > 0)
-      storageCell.requestFromStorage("power_" + this.powerSpawn.id, this.powerSpawn, 5, RESOURCE_POWER);
+      storageCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER);
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_CAPACITY / 2)
-      storageCell.requestFromStorage("energy_" + this.powerSpawn.id, this.powerSpawn, 5, RESOURCE_ENERGY);
+      storageCell.requestFromStorage([this.powerSpawn], 5);
   }
 
   run() {

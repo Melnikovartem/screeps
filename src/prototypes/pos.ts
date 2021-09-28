@@ -150,6 +150,8 @@ RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant
   let par = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(this.roomName);
   if (par) // well the types are right
     [we, x, ns, y] = [par[1], +par[2], par[3], +par[4]];
+  else
+    return new RoomPosition(Math.min(Math.max(cc[0], 0), 49), Math.min(Math.max(cc[1], 0), 49), this.roomName);
   if (cc[0] < 0) {
     x += (we === "E" ? -1 : 1);
     cc[0] = 49;

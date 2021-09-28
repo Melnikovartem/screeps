@@ -1,19 +1,12 @@
 import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
 
+import { TransferRequest } from "../../bees/transferRequest";
+
 import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
-
-export interface StorageRequest {
-  ref: string;
-  from: StructureLink | StructureTerminal | StructureStorage | StructureLab;
-  to: StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn;
-  resource: ResourceConstant;
-  amount: number;
-  priority: 0 | 1 | 2 | 3 | 4 | 5;
-}
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
 type StorageResource = RESOURCE_ENERGY
@@ -30,7 +23,7 @@ export class StorageCell extends Cell {
   terminal: StructureTerminal | undefined;
   master: ManagerMaster;
 
-  requests: { [id: string]: StorageRequest } = {};
+  requests: { [id: string]: TransferRequest } = {};
 
   constructor(hive: Hive, storage: StructureStorage) {
     super(hive, prefix.storageCell + hive.room.name);
@@ -45,49 +38,45 @@ export class StorageCell extends Cell {
       this.linksState[l.id] = "idle";
     });
 
-    this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
+    this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 5),
       structure => structure.structureType === STRUCTURE_TERMINAL)[0];
 
     this.pos = this.hive.getPos("queen2");
     this.master = new ManagerMaster(this);
   }
 
-  requestFromStorage(ref: string, to: StorageRequest["to"], priority: StorageRequest["priority"]
-    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
-    if (this.master.manager && this.master.manager.target == ref)
-      return 0;
-    if (amount === Infinity)
-      amount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(res);
-    amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
-    if (amount > 0)
-      this.requests[ref] = {
-        ref: ref,
-        from: this.storage,
-        to: to,
-        resource: res,
-        priority: priority,
-        amount: amount,
-      };
-    return amount;
+  requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
+    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    let sum = 0;
+    let prev: TransferRequest | undefined;
+    for (let i = 0; i < objects.length; ++i) {
+      let ref = objects[i].structureType + "_" + objects[i].id
+      if (this.requests[ref])
+        continue;
+      this.requests[ref] = new TransferRequest(ref, this.storage, objects[i], priority, res, amount);
+      if (prev)
+        this.requests[ref].nextup = prev;
+      prev = this.requests[ref];
+      sum += this.requests[ref].amount;
+    }
+    return sum;
   }
 
-  requestToStorage(ref: string, from: StorageRequest["from"], priority: StorageRequest["priority"]
-    , res: StorageRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
-    if (this.master.manager && this.master.manager.target == ref)
-      return 0;
-    if (amount === Infinity)
-      amount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(res);
-    amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
-    if (amount > 0)
-      this.requests[ref] = {
-        ref: ref,
-        from: from,
-        to: this.storage,
-        resource: res,
-        priority: priority,
-        amount: amount,
-      };
-    return amount;
+  requestToStorage(objects: TransferRequest["from"][], priority: TransferRequest["priority"]
+    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    let sum = 0;
+    let prev: TransferRequest | undefined;
+    for (let i = 0; i < objects.length; ++i) {
+      let ref = objects[i].structureType + "_" + objects[i].id
+      if (this.requests[ref])
+        continue;
+      this.requests[ref] = new TransferRequest(ref, objects[i], this.storage, priority, res, amount);
+      if (prev)
+        this.requests[ref].nextup = prev;
+      prev = this.requests[ref];
+      sum += this.requests[ref].amount;
+    }
+    return sum;
   }
 
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
@@ -108,24 +97,9 @@ export class StorageCell extends Cell {
     }
 
 
-    for (let k in this.requests) {
-      let request = this.requests[k];
-
-      let from = <StorageRequest["from"] | null>Game.getObjectById(request.from.id);
-      if (from)
-        this.requests[k].from = from;
-      let to = <StorageRequest["to"] | null>Game.getObjectById(request.to.id);
-      if (to)
-        this.requests[k].to = to;
-
-      if (request.amount > 0 && !(<Store<ResourceConstant, false>>request.from.store).getUsedCapacity(request.resource)
-        && !(this.master.manager && this.master.manager.store.getUsedCapacity(request.resource)))
+    for (let k in this.requests)
+      if (!this.requests[k].isValid())
         delete this.requests[k];
-      else if (!(<Store<ResourceConstant, false>>request.to.store).getFreeCapacity(request.resource))
-        delete this.requests[k];
-      else if (request.amount <= 0)
-        delete this.requests[k];
-    }
 
 
     if ((!Object.keys(this.requests).length || this.storage.store.getFreeCapacity() < 10000) && this.terminal) {
@@ -164,10 +138,10 @@ export class StorageCell extends Cell {
           amount = 0;
 
         if (amount > 0)
-          this.requestToStorage("terminal_" + this.terminal.id, this.terminal,
+          this.requestToStorage([this.terminal],
             this.storage.store.getFreeCapacity() < 10000 ? 2 : 5, res, Math.min(amount, 5500, freeCap));
         else if (amount < 0)
-          this.requestFromStorage("terminal_" + this.terminal.id, this.terminal, 5, res, Math.min(-amount, 5500));
+          this.requestFromStorage([this.terminal], 5, res, Math.min(-amount, 5500));
       }
     }
 
@@ -175,7 +149,7 @@ export class StorageCell extends Cell {
       let link = this.links[id];
       this.linksState[id] = "idle";
       if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
-        this.requestToStorage("link_" + link.id, link, 3);
+        this.requestToStorage([link], 3);
     }
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);

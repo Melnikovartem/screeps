@@ -14,6 +14,7 @@ export class DefenseCell extends Cell {
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
+  master: undefined;
 
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
@@ -93,12 +94,11 @@ export class DefenseCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
-      _.forEach(this.towers, tower => {
-        if (tower.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage("tower_" + tower.id, tower, 1, RESOURCE_ENERGY, 1000);
-        else if (tower.store.getCapacity(RESOURCE_ENERGY) > tower.store.getUsedCapacity(RESOURCE_ENERGY))
-          storageCell!.requestFromStorage("tower_" + tower.id, tower, 3, RESOURCE_ENERGY, 1000);
-      });
+      storageCell.requestFromStorage(_.filter(this.towers,
+        t => t.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= t.store.getUsedCapacity(RESOURCE_ENERGY)), 1);
+      storageCell.requestFromStorage(_.filter(this.towers,
+        t => t.store.getCapacity(RESOURCE_ENERGY) > t.store.getUsedCapacity(RESOURCE_ENERGY)
+          && t.store.getCapacity(RESOURCE_ENERGY) * 0.75 < t.store.getUsedCapacity(RESOURCE_ENERGY)), 4);
     }
   }
 

@@ -1,7 +1,6 @@
 import { Cell } from "../_Cell";
-import { QueenMaster } from "../../beeMasters/economy/queen";
 
-import { beeStates, hiveStates } from "../../enums";
+import { beeStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
 import { prefix } from "../../enums";
 
@@ -13,7 +12,7 @@ export class RespawnCell extends Cell {
   spawns: { [id: string]: StructureSpawn } = {};
   freeSpawns: StructureSpawn[] = [];
   extensions: { [id: string]: StructureExtension } = {};
-  master: QueenMaster | undefined;
+  master: undefined;
 
 
   constructor(hive: Hive) {
@@ -24,20 +23,15 @@ export class RespawnCell extends Cell {
   update() {
     super.update(["extensions", "spawns"]);
 
-    if (!this.master && (!this.hive.cells.dev || (this.hive.phase > 0 && this.hive.state === hiveStates.economy)))
-      this.master = new QueenMaster(this);
-
     // find free spawners
     this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    /* // remove
     let targets: (StructureSpawn | StructureExtension)[] = _.map(this.spawns);
     targets = _.filter(targets.concat(_.map(this.extensions)), structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     let storageCell = this.hive.cells.storage;
     if (storageCell)
-      _.forEach(targets, s => storageCell!.requestFromStorage(s.structureType + "_" + s.id, s, 0, RESOURCE_ENERGY, 10000));
-    */
+      storageCell!.requestFromStorage(targets, 1);
   };
 
   run() {

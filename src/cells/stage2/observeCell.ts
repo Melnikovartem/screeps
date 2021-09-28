@@ -13,6 +13,7 @@ export class ObserveCell extends Cell {
   prevRoom: string;
   powerRooms: string[] = [];
   doPowerCheck = false;
+  master: undefined;
 
   constructor(hive: Hive, obeserver: StructureObserver) {
     super(hive, prefix.observerCell + hive.room.name);
