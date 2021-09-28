@@ -14,7 +14,7 @@ export class RespawnCell extends Cell {
   extensions: { [id: string]: StructureExtension } = {};
   master: undefined;
 
-  roadMap: (string)[] = [];
+  roadMap: number[][] = [];
 
 
   constructor(hive: Hive) {
@@ -30,15 +30,38 @@ export class RespawnCell extends Cell {
 
     let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    targets.sort((a, b) => this.roadMap[a.pos.x][a.pos.y] - this.roadMap[b.pos.x][b.pos.y]);
     let storageCell = this.hive.cells.storage;
     if (storageCell)
       storageCell!.requestFromStorage(targets, 1);
   };
 
   bakeMap() {
-    let targets: (StructureSpawn | StructureExtension)[] = Object.values(this.spawns);
-    targets = targets.concat(Object.values(this.extensions));
-    this.roadMap.sort()
+    this.roadMap = [];
+    for (let x = 0; x <= 49; ++x) {
+      this.roadMap[x] = [];
+      for (let y = 0; y <= 49; ++y)
+        this.roadMap[x][y] = Infinity;
+    }
+
+    let poss: RoomPosition[] = _.map(this.spawns, s => s.pos).concat(_.map(this.extensions, s => s.pos));
+
+    // it won't compute some edge cases with strange trerrain but this is good enough (cause we refill edge extensions last)
+    this.dfs(this.pos, 0, Math.max(..._.map(poss, p => this.pos.getRangeTo(p))));
+  }
+
+  dfs(p: RoomPosition, depth: number, maxRange: number) {
+    if (this.roadMap[p.x][p.y] !== Infinity)
+      return depth - 1;
+    if (p.getRangeTo(this.pos) > maxRange)
+      return depth - 1;
+
+    this.roadMap[p.x][p.y] = depth;
+    _.forEach(p.getPositionsInRange(1), pp => {
+      if (pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length || pp.isFree(true))
+        depth = this.dfs(pp, depth + 1, maxRange);
+    });
+    return depth;
   }
 
   run() {

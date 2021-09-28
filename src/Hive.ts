@@ -228,6 +228,9 @@ export class Hive {
             if (this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB) === ERR_INVALID_ARGS)
               void (0);
     });
+
+    if (this.phase > 0)
+      this.cells.spawn.bakeMap();
   }
 
   private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {

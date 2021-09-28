@@ -47,6 +47,23 @@ export class CustomConsole {
     return "OK";
   }
 
+  showSpawnMap(hiveName: string, keep = false) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    let terrain = Game.map.getRoomTerrain(hiveName);
+    Apiary.visuals.changeAnchor(0, 0, hiveName);
+    for (let x = 0; x <= 49; ++x)
+      for (let y = 0; y <= 49; ++y)
+        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
+          if (hive.cells.spawn.roadMap[x][y] !== Infinity)
+            Apiary.visuals.anchor.vis.text("" + hive.cells.spawn.roadMap[x][y], x - 0.25, y + 0.25,
+              Apiary.visuals.textStyle({ font: 0.5, strokeWidth: 0.3 }));
+
+    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
+    return "OK";
+  }
+
   // some hand used functions
   terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
     hiveName = this.format(hiveName);

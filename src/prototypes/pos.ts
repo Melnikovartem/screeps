@@ -3,7 +3,7 @@ type ProtoPos = RoomPosition | { pos: RoomPosition };
 interface RoomPosition {
   getRoomCoorinates(): [number, number, string, string];
   getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
-  getPositionsInRange(range?: number): RoomPosition[];
+  getPositionsInRange(range: number): RoomPosition[];
   getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
   isFree(ignoreCreeps?: boolean): boolean;
   getEnteranceToRoom(): RoomPosition | null;
@@ -59,7 +59,7 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
   }
 }
 
-RoomPosition.prototype.getPositionsInRange = function(range: number = 1): RoomPosition[] {
+RoomPosition.prototype.getPositionsInRange = function(range: number): RoomPosition[] {
   let positions: RoomPosition[] = [];
 
   let startX = this.x >= range ? this.x - range : 0;
