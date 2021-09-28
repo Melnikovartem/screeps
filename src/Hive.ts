@@ -231,6 +231,7 @@ export class Hive {
 
     if (this.phase > 0)
       this.cells.spawn.bakeMap();
+    this.cells.defense.bakeMap();
   }
 
   private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
@@ -245,7 +246,7 @@ export class Hive {
     return ERR_INVALID_ARGS;
   }
 
-  findProject(pos: RoomPosition | { pos: RoomPosition }, ignore?: "repairs" | "constructions") {
+  findProject(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignore_repairs" | "ignore_constructions") {
     if (!this.structuresConst.length)
       return;
 
@@ -259,9 +260,9 @@ export class Hive {
 
     let proj = getProj();
     while (proj && !target) {
-      if (ignore !== "constructions")
+      if (ignore !== "ignore_constructions")
         target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-      if (!target && ignore !== "repairs")
+      if (!target && ignore !== "ignore_repairs")
         target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
       if (!target) {
         for (let k = 0; k < projects.length; ++k)

@@ -61,7 +61,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.work;
             delete bee.target;
             if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "build", storage!.store, bee.store);
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", storage!.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
             if (target && target.pos.getRangeTo(bee) > 3)
               bee.goTo(target.pos);

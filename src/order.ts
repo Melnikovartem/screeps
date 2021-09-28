@@ -106,14 +106,11 @@ export class Order {
   }
 
   fixedName(name: string) {
-    if (this.pos.roomName in Game.rooms) {
-      if (this.ref !== name) {
-        this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
-        this.delete();
-        return false;
-      }
-    } else
-      this.acted = false;
+    if (this.ref !== name && this.pos.roomName in Game.rooms) {
+      this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
+      this.delete();
+      return false;
+    }
     return true;
   }
 
@@ -152,6 +149,11 @@ export class Order {
               break;
             case COLOR_WHITE:
               this.fixedName(prefix.surrender + this.hive.roomName);
+              if (!this.flag.memory.info)
+                this.flag.memory.info = Game.time;
+              if (Game.time - this.flag.memory.info > CREEP_LIFE_TIME)
+                this.delete();
+              this.acted = false;
               break;
           }
         break;

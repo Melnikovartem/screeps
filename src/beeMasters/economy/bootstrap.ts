@@ -299,7 +299,7 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target && bee.pos.roomName !== this.hive.roomName) {
-            target = this.hive.findProject(bee, "repairs");
+            target = this.hive.findProject(bee, "ignore_repairs");
             if (target && target.pos.roomName !== bee.pos.roomName)
               target = null;
             if (target)
@@ -310,7 +310,7 @@ export class BootstrapMaster extends Master {
           }
 
           let refillTarget = bee.pos.findClosest(refillTargets);
-          if (refillTarget && refillTarget.pos.getRangeTo(bee) < 10 || !target) {
+          if (refillTarget && !this.hive.phase && (refillTarget.pos.getRangeTo(bee) < 10 || !target)) {
             target = refillTarget;
             workType = "refill";
           }

@@ -15,7 +15,7 @@ interface Enemy {
   object: Creep | PowerCreep | Structure,
   dangerlvl: DangerLvl,
   type: enemyTypes,
-}
+};
 
 interface RoomInfo {
   enemies: Enemy[],
@@ -26,13 +26,22 @@ interface RoomInfo {
   currentOwner: string | undefined,
   safePlace: boolean,
   safeModeEndTime: number,
-}
+};
+
+interface CreepBattleInfo {
+  dmgClose: number,
+  dmgRange: number,
+  dism: number,
+  heal: number,
+};
+
+interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
 
 @profile
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
 
-  getEnemy(pos: RoomPosition | { pos: RoomPosition }, lag?: number) {
+  getEnemy(pos: ProtoPos, lag?: number) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -41,13 +50,53 @@ export class Intel {
     if (!roomInfo.enemies.length)
       return;
 
-    return roomInfo.enemies.reduce((prev, curr) => {
-      let ans = prev.dangerlvl - curr.dangerlvl;
-      if (curr.dangerlvl === roomInfo.dangerlvlmax && ans === 0)
-        ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
+    return roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax).reduce((prev, curr) => {
+      let ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
+      if (Math.abs(ans) < (curr.type === enemyTypes.moving ? 4 : 2)) {
+        ans = curr.object.hits - curr.object.hits;
+        if (!ans && curr.object instanceof Creep && prev.object instanceof Creep) {
+          let statsCurr = this.getStats(curr.object);
+          let statsPrev = this.getStats(prev.object);
+          if (!ans)
+            ans = statsPrev.current.dmgClose - statsCurr.current.dmgClose;
+          if (!ans)
+            ans = statsPrev.current.dmgRange - statsCurr.current.dmgRange;
+          if (!ans)
+            ans = statsPrev.current.heal - statsCurr.current.heal;
+        }
+      }
 
       return ans < 0 ? curr : prev;
-    }).object
+    }).object;
+  }
+
+  getComplexStats(pos: ProtoPos) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let ans: CreepAllBattleInfo = {
+      max: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+      }, current: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+      }
+    }
+
+    _.forEach(pos.findInRange(FIND_HOSTILE_CREEPS, 1), creep => {
+      let stats = this.getStats(creep);
+      for (let i in stats.max) {
+        ans.max[<keyof CreepBattleInfo>i] += stats.max[<keyof CreepBattleInfo>i];
+        ans.current[<keyof CreepBattleInfo>i] += stats.current[<keyof CreepBattleInfo>i]
+      }
+    });
+
+    return ans;
   }
 
   getInfo(roomName: string, lag: number = 0): RoomInfo {
@@ -114,7 +163,7 @@ export class Intel {
         owner = room.controller.reservation.username;
         if (owner === Apiary.username)
           roomInfo.roomState = roomStates.reservedByMe;
-        else if (owner === "Invader")
+        else if (owner === "Invaider")
           roomInfo.roomState = roomStates.reservedByInvaider;
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
@@ -250,14 +299,7 @@ export class Intel {
   }
 
   getStats(creep: Creep) {
-    type CreepBattleInfo = {
-      dmgClose: number,
-      dmgRange: number,
-      dism: number,
-      heal: number,
-    };
-
-    let ans: { max: CreepBattleInfo, current: CreepBattleInfo } = {
+    let ans: CreepAllBattleInfo = {
       max: {
         dmgClose: 0,
         dmgRange: 0,

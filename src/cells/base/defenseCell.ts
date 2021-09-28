@@ -7,6 +7,8 @@ import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
 import type { Order } from "../../order";
 
+const TOWER_POWER_ATTACK_MY = TOWER_POWER_ATTACK / 16;
+
 @profile
 export class DefenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
@@ -15,11 +17,37 @@ export class DefenseCell extends Cell {
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
   master: undefined;
+  coefMap: number[][] = [];
 
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
     this.pos = this.hive.getPos("center");
+  }
+
+  bakeMap() {
+    if (!Object.keys(this.towers).length)
+      return;
+
+    this.coefMap = [];
+    for (let x = 0; x <= 49; ++x) {
+      this.coefMap[x] = [];
+      for (let y = 0; y <= 49; ++y)
+        this.coefMap[x][y] = 0;
+    }
+
+    _.forEach(this.towers, t => {
+      for (let x = 0; x <= 49; ++x)
+        for (let y = 0; y <= 49; ++y) {
+          let range = t.pos.getRangeTo(new RoomPosition(x, y, t.pos.roomName));
+          if (range > TOWER_FALLOFF_RANGE)
+            this.coefMap[x][y] += 4;
+          else if (range <= TOWER_OPTIMAL_RANGE)
+            this.coefMap[x][y] += 16;
+          else
+            this.coefMap[x][y] += TOWER_FALLOFF_RANGE - (range - TOWER_OPTIMAL_RANGE)
+        }
+    });
   }
 
   updateNukes() {
@@ -198,42 +226,48 @@ export class DefenseCell extends Cell {
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
-      if (roomInfo.enemies.length > 0) {
-        // for now i will just sit back ...
-        if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
-          this.setDefFlag(roomInfo.enemies[0].object.pos, "power");
+      let enemy = Apiary.intel.getEnemy(this)!;
+      if (!enemy)
+        return;
 
-        if (!_.filter(this.towers, t => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
-          _.forEach(this.towers, tower => {
-            let closest = Apiary.intel.getEnemy(tower)!;
-            if (roomInfo.dangerlvlmax < 6) {
-              if (closest.pos.getRangeTo(tower) < 10 || closest.pos.getRangeTo(this.hive.pos) < 5
-                || closest instanceof Creep && closest.owner.username === "Invader")
-                if (tower.attack(closest) === OK && Apiary.logger)
-                  Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
-            } else {
-              let target = <Structure | undefined>this.hive.findProject(closest, "constructions");
-              if (target && tower.repair(target) === OK && Apiary.logger)
-                Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
-            }
+      _.forEach(roomInfo.enemies, e => {
+        if (this.coefMap[e.object.pos.x][e.object.pos.y] < this.coefMap[enemy.pos.x][enemy.pos.y])
+          enemy = e.object;
+      });
+
+      let shouldAttack = false;
+      let stats = Apiary.intel.getComplexStats(enemy);
+
+      if (stats.current.heal < TOWER_POWER_ATTACK_MY * this.coefMap[enemy.pos.x][enemy.pos.y])
+        shouldAttack = true;
+
+      _.forEach(this.towers, tower => {
+        if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < 10)
+          return;
+        if (shouldAttack) {
+          if (tower.attack(enemy) === OK && Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+        } else {
+          let target = <Structure | undefined>this.hive.findProject(enemy, "ignore_constructions");
+          if (target && tower.repair(target) === OK && Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+        }
+      });
+
+      if (roomInfo.dangerlvlmax > 5 && Game.time % 10 === 6) {
+        let contr = this.hive.room.controller!;
+        if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
+          _.forEach(roomInfo.enemies, enemy => {
+            if (!(enemy instanceof Creep))
+              return;
+
+            let info = Apiary.intel.getStats(enemy).current;
+            if (info.dism < 100 && info.dmgClose < 100)
+              return;
+
+            if (this.wasBreached(enemy.pos))
+              this.hive.room.controller!.activateSafeMode(); // red button
           });
-        }
-
-        if (roomInfo.dangerlvlmax > 5 && Game.time % 10 === 6) {
-          let contr = this.hive.room.controller!;
-          if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
-            _.forEach(roomInfo.enemies, enemy => {
-              if (!(enemy instanceof Creep))
-                return;
-
-              let info = Apiary.intel.getStats(enemy).current;
-              if (info.dism < 100 && info.dmgClose < 100)
-                return;
-
-              if (this.wasBreached(enemy.pos))
-                this.hive.room.controller!.activateSafeMode(); // red button
-            });
-        }
       }
     }
   }

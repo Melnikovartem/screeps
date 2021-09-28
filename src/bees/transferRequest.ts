@@ -54,13 +54,21 @@ export class TransferRequest {
     return true;
   }
 
-  process(bee: Bee) {
+  preprocess(bee: Bee) {
     this.inProcess += bee.store.getUsedCapacity(this.resource);
-    bee.target = this.ref;
+    if (bee.target !== this.ref) {
+      bee.target = this.ref;
+      bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(this.resource) ? beeStates.fflush
+        : (bee.store.getUsedCapacity() === 0 ? beeStates.refill : beeStates.work);
+    }
+  }
+
+  process(bee: Bee) {
     if (!this.isValid()) {
-      if (this.nextup)
+      if (this.nextup) {
+        this.nextup.preprocess(bee);
         this.nextup.process(bee);
-      else {
+      } else {
         bee.state = beeStates.fflush;
         delete bee.target;
       }
@@ -77,10 +85,9 @@ export class TransferRequest {
         else if (bee.store.getUsedCapacity(this.resource) >= this.amount)
           bee.state = beeStates.work;
         else if (!this.fromAmount) {
-          if (this.nextup) {
+          if (this.nextup)
             this.nextup.process(bee);
-            bee.target = this.ref;
-          } else
+          else
             bee.state = beeStates.work;
           return;
         }

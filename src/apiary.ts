@@ -33,7 +33,7 @@ export class _Apiary {
 
   constructor() {
     this.createTime = Game.time;
-    this.destroyTime = this.createTime + 6000;
+    this.destroyTime = this.createTime + 9000;
     this.intel = new Intel();
     this.planner = new RoomPlanner();
     if (LOGGING_CYCLE)

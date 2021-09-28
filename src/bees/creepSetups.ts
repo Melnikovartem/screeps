@@ -185,7 +185,7 @@ export const setups = {
 /*
 let printSetup = (s: CreepSetup, energy = Infinity) => {
   let bbody = s.getBody(energy).body;
-  console .log(s.name, ":", bbody.length, bbody.filter(s => s != MOVE).length)
+  console.log(s.name, ":", bbody.length, bbody.filter(s => s != MOVE).length)
   return bbody;
 }
 
@@ -202,7 +202,7 @@ printSetup(setups.miner.minerals)
 printSetup(setups.miner.power)
 printSetup(setups.upgrader.fast)
 printSetup(setups.upgrader.manual)
-printSetup(setups.builder)
+printSetup(setups.builder, 1300)
 printSetup(setups.puppet)
 printSetup(setups.defender.normal)
 printSetup(setups.defender.sk)

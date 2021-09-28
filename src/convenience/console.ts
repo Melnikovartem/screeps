@@ -27,41 +27,52 @@ export class CustomConsole {
       return s.toLowerCase();
   }
 
+  showMap(roomName: string, keep: boolean, visual: (x: number, y: number, vis: RoomVisual) => void) {
+    let terrain = Game.map.getRoomTerrain(roomName);
+    Apiary.visuals.changeAnchor(0, 0, roomName);
+    for (let x = 0; x <= 49; ++x)
+      for (let y = 0; y <= 49; ++y)
+        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
+          visual(x, y, Apiary.visuals.anchor.vis);
+
+    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
+    return "OK";
+  }
+
   showBreach(hiveName: string, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    let terrain = Game.map.getRoomTerrain(hiveName);
     let mask = Apiary.useBucket ? 1 : 3;
-    Apiary.visuals.changeAnchor(0, 0, hiveName);
-    for (let x = 0; x <= 49; ++x)
-      for (let y = 0; y <= 49; ++y) {
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      if (x % mask === 0 && x % mask === 0) {
         let pos = new RoomPosition(x, y, hiveName);
-        if (x % mask === 0 && y % mask === 0 && terrain.get(x, y) !== TERRAIN_MASK_WALL
-          && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
+        if (!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
           && hive.cells.defense.wasBreached(pos))
-          Apiary.visuals.anchor.vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
+          vis.circle(x, x, { radius: 0.2, fill: "#E75050" });
       }
-
-    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
-    return "OK";
+    });
   }
 
   showSpawnMap(hiveName: string, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    let terrain = Game.map.getRoomTerrain(hiveName);
-    Apiary.visuals.changeAnchor(0, 0, hiveName);
-    for (let x = 0; x <= 49; ++x)
-      for (let y = 0; y <= 49; ++y)
-        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
-          if (hive.cells.spawn.roadMap[x][y] !== Infinity)
-            Apiary.visuals.anchor.vis.text("" + hive.cells.spawn.roadMap[x][y], x - 0.25, y + 0.25,
-              Apiary.visuals.textStyle({ font: 0.5, strokeWidth: 0.3 }));
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      if (hive.cells.spawn.roadMap[x][y] !== Infinity)
+        vis.text("" + hive.cells.spawn.roadMap[x][y], x - 0.25, y + 0.25,
+          Apiary.visuals.textStyle({ font: 0.5, strokeWidth: 0.3 }));
+    });
+  }
 
-    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
-    return "OK";
+  showDefMap(hiveName: string, keep = false) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    let max = Math.max(...hive.cells.defense.coefMap.map(row => Math.max(...row)));
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max, 3) });
+    });
   }
 
   // some hand used functions
