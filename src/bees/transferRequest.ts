@@ -36,7 +36,7 @@ export class TransferRequest {
       this.from = from;
       this.fromAmount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(this.resource);
     }
-    let to = <TransferTarget | null>Game.getObjectById(this.from.id);
+    let to = <TransferTarget | null>Game.getObjectById(this.to.id);
     if (to) {
       this.to = to;
       this.toAmount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(this.resource);
@@ -107,7 +107,7 @@ export class TransferRequest {
           this.amount -= amountBee;
           this.toAmount -= amountBee;
         }
-        if (!this.isValid() && this.nextup) {
+        if (!this.isValid() && this.nextup && this.nextup.isValid()) {
           if (bee.store.getUsedCapacity(this.resource) === amountBee)
             bee.goTo(this.nextup.from)
           else

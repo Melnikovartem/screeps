@@ -131,8 +131,7 @@ export class LaboratoryCell extends Cell {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
       sum += storageCell.storage.store.getUsedCapacity(res);
-      if (storageCell.master.manager)
-        sum += storageCell.master.manager.store.getUsedCapacity(res);
+      sum += _.sum(storageCell.master.activeBees, b => b.store.getUsedCapacity(res));
     }
     let inLabMax;
     if (source)
@@ -152,7 +151,7 @@ export class LaboratoryCell extends Cell {
 
   getBoostInfo(r: BoostRequest) {
     let storageCell = this.hive.cells.storage;
-    if (storageCell && storageCell.master.manager)
+    if (storageCell && storageCell.master.activeBees.length)
       _.some(BOOST_MINERAL[r.type], (resIter, k) => {
         let sum = this.getMineralSum(resIter);
         if (sum > LAB_BOOST_MINERAL) {
@@ -172,7 +171,7 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
     let storageCell = this.hive.cells.storage;
-    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell.master.manager) {
+    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell.master.activeBees.length) {
       if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
         this.boostRequests[bee.ref] = requests;
         for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
@@ -182,6 +181,7 @@ export class LaboratoryCell extends Cell {
           this.boostRequests[bee.ref][k] = this.getBoostInfo(r);
         }
       }
+
       for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
         let r = this.boostRequests[bee.ref][k];
         let lab: StructureLab | undefined;

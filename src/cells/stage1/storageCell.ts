@@ -41,7 +41,7 @@ export class StorageCell extends Cell {
     this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 5),
       structure => structure.structureType === STRUCTURE_TERMINAL)[0];
 
-    this.pos = this.hive.getPos("queen2");
+    this.pos = storage.pos;
     this.master = new ManagerMaster(this);
   }
 
@@ -98,9 +98,7 @@ export class StorageCell extends Cell {
 
 
     for (let k in this.requests)
-      if (!this.requests[k].isValid())
-        delete this.requests[k];
-
+      this.requests[k].update();
 
     if ((!Object.keys(this.requests).length || this.storage.store.getFreeCapacity() < 10000) && this.terminal) {
       if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.1) {
@@ -158,6 +156,10 @@ export class StorageCell extends Cell {
   }
 
   run() {
+    for (let k in this.requests)
+      if (!this.requests[k].isValid())
+        delete this.requests[k];
+
     if (this.terminal && this.terminal.store.getUsedCapacity() > this.terminal.store.getCapacity() * 0.7 && !this.terminal.cooldown) {
       let res: ResourceConstant = RESOURCE_ENERGY;
       let amount: number = 0;

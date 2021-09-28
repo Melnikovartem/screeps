@@ -232,33 +232,30 @@ export class Order {
       case COLOR_CYAN:
         this.uniqueFlag();
         if (this.hive.roomName === this.pos.roomName) {
-          let cell;
           let type: keyof HivePositions | undefined;
           switch (this.flag.secondaryColor) {
             case COLOR_CYAN:
               type = "hive";
               this.hive.pos = this.pos;
-              cell = this.hive.cells.excavation;
+              this.hive.cells.excavation.pos = this.pos;
               break;
             case COLOR_GREEN:
               type = "queen1";
-              cell = this.hive.cells.spawn;
               break;
             case COLOR_YELLOW:
               type = "queen2";
-              cell = this.hive.cells.storage;
               break;
             case COLOR_GREY:
               type = "lab";
-              cell = this.hive.cells.lab;
+              if (this.hive.cells.lab)
+                this.hive.cells.lab.pos = this.pos;
               break;
             case COLOR_WHITE:
               type = "center";
-              cell = this.hive.cells.defense;
+              this.hive.cells.defense.pos = this.pos;
+              this.hive.cells.spawn.pos = this.pos;
               break;
           }
-          if (cell)
-            cell.pos = this.pos;
           if (type) {
             Memory.cache.positions[this.hive.roomName][type] = { x: this.pos.x, y: this.pos.y };
             let active = Apiary.planner.activePlanning[this.hive.roomName];

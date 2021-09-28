@@ -1,20 +1,18 @@
 import { Master } from "../_Master";
 
-import { beeStates, hiveStates } from "../../enums";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { StorageCell } from "../../cells/stage1/storageCell";
-import type { SpawnOrder } from "../../Hive";
-import type { Bee } from "../../bees/bee";
 import type { TransferRequest } from "../../bees/transferRequest";
 
 @profile
 export class ManagerMaster extends Master {
   cell: StorageCell;
-  manager: Bee | undefined;
   movePriority = <3>3;
+  targetBeeCount = 2;
 
   constructor(storageCell: StorageCell) {
     super(storageCell.hive, storageCell.ref);
@@ -24,24 +22,19 @@ export class ManagerMaster extends Master {
   update() {
     super.update();
 
-    if (this.checkBees(this.hive.state === hiveStates.lowenergy)) {
-      let order: SpawnOrder = {
-        setup: setups.manager,
+    if (this.checkBees(false)) {
+      let order = {
+        setup: setups.queen,
         amount: 1,
-        priority: 1,
+        priority: <0>0,
       };
-      // desired linear regex from desmos))
+
       let lvl = this.hive.room.controller!.level;
-      order.setup.patternLimit = lvl * lvl - lvl * 9 + 30;
+      // some cool function i came up with. It works utill lvl 8 though
+      order.setup.patternLimit = -0.85 * lvl * lvl + 13.44 * lvl + 28.7;
 
       this.wish(order);
     }
-
-    if (!this.manager || !Apiary.bees[this.manager.ref])
-      if (this.beesAmount)
-        this.manager = this.bees[Object.keys(this.bees)[0]];
-      else
-        return;
 
     _.forEach(this.activeBees, bee => {
       if (!bee.target || !this.cell.requests[bee.target] || !this.cell.requests[bee.target].isValid() && Object.keys(this.cell.requests).length) {
@@ -73,10 +66,9 @@ export class ManagerMaster extends Master {
         bee.state = beeStates.fflush;
 
       if (bee.state === beeStates.fflush)
-        if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0) {
-          let resource = <ResourceConstant>Object.keys(bee.store)[0];
-          bee.transfer(this.cell.storage, resource);
-        } else
+        if (bee.creep.store.getUsedCapacity() > 0 && this.cell.storage.store.getFreeCapacity() > 0)
+          bee.transfer(this.cell.storage, findOptimalResource(bee.store));
+        else
           if (bee.target)
             bee.state = beeStates.refill;
           else
@@ -84,14 +76,18 @@ export class ManagerMaster extends Master {
 
       if (bee.target) {
         let transfer = this.cell.requests[bee.target];
-        if (bee.target)
+        if (transfer)
           transfer.process(bee);
       } else
         bee.state = beeStates.fflush;
 
 
-      if (bee.state === beeStates.chill)
-        bee.goRest(this.cell.pos);
+      if (bee.state === beeStates.chill) {
+        let pos = bee.pos.findClosest([this.hive.getPos("queen1"), this.hive.getPos("queen2")].filter(p => p.isFree()));
+        console.log(pos);
+        if (pos)
+          bee.goRest(pos);
+      }
     });
 
     /* drop off extra res in sim

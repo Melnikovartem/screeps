@@ -18,7 +18,7 @@ export abstract class Cell {
     this.hive = hive;
     this.ref = cellName;
     this.time = Game.time;
-    this.pos = hive.pos;
+    this.pos = hive.getPos("center");
 
     if (Apiary.masters[prefix.master + this.ref])
       this.master = Apiary.masters[prefix.master + this.ref];

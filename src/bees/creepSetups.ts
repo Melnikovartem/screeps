@@ -109,10 +109,6 @@ export const setups = {
   queen: new CreepSetup(setupsNames.queen, {
     pattern: [CARRY],
   }, 50 / 3),
-  manager: new CreepSetup(setupsNames.manager, {
-    pattern: [CARRY],
-    patternLimit: 14,
-  }, 50 / 3),
   hauler: new CreepSetup(setupsNames.hauler, {
     fixed: [WORK],
     pattern: [CARRY],

@@ -14,10 +14,11 @@ export class RespawnCell extends Cell {
   extensions: { [id: string]: StructureExtension } = {};
   master: undefined;
 
+  roadMap: (string)[] = [];
+
 
   constructor(hive: Hive) {
     super(hive, prefix.respawnCell + hive.room.name);
-    this.pos = this.hive.getPos("queen1");
   }
 
   update() {
@@ -27,12 +28,18 @@ export class RespawnCell extends Cell {
     this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    let targets: (StructureSpawn | StructureExtension)[] = _.map(this.spawns);
-    targets = _.filter(targets.concat(_.map(this.extensions)), structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     let storageCell = this.hive.cells.storage;
     if (storageCell)
       storageCell!.requestFromStorage(targets, 1);
   };
+
+  bakeMap() {
+    let targets: (StructureSpawn | StructureExtension)[] = Object.values(this.spawns);
+    targets = targets.concat(Object.values(this.extensions));
+    this.roadMap.sort()
+  }
 
   run() {
     // generate the queue and start spawning

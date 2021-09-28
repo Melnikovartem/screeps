@@ -3,6 +3,7 @@ import { makeId } from "../abstract/utils";
 
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
+import type { TransferRequest } from "../bees/transferRequest";
 
 export class CustomConsole {
   vis(framerate?: number, force: number = 0) {
@@ -321,11 +322,21 @@ export class CustomConsole {
   }
 
   printSpawnOrders(hiveName?: string) {
-    // i know this is messy, but this is print so it is ok
     return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
         o => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')
       } \n`).join('\n');
+  }
+
+  printStorageOrders(hiveName?: string) {
+    return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
+      if (!h.cells.storage)
+        return "";
+      return `${h.print}: \n${
+        _.map((<TransferRequest[]>_.map(h.cells.storage.requests)).sort((a, b) => a.priority - b.priority),
+          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from.structureType} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}`).join('\n')
+        } \n`
+    }).join('\n');
   }
 }

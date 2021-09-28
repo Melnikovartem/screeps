@@ -68,7 +68,7 @@ export class UpgradeCell extends Cell {
     if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 2) {
       this.storageLink = storageCell.getFreeLink();
       if (this.storageLink) {
-        if (storageCell.master.manager && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
+        if (storageCell.master.activeBees.length && storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
           storageCell.linksState[this.storageLink.id] = "busy";
         let usedCap = this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
         if (freeCap >= usedCap + 50 || freeCap === LINK_CAPACITY - usedCap)
