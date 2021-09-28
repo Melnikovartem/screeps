@@ -222,10 +222,10 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
 
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
-      this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
       let enemy = Apiary.intel.getEnemy(this)!;
       if (!enemy)
         return;
@@ -237,7 +237,6 @@ export class DefenseCell extends Cell {
 
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy);
-
       if (stats.current.heal < TOWER_POWER_ATTACK_MY * this.coefMap[enemy.pos.x][enemy.pos.y])
         shouldAttack = true;
 

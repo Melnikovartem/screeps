@@ -171,90 +171,94 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
     let storageCell = this.hive.cells.storage;
-    if (Game.time - bee.memory.born <= 600 && storageCell && storageCell.master.activeBees.length) {
-      if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
-        this.boostRequests[bee.ref] = requests;
-        for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
-          let r = this.boostRequests[bee.ref][k];
-          if (!r.amount)
-            r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
-          this.boostRequests[bee.ref][k] = this.getBoostInfo(r);
-        }
-      }
+    if (Game.time - bee.memory.born <= 600
+      || !storageCell || !storageCell.master.activeBees.length
+      || !bee.master || !bee.master.boost)
+      return OK;
 
+    if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
+      this.boostRequests[bee.ref] = requests;
       for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
         let r = this.boostRequests[bee.ref][k];
-        let lab: StructureLab | undefined;
-
-        if (!r.res || !r.amount)
-          continue;
-        r.amount = Math.min(r.amount, bee.getBodyParts(BOOST_PARTS[r.type], -1));
         if (!r.amount)
-          continue;
+          r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
+        this.boostRequests[bee.ref][k] = this.getBoostInfo(r);
+      }
+    }
 
-        if (this.boostLabs[r.res])
-          lab = this.laboratories[this.boostLabs[r.res]!];
-        else {
+    for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
+      let r = this.boostRequests[bee.ref][k];
+      let lab: StructureLab | undefined;
+
+      if (!r.res || !r.amount)
+        continue;
+      r.amount = Math.min(r.amount, bee.getBodyParts(BOOST_PARTS[r.type], -1));
+      if (!r.amount)
+        continue;
+
+      if (this.boostLabs[r.res])
+        lab = this.laboratories[this.boostLabs[r.res]!];
+      else {
+        _.some(this.laboratories, l => {
+          if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
+            lab = l;
+          return lab;
+        });
+        if (!lab)
           _.some(this.laboratories, l => {
-            if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
+            if (this.labsStates[l.id] === "idle")
               lab = l;
             return lab;
           });
-          if (!lab)
-            _.some(this.laboratories, l => {
-              if (this.labsStates[l.id] === "idle")
-                lab = l;
-              return lab;
-            });
-          if (!lab)
-            _.some(this.laboratories, l => {
-              if (this.labsStates[l.id] === "production" && l.mineralType === r.res)
-                lab = l;
-              return lab;
-            });
-          if (!lab)
-            _.some(this.laboratories, l => {
-              if (this.labsStates[l.id] === "production")
-                lab = l;
-              return lab;
-            });
-          if (lab) {
-            this.boostLabs[r.res!] = lab.id;
-            this.labsStates[lab.id] = r.res!;
-            delete storageCell.requests["lab_" + lab.id];
+        if (!lab)
+          _.some(this.laboratories, l => {
+            if (this.labsStates[l.id] === "production" && l.mineralType === r.res)
+              lab = l;
+            return lab;
+          });
+        if (!lab)
+          _.some(this.laboratories, l => {
+            if (this.labsStates[l.id] === "production")
+              lab = l;
+            return lab;
+          });
+        if (lab) {
+          this.boostLabs[r.res!] = lab.id;
+          this.labsStates[lab.id] = r.res!;
+          delete storageCell.requests["lab_" + lab.id];
+        }
+      }
+
+      if (!lab)
+        continue;
+
+      if (bee.creep.spawning)
+        return ERR_BUSY;
+
+      if (lab.store.getUsedCapacity(r.res) >= LAB_BOOST_MINERAL && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= LAB_BOOST_ENERGY) {
+        if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
+          && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
+          let pos = lab.pos.getOpenPositions(true)[0];
+          if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
+            let ans = lab.boostCreep(bee.creep, r.amount);
+            if (ans === OK) {
+              // bad things if 2 creeps want to be boosted at same time
+              r.amount = 0;
+              if (Apiary.logger) {
+                Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);
+                Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
+              }
+            }
+          } else {
+            bee.goRest(pos);
+            return ERR_NOT_IN_RANGE;
           }
         }
-
-        if (!lab)
-          continue;
-
-        if (bee.creep.spawning)
-          return ERR_BUSY;
-
-        if (lab.store.getUsedCapacity(r.res) >= LAB_BOOST_MINERAL && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= LAB_BOOST_ENERGY) {
-          if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
-            && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
-            let pos = lab.pos.getOpenPositions(true)[0];
-            if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
-              let ans = lab.boostCreep(bee.creep, r.amount);
-              if (ans === OK) {
-                // bad things if 2 creeps want to be boosted at same time
-                r.amount = 0;
-                if (Apiary.logger) {
-                  Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);
-                  Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
-                }
-              }
-            } else {
-              bee.goRest(pos);
-              return ERR_NOT_IN_RANGE;
-            }
-          }
-        } else
-          bee.goRest(this.pos);
-        return ERR_TIRED;
-      }
+      } else
+        bee.goRest(this.pos);
+      return ERR_TIRED;
     }
+
     delete this.boostRequests[bee.ref];
     return OK;
   }

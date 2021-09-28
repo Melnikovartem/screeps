@@ -5,7 +5,7 @@ import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils"
 
 import { profile } from "../../profiler/decorator";
-import type { ExcavationCell } from "../../cells/stage0/excavationCell";
+import type { ExcavationCell } from "../../cells/base/excavationCell";
 
 @profile
 export class HaulerMaster extends Master {

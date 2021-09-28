@@ -1,7 +1,7 @@
 import { RespawnCell } from "./cells/base/respawnCell";
 import { DefenseCell } from "./cells/base/defenseCell";
 import { DevelopmentCell } from "./cells/stage0/developmentCell";
-import { ExcavationCell } from "./cells/stage0/excavationCell";
+import { ExcavationCell } from "./cells/base/excavationCell";
 
 import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";

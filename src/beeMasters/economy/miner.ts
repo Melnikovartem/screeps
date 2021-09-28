@@ -4,7 +4,7 @@ import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
-import type { ResourceCell } from "../../cells/stage0/resourceCell";
+import type { ResourceCell } from "../../cells/base/resourceCell";
 
 @profile
 export class MinerMaster extends Master {

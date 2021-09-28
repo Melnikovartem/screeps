@@ -35,13 +35,15 @@ export class BuilderMaster extends Master {
   update() {
     super.update();
     this.recalculateTargetBee();
-    this.boost = this.hive.state >= hiveStates.nukealert;
-    this.movePriority = this.hive.state >= hiveStates.nukealert ? 1 : 5;
+    let emergency = this.hive.state >= hiveStates.nukealert;
+    this.boost = emergency;
+    this.movePriority = emergency ? 1 : 5;
+
     if (this.checkBees(false) && this.recalculateTargetBee()) {
       let order = {
         setup: setups.builder,
         amount: 1,
-        priority: <1 | 8>(this.hive.state >= hiveStates.nukealert ? 8 : 0),
+        priority: <1 | 8>(emergency ? 1 : 8),
       };
       order.setup.patternLimit = 10;
       this.wish(order);
@@ -81,7 +83,7 @@ export class BuilderMaster extends Master {
             }
 
             if (!target)
-              target = this.hive.findProject(bee);
+              target = this.hive.findProject(bee, this.hive.state === hiveStates.battle ? "ignore_constructions" : undefined);
 
             if (target) {
               let ans;
