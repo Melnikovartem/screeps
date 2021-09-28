@@ -44,11 +44,11 @@ export class HaulerMaster extends Master {
   recalculateTargetBee() {
     //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
     this.targetBeeCount = Math.ceil(this.accumRoadTime / Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 150) * 100, 1600));
-    return this.checkBees(this.hive.state === hiveStates.lowenergy);
+    return this.checkBees(hiveStates.battle !== this.hive.state);
   }
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(this.hive.state === hiveStates.lowenergy);
+    let check = () => this.checkBees(hiveStates.battle !== this.hive.state);
     if (!check())
       return false;
     this.recalculateTargetBee();

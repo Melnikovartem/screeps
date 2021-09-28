@@ -82,14 +82,12 @@ export class BootstrapMaster extends Master {
         this.targetBeeCount = Math.min(this.targetBeeCount, 10);
     */
     this.cell.shouldRecalc = false;
-
-    return this.checkBees(false);
   }
 
   checkBeesWithRecalc() {
     if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
       return false;
-    let check = () => this.checkBees(false);
+    let check = () => this.checkBees(true);
     if (!check())
       return false;
     this.recalculateTargetBee();

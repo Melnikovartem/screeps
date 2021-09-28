@@ -1,8 +1,9 @@
-import type { _Apiary } from "./Apiary";
-import type { beeStates } from "./enums";
-import type { CustomConsole } from "./convenience/console";
-import type { RoomSetup } from "./abstract/roomPlanner";
-import type { HivePositions } from "./Hive";
+import type { _Apiary } from "../Apiary";
+import type { beeStates } from "../enums";
+import type { CustomConsole } from "../convenience/console";
+import type { RoomSetup } from "./roomPlanner";
+import type { CreepAllBattleInfo } from "./intelligence";
+import type { HivePositions } from "../Hive";
 
 declare global {
   var Apiary: _Apiary;
@@ -85,7 +86,7 @@ declare global {
           }
         }
       },
-      orders: {
+      orders?: {
         [id: string]: {
           time: number,
           pos: RoomPosition,
@@ -94,7 +95,7 @@ declare global {
           master: boolean,
         }
       },
-      crashes: {
+      crashes?: {
         [id: string]: {
           time: number,
           context: string,
@@ -103,7 +104,12 @@ declare global {
         }
       },
       enemies?: {
-        [id: string]: { [id: number]: any },
+        [id: string]: {
+          time: number,
+          info: CreepAllBattleInfo,
+          pos: RoomPosition,
+          owner: string,
+        },
       }
     },
   }

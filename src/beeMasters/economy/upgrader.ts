@@ -54,8 +54,8 @@ export class UpgraderMaster extends Master {
   }
 
 
-  checkBeesWithRecalc(extreme: boolean) {
-    let check = () => this.checkBees(!extreme);
+  checkBeesWithRecalc() {
+    let check = () => this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2);
     if (!check())
       return false;
     this.recalculateTargetBee();
@@ -65,8 +65,7 @@ export class UpgraderMaster extends Master {
   update() {
     super.update();
 
-    let extreme = this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2;
-    if (this.checkBeesWithRecalc(extreme)) {
+    if (this.checkBeesWithRecalc()) {
       let order = {
         setup: setups.upgrader.manual,
         amount: this.targetBeeCount - this.beesAmount,
@@ -78,7 +77,7 @@ export class UpgraderMaster extends Master {
 
       order.setup.patternLimit = this.patternPerBee;
 
-      if (extreme) {
+      if (this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2) {
         order.priority = 3;
         order.setup = setups.upgrader.manual;
       }
@@ -101,7 +100,7 @@ export class UpgraderMaster extends Master {
       if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME
         && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25 || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0)) {
         let suckerTarget;
-        if (this.cell.link)
+        if (this.cell.link && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME / 2)
           suckerTarget = this.cell.link;
         if (!suckerTarget) {
           let storage = this.hive.cells.storage && this.hive.cells.storage.storage;

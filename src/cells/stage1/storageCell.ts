@@ -46,13 +46,16 @@ export class StorageCell extends Cell {
   }
 
   requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
-    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
       if (this.requests[ref])
         continue;
+      if (fitStore)
+        amount = Math.min(amount, (<Store<ResourceConstant, false>>objects[i].store).getUsedCapacity(res));
+      amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
       this.requests[ref] = new TransferRequest(ref, this.storage, objects[i], priority, res, amount);
       if (prev)
         this.requests[ref].nextup = prev;
@@ -63,13 +66,16 @@ export class StorageCell extends Cell {
   }
 
   requestToStorage(objects: TransferRequest["from"][], priority: TransferRequest["priority"]
-    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity): number {
+    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
       if (this.requests[ref])
         continue;
+      if (fitStore)
+        amount = Math.min(amount, (<Store<ResourceConstant, false>>objects[i].store).getUsedCapacity(res));
+      amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
       this.requests[ref] = new TransferRequest(ref, objects[i], this.storage, priority, res, amount);
       if (prev)
         this.requests[ref].nextup = prev;

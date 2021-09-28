@@ -53,11 +53,11 @@ export abstract class Master {
       this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
   }
 
-  checkBees(onlySafeState: boolean = true, spawnCycle: number = CREEP_LIFE_TIME): boolean {
+  checkBees(spawnExtreme: boolean = false, spawnCycle: number = CREEP_LIFE_TIME): boolean {
     // in 4 ifs to be able to read...
     if (this.waitingForBees || this.targetBeeCount === 0)
       return false;
-    if (onlySafeState && this.hive.state !== hiveStates.economy)
+    if (!spawnExtreme && this.hive.state !== hiveStates.economy)
       return false;
     if (this.hive.cells.defense.timeToLand < spawnCycle / 2 || this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < spawnCycle / 2)
       return false;

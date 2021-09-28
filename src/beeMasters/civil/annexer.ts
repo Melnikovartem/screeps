@@ -25,7 +25,7 @@ export class AnnexMaster extends SwarmMaster {
 
     this.targetBeeCount = doAnnex ? 1 : 0;
 
-    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME)) {
+    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let order = {
         setup: setups.claimer,
         amount: 1,

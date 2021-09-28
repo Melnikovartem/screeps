@@ -25,8 +25,8 @@ export abstract class SwarmMaster extends Master {
     this.boostMove = this.boost;
   }
 
-  checkBees(onlySafeState: boolean = false, spawnCycle?: number) {
-    return this.checkBeesSwarm() && super.checkBees(onlySafeState, spawnCycle);
+  checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
+    return this.checkBeesSwarm() && super.checkBees(spawnExtreme, spawnCycle);
   }
 
   checkBeesSwarm() {

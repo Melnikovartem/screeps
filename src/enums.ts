@@ -15,9 +15,12 @@ export enum roomStates {
   ownedByMe = 0,
   reservedByMe = 1,
   noOwner = 2,
-  reservedByInvaider = 3,
-  reservedByEnemy = 4,
-  ownedByEnemy = 5,
+  corridor = 3,
+  SKcentral = 4,
+  SKfrontier = 5,
+  reservedByInvaider = 6,
+  reservedByEnemy = 7,
+  ownedByEnemy = 8,
 }
 
 export enum beeStates {

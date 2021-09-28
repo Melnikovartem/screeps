@@ -69,7 +69,7 @@ export class DupletMaster extends SwarmMaster {
       damageWillBeMax += ticks * 600;
     }
 
-    if (this.checkBees(true) && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
+    if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
         setup: setups.healer,
         amount: 1,

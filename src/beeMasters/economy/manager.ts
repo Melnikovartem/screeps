@@ -50,7 +50,7 @@ export class ManagerMaster extends Master {
     });
 
 
-    if (this.checkBees(false)) {
+    if (this.checkBees(true)) {
       let order = {
         setup: setups.queen,
         amount: 1,

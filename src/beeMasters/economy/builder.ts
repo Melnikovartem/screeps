@@ -29,7 +29,7 @@ export class BuilderMaster extends Master {
     if (storage && this.hive.state >= hiveStates.nukealert && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
       this.targetBeeCount = 4;
 
-    return this.checkBees(false);
+    return this.checkBees(this.hive.state === hiveStates.battle);
   }
 
   update() {
@@ -39,7 +39,7 @@ export class BuilderMaster extends Master {
     this.boost = emergency;
     this.movePriority = emergency ? 1 : 5;
 
-    if (this.checkBees(false) && this.recalculateTargetBee()) {
+    if (this.checkBees(this.hive.state === hiveStates.battle) && this.recalculateTargetBee()) {
       let order = {
         setup: setups.builder,
         amount: 1,

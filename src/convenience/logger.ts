@@ -105,26 +105,30 @@ export class Logger {
     return ERR_BUSY;
   }
 
+  reportEnemy(creep: Creep) {
+    if (!Memory.log.enemies)
+      Memory.log.enemies = {};
+
+    Memory.log.enemies[creep.name] = {
+      time: Game.time,
+      info: Apiary.intel.getStats(creep),
+      pos: creep.pos,
+      owner: creep.owner.username,
+    }
+  }
+
   clean() {
     if (Game.time % LOGGING_CYCLE === 0) {
       for (let key in Memory.log.hives) {
-        let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates)
-          .sort((a, b) => +b - +a);
-        let j = sortedKeys.length - 10;
-        _.some(sortedKeys, i => {
-          if (--j <= 0) return true;
-          delete Memory.log.hives[key].loggedStates[+i];
-          return false;
-        });
+        let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates).sort((a, b) => +b - +a);
+
+        for (let i = sortedKeys.length - 25; i >= 0; --i)
+          delete Memory.log.hives[key].loggedStates[+sortedKeys[i]];
 
         sortedKeys = Object.keys(Memory.log.hives[key].spawns)
           .sort((a, b) => Memory.log.hives[key].spawns[b].time - Memory.log.hives[key].spawns[a].time);
-        j = sortedKeys.length - 10;
-        _.some(sortedKeys, i => {
-          if (--j <= 0) return true;
-          delete Memory.log.hives[key].spawns[i];
-          return false;
-        });
+        for (let i = sortedKeys.length - 25; i >= 0; --i)
+          delete Memory.log.hives[key].spawns[sortedKeys[i]];
 
         for (let res in Memory.log.hives[key].resourceBalance)
           for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
@@ -138,34 +142,25 @@ export class Logger {
           }
       }
 
-      if (Object.keys(Memory.log.orders).length > 50) {
-        let sortedKeys = Object.keys(Memory.log.orders).sort((a, b) => Memory.log.orders[b].time - Memory.log.orders[a].time);
-        let j = sortedKeys.length - 25;
-        _.some(sortedKeys, i => {
-          if (--j <= 0) return true;
-          if (Memory.log.orders[i].destroyTime !== -1)
-            delete Memory.log.orders[i];
-          return false;
-        });
+      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 100) {
+        let sortedKeys = Object.keys(Memory.log.orders)
+          .sort((a, b) => Memory.log.orders![b].time - Memory.log.orders![a].time);
+        for (let i = sortedKeys.length - 26; i >= 0; --i)
+          delete Memory.log.orders[sortedKeys[i]];
       }
 
-      if (Memory.log.crashes)
-        if (Object.keys(Memory.log.crashes).length > 100) {
-          let sortedKeys = Object.keys(Memory.log.crashes).sort((a, b) => Memory.log.crashes[b].time - Memory.log.crashes[a].time);
-          let j = sortedKeys.length - 25;
-          _.some(sortedKeys, i => {
-            if (--j <= 0) return true;
-            delete Memory.log.crashes[i];
-            return false;
-          });
-        }
+      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 100) {
+        let sortedKeys = Object.keys(Memory.log.crashes)
+          .sort((a, b) => Memory.log.crashes![b].time - Memory.log.crashes![a].time);
+        for (let i = sortedKeys.length - 26; i >= 0; --i)
+          delete Memory.log.crashes[sortedKeys[i]];
+      }
 
-      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
-        let j = Object.keys(Memory.log.enemies).length - 35;
-        for (let key in Memory.log.enemies) {
-          delete Memory.log.enemies[key];
-          if (--j === 0) break;
-        }
+      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 20) {
+        let sortedKeys = Object.keys(Memory.log.enemies)
+          .sort((a, b) => Memory.log.enemies![b].time - Memory.log.enemies![a].time);
+        for (let i = sortedKeys.length - 26; i >= 0; --i)
+          delete Memory.log.enemies[sortedKeys[i]];
       }
     }
   }

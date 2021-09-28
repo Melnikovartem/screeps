@@ -283,7 +283,7 @@ export class LaboratoryCell extends Cell {
             let res = l.mineralType;
             if (res && !storageCell.requests[id] && (!this.currentProduction || res !== this.currentProduction.res
               || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
-              storageCell.requestToStorage([l], 3, res);
+              storageCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
             break;
           default: // boosting lab : state == resource
             if (l.mineralType !== state)
@@ -365,10 +365,8 @@ export class LaboratoryCell extends Cell {
           }
         }
 
-        _.forEach(this.laboratories, lab => {
-          if (lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 4)
-            storageCell!.requestFromStorage([lab], lab.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2 ? 2 : 5);
-        });
+        storageCell.requestFromStorage(_.filter(this.laboratories,
+          l => l.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2), 4, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
       }
     }
   }

@@ -10,7 +10,7 @@ export class ClaimerMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME)) {
+    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let order: SpawnOrder = {
         setup: setups.claimer,
         amount: 1,

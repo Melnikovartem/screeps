@@ -35,7 +35,7 @@ interface CreepBattleInfo {
   heal: number,
 };
 
-interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
+export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
 
 @profile
 export class Intel {
@@ -104,7 +104,7 @@ export class Intel {
     if (!roomInfo) {
       let cache = Memory.cache.intellegence[roomName];
       if (cache)
-        this.roomInfo[roomName] = {
+        roomInfo = {
           enemies: [],
           dangerlvlmax: 0,
           lastUpdated: -1,
@@ -114,8 +114,8 @@ export class Intel {
           safePlace: cache.safePlace,
           safeModeEndTime: cache.safeModeEndTime,
         };
-      else
-        this.roomInfo[roomName] = {
+      else {
+        roomInfo = {
           enemies: [],
           dangerlvlmax: 0,
           lastUpdated: -1,
@@ -125,8 +125,21 @@ export class Intel {
           safePlace: true,
           safeModeEndTime: -1,
         };
-      roomInfo = this.roomInfo[roomName];
+
+        let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+        if (parsed) {
+          let [x, y] = [+parsed[2] % 10, +parsed[4] % 10];
+          if (x === 0 && y == 0)
+            roomInfo.roomState = roomStates.corridor;
+          else if (4 <= x && x <= 6 && 4 <= y && y <= 6)
+            if (x === 5 && y === 5)
+              roomInfo.roomState = roomStates.SKcentral;
+            else
+              roomInfo.roomState = roomStates.SKfrontier;
+        }
+      }
     }
+
     // it is cached after first check
     if (!Apiary.useBucket)
       lag = Math.max(4, lag);
@@ -137,7 +150,7 @@ export class Intel {
     if (!(roomName in Game.rooms)) {
       Apiary.requestSight(roomName);
       roomInfo.enemies = [];
-      if (!roomInfo.safePlace && roomInfo.roomState < roomStates.reservedByEnemy && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME) {
+      if (!roomInfo.safePlace && roomInfo.roomState < roomStates.ownedByEnemy && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME) {
         roomInfo.safePlace = true;
         roomInfo.dangerlvlmax = 0;
       }
@@ -146,9 +159,9 @@ export class Intel {
 
     let room = Game.rooms[roomName];
 
-    roomInfo.roomState = roomStates.noOwner;
     roomInfo.currentOwner = undefined;
     if (room.controller) {
+      roomInfo.roomState = roomStates.noOwner;
       if (room.controller.safeMode)
         this.roomInfo[room.name].safeModeEndTime = Game.time + room.controller.safeMode;
       let owner = room.controller.owner && room.controller.owner.username;
@@ -171,28 +184,8 @@ export class Intel {
       roomInfo.currentOwner = owner;
     }
 
+    this.roomInfo[room.name] = roomInfo;
     this.updateEnemiesInRoom(room);
-
-    /*
-    if (Game.time % LOGGING_CYCLE === 0 && !this.roomInfo[room.name].safePlace) {
-      if (!Memory.log.enemies)
-        Memory.log.enemies = {};
-      if (!Memory.log.enemies[room.name])
-        Memory.log.enemies[room.name] = {};
-      if (+_.min(Object.keys(Memory.log.enemies[room.name])) + CREEP_LIFE_TIME / 2 < Game.time)
-        Memory.log.enemies[room.name][Game.time] = _.map(this.roomInfo[room.name].enemies,
-          e => {
-            let ans: any = { hits: e.hits, hitsMax: e.hitsMax }
-            if (e instanceof Creep) {
-              ans.owner = e.owner.username;
-              ans.attack = e.getBodyParts(ATTACK);
-              ans.heal = e.getBodyParts(HEAL);
-            } else
-              ans.owner = e.structureType;
-            return ans;
-          });
-    }
-    */
 
     return this.roomInfo[roomName];
   }
@@ -207,6 +200,12 @@ export class Intel {
         safePlace: roomInfo.safePlace,
         safeModeEndTime: roomInfo.safeModeEndTime,
       }
+
+      if (Apiary.logger)
+        _.forEach(roomInfo.enemies, e => {
+          if (e.dangerlvl > 4 && e.object instanceof Creep)
+            Apiary.logger!.reportEnemy(e.object);
+        });
     }
   }
 
@@ -241,19 +240,13 @@ export class Intel {
       });
     });
 
-    let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room.name);
-    if (!parsed)
-      return;
-    let [x, y] = [+parsed[2], +parsed[4]];
-
-    if (roomInfo.roomState === roomStates.reservedByInvaider || roomInfo.roomState === roomStates.ownedByEnemy || Game.time % 500 === 0)
+    if (roomInfo.roomState >= roomStates.SKfrontier || Game.time % 500 === 0)
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE) {
           dangerlvl = 3;
-          if (4 <= x && x <= 6 && 4 <= y && y <= 6 && (x != 5 || y != 5)) {
+          if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
             dangerlvl = 9;
-          }
         } else if (roomInfo.roomState === roomStates.ownedByEnemy)
           if (s.structureType === STRUCTURE_TOWER)
             dangerlvl = 7;
