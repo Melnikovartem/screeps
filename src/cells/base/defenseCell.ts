@@ -130,8 +130,10 @@ export class DefenseCell extends Cell {
           if (ans !== OK) {
             if (roomInfo.dangerlvlmax < 6)
               this.setDefFlag(enemy.pos);
+            else if (roomInfo.dangerlvlmax < 9)
+              this.setDefFlag(enemy.pos, "power");
             else
-              this.setDefFlag(enemy.pos, true);
+              this.setDefFlag(enemy.pos, "surrender");
           }
         }
       }
@@ -162,7 +164,7 @@ export class DefenseCell extends Cell {
     return path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y;
   }
 
-  setDefFlag(pos: RoomPosition, info: boolean | Flag = false) {
+  setDefFlag(pos: RoomPosition, info: "normal" | "power" | "surrender" | Flag = "normal") {
     let ans;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8);
@@ -175,9 +177,11 @@ export class DefenseCell extends Cell {
 
     if (info instanceof Flag) {
       return info.setPosition(pos.x, pos.y)
-    } else if (info)
+    } else if (info === "surrender") {
+      ans = pos.createFlag(prefix.surrender + pos.roomName, COLOR_RED, COLOR_WHITE);
+    } else if (info === "power")
       ans = pos.createFlag(prefix.def + "D_" + makeId(4), COLOR_RED, COLOR_RED);
-    else
+    else if (info === "normal")
       ans = pos.createFlag(prefix.def + makeId(4), COLOR_RED, COLOR_BLUE);
     if (typeof ans === "string")
       Game.flags[ans].memory = { hive: this.hive.roomName };
@@ -197,7 +201,7 @@ export class DefenseCell extends Cell {
       if (roomInfo.enemies.length > 0) {
         // for now i will just sit back ...
         if (roomInfo.dangerlvlmax === 5 && this.notDef(this.hive.roomName))
-          this.setDefFlag(roomInfo.enemies[0].object.pos, true);
+          this.setDefFlag(roomInfo.enemies[0].object.pos, "power");
 
         if (!_.filter(this.towers, t => t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10).length) {
           _.forEach(this.towers, tower => {

@@ -87,7 +87,7 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
       && s.structureType !== STRUCTURE_CONTAINER).length;
 
     if (ans && !ignoreCreeps)
-      ans = !this.lookFor(LOOK_CREEPS).length
+      ans = !this.lookFor(LOOK_CREEPS).length;
   }
 
   return ans;

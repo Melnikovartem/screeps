@@ -33,6 +33,9 @@ export class ResourceCell extends Cell {
   }
 
   updateStructure() {
+    if (!(this.pos.roomName in Game.rooms))
+      return;
+
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
       s => s.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
@@ -69,11 +72,6 @@ export class ResourceCell extends Cell {
 
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
-
-    if (this.container && !Game.getObjectById(this.container.id)) {
-      this.container = undefined;
-      this.operational = false;
-    }
 
     if (this.resourceType !== RESOURCE_ENERGY)
       this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;

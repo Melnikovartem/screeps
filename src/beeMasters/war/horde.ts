@@ -12,6 +12,8 @@ export class HordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 5;
   movePriority = <2>2;
+  boost = true;
+  boostMove = true;
 
   update() {
     super.update();
@@ -91,7 +93,7 @@ export class HordeMaster extends SwarmMaster {
             bee.goRest(this.order.pos);
           break;
         case beeStates.boosting:
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }]) === OK)
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }]) === OK)
             bee.state = beeStates.chill;
           break;
         case beeStates.chill:

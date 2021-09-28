@@ -137,13 +137,14 @@ export class BootstrapMaster extends Master {
     let containerTargetingCur: { [id: string]: { current: number, max: number } } = {};
 
     for (let i = 0; i < this.cell.handAddedResources.length; ++i) {
-      let target: extraTarget | undefined;
       let pos = this.cell.handAddedResources[i];
+      if (!(pos.roomName in Game.rooms))
+        continue;
       let amount = 0;
-      target = pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY && r.amount >= 25)[0];
+      let target: extraTarget | undefined = pos.lookFor(LOOK_RESOURCES)
+        .filter(r => r.resourceType === RESOURCE_ENERGY && r.amount >= 25)[0];
       if (target)
         amount = target.amount;
-
       if (!target)
         target = pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) >= 25)[0];
       if (!target)
@@ -193,6 +194,7 @@ export class BootstrapMaster extends Master {
         case beeStates.chill:
           if (bee.pos.roomName === this.hive.roomName)
             bee.state = beeStates.refill;
+          break;
       }
 
       switch (bee.state) {
@@ -205,7 +207,7 @@ export class BootstrapMaster extends Master {
           } else
             source = Game.getObjectById(bee.target);
 
-          if (!source || source instanceof Resource) {
+          if (!source || source instanceof Source) {
             let pickupTarget = bee.pos.findClosest(targets);
             if (pickupTarget && this.containerTargeting[pickupTarget.id].current < this.containerTargeting[pickupTarget.id].max
               && (!source || bee.pos.getRangeApprox(pickupTarget) < bee.pos.getRangeApprox(source) + 50)) {

@@ -9,6 +9,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class HordeDefenseMaster extends HordeMaster {
   maxSpawns: number = 2;
+  boost = false;
 
   update() {
     SwarmMaster.prototype.update.call(this);

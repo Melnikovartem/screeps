@@ -192,12 +192,20 @@ export class Intel {
       });
     });
 
+    let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room.name);
+    if (!parsed)
+      return;
+    let [x, y] = [+parsed[2], +parsed[4]];
+
     if (roomInfo.roomState === roomStates.reservedByInvaider || roomInfo.roomState === roomStates.ownedByEnemy || Game.time % 500 === 0)
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => {
         let dangerlvl: DangerLvl = 0;
-        if (s.structureType === STRUCTURE_INVADER_CORE)
+        if (s.structureType === STRUCTURE_INVADER_CORE) {
           dangerlvl = 3;
-        else if (roomInfo.roomState === roomStates.ownedByEnemy)
+          if (4 <= x && x <= 6 && 4 <= y && y <= 6 && (x != 5 || y != 5)) {
+            dangerlvl = 9;
+          }
+        } else if (roomInfo.roomState === roomStates.ownedByEnemy)
           if (s.structureType === STRUCTURE_TOWER)
             dangerlvl = 7;
           else if (s.structureType === STRUCTURE_EXTENSION)
