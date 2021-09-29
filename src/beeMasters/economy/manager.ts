@@ -59,7 +59,7 @@ export class ManagerMaster extends Master {
 
       let lvl = this.hive.room.controller!.level;
       // some cool function i came up with. It works utill lvl 8 though
-      order.setup.patternLimit = -0.85 * lvl * lvl + 13.44 * lvl + 28.7;
+      order.setup.patternLimit = Math.ceil(0.042 * Math.pow(lvl, 3) + 11.2);
 
       this.wish(order);
     }

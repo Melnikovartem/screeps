@@ -18,22 +18,17 @@ const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
 export class Visuals {
   caching: { [id: string]: { data: string, lastRecalc: number } } = {};
   anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
-  anchorsAll: { [id: string]: VisInfo } = {};
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
-    if (roomName && this.anchor.ref !== roomName) {
-      if (this.anchorsAll[roomName])
-        this.anchor = this.anchorsAll[roomName]
-      else {
-        this.anchorsAll[this.anchor.ref] = this.anchor;
-        this.anchor = { x: x ? x : this.anchor.x, y: y ? y : this.anchor.y, vis: new RoomVisual(makeId(8)), ref: roomName }
-        return this.anchor;
-      }
-    }
 
     if (x !== undefined)
       this.anchor.x = x;
     this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y;
+
+    if (roomName && this.anchor.ref !== roomName) {
+      this.anchor.vis = new RoomVisual(makeId(8));
+      this.anchor.ref = roomName;
+    }
 
     return this.anchor;
   }
@@ -57,7 +52,6 @@ export class Visuals {
             vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
       }
-    this.anchorsAll = {};
   }
 
   create() {
@@ -66,16 +60,7 @@ export class Visuals {
 
     this.visualizePlanner();
     if (Game.time % Memory.settings.framerate === 0 || Game.time === Apiary.createTime) {
-      this.changeAnchor(49, 1, GLOBAL_VISUALS);
-      this.global();
-      this.exportAnchor();
       if (Apiary.useBucket) {
-        this.changeAnchor(25, 1, GLOBAL_VISUALS_HEAVY);
-        this.battleInfo();
-        this.exportAnchor();
-      }
-
-      if (Apiary.useBucket)
         for (const name in Apiary.hives) {
           let hive = Apiary.hives[name];
           this.changeAnchor(1, 1, name);
@@ -83,22 +68,26 @@ export class Visuals {
           this.statsLab(hive);
           this.changeAnchor(0.5, 48.5);
           this.visualizeEnergy(name);
+
+          _.forEach(hive.annexNames, annex => {
+            if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
+              this.exportAnchor(0, annex);
+          });
+
+          this.spawnInfo(hive);
+
+          if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
+            this.exportAnchor();
         }
 
-      for (const name in Apiary.hives) {
-        let hive = Apiary.hives[name];
-
-        _.forEach(hive.annexNames, annex => {
-          if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
-            this.exportAnchor(0, annex);
-        });
-
-        this.changeAnchor(1, 1, name);
-        this.spawnInfo(hive);
-
-        if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
-          this.exportAnchor();
+        this.changeAnchor(25, 1, GLOBAL_VISUALS_HEAVY);
+        this.battleInfo();
+        this.exportAnchor();
       }
+
+      this.changeAnchor(49, 1, GLOBAL_VISUALS);
+      this.global();
+      this.exportAnchor();
     }
 
     this.update();

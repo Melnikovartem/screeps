@@ -18,54 +18,54 @@ export class CreepSetup {
   pattern: BodyPartConstant[];
   patternLimit: number;
   moveMax: number | "best";
-  ignoreCarry: boolean;
 
-  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", ignoreCarry = false) {
+  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best") {
     this.name = setupName;
 
     this.moveMax = moveMax;
     this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
     this.pattern = bodySetup.pattern;
     this.patternLimit = bodySetup.patternLimit ? bodySetup.patternLimit : Infinity;
-    this.ignoreCarry = ignoreCarry;
   }
 
   getBody(energy: number, moveMax: number = this.moveMax === "best" ? 25 : this.moveMax): { body: BodyPartConstant[], cost: number } {
     let body: BodyPartConstant[] = [];
     let nonMoveMax = MAX_CREEP_SIZE - moveMax;
     let nonMove = 0;
-    let moveAmount = (nonMoveCurrent: number) => Math.ceil(nonMoveCurrent * moveMax / nonMoveMax - ROUNDING_ERROR)
-    let addPattern = (pattern: BodyPartConstant[]) => {
-      if (nonMove + pattern.length <= nonMoveMax)
-        _.forEach(pattern, s => {
+    let moveAmount = (nonMoveCurrent: number) => nonMoveMax > 0 ? nonMoveCurrent * moveMax / nonMoveMax : nonMoveCurrent;
+    let bodyCost = 0;
 
-          if (body.length >= MAX_CREEP_SIZE)
-            return;
+    let addPattern = (pattern: BodyPartConstant[], maxTimes: number) => {
+      let nonMovePattern = pattern.filter(s => s !== MOVE);
+      let segmentCost = _.sum(pattern, s => BODYPART_COST[s]);
 
-          if (nonMove < nonMoveMax) {
-            body.push(s);
-            if (s !== MOVE && (!this.ignoreCarry || s !== CARRY))
-              ++nonMove;
-          }
+      for (let i = 0; i < maxTimes; ++i) {
+        if (nonMove + nonMovePattern.length > nonMoveMax)
+          return;
+        let moveToAdd = pattern.length - nonMovePattern.length
+          + Math.max(0, Math.ceil(moveAmount(nonMove + nonMovePattern.length) - ROUNDING_ERROR) - (body.length - nonMove));
+        if (body.length + moveToAdd + nonMovePattern.length > MAX_CREEP_SIZE)
+          return;
+        if (moveToAdd + (body.length - nonMove) > moveMax)
+          return;
+        if (bodyCost + segmentCost + moveToAdd * BODYPART_COST[MOVE] > energy)
+          return;
 
-          if (moveAmount(nonMove) > body.length - nonMove && body.length < MAX_CREEP_SIZE)
-            body.push(MOVE);
+        _.forEach(nonMovePattern, s => {
+          body.push(s);
+          bodyCost += BODYPART_COST[s];
+          ++nonMove;
         });
-    };
 
-    let fixedCosts = _.sum(this.fixed, s => BODYPART_COST[s]) + moveAmount(this.fixed.length) * BODYPART_COST[MOVE];
-    if (fixedCosts <= energy)
-      addPattern(this.fixed);
-    else
-      fixedCosts = 0;
+        _.times(moveToAdd, _ => {
+          body.push(MOVE);
+          bodyCost += BODYPART_COST[MOVE];
+        });
+      }
+    }
 
-    let segmentCost = _.sum(this.pattern, s => BODYPART_COST[s]) + moveAmount(this.pattern.length) * BODYPART_COST[MOVE];
-    let maxSegment = Math.min(this.patternLimit,
-      Math.floor(nonMoveMax - nonMove + ROUNDING_ERROR) / this.pattern.length, Math.floor((energy - fixedCosts) / segmentCost));
-
-    _.times(maxSegment, () => {
-      addPattern(this.pattern);
-    });
+    addPattern(this.fixed, 1);
+    addPattern(this.pattern, this.patternLimit);
 
     body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
     let index = body.indexOf(MOVE);
@@ -184,18 +184,25 @@ export const setups = {
 
 /*
 let printSetup = (s: CreepSetup, energy = Infinity) => {
-  let bbody = s.getBody(energy).body;
-  console.log(s.name, ":", bbody.length, bbody.filter(s => s != MOVE).length)
-  return bbody;
+  let setup = s.getBody(energy);
+  let nonMoveLen = setup.body.filter(s => s != MOVE).length;
+  console.log(`${s.name}: ${nonMoveLen}/${setup.body.length} aka ${Math.round(nonMoveLen / setup.body.length * 1000) / 10}% cost: ${setup.cost}/${energy}`);
+  return setup.body;
 }
 
+printSetup(new CreepSetup("test bee", {
+  pattern: [MOVE],
+}, 50), 10000)
+
 /*
+printSetup(setups.defender.destroyer, 650)
+printSetup(setups.hauler, 3000)
 printSetup(setups.defender.destroyer, 650)
 printSetup(setups.bootstrap, 600)
 printSetup(setups.queen)
 printSetup(setups.claimer)
 printSetup(setups.manager)
-printSetup(setups.hauler)
+printSetup(setups.queen, 1000)
 printSetup(setups.pickup)
 printSetup(setups.miner.energy)
 printSetup(setups.miner.minerals)
@@ -206,7 +213,7 @@ printSetup(setups.builder, 1300)
 printSetup(setups.puppet)
 printSetup(setups.defender.normal)
 printSetup(setups.defender.sk)
-printSetup(setups.knight)
+printSetup(setups.knight, 975)
 printSetup(setups.dismantler)
-printSetup(setups.healer)
+printSetup(setups.healer, 1300)
 */

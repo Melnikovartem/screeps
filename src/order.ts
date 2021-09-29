@@ -273,11 +273,6 @@ export class Order {
             if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
               Apiary.orders[f.name].delete();
           });
-        else
-          _.forEach(Game.flags, f => {
-            if (f.color === COLOR_WHITE && f.secondaryColor === COLOR_WHITE && Apiary.orders[f.name] && Game.time !== Apiary.createTime)
-              Apiary.orders[f.name].acted = false;
-          });
 
         switch (this.flag.secondaryColor) {
           case COLOR_WHITE:
@@ -293,7 +288,7 @@ export class Order {
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
-              Apiary.planner.toActive(this.pos.roomName);
+              Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
               if (this.hive.shouldRecalc < 3)
                 if (this.hive.roomName === this.pos.roomName)
                   this.hive.shouldRecalc = 1;
@@ -307,7 +302,7 @@ export class Order {
               let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
               if (contr && (contr.my || contr.reservation && contr.reservation.username === Apiary.username))
                 Apiary.planner.resetPlanner(this.pos.roomName);
-              Apiary.planner.toActive(this.pos.roomName);
+              Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
             }
             this.acted = false;
             break;
@@ -319,14 +314,8 @@ export class Order {
             }
             if (!del || /^force/.exec(this.ref)) {
               for (let name in Apiary.planner.activePlanning) {
-                let anchor = Apiary.planner.activePlanning[name].anchor;
-                if (!anchor)
-                  if (this.pos.roomName === this.hive.roomName)
-                    anchor = this.hive.getPos("center");
-                  else
-                    anchor = this.pos;
-                console.log("SAVED: ", name, anchor);
-                Apiary.planner.saveActive(name, anchor);
+                console.log("SAVED: ", name, Apiary.planner.activePlanning[name].anchor);
+                Apiary.planner.saveActive(name, this.hive.phase === 0);
                 delete Apiary.planner.activePlanning[name];
               }
               if (!Object.keys(Apiary.planner.activePlanning).length)
@@ -339,6 +328,18 @@ export class Order {
               this.pos.createFlag("FAIL_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
             break;
           case COLOR_PURPLE:
+            let planner = false;
+            _.forEach(Game.flags, f => {
+              if (f.color === COLOR_WHITE && f.secondaryColor === COLOR_WHITE && Apiary.orders[f.name] && Game.time !== Apiary.createTime) {
+                Apiary.orders[f.name].acted = false;
+                planner = true;
+              }
+            });
+            if (!planner)
+              Apiary.planner.addCustomRoad(this.hive.getPos("center"), this.pos);
+            break;
+          case COLOR_YELLOW:
+            Apiary.planner.addResourceRoads(this.hive.getPos("center"));
             break;
         }
         break;

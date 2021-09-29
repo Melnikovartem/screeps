@@ -89,7 +89,7 @@ export class RespawnCell extends Cell {
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 
-      if (order.priority === 0)
+      if (order.priority === 0 && (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount))
         setup = order.setup.getBody(energyAvailable, moveMax);
       else
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);

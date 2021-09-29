@@ -35,7 +35,7 @@ export class HaulerMaster extends Master {
           let coef = 10; // mineral production
           if (cell.resourceType !== RESOURCE_ENERGY)
             coef = Math.floor(this.hive.room.energyCapacityAvailable / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
-          this.accumRoadTime += this.hive.cells.storage!.storage.pos.getTimeForPath(cell.container.pos) * coef * 2;
+          this.accumRoadTime += this.hive.cells.storage!.pos.getTimeForPath(cell.container.pos) * coef * 2;
         }
       });
     this.cell.shouldRecalc = false;
@@ -43,7 +43,7 @@ export class HaulerMaster extends Master {
 
   recalculateTargetBee() {
     //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
-    this.targetBeeCount = Math.ceil(this.accumRoadTime / Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 150) * 100, 1600));
+    this.targetBeeCount = Math.ceil(this.accumRoadTime / Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 100) / 150) * 100, 1600));
     return this.checkBees(hiveStates.battle !== this.hive.state);
   }
 

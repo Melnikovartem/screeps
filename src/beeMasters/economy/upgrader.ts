@@ -48,9 +48,9 @@ export class UpgraderMaster extends Master {
     this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
 
-    this.targetBeeCount = Math.min(Math.max(1, this.targetBeeCount),
-      Math.ceil(4.15 * Math.pow(10, -17) * Math.pow(storeAmount, 3) - 7.6 * Math.pow(10, -11) * Math.pow(storeAmount, 2)
-        + 4.8 * Math.pow(10, -5) * storeAmount - 1)); // cool math function
+    this.targetBeeCount = Math.max(1, this.targetBeeCount);
+    this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
+      1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
   }
 
 

@@ -56,23 +56,9 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
-/*
-let matrix = new PathFinder.CostMatrix();
-let terrain = Game.map.getRoomTerrain(roomName);
-for (let x = 0; x <= 49; ++x)
-  for (let y = 0; y <= 49; ++y)
-    switch (terrain.get(x, y)) {
-      case TERRAIN_MASK_WALL:
-        matrix.set(x, y, 255);
-      case TERRAIN_MASK_SWAMP:
-        matrix.set(x, y, 2);
-      default:
-        matrix.set(x, y, 1);
-    }
-*/
-function getPathArgs(sameRoom: boolean = true, costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
-  return {
-    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: sameRoom ? 1 : undefined,
+function getPathArgs(opts: FindPathOpts = {}, costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
+  return _.defaults(opts, {
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: 1,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -81,14 +67,14 @@ function getPathArgs(sameRoom: boolean = true, costCallbackExtra = (_: string, c
             if (plan[x][y].s === STRUCTURE_ROAD)
               costMatrix.set(+x, +y, 1);
             else if (plan[x][y].s === STRUCTURE_WALL)
-              costMatrix.set(+x, +y, 6);
+              costMatrix.set(+x, +y, 3);
             else if (plan[x][y].s)
               costMatrix.set(+x, +y, 255);
           }
         return costCallbackExtra(roomName, costMatrix);
       }
     }
-  };
+  });
 }
 
 /*
@@ -120,7 +106,7 @@ export class RoomPlanner {
       freeSpaces: Pos[], exits: RoomPosition[],
       jobsToDo: Job[]; // ERR_BUSY - repeat job, ERR_FULL - failed
       correct: "ok" | "fail" | "work";
-      anchor?: RoomPosition,
+      anchor: RoomPosition,
       poss: PossiblePositions,
     }
   } = {};
@@ -128,38 +114,36 @@ export class RoomPlanner {
   run() {
     // CPU for planner - least important one
     for (let roomName in this.activePlanning) {
-      if (this.activePlanning[roomName].correct === "work") {
-        let jobs = this.activePlanning[roomName].jobsToDo;
-        while (jobs.length) {
-          let ans;
-          // console .log("?:", jobs[0].context)
-          ans = jobs[0].func();
-          if (ans === ERR_FULL) {
-            this.activePlanning[roomName].correct = "fail";
-            console.log("FAIL: ", jobs[0].context);
-          }
-          if (ans === ERR_BUSY)
-            break;
-          jobs.shift();
+      let jobs = this.activePlanning[roomName].jobsToDo;
+      while (jobs.length) {
+        this.activePlanning[roomName].correct = "work";
+        let ans;
+        // console .log("?:", jobs[0].context)
+        ans = jobs[0].func();
+        if (ans === ERR_FULL) {
+          this.activePlanning[roomName].correct = "fail";
+          console.log("FAIL: ", jobs[0].context);
         }
-        if (!jobs.length && this.activePlanning[roomName].correct !== "fail") {
-          console.log("OK: ", roomName);
-          this.activePlanning[roomName].correct = "ok";
-        }
+        if (ans === ERR_BUSY)
+          break;
+        jobs.shift();
+      }
+      if (!jobs.length && this.activePlanning[roomName].correct === "work") {
+        console.log("OK: ", roomName);
+        this.activePlanning[roomName].correct = "ok";
       }
     }
   }
 
-  initPlanning(roomName: string, correct: boolean = false) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: correct ? "ok" : "work", poss: {} };
+  initPlanning(roomName: string, anchor: RoomPosition) {
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: "ok", poss: {}, anchor: anchor };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
 
   generatePlan(anchor: RoomPosition, rotation: ExitConstant, warchance = true) {
-    this.initPlanning(anchor.roomName);
+    this.initPlanning(anchor.roomName, anchor);
     let jobs = this.activePlanning[anchor.roomName].jobsToDo;
-    this.activePlanning[anchor.roomName].anchor = anchor;
     let rotate = (pos: Pos, direction: 0 | 1 | 2 | 3, shiftY: number = 0, shiftX: number = 0) => {
       let x = pos.x - 25;
       let y = pos.y - 25;
@@ -252,18 +236,7 @@ export class RoomPlanner {
       return ans;
     });
 
-    _.forEach(customRoads, f => {
-      jobs.push({
-        context: `custom road for ${f.pos}`,
-        func: () => {
-          let ans = this.connectWithRoad(anchor, f.pos, true);
-          if (typeof ans === "number")
-            return ans;
-          this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_ROAD);
-          return OK;
-        }
-      });
-    });
+    _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
 
     jobs.push({
       context: "outer ring",
@@ -349,45 +322,7 @@ export class RoomPlanner {
     });
 
 
-    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
-    futureResourceCells.sort((a, b) => {
-      let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
-      if (ans === 0)
-        return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
-      return ans;
-    });
-
-    _.forEach(futureResourceCells, f => {
-      jobs.push({
-        context: `resource road for ${f.pos}`,
-        func: () => {
-          let ans = this.connectWithRoad(anchor, f.pos, true);
-          if (typeof ans === "number")
-            return ans;
-          if (f.secondaryColor === COLOR_YELLOW) {
-            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-            if (f.pos.roomName !== anchor.roomName)
-              return OK;
-            let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getOpenPositions(true, 1);
-            if (!poss.length)
-              return ERR_FULL;
-            let pos = poss.reduce((prev, curr) => {
-              if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
-                || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
-                return curr;
-              return prev;
-            });
-            // plcaeholder
-            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
-              return ERR_FULL;
-          } else if (f.secondaryColor === COLOR_CYAN) {
-            this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
-            this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
-          }
-          return OK;
-        }
-      });
-    });
+    this.addResourceRoads(anchor);
 
     jobs.push({
       context: "upgrade site",
@@ -488,6 +423,67 @@ export class RoomPlanner {
         context: "adding walls adding jobs",
         func: () => this.addWalls(anchor, [4, 3, 2]),
       });
+  }
+
+  addCustomRoad(anchor: RoomPosition, pos: RoomPosition) {
+    if (!this.activePlanning[anchor.roomName])
+      this.toActive(anchor)
+
+    this.activePlanning[anchor.roomName].jobsToDo.push({
+      context: `custom road for ${pos}`,
+      func: () => {
+        let ans = this.connectWithRoad(anchor, pos, true);
+        if (typeof ans === "number")
+          return ans;
+        this.addToPlan(pos, pos.roomName, STRUCTURE_ROAD);
+        return OK;
+      }
+    });
+  }
+
+  addResourceRoads(anchor: RoomPosition) {
+    if (!this.activePlanning[anchor.roomName])
+      this.toActive(anchor)
+
+    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
+    futureResourceCells.sort((a, b) => {
+      let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
+      if (ans === 0)
+        return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
+      return ans;
+    });
+
+    _.forEach(futureResourceCells, f => {
+      this.activePlanning[anchor.roomName].jobsToDo.push({
+        context: `resource road for ${f.pos}`,
+        func: () => {
+          let ans = this.connectWithRoad(anchor, f.pos, true);
+          if (typeof ans === "number")
+            return ans;
+          if (f.secondaryColor === COLOR_YELLOW) {
+            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            if (f.pos.roomName !== anchor.roomName)
+              return OK;
+            let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getOpenPositions(true, 1);
+            if (!poss.length)
+              return ERR_FULL;
+            let pos = poss.reduce((prev, curr) => {
+              if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
+                || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+                return curr;
+              return prev;
+            });
+            // plcaeholder
+            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
+              return ERR_FULL;
+          } else if (f.secondaryColor === COLOR_CYAN) {
+            this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
+          }
+          return OK;
+        }
+      });
+    });
   }
 
   addWalls(anchor: RoomPosition, ranges: number[]) {
@@ -598,7 +594,7 @@ export class RoomPlanner {
 
           _.forEach(addedWalls, p => {
             let pos = new RoomPosition(p.x, p.y, anchor.roomName);
-            let path = anchor.findPathTo(pos, getPathArgs(true, (roomName: string, costMatrix: CostMatrix) => {
+            let path = anchor.findPathTo(pos, getPathArgs({}, (roomName: string, costMatrix: CostMatrix) => {
               let plan = Apiary.planner.activePlanning[roomName].plan;
               for (let x in plan)
                 for (let y in plan[x]) {
@@ -611,7 +607,7 @@ export class RoomPlanner {
             }));
             while (path.length > 1)
               path = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName)
-                .findPathTo(pos, getPathArgs(true, (roomName: string, costMatrix: CostMatrix) => {
+                .findPathTo(pos, getPathArgs({}, (roomName: string, costMatrix: CostMatrix) => {
                   let plan = Apiary.planner.activePlanning[roomName].plan;
                   for (let x in plan)
                     for (let y in plan[x]) {
@@ -645,19 +641,21 @@ export class RoomPlanner {
     return false;
   }
 
-  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean): Pos | ERR_BUSY | ERR_FULL {
+  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opts: FindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
     let roomName = anchor.roomName;
     if (!(pos.roomName in Game.rooms))
       return ERR_FULL;
     let exit: RoomPosition | undefined | null;
     let exits = this.activePlanning[roomName].exits;
+    if (roomName !== pos.roomName)
+      opts.maxRooms = 16;
     if (pos.roomName === roomName)
-      exit = pos.findClosestByPath(exits, getPathArgs(roomName === pos.roomName));
+      exit = pos.findClosestByPath(exits, getPathArgs(opts));
     if (!exit)
       exit = pos.findClosest(exits);
     if (!exit)
       return ERR_FULL;
-    let path = exit.findPathTo(pos, getPathArgs(roomName === pos.roomName));
+    let path = exit.findPathTo(pos, getPathArgs(opts));
     if (!path.length)
       return exit.x === pos.x && exit.y === pos.y ? exit : ERR_FULL;
 
@@ -679,7 +677,7 @@ export class RoomPlanner {
 
   addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null | undefined, force: boolean = false, check: boolean = false) {
     if (!this.activePlanning[roomName])
-      this.initPlanning(roomName, true);
+      this.initPlanning(roomName, new RoomPosition(pos.x, pos.y, roomName));
     if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType !== STRUCTURE_EXTRACTOR)
       return ERR_NO_PATH;
     let placed = this.activePlanning[roomName].placed;
@@ -751,8 +749,9 @@ export class RoomPlanner {
     });
   }
 
-  toActive(roomName: string) {
-    this.initPlanning(roomName, true);
+  toActive(anchor: RoomPosition, roomName: string = anchor.roomName) {
+    this.initPlanning(roomName, anchor);
+    this.activePlanning[roomName].exits.push(anchor);
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
@@ -765,6 +764,7 @@ export class RoomPlanner {
     if (Memory.cache.positions[roomName])
       for (let type in Memory.cache.positions[roomName])
         this.activePlanning[roomName].poss[<keyof PossiblePositions>type] = Memory.cache.positions[roomName][<keyof PossiblePositions>type]!;
+
   }
 
   resetPlanner(roomName: string) {
@@ -784,7 +784,7 @@ export class RoomPlanner {
       });
   }
 
-  saveActive(roomName: string, anchor: RoomPosition) {
+  saveActive(roomName: string, inverseRoads = false) {
     let active = this.activePlanning[roomName];
     if (!(active))
       return;
@@ -797,6 +797,7 @@ export class RoomPlanner {
           this.addToCache({ x: +x, y: +y }, roomName, STRUCTURE_RAMPART);
       }
 
+    let anchor = this.activePlanning[roomName].anchor;
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
@@ -804,7 +805,7 @@ export class RoomPlanner {
         let ans = anchorDist(anchor, a, roomName) - anchorDist(anchor, b, roomName);
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        return ans * (sType === STRUCTURE_ROAD ? -1 : 1);
+        return ans * (inverseRoads && sType === STRUCTURE_ROAD ? -1 : 1);
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }

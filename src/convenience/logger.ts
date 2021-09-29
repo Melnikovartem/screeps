@@ -133,7 +133,7 @@ export class Logger {
         for (let res in Memory.log.hives[key].resourceBalance)
           for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
             let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
-            if (diff >= LOGGING_CYCLE * 10) {
+            if (diff >= LOGGING_CYCLE * 25) {
               Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
                 time: Game.time - Math.floor(diff / 2),
                 amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
