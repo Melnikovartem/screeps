@@ -278,7 +278,7 @@ export class CustomConsole {
       return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
 
     if (!(roomName in Apiary.planner.activePlanning))
-      Apiary.planner.toActive(roomName);
+      return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`
 
     for (let t in cache) {
       let val: BuildableStructureConstant | null = <BuildableStructureConstant>t;

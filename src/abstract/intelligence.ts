@@ -33,6 +33,7 @@ interface CreepBattleInfo {
   dmgRange: number,
   dism: number,
   heal: number,
+  hits: number,
 };
 
 export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
@@ -80,11 +81,13 @@ export class Intel {
         dmgRange: 0,
         dism: 0,
         heal: 0,
+        hits: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
         dism: 0,
         heal: 0,
+        hits: 0,
       }
     }
 
@@ -298,11 +301,13 @@ export class Intel {
         dmgRange: 0,
         dism: 0,
         heal: 0,
+        hits: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
         dism: 0,
         heal: 0,
+        hits: 0,
       }
     }
 
@@ -313,9 +318,11 @@ export class Intel {
           stat = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;
           ans.max.dmgRange += stat;
           ans.max.dmgClose += stat;
+          ans.max.dism += stat;
           if (b.hits) {
             ans.current.dmgRange += stat;
             ans.current.dmgClose += stat;
+            ans.max.dism += stat;
           }
           break;
         case ATTACK:
@@ -339,6 +346,9 @@ export class Intel {
           break;
       }
     });
+
+    ans.current.hits = creep.hits;
+    ans.max.hits = creep.hitsMax;
 
     return ans;
   }

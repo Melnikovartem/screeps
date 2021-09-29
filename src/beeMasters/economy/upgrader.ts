@@ -123,7 +123,8 @@ export class UpgraderMaster extends Master {
 
       switch (bee.state) {
         case beeStates.work:
-          bee.upgradeController(this.cell.controller)
+          if (bee.upgradeController(this.cell.controller) === OK && Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -bee.getActiveBodyParts(WORK));
           break;
         case beeStates.chill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
