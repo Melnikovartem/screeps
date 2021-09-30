@@ -28,10 +28,9 @@ export class RespawnCell extends Cell {
     this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    let targets = this.getTargets();
     let storageCell = this.hive.cells.storage;
     if (storageCell)
-      storageCell!.requestFromStorage(targets, 1);
+      storageCell!.requestFromStorage(this.getTargets(), 1);
   };
 
   getTargets(freeStore = 0) {

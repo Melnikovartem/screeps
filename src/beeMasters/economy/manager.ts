@@ -95,28 +95,17 @@ export class ManagerMaster extends Master {
 
       if (bee.state === beeStates.chill) {
         let poss = [this.hive.getPos("queen1"), this.hive.getPos("queen2")];
-        let needMove = true
+        let shouldMove = true
         _.forEach(poss, p => {
           if (p.x === bee.pos.x && p.y === bee.pos.y)
-            needMove = false;
+            shouldMove = false;
         });
-        if (needMove) {
+        if (shouldMove) {
           let pos = poss.filter(p => p.isFree())[0];
           if (pos)
             bee.goRest(pos);
         }
       }
     });
-
-    /* drop off extra res in sim
-    let store = bee.store
-    let ans: ResourceConstant = RESOURCE_ENERGY;
-    for (let resourceConstant in store) {
-      if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
-        ans = <ResourceConstant>resourceConstant;
-    }
-    if (store[ans] > 0)
-      bee.creep.drop(ans);
-    */
   }
 }

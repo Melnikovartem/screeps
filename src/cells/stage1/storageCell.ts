@@ -51,8 +51,8 @@ export class StorageCell extends Cell {
     let prev: TransferRequest | undefined;
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
-      let ref = objects[i].structureType + "_" + objects[i].id
-      if (this.requests[ref])
+      let ref = objects[i].structureType + "_" + objects[i].id;
+      if (this.requests[ref] && this.requests[ref].priority === priority)
         continue;
       let amountCC = amount;
       if (fitStore)
@@ -76,7 +76,7 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
-      if (this.requests[ref])
+      if (this.requests[ref] && this.requests[ref].priority === priority)
         continue;
       let amountCC = amount;
       if (fitStore)
