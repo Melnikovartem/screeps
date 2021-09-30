@@ -12,6 +12,7 @@ import type { TransferRequest } from "../../bees/transferRequest";
 export class ManagerMaster extends Master {
   cell: StorageCell;
   movePriority = <3>3;
+  targetBeeCount = 2;
 
   constructor(storageCell: StorageCell) {
     super(storageCell.hive, storageCell.ref);
@@ -24,14 +25,16 @@ export class ManagerMaster extends Master {
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
 
-      if (transfer)
+      if (transfer && !transfer.beeProcess)
         transfer.preprocess(bee);
+      else
+        transfer = undefined;
 
-      if ((!transfer || !transfer.isValid())) {
+      if (!transfer || !transfer.isValid()) {
         delete bee.target;
         if (Object.keys(this.cell.requests).length && bee.creep.ticksToLive! > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          transfer = _.reduce(_.filter(this.cell.requests, r => r.isValid())
+          transfer = _.reduce(_.filter(this.cell.requests, r => r.isValid() && !r.beeProcess)
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {
@@ -42,6 +45,8 @@ export class ManagerMaster extends Master {
               }
               if (!ans)
                 ans = curr.amount - prev.amount;
+              if (!ans)
+                ans = Math.random() - 0.5;
               return ans < 0 ? curr : prev;
             });
           transfer.preprocess(bee);
@@ -59,7 +64,7 @@ export class ManagerMaster extends Master {
 
       let lvl = this.hive.room.controller!.level;
       // some cool function i came up with. It works utill lvl 8 though
-      order.setup.patternLimit = Math.ceil(0.042 * Math.pow(lvl, 3) + 11.2);
+      order.setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
 
       this.wish(order);
     }

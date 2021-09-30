@@ -118,8 +118,8 @@ export class RoomPlanner {
       while (jobs.length) {
         this.activePlanning[roomName].correct = "work";
         let ans;
-        // console .log("?:", jobs[0].context)
         ans = jobs[0].func();
+        console.log("?:", jobs[0].context, ans);
         if (ans === ERR_FULL) {
           this.activePlanning[roomName].correct = "fail";
           console.log("FAIL: ", jobs[0].context);
@@ -334,7 +334,7 @@ export class RoomPlanner {
           let ans = this.connectWithRoad(anchor, contr.pos, false);
           if (typeof ans === "number")
             return ans;
-          let poss = contr.pos.getOpenPositions(true);
+          let poss = contr.pos.getPositionsInRange(1);
           _.forEach(poss, p => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
           poss = contr.pos.getPositionsInRange(3);
           if (!poss.length)
@@ -443,7 +443,7 @@ export class RoomPlanner {
 
   addResourceRoads(anchor: RoomPosition) {
     if (!this.activePlanning[anchor.roomName])
-      this.toActive(anchor)
+      this.toActive(anchor, undefined, [STRUCTURE_CONTAINER]);
 
     let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
@@ -464,15 +464,18 @@ export class RoomPlanner {
             this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
             if (f.pos.roomName !== anchor.roomName)
               return OK;
-            let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getOpenPositions(true, 1);
+            let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getPositionsInRange(1);
             if (!poss.length)
               return ERR_FULL;
-            let pos = poss.reduce((prev, curr) => {
-              if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
-                || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
-                return curr;
-              return prev;
-            });
+            let plan = this.activePlanning[anchor.roomName].plan;
+            let pos = poss.filter(p => plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_LINK)[0];
+            if (!pos)
+              pos = poss.reduce((prev, curr) => {
+                if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
+                  || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+                  return curr;
+                return prev;
+              });
             // plcaeholder
             if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
               return ERR_FULL;
@@ -749,11 +752,13 @@ export class RoomPlanner {
     });
   }
 
-  toActive(anchor: RoomPosition, roomName: string = anchor.roomName) {
+  toActive(anchor: RoomPosition, roomName: string = anchor.roomName, ignore: BuildableStructureConstant[] = []) {
     this.initPlanning(roomName, anchor);
     this.activePlanning[roomName].exits.push(anchor);
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
+      if (ignore.indexOf(sType) !== -1)
+        continue
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
       for (let i = 0; i < poss.length; ++i)
         this.addToPlan(poss[i], roomName, sType, true);
@@ -801,8 +806,14 @@ export class RoomPlanner {
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
+      let contr = Game.rooms[roomName] && Game.rooms[roomName].controller
       poss.sort((a, b) => {
         let ans = anchorDist(anchor, a, roomName) - anchorDist(anchor, b, roomName);
+        if (sType === STRUCTURE_LINK && contr)
+          if (anchorDist(contr.pos, a, roomName) <= 3)
+            ans = -1;
+          else if (anchorDist(contr.pos, b, roomName) <= 3)
+            ans = 1;
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
         return ans * (inverseRoads && sType === STRUCTURE_ROAD ? -1 : 1);

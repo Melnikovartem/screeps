@@ -112,7 +112,8 @@ export class BuilderMaster extends Master {
             bee.goRest(this.hive.pos);
           break;
         case beeStates.boosting:
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }]) === OK)
+          if (!this.hive.cells.lab
+            || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }, { type: "fatigue", amount: Math.ceil(bee.getActiveBodyParts(MOVE) / 3) }]) === OK)
             bee.state = beeStates.chill;
           break;
       }

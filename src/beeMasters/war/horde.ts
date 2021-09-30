@@ -66,8 +66,23 @@ export class HordeMaster extends SwarmMaster {
     if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.7 || bee.pos.getRangeTo(target) < range)) {
       let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
         let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
-        if (ans === 0)
-          ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+        if (ans === 0) {
+          switch (Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y)) {
+            case TERRAIN_MASK_WALL:
+            case TERRAIN_MASK_SWAMP:
+              if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) === TERRAIN_MASK_WALL)
+                ans = -1;
+              else
+                ans = 1;
+              break;
+            case 0:
+              if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) !== 0)
+                ans = -1;
+              else
+                ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
+              break;
+          }
+        }
         return ans < 0 ? curr : prev;
       });
       if (open)

@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 
 import { makeId } from "../../abstract/utils";
-import { prefix } from "../../enums";
+import { prefix, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
@@ -121,13 +121,12 @@ export class DefenseCell extends Cell {
     _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      storageCell.requestFromStorage(_.filter(this.towers,
-        t => t.store.getCapacity(RESOURCE_ENERGY) * 0.75 >= t.store.getUsedCapacity(RESOURCE_ENERGY)), 1, RESOURCE_ENERGY, TOWER_CAPACITY, true);
-      storageCell.requestFromStorage(_.filter(this.towers,
-        t => t.store.getCapacity(RESOURCE_ENERGY) > t.store.getUsedCapacity(RESOURCE_ENERGY)
-          && t.store.getCapacity(RESOURCE_ENERGY) * 0.75 < t.store.getUsedCapacity(RESOURCE_ENERGY)), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
-    }
+    if (!storageCell)
+      return;
+    if (this.hive.state === hiveStates.battle)
+      storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 1);
+    else
+      storageCell.requestFromStorage(Object.values(this.towers), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
   }
 
   checkOrDefendSwarms(roomName: string) {

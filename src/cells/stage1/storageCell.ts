@@ -49,14 +49,17 @@ export class StorageCell extends Cell {
     , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
+    amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
       if (this.requests[ref])
         continue;
+      let amountCC = amount;
       if (fitStore)
-        amount = Math.min(amount, (<Store<ResourceConstant, false>>objects[i].store).getUsedCapacity(res));
-      amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
-      this.requests[ref] = new TransferRequest(ref, this.storage, objects[i], priority, res, amount);
+        amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>objects[i].store).getFreeCapacity(res));
+      if (amountCC <= 0)
+        continue;
+      this.requests[ref] = new TransferRequest(ref, this.storage, objects[i], priority, res, amountCC);
       if (prev)
         this.requests[ref].nextup = prev;
       prev = this.requests[ref];
@@ -69,14 +72,18 @@ export class StorageCell extends Cell {
     , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
+
+    amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
       if (this.requests[ref])
         continue;
+      let amountCC = amount;
       if (fitStore)
-        amount = Math.min(amount, (<Store<ResourceConstant, false>>objects[i].store).getUsedCapacity(res));
-      amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
-      this.requests[ref] = new TransferRequest(ref, objects[i], this.storage, priority, res, amount);
+        amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>objects[i].store).getUsedCapacity(res));
+      if (amountCC <= 0)
+        continue;
+      this.requests[ref] = new TransferRequest(ref, objects[i], this.storage, priority, res, amountCC);
       if (prev)
         this.requests[ref].nextup = prev;
       prev = this.requests[ref];

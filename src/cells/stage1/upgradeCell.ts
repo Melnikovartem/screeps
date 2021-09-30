@@ -2,6 +2,7 @@ import { Cell } from "../_Cell";
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 
 import { prefix } from "../../enums";
+import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -30,26 +31,34 @@ export class UpgradeCell extends Cell {
       this.pos = this.controller.pos;
 
     this.master = new UpgraderMaster(this);
+    this.recalculateRate();
+  }
 
+  recalculateRate() {
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
       let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW && f.memory.hive === this.hive.roomName);
       this.maxRate = Math.max(1, futureResourceCells.length) * 10;
-      // console .log(this.maxRate);
 
       let storageLink = storageCell.links[Object.keys(storageCell.links)[0]];
+      let body;
+      let suckerTime = 0;
+
       if (this.link && storageLink) {
-        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.maxRate = 800 / this.link.pos.getRangeTo(storageLink); // how to get more in?
-        this.ratePerCreepMax = 50 / (10 / patternLimit + Math.max(this.link.pos.getTimeForPath(this.controller) - 3, 0) * 2);
-      } else if (storageCell && this.controller.pos.getRangeTo(storageCell.storage) < 4) {
-        let patternLimit = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 550), 8);
-        this.ratePerCreepMax = Math.floor((this.hive.room.energyCapacityAvailable - 50) / 2.2);
-        this.ratePerCreepMax = 50 / ((10 / patternLimit + Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2));
-      } else if (storageCell) {
-        let maxCap = Math.min(Math.floor(this.hive.room.energyCapacityAvailable / 150), 10) * 50;
-        this.ratePerCreepMax = maxCap / (Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0) * 2 + 50);
+        this.maxRate = Math.min(800 / this.link.pos.getRangeTo(storageLink), this.maxRate); // how to get more in?
+        body = setups.upgrader.fast.getBody(this.hive.room.energyCapacityAvailable).body;
+      } else {
+        suckerTime = Math.max(storageCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0);
+        if (this.controller.pos.getRangeTo(storageCell.storage) < 4)
+          body = setups.upgrader.fast.getBody(this.hive.room.energyCapacityAvailable).body;
+        else
+          body = setups.upgrader.manual.getBody(this.hive.room.energyCapacityAvailable).body;
       }
+
+      let carry = body.filter(b => b === CARRY).length;
+      let work = body.filter(b => b === WORK).length
+      this.ratePerCreepMax = carry / (suckerTime + carry / work);
+
       if (this.hive.phase === 2)
         this.maxRate = Math.min(this.maxRate, 15);
       this.master.recalculateTargetBee();
@@ -58,8 +67,11 @@ export class UpgradeCell extends Cell {
 
   update() {
     super.update();
-    if (!this.link && Game.time % 30 === 7)
+    if (!this.link && Game.time % 30 === 7) {
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
+      if (this.link)
+        this.recalculateRate();
+    }
 
     if (!this.master.beesAmount)
       return;

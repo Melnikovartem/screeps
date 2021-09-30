@@ -11,6 +11,7 @@ export class TransferRequest {
   fromAmount: number;
   resource: ResourceConstant;
   inProcess = 0;
+  beeProcess = 0;
   amount: number;
   priority: 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -42,6 +43,7 @@ export class TransferRequest {
       this.toAmount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(this.resource);
     }
     this.inProcess = 0;
+    this.beeProcess = 0;
   }
 
   isValid() {
@@ -56,6 +58,7 @@ export class TransferRequest {
 
   preprocess(bee: Bee) {
     this.inProcess += bee.store.getUsedCapacity(this.resource);
+    ++this.beeProcess;
     if (bee.target !== this.ref) {
       bee.target = this.ref;
       bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(this.resource) ? beeStates.fflush

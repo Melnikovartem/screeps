@@ -41,17 +41,12 @@ export class HaulerMaster extends Master {
     this.cell.shouldRecalc = false;
   }
 
-  recalculateTargetBee() {
-    //  accumRoadTime/(hauler carry cap / 2) aka desired time for 1 hauler
-    this.targetBeeCount = Math.ceil(this.accumRoadTime / Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 100) / 150) * 100, 1600));
-    return this.checkBees(hiveStates.battle !== this.hive.state);
-  }
-
   checkBeesWithRecalc() {
     let check = () => this.checkBees(hiveStates.battle !== this.hive.state);
     if (!check())
       return false;
-    this.recalculateTargetBee();
+    let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
+    this.targetBeeCount = Math.ceil(this.accumRoadTime / (body.filter(b => b === CARRY).length * CARRY_CAPACITY));
     return check();
   }
 
@@ -78,10 +73,8 @@ export class HaulerMaster extends Master {
       }
     });
 
-    if (this.cell.shouldRecalc) {
+    if (this.cell.shouldRecalc)
       this.recalculateRoadTime();
-      this.recalculateTargetBee();
-    }
 
     if (this.checkBeesWithRecalc()) {
       this.wish({
