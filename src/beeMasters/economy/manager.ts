@@ -94,12 +94,17 @@ export class ManagerMaster extends Master {
         bee.state = beeStates.fflush;
 
       if (bee.state === beeStates.chill) {
-        let pos = this.hive.getPos("queen2");
-        if (pos.x !== bee.pos.x || pos.y !== bee.pos.y)
-          if (pos.isFree())
+        let poss = [this.hive.getPos("queen1"), this.hive.getPos("queen2")];
+        let needMove = true
+        _.forEach(poss, p => {
+          if (p.x === bee.pos.x && p.y === bee.pos.y)
+            needMove = false;
+        });
+        if (needMove) {
+          let pos = poss.filter(p => p.isFree())[0];
+          if (pos)
             bee.goRest(pos);
-          else
-            bee.goRest(this.hive.getPos("queen1"));
+        }
       }
     });
 

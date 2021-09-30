@@ -28,13 +28,18 @@ export class RespawnCell extends Cell {
     this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-    targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-    targets.sort((a, b) => this.roadMap[a.pos.x][a.pos.y] - this.roadMap[b.pos.x][b.pos.y]);
+    let targets = this.getTargets();
     let storageCell = this.hive.cells.storage;
     if (storageCell)
       storageCell!.requestFromStorage(targets, 1);
   };
+
+  getTargets(freeStore = 0) {
+    let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
+    targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
+    targets.sort((a, b) => this.roadMap[a.pos.x][a.pos.y] - this.roadMap[b.pos.x][b.pos.y]);
+    return targets;
+  }
 
   bakeMap() {
     this.roadMap = [];
@@ -58,7 +63,11 @@ export class RespawnCell extends Cell {
 
     this.roadMap[p.x][p.y] = depth;
     _.forEach(p.getPositionsInRange(1), pp => {
-      if (pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length || pp.isFree(true))
+      if (pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length)
+        this.roadMap[pp.x][pp.y] = depth;
+    });
+    _.forEach(p.getPositionsInRange(1).sort((a, b) => b.getRangeTo(this) - a.getRangeTo(this)), pp => {
+      if (pp.isFree(true))
         depth = this.dfs(pp, depth + 1, maxRange);
     });
     return depth;

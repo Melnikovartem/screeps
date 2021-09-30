@@ -62,7 +62,7 @@ export class TransferRequest {
     if (bee.target !== this.ref) {
       bee.target = this.ref;
       bee.state = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(this.resource) ? beeStates.fflush
-        : (bee.store.getUsedCapacity() === 0 ? beeStates.refill : beeStates.work);
+        : (bee.store.getUsedCapacity() < Math.min(this.amount, this.toAmount) && bee.store.getFreeCapacity() > 0 ? beeStates.refill : beeStates.work);
     }
   }
 

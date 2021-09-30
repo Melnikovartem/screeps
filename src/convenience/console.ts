@@ -6,6 +6,13 @@ import type { Master } from "../beeMasters/_Master";
 import type { TransferRequest } from "../bees/transferRequest";
 
 export class CustomConsole {
+
+  lastActionRoomName: string;
+
+  constructor() {
+    this.lastActionRoomName = Object.keys(Apiary.hives)[0];
+  }
+
   vis(framerate?: number, force: number = 0) {
     if (Apiary.visuals)
       for (let name in Apiary.visuals.caching) {
@@ -27,7 +34,7 @@ export class CustomConsole {
       return s.toLowerCase();
   }
 
-  showMap(roomName: string, keep: boolean, visual: (x: number, y: number, vis: RoomVisual) => void) {
+  showMap(roomName: string = this.lastActionRoomName, keep: boolean, visual: (x: number, y: number, vis: RoomVisual) => void) {
     let terrain = Game.map.getRoomTerrain(roomName);
     Apiary.visuals.changeAnchor(0, 0, roomName);
     for (let x = 0; x <= 49; ++x)
@@ -36,10 +43,10 @@ export class CustomConsole {
           visual(x, y, Apiary.visuals.anchor.vis);
 
     Apiary.visuals.exportAnchor(keep ? Infinity : 20);
-    return "OK";
+    return `OK @ ${this.formatRoom(roomName)}`;
   }
 
-  showBreach(hiveName: string, keep = false) {
+  showBreach(hiveName: string = this.lastActionRoomName, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
@@ -54,18 +61,25 @@ export class CustomConsole {
     });
   }
 
-  showSpawnMap(hiveName: string, keep = false) {
+  showSpawnMap(hiveName: string = this.lastActionRoomName, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    let targets = hive.cells.spawn.getTargets(-1);
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      if (hive.cells.spawn.roadMap[x][y] !== Infinity)
-        vis.text("" + hive.cells.spawn.roadMap[x][y], x - 0.25, y + 0.25,
-          Apiary.visuals.textStyle({ font: 0.5, strokeWidth: 0.3 }));
+      // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
+      for (let i = 0; i < targets.length; ++i) {
+        let t = targets[i];
+        if (t.pos.x === x && t.pos.y == y) {
+          vis.text("" + i, x, y + 0.14,
+            Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" }));
+          break;
+        }
+      }
     });
   }
 
-  showDefMap(hiveName: string, keep = false) {
+  showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
@@ -76,7 +90,7 @@ export class CustomConsole {
   }
 
   // some hand used functions
-  terminal(hiveName: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
+  terminal(hiveName: string = this.lastActionRoomName, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
     hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
     if (!hive)
@@ -161,7 +175,7 @@ export class CustomConsole {
     let amount = Math.min(am, order.remainingAmount);
     let ans;
     let energy: number | string = "NOT NEEDED";
-    let hiveName: string = "NO HIVE";
+    let hiveName: string = this.lastActionRoomName = "NO HIVE";
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {
@@ -210,7 +224,7 @@ export class CustomConsole {
       return `ERROR: ${ans}` + info;
   }
 
-  buy(hiveName: string, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
+  buy(hiveName: string = this.lastActionRoomName, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
     hiveName = hiveName.toUpperCase();
     let targetPrice = -1;
     let sum = 0, count = 0;
@@ -234,7 +248,7 @@ export class CustomConsole {
     return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${this.formatRoom(hiveName)} `;
   }
 
-  produce(hiveName: string, ...resource: string[]) {
+  produce(hiveName: string = this.lastActionRoomName, ...resource: string[]) {
     hiveName = hiveName.toUpperCase();
     let hive = Apiary.hives[hiveName];
     if (!hive)
@@ -271,7 +285,7 @@ export class CustomConsole {
     return `OK @ ${hive.print}`;
   }
 
-  update(roomName: string, cache: RoomSetup) {
+  update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {
     if (!(roomName in Game.rooms))
       return `CANNOT ACCESS ${this.formatRoom(roomName)}`
     if (!Memory.cache.roomPlanner[roomName])
@@ -349,7 +363,7 @@ export class CustomConsole {
     return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`
   }
 
-  printSpawnOrders(hiveName?: string) {
+  printSpawnOrders(hiveName: string = this.lastActionRoomName) {
     return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
@@ -357,7 +371,7 @@ export class CustomConsole {
       } \n`).join('\n');
   }
 
-  printStorageOrders(hiveName?: string) {
+  printStorageOrders(hiveName: string = this.lastActionRoomName) {
     return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
       if (!h.cells.storage)
         return "";

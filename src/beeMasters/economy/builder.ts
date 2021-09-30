@@ -36,6 +36,12 @@ export class BuilderMaster extends Master {
     super.update();
     this.recalculateTargetBee();
     let emergency = this.hive.state >= hiveStates.nukealert;
+
+    if (!this.boost && emergency)
+      _.forEach(this.activeBees, b => b.state = beeStates.boosting);
+    else if (this.boost && !emergency)
+      _.forEach(this.activeBees, b => b.state = b.state === beeStates.boosting ? beeStates.chill : b.state);
+
     this.boost = emergency;
     this.movePriority = emergency ? 1 : 5;
 

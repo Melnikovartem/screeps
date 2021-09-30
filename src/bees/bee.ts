@@ -267,7 +267,7 @@ export class Bee {
           if (bee.ref === creepIn.name)
             continue;
           let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
-          let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y])
+          let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
           if (!open.length)
             continue;
           let pp = open.reduce((prev, curr) => {
@@ -278,7 +278,7 @@ export class Bee {
           });
           if (pp) {
             moveMap[pp.roomName + "_" + pp.x + "_" + pp.y] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
-            beeIn.creep.move(bee.pos.getDirectionTo(pp));
+            beeIn.creep.move(beeIn.pos.getDirectionTo(pp));
           } else
             continue;
         } else {
