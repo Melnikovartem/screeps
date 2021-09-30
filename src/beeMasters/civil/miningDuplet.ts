@@ -73,13 +73,13 @@ export class DupletMaster extends SwarmMaster {
       this.wish({
         setup: setups.healer,
         amount: 1,
-        priority: 4,
+        priority: 7,
         master: this.ref,
       }, this.ref + "_healer");
       this.wish({
         setup: setups.miner.power,
         amount: 1,
-        priority: 4,
+        priority: 7,
         master: this.ref,
       }, this.ref + "_miner");
     }

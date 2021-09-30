@@ -259,7 +259,7 @@ export class Order {
               break;
           }
           if (type) {
-            Memory.cache.positions[this.hive.roomName][type] = { x: this.pos.x, y: this.pos.y };
+            Memory.cache.hives[this.hive.roomName].positions[type] = { x: this.pos.x, y: this.pos.y };
             let active = Apiary.planner.activePlanning[this.hive.roomName];
             if (active)
               active.poss[type] = { x: this.pos.x, y: this.pos.y }

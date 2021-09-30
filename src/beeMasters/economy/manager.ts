@@ -58,7 +58,7 @@ export class ManagerMaster extends Master {
     if (this.checkBees(true)) {
       let order = {
         setup: setups.queen,
-        amount: 1,
+        amount: this.targetBeeCount - this.beesAmount,
         priority: <0>0,
       };
 

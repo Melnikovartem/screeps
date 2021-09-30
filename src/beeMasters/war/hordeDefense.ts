@@ -24,13 +24,13 @@ export class HordeDefenseMaster extends HordeMaster {
       let order = {
         setup: setups.defender.normal,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: <1 | 7>1,
+        priority: <1 | 8>1,
       }
 
       let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
 
       if (roomInfo.dangerlvlmax < 4) {
-        order.priority = 7;
+        order.priority = 8;
         if (roomInfo.dangerlvlmax === 3)
           order.setup = setups.defender.destroyer;
         else

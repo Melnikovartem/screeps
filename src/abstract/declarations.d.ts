@@ -3,7 +3,7 @@ import type { beeStates } from "../enums";
 import type { CustomConsole } from "../convenience/console";
 import type { RoomSetup } from "./roomPlanner";
 import type { CreepAllBattleInfo } from "./intelligence";
-import type { HivePositions } from "../Hive";
+import type { HiveLog, HiveCache } from "./hiveMemory";
 
 declare global {
   var Apiary: _Apiary;
@@ -34,9 +34,9 @@ declare global {
       intellegence: any;
       roomPlanner: { [id: string]: RoomSetup }
       avoid: { [id: string]: number };
-      positions: {
-        [id: string]: HivePositions,
-      }
+      hives: {
+        [id: string]: HiveCache
+      },
     },
     masters: { [id: string]: any };
 
@@ -54,37 +54,7 @@ declare global {
       reset: number,
       apiary: number,
       hives: {
-        [id: string]: {
-          loggedStates: {
-            [id: number]: {
-              annexNames: string[],
-              structuresConst: number
-              sumCost: number,
-              spawOrders: {
-                [id: string]: {
-                  amount: number,
-                  priority: number,
-                }
-              }
-            }
-          },
-          spawns: {
-            [id: string]: {
-              time: number,
-              fromSpawn: string,
-              orderedBy: string,
-              priority: number,
-            }
-          },
-          resourceBalance: {
-            [key in ResourceConstant]?: {
-              [id: string]: {
-                amount: number,
-                time: number,
-              }
-            }
-          }
-        }
+        [id: string]: HiveLog
       },
       orders?: {
         [id: string]: {

@@ -104,7 +104,7 @@ export class BootstrapMaster extends Master {
       let order = {
         setup: setups.bootstrap,
         amount: 1,
-        priority: <0 | 5 | 9>(this.hive.bassboost ? 9 : (this.beesAmount < this.targetBeeCount * 0.35 ? 0 : (this.targetBeeCount > 13 ? 9 : 5))),
+        priority: <0 | 5 | 8>(this.beesAmount < this.targetBeeCount * 0.35 ? 0 : (this.beesAmount > 10 ? 8 : 5)),
       }
 
       if (this.hive.bassboost && this.hive.pos.getRoomRangeTo(this.hive.bassboost) > 8) {

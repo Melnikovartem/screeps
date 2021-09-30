@@ -69,7 +69,7 @@ export class UpgraderMaster extends Master {
       let order = {
         setup: setups.upgrader.manual,
         amount: this.targetBeeCount - this.beesAmount,
-        priority: <8 | 3>8,
+        priority: <8 | 7 | 3>(this.cell.controller.level === 8 ? 8 : 7),
       };
 
       if (this.fastModePossible)

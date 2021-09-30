@@ -766,9 +766,9 @@ export class RoomPlanner {
         delete Memory.cache.roomPlanner[roomName][sType];
     }
 
-    if (Memory.cache.positions[roomName])
-      for (let type in Memory.cache.positions[roomName])
-        this.activePlanning[roomName].poss[<keyof PossiblePositions>type] = Memory.cache.positions[roomName][<keyof PossiblePositions>type]!;
+    if (Memory.cache.hives[roomName])
+      for (let type in Memory.cache.hives[roomName].positions)
+        this.activePlanning[roomName].poss[<keyof PossiblePositions>type] = Memory.cache.hives[roomName].positions[<keyof PossiblePositions>type]!;
 
   }
 
@@ -821,9 +821,9 @@ export class RoomPlanner {
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }
 
-    if (Memory.cache.positions[roomName])
+    if (Memory.cache.hives[roomName])
       for (let type in this.activePlanning[roomName].poss)
-        Memory.cache.positions[roomName][<keyof PossiblePositions>type] = this.activePlanning[roomName].poss[<keyof PossiblePositions>type]!;
+        Memory.cache.hives[roomName].positions[<keyof PossiblePositions>type] = this.activePlanning[roomName].poss[<keyof PossiblePositions>type]!;
   }
 
   addToCache(pos: Pos, roomName: string, sType: BuildableStructureConstant) {

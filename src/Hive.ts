@@ -87,15 +87,16 @@ export class Hive {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
 
-    if (!Memory.cache.positions[this.roomName]) {
+    if (!Memory.cache.hives[this.roomName]) {
       let pos = { x: 25, y: 25 };
       if (this.room.controller)
         pos = { x: this.room.controller!.pos.x, y: this.room.controller!.pos.y };
       let spawn = this.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_SPAWN)[0];
       if (spawn)
         pos = spawn.pos;
-      Memory.cache.positions[this.roomName] = { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos }
+      Memory.cache.hives[this.roomName] = { positions: { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos } }
     }
+
     this.pos = this.getPos("hive");
 
     this.phase = 0;
@@ -217,7 +218,8 @@ export class Hive {
   }
 
   getPos(type: keyof HivePositions) {
-    return new RoomPosition(Memory.cache.positions[this.roomName][type].x, Memory.cache.positions[this.roomName][type].y, this.roomName);
+    let pos = Memory.cache.hives[this.roomName].positions[type];
+    return new RoomPosition(pos.x, pos.y, this.roomName);
   }
 
   private updateCellData() {
