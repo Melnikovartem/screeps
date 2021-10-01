@@ -33,20 +33,26 @@ export class HaulerMaster extends Master {
         if (cell.container && !cell.link
           && (!this.hive.cells.dev && cell.resourceType === RESOURCE_ENERGY || cell.extractor)) {
           let coef = 10; // mineral production
-          if (cell.resourceType !== RESOURCE_ENERGY)
-            coef = Math.floor(this.hive.room.energyCapacityAvailable / 550); // max mineral mining based on current miner setup (workPart * 5) / 5
+          if (cell.resourceType !== RESOURCE_ENERGY) {
+            let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;
+            coef = body.filter(b => b === WORK).length / 5;
+          }
           this.accumRoadTime += this.hive.cells.storage!.pos.getTimeForPath(cell.container.pos) * coef * 2;
         }
       });
     this.cell.shouldRecalc = false;
   }
 
+  recalculateTargetBee() {
+    let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
+    this.targetBeeCount = Math.ceil(this.accumRoadTime / (body.filter(b => b === CARRY).length * CARRY_CAPACITY));
+  }
+
   checkBeesWithRecalc() {
     let check = () => this.checkBees(hiveStates.battle !== this.hive.state);
     if (!check())
       return false;
-    let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
-    this.targetBeeCount = Math.ceil(this.accumRoadTime / (body.filter(b => b === CARRY).length * CARRY_CAPACITY));
+    this.recalculateTargetBee();
     return check();
   }
 
@@ -73,8 +79,10 @@ export class HaulerMaster extends Master {
       }
     });
 
-    if (this.cell.shouldRecalc)
+    if (this.cell.shouldRecalc) {
       this.recalculateRoadTime();
+      this.recalculateTargetBee();
+    }
 
     if (this.checkBeesWithRecalc()) {
       this.wish({

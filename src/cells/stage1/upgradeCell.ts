@@ -75,9 +75,10 @@ export class UpgradeCell extends Cell {
 
     if (!this.master.beesAmount)
       return;
+
     let storageCell = this.hive.cells.storage;
     let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-    if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 4) {
+    if (freeCap && storageCell && freeCap >= LINK_CAPACITY / 2) {
       this.storageLink = storageCell.getFreeLink();
       if (this.storageLink) {
         if (!storageCell.master.activeBees.length || storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000)

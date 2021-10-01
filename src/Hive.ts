@@ -15,7 +15,6 @@ import { safeWrap } from "./abstract/utils";
 import { hiveStates, prefix } from "./enums";
 import { profile } from "./profiler/decorator";
 
-import type { Pos } from "./abstract/roomPlanner";
 import type { CreepSetup } from "./bees/creepSetups";
 
 export interface SpawnOrder {

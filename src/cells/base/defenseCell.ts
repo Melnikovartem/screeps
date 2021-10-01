@@ -149,11 +149,12 @@ export class DefenseCell extends Cell {
           if (freeSwarms.length) {
             let swarm = freeSwarms.reduce((prev, curr) =>
               prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
-            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5 && this.setDefFlag(enemy.pos) === OK) {
-              Apiary.defenseSwarms[roomName] = swarm;
+            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5)
+              ans = this.setDefFlag(enemy.pos);
+            if (ans === OK)
               delete Apiary.defenseSwarms[swarm.pos.roomName];
-            }
           }
+
           if (ans !== OK) {
             if (roomInfo.dangerlvlmax < 6)
               this.setDefFlag(enemy.pos);

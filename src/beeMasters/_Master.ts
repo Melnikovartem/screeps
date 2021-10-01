@@ -74,6 +74,7 @@ export abstract class Master {
 
   wish(order: SpawnOrder, ref: string = this.ref) {
     order.amount = Math.max(order.amount, 1);
+    order.master = this.ref;
     if (this.hive.bassboost) {
       if (this.hive.state !== hiveStates.nospawn
         && (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyCapacityAvailable ||

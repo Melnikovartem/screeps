@@ -1,10 +1,10 @@
-export const DEVELOPING = false;
+export const DEVELOPING = true;
 export const PROFILER = DEVELOPING;
 export const UPDATE_EACH_TICK = false;
 
 export const TRAVELER_MESSAGE = true;
-export const VISUALS_TRAVELER = true;
+export const VISUALS_TRAVELER = false;
 
 export const GENERATE_PIXEL = !DEVELOPING;
 export const LOGGING_CYCLE = 250;
-export const SAFE_DEV = !DEVELOPING;
+export const SAFE_DEV = true;

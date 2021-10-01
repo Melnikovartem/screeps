@@ -11,7 +11,7 @@ type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 const PEACE_PACKS: string[] = ["Hi_Melnikov"];
 const NON_AGRESSION_PACKS: string[] = ["Bulletproof"];
 
-interface Enemy {
+export interface Enemy {
   object: Creep | PowerCreep | Structure,
   dangerlvl: DangerLvl,
   type: enemyTypes,
@@ -28,7 +28,7 @@ interface RoomInfo {
   safeModeEndTime: number,
 };
 
-interface CreepBattleInfo {
+export interface CreepBattleInfo {
   dmgClose: number,
   dmgRange: number,
   dism: number,
@@ -42,7 +42,7 @@ export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattle
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
 
-  getEnemy(pos: ProtoPos, lag?: number) {
+  getEnemy(pos: ProtoPos, lag?: number, canAttack: boolean = true) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -52,6 +52,12 @@ export class Intel {
       return;
 
     return roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax).reduce((prev, curr) => {
+      if (!canAttack) {
+        if (curr.object instanceof Creep && !(prev.object instanceof Creep))
+          return prev;
+        else if (!(curr.object instanceof Creep) && prev.object instanceof Creep)
+          return curr;
+      }
       let ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
       if (Math.abs(ans) < (curr.type === enemyTypes.moving ? 4 : 2)) {
         ans = curr.object.hits - curr.object.hits;

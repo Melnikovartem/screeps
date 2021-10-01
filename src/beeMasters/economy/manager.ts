@@ -22,6 +22,8 @@ export class ManagerMaster extends Master {
   update() {
     super.update();
 
+    this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell) - b.pos.getRangeTo(this.cell));
+
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
 
@@ -49,7 +51,8 @@ export class ManagerMaster extends Master {
                 ans = Math.random() - 0.5;
               return ans < 0 ? curr : prev;
             });
-          transfer.preprocess(bee);
+          if (transfer)
+            transfer.preprocess(bee);
         }
       }
     });

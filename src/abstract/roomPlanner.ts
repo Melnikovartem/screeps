@@ -4,7 +4,6 @@ import { profile } from "../profiler/decorator";
 
 import type { PossiblePositions, BuildProject } from "../Hive";
 
-export type Pos = { x: number, y: number };
 export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: number, y: number }[] } };
 
 type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: PossiblePositions };
@@ -469,16 +468,16 @@ export class RoomPlanner {
               return ERR_FULL;
             let plan = this.activePlanning[anchor.roomName].plan;
             let pos = poss.filter(p => plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_LINK)[0];
-            if (!pos)
+            if (!pos) {
               pos = poss.reduce((prev, curr) => {
                 if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
                   || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
                   return curr;
                 return prev;
               });
-            // plcaeholder
-            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
-              return ERR_FULL;
+              if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
+                return ERR_FULL;
+            }
           } else if (f.secondaryColor === COLOR_CYAN) {
             this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
             this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);

@@ -25,7 +25,7 @@ export class Visuals {
       this.anchor.x = x;
     this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y;
 
-    if (roomName && this.anchor.ref !== roomName) {
+    if (roomName) {
       this.anchor.vis = new RoomVisual(makeId(8));
       this.anchor.ref = roomName;
     }

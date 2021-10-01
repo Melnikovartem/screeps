@@ -1,4 +1,5 @@
 type ProtoPos = RoomPosition | { pos: RoomPosition };
+type Pos = { x: number, y: number }
 
 interface RoomPosition {
   getRoomCoorinates(): [number, number, string, string];
@@ -302,7 +303,7 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  _.some(objects, (obj: Obj) => {
+  _.forEach(objects, (obj: Obj) => {
     let newDistance = this.getRangeApprox(obj);
     if (newDistance < distance) {
       ans = obj;
@@ -311,7 +312,6 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
       if (this.getRangeApprox(ans, "linear") > this.getRangeApprox(obj, "linear"))
         ans = obj;
     }
-    return distance <= 1;
   });
 
 

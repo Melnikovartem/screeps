@@ -3,7 +3,7 @@ import { HordeMaster } from "./beeMasters/war/horde";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismantlerMaster } from "./beeMasters/war/dismantler";
 import { WaiterMaster } from "./beeMasters/war/waiter";
-import { SquadMaster } from "./beeMasters/war/squad";
+import { TestSquad } from "./beeMasters/squads/test";
 
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
@@ -142,7 +142,7 @@ export class Order {
               this.master = new WaiterMaster(this);
               break;
             case COLOR_ORANGE:
-              this.master = new SquadMaster(this);
+              this.master = new TestSquad(this);
               break;
             case COLOR_CYAN:
               this.master = new SKMaster(this);
