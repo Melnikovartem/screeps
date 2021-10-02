@@ -128,7 +128,7 @@ export class DupletMaster extends SwarmMaster {
           } else
             knight.attack(target);
         } else if (knight.hits === knight.hitsMax)
-          knight.goRest(this.order.pos, { preferHighway: true });
+          knight.goRest(this.order.pos);
 
         if (healer)
           healer.goTo(knight.pos, { ignoreCreeps: false, movingTarget: true });

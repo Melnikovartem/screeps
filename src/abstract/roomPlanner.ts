@@ -40,10 +40,10 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
   STRUCTURE_EXTENSION,
   STRUCTURE_STORAGE,
   STRUCTURE_TERMINAL,
-  STRUCTURE_EXTRACTOR,
   STRUCTURE_CONTAINER,
   STRUCTURE_LINK,
   STRUCTURE_LAB,
+  STRUCTURE_EXTRACTOR,
   STRUCTURE_OBSERVER,
   STRUCTURE_POWER_SPAWN,
   STRUCTURE_FACTORY,
@@ -197,11 +197,14 @@ export class RoomPlanner {
     order.splice(order.indexOf(rotation), 1);
     order.sort((a, b) => {
       let exits = Game.map.describeExits(anchor.roomName);
-      if (exits[a]) {
+      if (!exits)
+        return 0;
+      else if (exits[a]) {
         if (!exits[b])
           return -1;
       } else if (exits[b])
         return 1;
+
       let room = Game.rooms[anchor.roomName];
       if (!room)
         return 0;
@@ -621,9 +624,8 @@ export class RoomPlanner {
                   return costMatrix;
                 }));
 
-            if (path.length && (p.x == path[path.length - 1].x || p.y !== path[path.length - 1].y)) {
+            if (path.length && (p.x == path[path.length - 1].x || p.y !== path[path.length - 1].y))
               this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
-            }
           });
           return OK;
         }
@@ -701,9 +703,9 @@ export class RoomPlanner {
         placed[sType]!++;
       }
       plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
-    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL && sType !== undefined) {
+    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL && sType !== undefined)
       plan[pos.x][pos.y] = { s: sType, r: true };
-    } else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
+    else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (force) {
       if (plan[pos.x][pos.y].s)
@@ -906,7 +908,7 @@ export class RoomPlanner {
       }
       /*
       if (ans.length || toadd.length)
-        console. log(`${roomName} ${sType} : ${ans.length}/(${constructions}+${toadd.length}) : ${_.sum(ans, e => e.targetHits / 100)}/${_.sum(ans, e => e.energyCost)}`);
+        console .log(`${roomName} ${sType} : ${ans.length}/(${constructions}+${toadd.length}) : ${_.sum(ans, e => e.targetHits / 100)}/${_.sum(ans, e => e.energyCost)}`);
       */
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_ROOM; ++i) {

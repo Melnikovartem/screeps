@@ -46,7 +46,7 @@ export class DevelopmentCell extends Cell {
 
   update() {
     super.update();
-    if (this.hive.room.storage && this.hive.phase === 0)
+    if (this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.phase === 0)
       Apiary.destroyTime = Game.time;
   }
 

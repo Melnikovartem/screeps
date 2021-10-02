@@ -87,7 +87,7 @@ export class BootstrapMaster extends Master {
   checkBeesWithRecalc() {
     if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
       return false;
-    let check = () => this.checkBees(true);
+    let check = () => this.checkBees(true) || !this.activeBees.length;
     if (!check())
       return false;
     this.recalculateTargetBee();
@@ -308,7 +308,8 @@ export class BootstrapMaster extends Master {
           }
 
           let refillTarget = bee.pos.findClosest(refillTargets);
-          if (refillTarget && !this.hive.phase && (refillTarget.pos.getRangeTo(bee) < 10 || !target)) {
+          if (refillTarget && (!this.hive.cells.storage || !this.hive.cells.storage.master.activeBees.length)
+            && (refillTarget.pos.getRangeTo(bee) < 10 || !target)) {
             target = refillTarget;
             workType = "refill";
           }

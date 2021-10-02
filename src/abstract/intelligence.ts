@@ -177,10 +177,8 @@ export class Intel {
       if (owner) {
         if (owner === Apiary.username)
           roomInfo.roomState = roomStates.ownedByMe;
-        else {
+        else
           roomInfo.roomState = roomStates.ownedByEnemy;
-          Memory.cache.avoid[room.name] = Game.time + 100000;
-        }
       } else if (room.controller.reservation) {
         owner = room.controller.reservation.username;
         if (owner === Apiary.username)

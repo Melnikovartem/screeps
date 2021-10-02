@@ -4,6 +4,7 @@
  */
 import { VISUALS_TRAVELER, TRAVELER_MESSAGE } from "../settings";
 import { profile } from "../profiler/decorator";
+import { roomStates } from "../enums";
 
 @profile
 export class Traveler {
@@ -375,6 +376,7 @@ export class Traveler {
     let restrictDistance = options.restrictDistance || Game.map.getRoomLinearDistance(origin, destination) + 10;
     let allowedRooms = { [origin]: true, [destination]: true };
 
+    /*
     let highwayBias = 1;
     if (options.preferHighway) {
       highwayBias = 2.5;
@@ -382,6 +384,7 @@ export class Traveler {
         highwayBias = options.highwayBias;
       }
     }
+    */
 
     let ret = Game.map.findRoute(origin, destination, {
       routeCallback: (roomName: string) => {
@@ -405,6 +408,24 @@ export class Traveler {
           return Number.POSITIVE_INFINITY;
         }
 
+        let roomInfo = Apiary.intel.getInfo(roomName, 50);
+        switch (roomInfo.roomState) {
+          case roomStates.ownedByMe:
+          case roomStates.reservedByMe:
+            return 1;
+          case roomStates.corridor:
+            return 1;
+          case roomStates.SKfrontier:
+          case roomStates.reservedByEnemy:
+            return 5;
+          case roomStates.ownedByEnemy:
+            return 255;
+          case roomStates.noOwner:
+          default:
+            return 2;
+        }
+
+        /*
         let parsed;
         if (options.preferHighway) {
           parsed = /^[WE]([0-9]+)[NS]([0-9]+)$/.exec(roomName) as any;
@@ -425,8 +446,8 @@ export class Traveler {
             return 10 * highwayBias;
           }
         }
-
         return highwayBias;
+        */
       },
     });
 

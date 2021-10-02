@@ -58,7 +58,7 @@ export class ManagerMaster extends Master {
     });
 
 
-    if (this.checkBees(true)) {
+    if (this.checkBees(true) && this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let order = {
         setup: setups.queen,
         amount: this.targetBeeCount - this.beesAmount,
