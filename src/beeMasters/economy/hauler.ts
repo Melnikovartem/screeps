@@ -37,7 +37,7 @@ export class HaulerMaster extends Master {
             let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;
             coef = body.filter(b => b === WORK).length / 5;
           }
-          this.accumRoadTime += this.hive.cells.storage!.pos.getTimeForPath(cell.container.pos) * coef * 2;
+          this.accumRoadTime += cell.roadTime * coef * 2;
         }
       });
     this.cell.shouldRecalc = false;
@@ -62,12 +62,17 @@ export class HaulerMaster extends Master {
     if ((<Store<ResourceConstant, false>>this.dropOff.store).getFreeCapacity() <= 0)
       return;
 
-    _.forEach(this.cell.quitefullContainers, container => {
+    _.forEach(this.cell.quitefullCells, cell => {
+      let container = cell.container;
+      if (!container)
+        return;
+
       let target = this.targetMap[container.id];
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.bees, b => b.state === beeStates.chill && Game.time - b.memory.born > 100));
+      let bee = container.pos.findClosest(_.filter(this.activeBees, b => b.state === beeStates.chill
+        && b.creep.ticksToLive && b.creep.ticksToLive >= cell.roadTime * 2));
       if (bee) {
         bee.state = beeStates.refill;
         bee.target = container.id;

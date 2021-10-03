@@ -14,6 +14,10 @@ export class BuilderMaster extends Master {
   }
 
   recalculateTargetBee() {
+    this.targetBeeCount = 1;
+    if (2 % 1 === 0)
+      return; // remove
+
     let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
     let constLen = this.hive.structuresConst.length;
     let constSum = this.hive.sumCost;
@@ -55,7 +59,7 @@ export class BuilderMaster extends Master {
       let order = {
         setup: setups.builder,
         amount: 1,
-        priority: <1 | 8>(emergency ? 1 : 8),
+        priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
       };
       order.setup.patternLimit = 10;
       this.wish(order);

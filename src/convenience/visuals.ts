@@ -320,8 +320,8 @@ export class Visuals {
       ans.push(["develop", "", this.getBeesAmount(cell.master)]);
     else {
       cell = hive.cells.excavation;
-      ans.push(["excav", !cell.quitefullContainers.length ? "" :
-        ` ${cell.quitefullContainers.length}/${_.sum(cell.resourceCells, c => c.container && c.operational && !c.link ? 1 : 0)}`,
+      ans.push(["excav", !cell.quitefullCells.length ? "" :
+        ` ${cell.quitefullCells.length}/${_.filter(cell.resourceCells, c => c.operational && !c.link).length}`,
         this.getBeesAmount(cell.master)]);
     }
 

@@ -12,7 +12,7 @@ import type { Hive } from "../../Hive";
 @profile
 export class ExcavationCell extends Cell {
   resourceCells: { [id: string]: ResourceCell } = {};
-  quitefullContainers: StructureContainer[] = [];
+  quitefullCells: ResourceCell[] = [];
   shouldRecalc: boolean = true;
   master: HaulerMaster | undefined;
   roomResources: { [id: string]: number } = {};
@@ -35,7 +35,7 @@ export class ExcavationCell extends Cell {
   }
 
   update() {
-    this.quitefullContainers = [];
+    this.quitefullCells = [];
     _.forEach(this.resourceCells, cell => {
       safeWrap(() => { cell.update() }, cell.print + " update");
 
@@ -43,11 +43,11 @@ export class ExcavationCell extends Cell {
         if (cell.container.store.getUsedCapacity() >= 1000) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace)
-            this.quitefullContainers.push(cell.container);
+            this.quitefullCells.push(cell);
         }
       }
     });
-    this.quitefullContainers.sort((a, b) => a.store.getFreeCapacity() - b.store.getFreeCapacity());
+    this.quitefullCells.sort((a, b) => a.container!.store.getFreeCapacity() - b.container!.store.getFreeCapacity());
   };
 
   run() {

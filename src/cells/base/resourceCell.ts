@@ -19,6 +19,7 @@ export class ResourceCell extends Cell {
   extractor: StructureExtractor | undefined;
   parentCell: ExcavationCell;
   master: MinerMaster;
+  roadTime: number = Infinity;
 
   operational: boolean = false;
 
@@ -60,6 +61,8 @@ export class ResourceCell extends Cell {
         this.pos = this.container.pos;
       else
         this.pos = this.resource.pos;
+      let storagePos = this.hive.cells.storage ? this.hive.cells.storage.pos : this.hive.getPos("center");
+      this.roadTime = this.pos.getTimeForPath(storagePos);
     }
 
     if (this.hive.cells.dev)

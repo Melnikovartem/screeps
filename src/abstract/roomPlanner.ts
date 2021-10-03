@@ -247,12 +247,13 @@ export class RoomPlanner {
         let addXEnd = (coef: number, x: number, y: number) => {
           let close = y === 0 ? y + 1 : y - 1;
           let far = y === 0 ? y + 2 : y - 2;
-          this.addToPlan({ x: x - 2 * coef, y: close }, anchor.roomName, STRUCTURE_WALL);
-          let outer = [x - 1 * coef, x - 2 * coef];
-          if (terrain.get(outer[0], close) === TERRAIN_MASK_WALL && terrain.get(outer[1], close) === TERRAIN_MASK_WALL)
+          let inner = x - 1 * coef;
+          let outer = x - 2 * coef;
+          this.addToPlan({ x: inner, y: far }, anchor.roomName, STRUCTURE_WALL);
+          if (terrain.get(inner, close) === TERRAIN_MASK_WALL)
             return;
-          this.addToPlan({ x: outer[0], y: far }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ x: outer[1], y: far }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ x: outer, y: close }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ x: outer, y: far }, anchor.roomName, STRUCTURE_WALL);
         };
         for (let y in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -285,12 +286,13 @@ export class RoomPlanner {
         let addYEnd = (coef: number, x: number, y: number) => {
           let close = x === 0 ? x + 1 : x - 1;
           let far = x === 0 ? x + 2 : x - 2;
-          this.addToPlan({ y: y - 2 * coef, x: close }, anchor.roomName, STRUCTURE_WALL);
-          let outer = [y - 1 * coef, y - 2 * coef];
-          if (terrain.get(close, outer[0]) === TERRAIN_MASK_WALL && terrain.get(close, outer[1]) === TERRAIN_MASK_WALL)
+          let inner = y - 1 * coef;
+          let outer = y - 2 * coef;
+          this.addToPlan({ y: inner, x: far }, anchor.roomName, STRUCTURE_WALL);
+          if (terrain.get(close, inner) === TERRAIN_MASK_WALL)
             return;
-          this.addToPlan({ y: outer[0], x: far }, anchor.roomName, STRUCTURE_WALL);
-          this.addToPlan({ y: outer[1], x: far }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ y: outer, x: close }, anchor.roomName, STRUCTURE_WALL);
+          this.addToPlan({ y: outer, x: far }, anchor.roomName, STRUCTURE_WALL);
         };
         for (let x in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -857,8 +859,12 @@ export class RoomPlanner {
 
     let ans: BuildProject[] = [];
     let constructions = 0;
+    let defenseIndex = Math.min(priorityQue.indexOf(STRUCTURE_RAMPART), priorityQue.indexOf(STRUCTURE_WALL));
+    let firstDefense = defenseIndex > 0 ? priorityQue[defenseIndex] : "";
     for (let i = 0; i < priorityQue.length; ++i) {
       let sType = priorityQue[i];
+      if (ans.length && sType === firstDefense)
+        break;
       if (!(sType in Memory.cache.roomPlanner[roomName]))
         continue;
       let cc = this.getCase({ structureType: sType, pos: { roomName: roomName }, hitsMax: 0 });
