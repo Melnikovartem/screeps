@@ -1,8 +1,9 @@
-import type { Hive } from "../hive";
 import { setupsNames } from "../bees/creepSetups";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
+import type { Hive } from "../hive";
+import type { ProtoOrder } from "../abstract/broker";
 
 @profile
 export class Logger {
@@ -68,9 +69,7 @@ export class Logger {
     return OK;
   }
 
-  newMarketOperation(order: Order, amount: number, hiveName: string) {
-    if (!order.roomName)
-      return;
+  newMarketOperation(order: ProtoOrder, amount: number, hiveName: string) {
     this.addResourceStat(hiveName, order.type === ORDER_BUY ? "export" : "import", order.type === ORDER_BUY ? -amount : amount, <ResourceConstant>order.resourceType);
     this.addResourceStat(hiveName, "terminal", -Game.market.calcTransactionCost(amount, hiveName, order.roomName));
   }

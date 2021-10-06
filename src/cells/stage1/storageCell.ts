@@ -191,39 +191,9 @@ export class StorageCell extends Cell {
       if (res in STORAGE_BALANCE)
         amoundSend = this.sendAid(<StorageResource>res, amount);
 
-      if (amoundSend === 0 && Apiary.useBucket)
-        this.sellOff(res, amount);
+      if (amoundSend === 0)
+        Apiary.broker.sellOff(this.terminal, res, amount);
     }
-  }
-
-  sellOff(res: ResourceConstant, amount: number) {
-    if (!this.terminal)
-      return 0;
-    let targetPrice = -1;
-    let orders = Game.market.getAllOrders(order => {
-      if (order.type === ORDER_SELL || order.resourceType !== res)
-        return false;
-      if (targetPrice < order.price)
-        targetPrice = order.price;
-      return this.terminal!.pos.getRoomRangeTo(order.roomName!) < 25;
-    });
-    if (orders.length)
-      orders = orders.filter(order => order.price > targetPrice * 0.9);
-    if (orders.length) {
-      let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
-      let energyCost = Game.market.calcTransactionCost(10000, this.hive.roomName, order.roomName!) / 10000;
-      let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-      amount = Math.min(amount, energyCap, order.amount);
-      if (orders[0].resourceType === RESOURCE_ENERGY && amount * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
-        amount = Math.floor(amount * (1 - energyCost));
-      let ans = Game.market.deal(orders[0].id, amount, this.hive.roomName);
-      if (ans === OK) {
-        if (Apiary.logger)
-          Apiary.logger.newMarketOperation(order, amount, this.hive.roomName);
-        return amount;
-      }
-    }
-    return 0;
   }
 
   sendAid(res: StorageResource, amount: number) {

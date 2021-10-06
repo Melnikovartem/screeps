@@ -3,6 +3,7 @@ import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { Order } from "./order";
 import { Intel } from "./abstract/intelligence";
+import { Broker } from "./abstract/broker";
 import { Logger } from "./convenience/logger";
 import { RoomPlanner } from "./abstract/RoomPlanner";
 import { Visuals } from "./convenience/visuals";
@@ -19,6 +20,7 @@ export class _Apiary {
   useBucket: boolean = false;
   username: string = "";
   intel: Intel;
+  broker: Broker;
   planner: RoomPlanner;
   logger: Logger | undefined;
   visuals: Visuals = new Visuals;
@@ -35,6 +37,7 @@ export class _Apiary {
     this.createTime = Game.time;
     this.destroyTime = this.createTime + 9000;
     this.intel = new Intel();
+    this.broker = new Broker();
     this.planner = new RoomPlanner();
     if (LOGGING_CYCLE)
       this.logger = new Logger();
@@ -44,6 +47,7 @@ export class _Apiary {
     this.orders = {};
     this.masters = {};
 
+    this.broker.update();
   }
 
   init() {
@@ -68,6 +72,10 @@ export class _Apiary {
   // update phase
   update() {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
+
+    if (this.useBucket && Game.time % 10 === 0)
+      this.broker.update();
+
     Order.checkFlags();
     _.forEach(Apiary.orders, order => {
       if (order)
