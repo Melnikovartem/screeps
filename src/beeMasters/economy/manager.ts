@@ -26,12 +26,12 @@ export class ManagerMaster extends Master {
 
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
-
-      if (transfer && !transfer.beeProcess)
+      if (transfer)
         transfer.preprocess(bee);
-      else
-        transfer = undefined;
+    });
 
+    _.forEach(this.activeBees, bee => {
+      let transfer = bee.target && this.cell.requests[bee.target];
       if (!transfer || !transfer.isValid()) {
         delete bee.target;
         if (Object.keys(this.cell.requests).length && bee.creep.ticksToLive! > 20) {

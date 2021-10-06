@@ -181,8 +181,8 @@ export class StorageCell extends Cell {
       for (let resourceConstant in this.desiredBalance) {
         let resource = <ResourceConstant>resourceConstant;
         let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
-        if (balance < 0)
-          amountSend = this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9)
+        if (balance < 0 && this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9) === "short")
+          return;
       }
 
       amountSend = 0;
@@ -210,7 +210,7 @@ export class StorageCell extends Cell {
       amountSend = this.sendAid(res, amount);
 
       if (amountSend === 0)
-        Apiary.broker.sellOff(this.terminal, res, amount);
+        Apiary.broker.sellShort(this.terminal, res, amount);
     }
   }
 

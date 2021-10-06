@@ -15,6 +15,7 @@ import { SKMaster } from "./beeMasters/civil/safeSK";
 
 import { hiveStates, prefix } from "./enums";
 import { makeId } from "./abstract/utils";
+import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
 
 import { LOGGING_CYCLE } from "./settings";
 import { profile } from "./profiler/decorator";
@@ -375,14 +376,45 @@ export class Order {
             break;
           case COLOR_CYAN:
             this.acted = false;
-            if (this.pos.roomName === this.hive.roomName && this.hive.cells.lab) {
-              if (!Object.keys(this.hive.cells.lab.synthesizeRequests).length) {
-                let ans = _.some(this.flag.name.split("_"), res => this.hive.cells.lab!.newSynthesizeRequest(<ReactionConstant>res));
-                if (!ans && this.hive.cells.lab.time !== Game.time)
-                  this.delete();
-              }
-            } else
+            if (this.pos.roomName !== this.hive.roomName || !this.hive.cells.lab) {
               this.delete();
+              break;
+            }
+            if (Object.keys(this.hive.cells.lab.synthesizeRequests).length)
+              break;
+            let final = <ReactionConstant>this.flag.name.split("_")[1];
+            if (!final || !REACTION_MAP[final]) {
+              this.delete();
+              break;
+            }
+
+            let ingredients: ResourceConstant[] = [];
+            let createQue: ReactionConstant[] = [];
+
+            let dfs = (res: ResourceConstant) => {
+              let recipe = REACTION_MAP[<ReactionConstant>res];
+              if (!recipe) {
+                ingredients.push(res);
+                return;
+              }
+              createQue.push(<ReactionConstant>res);
+              dfs(recipe.res1);
+              dfs(recipe.res2);
+            }
+            dfs(final);
+            createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
+
+            let ans = _.some(createQue, res => this.hive.cells.lab!.newSynthesizeRequest(res));
+            if (!ans && this.hive.cells.lab.time !== Game.time) {
+              let sCell = this.hive.cells.storage;
+              if (sCell && sCell.terminal && ingredients.length) {
+                _.forEach(ingredients, resource => {
+                  if (sCell!.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
+                    sCell!.askAid(resource, LAB_MINERAL_CAPACITY * 2);
+                });
+              } else
+                this.delete();
+            }
             break;
           case COLOR_YELLOW:
             if (this.fixedName(prefix.upgrade + this.hive.roomName))

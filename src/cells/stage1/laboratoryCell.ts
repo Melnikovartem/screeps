@@ -48,7 +48,7 @@ const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, 
 const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
 
-const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
+export const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
 for (const res1 in REACTIONS) {
   for (const res2 in REACTIONS[res1])
     REACTION_MAP[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {

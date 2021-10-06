@@ -187,30 +187,30 @@ export class CustomConsole {
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {
-      if (order.type === ORDER_SELL && order.price > 100)
-        return "ORDER_PRICE IS STUPID HIGH";
-
       let resource = <ResourceConstant>order.resourceType;
-      let hive;
-      let validateTerminal = (t: StructureTerminal) =>
-        (order!.type === ORDER_BUY && t.store.getUsedCapacity(resource) > amount)
-        || (order!.type === ORDER_SELL && t.store.getFreeCapacity(resource) > amount);
+
+
+      let terminal;
+      let validateTerminal = (t: StructureTerminal) => t.store.getUsedCapacity(resource) > amount;
+      if (order.type === ORDER_SELL)
+        validateTerminal = (t) => t.store.getFreeCapacity(resource) > amount;
+
       if (roomName)
-        hive = Apiary.hives[roomName];
+        terminal = this.getTerminal(roomName, order.type === ORDER_BUY);
       else {
         let validHives = _.filter(Apiary.hives, h => h.cells.storage && h.cells.storage.terminal && validateTerminal(h.cells.storage.terminal));
-        hive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(100, prev.roomName, order!.roomName!) >
+        if (!validHives.length)
+          return "NO VALID HIVES FOUND";
+
+        let hive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(100, prev.roomName, order!.roomName!) >
           Game.market.calcTransactionCost(100, curr.roomName, order!.roomName!) ? curr : prev);
+        terminal = hive.cells.storage!.terminal!;
       }
 
-      if (!hive)
-        return `NO VALID HIVE FOUND${roomName ? " @ " + this.formatRoom(roomName) : ""}`;
-      hiveName = hive.print;
-      let terminal = hive.cells.storage!.terminal!;
-      if (!terminal || !validateTerminal(terminal))
-        return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
-      if (terminal.cooldown)
-        return `TERMINAL COOLDOWN`
+      if (typeof terminal === "string")
+        return terminal;
+
+      hiveName = this.formatRoom(terminal.pos.roomName);
 
       if (order.type === ORDER_BUY)
         amount = Math.min(amount, terminal.store.getUsedCapacity(resource));
@@ -223,73 +223,79 @@ export class CustomConsole {
         Apiary.logger.newMarketOperation(<ProtoOrder>order, amount, terminal.pos.roomName);
     }
 
-
     let info = ` ${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""
       }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
-    if (ans === OK)
-      return "OK" + info;
-    else
-      return `ERROR: ${ans}` + info;
+
+    return this.marketReturn(ans, info);
   }
 
-  buy(hiveName: string = this.lastActionRoomName, resource: ResourceConstant, sets: number = 1, amount: number = 1500 * sets) {
+  getTerminal(roomName: string, checkCooldown = false) {
+    let hive = Apiary.hives[roomName];
+    if (!hive)
+      return `NO VALID HIVE FOUND @ ${this.formatRoom(roomName)}`;
+    let terminal = hive.cells.storage && hive.cells.storage.terminal!;
+    if (!terminal)
+      return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
+    if (checkCooldown && terminal.cooldown)
+      return `TERMINAL COOLDOWN`;
+    return terminal;
+  }
+
+  buy(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
     hiveName = hiveName.toUpperCase();
-    let targetPrice = -1;
-    let sum = 0, count = 0;
-    let anchor = new RoomPosition(25, 25, hiveName);
-    let orders = Game.market.getAllOrders(order => {
-      if (order.type === ORDER_BUY || order.resourceType !== resource || !order.roomName)
-        return false;
-      if (targetPrice < order.price)
-        targetPrice = order.price;
-      sum += order.price * order.amount;
-      count += order.amount;
-      return anchor.getRoomRangeTo(order.roomName!) < 50;
-    })
-    targetPrice = Math.min(targetPrice, (sum / count) * 1.2);
-    if (orders.length)
-      orders = orders.filter(order => order.price < targetPrice * 0.9);
-    if (orders.length) {
-      let order = orders.reduce((prev, curr) => prev.price > curr.price ? curr : prev);
-      return this.completeOrder(order.id, hiveName, amount);
+    let terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string")
+      return terminal;
+    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+  }
+
+  buyShort(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
+    hiveName = hiveName.toUpperCase();
+    let terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string")
+      return terminal;
+    return this.marketReturn(Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+  }
+
+  buyLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, coef: number = 0.95) {
+    hiveName = hiveName.toUpperCase();
+    let terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string")
+      return terminal;
+    return this.marketReturn(Apiary.broker.buyLong(terminal, resource, 5000 * sets, Infinity, coef), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+  }
+
+  marketReturn(ans: number | string, info: string) {
+    switch (ans) {
+      case ERR_NOT_FOUND:
+        ans = "NO GOOD DEAL";
+      case ERR_NOT_ENOUGH_RESOURCES:
+        ans = "NOT ENOUGH RESOURCES";
+      case OK:
+        return "OK " + info;
     }
-    return `NO GOOD DEAL FOR ${resource.toUpperCase()} : ${amount} @ ${this.formatRoom(hiveName)} `;
+    return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
   }
 
-  produce(hiveName: string = this.lastActionRoomName, ...resource: string[]) {
+  produce(resource: string, hiveName: string = this.lastActionRoomName) {
     hiveName = hiveName.toUpperCase();
+    resource = resource.toUpperCase();
+
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    let cell = Apiary.hives[hiveName] && Apiary.hives[hiveName].cells.lab;
-    if (!cell)
+    let pos = hive.cells.lab && hive.cells.lab.pos;
+    if (!pos)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
 
-    for (let k in resource)
-      resource[k] = resource[k].toUpperCase();
-    let productionFlags = Game.rooms[hiveName].find(FIND_FLAGS, { filter: { color: COLOR_GREY, secondaryColor: COLOR_CYAN } });
-    for (let k in productionFlags)
-      resource = resource.concat(productionFlags[k].name.split("_"));
-    resource.push(hiveName);
-    let ref = resource.filter((value, index) => resource.indexOf(value) === index).join("_");
-    let create = true;
-    for (let k in productionFlags)
-      if (ref !== productionFlags[k].name)
-        productionFlags[k].remove()
-      else {
-        create = false;
-      }
-    if (create) {
-      let pos = [new RoomPosition(cell.pos.x, cell.pos.y + 1, cell.pos.roomName), new RoomPosition(cell.pos.x, cell.pos.y - 1, cell.pos.roomName)]
-        .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0];
-      if (pos)
-        pos.createFlag(ref, COLOR_GREY, COLOR_CYAN);
-      else
-        return `ERROR: TOO MUCH FLAGS @ ${hive.print}`;
+    let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
+    let ref = hiveName + "_" + resource;
+    if (!productionFlag || ref !== productionFlag.name) {
+      if (productionFlag)
+        productionFlag.remove();
+      pos.createFlag(ref, COLOR_GREY, COLOR_CYAN);
     } else
       return `ALREADY EXISTS @ ${hive.print}`;
-
-
     return `OK @ ${hive.print}`;
   }
 

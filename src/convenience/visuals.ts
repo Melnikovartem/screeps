@@ -5,7 +5,6 @@ import { profile } from "../profiler/decorator";
 import type { PossiblePositions, Hive } from "../hive";
 
 const TEXT_SIZE = 0.8;
-const TEXT_WIDTH = TEXT_SIZE * 0.46;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
 const SPACING = 0.3;
 
@@ -94,7 +93,7 @@ export class Visuals {
   }
 
   global() {
-    const minLen = 6;
+    const minLen = 6.2;
     if (!Apiary.useBucket)
       this.updateAnchor(this.label("LOW CPU", this.anchor, { align: "right" }, minLen));
     this.updateAnchor(this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.anchor, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, minLen));
@@ -431,8 +430,27 @@ export class Visuals {
     });
   }
 
+
+  getTextLength(str: string) {
+    let coefsum = 0;
+    for (let i = 0; i < str.length; ++i) {
+      let coef = 0.5;
+      let code = str.charCodeAt(i);
+
+      if (code == 0x2F || code === 0x3A)
+        coef = 0.3;
+      else if (0x41 <= code && code <= 0x5A)
+        coef = 0.55;
+      else if (code > 0x7F)
+        coef = 0.8;
+
+      coefsum += coef;
+    }
+    return TEXT_SIZE * coefsum;
+  }
+
   label(label: string, info: VisInfo, style: TextStyle = {}, minSize: number = 1, maxSize: number = 15) {
-    let textLen = label.length * TEXT_WIDTH * 1.05;
+    let textLen = this.getTextLength(label);
     let xMax = info.x + Math.min(Math.max(minSize, textLen + 0.5), maxSize) * (style.align === "right" ? -1 : 1);
     let yMax = info.y + TEXT_HEIGHT + 0.5;
     info.vis.text(label, info.x + 0.25 * (style.align === "right" ? -1 : 1), yMax - 0.26, this.textStyle(style));
@@ -465,7 +483,7 @@ export class Visuals {
       for (let i = 0; i < s.length; ++i) {
         if (!widths[i])
           widths[i] = 0;
-        widths[i] = Math.max(widths[i], s[i].length * TEXT_WIDTH + 0.6);
+        widths[i] = Math.max(widths[i], this.getTextLength(s[i]) + (s.length === i + 1 ? 0.05 : 0.2));
       }
     });
 

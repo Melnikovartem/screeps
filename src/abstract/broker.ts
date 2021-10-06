@@ -125,8 +125,93 @@ export class Broker {
     */
   }
 
-  sellOff(terminal: StructureTerminal, res: ResourceConstant, amount: number) {
+  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false): "no money" | "short" | "long" {
     let roomName = terminal.pos.roomName;
+
+    let creditsToUse = this.creditsToUse(roomName);
+    if (creditsToUse <= 0)
+      return "no money";
+
+    let price = this.getPriceLong(res);
+    let priceToBuyIn = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
+
+    if (res === RESOURCE_ENERGY)
+      priceToBuyIn *= 1.5654;
+
+    if (hurry || priceToBuyIn <= price) {
+      let ans = this.buyShort(terminal, res, amount, creditsToUse);
+      if (ans === OK)
+        return "short";
+    }
+
+    let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res
+      && order.type === ORDER_BUY && order.price > price * 0.95);
+    if (!orders.length)
+      this.buyLong(terminal, res, amount, creditsToUse);
+    return "long";
+  }
+
+  creditsToUse(roomName: string) {
+    if (!this.hiveSpending[roomName])
+      this.hiveSpending[roomName] = { credits: 0, lastUpdated: Game.time }
+    return Math.min(MAX_SPENDING_HIVE - this.hiveSpending[roomName].credits, Game.market.credits - Memory.settings.minBalance);
+  }
+
+  getPriceLong(res: ResourceConstant) {
+    return (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + ORDER_PADDING;
+  }
+
+  buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, coef: number = 1) {
+    this.update();
+    let price = this.getPriceLong(res) * coef;
+    let roomName = terminal.pos.roomName;
+    let priceCap = Math.floor(creditsToUse / (price * 1.05));
+    amount = Math.min(amount, priceCap);
+    if (!amount)
+      return ERR_NOT_ENOUGH_RESOURCES;
+    let ans = Game.market.createOrder({
+      type: ORDER_BUY,
+      resourceType: res,
+      totalAmount: amount,
+      price: price,
+      roomName: roomName,
+    });
+    if (ans === OK)
+      this.hiveSpending[roomName].credits += amount * price * 1.05;
+    return ans;
+  }
+
+  buyShort(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number) {
+    this.update();
+    let orders = this.goodBuy[res];
+    if (orders)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
+
+    if (!orders || !orders.length)
+      return ERR_NOT_FOUND;
+
+    let roomName = terminal.pos.roomName;
+    let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
+    let energyCost = Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;
+    let energyCap = Math.floor(terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+    let priceCap = Math.floor(creditsToUse / order.price);
+
+    amount = Math.min(amount, energyCap, order.amount, priceCap, terminal.store.getFreeCapacity(res));
+    if (!amount)
+      return ERR_NOT_ENOUGH_RESOURCES;
+
+    let ans = Game.market.deal(order.id, amount, roomName);
+    if (ans === OK) {
+      this.hiveSpending[roomName].credits += amount * order.price;
+      if (Apiary.logger)
+        Apiary.logger.newMarketOperation(order, amount, roomName);
+    }
+    return ans;
+  }
+
+  sellShort(terminal: StructureTerminal, res: ResourceConstant, amount: number) {
+    this.update();
+
     let orders = this.goodSell[res];
     if (!orders)
       return ERR_NOT_FOUND;
@@ -134,6 +219,7 @@ export class Broker {
     if (!orders.length)
       return ERR_NOT_FOUND;
 
+    let roomName = terminal.pos.roomName;
     let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
     let energyCost = Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;
     let energyCap = Math.floor(terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
@@ -144,71 +230,6 @@ export class Broker {
 
     let ans = Game.market.deal(order.id, amount, roomName);
     if (ans === OK) {
-      if (Apiary.logger)
-        Apiary.logger.newMarketOperation(order, amount, roomName);
-      return amount;
-    }
-
-    return 0;
-  }
-
-  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, minBalance = Memory.settings.minBalance): number {
-    let roomName = terminal.pos.roomName;
-    if (!this.hiveSpending[roomName])
-      this.hiveSpending[roomName] = { credits: 0, lastUpdated: Game.time }
-
-    let creditsToUse = Math.min(MAX_SPENDING_HIVE - this.hiveSpending[roomName].credits, Game.market.credits - minBalance)
-    if (creditsToUse <= 0)
-      return 0;
-
-    let price = (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + ORDER_PADDING;
-    let priceToBuyIn = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
-
-    if (res === RESOURCE_ENERGY)
-      priceToBuyIn *= 1.5654;
-
-    if (priceToBuyIn > price && !hurry) {
-      let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res
-        && order.type === ORDER_BUY && order.price > price * 0.95);
-      if (!orders.length) {
-        let priceCap = Math.floor(creditsToUse / (price * 1.05));
-        amount = Math.min(amount, priceCap);
-        if (!amount)
-          return 0;
-        let ans = Game.market.createOrder({
-          type: ORDER_BUY,
-          resourceType: res,
-          totalAmount: amount,
-          price: price,
-          roomName: roomName,
-        });
-        if (ans === OK)
-          this.hiveSpending[roomName].credits += amount * price * 1.05;
-      }
-      return 0;
-    }
-
-    let orders = this.goodBuy[res];
-    if (orders)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
-
-    if (!orders || !orders.length) {
-      if (priceToBuyIn > price && hurry)
-        return this.buyIn(terminal, res, amount, true, minBalance);
-      return ERR_NOT_FOUND;
-    }
-
-    let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
-    let energyCost = Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;
-    let energyCap = Math.floor(terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-    let priceCap = Math.floor(creditsToUse / order.price);
-
-    amount = Math.min(amount, energyCap, order.amount, priceCap, terminal.store.getFreeCapacity(res));
-    if (!amount)
-      return 0;
-    let ans = Game.market.deal(order.id, amount, roomName);
-    if (ans === OK) {
-      this.hiveSpending[roomName].credits += amount * price;
       if (Apiary.logger)
         Apiary.logger.newMarketOperation(order, amount, roomName);
       return amount;
