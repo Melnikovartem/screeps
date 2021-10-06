@@ -46,7 +46,7 @@ export class Visuals {
       if (name !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);
         vis.import(this.caching[name].data);
-        if (this.caching[name].lastRecalc === Game.time) {
+        if (this.caching[name].lastRecalc <= Game.time) {
           vis.import(this.caching[GLOBAL_VISUALS].data);
           if (this.caching[GLOBAL_VISUALS_HEAVY])
             vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);

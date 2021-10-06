@@ -13,8 +13,9 @@ import { BuilderMaster } from "./beeMasters/economy/builder";
 
 import { safeWrap } from "./abstract/utils";
 import { hiveStates, prefix } from "./enums";
-import { profile } from "./profiler/decorator";
+import { WALL_HEALTH } from "abstract/roomPlanner";
 
+import { profile } from "./profiler/decorator";
 import type { CreepSetup } from "./bees/creepSetups";
 
 export interface SpawnOrder {
@@ -79,6 +80,9 @@ export class Hive {
 
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
+
+  wallsHealth = WALL_HEALTH;
+  wallsHealthMax = WALL_HEALTH * 10;
 
   state: hiveStates = hiveStates.economy;
 
@@ -282,7 +286,7 @@ export class Hive {
   }
 
   updateStructures() {
-    let builderReCheck = this.sumCost > 0;
+    let reCheck = this.sumCost > 0;
     this.structuresConst = [];
     this.sumCost = 0;
     let add = (ans: BuildProject[]) => {
@@ -292,7 +296,10 @@ export class Hive {
 
     switch (this.state) {
       case hiveStates.battle:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_RAMPART, STRUCTURE_WALL]));
+        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
+          [STRUCTURE_WALL]: Math.min(this.wallsHealth * 1.5, RAMPART_HITS_MAX[this.room.controller ? this.room.controller.level : 0]),
+          [STRUCTURE_RAMPART]: Math.min(this.wallsHealth * 1.5, WALL_HITS_MAX),
+        }));
         break;
       case hiveStates.nukealert:
         add(this.cells.defense.getNukeDefMap());
@@ -301,11 +308,24 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
         break;
       case hiveStates.economy:
-        if (builderReCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
+        if (reCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
           _.forEach(this.annexNames, annexName => {
             if (Apiary.intel.getInfo(annexName).safePlace)
               add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
+        if (this.phase === 2) {
+          if (!reCheck && this.wallsHealth < this.wallsHealthMax) {
+            let sCell = this.cells.storage;
+            if (sCell && sCell.desiredBalance[RESOURCE_ENERGY] && sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > sCell.desiredBalance[RESOURCE_ENERGY]!)
+              this.wallsHealth += WALL_HEALTH;
+          }
+
+          add(Apiary.planner.checkBuildings(this.roomName, undefined, {
+            [STRUCTURE_WALL]: this.wallsHealth,
+            [STRUCTURE_RAMPART]: this.wallsHealth,
+          }));
+          break;
+        }
       default:
         add(Apiary.planner.checkBuildings(this.roomName));
     }

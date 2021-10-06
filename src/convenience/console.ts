@@ -28,9 +28,11 @@ export class CustomConsole {
     return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
   }
 
-  balance(min: number = Game.market.credits * 0.8) {
-    Memory.settings.minBalance = min;
-    return "won't use money if balance lower " + min;
+  balance(min: number | "fit" = Game.market.credits * 0.8) {
+    if (typeof min !== "number")
+      min = Game.market.credits;
+    Memory.settings.minBalance = Math.ceil(min);
+    return "use credit down to balance of " + Memory.settings.minBalance;
   }
 
   format(s: string) {

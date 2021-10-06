@@ -364,8 +364,13 @@ export class LaboratoryCell extends Cell {
           }
         }
 
+        let priority = <2 | 5>5;
         storageCell.requestFromStorage(_.filter(this.laboratories,
-          l => l.store.getFreeCapacity(RESOURCE_ENERGY) > LAB_ENERGY_CAPACITY / 2), 4, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
+          l => {
+            if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
+              priority = 2;
+            return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
       }
     }
   }

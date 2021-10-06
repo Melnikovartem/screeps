@@ -147,6 +147,7 @@ export class Intel {
               roomInfo.roomState = roomStates.SKfrontier;
         }
       }
+      this.roomInfo[roomName] = roomInfo;
     }
 
     // it is cached after first check
@@ -191,7 +192,6 @@ export class Intel {
       roomInfo.currentOwner = owner;
     }
 
-    this.roomInfo[room.name] = roomInfo;
     this.updateEnemiesInRoom(room);
 
     return this.roomInfo[roomName];

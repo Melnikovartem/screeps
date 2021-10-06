@@ -7,4 +7,7 @@ export class TestSquad extends SquadMaster {
     <FormationPosition>[{ x: 1, y: 0 }, setups.puppet],
     <FormationPosition>[{ x: 0, y: 1 }, setups.puppet],
     <FormationPosition>[{ x: 1, y: 1 }, setups.puppet]];
+
+  boost = false;
+  boostMove = false;
 }

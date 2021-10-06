@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import type { Hive } from "../../Hive";
 
-import { prefix } from "../../enums";
+import { prefix, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 
@@ -58,20 +58,23 @@ export class ObserveCell extends Cell {
     } else
       this.roomsToCheck = this.powerRooms;
 
-    if (!(this.prevRoom in Game.rooms) || !this.powerRooms.includes(this.prevRoom))
-      return;
-    let storageCell = this.hive.cells && this.hive.cells.storage;
-    if (!storageCell || storageCell.desiredBalance[RESOURCE_ENERGY]
-      || storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < storageCell.desiredBalance[RESOURCE_ENERGY]! / 2)
+    let room = Game.rooms[this.prevRoom];
+    if (!room)
       return;
 
-    this.powerCheck(this.prevRoom);
+    let storageCell = this.hive.cells && this.hive.cells.storage;
+    if (!storageCell || !storageCell.desiredBalance[RESOURCE_ENERGY]
+      || storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < storageCell.desiredBalance[RESOURCE_ENERGY]!)
+      return;
+
+    let roomInfo = Apiary.intel.getInfo(this.prevRoom, 25);
+
+    if (roomInfo.roomState === roomStates.corridor)
+      this.powerCheck(room);
   }
 
-  powerCheck(roomName: string) {
-    if (!this.doPowerCheck)
-      return;
-    let power = <StructurePowerBank>Game.rooms[roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
+  powerCheck(room: Room) {
+    let power = <StructurePowerBank | undefined>room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
     if (!power)
       return;
     let open = power.pos.getOpenPositions(true).length;

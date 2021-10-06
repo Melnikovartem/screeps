@@ -41,6 +41,11 @@ export class Broker {
   update() {
     if (this.lastUpdated === Game.time)
       return;
+
+    for (let id in Game.market.orders)
+      if (!Game.market.orders[id].amount)
+        Game.market.cancelOrder(id);
+
     // on shard2 during 10.2021 it took about 9.5CPU to calc all this
     // let cpu = Game.cpu.getUsed();
     this.lastUpdated = Game.time;
@@ -147,7 +152,7 @@ export class Broker {
     return 0;
   }
 
-  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, minBalance = Memory.settings.minBalance) {
+  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, minBalance = Memory.settings.minBalance): number {
     let roomName = terminal.pos.roomName;
     if (!this.hiveSpending[roomName])
       this.hiveSpending[roomName] = { credits: 0, lastUpdated: Game.time }
@@ -164,7 +169,7 @@ export class Broker {
 
     if (priceToBuyIn > price && !hurry) {
       let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res
-        && order.type === ORDER_BUY && order.price > price * 0.95 && order.amount);
+        && order.type === ORDER_BUY && order.price > price * 0.95);
       if (!orders.length) {
         let priceCap = Math.floor(creditsToUse / (price * 1.05));
         amount = Math.min(amount, priceCap);
@@ -184,11 +189,14 @@ export class Broker {
     }
 
     let orders = this.goodBuy[res];
-    if (!orders)
+    if (orders)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
+
+    if (!orders || !orders.length) {
+      if (priceToBuyIn > price && hurry)
+        return this.buyIn(terminal, res, amount, true, minBalance);
       return ERR_NOT_FOUND;
-    orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
-    if (!orders.length)
-      return ERR_NOT_FOUND;
+    }
 
     let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
     let energyCost = Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;

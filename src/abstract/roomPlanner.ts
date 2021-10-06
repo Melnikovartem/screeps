@@ -22,16 +22,13 @@ const EXTRA_SIDE: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 
 
 const CONSTRUCTIONS_PER_ROOM = 5;
 
-const WALL_HEALTH = {
-  small: 100000,
-  big: 1000000,
-}
+export const WALL_HEALTH = 100000;
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 } },
   [STRUCTURE_CONTAINER]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 5, heal: CONTAINER_HITS / 2 } },
-  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } },
-  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH.small / 2 }, 5: { amount: 2500, heal: WALL_HEALTH.small }, 6: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 7: { amount: 2500, heal: WALL_HEALTH.big / 2 }, 8: { amount: 2500, heal: WALL_HEALTH.big } }
+  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } },
+  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } }
 }
 
 const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
@@ -847,7 +844,7 @@ export class RoomPlanner {
     return { amount: amount ? amount : 0, heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax };
   }
 
-  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY) {
+  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY, specials: { [key in StructureConstant]?: number } = {}) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return [];
 
@@ -900,6 +897,8 @@ export class RoomPlanner {
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
+          if (specials[structure.structureType])
+            heal = specials[structure.structureType]!;
           if (structure.hits < heal * 0.3
             || (structure.hits < heal * 0.75 && !constructions)
             || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * 0.75))

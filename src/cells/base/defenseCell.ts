@@ -151,8 +151,10 @@ export class DefenseCell extends Cell {
               prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
             if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5)
               ans = this.setDefFlag(enemy.pos);
-            if (ans === OK)
+            if (ans === OK) {
               delete Apiary.defenseSwarms[swarm.pos.roomName];
+              return;
+            }
           }
 
           if (ans !== OK) {

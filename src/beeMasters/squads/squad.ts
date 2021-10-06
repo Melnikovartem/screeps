@@ -120,18 +120,22 @@ export abstract class SquadMaster extends SwarmMaster {
 
   validFormation() {
     if (this.maxSpawns !== this.spawned)
-      return false;
-    let validFormation = true;
+      return ERR_BUSY;
+
+    for (const name in this.bees)
+      if (this.bees[name].state === beeStates.chill)
+        return ERR_BUSY;
+
     for (let i = 0; i < this.formation.length; ++i) {
       if (!this.isAlive(this.formationBees[i]))
         continue;
       let beePos = this.formationBees[i]!.pos;
       let desiredPos = this.getDeisredPos(i);
       if (!desiredPos || beePos.x !== desiredPos.x || beePos.y !== desiredPos.y || beePos.roomName !== desiredPos.roomName)
-        validFormation = false;
+        return ERR_NOT_IN_RANGE;
     }
 
-    return validFormation;
+    return OK;
   }
 
   getSquadMoveMentValue(pos: RoomPosition) {
@@ -156,7 +160,7 @@ export abstract class SquadMaster extends SwarmMaster {
     for (let i = 0; i < this.formation.length; ++i) {
       let desiredPos = this.getDeisredPos(i);
       if (!desiredPos || !desiredPos.isFree(true) && this.isAlive(this.formationBees[i]) || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
-        return false;
+        return ERR_NO_PATH;
     }
 
     for (let i = 0; i < this.formationBees.length; ++i) {
@@ -167,7 +171,7 @@ export abstract class SquadMaster extends SwarmMaster {
       bee.goTo(desiredPos, { movingTarget: true, ignoreCreeps: false });
       bee.actionPosition = desiredPos;
     }
-    return true;
+    return OK;
   }
 
   beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined | null, healingTarget: Creep | Bee | undefined | null) {
@@ -268,7 +272,9 @@ export abstract class SquadMaster extends SwarmMaster {
     let centerBee = this.formationBees.filter(b => this.isAlive(b))[0];
     if (!centerBee)
       return;
-    if (this.validFormation()) {
+
+    let valid: number = this.validFormation();
+    if (valid === OK) {
       let direction = this.moveCenter(centerBee, enemy);
       if (direction)
         _.forEach(this.activeBees, b => {
@@ -276,12 +282,17 @@ export abstract class SquadMaster extends SwarmMaster {
           if (pos.isFree(true))
             b.targetPosition = pos;
         });
-    } else if (!this.validateFormation()) {
-      this.moveCenter(centerBee, enemy);
-      _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.goTo(this.formationCenter, { movingTarget: true }));
+    } else {
+      if (valid === ERR_NOT_IN_RANGE)
+        valid = this.validateFormation();
+      if (valid !== OK) {
+        this.moveCenter(centerBee, enemy)
+        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.goTo(this.formationCenter, { movingTarget: true }));
+      }
     }
 
-    this.formationCenter = centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos;
+    if (valid !== ERR_BUSY)
+      this.formationCenter = centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos;
 
     new RoomVisual(this.formationCenter.roomName).circle(this.formationCenter.x, this.formationCenter.y);
   }

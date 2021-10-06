@@ -181,24 +181,8 @@ export class StorageCell extends Cell {
       for (let resourceConstant in this.desiredBalance) {
         let resource = <ResourceConstant>resourceConstant;
         let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
-        if (balance < 0) {
-
-          let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
-            && (!h.cells.storage.desiredBalance[resource] || h.cells.storage.storage.store.getUsedCapacity(resource) > h.cells.storage.desiredBalance[resource]!));
-
-          if (!hives.length) {
-            amountSend = Apiary.broker.buyIn(this.terminal, resource, -balance, -balance > this.desiredBalance[resource]! * 0.9);
-            if (amountSend > 0)
-              return;
-          } else {
-            let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
-            let sCell = closest.cells.storage!;
-            if (!sCell.requests[STRUCTURE_TERMINAL + "_" + sCell.terminal!.id]) {
-              let deiseredIn = sCell.desiredBalance[resource] ? sCell.desiredBalance[resource]! : 0;
-              sCell.requestFromStorage([sCell.terminal!], 5, resource, sCell.storage.store.getUsedCapacity(resource) - deiseredIn, true);
-            }
-          }
-        }
+        if (balance < 0)
+          amountSend = this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9)
       }
 
       amountSend = 0;
@@ -228,6 +212,28 @@ export class StorageCell extends Cell {
       if (amountSend === 0)
         Apiary.broker.sellOff(this.terminal, res, amount);
     }
+  }
+
+  askAid(res: ResourceConstant, amount: number, hurry?: boolean) {
+    if (!this.terminal)
+      return 0;
+    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
+      && (!h.cells.storage.desiredBalance[res] || h.cells.storage.storage.store.getUsedCapacity(res) > h.cells.storage.desiredBalance[res]!));
+
+    if (!hives.length) {
+      if (res === RESOURCE_ENERGY)
+        return 0;
+      return Apiary.broker.buyIn(this.terminal, res, -amount, hurry);
+    }
+
+    let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
+    let sCell = closest.cells.storage!;
+    if (!sCell.requests[STRUCTURE_TERMINAL + "_" + sCell.terminal!.id]) {
+      let deiseredIn = sCell.desiredBalance[res] ? sCell.desiredBalance[res]! : 0;
+      sCell.requestFromStorage([sCell.terminal!], 5, res, sCell.storage.store.getUsedCapacity(res) - deiseredIn, true);
+    }
+
+    return 0;
   }
 
   sendAid(res: ResourceConstant, amount: number) {
