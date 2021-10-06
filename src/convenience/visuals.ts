@@ -331,7 +331,7 @@ export class Visuals {
     _.forEach(hive.cells.excavation.resourceCells, rcell => {
       ++all;
       operational += rcell.operational ? 1 : 0;
-      if (rcell.master && rcell.perSecondNeeded) {
+      if (rcell.master && rcell.operational) {
         stats.beesAmount += rcell.master.beesAmount;
         stats.waitingForBees += rcell.master.waitingForBees;
         stats.targetBeeCount += rcell.master.targetBeeCount;

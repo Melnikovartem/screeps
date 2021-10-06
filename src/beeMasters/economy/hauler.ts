@@ -30,8 +30,7 @@ export class HaulerMaster extends Master {
     this.accumRoadTime = 0; // roadTime * minePotential
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
-        if (cell.container && !cell.link
-          && (!this.hive.cells.dev && cell.resourceType === RESOURCE_ENERGY || cell.extractor)) {
+        if (cell.operational && cell.roadTime !== Infinity && cell.container && !cell.link && (!this.hive.cells.dev || cell.resourceType !== RESOURCE_ENERGY)) {
           let coef = 10; // mineral production
           if (cell.resourceType !== RESOURCE_ENERGY) {
             let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;

@@ -52,7 +52,7 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id;
-      if (this.requests[ref] && this.requests[ref].priority === priority)
+      if (this.requests[ref] && this.requests[ref].priority === priority && this.requests[ref].to.id === objects[i].id)
         continue;
       let amountCC = amount;
       if (fitStore)
@@ -76,7 +76,7 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].structureType + "_" + objects[i].id
-      if (this.requests[ref] && this.requests[ref].priority === priority)
+      if (this.requests[ref] && this.requests[ref].priority === priority && this.requests[ref].from.id === objects[i].id)
         continue;
       let amountCC = amount;
       if (fitStore)

@@ -22,8 +22,7 @@ export class MinerMaster extends Master {
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
 
-    if (this.checkBees(hiveStates.battle !== this.hive.state)
-      && this.cell.perSecondNeeded > 0 && roomInfo.safePlace && this.cell.operational) {
+    if (this.checkBees(hiveStates.battle !== this.hive.state) && roomInfo.safePlace && this.cell.operational) {
       let order = {
         setup: setups.miner.energy,
         amount: 1,
@@ -41,9 +40,10 @@ export class MinerMaster extends Master {
   }
 
   run() {
-    let sourceOff = this.cell.resource instanceof Source && this.cell.resource.energy === 0
-      || this.cell.extractor && (this.cell.extractor.cooldown > 0 || this.cell.perSecondNeeded === 0)
-      || !this.cell.operational;
+    let sourceOff = !this.cell.operational
+      || this.cell.resource instanceof Source && this.cell.resource.energy === 0
+      || this.cell.extractor && this.cell.extractor.cooldown > 0;
+
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;

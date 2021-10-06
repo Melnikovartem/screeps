@@ -50,7 +50,8 @@ export class UpgraderMaster extends Master {
 
     this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
       1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
-    // this.targetBeeCount = Math.min(this.targetBeeCount, this.cell.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.cell.controller) <= 3).length)
+    if (this.cell.link)
+      this.targetBeeCount = Math.min(this.targetBeeCount, this.cell.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.cell.controller) <= 3).length)
   }
 
 

@@ -171,7 +171,7 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
     let storageCell = this.hive.cells.storage;
-    if (Game.time - bee.memory.born <= 600
+    if (Game.time - bee.memory.born > 600
       || !storageCell || !storageCell.master.activeBees.length
       || !bee.master || !bee.master.boost)
       return OK;
@@ -182,6 +182,7 @@ export class LaboratoryCell extends Cell {
         let r = this.boostRequests[bee.ref][k];
         if (!r.amount)
           r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
+
         this.boostRequests[bee.ref][k] = this.getBoostInfo(r);
       }
     }
@@ -235,27 +236,25 @@ export class LaboratoryCell extends Cell {
       if (bee.creep.spawning)
         return ERR_BUSY;
 
-      if (lab.store.getUsedCapacity(r.res) >= LAB_BOOST_MINERAL && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= LAB_BOOST_ENERGY) {
-        if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
-          && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
-          let pos = lab.pos.getOpenPositions(true)[0];
-          if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
-            let ans = lab.boostCreep(bee.creep, r.amount);
-            if (ans === OK) {
-              // bad things if 2 creeps want to be boosted at same time
-              r.amount = 0;
-              if (Apiary.logger) {
-                Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);
-                Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
-              }
+      if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
+        && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
+        let pos = lab.pos.getOpenPositions(true)[0];
+        if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
+          let ans = lab.boostCreep(bee.creep, r.amount);
+          if (ans === OK) {
+            // bad things if 2 creeps want to be boosted at same time
+            r.amount = 0;
+            if (Apiary.logger) {
+              Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);
+              Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
             }
-          } else {
-            bee.goRest(pos);
-            return ERR_NOT_IN_RANGE;
           }
+        } else {
+          bee.goRest(pos);
+          return ERR_NOT_IN_RANGE;
         }
-      } else
-        bee.goRest(this.pos);
+      }
+      bee.goRest(this.pos);
       return ERR_TIRED;
     }
 
@@ -286,7 +285,7 @@ export class LaboratoryCell extends Cell {
               storageCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
             break;
           default: // boosting lab : state == resource
-            if (l.mineralType !== state)
+            if (l.mineralType && l.mineralType !== state)
               storageCell.requestToStorage([l], 1, state);
             if (!storageCell.requests[id] && l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
               storageCell.requestFromStorage([l], 1, state);

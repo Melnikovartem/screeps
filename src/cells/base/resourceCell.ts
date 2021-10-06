@@ -10,8 +10,6 @@ import type { Hive } from "../../Hive";
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
 export class ResourceCell extends Cell {
-
-  perSecondNeeded: number = 5; // aka 3000/300/2 for energy
   resource: Source | Mineral;
   resourceType: ResourceConstant = RESOURCE_ENERGY;
   link: StructureLink | undefined;
@@ -46,8 +44,7 @@ export class ResourceCell extends Cell {
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
-      this.operational = this.extractor && this.container ? true : false;
-      this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
+      this.operational = !!(this.extractor && this.container && !this.resource.ticksToRegeneration);
       this.resourceType = this.resource.mineralType;
     }
 
@@ -76,8 +73,8 @@ export class ResourceCell extends Cell {
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
 
-    if (this.resourceType !== RESOURCE_ENERGY)
-      this.perSecondNeeded = this.resource.ticksToRegeneration ? 0 : Infinity;
+    if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration)
+      this.operational = false;
   }
 
   run() {
