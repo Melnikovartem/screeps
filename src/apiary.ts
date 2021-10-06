@@ -46,8 +46,6 @@ export class _Apiary {
     this.hives = {};
     this.orders = {};
     this.masters = {};
-
-    this.broker.update();
   }
 
   init() {
@@ -73,7 +71,7 @@ export class _Apiary {
   update() {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
 
-    if (this.useBucket && Game.time % 10 === 0)
+    if (this.useBucket && Game.time % 10 === 0 || this.broker.lastUpdated < 0)
       this.broker.update();
 
     Order.checkFlags();

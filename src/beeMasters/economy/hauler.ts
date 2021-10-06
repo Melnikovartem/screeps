@@ -44,7 +44,8 @@ export class HaulerMaster extends Master {
 
   recalculateTargetBee() {
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
-    this.targetBeeCount = Math.ceil(this.accumRoadTime / (body.filter(b => b === CARRY).length * CARRY_CAPACITY));
+    this.cell.fullContainer = Math.min(CONTAINER_CAPACITY * 0.9, body.filter(b => b === CARRY).length * CARRY_CAPACITY)
+    this.targetBeeCount = Math.ceil(this.accumRoadTime / this.cell.fullContainer);
   }
 
   checkBeesWithRecalc() {

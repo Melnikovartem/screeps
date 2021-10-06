@@ -1,6 +1,5 @@
 import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
-
 import { TransferRequest } from "../../bees/transferRequest";
 
 import { prefix } from "../../enums";
@@ -9,10 +8,6 @@ import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
-type StorageResource = RESOURCE_ENERGY
-export const STORAGE_BALANCE: { [key in StorageResource]: number } = {
-  [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
-};
 
 @profile
 export class StorageCell extends Cell {
@@ -22,6 +17,14 @@ export class StorageCell extends Cell {
   linksState: { [id: string]: "idle" | "busy" } = {};
   terminal: StructureTerminal | undefined;
   master: ManagerMaster;
+  desiredBalance: { [key in ResourceConstant]?: number } = {
+    [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
+    "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // upgrade
+    "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // repair
+    "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // heal
+    "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // rangedAttack
+    "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // move
+  }
 
   requests: { [id: string]: TransferRequest } = {};
 
@@ -136,8 +139,8 @@ export class StorageCell extends Cell {
             for (let resourceConstant in this.storage.store) {
               let resource = <ResourceConstant>resourceConstant;
               let newAmount = this.storage.store.getUsedCapacity(resource);
-              if (resource === RESOURCE_ENERGY)
-                newAmount -= STORAGE_BALANCE[RESOURCE_ENERGY]!; // save 400K energy everytime
+              if (resource in this.desiredBalance)
+                newAmount -= this.desiredBalance[resource]!;
               if (-amount < newAmount) {
                 res = resource;
                 amount = -newAmount;
@@ -145,8 +148,7 @@ export class StorageCell extends Cell {
             }
             amount = Math.max(amount, freeCap);
           }
-        } else if (this.storage.store.getUsedCapacity(res) < STORAGE_BALANCE[RESOURCE_ENERGY]!)
-          amount = 0;
+        }
 
         if (amount > 0)
           this.requestToStorage([this.terminal],
@@ -173,11 +175,45 @@ export class StorageCell extends Cell {
       if (!this.requests[k].isValid())
         delete this.requests[k];
 
-    if (this.terminal && this.terminal.store.getUsedCapacity() > this.terminal.store.getCapacity() * 0.7 && !this.terminal.cooldown) {
+    if (this.terminal && !this.terminal.cooldown) {
+      let amountSend: number = 0;
+
+      for (let resourceConstant in this.desiredBalance) {
+        let resource = <ResourceConstant>resourceConstant;
+        let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
+        if (balance < 0) {
+
+          let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
+            && (!h.cells.storage.desiredBalance[resource] || h.cells.storage.storage.store.getUsedCapacity(resource) > h.cells.storage.desiredBalance[resource]!));
+
+          if (!hives.length) {
+            amountSend = Apiary.broker.buyIn(this.terminal, resource, -balance, -balance > this.desiredBalance[resource]! * 0.9);
+            if (amountSend > 0)
+              return;
+          } else {
+            let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
+            let sCell = closest.cells.storage!;
+            if (!sCell.requests[STRUCTURE_TERMINAL + "_" + sCell.terminal!.id]) {
+              let deiseredIn = sCell.desiredBalance[resource] ? sCell.desiredBalance[resource]! : 0;
+              sCell.requestFromStorage([sCell.terminal!], 5, resource, sCell.storage.store.getUsedCapacity(resource) - deiseredIn, true);
+            }
+          }
+        }
+      }
+
+      amountSend = 0;
+
+      if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.3)
+        return;
+
       let res: ResourceConstant = RESOURCE_ENERGY;
       let amount: number = 0;
       for (let resourceConstant in this.terminal.store) {
         let resource = <ResourceConstant>resourceConstant;
+
+        if (this.desiredBalance[resource] && this.getUsedCapacity(resource) <= this.desiredBalance[resource]!)
+          continue;
+
         let newAmount = this.terminal.store.getUsedCapacity(resource);
         if (resource === RESOURCE_ENERGY)
           newAmount -= TERMINAL_ENERGY;
@@ -187,37 +223,62 @@ export class StorageCell extends Cell {
         }
       }
 
-      let amoundSend: number = 0;
-      if (res in STORAGE_BALANCE)
-        amoundSend = this.sendAid(<StorageResource>res, amount);
+      amountSend = this.sendAid(res, amount);
 
-      if (amoundSend === 0)
+      if (amountSend === 0)
         Apiary.broker.sellOff(this.terminal, res, amount);
     }
   }
 
-  sendAid(res: StorageResource, amount: number) {
-    let amoundSend: number = 0;
+  sendAid(res: ResourceConstant, amount: number) {
     if (!this.terminal)
-      return amoundSend;
-    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
-      && h.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[res])
-    if (hives.length) {
-      let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
-      let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;
-      amoundSend = Math.min(amount, terminalTo.store.getFreeCapacity(res));
+      return 0;
+    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage
+      && h.cells.storage.desiredBalance[res] && h.cells.storage.terminal
+      && h.cells.storage.getUsedCapacity(res) < h.cells.storage.desiredBalance[res]!);
 
-      let energyCost = Game.market.calcTransactionCost(10000, this.pos.roomName, terminalTo.pos.roomName) / 10000;
-      let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-      amoundSend = Math.min(amoundSend, energyCap);
+    if (!hives.length)
+      return 0;
 
-      if (res === RESOURCE_ENERGY && amoundSend * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
-        amoundSend = Math.floor(amoundSend * (1 - energyCost));
+    let amoundSend: number = 0;
+    let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
+    let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;
+    amoundSend = Math.min(amount, terminalTo.store.getFreeCapacity(res));
 
-      let ans = this.terminal.send(res, amoundSend, terminalTo.pos.roomName);
-      if (ans === OK && Apiary.logger)
-        Apiary.logger.newTerminalTransfer(this.terminal, terminalTo, amoundSend, res);
-    }
+    let energyCost = Game.market.calcTransactionCost(10000, this.pos.roomName, terminalTo.pos.roomName) / 10000;
+    let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+    amoundSend = Math.min(amoundSend, energyCap);
+
+    if (res === RESOURCE_ENERGY && amoundSend * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
+      amoundSend = Math.floor(amoundSend * (1 - energyCost));
+
+    let ans = this.terminal.send(res, amoundSend, terminalTo.pos.roomName);
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.newTerminalTransfer(this.terminal, terminalTo, amoundSend, res);
+
     return amoundSend;
+  }
+
+  getUsedCapacity(resource?: ResourceConstant) {
+    let amount = this.storage.store.getUsedCapacity(resource);
+    if (this.terminal) {
+      let toAdd = this.terminal.store.getUsedCapacity(resource);
+      if (resource === RESOURCE_ENERGY)
+        toAdd = Math.max(0, toAdd - TERMINAL_ENERGY);
+      amount += toAdd;
+    }
+
+    _.forEach(this.master.activeBees, bee => {
+      amount += bee.store.getUsedCapacity(resource);
+    });
+
+    if (resource && resource in REACTION_TIME && this.hive.cells.lab)
+      _.forEach(this.hive.cells.lab.laboratories, lab => {
+        let toAdd = lab.store.getUsedCapacity(resource);
+        if (toAdd)
+          amount += toAdd;
+      });
+
+    return amount;
   }
 }

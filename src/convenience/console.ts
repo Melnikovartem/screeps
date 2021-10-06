@@ -28,6 +28,11 @@ export class CustomConsole {
     return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
   }
 
+  balance(min: number = Game.market.credits * 0.8) {
+    Memory.settings.minBalance = min;
+    return "won't use money if balance lower " + min;
+  }
+
   format(s: string) {
     if (/\d/.exec(s) !== null)
       return s.toUpperCase();

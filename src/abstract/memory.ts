@@ -6,7 +6,7 @@ export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
     if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, hives: {} };
-    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0 };
+    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
     Logger.init();
   }
@@ -15,7 +15,7 @@ export class Mem {
     console.log("> > Memory wipe!");
     Memory.masters = {};
     Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, hives: {} };
-    Memory.settings = { framerate: 10, forceBucket: 0 };
+    Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
     Logger.init(true);
   }

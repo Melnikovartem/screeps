@@ -3,7 +3,6 @@ import { Master } from "../_Master";
 
 import { beeStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
-import { STORAGE_BALANCE } from "../../cells/stage1/storageCell";
 
 import { profile } from "../../profiler/decorator";
 
@@ -41,12 +40,9 @@ export class UpgraderMaster extends Master {
     this.boost = true;
     let desiredRate = this.cell.maxRate;
     let storeAmount = storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY)
-    let rounding = Math.floor;
-    if (storeAmount >= STORAGE_BALANCE[RESOURCE_ENERGY])
-      rounding = Math.ceil;
 
-    this.targetBeeCount = rounding(desiredRate / this.cell.ratePerCreepMax);
-    this.patternPerBee = rounding(desiredRate / this.targetBeeCount);
+    this.targetBeeCount = Math.ceil(desiredRate / this.cell.ratePerCreepMax);
+    this.patternPerBee = Math.ceil(desiredRate / this.targetBeeCount);
 
     this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
       1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function

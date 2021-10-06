@@ -44,6 +44,7 @@ declare global {
     settings: {
       framerate: number,
       forceBucket: number,
+      minBalance: number,
     }
 
     // for TRAVELER

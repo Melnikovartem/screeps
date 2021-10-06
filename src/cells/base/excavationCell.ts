@@ -16,6 +16,7 @@ export class ExcavationCell extends Cell {
   shouldRecalc: boolean = true;
   master: HaulerMaster | undefined;
   roomResources: { [id: string]: number } = {};
+  fullContainer = CONTAINER_CAPACITY * 0.9;
 
   constructor(hive: Hive) {
     super(hive, prefix.excavationCell + hive.room.name);
@@ -40,7 +41,7 @@ export class ExcavationCell extends Cell {
       safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
-        if (cell.container.store.getUsedCapacity() >= 1000) {
+        if (cell.container.store.getUsedCapacity() >= this.fullContainer) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace)
             this.quitefullCells.push(cell);
@@ -48,11 +49,11 @@ export class ExcavationCell extends Cell {
       }
     });
     this.quitefullCells.sort((a, b) => a.container!.store.getFreeCapacity() - b.container!.store.getFreeCapacity());
-  };
+  }
 
   run() {
     _.forEach(this.resourceCells, cell => {
       safeWrap(() => { cell.run() }, cell.print + " run");
     });
-  };
+  }
 }

@@ -1,7 +1,6 @@
 import { Cell } from "../_Cell";
 import type { Hive } from "../../Hive";
 
-import { STORAGE_BALANCE } from "../stage1/storageCell";
 import { prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
@@ -61,12 +60,12 @@ export class ObserveCell extends Cell {
 
     if (!(this.prevRoom in Game.rooms) || !this.powerRooms.includes(this.prevRoom))
       return;
-    let storage = this.hive.cells && this.hive.cells.storage && this.hive.cells.storage.storage;
-    if (!storage || storage.store.getUsedCapacity(RESOURCE_ENERGY) < STORAGE_BALANCE[RESOURCE_ENERGY]! / 2)
+    let storageCell = this.hive.cells && this.hive.cells.storage;
+    if (!storageCell || storageCell.desiredBalance[RESOURCE_ENERGY]
+      || storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < storageCell.desiredBalance[RESOURCE_ENERGY]! / 2)
       return;
 
     this.powerCheck(this.prevRoom);
-
   }
 
   powerCheck(roomName: string) {
