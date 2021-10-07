@@ -48,7 +48,7 @@ export class ManagerMaster extends Master {
 
       if (!transfer || !transfer.isValid()) {
         delete bee.target;
-        if (Object.keys(requests).length && bee.creep.ticksToLive! > 20) {
+        if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
           transfer = _.reduce(_.filter(requests, (r: TransferRequest) => r.isValid() && !r.beeProcess)
             , (prev: TransferRequest, curr) => {
@@ -91,7 +91,7 @@ export class ManagerMaster extends Master {
     _.forEach(this.activeBees, bee => {
       if (bee.pos.roomName !== this.cell.pos.roomName)
         bee.state = beeStates.chill;
-      if (bee.creep.ticksToLive && bee.creep.ticksToLive < 10)
+      if (bee.ticksToLive < 10)
         bee.state = beeStates.fflush;
 
       let transfer = bee.target && this.cell.requests[bee.target];

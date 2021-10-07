@@ -53,7 +53,6 @@ export class ResourceCell extends Cell {
       this.operational = false;
 
     if (this.operational) {
-      this.parentCell.shouldRecalc = true;
       if (this.container)
         this.pos = this.container.pos;
       else
@@ -64,7 +63,7 @@ export class ResourceCell extends Cell {
 
     if (this.hive.cells.dev)
       this.hive.cells.dev.shouldRecalc = true;
-    this.hive.cells.excavation.shouldRecalc = true;
+    this.parentCell.shouldRecalc = true;
   }
 
   update() {
@@ -73,8 +72,10 @@ export class ResourceCell extends Cell {
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
 
-    if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration)
+    if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
+      this.parentCell.shouldRecalc = true;
       this.operational = false;
+    }
   }
 
   run() {

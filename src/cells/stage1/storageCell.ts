@@ -19,11 +19,11 @@ export class StorageCell extends Cell {
   master: ManagerMaster;
   desiredBalance: { [key in ResourceConstant]?: number } = {
     [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
-    "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // upgrade
-    "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // repair
-    "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // heal
-    "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // rangedAttack
-    "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE, // move
+    "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // upgrade
+    "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // repair
+    "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // heal
+    "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // rangedAttack
+    "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // move
   }
 
   requests: { [id: string]: TransferRequest } = {};
@@ -181,7 +181,7 @@ export class StorageCell extends Cell {
       for (let resourceConstant in this.desiredBalance) {
         let resource = <ResourceConstant>resourceConstant;
         let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
-        if (balance < 0 && this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9) === "short")
+        if (balance < 0 && this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9))
           return;
       }
 
@@ -223,7 +223,11 @@ export class StorageCell extends Cell {
     if (!hives.length) {
       if (res === RESOURCE_ENERGY)
         return 0;
-      return Apiary.broker.buyIn(this.terminal, res, -amount, hurry);
+      let ans = Apiary.broker.buyIn(this.terminal, res, amount, hurry);
+
+      if (ans === "short")
+        return amount;
+      return 0;
     }
 
     let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);

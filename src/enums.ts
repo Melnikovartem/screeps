@@ -40,6 +40,7 @@ export enum prefix {
   boost = "boost_",
   def = "def_",
   puppet = "pup_",
+  annex = "annex_",
 
   //cells
   defenseCell = "DefenseCell_",

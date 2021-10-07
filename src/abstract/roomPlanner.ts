@@ -772,10 +772,14 @@ export class RoomPlanner {
 
   }
 
-  resetPlanner(roomName: string) {
-    if (!this.activePlanning[roomName])
-      return;
+  resetPlanner(roomName: string, anchor: RoomPosition) {
     Memory.cache.roomPlanner[roomName] = {};
+    this.currentToActive(roomName, anchor);
+    this.saveActive(roomName);
+  }
+
+  currentToActive(roomName: string, anchor: RoomPosition) {
+    this.initPlanning(roomName, anchor);
     _.forEach((<(Structure | ConstructionSite)[]>Game.rooms[roomName].find(FIND_STRUCTURES))
       .concat(Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES)),
       s => {
@@ -785,7 +789,7 @@ export class RoomPlanner {
           return;
         if (s.pos.getEnteranceToRoom())
           return;
-        this.addToCache(s.pos, s.pos.roomName, <BuildableStructureConstant>s.structureType);
+        this.addToPlan(s.pos, s.pos.roomName, <BuildableStructureConstant>s.structureType);
       });
   }
 

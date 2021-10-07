@@ -142,7 +142,7 @@ export class DefenseCell extends Cell {
           for (const roomDefName in Apiary.defenseSwarms) {
             let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
             if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5).length > 0)
+              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5 && bee.ticksToLive).length > 0)
               freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
           }
           let ans: number | string | undefined;

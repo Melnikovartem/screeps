@@ -63,10 +63,7 @@ export class DupletMaster extends SwarmMaster {
 
     let damageWillBeMax = 0;
     for (let i = 0; i < this.duplets.length; ++i) {
-      let ticks = this.duplets[i][0].creep.ticksToLive;
-      if (!ticks)
-        ticks = CREEP_LIFE_TIME;
-      damageWillBeMax += ticks * 600;
+      damageWillBeMax += this.duplets[i][0].ticksToLive * 600;
     }
 
     if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {

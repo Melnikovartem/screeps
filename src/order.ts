@@ -108,8 +108,9 @@ export class Order {
 
   fixedName(name: string) {
     if (this.ref !== name && this.pos.roomName in Game.rooms) {
-      this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
-      this.delete();
+      if (!(name in Game.flags))
+        this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
+      this.delete(true);
       return false;
     }
     return true;
@@ -165,6 +166,7 @@ export class Order {
               this.delete(true);
               break;
             }
+
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
               if (this.hive.cells.observe)
                 Apiary.requestSight(this.pos.roomName)
@@ -187,6 +189,9 @@ export class Order {
               this.master.delete();
               this.master = undefined;
             }
+
+            if (!this.fixedName(prefix.annex + this.pos.roomName))
+              break;
 
             if (!this.master) {
               let [x, y] = this.pos.getRoomCoorinates();
@@ -269,7 +274,7 @@ export class Order {
         this.delete();
         break;
       case COLOR_WHITE:
-        if (this.flag.secondaryColor !== COLOR_PURPLE)
+        if (this.flag.secondaryColor !== COLOR_PURPLE && this.flag.secondaryColor !== COLOR_RED)
           _.forEach(Game.flags, f => {
             if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
               Apiary.orders[f.name].delete();
@@ -299,11 +304,25 @@ export class Order {
               this.delete();
             break;
           case COLOR_RED:
-            if (Game.time % 3 === 0 && Apiary.useBucket) {
-              let contr = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
-              if (contr && (contr.my || contr.reservation && contr.reservation.username === Apiary.username))
-                Apiary.planner.resetPlanner(this.pos.roomName);
-              Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+            switch (this.ref) {
+              case "all":
+                Apiary.planner.currentToActive(this.pos.roomName, this.hive.getPos("center"));
+                break;
+              case "add":
+                Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+                Apiary.planner.addToPlan(this.pos, this.pos.roomName, undefined, true);
+                _.forEach(this.pos.lookFor(LOOK_STRUCTURES), s => {
+                  if (s.structureType in CONTROLLER_STRUCTURES)
+                    Apiary.planner.addToPlan(this.pos, this.pos.roomName, <BuildableStructureConstant>s.structureType, true);
+                });
+                _.forEach(this.pos.lookFor(LOOK_CONSTRUCTION_SITES), s => {
+                  if (s.structureType in CONTROLLER_STRUCTURES)
+                    Apiary.planner.addToPlan(this.pos, this.pos.roomName, s.structureType, true);
+                });
+                break;
+              default:
+                Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+                Apiary.planner.addToPlan(this.pos, this.pos.roomName, null, true);
             }
             this.acted = false;
             break;

@@ -15,7 +15,7 @@ export class Bee {
   hits: number;
   hitsMax: number;
   reusePath: number = 3;
-  lifeTime: number = CREEP_LIFE_TIME;
+  ticksToLive: number = CREEP_LIFE_TIME;
 
   // target caching and states to have some tools to work with in masters
   state: beeStates;
@@ -38,8 +38,7 @@ export class Bee {
     this.state = creep.memory.state;
     this.target = creep.memory.target;
 
-    if (creep.getBodyParts(CLAIM))
-      this.lifeTime = CREEP_CLAIM_LIFE_TIME;
+    this.ticksToLive = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
@@ -58,6 +57,9 @@ export class Bee {
 
     this.targetPosition = undefined;
     this.actionPosition = undefined;
+
+    if (this.creep.ticksToLive)
+      this.ticksToLive = this.creep.ticksToLive;
 
     if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
       this.master = Apiary.masters[this.creep.memory.refMaster];
