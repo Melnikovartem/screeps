@@ -312,7 +312,7 @@ export class Visuals {
     cell = hive.cells.storage;
     if (cell)
       ans.push(["storage",
-        !Object.keys(cell.requests).length ? "" : ` ${Object.keys(cell.requests).length}`,
+        !Object.keys(cell.requests).length ? "" : ` ${_.filter(cell.requests, r => r.priority).length}/${Object.keys(cell.requests).length}`,
         this.getBeesAmount(cell.master)]);
     cell = hive.cells.dev;
     if (cell)
@@ -380,24 +380,30 @@ export class Visuals {
   statsLab(hive: Hive) {
     if (!hive.cells.lab)
       return;
-    let labRequest = hive.cells.lab.currentProduction;
+    let lab = hive.cells.lab;
+    let labRequest = lab.currentProduction;
     if (labRequest) {
       this.updateAnchor(this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.anchor, undefined));
     }
     if (Object.keys(hive.cells.lab.boostRequests).length) {
-      let boosts: { [id: string]: { [id: string]: number } } = {};
-      _.forEach(hive.cells.lab.boostRequests, rr => _.forEach(rr, r => {
+      let boosts: { [id: string]: { [id: string]: { num: number, lab: StructureLab | undefined } } } = {};
+      _.forEach(lab.boostRequests, rr => _.forEach(rr, r => {
         if (!r.amount || !r.res)
           return;
         if (!boosts[r.type])
           boosts[r.type] = {};
         if (!boosts[r.type][r.res])
-          boosts[r.type][r.res] = 0
-        boosts[r.type][r.res] += r.amount;
+          boosts[r.type][r.res] = { num: 0, lab: undefined }
+        boosts[r.type][r.res].num += r.amount;
+        if (lab.boostLabs[r.res])
+          boosts[r.type][r.res].lab = lab.laboratories[lab.boostLabs[r.res]!];
       }));
-      let ans = [["boosts", "🧬", "🧪"]];
+      let ans = [["boosts", "🧬", " 🧪", "🥼"]];
       for (let action in boosts)
-        ans.push([action].concat(_.map(boosts[action], (num, res) => `${res}: ${num}`)));
+        for (let res in boosts[action]) {
+          let b = boosts[action][res];
+          ans.push([action, res, " " + b.num, b.lab ? b.lab.id.slice(b.lab.id.length - 5) : "not found"]);
+        }
       this.updateAnchor(this.table(ans, this.anchor, undefined));
     }
   }

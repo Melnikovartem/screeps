@@ -24,19 +24,33 @@ export class ManagerMaster extends Master {
 
     this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell) - b.pos.getRangeTo(this.cell));
 
+    let refilling = 0;
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
-      if (transfer)
+      if (transfer) {
         transfer.preprocess(bee);
+        if (!transfer.priority)
+          ++refilling;
+      }
     });
 
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
+      let requests: TransferRequest[] | { [id: string]: TransferRequest } = this.cell.requests;
+      if (transfer && !transfer.priority && refilling > 1) {
+        let filtered_requests = _.filter(requests, r => r.priority);
+        if (filtered_requests.length) {
+          requests = filtered_requests;
+          --refilling;
+          transfer = undefined;
+        }
+      }
+
       if (!transfer || !transfer.isValid()) {
         delete bee.target;
-        if (Object.keys(this.cell.requests).length && bee.creep.ticksToLive! > 20) {
+        if (Object.keys(requests).length && bee.creep.ticksToLive! > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          transfer = _.reduce(_.filter(this.cell.requests, r => r.isValid() && !r.beeProcess)
+          transfer = _.reduce(_.filter(requests, (r: TransferRequest) => r.isValid() && !r.beeProcess)
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {

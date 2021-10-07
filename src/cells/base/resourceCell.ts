@@ -59,7 +59,7 @@ export class ResourceCell extends Cell {
       else
         this.pos = this.resource.pos;
       let storagePos = this.hive.cells.storage ? this.hive.cells.storage.pos : this.hive.getPos("center");
-      this.roadTime = this.pos.getTimeForPath(storagePos);
+      this.roadTime = this.pos.getTimeForPath(storagePos) + this.pos.getTimeForPath(this.hive.getPos("hive"));
     }
 
     if (this.hive.cells.dev)

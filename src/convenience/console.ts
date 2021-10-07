@@ -120,9 +120,9 @@ export class CustomConsole {
     let ans;
     if (amount > 0)
       if (mode === "empty")
-        ans = cell.requestToStorage([cell.terminal], 2, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
+        ans = cell.requestToStorage([cell.terminal], 1, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
       else
-        ans = cell.requestFromStorage([cell.terminal], 2, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
+        ans = cell.requestFromStorage([cell.terminal], 1, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
 
     return `${mode.toUpperCase()} TERMINAL @ ${hive.print} \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
   }

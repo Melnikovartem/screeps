@@ -223,6 +223,12 @@ export class LaboratoryCell extends Cell {
               lab = l;
             return lab;
           });
+        if (!lab)
+          _.some(this.laboratories, l => {
+            if (!_.sum(this.boostRequests, br => br.filter(r => r.res == this.labsStates[l.id]).length))
+              lab = l;
+            return lab;
+          });
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
           this.labsStates[lab.id] = r.res!;
@@ -286,9 +292,10 @@ export class LaboratoryCell extends Cell {
             break;
           default: // boosting lab : state == resource
             if (l.mineralType && l.mineralType !== state)
-              storageCell.requestToStorage([l], 1, state);
-            if (!storageCell.requests[id] && l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
+              storageCell.requestToStorage([l], 1, l.mineralType);
+            else if (!storageCell.requests[id] && l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
               storageCell.requestFromStorage([l], 1, state);
+
             if (!Object.keys(this.boostRequests).length && this.currentProduction) {
               this.labsStates[id] = "idle";
               delete this.boostLabs[state];

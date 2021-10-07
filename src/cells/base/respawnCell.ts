@@ -30,7 +30,7 @@ export class RespawnCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (storageCell)
-      storageCell!.requestFromStorage(this.getTargets(), 1);
+      storageCell!.requestFromStorage(this.getTargets(), 0);
   };
 
   getTargets(freeStore = 0) {
