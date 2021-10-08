@@ -61,13 +61,13 @@ export class BootstrapMaster extends Master {
         let miningPower = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 150), setups.miner.energy.patternLimit);
         this.targetBeeCount += Math.min(energyPerTick, miningPower * 2)
           / (this.patternCount * 50 / cycleWithoutEnergy);
-        energyPerTick -= miningPower * 2;
+        energyPerTick = Math.max(energyPerTick - miningPower * 2, 0);
         --openPos;
         if (!openPos)
           return;
       }
 
-      let maxCycleByEnergy = Math.max(energyPerTick, 0) / (2 * this.patternCount * openPos * 25 / (cycleWithoutEnergy + 25))
+      let maxCycleByEnergy = energyPerTick / (2 * this.patternCount * openPos * 25 / (cycleWithoutEnergy + 25))
         * (cell.pos.roomName === this.hive.pos.roomName ? 1.5 : 0.5); // much higher chance to mine in same room then in faraway
       // amount of positions * bees can 1 position support
       let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / (25 + roadTime * 0.5)));
@@ -75,6 +75,8 @@ export class BootstrapMaster extends Master {
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
+    if (this.hive.phase > 0)
+      this.targetBeeCount = Math.min(this.targetBeeCount, 2);
     /*
       if (this.hive.bassboost)
         this.targetBeeCount = Math.min(this.targetBeeCount, 6);
@@ -99,6 +101,9 @@ export class BootstrapMaster extends Master {
 
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
+
+    if (this.hive.cells.storage)
+      this.hive.cells.storage.master.targetBeeCount = 1;
 
     if (this.checkBeesWithRecalc()) {
       this.wish({
@@ -306,6 +311,11 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
+          if (!target && this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.state !== hiveStates.battle) {
+            target = this.hive.room.storage;
+            workType = "refill";
+          }
+
           if (!target) {
             target = this.hive.findProject(bee);
             if (target)
@@ -313,11 +323,6 @@ export class BootstrapMaster extends Master {
                 workType = "repair";
               else
                 workType = "build";
-          }
-
-          if (!target && this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.state !== hiveStates.battle) {
-            target = this.hive.room.storage;
-            workType = "refill";
           }
 
           if (!target) {

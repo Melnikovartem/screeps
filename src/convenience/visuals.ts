@@ -326,7 +326,7 @@ export class Visuals {
     cell = hive.cells.dev;
     if (cell)
       ans.push(["develop", "", this.getBeesAmount(cell.master)]);
-    else {
+    if (hive.phase > 0) {
       cell = hive.cells.excavation;
       ans.push(["excav", !cell.quitefullCells.length ? "" :
         ` ${cell.quitefullCells.length}/${_.filter(cell.resourceCells, c => c.operational && !c.link).length}`,

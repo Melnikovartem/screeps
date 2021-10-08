@@ -134,37 +134,38 @@ export class DefenseCell extends Cell {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
       if (roomInfo.dangerlvlmax > 1) {
         let enemy = roomInfo.enemies[0].object;
-        if (this.notDef(roomName)) {
-          let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
-          if (!pos)
-            pos = enemy.pos;
-          let freeSwarms: Order[] = [];
-          for (const roomDefName in Apiary.defenseSwarms) {
-            let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
-            if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-              && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5 && bee.ticksToLive).length > 0)
-              freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
-          }
-          let ans: number | string | undefined;
-          if (freeSwarms.length) {
-            let swarm = freeSwarms.reduce((prev, curr) =>
-              prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
-            if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5)
-              ans = this.setDefFlag(enemy.pos);
-            if (ans === OK) {
-              delete Apiary.defenseSwarms[swarm.pos.roomName];
-              return;
-            }
-          }
+        if (!this.notDef(roomName))
+          return;
 
-          if (ans !== OK) {
-            if (roomInfo.dangerlvlmax < 6)
-              this.setDefFlag(enemy.pos);
-            else if (roomInfo.dangerlvlmax < 9)
-              this.setDefFlag(enemy.pos, "power");
-            else
-              this.setDefFlag(enemy.pos, "surrender");
+        let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
+        if (!pos)
+          pos = enemy.pos;
+        let freeSwarms: Order[] = [];
+        for (const roomDefName in Apiary.defenseSwarms) {
+          let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
+          if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
+            && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5 && bee.ticksToLive).length > 0)
+            freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
+        }
+        let ans: number | string | undefined;
+        if (freeSwarms.length) {
+          let swarm = freeSwarms.reduce((prev, curr) =>
+            prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
+          if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5)
+            ans = this.setDefFlag(enemy.pos, swarm.flag);
+          if (ans === OK) {
+            delete Apiary.defenseSwarms[swarm.pos.roomName];
+            return;
           }
+        }
+
+        if (ans !== OK) {
+          if (roomInfo.dangerlvlmax < 6)
+            this.setDefFlag(enemy.pos);
+          else if (roomInfo.dangerlvlmax < 9)
+            this.setDefFlag(enemy.pos, "power");
+          else
+            this.setDefFlag(enemy.pos, "surrender");
         }
       }
     }

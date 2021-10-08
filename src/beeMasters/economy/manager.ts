@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { beeStates } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
 
@@ -35,9 +35,12 @@ export class ManagerMaster extends Master {
     });
 
     let requests: TransferRequest[] | { [id: string]: TransferRequest } = this.cell.requests;
+    if (this.hive.state === hiveStates.lowenergy)
+      requests = _.filter(requests, r => r.resource !== RESOURCE_ENERGY || r.priority <= 1 || r.to.id === this.cell.storage.id);
+
     let non_refill_needed = refilling > 1;
     if (non_refill_needed) {
-      let non_refill_requests = _.filter(requests, r => r.priority);
+      let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority);
       if (non_refill_requests.length) {
         this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell.pos) - b.pos.getRangeTo(this.cell.pos));
         requests = non_refill_requests;
@@ -87,6 +90,8 @@ export class ManagerMaster extends Master {
       let lvl = this.hive.room.controller!.level;
       // some cool function i came up with. It works utill lvl 8 though
       order.setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
+      if (this.hive.state === hiveStates.lowenergy)
+        order.setup.patternLimit = Math.ceil(order.setup.patternLimit / 4);
 
       this.wish(order);
     }

@@ -30,7 +30,7 @@ export class HaulerMaster extends Master {
     this.accumRoadTime = 0; // roadTime * minePotential
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
-        if (cell.operational && cell.roadTime !== Infinity && cell.container && !cell.link && (!this.hive.cells.dev || cell.resourceType !== RESOURCE_ENERGY)) {
+        if (cell.operational && cell.roadTime !== Infinity && cell.container && !cell.link) {
           let coef = 10; // mineral production
           if (cell.resourceType !== RESOURCE_ENERGY) {
             let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;
@@ -44,8 +44,11 @@ export class HaulerMaster extends Master {
 
   recalculateTargetBee() {
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
-    this.cell.fullContainer = Math.min(CONTAINER_CAPACITY * 0.9, body.filter(b => b === CARRY).length * CARRY_CAPACITY)
-    this.targetBeeCount = Math.ceil(this.accumRoadTime / this.cell.fullContainer);
+    this.cell.fullContainer = Math.min(CONTAINER_CAPACITY * 0.9, body.filter(b => b === CARRY).length * CARRY_CAPACITY);
+    let rounding = Math.ceil;
+    if (this.hive.state === hiveStates.lowenergy)
+      rounding = x => Math.max(1, Math.floor(x));
+    this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
   }
 
   checkBeesWithRecalc() {

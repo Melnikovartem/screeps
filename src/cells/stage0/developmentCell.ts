@@ -27,7 +27,7 @@ export class DevelopmentCell extends Cell {
     });
 
     _.forEach(this.hive.room.find(FIND_STRUCTURES), s => {
-      if (s.structureType === STRUCTURE_LINK || s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
+      if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
         this.handAddedResources.push(s.pos);
     });
   }
@@ -39,7 +39,7 @@ export class DevelopmentCell extends Cell {
     });
 
     _.forEach(room.find(FIND_STRUCTURES), s => {
-      if (s.structureType === STRUCTURE_LINK || s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
+      if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
         this.handAddedResources.push(s.pos);
     });
   }

@@ -1,6 +1,6 @@
 import { Cell } from "../_Cell";
 
-import { prefix } from "../../enums";
+import { prefix, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -260,6 +260,8 @@ export class LaboratoryCell extends Cell {
           return ERR_NOT_IN_RANGE;
         }
       }
+      if (this.hive.state === hiveStates.lowenergy && lab.store.getUsedCapacity(RESOURCE_ENERGY) < r.amount * LAB_BOOST_ENERGY)
+        continue; // help is not coming
       bee.goRest(this.pos);
       return ERR_TIRED;
     }
