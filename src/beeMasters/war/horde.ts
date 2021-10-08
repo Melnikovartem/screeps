@@ -14,6 +14,7 @@ export class HordeMaster extends SwarmMaster {
   movePriority = <2>2;
   boost = true;
   boostMove = true;
+  notify = false;
 
   update() {
     super.update();

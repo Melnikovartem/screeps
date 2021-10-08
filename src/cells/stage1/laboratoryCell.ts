@@ -370,15 +370,15 @@ export class LaboratoryCell extends Cell {
             this.updateProductionLabs();
           }
         }
-
-        let priority = <2 | 5>5;
-        storageCell.requestFromStorage(_.filter(this.laboratories,
-          l => {
-            if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
-              priority = 2;
-            return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-          }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
       }
+
+      let priority = <2 | 5>5;
+      storageCell.requestFromStorage(_.filter(this.laboratories,
+        l => {
+          if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
+            priority = 2;
+          return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+        }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
     }
   }
 

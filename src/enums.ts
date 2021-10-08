@@ -60,3 +60,9 @@ export enum prefix {
   master = "master",
   swarm = "Swarm_",
 }
+
+export enum signText {
+  my = "🐝✨❤️",
+  annex = "🐝⛏️🔥",
+  other = "🐝☠️🤖",
+}

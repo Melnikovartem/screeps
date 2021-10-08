@@ -49,10 +49,10 @@ export class TransferRequest {
   isValid() {
     if (this.amount > 0 && !this.fromAmount && !this.inProcess)
       return false;
-    if (!this.toAmount)
-      return false
     if (this.amount <= 0)
       return false;
+    if (!this.toAmount)
+      return false
     return true;
   }
 

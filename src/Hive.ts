@@ -340,7 +340,7 @@ export class Hive {
       if (this.shouldRecalc > 2) {
         this.markResources();
         _.forEach(this.rooms, r => {
-          if (!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length)
+          if ((!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length) && !Apiary.planner.activePlanning[r.name])
             Apiary.planner.resetPlanner(r.name, this.getPos("center"));
         });
       }

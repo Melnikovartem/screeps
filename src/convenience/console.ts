@@ -1,3 +1,5 @@
+import { signText } from "../enums"
+
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { makeId } from "../abstract/utils";
 
@@ -95,6 +97,13 @@ export class CustomConsole {
     return this.showMap(hiveName, keep, (x, y, vis) => {
       vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max, 3) });
     });
+  }
+
+  showEnergy(hiveName: string = this.lastActionRoomName, keep?: boolean, x: number = 1, y: number = 1) {
+    Apiary.visuals.changeAnchor(x, y, hiveName);
+    Apiary.visuals.visualizeEnergy(hiveName);
+    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
+    return `OK @ ${this.formatRoom(hiveName)}`;
   }
 
   // some hand used functions
@@ -331,7 +340,7 @@ export class CustomConsole {
     return "OK";
   }
 
-  sign(textMy = "🐝✨❤️", textAnnex = "🐝⛏️🔥", textOther = "🐝☠️🤖") {
+  sign(textMy = signText.my, textAnnex = signText.annex, textOther = signText.other) {
     let sgn = [];
     for (let name in Game.creeps) {
       let creep = Game.creeps[name];

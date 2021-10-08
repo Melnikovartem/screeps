@@ -42,10 +42,6 @@ export class Broker {
     if (this.lastUpdated === Game.time)
       return;
 
-    for (let id in Game.market.orders)
-      if (!Game.market.orders[id].amount)
-        Game.market.cancelOrder(id);
-
     // on shard2 during 10.2021 it took about 9.5CPU to calc all this
     // let cpu = Game.cpu.getUsed();
     this.lastUpdated = Game.time;
@@ -123,6 +119,11 @@ export class Broker {
     console .log("order update\ncpu used: " + (Game.cpu.getUsed() - cpu));
     console .log(`transfer energy buyLimit ${energyToBuy} sellLimit ${energyToSell}`);
     */
+
+    if (Game.time % 10 === 0)
+      for (let id in Game.market.orders)
+        if (!Game.market.orders[id].amount)
+          Game.market.cancelOrder(id);
   }
 
   buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false): "no money" | "short" | "long" {
@@ -139,14 +140,17 @@ export class Broker {
       priceToBuyIn *= 1.5654;
 
     if (hurry || priceToBuyIn <= price) {
-      let ans = this.buyShort(terminal, res, amount, creditsToUse);
+      let ans: number = ERR_NOT_ENOUGH_RESOURCES;
+      if (this.bestPriceBuy[res] && Math.floor(creditsToUse / this.bestPriceBuy[res]!))
+        ans = this.buyShort(terminal, res, amount, creditsToUse);
       if (ans === OK)
         return "short";
     }
 
     let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res
       && order.type === ORDER_BUY && order.price > price * 0.95);
-    if (!orders.length)
+
+    if (!orders.length && Math.floor(creditsToUse / (price * 1.05)) > 0)
       this.buyLong(terminal, res, amount, creditsToUse);
     return "long";
   }

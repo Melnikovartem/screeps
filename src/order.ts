@@ -309,7 +309,8 @@ export class Order {
                 Apiary.planner.currentToActive(this.pos.roomName, this.hive.getPos("center"));
                 break;
               case "add":
-                Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+                if (!Apiary.planner.activePlanning[this.pos.roomName])
+                  Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
                 Apiary.planner.addToPlan(this.pos, this.pos.roomName, undefined, true);
                 _.forEach(this.pos.lookFor(LOOK_STRUCTURES), s => {
                   if (s.structureType in CONTROLLER_STRUCTURES)
@@ -321,8 +322,12 @@ export class Order {
                 });
                 break;
               default:
-                Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
-                Apiary.planner.addToPlan(this.pos, this.pos.roomName, null, true);
+                if (!Apiary.planner.activePlanning[this.pos.roomName])
+                  Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+                if (this.ref in CONTROLLER_STRUCTURES)
+                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, <BuildableStructureConstant>this.ref, true);
+                else
+                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, null, true);
             }
             this.acted = false;
             break;

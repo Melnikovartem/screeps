@@ -52,7 +52,7 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 
-function getPathArgs(opts: FindPathOpts = {}, costCallbackExtra = (_: string, c: CostMatrix) => c): FindPathOpts {
+function getPathArgs(opts: FindPathOpts = {}): FindPathOpts {
   return _.defaults(opts, {
     plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: 1,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
@@ -67,7 +67,7 @@ function getPathArgs(opts: FindPathOpts = {}, costCallbackExtra = (_: string, c:
             else if (plan[x][y].s)
               costMatrix.set(+x, +y, 255);
           }
-        return costCallbackExtra(roomName, costMatrix);
+        return costMatrix;
       }
     }
   });
@@ -598,21 +598,25 @@ export class RoomPlanner {
 
           _.forEach(addedWalls, p => {
             let pos = new RoomPosition(p.x, p.y, anchor.roomName);
-            let path = anchor.findPathTo(pos, getPathArgs({}, (roomName: string, costMatrix: CostMatrix) => {
-              let plan = Apiary.planner.activePlanning[roomName].plan;
-              for (let x in plan)
-                for (let y in plan[x]) {
-                  if (plan[x][y].s === STRUCTURE_WALL)
-                    costMatrix.set(+x, +y, 255);
-                  else if (plan[x][y].r)
-                    costMatrix.set(+x, +y, 255);
-                }
-              return costMatrix;
+            let path = anchor.findPathTo(pos, getPathArgs({
+              costCallback: (roomName: string, costMatrix: CostMatrix) => {
+                let plan = this.activePlanning[roomName].plan;
+                for (let x in plan)
+                  for (let y in plan[x]) {
+                    if (plan[x][y].s === STRUCTURE_WALL)
+                      costMatrix.set(+x, +y, 255);
+                    else if (plan[x][y].r)
+                      costMatrix.set(+x, +y, 255);
+                  }
+                return costMatrix;
+              }
             }));
-            while (path.length > 1)
-              path = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName)
-                .findPathTo(pos, getPathArgs({}, (roomName: string, costMatrix: CostMatrix) => {
-                  let plan = Apiary.planner.activePlanning[roomName].plan;
+
+            let newPos = path.length && new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
+            while (newPos && (newPos.x !== pos.x || newPos.y !== pos.y)) {
+              path = pos.findPathTo(pos, getPathArgs({
+                costCallback: (roomName: string, costMatrix: CostMatrix) => {
+                  let plan = this.activePlanning[roomName].plan;
                   for (let x in plan)
                     for (let y in plan[x]) {
                       if (plan[x][y].s === STRUCTURE_WALL)
@@ -621,10 +625,20 @@ export class RoomPlanner {
                         costMatrix.set(+x, +y, 255);
                     }
                   return costMatrix;
-                }));
+                }
+              }));
+              if (path.length > 0)
+                newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
+              else
+                break;
+            }
 
-            if (path.length && (p.x == path[path.length - 1].x || p.y !== path[path.length - 1].y))
-              this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
+            let plan = this.activePlanning[anchor.roomName].plan;
+            if (newPos && (p.x !== newPos.x || p.y !== newPos.y))
+              if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
+                this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
+              else if (plan[p.x] && plan[p.x][p.y])
+                this.activePlanning[anchor.roomName].plan[p.x][p.y].r = false;
           });
           return OK;
         }
@@ -776,6 +790,7 @@ export class RoomPlanner {
     Memory.cache.roomPlanner[roomName] = {};
     this.currentToActive(roomName, anchor);
     this.saveActive(roomName);
+    delete this.activePlanning[roomName];
   }
 
   currentToActive(roomName: string, anchor: RoomPosition) {

@@ -44,7 +44,6 @@ export class BuilderMaster extends Master {
 
   update() {
     super.update();
-    this.recalculateTargetBee();
     let emergency = this.hive.state >= hiveStates.nukealert;
 
     if (!this.boost && emergency)
@@ -94,7 +93,7 @@ export class BuilderMaster extends Master {
             let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
               target = Game.getObjectById(bee.target);
-              if (target instanceof Structure && target.hits >= Apiary.planner.getCase(target).heal)
+              if (target instanceof Structure && (target.hits >= Apiary.planner.getCase(target).heal || target.hits === target.hitsMax))
                 target = undefined;
               if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
                 this.hive.shouldRecalc = 2;

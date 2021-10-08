@@ -1,4 +1,4 @@
-import { hiveStates } from "../enums";
+import { hiveStates, prefix } from "../enums";
 import { makeId } from "../abstract/utils";
 
 import { profile } from "../profiler/decorator";
@@ -41,16 +41,27 @@ export class Visuals {
   }
 
   update() {
+    let allglobal = true;
     for (const name in this.caching)
       if (name !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);
         vis.import(this.caching[name].data);
+        if (this.caching[name].lastRecalc > Game.time)
+          allglobal = false;
+      }
+    if (allglobal) {
+      let vis = new RoomVisual();
+      vis.import(this.caching[GLOBAL_VISUALS].data);
+      if (this.caching[GLOBAL_VISUALS_HEAVY])
+        vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
+    } else
+      for (const name in this.caching)
         if (this.caching[name].lastRecalc <= Game.time) {
+          let vis = new RoomVisual(name);
           vis.import(this.caching[GLOBAL_VISUALS].data);
           if (this.caching[GLOBAL_VISUALS_HEAVY])
             vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
-      }
   }
 
   create() {
@@ -65,8 +76,6 @@ export class Visuals {
           this.changeAnchor(1, 1, name);
           this.statsHive(hive);
           this.statsLab(hive);
-          this.changeAnchor(0.5, 48.5);
-          this.visualizeEnergy(name);
 
           _.forEach(hive.annexNames, annex => {
             if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
@@ -219,7 +228,7 @@ export class Visuals {
     }
   }
 
-  visualizeEnergy(hiveName: string) {
+  visualizeEnergy(hiveName: string, align: "center" | "right" | "left" = "left", snap: "bottom" | "top" = "top") {
     if (!Apiary.logger)
       return;
     let report = Apiary.logger.reportEnergy(hiveName);
@@ -245,21 +254,21 @@ export class Visuals {
     ans.splice(2, 0, ["  💎🙌", "", prep(overAll)]);
 
     this.anchor.y = this.table(ans, this.anchor,
-      undefined, undefined, undefined, "left", "bottom").y;
+      undefined, undefined, undefined, align, snap).y;
     return;
   }
 
   statsOrders(hiveName: string): string[][] {
-    let orders = _.filter(Apiary.orders, o => o.hive.roomName === hiveName && o.flag.color !== COLOR_PURPLE && o.master);
+    let orders = _.filter(Apiary.orders, o => o.hive.roomName === hiveName && !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
     let length = orders.length;
-    const MAX_STATS = 4;
+    const MAX_STATS = 6;
     let ans: string[][] = [];
     if (orders.length > MAX_STATS)
-      orders = orders.filter(o => Apiary.intel.getInfo(o.pos.roomName).dangerlvlmax > 0);
+      orders = orders.filter(o => !o.ref.includes(prefix.def) && !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
     if (orders.length > MAX_STATS)
-      orders = orders.filter(o => o.master && (o.master.activeBees.length || o.master.waitingForBees));
+      orders = orders.filter(o => Apiary.intel.getInfo(o.pos.roomName, 25).dangerlvlmax > 0);
     if (orders.length > MAX_STATS)
-      orders = orders.filter(o => o.master && o.master.activeBees.length);
+      orders = orders.filter(o => o.master!.activeBees.length || o.master!.waitingForBees);
     if (orders.length > MAX_STATS)
       orders = orders.slice(0, MAX_STATS);
     _.forEach(orders, order => {

@@ -71,7 +71,7 @@ export class _Apiary {
   update() {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
 
-    if (Game.time % 10 === 0 || this.broker.lastUpdated < 0)
+    if (Game.time % 25 === 0 || this.broker.lastUpdated < 0)
       this.broker.update();
 
     Order.checkFlags();
