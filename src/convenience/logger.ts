@@ -84,13 +84,10 @@ export class Logger {
     if (!Memory.log.hives[hive.roomName])
       return ERR_NOT_FOUND;
     if (Game.time % LOGGING_CYCLE * 10 === 0) {
-      let orderMap: { [id: string]: { amount: number, priority: number } } = {};
+      let orderMap: { [id: string]: number } = {};
 
       for (const ref in hive.spawOrders) {
-        orderMap[ref] = {
-          amount: hive.spawOrders[ref].amount,
-          priority: hive.spawOrders[ref].priority,
-        };
+        orderMap[ref] = hive.spawOrders[ref].priority;
       }
 
       Memory.log.hives[hive.roomName].loggedStates[Game.time] = {

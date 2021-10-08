@@ -3,7 +3,6 @@ import { SwarmMaster } from "../_SwarmMaster";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class ClaimerMaster extends SwarmMaster {
@@ -11,14 +10,10 @@ export class ClaimerMaster extends SwarmMaster {
     super.update();
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: setups.claimer,
-        amount: 1,
         priority: 6,
-      };
-
-      this.wish(order);
-      ++this.spawned;
+      });
     }
   }
 

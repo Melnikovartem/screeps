@@ -81,7 +81,6 @@ export abstract class SquadMaster extends SwarmMaster {
         if (!this.formationBees[i])
           this.wish({
             setup: this.formation[i][1],
-            amount: 1,
             priority: this.priority,
           }, this.ref + "_" + i);
       }

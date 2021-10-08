@@ -11,7 +11,7 @@ import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
 
-import { safeWrap } from "./abstract/utils";
+import { safeWrap, makeId } from "./abstract/utils";
 import { hiveStates, prefix } from "./enums";
 import { WALL_HEALTH } from "abstract/roomPlanner";
 
@@ -19,10 +19,10 @@ import { profile } from "./profiler/decorator";
 import type { CreepSetup } from "./bees/creepSetups";
 
 export interface SpawnOrder {
-  amount: number;
-  setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this creep
-  master?: string;
+  setup: CreepSetup,
+  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, // how urgent is this creep
+  master: string,
+  ref: string,
 }
 
 export interface HivePositions {
@@ -199,8 +199,8 @@ export class Hive {
   markResources() {
     _.forEach(this.rooms, room => {
       _.forEach(room.find(FIND_SOURCES), s => {
-        if (!Game.flags["mine_" + s.id]) {
-          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_YELLOW);
+        if (!s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW).length) {
+          let flag = s.pos.createFlag(prefix.mine + makeId(2) + "_" + s.id.slice(s.id.length - 4), COLOR_YELLOW, COLOR_YELLOW);
           if (typeof flag === "string")
             Game.flags[flag].memory.hive = this.roomName;
         }
@@ -211,8 +211,8 @@ export class Hive {
       _.forEach(room.find(FIND_MINERALS), s => {
         if (room.name !== this.roomName && !s.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()).length)
           return;
-        if (!Game.flags["mine_" + s.id]) {
-          let flag = s.pos.createFlag("mine_" + s.id, COLOR_YELLOW, COLOR_CYAN);
+        if (!s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_YELLOW && f.secondaryColor === COLOR_CYAN).length) {
+          let flag = s.pos.createFlag(prefix.mine + makeId(2) + "_" + s.id.slice(s.id.length - 4), COLOR_YELLOW, COLOR_CYAN);
           if (typeof flag === "string")
             Game.flags[flag].memory.hive = this.roomName;
         }

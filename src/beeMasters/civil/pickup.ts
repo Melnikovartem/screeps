@@ -5,7 +5,6 @@ import { beeStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder } from "../../Hive";
 
 @profile
 export class PickupMaster extends SwarmMaster {
@@ -14,13 +13,10 @@ export class PickupMaster extends SwarmMaster {
   update() {
     super.update();
     if (this.checkBees()) {
-      let order: SpawnOrder = {
+      this.wish({
         setup: setups.pickup,
-        amount: 1,
         priority: 4,
-      };
-
-      this.wish(order);
+      });
     }
   }
 

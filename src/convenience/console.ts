@@ -331,6 +331,28 @@ export class CustomConsole {
     return "OK";
   }
 
+  sign(textMy = "🐝✨❤️", textAnnex = "🐝⛏️🔥", textOther = "🐝☠️🤖") {
+    let sgn = [];
+    for (let name in Game.creeps) {
+      let creep = Game.creeps[name];
+      if (!creep.getBodyParts(CLAIM))
+        continue;
+      let controller = <StructureController | undefined>creep.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_CONTROLLER)[0];
+      if (!controller)
+        continue;
+
+      let text = textOther;
+      if (controller.my)
+        text = textMy;
+      else if (controller.reservation && controller.reservation.username === Apiary.username)
+        text = textAnnex;
+      let ans = creep.signController(controller, text);
+      if (ans === OK)
+        sgn.push(controller.pos.roomName + " " + text)
+    }
+    return `SIGNED ${sgn.length} controllers${sgn.length ? "\n" : ""}` + sgn.join("\n");
+  }
+
   printHives() {
     return _.map(Apiary.hives, o => o.print).join('\n');
   }
@@ -381,7 +403,7 @@ export class CustomConsole {
     return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
-        o => `${o.order.priority} ${o.master}: ${o.order.setup.name} ${o.order.amount}`).join('\n')
+        o => `${o.order.priority} ${o.master}: ${o.order.setup.name}`).join('\n')
       } \n`).join('\n');
   }
 

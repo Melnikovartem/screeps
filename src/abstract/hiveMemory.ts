@@ -11,10 +11,7 @@ export interface HiveLog {
       structuresConst: number
       sumCost: number,
       spawOrders: {
-        [id: string]: {
-          amount: number,
-          priority: number,
-        }
+        [id: string]: number,
       }
     }
   },

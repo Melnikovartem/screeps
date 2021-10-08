@@ -92,7 +92,6 @@ export class HaulerMaster extends Master {
     if (this.checkBeesWithRecalc()) {
       this.wish({
         setup: setups.hauler,
-        amount: this.targetBeeCount - this.beesAmount,
         priority: 6,
       });
     }
@@ -133,7 +132,7 @@ export class HaulerMaster extends Master {
       if (bee.state === beeStates.refill) {
         if (bee.target && this.targetMap[bee.target]) {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
-          if (bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) === OK) {
+          if (target && bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) === OK) {
             this.targetMap[bee.target] = undefined;
             bee.state = beeStates.work;
             let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));

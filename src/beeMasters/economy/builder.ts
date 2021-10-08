@@ -58,10 +58,12 @@ export class BuilderMaster extends Master {
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
       let order = {
         setup: setups.builder,
-        amount: 1,
         priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
       };
-      order.setup.patternLimit = 10;
+      if (emergency) {
+        order.setup = order.setup.copy();
+        order.setup.patternLimit = Infinity;
+      }
       this.wish(order);
     }
   }

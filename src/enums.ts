@@ -41,6 +41,7 @@ export enum prefix {
   def = "def_",
   puppet = "pup_",
   annex = "annex_",
+  mine = "mine_",
 
   //cells
   defenseCell = "DefenseCell_",

@@ -34,19 +34,21 @@ export class ManagerMaster extends Master {
       }
     });
 
+    let requests: TransferRequest[] | { [id: string]: TransferRequest } = this.cell.requests;
+    let non_refill_needed = refilling > 1;
+    if (non_refill_needed) {
+      let non_refill_requests = _.filter(requests, r => r.priority);
+      if (non_refill_requests.length) {
+        this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell.pos) - b.pos.getRangeTo(this.cell.pos));
+        requests = non_refill_requests;
+      } else
+        non_refill_needed = false;
+    }
+
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
-      let requests: TransferRequest[] | { [id: string]: TransferRequest } = this.cell.requests;
-      if (transfer && !transfer.priority && refilling > 1) {
-        let filtered_requests = _.filter(requests, r => r.priority);
-        if (filtered_requests.length) {
-          requests = filtered_requests;
-          --refilling;
-          transfer = undefined;
-        }
-      }
 
-      if (!transfer || !transfer.isValid()) {
+      if (!transfer || !transfer.isValid() || (non_refill_needed && !transfer.priority)) {
         delete bee.target;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
@@ -67,6 +69,10 @@ export class ManagerMaster extends Master {
             });
           if (transfer)
             transfer.preprocess(bee);
+          if (non_refill_needed) {
+            requests = this.cell.requests;
+            non_refill_needed = false;
+          }
         }
       }
     });
@@ -75,7 +81,6 @@ export class ManagerMaster extends Master {
     if (this.checkBees(true) && this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let order = {
         setup: setups.queen,
-        amount: this.targetBeeCount - this.beesAmount,
         priority: <0>0,
       };
 

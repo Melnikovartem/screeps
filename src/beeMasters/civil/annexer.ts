@@ -28,7 +28,6 @@ export class AnnexMaster extends SwarmMaster {
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let order = {
         setup: setups.claimer,
-        amount: 1,
         priority: <6>6,
       };
 
@@ -36,8 +35,10 @@ export class AnnexMaster extends SwarmMaster {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
 
         // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-        if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200))
+        if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200)) {
+          order.setup = order.setup.copy();
           order.setup.patternLimit = 2;
+        }
       }
 
       this.wish(order);

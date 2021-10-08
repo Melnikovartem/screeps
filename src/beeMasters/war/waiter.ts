@@ -13,9 +13,7 @@ export class WaiterMaster extends SwarmMaster {
     if (this.checkBees()) {
       this.wish({
         setup: setups.healer,
-        amount: 1,
         priority: 4,
-        master: this.ref,
       }, this.ref + "_healer");
     }
   }

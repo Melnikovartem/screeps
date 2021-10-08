@@ -21,7 +21,6 @@ export class HordeMaster extends SwarmMaster {
     if (this.checkBees(true)) {
       this.wish({
         setup: setups.knight,
-        amount: this.targetBeeCount - this.beesAmount,
         priority: 1,
       });
     }

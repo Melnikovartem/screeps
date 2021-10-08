@@ -181,8 +181,14 @@ export class StorageCell extends Cell {
       for (let resourceConstant in this.desiredBalance) {
         let resource = <ResourceConstant>resourceConstant;
         let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
-        if (balance < 0 && this.askAid(resource, -balance, -balance > this.desiredBalance[resource]! * 0.9))
-          return;
+        if (balance < 0) {
+          let amount = -balance;
+          let hurry = amount > this.desiredBalance[resource]! * 0.9;
+          if (hurry)
+            amount = Math.floor(amount * 0.25);
+          if (this.askAid(resource, amount, hurry))
+            return;
+        }
       }
 
       amountSend = 0;

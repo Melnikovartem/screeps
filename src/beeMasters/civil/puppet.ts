@@ -12,9 +12,8 @@ export class PuppetMaster extends SwarmMaster {
     super.update();
     if (this.checkBees()) {
       this.wish({
-        setup: setups.puppet,
-        amount: 1,
-        priority: 2, // well it is cheap -_-
+        setup: this.order.ref.includes(CLAIM) ? setups.claimer : setups.puppet,
+        priority: 2, // well it is mostly cheap -_-
       });
     }
   }

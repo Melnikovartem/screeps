@@ -402,7 +402,7 @@ export class Visuals {
       for (let action in boosts)
         for (let res in boosts[action]) {
           let b = boosts[action][res];
-          ans.push([action, res, " " + b.num, b.lab ? b.lab.id.slice(b.lab.id.length - 5) : "not found"]);
+          ans.push([action, res, " " + b.num, b.lab ? b.lab.id.slice(b.lab.id.length - 4) : "not found"]);
         }
       this.updateAnchor(this.table(ans, this.anchor, undefined));
     }

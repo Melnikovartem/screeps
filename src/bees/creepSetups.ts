@@ -82,6 +82,10 @@ export class CreepSetup {
       cost: _.sum(body, s => BODYPART_COST[s]),
     };
   }
+
+  copy() {
+    return new CreepSetup(this.name, { pattern: this.pattern, fixed: this.fixed, patternLimit: this.patternLimit }, this.moveMax, this.ignoreCarry);
+  }
 }
 
 export const setupsNames = {

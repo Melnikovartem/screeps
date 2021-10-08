@@ -72,14 +72,18 @@ export abstract class Master {
     this.activeBees = _.filter(this.bees, b => !b.creep.spawning)
   }
 
-  wish(order: SpawnOrder, ref: string = this.ref) {
-    order.amount = Math.max(order.amount, 1);
-    order.master = this.ref;
+  wish(template: { setup: SpawnOrder["setup"], priority: SpawnOrder["priority"] }, ref: string = this.ref) {
+    let order: SpawnOrder = {
+      setup: template.setup,
+      priority: template.priority,
+      master: this.ref,
+      ref: ref,
+    }
     if (this.hive.bassboost) {
       if (this.hive.state !== hiveStates.nospawn
         && (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyCapacityAvailable ||
           Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).cost > 0)) {
-        order.amount = 1; // yey i can produce a minion locally or the main hive is just too busy ...
+        // yey i can produce a minion locally or the main hive is just too busy ...
         this.hive.spawOrders[ref] = order;
       } else {
         order.priority = 9;
@@ -87,7 +91,7 @@ export abstract class Master {
       }
     } else
       this.hive.spawOrders[ref] = order;
-    this.waitingForBees += order.amount;
+    this.waitingForBees += 1;
     // well he placed an order now just need to catch a creep after a spawn
   }
 

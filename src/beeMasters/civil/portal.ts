@@ -50,7 +50,6 @@ export class PortalMaster extends SwarmMaster {
     if (this.checkBees() && Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100) {
       this.wish({
         setup: this.setup,
-        amount: 1,
         priority: this.priority,
       });
     }

@@ -23,7 +23,6 @@ export class HordeDefenseMaster extends HordeMaster {
     if (this.checkBees(true) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 1) {
       let order = {
         setup: setups.defender.normal,
-        amount: this.targetBeeCount - this.beesAmount,
         priority: <1 | 8>1,
       }
 
@@ -33,8 +32,10 @@ export class HordeDefenseMaster extends HordeMaster {
         order.priority = 8;
         if (roomInfo.dangerlvlmax === 3)
           order.setup = setups.defender.destroyer;
-        else
+        else {
+          order.setup = order.setup.copy();
           order.setup.fixed = [];
+        }
       }
 
       this.wish(order);

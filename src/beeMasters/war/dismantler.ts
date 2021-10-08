@@ -4,7 +4,6 @@ import { setups } from "../../bees/creepsetups";
 import { beeStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
-import type { SpawnOrder } from "../../Hive";
 
 //first tandem btw
 @profile
@@ -16,13 +15,10 @@ export class DismantlerMaster extends SwarmMaster {
     super.update();
 
     if (this.checkBees()) {
-      let beeOrder: SpawnOrder = {
+      this.wish({
         setup: setups.dismantler,
-        amount: 1,
         priority: 4,
-        master: this.ref,
-      };
-      this.wish(beeOrder, this.ref + "_bee");
+      }, this.ref + "_bee");
     }
 
     if (!this.waitingForBees && this.beesAmount === 0)

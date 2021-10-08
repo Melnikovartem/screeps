@@ -34,7 +34,6 @@ export class SKMaster extends SwarmMaster {
     if (this.checkBees() && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5)) {
       this.wish({
         setup: setups.defender.sk,
-        amount: 1,
         priority: 4,
       });
     }

@@ -69,15 +69,11 @@ export class DupletMaster extends SwarmMaster {
     if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
         setup: setups.healer,
-        amount: 1,
         priority: 7,
-        master: this.ref,
       }, this.ref + "_healer");
       this.wish({
         setup: setups.miner.power,
-        amount: 1,
         priority: 7,
-        master: this.ref,
       }, this.ref + "_miner");
     }
   }

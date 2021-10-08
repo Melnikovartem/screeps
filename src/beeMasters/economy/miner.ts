@@ -25,7 +25,6 @@ export class MinerMaster extends Master {
     if (this.checkBees(hiveStates.battle !== this.hive.state) && roomInfo.safePlace && this.cell.operational) {
       let order = {
         setup: setups.miner.energy,
-        amount: 1,
         priority: <2 | 5 | 6>2,
       };
 

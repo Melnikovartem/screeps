@@ -101,18 +101,10 @@ export class BootstrapMaster extends Master {
       this.recalculateTargetBee();
 
     if (this.checkBeesWithRecalc()) {
-      let order = {
+      this.wish({
         setup: setups.bootstrap,
-        amount: 1,
         priority: <0 | 5 | 8>(this.beesAmount < this.targetBeeCount * 0.35 ? 0 : (this.beesAmount > 10 ? 8 : 5)),
-      }
-
-      if (this.hive.bassboost && this.hive.pos.getRoomRangeTo(this.hive.bassboost) > 8) {
-        order.setup.fixed = [TOUGH, TOUGH, TOUGH];
-        order.setup.moveMax = 8 / 21 * 50;
-      }
-
-      this.wish(order);
+      });
     }
   }
 

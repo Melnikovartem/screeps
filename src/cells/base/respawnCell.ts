@@ -75,25 +75,17 @@ export class RespawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
-    let sortedOrders = _.map(this.hive.spawOrders,
-      (order, ref) => { return { order: order, master: order.master ? order.master : ref!, ref: ref! } })
-      .sort((a, b) => a.order.priority - b.order.priority);
+    let sortedOrders = _.map(this.hive.spawOrders, o => o).sort((a, b) => a.priority - b.priority);
     for (let key = 0; key < sortedOrders.length; ++key) {
       if (!this.freeSpawns.length)
         break;
 
-      let order = sortedOrders[key].order;
-      if (!Apiary.masters[sortedOrders[key].master]) {
-        this.hive.spawOrders[sortedOrders[key].ref].amount = 0;
-        continue
-      }
-
+      let order = sortedOrders[key];
       let spawn = this.freeSpawns.pop()!;
-
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       let moveMax = undefined;
-      if (moveMax === "best" && Apiary.masters[sortedOrders[key].master] && Apiary.masters[sortedOrders[key].master].boostMove
+      if (moveMax === "best" && Apiary.masters[order.master] && Apiary.masters[order.master].boostMove
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 
@@ -105,7 +97,7 @@ export class RespawnCell extends Cell {
       if (setup.body.length) {
         let name = order.setup.name + " " + makeId(4);
         let memory: CreepMemory = {
-          refMaster: sortedOrders[key].master,
+          refMaster: order.master,
           born: Game.time,
           state: beeStates.idle,
         };
@@ -116,14 +108,10 @@ export class RespawnCell extends Cell {
         let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 
         if (ans === OK) {
-
           if (Apiary.logger)
-            Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, sortedOrders[key].master);
-
+            Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, order.master);
           energyAvailable -= setup.cost;
-          this.hive.spawOrders[sortedOrders[key].ref].amount -= 1;
-          if (this.hive.spawOrders[sortedOrders[key].ref].amount === 0)
-            delete this.hive.spawOrders[sortedOrders[key].ref];
+          delete this.hive.spawOrders[order.ref];
         }
       } else
         break;
