@@ -39,9 +39,12 @@ export class MinerMaster extends Master {
   }
 
   run() {
+
+    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
     let sourceOff = !this.cell.operational
       || this.cell.resource instanceof Source && this.cell.resource.energy === 0
-      || this.cell.extractor && this.cell.extractor.cooldown > 0;
+      || this.cell.extractor && this.cell.extractor.cooldown > 0
+      || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username);
 
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.work && sourceOff)

@@ -91,7 +91,7 @@ export class ManagerMaster extends Master {
       // some cool function i came up with. It works utill lvl 8 though
       order.setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
       if (this.hive.state === hiveStates.lowenergy)
-        order.setup.patternLimit = Math.ceil(order.setup.patternLimit / 4);
+        order.setup.patternLimit = Math.ceil(order.setup.patternLimit / 2);
 
       this.wish(order);
     }

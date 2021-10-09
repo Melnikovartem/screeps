@@ -133,7 +133,7 @@ export class Hive {
           pos.createConstructionSite(STRUCTURE_ROAD);
         });
     } else {
-      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 50000)
+      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 32000)
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!);

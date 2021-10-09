@@ -88,7 +88,7 @@ export class UpgradeCell extends Cell {
         if (freeCap >= usedCap + 50 || freeCap === LINK_CAPACITY - usedCap)
           storageCell.requestFromStorage([this.storageLink], freeCap >= LINK_CAPACITY - 100 ? 3 : 1);
         else
-          delete storageCell.requests["link_" + this.storageLink.id];
+          delete storageCell.requests[STRUCTURE_LINK + "_" + this.storageLink.id];
       }
     }
   }

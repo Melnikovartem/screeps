@@ -1,6 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { prefix } from "../../enums";
+import { prefix, signText } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -27,7 +27,7 @@ export class ClaimerMaster extends SwarmMaster {
         if (controller && !controller.owner) {
           if (bee.claimController(controller) === OK) {
             bee.pos.createFlag(prefix.boost + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
-            A.sign();
+            bee.creep.signController(controller, signText.my);
           }
           Apiary.destroyTime = Game.time; // create new hive
         } else

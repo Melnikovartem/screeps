@@ -255,12 +255,12 @@ export class LaboratoryCell extends Cell {
               Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
             }
           }
+          continue;
         } else {
           bee.goRest(pos);
           return ERR_NOT_IN_RANGE;
         }
-      }
-      if (this.hive.state === hiveStates.lowenergy && lab.store.getUsedCapacity(RESOURCE_ENERGY) < r.amount * LAB_BOOST_ENERGY)
+      } else if (this.hive.state === hiveStates.lowenergy)
         continue; // help is not coming
       bee.goRest(this.pos);
       return ERR_TIRED;
@@ -322,7 +322,7 @@ export class LaboratoryCell extends Cell {
         updateSourceLab(lab1, this.currentProduction.res1);
         updateSourceLab(lab2, this.currentProduction.res2);
 
-        if (Game.time % 500 === 0)
+        if (Game.time % 100 === 0)
           this.currentProduction.plan = Math.min(this.getMineralSum(this.currentProduction.res1), this.getMineralSum(this.currentProduction.res2));
 
         if (this.currentProduction.plan < 5) {
@@ -343,9 +343,6 @@ export class LaboratoryCell extends Cell {
           let res1 = this.currentProduction.res1;
           let res2 = this.currentProduction.res2;
 
-          let check = (l: StructureLab, r: BaseMineral | ReactionConstant) =>
-            this.labsStates[l.id] === "idle" && l.store.getFreeCapacity(r) + l.store.getUsedCapacity(r) >= 5;
-
           let maxDists: { [id: string]: number } = {}
           for (let id in this.laboratories)
             maxDists[id] = Math.max(..._.map(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l)));
@@ -358,10 +355,11 @@ export class LaboratoryCell extends Cell {
             return cond > 0 ? curr : prev;
           }
 
-          let lab1 = _.filter(this.laboratories, l => check(l, res1)).reduce((prev, curr) => comp(prev, curr, res1));
+          let check = (l: StructureLab) => this.labsStates[l.id] === "idle";
+          let lab1 = _.filter(this.laboratories, l => check(l)).reduce((prev, curr) => comp(prev, curr, res1));
           let lab2;
           if (lab1)
-            lab2 = _.filter(this.laboratories, l => check(l, res2) && l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
+            lab2 = _.filter(this.laboratories, l => check(l) && l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
 
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";

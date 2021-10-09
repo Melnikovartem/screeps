@@ -161,12 +161,12 @@ export class StorageCell extends Cell {
     for (let id in this.links) {
       let link = this.links[id];
       this.linksState[id] = "idle";
-      if (!this.requests["link_" + link.id] && link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
+      if (link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
         this.requestToStorage([link], 3);
     }
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);
-    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 1000 && !this.hive.cells.dev)
+    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 8000 && !this.hive.cells.dev)
       Apiary.destroyTime = Game.time;
   }
 

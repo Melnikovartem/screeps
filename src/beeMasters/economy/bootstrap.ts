@@ -53,7 +53,7 @@ export class BootstrapMaster extends Master {
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
       let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
-      if (roomInfo.currentOwner === Apiary.username)
+      if (roomInfo.currentOwner !== Apiary.username)
         energyPerTick = 5;
       let openPos = source.pos.getOpenPositions(true).length;
 

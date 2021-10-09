@@ -154,7 +154,7 @@ export const setups = {
   }, 50 / 3),
   bootstrap: new CreepSetup(setupsNames.bootstrap, {
     pattern: [WORK, CARRY],
-    patternLimit: 7,
+    patternLimit: 6,
   }, 50 / 3),
   puppet: new CreepSetup(setupsNames.scout, {
     pattern: [MOVE],

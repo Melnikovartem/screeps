@@ -112,16 +112,16 @@ export class HordeMaster extends SwarmMaster {
             bee.state = beeStates.chill;
           break;
         case beeStates.chill:
-          let enemiy = Apiary.intel.getEnemy(bee.pos, 10);
+          let enemy = Apiary.intel.getEnemy(bee.pos, 10);
           let ans: number = OK;
-          if (enemiy && bee.pos.getRangeTo(enemiy) <= 3) {
-            enemiy = Apiary.intel.getEnemy(bee.pos);
-            if (enemiy && bee.pos.getRangeTo(enemiy) <= 3)
-              ans = this.attackOrFlee(bee, enemiy);
+          if (enemy && bee.pos.getRangeTo(enemy) <= 3) {
+            enemy = Apiary.intel.getEnemy(bee.pos);
+            if (enemy && bee.pos.getRangeTo(enemy) <= 3)
+              ans = this.attackOrFlee(bee, enemy);
           }
           if (ans === OK) {
             bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
-            if (bee.pos.getRangeTo(this.order.pos) <= (enemiy ? 20 : 5))
+            if (bee.pos.getRangeTo(this.order.pos) <= (enemy ? 20 : 5))
               bee.state = beeStates.work;
           }
       }
