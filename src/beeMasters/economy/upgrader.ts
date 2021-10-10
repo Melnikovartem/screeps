@@ -38,14 +38,16 @@ export class UpgraderMaster extends Master {
     }
 
     this.boost = true;
-    let desiredRate = this.cell.maxRate;
-    let storeAmount = storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY)
+    let storeAmount = storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
+    // ceil(desiredRate) > 80 @ 390K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
+    let desiredRate = Math.min(this.cell.maxRate, Math.ceil(8.3 * Math.pow(10, -17) * Math.pow(storeAmount, 3) + 2.2 * Math.pow(10, -4) * storeAmount - 8.2))
 
+    // ceil(desiredRate) === 0 @ 35K
     this.targetBeeCount = Math.ceil(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = Math.ceil(desiredRate / this.targetBeeCount);
 
-    this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
-      1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
+    //this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
+    //  1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
     if (this.cell.link)
       this.targetBeeCount = Math.min(this.targetBeeCount, this.cell.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.cell.controller) <= 3).length)
   }
@@ -53,6 +55,8 @@ export class UpgraderMaster extends Master {
 
   checkBeesWithRecalc() {
     let check = () => this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2);
+    if (!this.targetBeeCount)
+      this.recalculateTargetBee();
     if (!check())
       return false;
     this.recalculateTargetBee();

@@ -17,14 +17,6 @@ export class StorageCell extends Cell {
   linksState: { [id: string]: "idle" | "busy" } = {};
   terminal: StructureTerminal | undefined;
   master: ManagerMaster;
-  desiredBalance: { [key in ResourceConstant]?: number } = {
-    [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
-    "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // upgrade
-    "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // repair
-    "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // heal
-    "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // rangedAttack
-    "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // move
-  }
 
   requests: { [id: string]: TransferRequest } = {};
 
@@ -139,8 +131,8 @@ export class StorageCell extends Cell {
             for (let resourceConstant in this.storage.store) {
               let resource = <ResourceConstant>resourceConstant;
               let newAmount = this.storage.store.getUsedCapacity(resource);
-              if (resource in this.desiredBalance)
-                newAmount -= this.desiredBalance[resource]!;
+              if (resource in this.hive.resTarget)
+                newAmount -= this.hive.resTarget[resource]!;
               if (-amount < newAmount) {
                 res = resource;
                 amount = -newAmount;
@@ -178,12 +170,13 @@ export class StorageCell extends Cell {
     if (this.terminal && !this.terminal.cooldown) {
       let amountSend: number = 0;
 
-      for (let resourceConstant in this.desiredBalance) {
+      for (let resourceConstant in this.hive.resTarget) {
         let resource = <ResourceConstant>resourceConstant;
-        let balance = this.getUsedCapacity(resource) - this.desiredBalance[resource]!;
+        let desire = this.hive.resTarget[resource]!;
+        let balance = this.getUsedCapacity(resource) - desire;
         if (balance < 0) {
           let amount = -balance;
-          let hurry = amount > this.desiredBalance[resource]! * 0.9;
+          let hurry = amount > desire * 0.9;
           if (hurry)
             amount = Math.floor(amount * 0.25);
           if (this.askAid(resource, amount, hurry))
@@ -201,7 +194,7 @@ export class StorageCell extends Cell {
       for (let resourceConstant in this.terminal.store) {
         let resource = <ResourceConstant>resourceConstant;
 
-        if (this.desiredBalance[resource] && this.getUsedCapacity(resource) <= this.desiredBalance[resource]!)
+        if (resource in this.hive.resTarget && this.getUsedCapacity(resource) <= this.hive.resTarget[resource]!)
           continue;
 
         let newAmount = this.terminal.store.getUsedCapacity(resource);
@@ -223,8 +216,9 @@ export class StorageCell extends Cell {
   askAid(res: ResourceConstant, amount: number, hurry?: boolean) {
     if (!this.terminal)
       return 0;
-    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage && h.cells.storage.terminal
-      && (!h.cells.storage.desiredBalance[res] || h.cells.storage.storage.store.getUsedCapacity(res) > h.cells.storage.desiredBalance[res]!));
+    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName
+      && h.cells.storage && h.cells.storage.terminal
+      && (!(res in h.resTarget) || h.cells.storage.storage.store.getUsedCapacity(res) > h.resTarget[res]!));
 
     if (!hives.length) {
       if (res === RESOURCE_ENERGY)
@@ -239,7 +233,7 @@ export class StorageCell extends Cell {
     let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
     let sCell = closest.cells.storage!;
     if (!sCell.requests[STRUCTURE_TERMINAL + "_" + sCell.terminal!.id]) {
-      let deiseredIn = sCell.desiredBalance[res] ? sCell.desiredBalance[res]! : 0;
+      let deiseredIn = closest.resTarget[res] ? closest.resTarget[res]! : 0;
       sCell.requestFromStorage([sCell.terminal!], 5, res, sCell.storage.store.getUsedCapacity(res) - deiseredIn, true);
     }
 
@@ -249,9 +243,9 @@ export class StorageCell extends Cell {
   sendAid(res: ResourceConstant, amount: number) {
     if (!this.terminal)
       return 0;
-    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName && h.cells.storage
-      && h.cells.storage.desiredBalance[res] && h.cells.storage.terminal
-      && h.cells.storage.getUsedCapacity(res) < h.cells.storage.desiredBalance[res]!);
+    let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName
+      && h.cells.storage && h.cells.storage.terminal
+      && res in h.resTarget && h.cells.storage.storage.store.getUsedCapacity(res) < h.resTarget[res]!);
 
     if (!hives.length)
       return 0;

@@ -257,7 +257,7 @@ export class BootstrapMaster extends Master {
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "chilling";
-          let oldTarget = false;
+          let oldTarget: workTypes = "chilling";
 
           if (bee.target) {
             target = Game.getObjectById(bee.target);
@@ -276,7 +276,7 @@ export class BootstrapMaster extends Master {
                 target = undefined;
             }
             if (target)
-              oldTarget = true;
+              oldTarget = workType;
             else if (!this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
               this.hive.shouldRecalc = 2;
           }
@@ -306,7 +306,7 @@ export class BootstrapMaster extends Master {
 
           let refillTarget = bee.pos.findClosest(refillTargets);
           if (refillTarget && (!this.hive.cells.storage || !this.hive.cells.storage.master.activeBees.length)
-            && (refillTarget.pos.getRangeTo(bee) < 10 || !target)) {
+            && (refillTarget.pos.getRangeTo(bee) < 10 && !this.count.refill || !target)) {
             target = refillTarget;
             workType = "refill";
           }
@@ -348,7 +348,7 @@ export class BootstrapMaster extends Master {
           }
           bee.repairRoadOnMove(ans);
 
-          if (!oldTarget)
+          if (oldTarget !== workType)
             ++this.count[workType];
           ++countCurrent[workType];
           bee.target = target.id;

@@ -6,6 +6,7 @@ import { ExcavationCell } from "./cells/base/excavationCell";
 import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";
 import { LaboratoryCell } from "./cells/stage1/laboratoryCell";
+import { FactoryCell } from "./cells/stage1/factoryCell";
 import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
@@ -50,6 +51,7 @@ interface HiveCells {
   excavation: ExcavationCell,
   dev?: DevelopmentCell,
   lab?: LaboratoryCell,
+  factory?: FactoryCell,
   observe?: ObserveCell,
   power?: PowerCell,
 }
@@ -57,20 +59,20 @@ interface HiveCells {
 @profile
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
-  roomName: string;
+  readonly roomName: string;
   annexNames: string[] = [];
 
   room: Room;
   rooms: Room[] = []; //this room and annexes
-  cells: HiveCells;
+  readonly cells: HiveCells;
 
   spawOrders: { [id: string]: SpawnOrder } = {};
 
-  builder?: BuilderMaster;
+  readonly builder?: BuilderMaster;
 
   pos: RoomPosition; // aka idle pos for creeps
 
-  phase: 0 | 1 | 2;
+  readonly phase: 0 | 1 | 2;
   // 0 up to storage tech
   // 1 storage - 7lvl
   // max
@@ -82,9 +84,20 @@ export class Hive {
   sumCost: number = 0;
 
   wallsHealth = WALL_HEALTH;
-  wallsHealthMax = WALL_HEALTH * 10;
+  readonly wallsHealthMax = WALL_HEALTH * 10;
 
   state: hiveStates = hiveStates.economy;
+
+  resTarget: {
+    "energy": number
+  } & { [key in ResourceConstant]?: number } = {
+      [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
+      "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // upgrade
+      "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // repair
+      "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // heal
+      "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // rangedAttack
+      "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // move
+    }
 
   constructor(roomName: string) {
     this.roomName = roomName;
@@ -140,6 +153,13 @@ export class Hive {
       this.cells.lab = new LaboratoryCell(this);
 
       this.builder = new BuilderMaster(this);
+      let factory: StructureFactory | undefined;
+      _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
+        if (s.structureType === STRUCTURE_FACTORY)
+          factory = s;
+      });
+      if (factory)
+        this.cells.factory = new FactoryCell(this, factory);
       if (this.phase === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
@@ -316,7 +336,7 @@ export class Hive {
         if (this.phase === 2) {
           if (!reCheck && this.wallsHealth < this.wallsHealthMax) {
             let sCell = this.cells.storage;
-            if (sCell && sCell.desiredBalance[RESOURCE_ENERGY] && sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > sCell.desiredBalance[RESOURCE_ENERGY]!)
+            if (sCell && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY])
               this.wallsHealth += WALL_HEALTH;
           }
 

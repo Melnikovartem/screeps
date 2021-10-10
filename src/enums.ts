@@ -54,6 +54,7 @@ export enum prefix {
   upgradeCell = "UpgradeCell_",
   observerCell = "ObserveCell_",
   powerCell = "PowerCell_",
+  factoryCell = "FactoryCell_",
 
 
   // game constants

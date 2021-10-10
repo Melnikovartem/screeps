@@ -12,7 +12,7 @@ import { profile } from "../profiler/decorator";
 @profile
 export abstract class SwarmMaster extends Master {
 
-  order: Order;
+  readonly order: Order;
   spawned: number = 0;
   maxSpawns: number = 1;
 

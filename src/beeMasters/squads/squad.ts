@@ -254,7 +254,7 @@ export abstract class SquadMaster extends SwarmMaster {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting) {
         if (!this.hive.cells.lab
-          || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }]) === OK)
+          || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }]) === OK)
           bee.state = beeStates.chill;
         else
           readyToGo = false;

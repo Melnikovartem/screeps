@@ -9,8 +9,8 @@ import type { Bee } from "../bees/bee";
 @profile
 export abstract class Master {
 
-  hive: Hive;
-  ref: string;
+  readonly hive: Hive;
+  readonly ref: string;
 
   targetBeeCount: number = 1;
   waitingForBees: number = 0;

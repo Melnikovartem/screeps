@@ -1,7 +1,8 @@
 import type { Bee } from "./bee";
 import { beeStates } from "../enums";
 
-type TransferTarget = StructureLink | StructureTerminal | StructureStorage | StructureTower | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn;
+type TransferTarget = StructureLink | StructureTerminal | StructureStorage | StructureTower
+  | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn | StructureFactory;
 
 export class TransferRequest {
   ref: string;
@@ -116,13 +117,14 @@ export class TransferRequest {
         if (bee.transfer(this.to, this.resource, amountBee) === OK) {
           this.amount -= amountBee;
           this.toAmount -= amountBee;
-        }
-        if (!this.isValid() && this.nextup && this.nextup.isValid()) {
-          if (bee.store.getUsedCapacity(this.resource) === amountBee)
-            bee.goTo(this.nextup.from)
-          else
-            bee.goTo(this.nextup.to)
-          bee.target = this.nextup.ref;
+          if (!this.isValid() && this.nextup && this.nextup.isValid()) {
+            if (bee.store.getUsedCapacity(this.resource) === amountBee)
+              bee.goTo(this.nextup.from);
+            else
+              bee.goTo(this.nextup.to);
+            bee.target = this.nextup.ref;
+          } else
+            bee.goTo(this.from);
         }
         break;
     }

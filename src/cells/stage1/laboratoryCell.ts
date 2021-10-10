@@ -199,7 +199,7 @@ export class LaboratoryCell extends Cell {
 
       if (this.boostLabs[r.res])
         lab = this.laboratories[this.boostLabs[r.res]!];
-      else {
+      if (!lab || this.labsStates[lab.id] !== r.res) {
         _.some(this.laboratories, l => {
           if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
             lab = l;
@@ -288,8 +288,7 @@ export class LaboratoryCell extends Cell {
             break;
           case "production":
             let res = l.mineralType;
-            if (res && !storageCell.requests[id] && (!this.currentProduction || res !== this.currentProduction.res
-              || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
+            if (res && (!this.currentProduction || res !== this.currentProduction.res || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
               storageCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
             break;
           default: // boosting lab : state == resource
@@ -314,7 +313,9 @@ export class LaboratoryCell extends Cell {
 
         let updateSourceLab = (l: StructureLab, r: BaseMineral | ReactionConstant) => {
           let freeCap = l.store.getFreeCapacity(r);
-          if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.currentProduction!.plan <= LAB_MINERAL_CAPACITY)
+          if (l.mineralType && l.mineralType !== r)
+            storageCell!.requestToStorage([l], 3, l.mineralType);
+          else if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.currentProduction!.plan <= LAB_MINERAL_CAPACITY)
             && l.store.getUsedCapacity(r) < this.currentProduction!.plan)
             storageCell!.requestFromStorage([l], 3, r, Math.min(this.currentProduction!.plan, freeCap));
         };
@@ -355,11 +356,10 @@ export class LaboratoryCell extends Cell {
             return cond > 0 ? curr : prev;
           }
 
-          let check = (l: StructureLab) => this.labsStates[l.id] === "idle";
-          let lab1 = _.filter(this.laboratories, l => check(l)).reduce((prev, curr) => comp(prev, curr, res1));
+          let lab1 = _.map(this.laboratories, l => l).reduce((prev, curr) => comp(prev, curr, res1));
           let lab2;
           if (lab1)
-            lab2 = _.filter(this.laboratories, l => check(l) && l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
+            lab2 = _.filter(this.laboratories, l => l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
 
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";

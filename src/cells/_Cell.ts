@@ -8,10 +8,10 @@ import { profile } from "../profiler/decorator";
 @profile
 export abstract class Cell {
 
-  hive: Hive;
-  ref: string;
+  readonly hive: Hive;
+  readonly ref: string;
   master: Master | undefined;
-  time: number;
+  readonly time: number;
   pos: RoomPosition;
 
   constructor(hive: Hive, cellName: string) {
