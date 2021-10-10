@@ -19,13 +19,7 @@ export class UpgraderMaster extends Master {
   }
 
   recalculateTargetBee() {
-    let storageCell = this.hive.cells.storage;
-    if (!storageCell) {
-      this.targetBeeCount = 0;
-      return;
-    }
-
-    this.fastModePossible = !!(this.cell.link && Object.keys(storageCell.links).length || this.cell.pos.getRangeTo(storageCell.storage) < 4);
+    this.fastModePossible = !!(this.cell.link && Object.keys(this.cell.sCell.links).length || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4);
 
     this.targetBeeCount = 1;
     this.patternPerBee = 10;
@@ -38,7 +32,7 @@ export class UpgraderMaster extends Master {
     }
 
     this.boost = true;
-    let storeAmount = storageCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
+    let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ 390K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
     let desiredRate = Math.min(this.cell.maxRate, Math.ceil(8.3 * Math.pow(10, -17) * Math.pow(storeAmount, 3) + 2.2 * Math.pow(10, -4) * storeAmount - 8.2))
 
@@ -105,11 +99,9 @@ export class UpgraderMaster extends Master {
           if (carryPart === 1 || this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) >= carryPart * CARRY_CAPACITY)
             suckerTarget = this.cell.link;
         }
-        if (!suckerTarget) {
-          let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-          if (storage && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
-            suckerTarget = storage;
-        }
+        if (!suckerTarget && this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
+          suckerTarget = this.cell.sCell.storage;
+
         let ans = bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         switch (ans) {
           case OK:

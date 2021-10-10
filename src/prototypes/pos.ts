@@ -11,8 +11,15 @@ interface RoomPosition {
   getPosInDirection(direction: DirectionConstant): RoomPosition;
   getTimeForPath(pos: ProtoPos): number;
   findClosest<Obj extends ProtoPos>(structures: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
-  getRangeApprox(obj: ProtoPos, calcType?: "linear"): number
+  getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
+  readonly str: string;
 }
+
+Object.defineProperty(RoomPosition.prototype, "str", {
+  get: function str() {
+    return this.roomName + "_" + this.x + "_" + this.y;
+  }
+});
 
 function getRoomCoorinates(roomName: string): [number, number] {
   let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);

@@ -1,13 +1,11 @@
 import { setups } from "../../bees/creepsetups";
 import { SquadMaster, FormationPositions } from "./squad";
-import type { Boosts } from "./squad";
 
 const HEALER = setups.healer.copy();
 HEALER.patternLimit = 15;
 
-// can take 1 tower of dmg
+// can eat 2 towers of dmg (15*2*12 = 1440 > 1200)
 export class FirstSquad extends SquadMaster {
-  boosts: Boosts = [{ type: "rangedAttack" }, { type: "damage" }, { type: "heal" }];
   formation: FormationPositions = [
     [{ x: 0, y: 0 }, setups.archer],
     [{ x: 1, y: 0 }, setups.archer],

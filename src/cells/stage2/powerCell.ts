@@ -1,33 +1,36 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
 
-import { prefix } from "../../enums";
+import { hiveStates, prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
+import type { Hive } from "../../Hive";
+import type { StorageCell } from "../stage1/storageCell";
 
 @profile
 export class PowerCell extends Cell {
   powerSpawn: StructurePowerSpawn;
   roomsToCheck: string[] = [];
   master: undefined;
+  sCell: StorageCell
 
-  constructor(hive: Hive, powerSpawn: StructurePowerSpawn) {
+  constructor(hive: Hive, powerSpawn: StructurePowerSpawn, sCell: StorageCell) {
     super(hive, prefix.powerCell + hive.room.name);
+    this.sCell = sCell;
     this.powerSpawn = powerSpawn;
   }
 
   update() {
     super.update();
     this.roomsToCheck = this.hive.annexNames;
-    let storageCell = this.hive.cells.storage;
-    if (!storageCell)
+
+    if (this.hive.state !== hiveStates.economy)
       return;
 
-    if (this.powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > POWER_SPAWN_POWER_CAPACITY / 2 && storageCell.storage.store.getCapacity(RESOURCE_POWER) > 0)
-      storageCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER);
+    if (this.powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > POWER_SPAWN_POWER_CAPACITY / 2)
+      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER);
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_CAPACITY / 2)
-      storageCell.requestFromStorage([this.powerSpawn], 5);
+      this.sCell.requestFromStorage([this.powerSpawn], 5);
   }
 
   run() {

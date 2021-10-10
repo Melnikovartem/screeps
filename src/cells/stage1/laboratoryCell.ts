@@ -5,40 +5,7 @@ import { prefix, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Hive } from "../../Hive";
-
-/*
-// i rly don't like to type in all the reactions;
-let s: string[] = []; REACTION_TIME
-for (let key in REACTIONS)
-  if (!s.includes(key))
-    s.push(key);
-for (let key in REACTION_TIME) {
-  if (!s.includes(key))
-    s.push(key);
-}
-let ss = "";
-for (let key in s)
-  ss += " | " + '"' + s[key] + '"';
-console. log(""ss);
-===========================================
-let s: { [action: string]: string[] } = {};
-for (let key in BOOSTS)
-  for (let reaction in BOOSTS[key])
-    for (let action in BOOSTS[key][reaction]) {
-      if (!s[action]) {
-        s[action] = [];
-      }
-      s[action].push(reaction);
-    }
-
-let ss = "";
-for (let action in s) {
-  ss += action + ", ";
-  s[action].reverse();
-}
-console. log(`{${ss}}`);
-console. log(JSON.stringify(s));
-*/
+import type { StorageCell } from "./storageCell";
 
 type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
@@ -80,9 +47,11 @@ export class LaboratoryCell extends Cell {
   currentProduction?: SynthesizeRequest;
   sourceLabs: [string, string] | undefined;
   master: undefined;
+  sCell: StorageCell;
 
-  constructor(hive: Hive) {
+  constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
+    this.sCell = sCell;
     this.pos = this.hive.getPos("lab");
   }
 
@@ -125,11 +94,8 @@ export class LaboratoryCell extends Cell {
 
   getMineralSum(res: ReactionConstant | MineralConstant, source: boolean = false) {
     let sum = 0;
-    let storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      sum += storageCell.storage.store.getUsedCapacity(res);
-      sum += _.sum(storageCell.master.activeBees, b => b.store.getUsedCapacity(res));
-    }
+    sum += this.sCell.storage.store.getUsedCapacity(res);
+    sum += _.sum(this.sCell.master.activeBees, b => b.store.getUsedCapacity(res));
     let inLabMax;
     if (source)
       inLabMax = Math.max(..._.map(_.filter(this.laboratories, l => this.labsStates[l.id] === "idle"
@@ -147,8 +113,7 @@ export class LaboratoryCell extends Cell {
   }
 
   getBoostInfo(r: BoostRequest) {
-    let storageCell = this.hive.cells.storage;
-    if (storageCell && storageCell.master.activeBees.length)
+    if (this.sCell.master.activeBees.length)
       _.some(BOOST_MINERAL[r.type], (resIter, k) => {
         let sum = this.getMineralSum(resIter);
         if (sum > LAB_BOOST_MINERAL) {
@@ -167,10 +132,9 @@ export class LaboratoryCell extends Cell {
 
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
-    let storageCell = this.hive.cells.storage;
     let rCode: ScreepsReturnCode = OK;
     if (Game.time - bee.memory.born > 600
-      || !storageCell || !storageCell.master.activeBees.length
+      || !this.sCell.master.activeBees.length
       || !bee.master || !bee.master.boost)
       return rCode;
 
@@ -230,7 +194,7 @@ export class LaboratoryCell extends Cell {
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
           this.labsStates[lab.id] = r.res;
-          delete storageCell.requests[lab.id];
+          delete this.sCell.requests[lab.id];
         }
       }
 
@@ -274,8 +238,7 @@ export class LaboratoryCell extends Cell {
 
   update() {
     super.update(["laboratories"]);
-    let storageCell = this.hive.cells.storage;
-    if (storageCell && Object.keys(this.laboratories).length) {
+    if (Object.keys(this.laboratories).length) {
       for (let id in this.laboratories) {
         let l = this.laboratories[id];
         let state = this.labsStates[id];
@@ -284,26 +247,26 @@ export class LaboratoryCell extends Cell {
             this.labsStates[id] = "idle";
           case "idle":
             if (l.mineralType)
-              storageCell.requestToStorage([l], 5, l.mineralType);
+              this.sCell.requestToStorage([l], 5, l.mineralType);
             break;
           case "source":
             break;
           case "production":
             let res = l.mineralType;
             if (res && (!this.currentProduction || res !== this.currentProduction.res || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
-              storageCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
+              this.sCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
             break;
           default: // boosting lab : state == resource
             if (l.mineralType && l.mineralType !== state)
-              storageCell.requestToStorage([l], 1, l.mineralType);
+              this.sCell.requestToStorage([l], 1, l.mineralType);
             else if (l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
-              storageCell.requestFromStorage([l], 1, state);
+              this.sCell.requestFromStorage([l], 1, state);
 
             if (!Object.keys(this.boostRequests).length && this.currentProduction) {
               this.labsStates[id] = "idle";
               delete this.boostLabs[state];
               if (l.mineralType)
-                storageCell.requestToStorage([l], 3, l.mineralType);
+                this.sCell.requestToStorage([l], 3, l.mineralType);
             }
             break;
         }
@@ -316,10 +279,10 @@ export class LaboratoryCell extends Cell {
         let updateSourceLab = (l: StructureLab, r: BaseMineral | ReactionConstant) => {
           let freeCap = l.store.getFreeCapacity(r);
           if (l.mineralType && l.mineralType !== r)
-            storageCell!.requestToStorage([l], 3, l.mineralType);
+            this.sCell!.requestToStorage([l], 3, l.mineralType);
           else if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.currentProduction!.plan <= LAB_MINERAL_CAPACITY)
             && l.store.getUsedCapacity(r) < this.currentProduction!.plan)
-            storageCell!.requestFromStorage([l], 3, r, Math.min(this.currentProduction!.plan, freeCap));
+            this.sCell!.requestFromStorage([l], 3, r, Math.min(this.currentProduction!.plan, freeCap));
         };
 
         updateSourceLab(lab1, this.currentProduction.res1);
@@ -354,7 +317,7 @@ export class LaboratoryCell extends Cell {
             if (cond === 0)
               cond = curr.store.getUsedCapacity(res) - prev.store.getUsedCapacity(res);
             if (cond === 0)
-              cond = prev.pos.getTimeForPath(storageCell!) - curr.pos.getTimeForPath(storageCell!);
+              cond = prev.pos.getTimeForPath(this.sCell!) - curr.pos.getTimeForPath(this.sCell!);
             return cond > 0 ? curr : prev;
           }
 
@@ -366,8 +329,8 @@ export class LaboratoryCell extends Cell {
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";
             this.labsStates[lab2.id] = "source";
-            delete storageCell.requests[lab1.id];
-            delete storageCell.requests[lab2.id];
+            delete this.sCell.requests[lab1.id];
+            delete this.sCell.requests[lab2.id];
             this.sourceLabs = [lab1.id, lab2.id];
             this.updateProductionLabs();
           }
@@ -375,7 +338,7 @@ export class LaboratoryCell extends Cell {
       }
 
       let priority = <2 | 5>5;
-      storageCell.requestFromStorage(_.filter(this.laboratories,
+      this.sCell.requestFromStorage(_.filter(this.laboratories,
         l => {
           if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
             priority = 2;
@@ -413,3 +376,38 @@ export class LaboratoryCell extends Cell {
     }
   }
 }
+
+
+/*
+// i rly don't like to type in all the reactions;
+let s: string[] = []; REACTION_TIME
+for (let key in REACTIONS)
+  if (!s.includes(key))
+    s.push(key);
+for (let key in REACTION_TIME) {
+  if (!s.includes(key))
+    s.push(key);
+}
+let ss = "";
+for (let key in s)
+  ss += " | " + '"' + s[key] + '"';
+console. log(""ss);
+===========================================
+let s: { [action: string]: string[] } = {};
+for (let key in BOOSTS)
+  for (let reaction in BOOSTS[key])
+    for (let action in BOOSTS[key][reaction]) {
+      if (!s[action]) {
+        s[action] = [];
+      }
+      s[action].push(reaction);
+    }
+
+let ss = "";
+for (let action in s) {
+  ss += action + ", ";
+  s[action].reverse();
+}
+console. log(`{${ss}}`);
+console. log(JSON.stringify(s));
+*/

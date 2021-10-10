@@ -1,9 +1,10 @@
 import { Cell } from "../_Cell";
-import type { Hive } from "../../Hive";
 
 import { prefix, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
+import type { Hive } from "../../Hive";
+import type { StorageCell } from "../stage1/storageCell";
 
 @profile
 export class ObserveCell extends Cell {
@@ -13,9 +14,11 @@ export class ObserveCell extends Cell {
   powerRooms: string[] = [];
   doPowerCheck = false;
   master: undefined;
+  sCell: StorageCell;
 
-  constructor(hive: Hive, obeserver: StructureObserver) {
+  constructor(hive: Hive, obeserver: StructureObserver, sCell: StorageCell) {
     super(hive, prefix.observerCell + hive.room.name);
+    this.sCell = sCell;
     this.obeserver = obeserver;
     this.pos = obeserver.pos;
 
@@ -62,8 +65,7 @@ export class ObserveCell extends Cell {
     if (!room)
       return;
 
-    let sCell = this.hive.cells.storage;
-    if (!sCell || sCell.getUsedCapacity(RESOURCE_ENERGY) < this.hive.resTarget[RESOURCE_ENERGY]!)
+    if (this.sCell.getUsedCapacity(RESOURCE_ENERGY) < this.hive.resTarget[RESOURCE_ENERGY]!)
       return;
 
     let roomInfo = Apiary.intel.getInfo(this.prevRoom, 25);

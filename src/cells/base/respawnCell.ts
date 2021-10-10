@@ -30,7 +30,7 @@ export class RespawnCell extends Cell {
 
     let storageCell = this.hive.cells.storage;
     if (storageCell)
-      storageCell!.requestFromStorage(this.getTargets(), 0);
+      storageCell.requestFromStorage(this.getTargets(), 0);
   };
 
   getTargets(freeStore = 0) {
@@ -91,7 +91,7 @@ export class RespawnCell extends Cell {
 
       if (order.priority === 0 && (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount)) {
         setup = order.setup.getBody(energyAvailable, moveMax);
-        if (setup.body.length)
+        if (!setup.body.length)
           break;
       } else {
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);

@@ -62,7 +62,7 @@ export class HaulerMaster extends Master {
   update() {
     super.update();
 
-    if ((<Store<ResourceConstant, false>>this.dropOff.store).getFreeCapacity() <= 0)
+    if (this.dropOff.store.getFreeCapacity() <= 0)
       return;
 
     _.forEach(this.cell.quitefullCells, cell => {

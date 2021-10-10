@@ -149,8 +149,8 @@ export class Hive {
       if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 32000)
         this.cells.dev = new DevelopmentCell(this);
       this.cells.storage = new StorageCell(this, this.room.storage!);
-      this.cells.upgrade = new UpgradeCell(this, this.room.controller!);
-      this.cells.lab = new LaboratoryCell(this);
+      this.cells.upgrade = new UpgradeCell(this, this.room.controller!, this.cells.storage);
+      this.cells.lab = new LaboratoryCell(this, this.cells.storage);
 
       this.builder = new BuilderMaster(this);
       let factory: StructureFactory | undefined;
@@ -159,7 +159,7 @@ export class Hive {
           factory = s;
       });
       if (factory)
-        this.cells.factory = new FactoryCell(this, factory);
+        this.cells.factory = new FactoryCell(this, factory, this.cells.storage);
       if (this.phase === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
@@ -170,9 +170,9 @@ export class Hive {
             powerSpawn = s;
         });
         if (obeserver)
-          this.cells.observe = new ObserveCell(this, obeserver);
+          this.cells.observe = new ObserveCell(this, obeserver, this.cells.storage);
         if (powerSpawn)
-          this.cells.power = new PowerCell(this, powerSpawn)
+          this.cells.power = new PowerCell(this, powerSpawn, this.cells.storage);
         // TODO cause i haven' reached yet
       }
     }

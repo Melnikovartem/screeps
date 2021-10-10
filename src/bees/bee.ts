@@ -276,7 +276,7 @@ export class Bee {
         p = bee.pos; // 0 and 1 won't move
       if (!p)
         continue;
-      let nodeId = p.roomName + "_" + p.x + "_" + p.y;
+      let nodeId = p.str;
       if (!moveMap[nodeId])
         moveMap[nodeId] = [];
       moveMap[nodeId].push({ bee: bee, priority: priority });
@@ -284,61 +284,54 @@ export class Bee {
 
     for (const nodeId in moveMap) {
       let [, roomName, x, y] = /^(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
-      let pos = new RoomPosition(+x, +y, roomName);
-      let creepIn: Creep | undefined | null;
-      if (roomName in Game.rooms)
-        creepIn = pos.lookFor(LOOK_CREEPS).filter(c => c.my)[0];
-      let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
-      let bee;
-      if (creepIn) {
-        if (creepIn.fatigue > 0)
-          continue;
-        let beeIn = Apiary.bees[creepIn.name];
-        if (!beeIn.targetPosition) {
-          bee = moveMap[nodeId].reduce(red).bee;
-          let ans = this.noBeeInSover(moveMap, bee, beeIn);
-          if (ans !== OK)
-            continue;
-        } else {
-          let outPos = beeIn.targetPosition;
-          // should i check that beeIn will be the max priority in outPos or it is too edge case?
-          red = (prev: InfoMove, curr: InfoMove) => {
-            if (curr.bee.pos.x === outPos.x && curr.bee.pos.y === outPos.y)
-              return curr;
-            if (prev.bee.pos.x === outPos.x && prev.bee.pos.y === outPos.y)
-              return prev;
-            return curr.priority < prev.priority ? curr : prev
-          };
-          bee = moveMap[nodeId].reduce(red).bee;
-        }
-      } else
-        bee = moveMap[nodeId].reduce(red).bee;
-      bee.creep.move(bee.pos.getDirectionTo(pos));
+      this.beeMove(moveMap, new RoomPosition(+x, +y, roomName));
     }
   }
 
-  private static noBeeInSover(moveMap: MoveMap, bee: Bee, beeIn: Bee): OK | ERR_FULL | ERR_NOT_FOUND {
-    if (bee.ref === beeIn.ref)
-      return ERR_FULL;
-    let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
-    let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
-    if (!open.length)
-      return ERR_NOT_FOUND;
-    let pp = open.reduce((prev, curr) => {
-      let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
-      if (ans === 0)
-        ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length
-      return ans < 0 ? curr : prev;
-    });
-
-    moveMap[pp.roomName + "_" + pp.x + "_" + pp.y] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
-    let creepIn = pp.lookFor(LOOK_CREEPS).filter(c => c.my)[0];
-    let ans: OK | ERR_FULL | ERR_NOT_FOUND = OK;
-    if (creepIn)
-      ans = this.noBeeInSover(moveMap, beeIn, Apiary.bees[creepIn.name]);
-    if (ans === OK)
-      beeIn.creep.move(beeIn.pos.getDirectionTo(pp));
-    return ans;
+  private static beeMove(moveMap: MoveMap, pos: RoomPosition): OK | ERR_FULL | ERR_NOT_FOUND {
+    let creepIn: Creep | undefined | null;
+    if (pos.roomName in Game.rooms)
+      creepIn = pos.lookFor(LOOK_CREEPS).filter(c => c.my)[0];
+    let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
+    let bee;
+    if (creepIn) {
+      if (creepIn.fatigue > 0)
+        return ERR_FULL;
+      let beeIn = Apiary.bees[creepIn.name];
+      if (!beeIn.targetPosition) {
+        bee = moveMap[pos.str].reduce(red).bee;
+        if (bee.ref === beeIn.ref)
+          return ERR_FULL;
+        let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
+        let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
+        if (!open.length)
+          return ERR_NOT_FOUND;
+        let pp = open.reduce((prev, curr) => {
+          let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
+          if (ans === 0)
+            ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length
+          return ans < 0 ? curr : prev;
+        });
+        moveMap[pp.str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+        let ans = this.beeMove(moveMap, pp);
+        if (ans !== OK)
+          return ans;
+      } else {
+        let outPos = beeIn.targetPosition;
+        // should i check that beeIn will be the max priority in outPos or it is too edge case?
+        red = (prev: InfoMove, curr: InfoMove) => {
+          if (curr.bee.pos.x === outPos.x && curr.bee.pos.y === outPos.y)
+            return curr;
+          if (prev.bee.pos.x === outPos.x && prev.bee.pos.y === outPos.y)
+            return prev;
+          return curr.priority < prev.priority ? curr : prev
+        };
+        bee = moveMap[pos.str].reduce(red).bee;
+      }
+    } else
+      bee = moveMap[pos.str].reduce(red).bee;
+    bee.creep.move(bee.pos.getDirectionTo(pos));
+    return OK;
   }
 
   get print(): string {
