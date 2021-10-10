@@ -38,6 +38,11 @@ export class HordeDefenseMaster extends HordeMaster {
         }
       }
 
+      if (this.hive.phase === 0) {
+        order.setup = order.setup.copy();
+        order.setup.fixed = [];
+      }
+
       this.wish(order);
     }
   }

@@ -346,7 +346,7 @@ export class Hive {
           break;
         }
 
-        if (!this.sumCost && this.builder && this.builder.activeBees) {
+        if (!reCheck && !this.sumCost && this.builder && this.builder.activeBees) {
           add(Apiary.planner.checkBuildings(this.roomName, undefined, undefined, 0.99));
           break;
         }
