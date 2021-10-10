@@ -3,7 +3,7 @@ import { HordeMaster } from "./beeMasters/war/horde";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismantlerMaster } from "./beeMasters/war/dismantler";
 import { WaiterMaster } from "./beeMasters/war/waiter";
-import { TestSquad } from "./beeMasters/squads/test";
+import { FirstSquad } from "./beeMasters/squads/quadSquad";
 
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
@@ -144,7 +144,7 @@ export class Order {
               this.master = new WaiterMaster(this);
               break;
             case COLOR_ORANGE:
-              this.master = new TestSquad(this);
+              this.master = new FirstSquad(this);
               break;
             case COLOR_CYAN:
               this.master = new SKMaster(this);
@@ -214,26 +214,35 @@ export class Order {
               this.delete();
             break;
           case COLOR_WHITE:
+            this.acted = false;
+            let hiveToBoos = Apiary.hives[this.pos.roomName];
+            if (!hiveToBoos || this.pos.roomName === this.hive.roomName) {
+              this.delete();
+              break;
+            }
+
             if (!this.fixedName(prefix.boost + this.pos.roomName))
               break;
 
             if (this.hive.state !== hiveStates.economy) {
-              this.acted = false;
+              hiveToBoos.bassboost = null;
               break;
             }
 
-            let hiveToBoos = Apiary.hives[this.pos.roomName];
-            if (hiveToBoos && this.pos.roomName !== this.hive.roomName) {
-              hiveToBoos.bassboost = this.hive;
-              hiveToBoos.spawOrders = {};
-              _.forEach(this.hive.cells, c => {
-                if (c.master)
-                  c.master.waitingForBees = 0;
-              });
-              if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
-                hiveToBoos.cells.dev.master.recalculateTargetBee()
-            } else
-              this.delete();
+            if (hiveToBoos.bassboost) {
+              if (this.hive.phase > 0 && hiveToBoos.state === hiveStates.economy)
+                this.delete();
+              break;
+            }
+
+            hiveToBoos.bassboost = this.hive;
+            hiveToBoos.spawOrders = {};
+            _.forEach(this.hive.cells, c => {
+              if (c.master)
+                c.master.waitingForBees = 0;
+            });
+            if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
+              hiveToBoos.cells.dev.master.recalculateTargetBee();
             break;
         }
         break;

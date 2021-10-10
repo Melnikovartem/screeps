@@ -46,8 +46,8 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
   STRUCTURE_FACTORY,
   STRUCTURE_NUKER,
   STRUCTURE_ROAD,
-  STRUCTURE_RAMPART,
   STRUCTURE_WALL,
+  STRUCTURE_RAMPART,
 ];
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };

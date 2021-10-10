@@ -155,6 +155,15 @@ export class Bee {
     return ans === OK ? this.creep.rangedAttack(t!) : ans;
   }
 
+  rangedMassAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): number {
+    opt.movingTarget = true;
+    opt.goInDanger = true;
+    let ans = this.actionCheck(t, opt, 1);
+    if (ans === ERR_NOT_IN_RANGE && t && this.pos.getRangeTo(t) <= 3)
+      this.creep.rangedAttack(t);
+    return ans === OK ? this.creep.rangedMassAttack() : ans;
+  }
+
   heal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
     opt.goInDanger = true;

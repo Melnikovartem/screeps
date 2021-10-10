@@ -100,9 +100,15 @@ export class PickupMaster extends SwarmMaster {
             bee.state = beeStates.chill;
           break;
       }
-
-      // if (!target && bee.pos.roomName === this.order.pos.roomName && (this.order.pos.x !== this.hive.pos.x || this.order.pos.y !== this.hive.pos.y))
-      // this.order.flag.setPosition(this.hive.pos);
     });
+  }
+
+  delete() {
+    for (const key in this.bees) {
+      this.bees[key].master = undefined;
+      this.bees[key].state = beeStates.idle;
+      delete this.bees[key].target;
+    }
+    super.delete();
   }
 }

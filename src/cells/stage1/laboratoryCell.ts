@@ -67,7 +67,7 @@ interface SynthesizeRequest {
   cooldown: number,
 };
 
-type BoostRequest = { type: BoostType, res?: ReactionConstant, amount?: number, lowLvl?: 0 | 1 | 2 }
+export type BoostRequest = { type: BoostType, res?: ReactionConstant, amount?: number, minlvl?: 0 | 1 | 2 }
 
 @profile
 export class LaboratoryCell extends Cell {
@@ -94,9 +94,6 @@ export class LaboratoryCell extends Cell {
           && l.pos.getRangeTo(this.laboratories[this.sourceLabs![0]]) <= 2
           && l.pos.getRangeTo(this.laboratories[this.sourceLabs![1]]) <= 2) {
           this.labsStates[l.id] = "production";
-          let storageCell = this.hive.cells.storage;
-          if (storageCell)
-            delete storageCell.requests["lab_" + l.id];
           ans.push(l);
         }
       });
@@ -159,7 +156,7 @@ export class LaboratoryCell extends Cell {
           if (r.amount)
             r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
         }
-        if ((r.lowLvl ? r.lowLvl : 0) - k <= 0)
+        if ((r.minlvl ? r.minlvl : 0) - k <= 0)
           return true;
         return r.res;
       });
@@ -171,10 +168,11 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests: BoostRequest[]) {
     let storageCell = this.hive.cells.storage;
+    let rCode: ScreepsReturnCode = OK;
     if (Game.time - bee.memory.born > 600
       || !storageCell || !storageCell.master.activeBees.length
       || !bee.master || !bee.master.boost)
-      return OK;
+      return rCode;
 
     if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
       this.boostRequests[bee.ref] = requests;
@@ -231,16 +229,18 @@ export class LaboratoryCell extends Cell {
           });
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
-          this.labsStates[lab.id] = r.res!;
-          delete storageCell.requests["lab_" + lab.id];
+          this.labsStates[lab.id] = r.res;
+          delete storageCell.requests[lab.id];
         }
       }
 
       if (!lab)
         continue;
 
-      if (bee.creep.spawning)
-        return ERR_BUSY;
+      if (bee.creep.spawning) {
+        rCode = ERR_BUSY;
+        continue;
+      }
 
       if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
         && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
@@ -263,11 +263,13 @@ export class LaboratoryCell extends Cell {
       } else if (this.hive.state === hiveStates.lowenergy)
         continue; // help is not coming
       bee.goRest(this.pos);
-      return ERR_TIRED;
+      rCode = ERR_TIRED;
+      continue;
     }
 
-    delete this.boostRequests[bee.ref];
-    return OK;
+    if (rCode === OK)
+      delete this.boostRequests[bee.ref];
+    return rCode;
   }
 
   update() {
@@ -294,7 +296,7 @@ export class LaboratoryCell extends Cell {
           default: // boosting lab : state == resource
             if (l.mineralType && l.mineralType !== state)
               storageCell.requestToStorage([l], 1, l.mineralType);
-            else if (!storageCell.requests[id] && l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
+            else if (l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
               storageCell.requestFromStorage([l], 1, state);
 
             if (!Object.keys(this.boostRequests).length && this.currentProduction) {
@@ -364,8 +366,8 @@ export class LaboratoryCell extends Cell {
           if (lab1 && lab2) {
             this.labsStates[lab1.id] = "source";
             this.labsStates[lab2.id] = "source";
-            delete storageCell.requests["lab_" + lab1.id];
-            delete storageCell.requests["lab_" + lab2.id];
+            delete storageCell.requests[lab1.id];
+            delete storageCell.requests[lab2.id];
             this.sourceLabs = [lab1.id, lab2.id];
             this.updateProductionLabs();
           }

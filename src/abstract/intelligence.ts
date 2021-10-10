@@ -253,12 +253,14 @@ export class Intel {
         if (s.structureType === STRUCTURE_INVADER_CORE) {
           dangerlvl = 3;
           if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
-            dangerlvl = 9;
-        } else if (roomInfo.roomState === roomStates.ownedByEnemy)
-          if (s.structureType === STRUCTURE_TOWER)
-            dangerlvl = 7;
-          else if (s.structureType === STRUCTURE_EXTENSION)
-            dangerlvl = 1
+            dangerlvl = 6;
+        } else if (s.structureType === STRUCTURE_TOWER)
+          dangerlvl = 7;
+        else if (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_RAMPART)
+          dangerlvl = 3;
+        else if (roomInfo.roomState === roomStates.ownedByEnemy)
+          if (s.structureType === STRUCTURE_EXTENSION)
+            dangerlvl = 1;
           else if (s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
         if (dangerlvl > 0 || roomInfo.roomState === roomStates.ownedByEnemy)

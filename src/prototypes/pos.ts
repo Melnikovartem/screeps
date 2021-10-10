@@ -84,7 +84,7 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
 
   if (ans && this.roomName in Game.rooms) {
     ans = !_.filter(this.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_ROAD
-      && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my || (<StructureRampart>s).isPublic)
+      && !(s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my)
       && s.structureType !== STRUCTURE_CONTAINER).length;
 
     if (ans && !ignoreCreeps)

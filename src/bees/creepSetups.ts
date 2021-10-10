@@ -180,6 +180,10 @@ export const setups = {
     fixed: [TOUGH],
     pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL],
   }, "best"),
+  archer: new CreepSetup(setupsNames.knight, {
+    fixed: [TOUGH],
+    pattern: [RANGED_ATTACK],
+  }, "best"),
   dismantler: new CreepSetup(setupsNames.dismantler, {
     pattern: [WORK, TOUGH],
   }, 50 / 3),
@@ -190,8 +194,8 @@ export const setups = {
 
 
 /*
-let printSetup = (s: CreepSetup, energy = Infinity) => {
-  let setup = s.getBody(energy);
+let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
+  let setup = s.getBody(energy, moveMax);
   let nonMoveLen = setup.body.filter(s => s != MOVE).length;
   console.log(`${s.name}: ${nonMoveLen}/${setup.body.length} aka ${Math.round(nonMoveLen / setup.body.length * 1000) / 10}% cost: ${setup.cost}/${energy}`);
   return setup.body;
@@ -223,4 +227,6 @@ printSetup(setups.defender.sk)
 printSetup(setups.knight, 975)
 printSetup(setups.dismantler)
 printSetup(setups.healer, 1300)
+printSetup(setups.archer, Game.rooms["E12N48"].energyCapacityAvailable, 10);
+printSetup(setups.healer, Game.rooms["E12N48"].energyCapacityAvailable, 10);
 */

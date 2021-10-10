@@ -85,7 +85,7 @@ export class RespawnCell extends Cell {
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       let moveMax = undefined;
-      if (moveMax === "best" && Apiary.masters[order.master] && Apiary.masters[order.master].boostMove
+      if (order.setup.moveMax === "best" && Apiary.masters[order.master] && Apiary.masters[order.master].boostMove
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 

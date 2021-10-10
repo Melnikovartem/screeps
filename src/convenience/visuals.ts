@@ -418,10 +418,21 @@ export class Visuals {
   }
 
   spawnInfo(hive: Hive) {
+    let usedY: number[] = [];
     _.forEach(hive.cells.spawn.spawns, s => {
-      if (s.spawning)
+      if (s.spawning) {
+        let x = s.pos.x + 0.8;
+        let y = s.pos.y + 0.25;
+        if (usedY.indexOf(Math.round(y)) !== -1) {
+          y = s.pos.y + 1.7;
+          x = s.pos.x - 0.55;
+          if (usedY.indexOf(Math.round(y)) !== -1)
+            y = s.pos.y - 1.7;
+        }
+        usedY.push(Math.round(y));
         this.anchor.vis.text(`⚒️ ${s.spawning.name.slice(0, s.spawning.name.length - 5)} ${
-          Math.round((1 - s.spawning.remainingTime / s.spawning.needTime) * 100)}%`, s.pos.x + 1, s.pos.y + 0.25, this.textStyle());
+          Math.round((1 - s.spawning.remainingTime / s.spawning.needTime) * 100)}%`, x, y, this.textStyle({ stroke: "#2E2E2E", strokeWidth: 0.1 }));
+      }
     });
   }
 

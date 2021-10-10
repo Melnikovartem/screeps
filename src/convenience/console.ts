@@ -422,7 +422,7 @@ export class CustomConsole {
         return "";
       return `${h.print}: \n${
         _.map((<TransferRequest[]>_.map(h.cells.storage.requests)).sort((a, b) => a.priority - b.priority),
-          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from.structureType} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}`).join('\n')
+          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from instanceof Structure ? o.from.structureType : o.from} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}`).join('\n')
         } \n`
     }).join('\n');
   }

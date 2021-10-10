@@ -5,22 +5,26 @@ import { beeStates, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { CreepSetup } from "../../bees/creepSetups";
+import type { BoostRequest } from "../../cells/stage1/laboratoryCell";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
-export type FormationPosition = [Pos, CreepSetup];
+export type FormationPositions = [Pos, CreepSetup][];
+export type Boosts = BoostRequest[];
 //first tandem btw
 @profile
 export abstract class SquadMaster extends SwarmMaster {
-  formation: FormationPosition[] = [];
+  formation: FormationPositions = [];
   formationBees: Bee[] = [];
   formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.getPos("center") : this.hive.pos;
-  formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP;
+  formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP; // TODO rotate formation to enemy
   targetBeeCount = 1;
   maxSpawns = 1;
   movePriority = <2>2;
   priority = <1>1;
-  boost = true;
-  boostMove = true;
+  boost: boolean = true;;
+  boostMove: boolean = true;
+  boosts: Boosts = [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }];
+  stuckValue = 0;
   stats: CreepAllBattleInfo = {
     max: {
       dmgClose: 0,
@@ -76,6 +80,9 @@ export abstract class SquadMaster extends SwarmMaster {
     this.targetBeeCount = this.formation.length;
     this.maxSpawns = this.formation.length;
 
+    this.boost = !!this.boosts.length;
+    this.boostMove = !!this.boosts.filter(b => b.type === "fatigue").length;
+
     if (this.checkBees()) {
       for (let i = 0; i < this.formation.length; ++i) {
         if (!this.formationBees[i])
@@ -121,10 +128,6 @@ export abstract class SquadMaster extends SwarmMaster {
     if (this.maxSpawns !== this.spawned)
       return ERR_BUSY;
 
-    for (const name in this.bees)
-      if (this.bees[name].state === beeStates.chill)
-        return ERR_BUSY;
-
     for (let i = 0; i < this.formation.length; ++i) {
       if (!this.isAlive(this.formationBees[i]))
         continue;
@@ -137,7 +140,7 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  getSquadMoveMentValue(pos: RoomPosition) {
+  getSquadMoveMentValue(pos: RoomPosition, centerRef: string) {
     let max = 1;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
@@ -147,9 +150,12 @@ export abstract class SquadMaster extends SwarmMaster {
       if (!desiredPos)
         continue; // exit
       if (!desiredPos.isFree(true))
-        return 64;
+        if (this.formationBees[i].ref === centerRef)
+          return 255;
+        else
+          max = 64
       if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
-        max = 5;
+        max = Math.max(max, 5);
     }
     return max;
   }
@@ -185,13 +191,14 @@ export abstract class SquadMaster extends SwarmMaster {
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
     let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
 
-
-    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
+    if (rangeToTarget <= 1 && beeStats.dmgRange > 0)
+      action2 = () => bee.rangedMassAttack(target);
+    else if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
       action2 = () => bee.rangedAttack(target);
-    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
+    else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
       action2 = () => bee.rangedHeal(healingTarget);
 
-    if (rangeToHealingTarget === 1 && beeStats.heal > 0)
+    if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
       action1 = () => bee.heal(healingTarget);
     else if (rangeToTarget === 1) {
       if (beeStats.dism > 0 && target instanceof Structure)
@@ -211,22 +218,51 @@ export abstract class SquadMaster extends SwarmMaster {
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = enemy && (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5) ? enemy.pos : this.order.pos;
+    if (enemy && bee.pos.getRangeTo(enemy) > 3) {
+      switch (bee.pos.getDirectionTo(enemy)) {
+        case TOP:
+          this.formationRotation = TOP;
+          break;
+        case TOP_RIGHT:
+          if (this.formationRotation === TOP)
+            break;
+        case RIGHT:
+          this.formationRotation = RIGHT;
+          break;
+        case BOTTOM_RIGHT:
+          if (this.formationRotation === RIGHT)
+            break;
+        case BOTTOM:
+          this.formationRotation = BOTTOM;
+          break;
+        case BOTTOM_LEFT:
+          if (this.formationRotation === BOTTOM)
+            break;
+        case LEFT:
+          this.formationRotation = LEFT;
+          break;
+        case TOP_LEFT:
+          if (this.formationRotation !== TOP)
+            this.formationRotation = LEFT;
+          break;
+      }
+    }
     bee.goTo(moveTarget, {
-      movingTarget: true, goInDanger: true, roomCallback: (roomName: string, matrix: CostMatrix) => {
+      movingTarget: true, goInDanger: true, maxOps: 2000 * this.activeBees.length,
+      roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;
         for (let x = 0; x <= 49; ++x)
           for (let y = 0; y <= 49; ++y) {
-            let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName))
+            let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), bee.ref);
             matrix.set(x, y, moveMent);
           }
         return matrix;
       }
     });
     let direction: DirectionConstant | undefined;
-    if (bee.targetPosition)
+    if (bee.targetPosition && (bee.targetPosition.x !== bee.pos.x || bee.targetPosition.y !== bee.pos.y || bee.targetPosition.roomName !== bee.pos.roomName))
       direction = bee.pos.getDirectionTo(bee.targetPosition);
-
 
     return direction;
   }
@@ -239,11 +275,13 @@ export abstract class SquadMaster extends SwarmMaster {
     else if (this.stats.current.dism > 0)
       enemy = Apiary.intel.getEnemy(this.formationCenter, 1, false);
 
-    let healingTarget: Bee | undefined;
+    let healingTarget: Bee | null | undefined;
     if (this.stats.current.heal) {
       let healingTargets = this.activeBees.filter(b => b.hits < b.hitsMax);
       if (healingTargets.length)
         healingTarget = healingTargets.reduce((prev, curr) => curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev);
+      else if (enemy instanceof StructureTower)
+        healingTarget = enemy.pos.findClosest(this.activeBees);
     }
 
     _.forEach(this.activeBees, bee => {
@@ -251,10 +289,9 @@ export abstract class SquadMaster extends SwarmMaster {
     });
 
     let readyToGo = true;
-    _.forEach(this.activeBees, bee => {
+    _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting) {
-        if (!this.hive.cells.lab
-          || this.hive.cells.lab.askForBoost(bee, [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }]) === OK)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts) === OK)
           bee.state = beeStates.chill;
         else
           readyToGo = false;
@@ -274,19 +311,25 @@ export abstract class SquadMaster extends SwarmMaster {
 
     let valid: number = this.validFormation();
     if (valid === OK) {
+      this.stuckValue = 0;
       let direction = this.moveCenter(centerBee, enemy);
       if (direction)
         _.forEach(this.activeBees, b => {
+          if (b.ref === centerBee.ref)
+            return;
           let pos = b.pos.getPosInDirection(direction!);
           if (pos.isFree(true))
             b.targetPosition = pos;
         });
     } else {
-      if (valid === ERR_NOT_IN_RANGE)
+      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4) {
+        this.stuckValue += 1;
         valid = this.validateFormation();
+      }
       if (valid !== OK) {
-        this.moveCenter(centerBee, enemy)
-        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.goTo(this.formationCenter, { movingTarget: true }));
+        this.stuckValue = 0;
+        this.moveCenter(centerBee, enemy);
+        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.ref !== centerBee.ref && bee.goTo(this.formationCenter, { movingTarget: true }));
       }
     }
 
