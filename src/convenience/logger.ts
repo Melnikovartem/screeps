@@ -1,4 +1,4 @@
-import { setupsNames } from "../bees/creepSetups";
+import { setupsNames } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";

@@ -41,6 +41,7 @@ export enum prefix {
   def = "def_",
   puppet = "pup_",
   annex = "annex_",
+  claim = "claim",
   mine = "mine_",
 
   //cells
@@ -66,4 +67,23 @@ export enum signText {
   my = "🐝✨❤️",
   annex = "🐝⛏️🔥",
   other = "🐝☠️🤖",
+}
+
+export enum setupsNames {
+  // Civilian
+  claimer = 'Bee drone',
+  manager = 'Stingless bee',
+  hauler = 'Bumblebee',
+  miner = 'Andrena',
+  upgrader = 'Honey bee',
+  builder = 'Colletidae',
+  scout = 'Stenotritidae',
+  bootstrap = 'Bee larva',
+  queen = 'Bee queen',
+  // War
+  knight = 'European hornet',
+  tank = "Red paper wasp",
+  dismantler = 'Dolichovespula arenaria',
+  healer = 'Bald-faced hornet',
+  defender = 'Vespa affinis',
 }

@@ -1,5 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
+import { prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -15,21 +16,14 @@ export class PortalMaster extends SwarmMaster {
 
   constructor(order: Order) {
     super(order);
-    switch (this.order.ref.slice(0, 5)) {
-      case "boost":
-        this.targetBeeCount = 3;
-        this.setup = setups.bootstrap;
-        break;
-      case "claim":
-        this.setup = setups.claimer;
-        break;
-      case "dest_":
-        this.setup = setups.defender.destroyer;
-        break;
-      default:
-        this.setup = setups.puppet;
-        this.priority = 2; // well it IS cheap -_-
-        break;
+    if (this.order.ref.includes(prefix.boost)) {
+      this.setup = setups.bootstrap.copy();
+      this.setup.patternLimit += 2;
+    } else if (this.order.ref.includes(prefix.claim)) {
+      this.setup = setups.claimer;
+    } else {
+      this.setup = setups.puppet;
+      this.priority = 2; // well it IS cheap -_-
     }
   }
 
@@ -37,7 +31,7 @@ export class PortalMaster extends SwarmMaster {
     super.update();
 
     if (this.order.pos.roomName in Game.rooms) {
-      let portal = this.order.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0]
+      let portal = this.order.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
       if (!portal) {
         portal = Game.rooms[this.order.pos.roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
         if (portal)
@@ -57,20 +51,13 @@ export class PortalMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      bee.goTo(this.order.pos);
-      if (bee.pos.isNearTo(this.order.pos)) {
-        let parsed;
-        switch (this.order.ref.slice(0, 5)) {
-          case "boost":
-            parsed = /_([WE][0-9]+[NS][0-9]+)$/.exec(this.order.ref);
-            if (parsed)
-              bee.memory.refMaster = "masterDevelopmentCell_" + parsed[1];
-            break;
-          default:
-            // only for boost for now
-            break;
-        }
+      let pos = this.order.pos;
+      if (this.order.pos.roomName in Game.rooms) {
+        let portal = this.order.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+        if (portal)
+          pos = portal.pos;
       }
+      bee.goTo(pos);
     });
   }
 }

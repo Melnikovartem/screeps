@@ -11,6 +11,7 @@ import { _Apiary } from "./Apiary";
 import { GENERATE_PIXEL, LOGGING_CYCLE, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
 
+// if (Game.shard.name === "shard3")
 // Mem.wipe();
 
 // This gets run on each global reset

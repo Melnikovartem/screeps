@@ -17,11 +17,8 @@ export class AnnexMaster extends SwarmMaster {
 
     let doAnnex = (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && roomInfo.safePlace;
 
-    if (doAnnex)
-      if (this.hive.bassboost)
-        doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5 && this.hive.bassboost.room.energyCapacityAvailable >= 650;
-      else
-        doAnnex = this.hive.room.energyCapacityAvailable >= 650;
+    if (doAnnex && this.hive.bassboost)
+      doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5;
 
     this.targetBeeCount = doAnnex ? 1 : 0;
 

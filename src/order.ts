@@ -299,7 +299,7 @@ export class Order {
             else if (this.ref.includes("left"))
               baseRotation = LEFT;
 
-            Apiary.planner.generatePlan(this.pos, baseRotation);
+            Apiary.planner.generatePlan(this.pos, baseRotation, !this.ref.includes("safe"));
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
@@ -336,7 +336,7 @@ export class Order {
                 if (this.ref in CONTROLLER_STRUCTURES)
                   Apiary.planner.addToPlan(this.pos, this.pos.roomName, <BuildableStructureConstant>this.ref, true);
                 else
-                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, null, true);
+                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, undefined, true);
             }
             this.acted = false;
             break;

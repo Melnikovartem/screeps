@@ -15,7 +15,10 @@ const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
 
 @profile
 export class Visuals {
-  caching: { [id: string]: { data: string, lastRecalc: number } } = {};
+  caching: { [id: string]: { data: string, lastRecalc: number } } = {
+    [GLOBAL_VISUALS]: { data: "", lastRecalc: -1 },
+    [GLOBAL_VISUALS_HEAVY]: { data: "", lastRecalc: -1 },
+  };
   anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
@@ -52,15 +55,13 @@ export class Visuals {
     if (allglobal) {
       let vis = new RoomVisual();
       vis.import(this.caching[GLOBAL_VISUALS].data);
-      if (this.caching[GLOBAL_VISUALS_HEAVY])
-        vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
+      vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
     } else
       for (const name in this.caching)
         if (this.caching[name].lastRecalc <= Game.time) {
           let vis = new RoomVisual(name);
           vis.import(this.caching[GLOBAL_VISUALS].data);
-          if (this.caching[GLOBAL_VISUALS_HEAVY])
-            vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
+          vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
   }
 

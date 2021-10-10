@@ -1,5 +1,6 @@
 // body generating idea from overmind kinda
 // i think i dont need custom ordered creeps
+import { setupsNames } from "../enums";
 import { profile } from "../profiler/decorator";
 
 interface BodySetup {
@@ -86,25 +87,6 @@ export class CreepSetup {
   copy() {
     return new CreepSetup(this.name, { pattern: this.pattern, fixed: this.fixed, patternLimit: this.patternLimit }, this.moveMax, this.ignoreCarry);
   }
-}
-
-export const setupsNames = {
-  // Civilian
-  claimer: 'Bee drone',
-  manager: 'Stingless bee',
-  hauler: 'Bumblebee',
-  miner: 'Andrena',
-  upgrader: 'Honey bee',
-  builder: 'Colletidae',
-  scout: 'Stenotritidae',
-  bootstrap: 'Bee larva',
-  queen: 'Bee queen',
-  // War
-  knight: 'European hornet',
-  tank: "Red paper wasp",
-  dismantler: 'Dolichovespula arenaria',
-  healer: 'Bald-faced hornet',
-  defender: 'Vespa affinis',
 }
 
 

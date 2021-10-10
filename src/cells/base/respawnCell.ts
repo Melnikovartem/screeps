@@ -89,32 +89,36 @@ export class RespawnCell extends Cell {
         && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
         moveMax = 10;
 
-      if (order.priority === 0 && (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount))
+      if (order.priority === 0 && (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount)) {
         setup = order.setup.getBody(energyAvailable, moveMax);
-      else
-        setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);
-
-      if (setup.body.length) {
-        let name = order.setup.name + " " + makeId(4);
-        let memory: CreepMemory = {
-          refMaster: order.master,
-          born: Game.time,
-          state: beeStates.idle,
-        };
-
-        if (setup.cost > energyAvailable)
+        if (setup.body.length)
           break;
-
-        let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
-
-        if (ans === OK) {
-          if (Apiary.logger)
-            Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, order.master);
-          energyAvailable -= setup.cost;
-          delete this.hive.spawOrders[order.ref];
+      } else {
+        setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);
+        if (!setup.body.length) {
+          this.freeSpawns.push(spawn);
+          continue;
         }
-      } else
+      }
+
+      let name = order.setup.name + " " + makeId(4);
+      let memory: CreepMemory = {
+        refMaster: order.master,
+        born: Game.time,
+        state: beeStates.idle,
+      };
+
+      if (setup.cost > energyAvailable)
         break;
+
+      let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
+
+      if (ans === OK) {
+        if (Apiary.logger)
+          Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, order.master);
+        energyAvailable -= setup.cost;
+        delete this.hive.spawOrders[order.ref];
+      }
     }
     if (this.hive.phase === 0) // renewing Boost creeps if they are better than we can spawn
       _.forEach(this.freeSpawns, s => {

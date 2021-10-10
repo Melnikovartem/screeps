@@ -191,9 +191,7 @@ export abstract class SquadMaster extends SwarmMaster {
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
     let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
 
-    if (rangeToTarget <= 1 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedMassAttack(target);
-    else if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
+    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
       action2 = () => bee.rangedAttack(target);
     else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
       action2 = () => bee.rangedHeal(healingTarget);
@@ -248,7 +246,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     }
     bee.goTo(moveTarget, {
-      movingTarget: true, goInDanger: true, maxOps: 2000 * this.activeBees.length,
+      movingTarget: true, goInDanger: true, maxOps: Math.min(2000, 750 * this.activeBees.length),
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;

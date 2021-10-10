@@ -1,5 +1,6 @@
-import { beeStates } from "../enums";
+import { beeStates, prefix } from "../enums";
 import { profile } from "../profiler/decorator";
+import { setupsNames } from "../enums";
 import type { Master } from "../beeMasters/_Master";
 
 @profile
@@ -61,15 +62,41 @@ export class Bee {
     if (this.creep.ticksToLive)
       this.ticksToLive = this.creep.ticksToLive;
 
-    if (!this.master && Apiary.masters[this.creep.memory.refMaster]) {
-      this.master = Apiary.masters[this.creep.memory.refMaster];
-      this.master.newBee(this);
+    if (!this.master) {
+      if (!Apiary.masters[this.creep.memory.refMaster])
+        this.creep.memory.refMaster = this.findMaster();
+      if (Apiary.masters[this.creep.memory.refMaster]) {
+        this.master = Apiary.masters[this.creep.memory.refMaster];
+        this.master.newBee(this);
+      }
     }
+  }
+
+  findMaster() {
+    if (this.ref.includes(setupsNames.bootstrap)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.developmentCell)));
+      if (refMaster)
+        return refMaster;
+    } else if (this.ref.includes(setupsNames.claimer)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.claim)));
+      if (refMaster)
+        return refMaster;
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.annex)));
+      if (refMaster)
+        return refMaster;
+    }
+    return this.creep.memory.refMaster;
+  }
+
+  findClosestByHive(masters: Master[]) {
+    if (!masters.length)
+      return null;
+    return masters.reduce((prev, curr) => curr.hive.pos.getRoomRangeTo(this) < prev.hive.pos.getRoomRangeTo(this) ? curr : prev).ref;
   }
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
-  actionCheck<Obj extends RoomObject | undefined | null>(target: Obj, opt: TravelToOptions = {}, range: number = 1): number {
+  actionCheck<Obj extends RoomObject | undefined | null>(target: Obj, opt: TravelToOptions = {}, range: number = 1): ScreepsReturnCode {
     if (!target)
       return ERR_NOT_FOUND;
     if (this.creep.pos.inRangeTo(target!, range)) {
@@ -84,7 +111,7 @@ export class Bee {
     }
   }
 
-  goRest(pos: RoomPosition, opt?: TravelToOptions): number {
+  goRest(pos: RoomPosition, opt?: TravelToOptions): ScreepsReturnCode {
     this.actionPosition = pos;
     if ((this.pos.x !== pos.x || this.pos.y !== pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName !== pos.roomName)
       this.goTo(pos, opt);
@@ -93,11 +120,11 @@ export class Bee {
     return ERR_NOT_IN_RANGE;
   }
 
-  goToRoom(roomName: string, opt?: TravelToOptions): number {
+  goToRoom(roomName: string, opt?: TravelToOptions): ScreepsReturnCode {
     return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
-  goTo(target: RoomPosition | { pos: RoomPosition }, opt: TravelToOptions = {}): number {
+  goTo(target: RoomPosition | { pos: RoomPosition }, opt: TravelToOptions = {}): ScreepsReturnCode {
     Apiary.intel.getInfo(this.pos.roomName, 50); // collect intel
     /* Not sure how useful is this
     if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {
@@ -126,12 +153,12 @@ export class Bee {
     return this.creep.getBodyParts(partType, undefined, true);
   }
 
-  transfer(t: Structure | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
+  transfer(t: Structure | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.transfer(t!, resourceType, amount) : ans;
   }
 
-  withdraw(t: Structure | Tombstone | Ruin | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): number {
+  withdraw(t: Structure | Tombstone | Ruin | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.withdraw(t!, resourceType, amount) : ans;
   }
@@ -141,27 +168,20 @@ export class Bee {
     return ans === OK ? this.creep.pickup(t!) : ans;
   }
 
-  attack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): number {
+  attack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
     opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.attack(t!) : ans;
   }
 
-  rangedAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): number {
+  rangedAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
     opt.goInDanger = true;
     let ans = this.actionCheck(t, opt, 3);
+    if (t && this.pos.getRangeTo(t) <= 1)
+      return this.creep.rangedMassAttack();
     return ans === OK ? this.creep.rangedAttack(t!) : ans;
-  }
-
-  rangedMassAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): number {
-    opt.movingTarget = true;
-    opt.goInDanger = true;
-    let ans = this.actionCheck(t, opt, 1);
-    if (ans === ERR_NOT_IN_RANGE && t && this.pos.getRangeTo(t) <= 3)
-      this.creep.rangedAttack(t);
-    return ans === OK ? this.creep.rangedMassAttack() : ans;
   }
 
   heal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
@@ -182,44 +202,44 @@ export class Bee {
     return ans === OK ? this.creep.rangedHeal(<Creep | PowerCreep>t) : ans;
   }
 
-  dismantle(t: Structure | undefined | null, opt: TravelToOptions = {}): number {
+  dismantle(t: Structure | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.dismantle(t!) : ans;
   }
 
-  harvest(t: Source | Mineral | undefined | null, opt?: TravelToOptions): number {
+  harvest(t: Source | Mineral | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.harvest(t!) : ans;
   }
 
 
-  build(t: ConstructionSite | undefined | null, opt?: TravelToOptions): number {
+  build(t: ConstructionSite | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt, 3);
     return ans === OK ? this.creep.build(t!) : ans;
   }
 
-  repair(t: Structure | undefined | null, opt?: TravelToOptions): number {
+  repair(t: Structure | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt, 3);
     return ans === OK ? this.creep.repair(t!) : ans;
   }
 
-  upgradeController(t: StructureController | undefined | null, opt?: TravelToOptions): number {
+  upgradeController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt, 3);
     return ans === OK ? this.creep.upgradeController(t!) : ans;
   }
 
-  reserveController(t: StructureController | undefined | null, opt?: TravelToOptions): number {
+  reserveController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.reserveController(t!) : ans;
   }
 
-  claimController(t: StructureController | undefined | null, opt?: TravelToOptions): number {
+  claimController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.claimController(t!) : ans;
   }
 
-  attackController(t: StructureController | undefined | null, opt?: TravelToOptions): number {
+  attackController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.attackController(t!) : ans;
   }

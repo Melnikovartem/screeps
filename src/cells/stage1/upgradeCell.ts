@@ -55,8 +55,8 @@ export class UpgradeCell extends Cell {
           body = setups.upgrader.manual.getBody(this.hive.room.energyCapacityAvailable).body;
       }
 
-      let carry = body.filter(b => b === CARRY).length;
-      let work = body.filter(b => b === WORK).length
+      let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
+      let work = body.filter(b => b === WORK).length;
       this.ratePerCreepMax = carry / (suckerTime + carry / work);
 
       if (this.hive.phase === 2)

@@ -36,7 +36,7 @@ export abstract class Master {
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
     bee.creep.notifyWhenAttacked(this.notify);
-    if (bee.state === beeStates.idle)
+    if (bee.state === beeStates.idle || bee.state === undefined)
       bee.state = this.boost ? beeStates.boosting : beeStates.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)

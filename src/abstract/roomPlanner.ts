@@ -709,14 +709,16 @@ export class RoomPlanner {
     let oldState = { s: plan[pos.x][pos.y].s, r: plan[pos.x][pos.y].r };
     if (sType === STRUCTURE_RAMPART)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
-    else if (plan[pos.x][pos.y].s === undefined) {
+    else if (sType === undefined && force) {
+      plan[pos.x][pos.y] = { s: undefined, r: false };
+    } else if (plan[pos.x][pos.y].s === undefined) {
       if (sType) {
         if (placed[sType]! >= CONTROLLER_STRUCTURES[sType][8])
           return ERR_FULL;
         placed[sType]!++;
       }
       plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
-    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL && sType !== undefined)
+    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: sType, r: true };
     else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
@@ -902,7 +904,7 @@ export class RoomPlanner {
                 place.pos.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
             } else
               toadd.push(pos);
-          } else {
+          } else if (constructionSite.structureType === sType) {
             ans.push({
               pos: pos,
               sType: sType,
@@ -912,7 +914,8 @@ export class RoomPlanner {
             // if (!constructionSite.progress)
             //  constructionSite.remove();
             ++constructions;
-          }
+          } else if (constructionSite.my && constructionSite.structureType !== STRUCTURE_RAMPART && sType !== STRUCTURE_RAMPART)
+            constructionSite.remove();
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;

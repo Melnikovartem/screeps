@@ -22,7 +22,7 @@ export class Traveler {
    * @returns {number}
    */
 
-  public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): number | RoomPosition {
+  public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): ScreepsReturnCode | RoomPosition {
 
     // uncomment if you would like to register hostile rooms entered
     // this.updateRoomStatus(creep.room);
