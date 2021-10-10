@@ -3,6 +3,9 @@ import { profile } from "../profiler/decorator";
 import { setupsNames } from "../enums";
 import type { Master } from "../beeMasters/_Master";
 
+type InfoMove = { bee: Bee, priority: number };
+type MoveMap = { [id: string]: InfoMove[] };
+
 @profile
 export class Bee {
 
@@ -262,8 +265,7 @@ export class Bee {
   }
 
   static beesMove() {
-    type InfoMove = { bee: Bee, priority: number };
-    let moveMap: { [id: string]: InfoMove[] } = {};
+    let moveMap: MoveMap = {};
     for (const name in Apiary.bees) {
       let bee = Apiary.bees[name];
       if (bee.creep.fatigue > 0)
@@ -294,22 +296,8 @@ export class Bee {
         let beeIn = Apiary.bees[creepIn.name];
         if (!beeIn.targetPosition) {
           bee = moveMap[nodeId].reduce(red).bee;
-          if (bee.ref === creepIn.name)
-            continue;
-          let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
-          let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
-          if (!open.length)
-            continue;
-          let pp = open.reduce((prev, curr) => {
-            let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
-            if (ans === 0)
-              ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length
-            return ans < 0 ? curr : prev;
-          });
-          if (pp) {
-            moveMap[pp.roomName + "_" + pp.x + "_" + pp.y] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
-            beeIn.creep.move(beeIn.pos.getDirectionTo(pp));
-          } else
+          let ans = this.noBeeInSover(moveMap, bee, beeIn);
+          if (ans !== OK)
             continue;
         } else {
           let outPos = beeIn.targetPosition;
@@ -327,6 +315,30 @@ export class Bee {
         bee = moveMap[nodeId].reduce(red).bee;
       bee.creep.move(bee.pos.getDirectionTo(pos));
     }
+  }
+
+  private static noBeeInSover(moveMap: MoveMap, bee: Bee, beeIn: Bee): OK | ERR_FULL | ERR_NOT_FOUND {
+    if (bee.ref === beeIn.ref)
+      return ERR_FULL;
+    let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
+    let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
+    if (!open.length)
+      return ERR_NOT_FOUND;
+    let pp = open.reduce((prev, curr) => {
+      let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
+      if (ans === 0)
+        ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length
+      return ans < 0 ? curr : prev;
+    });
+
+    moveMap[pp.roomName + "_" + pp.x + "_" + pp.y] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+    let creepIn = pp.lookFor(LOOK_CREEPS).filter(c => c.my)[0];
+    let ans: OK | ERR_FULL | ERR_NOT_FOUND = OK;
+    if (creepIn)
+      ans = this.noBeeInSover(moveMap, beeIn, Apiary.bees[creepIn.name]);
+    if (ans === OK)
+      beeIn.creep.move(beeIn.pos.getDirectionTo(pp));
+    return ans;
   }
 
   get print(): string {
