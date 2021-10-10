@@ -349,7 +349,7 @@ export class Order {
             if (!del || /^force/.exec(this.ref)) {
               for (let name in Apiary.planner.activePlanning) {
                 console.log("SAVED: ", name, Apiary.planner.activePlanning[name].anchor);
-                Apiary.planner.saveActive(name, this.hive.phase === 0);
+                Apiary.planner.saveActive(name);
                 delete Apiary.planner.activePlanning[name];
               }
               if (!Object.keys(Apiary.planner.activePlanning).length)

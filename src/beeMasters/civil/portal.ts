@@ -18,12 +18,12 @@ export class PortalMaster extends SwarmMaster {
     super(order);
     if (this.order.ref.includes(prefix.boost)) {
       this.setup = setups.bootstrap.copy();
-      this.setup.patternLimit += 2;
+      this.setup.patternLimit += 4;
     } else if (this.order.ref.includes(prefix.claim)) {
       this.setup = setups.claimer;
     } else if (this.order.ref.includes(prefix.annex)) {
       this.setup = setups.claimer.copy();
-      this.setup.patternLimit = 3;
+      this.setup.patternLimit += 2;
     } else {
       this.setup = setups.puppet;
       this.priority = 2; // well it IS cheap -_-

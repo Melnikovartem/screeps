@@ -810,15 +810,22 @@ export class RoomPlanner {
       });
   }
 
-  saveActive(roomName: string, inverseRoads = false) {
+  saveActive(roomName: string) {
     let active = this.activePlanning[roomName];
     if (!(active))
       return;
     Memory.cache.roomPlanner[roomName] = {};
+    let myRoom = Game.rooms[roomName] && Game.rooms[roomName].controller && Game.rooms[roomName].controller!.my;
     for (let x in active.plan)
       for (let y in active.plan[+x]) {
         if (active.plan[+x][+y].s)
           this.addToCache({ x: +x, y: +y }, roomName, active.plan[+x][+y].s!);
+        else if (active.plan[+x][+y].s === null && myRoom) {
+          let s = new RoomPosition(+x, +y, roomName).lookFor(LOOK_STRUCTURES)[0];
+          if (s && s.structureType !== STRUCTURE_RAMPART)
+            s.destroy();
+        }
+
         if (active.plan[+x][+y].r || active.plan[+x][+y].s === STRUCTURE_TOWER)
           this.addToCache({ x: +x, y: +y }, roomName, STRUCTURE_RAMPART);
       }
@@ -837,7 +844,7 @@ export class RoomPlanner {
             ans = 1;
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        return ans * (inverseRoads && sType === STRUCTURE_ROAD ? -1 : 1);
+        return ans;
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }
@@ -865,7 +872,7 @@ export class RoomPlanner {
     return { amount: amount ? amount : 0, heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax };
   }
 
-  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY, specials: { [key in StructureConstant]?: number } = {}) {
+  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY, specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return [];
 
@@ -921,10 +928,10 @@ export class RoomPlanner {
           let heal = this.getCase(structure).heal;
           if (specials[structure.structureType])
             heal = specials[structure.structureType]!;
-          if (structure.hits < heal * 0.3
-            || (structure.hits < heal * 0.75 && !constructions)
-            || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * 0.75))
-            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal - 5000, heal * 0.75)))
+          if (structure.hits < heal * 0.25
+            || (structure.hits < heal * coef && !constructions)
+            || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * coef))
+            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal - 5000, heal * coef)))
             ans.push({
               pos: pos,
               sType: sType,

@@ -309,7 +309,9 @@ export class Bee {
         let pp = open.reduce((prev, curr) => {
           let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
           if (ans === 0)
-            ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length
+            ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length;
+          if (ans === 0)
+            ans = Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y) - Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y);
           return ans < 0 ? curr : prev;
         });
         moveMap[pp.str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];

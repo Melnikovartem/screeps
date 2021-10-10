@@ -148,18 +148,19 @@ export class Hive {
     } else {
       if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 32000)
         this.cells.dev = new DevelopmentCell(this);
-      this.cells.storage = new StorageCell(this, this.room.storage!);
-      this.cells.upgrade = new UpgradeCell(this, this.room.controller!, this.cells.storage);
-      this.cells.lab = new LaboratoryCell(this, this.cells.storage);
+      let sCell = new StorageCell(this, this.room.storage!);
+      this.cells.storage = sCell;
+      this.cells.upgrade = new UpgradeCell(this, this.room.controller!, sCell);
+      this.cells.lab = new LaboratoryCell(this, sCell);
 
-      this.builder = new BuilderMaster(this);
+      this.builder = new BuilderMaster(this, sCell);
       let factory: StructureFactory | undefined;
       _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
         if (s.structureType === STRUCTURE_FACTORY)
           factory = s;
       });
       if (factory)
-        this.cells.factory = new FactoryCell(this, factory, this.cells.storage);
+        this.cells.factory = new FactoryCell(this, factory, sCell);
       if (this.phase === 2) {
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
@@ -170,9 +171,9 @@ export class Hive {
             powerSpawn = s;
         });
         if (obeserver)
-          this.cells.observe = new ObserveCell(this, obeserver, this.cells.storage);
+          this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
-          this.cells.power = new PowerCell(this, powerSpawn, this.cells.storage);
+          this.cells.power = new PowerCell(this, powerSpawn, sCell);
         // TODO cause i haven' reached yet
       }
     }
@@ -333,17 +334,20 @@ export class Hive {
             if (Apiary.intel.getInfo(annexName).safePlace)
               add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
-        if (this.phase === 2) {
-          if (!reCheck && this.wallsHealth < this.wallsHealthMax) {
-            let sCell = this.cells.storage;
-            if (sCell && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY])
-              this.wallsHealth += WALL_HEALTH;
-          }
 
+        if (this.phase === 2 && !reCheck && !this.sumCost && this.wallsHealth < this.wallsHealthMax) {
+          let sCell = this.cells.storage;
+          if (sCell && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY])
+            this.wallsHealth += WALL_HEALTH;
           add(Apiary.planner.checkBuildings(this.roomName, undefined, {
             [STRUCTURE_WALL]: this.wallsHealth,
             [STRUCTURE_RAMPART]: this.wallsHealth,
           }));
+          break;
+        }
+
+        if (!this.sumCost && this.builder && this.builder.activeBees) {
+          add(Apiary.planner.checkBuildings(this.roomName, undefined, undefined, 0.99));
           break;
         }
       default:

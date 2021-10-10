@@ -5,33 +5,33 @@ import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
+import type { StorageCell } from "../../cells/stage1/storageCell";
 
 @profile
 export class BuilderMaster extends Master {
+  patternPerBee = 10;
+  sCell: StorageCell;
 
-  constructor(hive: Hive) {
+  constructor(hive: Hive, sCell: StorageCell) {
     super(hive, "BuilderHive_" + hive.room.name);
+    this.sCell = sCell;
   }
 
   recalculateTargetBee() {
-    this.targetBeeCount = 1;
-    if (2 % 1 === 0)
-      return; // remove
+    let target = this.hive.sumCost > 0 ? 1 : 0;
+    this.patternPerBee = 5;
 
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    let constLen = this.hive.structuresConst.length;
-    let constSum = this.hive.sumCost;
-    if (!storage || constSum < 100 && constLen <= 1 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
-      this.targetBeeCount = 0;
-    else if (constSum < 13000 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000)
-      this.targetBeeCount = 1;
-    else if (constSum < 22000 || storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000)
-      this.targetBeeCount = 2;
-    else
-      this.targetBeeCount = 3;
+    if (this.hive.sumCost > 2500 && this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY]) {
+      target = 2;
+      this.patternPerBee = 10;
+    }
 
-    if (storage && this.hive.state >= hiveStates.nukealert && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
-      this.targetBeeCount = 4;
+    if (this.hive.state >= hiveStates.nukealert) {
+      this.patternPerBee = Infinity;
+      ++target;
+    }
+
+    this.targetBeeCount = target;
   }
 
   checkBeesWithRecalc() {
@@ -59,10 +59,7 @@ export class BuilderMaster extends Master {
         setup: setups.builder,
         priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
       };
-      if (emergency) {
-        order.setup = order.setup.copy();
-        order.setup.patternLimit = Infinity;
-      }
+      order.setup.patternLimit = this.patternPerBee;
       this.wish(order);
     }
   }

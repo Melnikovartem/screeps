@@ -70,12 +70,6 @@ export class UpgraderMaster extends Master {
         order.setup = setups.upgrader.fast;
 
       order.setup.patternLimit = this.patternPerBee;
-
-      if (this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2) {
-        order.priority = 3;
-        order.setup = setups.upgrader.manual;
-      }
-
       this.wish(order);
     }
   }
