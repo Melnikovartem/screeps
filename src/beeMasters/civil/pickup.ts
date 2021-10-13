@@ -38,17 +38,19 @@ export class PickupMaster extends SwarmMaster {
           amount = target.amount;
         else
           amount = target.store.getUsedCapacity(RESOURCE_ENERGY)
-      else if (Game.time % 100 === 0) {
-        // this is ?
+      else {
         let room = Game.rooms[this.order.pos.roomName];
         target = room.find(FIND_DROPPED_RESOURCES)[0];
-        if (!target)
+        if (!target && this.order.pos.roomName !== this.hive.roomName) {
           target = <StructureStorage>room.find(FIND_STRUCTURES)
             .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
-        if (!target && this.order.pos.roomName !== this.hive.roomName)
-          target = this.hive.room.find(FIND_DROPPED_RESOURCES)[0];
+          if (!target)
+            target = this.hive.room.find(FIND_DROPPED_RESOURCES)[0];
+        }
         if (target)
           this.order.flag.setPosition(target.pos);
+        else
+          this.order.delete();
       }
     }
     return { target: target, amount: amount };
@@ -101,14 +103,5 @@ export class PickupMaster extends SwarmMaster {
           break;
       }
     });
-  }
-
-  delete() {
-    for (const key in this.bees) {
-      this.bees[key].master = undefined;
-      this.bees[key].state = beeStates.idle;
-      delete this.bees[key].target;
-    }
-    super.delete();
   }
 }

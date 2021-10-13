@@ -320,7 +320,7 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
           [STRUCTURE_WALL]: Math.min(this.wallsHealth * 1.5, RAMPART_HITS_MAX[this.room.controller ? this.room.controller.level : 0]),
           [STRUCTURE_RAMPART]: Math.min(this.wallsHealth * 1.5, WALL_HITS_MAX),
-        }));
+        }, 0.99));
         break;
       case hiveStates.nukealert:
         add(this.cells.defense.getNukeDefMap());
@@ -370,7 +370,7 @@ export class Hive {
       }
       this.shouldRecalc = 0;
     }
-    if (Game.time % 100 === 29)
+    if (Game.time % 100 === 29 || this.state === hiveStates.nospawn)
       this.updateCellData();
     if (Apiary.logger)
       Apiary.logger.hiveLog(this);

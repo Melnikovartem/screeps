@@ -36,7 +36,7 @@ export class BuilderMaster extends Master {
 
   checkBeesWithRecalc() {
     let check = () => this.checkBees(this.hive.state === hiveStates.battle);
-    if (!check())
+    if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
     return check();
@@ -56,7 +56,7 @@ export class BuilderMaster extends Master {
 
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
       let order = {
-        setup: setups.builder,
+        setup: setups.builder.copy(),
         priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
       };
       order.setup.patternLimit = this.patternPerBee;

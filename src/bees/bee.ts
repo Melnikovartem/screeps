@@ -76,7 +76,11 @@ export class Bee {
   }
 
   findMaster() {
-    if (this.ref.includes(setupsNames.bootstrap)) {
+    if (this.ref.includes(setupsNames.hauler)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.excavationCell) && m.beesAmount <= m.targetBeeCount));
+      if (refMaster)
+        return refMaster;
+    } else if (this.ref.includes(setupsNames.bootstrap)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.developmentCell)));
       if (refMaster)
         return refMaster;
@@ -94,7 +98,10 @@ export class Bee {
   findClosestByHive(masters: Master[]) {
     if (!masters.length)
       return null;
-    return masters.reduce((prev, curr) => curr.hive.pos.getRoomRangeTo(this) < prev.hive.pos.getRoomRangeTo(this) ? curr : prev).ref;
+    let ans = masters.reduce((prev, curr) => curr.hive.pos.getRoomRangeTo(this) < prev.hive.pos.getRoomRangeTo(this) ? curr : prev);
+    if (ans.hive.pos.getRoomRangeTo(this) > this.ticksToLive / 25)
+      return null;
+    return ans.ref;
   }
 
   // for future: could path to open position near object for targets that require isNearTo

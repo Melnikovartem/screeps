@@ -144,14 +144,15 @@ export class DefenseCell extends Cell {
         for (const roomDefName in Apiary.defenseSwarms) {
           let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
           if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-            && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees, bee => bee.hits >= bee.hitsMax * 0.5 && bee.ticksToLive).length > 0)
+            && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees,
+              bee => (bee.hits >= bee.hitsMax * 0.7 || bee.getActiveBodyParts(HEAL)) && bee.ticksToLive > CREEP_LIFE_TIME * 0.2).length)
             freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
         }
         let ans: number | string | undefined;
         if (freeSwarms.length) {
           let swarm = freeSwarms.reduce((prev, curr) =>
-            prev.pos.getRoomRangeTo(Game.rooms[roomName]) > curr.pos.getRoomRangeTo(Game.rooms[roomName]) ? curr : prev);
-          if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 5)
+            prev.pos.getRoomRangeTo(roomName) > curr.pos.getRoomRangeTo(roomName) ? curr : prev);
+          if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 6)
             ans = this.setDefFlag(enemy.pos, swarm.flag);
           if (ans === OK) {
             delete Apiary.defenseSwarms[swarm.pos.roomName];
@@ -207,7 +208,7 @@ export class DefenseCell extends Cell {
       pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
 
     if (info instanceof Flag) {
-      return info.setPosition(pos.x, pos.y)
+      return info.setPosition(pos);
     } else if (info === "surrender") {
       ans = pos.createFlag(prefix.surrender + pos.roomName, COLOR_RED, COLOR_WHITE);
     } else if (info === "power")

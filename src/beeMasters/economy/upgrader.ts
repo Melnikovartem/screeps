@@ -21,17 +21,17 @@ export class UpgraderMaster extends Master {
   recalculateTargetBee() {
     this.fastModePossible = !!(this.cell.link && Object.keys(this.cell.sCell.links).length || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4);
 
-    this.targetBeeCount = 1;
-    this.patternPerBee = 10;
-    this.boost = false;
-
-    this.fastMode = true;
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
       this.fastMode = false;
+      this.boost = false;
+
+      this.targetBeeCount = 1;
+      this.patternPerBee = 2;
       return;
     }
-
+    this.fastMode = true;
     this.boost = true;
+
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ 390K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
     let desiredRate = Math.min(this.cell.maxRate, Math.ceil(8.3 * Math.pow(10, -17) * Math.pow(storeAmount, 3) + 2.2 * Math.pow(10, -4) * storeAmount - 8.2))
@@ -49,9 +49,7 @@ export class UpgraderMaster extends Master {
 
   checkBeesWithRecalc() {
     let check = () => this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2);
-    if (!this.targetBeeCount)
-      this.recalculateTargetBee();
-    if (!check())
+    if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
     return check();
@@ -62,12 +60,12 @@ export class UpgraderMaster extends Master {
 
     if (this.checkBeesWithRecalc()) {
       let order = {
-        setup: setups.upgrader.manual,
+        setup: setups.upgrader.manual.copy(),
         priority: <8 | 7 | 3>(this.cell.controller.level === 8 ? 8 : 7),
       };
 
       if (this.fastModePossible)
-        order.setup = setups.upgrader.fast;
+        order.setup = setups.upgrader.fast.copy();
 
       order.setup.patternLimit = this.patternPerBee;
       this.wish(order);

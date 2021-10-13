@@ -35,7 +35,6 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
-    bee.creep.notifyWhenAttacked(this.notify);
     if (bee.state === beeStates.idle || bee.state === undefined)
       bee.state = this.boost ? beeStates.boosting : beeStates.chill;
     this.bees[bee.ref] = bee;
@@ -69,7 +68,9 @@ export abstract class Master {
     for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref])
         this.deleteBee(ref);
-    this.activeBees = _.filter(this.bees, b => !b.creep.spawning)
+    this.activeBees = _.filter(this.bees, b => !b.creep.spawning);
+    if (Game.time % 36 === 0)
+      _.forEach(this.activeBees, b => b.creep.notifyWhenAttacked(this.notify));
   }
 
   wish(template: { setup: SpawnOrder["setup"], priority: SpawnOrder["priority"] }, ref: string = this.ref) {

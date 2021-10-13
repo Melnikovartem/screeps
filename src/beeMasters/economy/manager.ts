@@ -83,7 +83,7 @@ export class ManagerMaster extends Master {
 
     if (this.checkBees(true) && this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let order = {
-        setup: setups.queen,
+        setup: setups.queen.copy(),
         priority: <0>0,
       };
 
