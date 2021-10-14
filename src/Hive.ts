@@ -318,9 +318,11 @@ export class Hive {
     switch (this.state) {
       case hiveStates.battle:
         add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
-          [STRUCTURE_WALL]: Math.min(this.wallsHealth * 1.5, RAMPART_HITS_MAX[this.room.controller ? this.room.controller.level : 0]),
-          [STRUCTURE_RAMPART]: Math.min(this.wallsHealth * 1.5, WALL_HITS_MAX),
+          [STRUCTURE_WALL]: this.wallsHealth,
+          [STRUCTURE_RAMPART]: this.wallsHealth,
         }, 0.99));
+        if (!this.sumCost && this.wallsHealth < Math.min(this.wallsHealthMax, RAMPART_HITS_MAX[this.room.controller!.level]))
+          this.wallsHealth += WALL_HEALTH;
         break;
       case hiveStates.nukealert:
         add(this.cells.defense.getNukeDefMap());

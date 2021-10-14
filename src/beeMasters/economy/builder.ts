@@ -56,7 +56,7 @@ export class BuilderMaster extends Master {
 
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
       let order = {
-        setup: setups.builder.copy(),
+        setup: setups.builder,
         priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
       };
       order.setup.patternLimit = this.patternPerBee;
@@ -90,8 +90,18 @@ export class BuilderMaster extends Master {
             let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
               target = Game.getObjectById(bee.target);
-              if (target instanceof Structure && (target.hits >= Apiary.planner.getCase(target).heal || target.hits === target.hitsMax))
-                target = undefined;
+              if (target instanceof Structure) {
+                let healTarget;
+                if (target.structureType === STRUCTURE_WALL || target.structureType === STRUCTURE_RAMPART) {
+                  healTarget = this.hive.wallsHealth;
+                  if (this.hive.state === hiveStates.battle)
+                    healTarget *= 2;
+                } else
+                  healTarget = Apiary.planner.getCase(target).heal;
+                if (target.hits >= Math.min(healTarget, target.hitsMax))
+                  target = undefined;
+              }
+
               if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
                 this.hive.shouldRecalc = 2;
             }

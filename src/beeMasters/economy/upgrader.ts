@@ -33,10 +33,9 @@ export class UpgraderMaster extends Master {
     this.boost = true;
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
-    // ceil(desiredRate) > 80 @ 390K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
-    let desiredRate = Math.min(this.cell.maxRate, Math.ceil(8.3 * Math.pow(10, -17) * Math.pow(storeAmount, 3) + 2.2 * Math.pow(10, -4) * storeAmount - 8.2))
-
-    // ceil(desiredRate) === 0 @ 35K
+    // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
+    let desiredRate = Math.min(this.cell.maxRate, Math.ceil(2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) + 3.5 * Math.pow(10, -5) * storeAmount - 1));
+    // ceil(desiredRate) === 0 @ ~30K
     this.targetBeeCount = Math.ceil(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = Math.ceil(desiredRate / this.targetBeeCount);
 
@@ -60,12 +59,12 @@ export class UpgraderMaster extends Master {
 
     if (this.checkBeesWithRecalc()) {
       let order = {
-        setup: setups.upgrader.manual.copy(),
+        setup: setups.upgrader.manual,
         priority: <8 | 7 | 3>(this.cell.controller.level === 8 ? 8 : 7),
       };
 
       if (this.fastModePossible)
-        order.setup = setups.upgrader.fast.copy();
+        order.setup = setups.upgrader.fast;
 
       order.setup.patternLimit = this.patternPerBee;
       this.wish(order);

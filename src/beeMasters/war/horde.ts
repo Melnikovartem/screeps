@@ -64,7 +64,7 @@ export class HordeMaster extends SwarmMaster {
         targetRange = 20;
       }
     if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.7 || bee.pos.getRangeTo(target) < range)) {
-      let open = bee.pos.getOpenPositions().reduce((prev, curr) => {
+      let open = bee.pos.getOpenPositions(true).reduce((prev, curr) => {
         let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
         if (ans === 0) {
           switch (Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y)) {

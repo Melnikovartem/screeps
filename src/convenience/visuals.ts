@@ -348,7 +348,7 @@ export class Visuals {
     });
     ans.push(["resource", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
 
-    let annexOrders = _.filter(Apiary.orders, o => o.hive === hive && o.flag.color === COLOR_PURPLE && o.flag.secondaryColor === COLOR_PURPLE)
+    let annexOrders = _.filter(Apiary.orders, o => o.hive === hive && o.flag.color === COLOR_PURPLE && o.flag.secondaryColor === COLOR_PURPLE);
     if (annexOrders.length) {
       let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
       let statsPuppet = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };

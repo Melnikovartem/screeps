@@ -42,20 +42,21 @@ export class UpgradeCell extends Cell {
     this.maxRate = Math.max(1, futureResourceCells.length) * 10;
 
     let storageLink = this.sCell.links[Object.keys(this.sCell.links)[0]];
-    let body;
+    let setup;
     let suckerTime = 0;
 
     if (this.link && storageLink) {
       this.maxRate = Math.min(800 / this.link.pos.getRangeTo(storageLink), this.maxRate); // how to get more in?
-      body = setups.upgrader.fast.getBody(this.hive.room.energyCapacityAvailable).body;
+      setup = setups.upgrader.fast;
     } else {
       suckerTime = Math.max(this.sCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0);
       if (this.controller.pos.getRangeTo(this.sCell.storage) < 4)
-        body = setups.upgrader.fast.getBody(this.hive.room.energyCapacityAvailable).body;
+        setup = setups.upgrader.fast;
       else
-        body = setups.upgrader.manual.getBody(this.hive.room.energyCapacityAvailable).body;
+        setup = setups.upgrader.manual;
     }
-
+    setup.patternLimit = Infinity;
+    let body = setup.getBody(this.hive.room.energyCapacityAvailable).body
     let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
     let work = body.filter(b => b === WORK).length;
     this.ratePerCreepMax = carry / (suckerTime + carry / work);

@@ -56,6 +56,11 @@ export class Order {
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
           filter = _ => true;
           break;
+        case COLOR_RED:
+          let parsed = /_room\_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
+          if (parsed)
+            filter = h => h.roomName === parsed![1];
+          break;
       }
       this.hive = this.findHive(filter);
     }

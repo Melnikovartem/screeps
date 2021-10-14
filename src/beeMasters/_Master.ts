@@ -75,7 +75,7 @@ export abstract class Master {
 
   wish(template: { setup: SpawnOrder["setup"], priority: SpawnOrder["priority"] }, ref: string = this.ref) {
     let order: SpawnOrder = {
-      setup: template.setup,
+      setup: template.setup.copy(),
       priority: template.priority,
       master: this.ref,
       ref: ref,
