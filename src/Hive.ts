@@ -273,8 +273,11 @@ export class Hive {
   }
 
   findProject(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignore_repairs" | "ignore_constructions") {
-    if (!this.structuresConst.length)
+    if (!this.structuresConst.length) {
+      if (this.shouldRecalc < 2)
+        this.shouldRecalc = 2;
       return;
+    }
 
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;

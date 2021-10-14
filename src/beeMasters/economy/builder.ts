@@ -21,9 +21,12 @@ export class BuilderMaster extends Master {
     let target = this.hive.sumCost > 0 ? 1 : 0;
     this.patternPerBee = 5;
 
-    if (this.hive.sumCost > 2500 && this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY]) {
-      target = 2;
+    if (this.hive.sumCost > 1200) {
       this.patternPerBee = 10;
+      if (this.hive.sumCost > 5000)
+        target = 2;
+      if (this.hive.sumCost > 15000 && this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
+        this.patternPerBee = 15;
     }
 
     if (this.hive.state >= hiveStates.nukealert) {
@@ -35,11 +38,8 @@ export class BuilderMaster extends Master {
   }
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(this.hive.state === hiveStates.battle);
-    if (this.targetBeeCount && !check())
-      return false;
     this.recalculateTargetBee();
-    return check();
+    return this.checkBees(this.hive.state !== hiveStates.lowenergy);
   }
 
   update() {
@@ -101,9 +101,6 @@ export class BuilderMaster extends Master {
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
               }
-
-              if (!target && !this.hive.structuresConst.length && this.hive.shouldRecalc < 2)
-                this.hive.shouldRecalc = 2;
             }
 
             if (!target)

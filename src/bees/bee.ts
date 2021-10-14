@@ -260,6 +260,34 @@ export class Bee {
     return ans;
   }
 
+  flee(enemy: Creep | Structure | PowerCreep, posToFlee: RoomPosition) {
+    let poss = this.pos.getOpenPositions(true);
+    if (!poss.length)
+      return ERR_NOT_FOUND;
+    let open = poss.reduce((prev, curr) => {
+      let ans = prev.getRangeTo(enemy) - curr.getRangeTo(enemy);
+      if (ans === 0) {
+        switch (Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y)) {
+          case TERRAIN_MASK_WALL:
+          case TERRAIN_MASK_SWAMP:
+            if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) === TERRAIN_MASK_WALL)
+              ans = -1;
+            else
+              ans = 1;
+            break;
+          case 0:
+            if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) !== 0)
+              ans = -1;
+            else
+              ans = curr.getRangeTo(posToFlee) - prev.getRangeTo(posToFlee)
+            break;
+        }
+      }
+      return ans < 0 ? curr : prev;
+    });
+    return this.goTo(open);
+  }
+
   static checkBees() {
     for (const name in Game.creeps) {
       let bee = Apiary.bees[name];
@@ -283,7 +311,7 @@ export class Bee {
         p = bee.pos; // 0 and 1 won't move
       if (!p)
         continue;
-      let nodeId = p.str;
+      let nodeId = p.to_str;
       if (!moveMap[nodeId])
         moveMap[nodeId] = [];
       moveMap[nodeId].push({ bee: bee, priority: priority });
@@ -306,7 +334,7 @@ export class Bee {
         return ERR_FULL;
       let beeIn = Apiary.bees[creepIn.name];
       if (!beeIn.targetPosition) {
-        bee = moveMap[pos.str].reduce(red).bee;
+        bee = moveMap[pos.to_str].reduce(red).bee;
         if (bee.ref === beeIn.ref)
           return ERR_FULL;
         let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
@@ -321,7 +349,7 @@ export class Bee {
             ans = Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y) - Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y);
           return ans < 0 ? curr : prev;
         });
-        moveMap[pp.str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+        moveMap[pp.to_str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
         let ans = this.beeMove(moveMap, pp);
         if (ans !== OK)
           return ans;
@@ -335,10 +363,10 @@ export class Bee {
             return prev;
           return curr.priority < prev.priority ? curr : prev
         };
-        bee = moveMap[pos.str].reduce(red).bee;
+        bee = moveMap[pos.to_str].reduce(red).bee;
       }
     } else
-      bee = moveMap[pos.str].reduce(red).bee;
+      bee = moveMap[pos.to_str].reduce(red).bee;
     bee.creep.move(bee.pos.getDirectionTo(pos));
     return OK;
   }

@@ -6,6 +6,8 @@ import { setups } from "../../bees/creepsetups";
 import { profile } from "../../profiler/decorator";
 import type { ResourceCell } from "../../cells/base/resourceCell";
 
+const ENEMY_DIST = 4;
+
 @profile
 export class MinerMaster extends Master {
   cell: ResourceCell;
@@ -39,18 +41,28 @@ export class MinerMaster extends Master {
   }
 
   run() {
-
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
     let sourceOff = !this.cell.operational
       || this.cell.resource instanceof Source && this.cell.resource.energy === 0
       || this.cell.extractor && this.cell.extractor.cooldown > 0
       || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username);
 
+    let enemy = Apiary.intel.getEnemy(this.cell, 10);
+
+    if (enemy && !(enemy instanceof Creep))
+      enemy = undefined;
+
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 
-      if (bee.state !== beeStates.chill && bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25) {
+      let shouldTransfer = bee.state !== beeStates.chill && bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25;
+      if (enemy && enemy.pos.getRangeTo(bee) < ENEMY_DIST + 1) {
+        bee.state = beeStates.flee;
+        shouldTransfer = true;
+      }
+
+      if (shouldTransfer) {
         let target;
         if (this.cell.link && this.cell.link.store.getFreeCapacity(this.cell.resourceType))
           target = this.cell.link;
@@ -58,6 +70,13 @@ export class MinerMaster extends Master {
           target = this.cell.container;
         if (target && bee.pos.isNearTo(target) || bee.store.getFreeCapacity(this.cell.resourceType) === 0)
           bee.transfer(target, this.cell.resourceType);
+      }
+
+      // energy from SK defenders
+      if (this.cell.lair && bee.state !== beeStates.flee) {
+        let resource = this.cell.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: { type: this.cell.resourceType } })[0];
+        if (resource)
+          bee.pickup(resource);
       }
 
       switch (bee.state) {
@@ -79,9 +98,12 @@ export class MinerMaster extends Master {
           bee.state = beeStates.work;
           break;
         case beeStates.flee:
-          let lair = this.cell.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
-          if (lair && lair.pos.getRangeTo(bee) < 6)
-            bee.goTo(this.hive.pos);
+          if (enemy && enemy.pos.getRangeTo(bee) < ENEMY_DIST) {
+            bee.flee(enemy, this.hive.getPos("center"));
+          } else {
+            if (this.cell.lair && this.cell.lair.pos.getRangeTo(bee) < ENEMY_DIST)
+              bee.flee(this.cell.lair, this.hive.pos);
+          }
           bee.state = beeStates.work;
           break;
       }

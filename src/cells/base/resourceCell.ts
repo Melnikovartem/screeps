@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { MinerMaster } from "../../beeMasters/economy/miner";
 
-import { prefix } from "../../enums";
+import { prefix, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "./excavationCell";
@@ -18,6 +18,7 @@ export class ResourceCell extends Cell {
   parentCell: ExcavationCell;
   master: MinerMaster;
   roadTime: number = Infinity;
+  lair?: StructureKeeperLair;
 
   operational: boolean = false;
 
@@ -51,6 +52,12 @@ export class ResourceCell extends Cell {
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);
     if (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
       this.operational = false;
+
+    if (roomInfo.roomState === roomStates.SKfrontier) {
+      let lair = <StructureKeeperLair>this.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
+      if (lair)
+        this.lair = lair;
+    }
 
     if (this.operational) {
       if (this.container)

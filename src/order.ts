@@ -203,8 +203,12 @@ export class Order {
               x %= 10;
               y %= 10;
               if (4 <= x && x <= 6 && 4 <= y && y <= 6) {
-                if (x != 5 || y != 5)
+                if (x != 5 || y != 5) {
+                  let hive = this.hive;
+                  this.hive = Apiary.hives["E12N48"];
                   this.master = new SKMaster(this);
+                  this.hive = hive;
+                }
               } else if (x > 0 && y > 0)
                 this.master = new AnnexMaster(this);
               else

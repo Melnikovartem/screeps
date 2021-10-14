@@ -12,10 +12,10 @@ interface RoomPosition {
   getTimeForPath(pos: ProtoPos): number;
   findClosest<Obj extends ProtoPos>(structures: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
   getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
-  readonly str: string;
+  readonly to_str: string;
 }
 
-Object.defineProperty(RoomPosition.prototype, "str", {
+Object.defineProperty(RoomPosition.prototype, "to_str", {
   get: function str() {
     return this.roomName + "_" + this.x + "_" + this.y;
   }

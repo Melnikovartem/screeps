@@ -43,20 +43,9 @@ export class SKMaster extends SwarmMaster {
     let shouldFlee = (bee.pos.getRangeTo(target) < 3)
       || (bee.pos.getRangeTo(target) < 4 && bee.hits <= bee.hitsMax * 0.65);
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
-      bee.rangedAttack(target);
-    if (shouldFlee) {
-      let poss = bee.pos.getOpenPositions(true);
-      if (!poss.length)
-        return ERR_NOT_FOUND;
-      let open = poss.reduce((prev, curr) => {
-        let ans = prev.getRangeTo(target!) - curr.getRangeTo(target!);
-        if (ans === 0)
-          ans = curr.getRangeTo(this.order.pos) - prev.getRangeTo(this.order.pos)
-        return ans < 0 ? curr : prev;
-      });
-      bee.goTo(open);
-      return ERR_BUSY;
-    }
+      bee.rangedAttack(target, { movingTarget: true });
+    if (shouldFlee)
+      return bee.flee(target, this.hive.getPos("center"));
     return OK;
   }
 

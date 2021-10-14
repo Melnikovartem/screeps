@@ -150,12 +150,11 @@ export const setups = {
     }, 25),
     destroyer: new CreepSetup(setupsNames.defender, {
       pattern: [ATTACK],
-      patternLimit: 10,
+      patternLimit: Infinity,
     }, 25),
     sk: new CreepSetup(setupsNames.defender + " SK", {
-      fixed: [RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
-      pattern: [RANGED_ATTACK, HEAL],
-      patternLimit: 9,
+      fixed: [HEAL, HEAL, HEAL],
+      pattern: [RANGED_ATTACK],
     }, 25),
   },
   knight: new CreepSetup(setupsNames.knight, {

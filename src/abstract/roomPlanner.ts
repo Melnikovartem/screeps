@@ -20,7 +20,7 @@ const EXTRA_SIDE: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
-const CONSTRUCTIONS_PER_ROOM = 5;
+const CONSTRUCTIONS_PER_ROOM = 8;
 
 export const WALL_HEALTH = 100000;
 

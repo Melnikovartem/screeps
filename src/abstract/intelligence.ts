@@ -222,7 +222,7 @@ export class Intel {
     roomInfo.enemies = [];
 
     _.forEach(room.find(FIND_HOSTILE_CREEPS), c => {
-      let dangerlvl: DangerLvl = 2;
+      let dangerlvl: DangerLvl = 3;
       let info = this.getStats(c).max;
       if (info.dmgRange >= 1000 || info.dmgClose > 2000)
         dangerlvl = 8;
@@ -236,7 +236,7 @@ export class Intel {
         dangerlvl = 4;
       if (c.owner.username === "Source Keeper")
         dangerlvl = 2;
-      if (PEACE_PACKS.includes(c.owner.username))
+      else if (PEACE_PACKS.includes(c.owner.username))
         dangerlvl = 0;
       else if (NON_AGRESSION_PACKS.includes(c.owner.username) && dangerlvl < 4)
         dangerlvl = 0;

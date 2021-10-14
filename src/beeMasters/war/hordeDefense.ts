@@ -15,12 +15,12 @@ export class HordeDefenseMaster extends HordeMaster {
     SwarmMaster.prototype.update.call(this);
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-    if (roomInfo.dangerlvlmax < 2 && !this.beesAmount) {
+    if (roomInfo.dangerlvlmax < 3 && !this.beesAmount) {
       this.order.delete();
       return;
     }
 
-    if (this.checkBees(true) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 1) {
+    if (this.checkBees(true) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
       let order = {
         setup: setups.defender.normal,
         priority: <1 | 8>1,
@@ -30,12 +30,9 @@ export class HordeDefenseMaster extends HordeMaster {
 
       if (roomInfo.dangerlvlmax < 4) {
         order.priority = 8;
-        if (roomInfo.dangerlvlmax === 3)
-          order.setup = setups.defender.destroyer;
-        else {
-          order.setup = order.setup.copy();
-          order.setup.fixed = [];
-        }
+        order.setup = setups.defender.destroyer.copy();
+        if (roomInfo.dangerlvlmax < 3 || Apiary.intel.getEnemy(new RoomPosition(25, 25, this.order.pos.roomName)) instanceof Creep)
+          order.setup.patternLimit = 1;
       }
 
       if (this.hive.phase === 0) {
