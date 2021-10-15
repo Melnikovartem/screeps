@@ -11,7 +11,7 @@ type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "rangedAttack" | "heal" | "capacity" | "fatigue" | "damage";
 
-const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["XUHO2", "UHO2", "UO"], "build": ["XLH2O", "LH2O", "LH"], "dismantle": ["XZH2O", "ZH2O", "ZH"], "upgrade": ["XGH2O", "GH2O", "GH"], "attack": ["XUH2O", "UH2O", "UH"], "rangedAttack": ["XKHO2", "KHO2", "KO"], "heal": ["XLHO2", "LHO2", "LO"], "capacity": ["XKH2O", "KH2O", "KH"], "fatigue": ["XZHO2", "ZHO2", "ZO"], "damage": ["XGHO2", "GHO2", "GO"] };
+export const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["UO", "UHO2", "XUHO2"], "build": ["LH", "LH2O", "XLH2O"], "dismantle": ["ZH", "ZH2O", "XZH2O"], "upgrade": ["GH", "GH2O", "XGH2O"], "attack": ["UH", "UH2O", "XUH2O"], "rangedAttack": ["KO", "KHO2", "XKHO2"], "heal": ["LO", "LHO2", "XLHO2"], "capacity": ["KH", "KH2O", "XKH2O"], "fatigue": ["ZO", "ZHO2", "XZHO2"], "damage": ["GO", "GHO2", "XGHO2"] };
 const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
 
@@ -34,7 +34,7 @@ interface SynthesizeRequest {
   cooldown: number,
 };
 
-export type BoostRequest = { type: BoostType, res?: ReactionConstant, amount?: number, minlvl?: 0 | 1 | 2 }
+export type BoostRequest = { type: BoostType, res?: ReactionConstant, amount?: number, lvl?: 0 | 1 | 2 }
 
 @profile
 export class LaboratoryCell extends Cell {
@@ -113,39 +113,39 @@ export class LaboratoryCell extends Cell {
   }
 
   getBoostInfo(r: BoostRequest) {
-    if (this.sCell.master.activeBees.length)
-      _.some(BOOST_MINERAL[r.type], (resIter, k) => {
-        let sum = this.getMineralSum(resIter);
-        if (sum > LAB_BOOST_MINERAL) {
-          r.res = resIter;
-          if (r.amount)
-            r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
-        }
-        if ((r.minlvl ? r.minlvl : 0) - k <= 0)
-          return true;
-        return r.res;
-      });
-    else
+    if (this.sCell.master.activeBees.length) {
+      if (r.lvl === undefined)
+        r.lvl = 2;
+      let res = BOOST_MINERAL[r.type][r.lvl];
+      let sum = this.getMineralSum(res);
+      if (sum > LAB_BOOST_MINERAL) {
+        r.res = res;
+        if (r.amount)
+          r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
+      }
+    } else
       r.amount = 0;
     return r;
   }
 
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
-  askForBoost(bee: Bee, requests: BoostRequest[]) {
+  askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
-    if (Game.time - bee.memory.born > 600
-      || !this.sCell.master.activeBees.length
-      || !bee.master || !bee.master.boost)
+    if (bee.ticksToLive > 1200
+      || bee.pos.roomName !== this.pos.roomName
+      || !bee.master || !bee.master.boosts)
       return rCode;
 
     if (!this.boostRequests[bee.ref] || Game.time % 25 === 0) {
-      this.boostRequests[bee.ref] = requests;
-      for (let k = 0; k < this.boostRequests[bee.ref].length; ++k) {
-        let r = this.boostRequests[bee.ref][k];
+      if (requests === undefined)
+        requests = bee.master.boosts;
+      this.boostRequests[bee.ref] = [];
+      for (let k = 0; k < requests.length; ++k) {
+        let r = requests[k];
         if (!r.amount)
           r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
-
-        this.boostRequests[bee.ref][k] = this.getBoostInfo(r);
+        if (!this.boostRequests[bee.ref].filter(br => br.type === r.type).length)
+          this.boostRequests[bee.ref].push(this.getBoostInfo(r));
       }
     }
 

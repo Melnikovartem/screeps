@@ -85,9 +85,26 @@ export class RespawnCell extends Cell {
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       let moveMax = undefined;
-      if (order.setup.moveMax === "best" && Apiary.masters[order.master] && Apiary.masters[order.master].boostMove
-        && this.hive.cells.lab && this.hive.cells.lab.getMineralSum(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) >= LAB_BOOST_MINERAL * 10)
-        moveMax = 10;
+      if (order.setup.moveMax === "best" && this.hive.cells.lab) {
+        let master = Apiary.masters[order.master];
+        if (master && master.boosts) {
+          let speedBoost = master.boosts.filter(b => b.type === "fatigue")[0];
+          if (speedBoost) {
+            let res = <"ZO" | "ZHO2" | "XZHO2">this.hive.cells.lab.getBoostInfo(speedBoost).res;
+            let toBoost = 25;
+            switch (res) {
+              case "ZO":
+                toBoost = 17;
+              case "ZHO2":
+                toBoost = 13;
+              case "XZHO2":
+                toBoost = 10;
+            }
+            if (this.hive.cells.lab.getMineralSum(res) >= LAB_BOOST_MINERAL * toBoost)
+              moveMax = toBoost;
+          }
+        }
+      }
 
       if (order.priority === 0 && (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount)) {
         setup = order.setup.getBody(energyAvailable, moveMax);

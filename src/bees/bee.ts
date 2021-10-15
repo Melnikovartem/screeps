@@ -40,6 +40,8 @@ export class Bee {
     this.hitsMax = creep.hitsMax;
 
     this.state = creep.memory.state;
+    if (this.state === undefined)
+      this.state = beeStates.idle;
     this.target = creep.memory.target;
 
     this.ticksToLive = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;

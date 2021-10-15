@@ -13,9 +13,10 @@ import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
-import { hiveStates, prefix } from "./enums";
+import { hiveStates, prefix, roomStates } from "./enums";
 import { makeId } from "./abstract/utils";
 import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
+import { BOOST_MINERAL } from "./cells/stage1/laboratoryCell";
 
 import { LOGGING_CYCLE } from "./settings";
 import { profile } from "./profiler/decorator";
@@ -199,20 +200,25 @@ export class Order {
               break;
 
             if (!this.master) {
-              let [x, y] = this.pos.getRoomCoorinates();
-              x %= 10;
-              y %= 10;
-              if (4 <= x && x <= 6 && 4 <= y && y <= 6) {
-                if (x != 5 || y != 5) {
+              let roomState = Apiary.intel.getInfo(this.pos.roomName, Infinity).roomState;
+              switch (roomState) {
+                case roomStates.reservedByEnemy:
+                case roomStates.reservedByInvaider:
+                case roomStates.noOwner:
+                case roomStates.reservedByMe:
+                  this.master = new AnnexMaster(this);
+                  break;
+                case roomStates.SKfrontier:
                   let hive = this.hive;
                   this.hive = Apiary.hives["E12N48"];
                   this.master = new SKMaster(this);
+                  if (!this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]])
+                    this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]] = 0
+                  this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]]! += LAB_BOOST_MINERAL * MAX_CREEP_SIZE;
                   this.hive = hive;
-                }
-              } else if (x > 0 && y > 0)
-                this.master = new AnnexMaster(this);
-              else
-                this.delete();
+                default:
+                  this.delete();
+              }
             }
             break;
           case COLOR_GREY:

@@ -30,6 +30,23 @@ function onGlobalReset(): void {
   global.A = new CustomConsole();
 }
 
+let s: { [action: string]: string[] } = {};
+for (let key in BOOSTS)
+  for (let reaction in BOOSTS[key])
+    for (let action in BOOSTS[key][reaction]) {
+      if (!s[action]) {
+        s[action] = [];
+      }
+      s[action].push(reaction);
+    }
+
+let ss = "";
+for (let action in s) {
+  ss += action + ", ";
+}
+console.log(`{${ss}}`);
+console.log(JSON.stringify(s));
+
 function main() {
   if (!Apiary || Game.time >= Apiary.destroyTime) {
     delete global.Apiary;

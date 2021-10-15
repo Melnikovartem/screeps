@@ -4,6 +4,9 @@ import { hiveStates, beeStates, prefix } from "../enums";
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
 import type { Bee } from "../bees/bee";
+import type { BoostRequest } from "../cells/stage1/laboratoryCell";
+
+export type Boosts = BoostRequest[];
 
 // i will need to do something so i can build up structure from memory
 @profile
@@ -20,8 +23,8 @@ export abstract class Master {
   beesAmount: number = 0;
   bees: { [id: string]: Bee } = {};
   activeBees: Bee[] = [];
-  boost: boolean = false;
-  boostMove: boolean = false;
+  boosts: undefined | Boosts;
+  boostTier: 0 | 1 | 2 | 3 = 0;
   movePriority: 0 | 1 | 2 | 3 | 4 | 5 = 5;
 
   constructor(hive: Hive, ref: string) {
@@ -35,8 +38,8 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
-    if (bee.state === beeStates.idle || bee.state === undefined)
-      bee.state = this.boost ? beeStates.boosting : beeStates.chill;
+    if (bee.state === beeStates.idle)
+      bee.state = this.boosts && this.hive.cells.lab && bee.ticksToLive > 1200 ? beeStates.boosting : beeStates.chill;
     this.bees[bee.ref] = bee;
     if (this.waitingForBees)
       this.waitingForBees -= 1;

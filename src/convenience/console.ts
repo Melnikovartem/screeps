@@ -189,7 +189,7 @@ export class CustomConsole {
     if (order.type === ORDER_SELL && !am)
       return `AMOUNT NEEDED MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
 
-    let amount = Math.min(am, order.remainingAmount);
+    let amount = Math.min(am, order.amount);
     let ans;
     let energy: number | string = "NOT NEEDED";
     let hiveName: string = this.lastActionRoomName = "NO HIVE";
@@ -232,7 +232,7 @@ export class CustomConsole {
         Apiary.logger.newMarketOperation(<ProtoOrder>order, amount, terminal.pos.roomName);
     }
 
-    let info = ` ${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""
+    let info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""
       }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
 
     return this.marketReturn(ans, info);

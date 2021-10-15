@@ -23,14 +23,14 @@ export class UpgraderMaster extends Master {
 
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
       this.fastMode = false;
-      this.boost = false;
+      this.boosts = undefined;
 
       this.targetBeeCount = 1;
       this.patternPerBee = 2;
       return;
     }
     this.fastMode = true;
-    this.boost = true;
+    this.boosts = [{ type: "upgrade" }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
@@ -72,10 +72,10 @@ export class UpgraderMaster extends Master {
   }
 
   run() {
-    if (this.boost)
+    if (this.boosts)
       _.forEach(this.bees, bee => {
         if (bee.state === beeStates.boosting)
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "upgrade" }]) === OK)
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
             bee.state = beeStates.chill;
       });
 

@@ -5,7 +5,7 @@ import { ExcavationCell } from "./cells/base/excavationCell";
 
 import { StorageCell } from "./cells/stage1/storageCell";
 import { UpgradeCell } from "./cells/stage1/upgradeCell";
-import { LaboratoryCell } from "./cells/stage1/laboratoryCell";
+import { LaboratoryCell, BOOST_MINERAL } from "./cells/stage1/laboratoryCell";
 import { FactoryCell } from "./cells/stage1/factoryCell";
 import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
@@ -56,6 +56,8 @@ interface HiveCells {
   power?: PowerCell,
 }
 
+const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2
+
 @profile
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
@@ -89,14 +91,14 @@ export class Hive {
   state: hiveStates = hiveStates.economy;
 
   resTarget: {
-    "energy": number
+    "energy": number,
   } & { [key in ResourceConstant]?: number } = {
       [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
-      "XGH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // upgrade
-      "XLH2O": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // repair
-      "XLHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // heal
-      "XKHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // rangedAttack
-      "XZHO2": LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2, // move
+      [BOOST_MINERAL.upgrade[2]]: HIVE_MINERAL,
+      [BOOST_MINERAL.build[2]]: HIVE_MINERAL,
+      [BOOST_MINERAL.heal[2]]: HIVE_MINERAL,
+      [BOOST_MINERAL.rangedAttack[2]]: HIVE_MINERAL,
+      [BOOST_MINERAL.fatigue[2]]: HIVE_MINERAL,
     }
 
   constructor(roomName: string) {
@@ -162,6 +164,7 @@ export class Hive {
       if (factory)
         this.cells.factory = new FactoryCell(this, factory, sCell);
       if (this.phase === 2) {
+        this.resTarget[BOOST_MINERAL.attack[0]] = HIVE_MINERAL;
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
         _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {

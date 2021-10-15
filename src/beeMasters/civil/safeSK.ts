@@ -1,10 +1,11 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { beeStates } from "../../enums";
+import { beeStates, prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
+import type { Boosts } from "../_Master";
 
 // most basic of bitches a horde full of wasps
 
@@ -15,6 +16,7 @@ export class SKMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];
+  boosts: Boosts = [{ type: "rangedAttack", lvl: 0, amount: 5 }];
 
   update() {
     super.update();
@@ -55,27 +57,34 @@ export class SKMaster extends SwarmMaster {
       let runaway = lair.pos.findInRange(FIND_MY_CREEPS, 6);
       _.forEach(runaway, b => {
         let bee = Apiary.bees[b.name];
-        if (bee && bee.master && bee.master.ref.includes("ResourceCell_"))
+        if (bee && bee.master && bee.master.ref.includes(prefix.resourceCells))
           bee.state = beeStates.flee;
       });
-
       if (ticksToSpawn(lair) < 1) {
         enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5));
         if (enemy)
           this.attackOrFlee(bee, enemy);
       }
-    } else
+    }
+
+    if (!enemy) {
       bee.goTo(lair, { range: 3 });
-    if (!enemy)
       bee.target = lair.id;
+    }
   }
 
   run() {
     _.forEach(this.activeBees, bee => {
+      if (bee.state === beeStates.boosting) {
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+          bee.state = beeStates.chill;
+        else
+          return;
+      }
 
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
-      else if (bee.pos === this.order.pos) {
+      else if (bee.pos.roomName === this.order.pos.roomName) {
         let healingTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_MY_CREEPS, 3).filter(b => b.hits < b.hitsMax));
         if (healingTarget)
           if (bee.pos.isNearTo(healingTarget))
@@ -92,9 +101,7 @@ export class SKMaster extends SwarmMaster {
         if (ans === OK)
           bee.goTo(this.order.pos);
         return;
-      }
-
-      if (bee.target) {
+      } else if (bee.target) {
         let target = <Creep | Structure>Game.getObjectById(bee.target);
         if (target instanceof Creep) {
           this.attackOrFlee(bee, target);

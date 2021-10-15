@@ -4,12 +4,11 @@ import { beeStates, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
+import type { Boosts } from "../_Master";
 import type { CreepSetup } from "../../bees/creepSetups";
-import type { BoostRequest } from "../../cells/stage1/laboratoryCell";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
 export type FormationPositions = [Pos, CreepSetup][];
-export type Boosts = BoostRequest[];
 //first tandem btw
 @profile
 export abstract class SquadMaster extends SwarmMaster {
@@ -21,8 +20,6 @@ export abstract class SquadMaster extends SwarmMaster {
   maxSpawns = 1;
   movePriority = <2>2;
   priority = <1>1;
-  boost: boolean = true;;
-  boostMove: boolean = true;
   boosts: Boosts = [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }];
   stuckValue = 0;
   stats: CreepAllBattleInfo = {
@@ -79,9 +76,6 @@ export abstract class SquadMaster extends SwarmMaster {
 
     this.targetBeeCount = this.formation.length;
     this.maxSpawns = this.formation.length;
-
-    this.boost = !!this.boosts.length;
-    this.boostMove = !!this.boosts.filter(b => b.type === "fatigue").length;
 
     if (this.checkBees()) {
       for (let i = 0; i < this.formation.length; ++i) {

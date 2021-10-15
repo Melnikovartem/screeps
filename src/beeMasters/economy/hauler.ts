@@ -6,6 +6,7 @@ import { findOptimalResource } from "../../abstract/utils"
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "../../cells/base/excavationCell";
+import type { Bee } from "../../bees/bee";
 
 @profile
 export class HaulerMaster extends Master {
@@ -19,6 +20,12 @@ export class HaulerMaster extends Master {
     super(excavationCell.hive, excavationCell.ref);
     this.cell = excavationCell;
     this.dropOff = storage;
+  }
+
+  newBee(bee: Bee) {
+    if (bee.state === beeStates.idle && bee.store.getUsedCapacity())
+      bee.state = beeStates.work;
+    super.newBee(bee);
   }
 
   deleteBee(ref: string) {

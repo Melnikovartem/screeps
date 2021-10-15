@@ -2,6 +2,7 @@ import { Master } from "../_Master";
 
 import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+// import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -46,12 +47,15 @@ export class BuilderMaster extends Master {
     super.update();
     let emergency = this.hive.state >= hiveStates.nukealert;
 
-    if (!this.boost && emergency)
-      _.forEach(this.activeBees, b => b.state = beeStates.boosting);
-    else if (this.boost && !emergency)
+    if (!this.boosts && emergency)
+      _.forEach(this.activeBees.filter(b => b.ticksToLive > 1000), b => b.state = beeStates.boosting);
+    else if (this.boosts && !emergency) {
+      this.boosts = undefined;
       _.forEach(this.activeBees, b => b.state = b.state === beeStates.boosting ? beeStates.chill : b.state);
+    }
 
-    this.boost = emergency;
+    if (emergency)
+      this.boosts = [{ type: "build" }, { type: "fatigue", lvl: 1 }];
     this.movePriority = emergency ? 1 : 5;
 
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
@@ -65,19 +69,17 @@ export class BuilderMaster extends Master {
   }
 
   run() {
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    if (!storage)
-      return;
     _.forEach(this.activeBees, bee => {
+
       switch (bee.state) {
         case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             bee.state = beeStates.work;
-          else if (bee.withdraw(storage, RESOURCE_ENERGY) === OK) {
+          else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY) === OK) {
             bee.state = beeStates.work;
             delete bee.target;
             if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", storage!.store, bee.store);
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", this.sCell.storage.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
             if (target && target.pos.getRangeTo(bee) > 3)
               bee.goTo(target.pos);
@@ -112,6 +114,11 @@ export class BuilderMaster extends Master {
                 ans = bee.build(target);
               else if (target instanceof Structure)
                 ans = bee.repair(target);
+              if (bee.pos.getRangeTo(target) <= 3) {
+                let resource = target.pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
+                if (resource)
+                  bee.pickup(resource);
+              }
               bee.target = target.id;
               bee.repairRoadOnMove(ans);
             } else {
@@ -122,19 +129,19 @@ export class BuilderMaster extends Master {
           if (bee.state !== beeStates.chill)
             break;
         case beeStates.chill:
-          if (this.hive.sumCost)
+          if (this.hive.structuresConst.length)
             bee.state = beeStates.work;
-          else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-            let ans = bee.transfer(storage, RESOURCE_ENERGY);
+          else if (bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
+            let ans = bee.transfer(this.sCell.storage, RESOURCE_ENERGY);
             if (ans === OK && Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, storage!.store, RESOURCE_ENERGY, 1);
+              Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
             bee.repairRoadOnMove(ans);
           } else
             bee.goRest(this.hive.pos);
           break;
         case beeStates.boosting:
           if (!this.hive.cells.lab
-            || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }, { type: "fatigue", amount: Math.ceil(bee.getActiveBodyParts(MOVE) / 3) }]) === OK)
+            || this.hive.cells.lab.askForBoost(bee) === OK)
             bee.state = beeStates.chill;
           break;
       }
