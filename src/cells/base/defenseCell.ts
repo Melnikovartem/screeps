@@ -142,23 +142,28 @@ export class DefenseCell extends Cell {
           pos = enemy.pos;
         let freeSwarms: Order[] = [];
         for (const roomDefName in Apiary.defenseSwarms) {
-          let roomInfDef = Apiary.intel.getInfo(roomDefName, 10);
-          if (roomInfDef.safePlace && Apiary.defenseSwarms[roomDefName].master
-            && _.filter(Apiary.defenseSwarms[roomDefName].master!.bees,
-              bee => (bee.hits >= bee.hitsMax * 0.7 || bee.getActiveBodyParts(HEAL)) && bee.ticksToLive > CREEP_LIFE_TIME * 0.2).length)
-            freeSwarms.push(Apiary.defenseSwarms[roomDefName]);
+          let roomInfDef = Apiary.intel.getInfo(roomDefName);
+          if (roomInfDef.safePlace) {
+            let order = Apiary.defenseSwarms[roomDefName];
+            if (order.master && _.filter(order.master.bees, bee => bee.getActiveBodyParts(HEAL)).length)
+              freeSwarms.push(order);
+          }
         }
         let ans: number | string | undefined;
         if (freeSwarms.length) {
-          let swarm = freeSwarms.reduce((prev, curr) =>
-            prev.pos.getRoomRangeTo(roomName) > curr.pos.getRoomRangeTo(roomName) ? curr : prev);
+          let swarm = freeSwarms.reduce((prev, curr) => curr.pos.getRoomRangeTo(roomName) < prev.pos.getRoomRangeTo(roomName) ? curr : prev);
           if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 6)
             ans = this.setDefFlag(enemy.pos, swarm.flag);
+          console.log(ans, swarm.pos.roomName, "->", roomName);
           if (ans === OK) {
+            swarm.hive = this.hive;
+            swarm.flag.memory.hive = this.hive.roomName;
+            Apiary.defenseSwarms[roomName] = swarm;
             delete Apiary.defenseSwarms[swarm.pos.roomName];
             return;
           }
-        }
+        } else
+          console.log("?", roomName, ":", Object.keys(Apiary.defenseSwarms))
 
         if (ans !== OK) {
           if (roomInfo.dangerlvlmax < 6)

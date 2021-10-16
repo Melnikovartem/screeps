@@ -2,6 +2,7 @@ import { signText } from "../enums"
 
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { makeId } from "../abstract/utils";
+import { setups } from "../bees/creepSetups";
 
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
@@ -28,6 +29,15 @@ export class CustomConsole {
     Memory.settings.forceBucket = force;
 
     return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
+  }
+
+  h(hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    return `active hive is ${this.lastActionRoomName}`;
   }
 
   balance(min: number | "fit" = Game.market.credits * 0.8) {
@@ -104,6 +114,20 @@ export class CustomConsole {
     Apiary.visuals.visualizeEnergy(hiveName);
     Apiary.visuals.exportAnchor(keep ? Infinity : 20);
     return `OK @ ${this.formatRoom(hiveName)}`;
+  }
+
+
+  spawnBuilder(hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    if (!hive.builder)
+      return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
+    let builder = setups.builder.copy();
+    builder.patternLimit = Infinity;
+    hive.builder.wish({ setup: builder, priority: 1 });
+    return `BUILDER SPAWNED @ ${hiveName}`;
   }
 
   // some hand used functions
@@ -192,7 +216,7 @@ export class CustomConsole {
     let amount = Math.min(am, order.amount);
     let ans;
     let energy: number | string = "NOT NEEDED";
-    let hiveName: string = this.lastActionRoomName = "NO HIVE";
+    let hiveName: string = "NO HIVE";
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {

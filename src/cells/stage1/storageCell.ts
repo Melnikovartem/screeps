@@ -224,7 +224,6 @@ export class StorageCell extends Cell {
       if (res === RESOURCE_ENERGY)
         return 0;
       let ans = Apiary.broker.buyIn(this.terminal, res, amount, hurry);
-
       if (ans === "short")
         return amount;
       return 0;

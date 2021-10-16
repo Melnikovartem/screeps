@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { beeStates, prefix } from "../../enums";
+import { beeStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -16,7 +16,7 @@ export class SKMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];
-  boosts: Boosts = [{ type: "rangedAttack", lvl: 0, amount: 5 }];
+  boosts: Boosts = [{ type: "rangedAttack", lvl: 0, amount: 6 }, { type: "fatigue", lvl: 0, amount: 5 }];
 
   update() {
     super.update();
@@ -25,14 +25,14 @@ export class SKMaster extends SwarmMaster {
       if (!this.lairs.length) {
         this.lairs = <StructureKeeperLair[]>Game.rooms[this.order.pos.roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } });
         if (!this.lairs.length)
-          this.order.delete();
+          this.order.delete(true);
       }
 
       for (let i = 0; i < this.lairs.length; ++i)
         this.lairs[i] = <StructureKeeperLair>Game.getObjectById(this.lairs[i].id);
     }
 
-    if (this.checkBees() && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5)) {
+    if (this.checkBees(false, CREEP_LIFE_TIME - 150) && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5)) {
       this.wish({
         setup: setups.defender.sk,
         priority: 6,
@@ -53,18 +53,11 @@ export class SKMaster extends SwarmMaster {
 
   useLair(bee: Bee, lair: StructureKeeperLair) {
     let enemy;
-    if (ticksToSpawn(lair) < 10) {
-      let runaway = lair.pos.findInRange(FIND_MY_CREEPS, 6);
-      _.forEach(runaway, b => {
-        let bee = Apiary.bees[b.name];
-        if (bee && bee.master && bee.master.ref.includes(prefix.resourceCells))
-          bee.state = beeStates.flee;
-      });
-      if (ticksToSpawn(lair) < 1) {
-        enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5));
-        if (enemy)
-          this.attackOrFlee(bee, enemy);
-      }
+
+    if (ticksToSpawn(lair) < 1) {
+      enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5));
+      if (enemy)
+        this.attackOrFlee(bee, enemy);
     }
 
     if (!enemy) {
@@ -74,14 +67,12 @@ export class SKMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.boosting) {
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-          bee.state = beeStates.chill;
-        else
-          return;
-      }
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting && (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK))
+        bee.state = beeStates.chill;
+    });
 
+    _.forEach(this.activeBees, bee => {
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
       else if (bee.pos.roomName === this.order.pos.roomName) {
@@ -93,6 +84,9 @@ export class SKMaster extends SwarmMaster {
             bee.rangedHeal(healingTarget);
       }
 
+      if (bee.state === beeStates.boosting)
+        return;
+
       if (bee.pos.roomName !== this.order.pos.roomName) {
         let ans: number = OK;
         let enemy = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3)[0];
@@ -101,7 +95,9 @@ export class SKMaster extends SwarmMaster {
         if (ans === OK)
           bee.goTo(this.order.pos);
         return;
-      } else if (bee.target) {
+      }
+
+      if (bee.target) {
         let target = <Creep | Structure>Game.getObjectById(bee.target);
         if (target instanceof Creep) {
           this.attackOrFlee(bee, target);

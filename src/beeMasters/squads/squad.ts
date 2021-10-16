@@ -263,9 +263,9 @@ export abstract class SquadMaster extends SwarmMaster {
     let enemy: Enemy["object"] | undefined;
 
     if (this.stats.current.dmgClose > 0)
-      enemy = Apiary.intel.getEnemy(this.formationCenter, 1);
+      enemy = Apiary.intel.getEnemy(this.formationCenter);
     else if (this.stats.current.dism > 0)
-      enemy = Apiary.intel.getEnemy(this.formationCenter, 1, false);
+      enemy = Apiary.intel.getEnemyStructure(this.formationCenter);
 
     let healingTarget: Bee | null | undefined;
     if (this.stats.current.heal) {

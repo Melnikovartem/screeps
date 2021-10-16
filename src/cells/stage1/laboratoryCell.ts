@@ -131,7 +131,7 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
-    if (bee.ticksToLive > 1200
+    if (bee.ticksToLive < 1200
       || bee.pos.roomName !== this.pos.roomName
       || !bee.master || !bee.master.boosts)
       return rCode;
@@ -260,7 +260,7 @@ export class LaboratoryCell extends Cell {
             if (l.mineralType && l.mineralType !== state)
               this.sCell.requestToStorage([l], 1, l.mineralType);
             else if (l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
-              this.sCell.requestFromStorage([l], 1, state);
+              this.sCell.requestFromStorage([l], 1, state, LAB_MINERAL_CAPACITY / 2, true);
 
             if (!Object.keys(this.boostRequests).length && this.currentProduction) {
               this.labsStates[id] = "idle";

@@ -57,6 +57,8 @@ export enum prefix {
   powerCell = "PowerCell_",
   factoryCell = "FactoryCell_",
 
+  builder = "BuilderHive_",
+
 
   // game constants
   master = "master",

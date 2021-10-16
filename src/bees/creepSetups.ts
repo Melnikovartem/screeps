@@ -158,8 +158,8 @@ export const setups = {
     }, 25),
   },
   knight: new CreepSetup(setupsNames.knight, {
-    fixed: [TOUGH],
-    pattern: [RANGED_ATTACK, RANGED_ATTACK, HEAL],
+    fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL],
+    pattern: [RANGED_ATTACK],
   }, "best"),
   archer: new CreepSetup(setupsNames.knight, {
     fixed: [TOUGH],
@@ -210,4 +210,5 @@ printSetup(setups.dismantler)
 printSetup(setups.healer, 1300)
 printSetup(setups.archer, Game.rooms["E12N48"].energyCapacityAvailable, 10);
 printSetup(setups.healer, Game.rooms["E12N48"].energyCapacityAvailable, 10);
+printSetup(setups.knight, Game.rooms["E12N48"].energyCapacityAvailable, 17);
 */

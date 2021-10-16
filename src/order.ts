@@ -127,8 +127,6 @@ export class Order {
     switch (this.flag.color) {
       case COLOR_RED:
         this.flag.memory.repeat = this.flag.memory.repeat ? this.flag.memory.repeat : 0;
-        if (this.ref.slice(0, 4) === prefix.def)
-          Apiary.defenseSwarms[this.pos.roomName] = this;
         if (!this.master)
           switch (this.flag.secondaryColor) {
             case COLOR_BLUE:

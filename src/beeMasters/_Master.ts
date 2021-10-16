@@ -7,6 +7,7 @@ import type { Bee } from "../bees/bee";
 import type { BoostRequest } from "../cells/stage1/laboratoryCell";
 
 export type Boosts = BoostRequest[];
+export const CIVILIAN_FLEE_DIST = 5;
 
 // i will need to do something so i can build up structure from memory
 @profile
@@ -83,7 +84,7 @@ export abstract class Master {
       master: this.ref,
       ref: ref,
     }
-    if (this.hive.bassboost) {
+    if (this.hive.bassboost && this.hive.state !== hiveStates.battle) {
       if (this.hive.state !== hiveStates.nospawn
         && (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyCapacityAvailable ||
           Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).cost > 0)) {

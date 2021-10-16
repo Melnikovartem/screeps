@@ -41,23 +41,48 @@ export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattle
 @profile
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
-
-  getEnemy(pos: ProtoPos, lag?: number, canAttack: boolean = true) {
+  getEnemyStructure(pos: ProtoPos, lag?: number) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
     let roomInfo = this.getInfo(pos.roomName, lag);
-
-    if (!roomInfo.enemies.length)
+    let enemies = roomInfo.enemies.filter(e => e.object instanceof Structure);
+    if (!enemies.length)
       return;
 
-    return roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax).reduce((prev, curr) => {
-      if (!canAttack) {
-        if (curr.object instanceof Creep && !(prev.object instanceof Creep))
-          return prev;
-        else if (!(curr.object instanceof Creep) && prev.object instanceof Creep)
-          return curr;
-      }
+    return enemies.reduce((prev, curr) => {
+      let ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
+      if (ans === 0)
+        ans = prev.dangerlvl - curr.dangerlvl;
+      return ans < 0 ? curr : prev;
+    }).object;
+  }
+
+  getEnemyCreep(pos: ProtoPos, lag?: number) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let roomInfo = this.getInfo(pos.roomName, lag);
+    let enemies = roomInfo.enemies.filter(e => e.object instanceof Creep);
+    if (!enemies.length)
+      return;
+
+    return enemies.reduce((prev, curr) => {
+      let ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
+      return ans < 0 ? curr : prev;
+    }).object;
+  }
+
+  getEnemy(pos: ProtoPos, lag?: number) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let roomInfo = this.getInfo(pos.roomName, lag);
+    let enemies = roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax);
+    if (!enemies.length)
+      return;
+
+    return enemies.reduce((prev, curr) => {
       let ans = (<RoomPosition>pos).getRangeTo(curr.object) - (<RoomPosition>pos).getRangeTo(prev.object);
       if (Math.abs(ans) < (curr.type === enemyTypes.moving ? 4 : 2)) {
         ans = curr.object.hits - curr.object.hits;

@@ -62,7 +62,14 @@ export class ResourceCell extends Cell {
     if (this.operational) {
       if (this.container)
         this.pos = this.container.pos;
-      else
+      else if (this.link) {
+        let poss = this.resource.pos.getOpenPositions(true);
+        let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => pp.x === p.x && pp.y === p.y).length)[0];
+        if (pos)
+          this.pos = pos;
+        else
+          this.pos = this.resource.pos;
+      } else
         this.pos = this.resource.pos;
       let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.getPos("center");
       this.roadTime = this.pos.getTimeForPath(storagePos);

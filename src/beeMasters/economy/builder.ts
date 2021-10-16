@@ -1,6 +1,6 @@
-import { Master } from "../_Master";
+import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
 
-import { beeStates, hiveStates } from "../../enums";
+import { beeStates, hiveStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 // import { findOptimalResource } from "../../abstract/utils";
 
@@ -14,7 +14,7 @@ export class BuilderMaster extends Master {
   sCell: StorageCell;
 
   constructor(hive: Hive, sCell: StorageCell) {
-    super(hive, "BuilderHive_" + hive.room.name);
+    super(hive, prefix.builder + hive.room.name);
     this.sCell = sCell;
   }
 
@@ -47,15 +47,14 @@ export class BuilderMaster extends Master {
     super.update();
     let emergency = this.hive.state >= hiveStates.nukealert;
 
-    if (!this.boosts && emergency)
+    if (!this.boosts && emergency) {
       _.forEach(this.activeBees.filter(b => b.ticksToLive > 1000), b => b.state = beeStates.boosting);
-    else if (this.boosts && !emergency) {
+      this.boosts = [{ type: "build" }, { type: "fatigue", lvl: 0 }];
+    } else if (this.boosts && !emergency) {
       this.boosts = undefined;
       _.forEach(this.activeBees, b => b.state = b.state === beeStates.boosting ? beeStates.chill : b.state);
     }
 
-    if (emergency)
-      this.boosts = [{ type: "build" }, { type: "fatigue", lvl: 1 }];
     this.movePriority = emergency ? 1 : 5;
 
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
@@ -70,6 +69,10 @@ export class BuilderMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, bee => {
+
+      let enemy = Apiary.intel.getEnemyCreep(bee, 10);
+      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+        bee.state = beeStates.flee;
 
       switch (bee.state) {
         case beeStates.refill:
@@ -143,6 +146,11 @@ export class BuilderMaster extends Master {
           if (!this.hive.cells.lab
             || this.hive.cells.lab.askForBoost(bee) === OK)
             bee.state = beeStates.chill;
+          break;
+        case beeStates.flee:
+          if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
+            bee.flee(enemy, this.hive.getPos("center"));
+          bee.state = beeStates.work;
           break;
       }
     });
