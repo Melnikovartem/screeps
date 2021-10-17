@@ -80,7 +80,7 @@ export class _Apiary {
         safeWrap(() => order.update(), order.print + " update");
     });
 
-    if (this.broker.lastUpdated < 0 && Game.cpu.limit > 20)
+    if (this.broker.lastUpdated < 0)
       this.broker.update();
     this.network.update();
 

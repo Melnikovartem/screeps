@@ -26,6 +26,8 @@ export class ResourceCell extends Cell {
     super(hive, prefix.resourceCells + resource.id);
 
     this.resource = resource;
+    if (resource instanceof Mineral)
+      this.resourceType = resource.mineralType;
     this.pos = this.resource.pos;
     this.parentCell = excavationCell;
     this.master = new MinerMaster(this);
@@ -46,7 +48,6 @@ export class ResourceCell extends Cell {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
       this.operational = !!(this.extractor && this.container && !this.resource.ticksToRegeneration);
-      this.resourceType = this.resource.mineralType;
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);

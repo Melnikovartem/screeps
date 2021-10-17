@@ -19,6 +19,8 @@ export class StorageCell extends Cell {
   requests: { [id: string]: TransferRequest } = {};
   resTargetTerminal: { [key in ResourceConstant]?: number } = {};
 
+  usedCapacity: { [key in ResourceConstant]?: number } = {}
+
   constructor(hive: Hive, storage: StructureStorage) {
     super(hive, prefix.storageCell + hive.room.name);
 
@@ -98,6 +100,8 @@ export class StorageCell extends Cell {
   update() {
     super.update(["links"]);
 
+    this.usedCapacity = {};
+
     if (!this.storage) {
       Apiary.destroyTime = Game.time;
       return;
@@ -151,7 +155,9 @@ export class StorageCell extends Cell {
         delete this.requests[k];
   }
 
-  getUsedCapacity(resource?: ResourceConstant) {
+  getUsedCapacity(resource: ResourceConstant) {
+    if (this.usedCapacity[resource])
+      return this.usedCapacity[resource]!;
     let amount = this.storage.store.getUsedCapacity(resource);
     if (this.terminal) {
       let toAdd = this.terminal.store.getUsedCapacity(resource);
@@ -164,13 +170,13 @@ export class StorageCell extends Cell {
       amount += bee.store.getUsedCapacity(resource);
     });
 
-    if (resource && (resource.length === 1 || resource in REACTION_TIME) && this.hive.cells.lab)
+    if ((resource.length === 1 || resource in REACTION_TIME) && this.hive.cells.lab)
       _.forEach(this.hive.cells.lab.laboratories, lab => {
         let toAdd = lab.store.getUsedCapacity(resource);
         if (toAdd)
           amount += toAdd;
       });
-
+    this.usedCapacity[resource] = amount;
     return amount;
   }
 }

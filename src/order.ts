@@ -426,6 +426,7 @@ export class Order {
               this.delete();
               break;
             }
+            this.hive.cells.lab.resTarget = {};
             if (Object.keys(this.hive.cells.lab.synthesizeRequests).length)
               break;
             let final = <ReactionConstant>this.flag.name.split("_")[1];
@@ -449,11 +450,11 @@ export class Order {
             }
             dfs(final);
             createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
-
+            let sCell = this.hive.cells.storage;
+            if (sCell)
+              createQue.sort((a, b) => sCell!.getUsedCapacity(a) - sCell!.getUsedCapacity(b));
             let ans = _.some(createQue, res => this.hive.cells.lab!.newSynthesizeRequest(res));
-            this.hive.cells.lab.resTarget = {};
             if (!ans) {
-              let sCell = this.hive.cells.storage;
               if (sCell && sCell.terminal && ingredients.length) {
                 _.forEach(ingredients, resource => {
                   if (sCell!.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)

@@ -211,6 +211,14 @@ export class CustomConsole {
     console.log(this.send(roomNameFrom, roomNameTo, amount, res));
   }
 
+  changeOrderPrice(orderId: string, newPrice: number) {
+    return this.marketReturn(Game.market.changeOrderPrice(orderId, newPrice), "ORDER CHANGE TO " + newPrice);
+  }
+
+  cancelOrder(orderId: string) {
+    return this.marketReturn(Game.market.cancelOrder(orderId), "ORDER CANCEL");
+  }
+
   completeOrder(orderId: string, roomName?: string, sets: number = 1) {
     let order = Game.market.getOrderById(orderId);
     if (!order)
@@ -339,11 +347,12 @@ export class CustomConsole {
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let pos = hive.cells.lab && hive.cells.lab.pos;
-    if (!pos)
+    if (!hive.cells.lab)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+    let pos = hive.cells.lab.pos;
 
     hive.cells.lab!.synthesizeRequests = [];
+    hive.cells.lab!.currentProduction = undefined;
 
     let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
     let ref = hiveName + "_" + resource;

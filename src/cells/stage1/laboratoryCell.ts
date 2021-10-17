@@ -226,7 +226,7 @@ export class LaboratoryCell extends Cell {
       continue;
     }
 
-    console.log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
+    // console.log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
     if (rCode === OK)
       delete this.boostRequests[bee.ref];
     return rCode;

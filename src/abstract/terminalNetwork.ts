@@ -1,62 +1,184 @@
+import { hiveStates } from "../enums";
+
 import { profile } from "../profiler/decorator";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.2);
+export type ResourceTarget = { [key in ResourceConstant]?: number };
+const PADDING_RESOURCE = 5000;
 
 @profile
 export class Network {
-  state: { [hiveName: string]: { [key in ResourceConstant]?: number } } = {}
+  state: { [hiveName: string]: ResourceTarget } = {}
+  aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number } } = {} // from -> to
+  shortages: { [hiveNameFrom: string]: ResourceTarget } = {}
 
   update() {
-    for (const hiveName in Apiary.hives) {
+    for (const hiveName in Apiary.hives)
+      this.updateState(hiveName);
+
+    this.shortages = {};
+    for (const hiveName in this.state)
+      this.reactToState(hiveName);
+
+    for (const hiveName in this.aid) {
+      let sCell = Apiary.hives[hiveName].cells.storage;
+      if (!sCell)
+        continue;
+      let aid = this.aid[hiveName];
+      aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
+      if (aid.amount === 0) {
+        delete this.aid[hiveName];
+        continue;
+      }
+      if (!sCell.resTargetTerminal[aid.res])
+        sCell.resTargetTerminal[aid.res] = 0;
+      sCell.resTargetTerminal[aid.res]! += aid.amount;
+    }
+  }
+
+  calcAmount(from: string, to: string, res: ResourceConstant) {
+    let fromState = this.state[from][res];
+    if (fromState === undefined)
+      fromState = 0;
+
+    let toState = this.state[to][res];
+    if (toState === undefined)
+      toState = 0;
+    toState = -toState;
+    return Math.max(Math.min(toState + PADDING_RESOURCE / 2, fromState - PADDING_RESOURCE / 2), 0);
+  }
+
+  run() {
+    for (const hiveName in this.state) {
       let hive = Apiary.hives[hiveName];
       if (!hive.cells.storage || !hive.cells.storage.terminal)
-        return;
-      this.state[hiveName] = {}
-      let sate = this.state[hiveName];
+        continue;
+      let terminal = hive.cells.storage.terminal;
+      let state = this.state[hiveName];
 
-      let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));
-      if (hive.cells.lab)
-        ress = ress.concat(Object.keys(hive.cells.lab.resTarget));
+      if (Game.time === Apiary.createTime + 1 && Game.shard.name === "shard2")
+        console.log(JSON.stringify(state))
 
-      for (const r in ress) {
-        const res = <ResourceConstant>r;
-        if (!sate[res])
-          sate[res] = hive.cells.storage.getUsedCapacity(res);
+      let usedTerminal = false;
+      let shortages = this.shortages[hiveName];
+      for (const r in shortages) {
+        let res = <ResourceConstant>r;
+        if (r.length === 1) { // buyIn obly basic materials for now
+          if (Game.time === Apiary.createTime + 1)
+            console.log(hiveName, res, shortages[res])
+          let ans = Apiary.broker.buyIn(terminal, res, shortages[res]!);
+          if (ans === "short") {
+            usedTerminal = true;
+            break;
+          }
+        }
+      }
+      if (usedTerminal)
+        continue;
+
+      let aid = this.aid[hiveName];
+      if (aid && !terminal.cooldown) {
+        let energyCost = Game.market.calcTransactionCost(10000, hiveName, aid.to) / 10000;
+        let terminalEnergy = terminal.store.getUsedCapacity(RESOURCE_ENERGY);
+        let energyCap = Math.floor(terminalEnergy / energyCost);
+
+        let amount = Math.min(aid.amount, PADDING_RESOURCE, terminal.store.getUsedCapacity(aid.res), energyCap);
+
+        if (aid.res === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalEnergy)
+          amount = Math.floor(terminalEnergy / (1 + energyCost));
+
+        if (amount > 0) {
+          terminal.send(aid.res, amount, aid.to);
+          continue;
+        }
       }
 
-      if (hive.cells.lab)
-        for (const r in hive.cells.lab.resTarget) {
-          const res = <ResourceConstant>r;
-          if (!sate[res])
-            sate[res] = 0;
-          sate[res]! -= hive.cells.lab.resTarget[res]!;
-        }
+      let stStore = hive.cells.storage.storage.store;
+      if (stStore.getUsedCapacity() > stStore.getCapacity() * 0.75) {
+        let keys = <(keyof ResourceTarget)[]>Object.keys(state).filter(s => s !== RESOURCE_ENERGY);
+        if (!keys.length)
+          continue;
+        let res = keys.reduce((prev, curr) => state[curr]! > state[prev]! ? curr : prev);
+        if (state[res]! < 0)
+          continue;
+        Apiary.broker.sellOff(terminal, res, Math.min(2048, state[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
+      }
+    }
+  }
 
-      for (const r in hive.resTarget) {
+  reactToState(hiveName: string) {
+    let state = this.state[hiveName];
+    for (const r in state) {
+      const res = <ResourceConstant>r;
+      if (state[res]! < 0) {
+        let validHives = _.filter(Object.keys(this.state), hiveNameCheck => hiveNameCheck !== hiveName && this.state[hiveNameCheck][res]! > PADDING_RESOURCE);
+        if (res === RESOURCE_ENERGY)
+          validHives = validHives.filter(h => Game.market.calcTransactionCost(1, hiveName, h) <= 0.5);
+        if (validHives.length) {
+          let validHive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(TERMINAL_MIN_SEND, hiveName, curr) < Game.market.calcTransactionCost(TERMINAL_MIN_SEND, hiveName, prev) ? curr : prev);
+          let amount = this.calcAmount(validHive, hiveName, res);
+          if (this.aid[validHive] && this.aid[validHive].amount > amount)
+            continue;
+          this.aid[validHive] = {
+            to: hiveName,
+            res: res,
+            amount: amount
+          }
+          break;
+        } else {
+          if (!this.shortages[hiveName])
+            this.shortages[hiveName] = {};
+          this.shortages[hiveName][res] = -state[res]!;
+        }
+      }
+    }
+  }
+
+  updateState(hiveName: string) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive.cells.storage || !hive.cells.storage.terminal)
+      return;
+    this.state[hiveName] = {}
+    let sate = this.state[hiveName];
+
+    let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));
+    if (hive.cells.lab)
+      ress = ress.concat(Object.keys(hive.cells.lab.resTarget));
+
+    for (const i in ress) {
+      const res = <ResourceConstant>ress[i];
+      if (!sate[res])
+        sate[res] = hive.cells.storage.getUsedCapacity(res);
+    }
+
+    if (hive.cells.lab)
+      for (const r in hive.cells.lab.resTarget) {
         const res = <ResourceConstant>r;
         if (!sate[res])
           sate[res] = 0;
-        sate[res]! -= hive.resTarget[res]!;
+        sate[res]! -= hive.cells.lab.resTarget[res]!;
       }
 
-      hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY };
-      let tState = hive.cells.storage.resTargetTerminal;
+    for (const r in hive.resTarget) {
+      const res = <ResourceConstant>r;
+      if (!sate[res])
+        sate[res] = 0;
+      sate[res]! -= hive.resTarget[res]!;
+    }
 
+    hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY };
+    let tState = hive.cells.storage.resTargetTerminal;
+    if (hive.state !== hiveStates.battle) {
       let marketState = Apiary.broker.getTargetLongOrders(hiveName);
       for (const r in marketState) {
         const res = <ResourceConstant>r;
         if (!tState[res])
           tState[res] = 0;
-        tState[res]! += marketState[res]!;
+        tState[res]! += Math.min(marketState[res]!, 5000);
       }
-
-      // toDoAddAidSystem
     }
   }
 
-  run() {
-
-  }
   /*
     run() {
       if (this.terminal && !this.terminal.cooldown) {

@@ -122,7 +122,12 @@ export class Intel {
       }
     }
 
-    _.forEach(pos.findInRange(FIND_HOSTILE_CREEPS, 1), creep => {
+    let range = 1;
+    let creep = pos.lookFor(LOOK_CREEPS)[0];
+    if (creep && creep.owner.username === "Invaider")
+      range = 4;
+
+    _.forEach(pos.findInRange(FIND_HOSTILE_CREEPS, range), creep => {
       let stats = this.getStats(creep);
       for (let i in stats.max) {
         ans.max[<keyof CreepBattleInfo>i] += stats.max[<keyof CreepBattleInfo>i];
@@ -278,7 +283,7 @@ export class Intel {
         if (s.structureType === STRUCTURE_INVADER_CORE) {
           dangerlvl = 3;
           if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
-            dangerlvl = 6;
+            dangerlvl = 9;
         } else if (s.structureType === STRUCTURE_TOWER)
           dangerlvl = 7;
         else if (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_RAMPART)
@@ -288,6 +293,14 @@ export class Intel {
             dangerlvl = 1;
           else if (s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
+
+        if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED)) {
+          if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy
+            || (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_TOWER)))
+            dangerlvl = 9;
+          else if (dangerlvl < 3)
+            dangerlvl = 3;
+        }
         if (dangerlvl > 0 || roomInfo.roomState === roomStates.ownedByEnemy)
           roomInfo.enemies.push({
             object: s,
@@ -303,8 +316,6 @@ export class Intel {
       if (!s)
         return;
       let dangerlvl: DangerLvl = 3;
-      if (roomInfo.roomState === roomStates.ownedByEnemy)
-        dangerlvl = 8;
       roomInfo.enemies.push({
         object: s,
         dangerlvl: dangerlvl,
