@@ -126,22 +126,24 @@ export class Broker {
           Game.market.cancelOrder(id);
   }
 
-  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false): "no money" | "short" | "long" {
+  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number): "no money" | "short" | "long" {
     let roomName = terminal.pos.roomName;
-
-    let creditsToUse = this.creditsToUse(roomName);
+    if (creditsToUse === undefined)
+      creditsToUse = this.creditsToUse(roomName);
     if (creditsToUse <= 0)
       return "no money";
 
+    this.update();
     let price = this.getPriceLong(res);
     let priceToBuyIn = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
       priceToBuyIn *= 1.5654;
 
+
     if (hurry || priceToBuyIn <= price) {
       let ans: number = ERR_NOT_ENOUGH_RESOURCES;
-      if (this.bestPriceBuy[res] && Math.floor(creditsToUse / this.bestPriceBuy[res]!))
+      if (Math.floor(creditsToUse / priceToBuyIn))
         ans = this.buyShort(terminal, res, amount, creditsToUse);
       if (ans === OK)
         return "short";
@@ -189,7 +191,7 @@ export class Broker {
     this.update();
     let orders = this.goodBuy[res];
     if (orders)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
 
     if (!orders || !orders.length)
       return ERR_NOT_FOUND;
@@ -219,7 +221,7 @@ export class Broker {
     let orders = this.goodSell[res];
     if (!orders)
       return ERR_NOT_FOUND;
-    orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) < 25)
+    orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
       return ERR_NOT_FOUND;
 

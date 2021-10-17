@@ -164,7 +164,7 @@ export class DefenseCell extends Cell {
           }
         } else
           console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
-            + Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master").join("\n"));
+            + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
 
         if (ans !== OK) {
           if (roomInfo.dangerlvlmax < 6)

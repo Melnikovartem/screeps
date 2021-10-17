@@ -144,6 +144,8 @@ export class LaboratoryCell extends Cell {
         let r = requests[k];
         if (!r.amount)
           r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
+        else
+          r.amount = Math.max(bee.getBodyParts(BOOST_PARTS[r.type], 1) - r.amount, 0);
         if (!this.boostRequests[bee.ref].filter(br => br.type === r.type).length)
           this.boostRequests[bee.ref].push(this.getBoostInfo(r));
       }
@@ -212,7 +214,6 @@ export class LaboratoryCell extends Cell {
         if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
           let ans = lab.boostCreep(bee.creep, r.amount);
           if (ans === OK) {
-            // bad things if 2 creeps want to be boosted at same time
             r.amount = 0;
             if (Apiary.logger) {
               Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);

@@ -384,7 +384,6 @@ export class Traveler {
 
     let ret = Game.map.findRoute(origin, destination, {
       routeCallback: (roomName: string) => {
-
         if (options.routeCallback) {
           let outcome = options.routeCallback(roomName);
           if (outcome !== undefined) {
@@ -404,7 +403,7 @@ export class Traveler {
           return Number.POSITIVE_INFINITY;
         }
 
-        let roomInfo = Apiary.intel.getInfo(roomName, 50);
+        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
           case roomStates.reservedByMe:

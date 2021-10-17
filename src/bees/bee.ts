@@ -79,7 +79,7 @@ export class Bee {
 
   findMaster() {
     if (this.ref.includes(setupsNames.hauler)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.excavationCell) && m.beesAmount <= m.targetBeeCount));
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.excavationCell))); // && m.beesAmount <= m.targetBeeCount + 2));
       if (refMaster)
         return refMaster;
     } else if (this.ref.includes(setupsNames.bootstrap)) {

@@ -211,14 +211,11 @@ export class CustomConsole {
     console.log(this.send(roomNameFrom, roomNameTo, amount, res));
   }
 
-  completeOrder(orderId: string, roomName?: string, am: number = Infinity) {
+  completeOrder(orderId: string, roomName?: string, sets: number = 1) {
     let order = Game.market.getOrderById(orderId);
     if (!order)
       return `ERROR: ORDER NOT FOUND`;
-    if (order.type === ORDER_SELL && !am)
-      return `AMOUNT NEEDED MAX: ${Math.min(order.amount, Math.floor(Game.market.credits / order.price))} `;
-
-    let amount = Math.min(am, order.amount);
+    let amount = Math.min(sets * 5000, order.amount);
     let ans;
     let energy: number | string = "NOT NEEDED";
     let hiveName: string = "NO HIVE";
@@ -285,7 +282,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
-    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets, false, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
   buyShort(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
@@ -307,9 +304,11 @@ export class CustomConsole {
   marketReturn(ans: number | string, info: string) {
     switch (ans) {
       case ERR_NOT_FOUND:
-        ans = "NO GOOD DEAL";
+        ans = "NO GOOD DEAL NEAR";
+        break;
       case ERR_NOT_ENOUGH_RESOURCES:
         ans = "NOT ENOUGH RESOURCES";
+        break;
       case OK:
         return "OK " + info;
     }
@@ -327,6 +326,8 @@ export class CustomConsole {
     let pos = hive.cells.lab && hive.cells.lab.pos;
     if (!pos)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+
+    hive.cells.lab!.synthesizeRequests = [];
 
     let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
     let ref = hiveName + "_" + resource;

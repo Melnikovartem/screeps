@@ -51,7 +51,15 @@ export class MinerMaster extends Master {
       || this.cell.extractor && this.cell.extractor.cooldown > 0
       || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username);
 
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+          bee.state = beeStates.chill;
+    });
+
     _.forEach(this.activeBees, bee => {
+      if (bee.state === beeStates.boosting)
+        return;
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 

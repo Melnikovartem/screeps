@@ -6,10 +6,12 @@ import { findOptimalResource } from "../../abstract/utils";
 import { CIVILIAN_FLEE_DIST } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
+import type { Boosts } from "../_Master";
 
 @profile
 export class PickupMaster extends SwarmMaster {
   waitPos = this.order.pos.getOpenPositions(true, 5)[0];
+  boosts: Boosts | undefined = [{ type: "capacity", lvl: 0 }, { type: "fatigue", lvl: 0 }];
 
   update() {
     super.update();
@@ -69,7 +71,15 @@ export class PickupMaster extends SwarmMaster {
 
     let target = this.getTarget().target;
 
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+          bee.state = beeStates.chill;
+    });
+
     _.forEach(this.activeBees, bee => {
+      if (bee.state === beeStates.boosting)
+        return;
       if (bee.store.getFreeCapacity() === 0)
         bee.state = beeStates.fflush;
       else if (bee.store.getUsedCapacity() === 0)
