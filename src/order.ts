@@ -451,12 +451,13 @@ export class Order {
             createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
 
             let ans = _.some(createQue, res => this.hive.cells.lab!.newSynthesizeRequest(res));
-            if (!ans && this.hive.cells.lab.time !== Game.time) {
+            this.hive.cells.lab.resTarget = {};
+            if (!ans) {
               let sCell = this.hive.cells.storage;
               if (sCell && sCell.terminal && ingredients.length) {
                 _.forEach(ingredients, resource => {
                   if (sCell!.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
-                    sCell!.askAid(resource, LAB_MINERAL_CAPACITY * 2);
+                    this.hive.cells.lab!.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
                 });
               } else
                 this.delete();

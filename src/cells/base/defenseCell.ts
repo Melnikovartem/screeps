@@ -154,7 +154,7 @@ export class DefenseCell extends Cell {
           let swarm = freeSwarms.reduce((prev, curr) => curr.pos.getRoomRangeTo(roomName) < prev.pos.getRoomRangeTo(roomName) ? curr : prev);
           if (swarm.pos.getRoomRangeTo(Game.rooms[roomName], true) < 6)
             ans = this.setDefFlag(enemy.pos, swarm.flag);
-          console.log(ans, swarm.pos.roomName, "->", roomName);
+          //console.log(ans, swarm.pos.roomName, "->", roomName);
           if (ans === OK) {
             swarm.hive = this.hive;
             swarm.flag.memory.hive = this.hive.roomName;
@@ -162,9 +162,9 @@ export class DefenseCell extends Cell {
             delete Apiary.defenseSwarms[swarm.pos.roomName];
             return;
           }
-        } else
-          console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
-            + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
+        }
+        // console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
+        // + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
 
         if (ans !== OK) {
           if (roomInfo.dangerlvlmax < 6)

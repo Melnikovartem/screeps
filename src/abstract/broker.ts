@@ -120,10 +120,24 @@ export class Broker {
     console .log(`transfer energy buyLimit ${energyToBuy} sellLimit ${energyToSell}`);
     */
 
-    if (Game.time % 10 === 0)
-      for (let id in Game.market.orders)
-        if (!Game.market.orders[id].amount)
-          Game.market.cancelOrder(id);
+    for (let id in Game.market.orders)
+      if (!Game.market.orders[id].remainingAmount)
+        Game.market.cancelOrder(id);
+  }
+
+  getTargetLongOrders(roomName: string) {
+    let orders = _.filter(Game.market.orders, o => o.roomName === roomName);
+    let ans: { [key in ResourceConstant]?: number } = {}
+    _.forEach(orders, o => {
+      if (o.type === ORDER_BUY || !o.remainingAmount || !o.roomName)
+        return;
+      let amount = o.remainingAmount;
+      let res = <ResourceConstant>o.resourceType;
+      if (ans[res])
+        amount = Math.max(ans[res]!, amount)
+      ans[res] = Math.min(amount, 5000);
+    });
+    return ans;
   }
 
   buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number): "no money" | "short" | "long" {
@@ -134,11 +148,11 @@ export class Broker {
       return "no money";
 
     this.update();
-    let price = this.getPriceLong(res);
+    let price = this.getPriceLongBuy(res);
     let priceToBuyIn = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
-      priceToBuyIn *= 1.5654;
+      priceToBuyIn *= 1.5654; // approx transfer costs
 
 
     if (hurry || priceToBuyIn <= price) {
@@ -163,13 +177,17 @@ export class Broker {
     return Math.min(MAX_SPENDING_HIVE - this.hiveSpending[roomName].credits, Game.market.credits - Memory.settings.minBalance);
   }
 
-  getPriceLong(res: ResourceConstant) {
+  getPriceLongBuy(res: ResourceConstant) {
     return (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + ORDER_PADDING;
+  }
+
+  getPriceLongSell(res: ResourceConstant) {
+    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : 0) - ORDER_PADDING;
   }
 
   buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, coef: number = 1) {
     this.update();
-    let price = this.getPriceLong(res) * coef;
+    let price = this.getPriceLongBuy(res) * coef;
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 1.05));
     amount = Math.min(amount, priceCap);
@@ -184,6 +202,24 @@ export class Broker {
     });
     if (ans === OK)
       this.hiveSpending[roomName].credits += amount * price * 1.05;
+    return ans;
+  }
+
+  sellLong(terminal: StructureTerminal, res: ResourceConstant, creditsToUse: number, amount: number, coef: number = 1) {
+    this.update();
+    let price = this.getPriceLongSell(res) * coef;
+    let roomName = terminal.pos.roomName;
+    let priceCap = Math.floor(creditsToUse / (price * 0.05));
+    amount = Math.min(amount, priceCap);
+    if (!amount)
+      return ERR_NOT_ENOUGH_RESOURCES;
+    let ans = Game.market.createOrder({
+      type: ORDER_SELL,
+      resourceType: res,
+      totalAmount: amount,
+      price: price,
+      roomName: roomName,
+    });
     return ans;
   }
 

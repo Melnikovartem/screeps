@@ -6,6 +6,7 @@ import { Intel } from "./abstract/intelligence";
 import { Broker } from "./abstract/broker";
 import { Logger } from "./convenience/logger";
 import { RoomPlanner } from "./abstract/RoomPlanner";
+import { Network } from "./abstract/terminalNetwork";
 import { Visuals } from "./convenience/visuals";
 
 import { safeWrap } from "./abstract/utils";
@@ -22,6 +23,7 @@ export class _Apiary {
   intel: Intel;
   broker: Broker;
   planner: RoomPlanner;
+  network: Network;
   logger: Logger | undefined;
   visuals: Visuals = new Visuals;
 
@@ -39,6 +41,7 @@ export class _Apiary {
     this.intel = new Intel();
     this.broker = new Broker();
     this.planner = new RoomPlanner();
+    this.network = new Network();
     if (LOGGING_CYCLE)
       this.logger = new Logger();
 
@@ -71,14 +74,15 @@ export class _Apiary {
   update() {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
 
-    // if ((Game.time % 25 === 0 || this.broker.lastUpdated < 0) && Game.cpu.limit > 20)
-    //  this.broker.update();
-
     Order.checkFlags();
     _.forEach(Apiary.orders, order => {
       if (order)
         safeWrap(() => order.update(), order.print + " update");
     });
+
+    if (this.broker.lastUpdated < 0 && Game.cpu.limit > 20)
+      this.broker.update();
+    this.network.update();
 
     _.forEach(this.hives, hive => {
       safeWrap(() => hive.update(), hive.print + " update");
@@ -99,6 +103,7 @@ export class _Apiary {
 
   // run phase
   run() {
+    this.network.run();
     _.forEach(this.hives, hive => {
       safeWrap(() => hive.run(), hive.print + " run");
     });

@@ -48,6 +48,7 @@ export class LaboratoryCell extends Cell {
   sourceLabs: [string, string] | undefined;
   master: undefined;
   sCell: StorageCell;
+  resTarget: { [key in ResourceConstant]?: number } = {};
 
   constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
@@ -113,18 +114,15 @@ export class LaboratoryCell extends Cell {
   }
 
   getBoostInfo(r: BoostRequest) {
-    if (this.sCell.master.activeBees.length) {
-      if (r.lvl === undefined)
-        r.lvl = 2;
-      let res = BOOST_MINERAL[r.type][r.lvl];
-      let sum = this.getMineralSum(res);
-      if (sum > LAB_BOOST_MINERAL) {
-        r.res = res;
-        if (r.amount)
-          r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
-      }
-    } else
-      r.amount = 0;
+    if (r.lvl === undefined)
+      r.lvl = 2;
+    let res = BOOST_MINERAL[r.type][r.lvl];
+    let sum = this.getMineralSum(res);
+    if (sum > LAB_BOOST_MINERAL) {
+      r.res = res;
+      if (r.amount)
+        r.amount = Math.min(r.amount, Math.floor(sum / LAB_BOOST_MINERAL));
+    }
     return r;
   }
 
@@ -143,9 +141,8 @@ export class LaboratoryCell extends Cell {
       for (let k = 0; k < requests.length; ++k) {
         let r = requests[k];
         if (!r.amount)
-          r.amount = bee.getBodyParts(BOOST_PARTS[r.type], -1);
-        else
-          r.amount = Math.max(bee.getBodyParts(BOOST_PARTS[r.type], 1) - r.amount, 0);
+          r.amount = Infinity;
+        r.amount = Math.min(Math.max(r.amount - bee.getBodyParts(BOOST_PARTS[r.type], 1), 0), bee.getBodyParts(BOOST_PARTS[r.type], -1));
         if (!this.boostRequests[bee.ref].filter(br => br.type === r.type).length)
           this.boostRequests[bee.ref].push(this.getBoostInfo(r));
       }
@@ -156,9 +153,6 @@ export class LaboratoryCell extends Cell {
       let lab: StructureLab | undefined;
 
       if (!r.res || !r.amount)
-        continue;
-      r.amount = Math.min(r.amount, bee.getBodyParts(BOOST_PARTS[r.type], -1));
-      if (!r.amount)
         continue;
 
       if (this.boostLabs[r.res])
@@ -232,6 +226,7 @@ export class LaboratoryCell extends Cell {
       continue;
     }
 
+    console.log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
     if (rCode === OK)
       delete this.boostRequests[bee.ref];
     return rCode;
