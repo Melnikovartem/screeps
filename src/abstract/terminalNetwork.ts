@@ -39,14 +39,24 @@ export class Network {
         sate[res]! -= hive.resTarget[res]!;
       }
 
-      hive.cells.storage.resTargetTerminal = Apiary.broker.getTargetLongOrders(hiveName);
-      hive.cells.storage.resTargetTerminal.energy = TERMINAL_ENERGY;
+      hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY };
+      let tState = hive.cells.storage.resTargetTerminal;
+
+      let marketState = Apiary.broker.getTargetLongOrders(hiveName);
+      for (const r in marketState) {
+        const res = <ResourceConstant>r;
+        if (!tState[res])
+          tState[res] = 0;
+        tState[res]! += marketState[res]!;
+      }
 
       // toDoAddAidSystem
     }
   }
 
-  run() { }
+  run() {
+
+  }
   /*
     run() {
       if (this.terminal && !this.terminal.cooldown) {
