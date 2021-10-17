@@ -142,8 +142,8 @@ export class DefenseCell extends Cell {
           pos = enemy.pos;
         let freeSwarms: Order[] = [];
         for (const roomDefName in Apiary.defenseSwarms) {
-          let roomInfDef = Apiary.intel.getInfo(roomDefName);
-          if (roomInfDef.safePlace) {
+          let roomInfoDef = Apiary.intel.getInfo(roomDefName, Infinity);
+          if (roomInfoDef.dangerlvlmax < 3) {
             let order = Apiary.defenseSwarms[roomDefName];
             if (order.master && _.filter(order.master.bees, bee => bee.getActiveBodyParts(HEAL)).length)
               freeSwarms.push(order);
@@ -163,7 +163,8 @@ export class DefenseCell extends Cell {
             return;
           }
         } else
-          console.log("?", roomName, ":", Object.keys(Apiary.defenseSwarms))
+          console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
+            + Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master").join("\n"));
 
         if (ans !== OK) {
           if (roomInfo.dangerlvlmax < 6)
@@ -202,7 +203,7 @@ export class DefenseCell extends Cell {
   }
 
   setDefFlag(pos: RoomPosition, info: "normal" | "power" | "surrender" | Flag = "normal") {
-    let ans;
+    let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8);
     if (centerPoss.length) {
@@ -210,7 +211,7 @@ export class DefenseCell extends Cell {
       if (!pos)
         pos = centerPoss[0];
     } else if (pos.getEnteranceToRoom())
-      pos = pos.getOpenPositions(true).reduce((prev, curr) => curr.getEnteranceToRoom() ? prev : curr);
+      pos = pos.getOpenPositions(true).reduce((prev, curr) => prev.getEnteranceToRoom() ? curr : prev);
 
     if (info instanceof Flag) {
       return info.setPosition(pos);

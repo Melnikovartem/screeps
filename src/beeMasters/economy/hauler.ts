@@ -1,4 +1,4 @@
-import { Master } from "../_Master";
+import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
 
 import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
@@ -51,8 +51,8 @@ export class HaulerMaster extends Master {
 
   recalculateTargetBee() {
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
-    this.cell.fullContainer = Math.min(CONTAINER_CAPACITY * 0.9, body.filter(b => b === CARRY).length * CARRY_CAPACITY);
-    let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.25));
+    this.cell.fullContainer = Math.min(CONTAINER_CAPACITY, body.filter(b => b === CARRY).length * CARRY_CAPACITY) * 0.9;
+    let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.1));
     if (this.hive.state === hiveStates.lowenergy)
       rounding = x => Math.max(1, Math.floor(x));
     this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
@@ -114,6 +114,10 @@ export class HaulerMaster extends Master {
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
 
+      let enemy = Apiary.intel.getEnemyCreep(bee, 10);
+      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+        bee.state = beeStates.flee;
+
       if (bee.state === beeStates.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
@@ -152,6 +156,12 @@ export class HaulerMaster extends Master {
           }
         } else
           bee.state = beeStates.chill; //failsafe
+      }
+
+      if (bee.state === beeStates.flee) {
+        if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
+          bee.flee(enemy, this.hive.cells.defense);
+        bee.state = beeStates.refill;
       }
 
       if (bee.state === beeStates.chill)

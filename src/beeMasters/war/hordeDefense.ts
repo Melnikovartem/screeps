@@ -35,13 +35,33 @@ export class HordeDefenseMaster extends HordeMaster {
       if (roomInfo.dangerlvlmax < 4) {
         order.priority = 8;
         order.setup = setups.defender.destroyer.copy();
-        if (roomInfo.dangerlvlmax < 3 || Apiary.intel.getEnemy(new RoomPosition(25, 25, this.order.pos.roomName)) instanceof Creep)
-          order.setup.patternLimit = 1;
-      }
+        if (roomInfo.dangerlvlmax < 3 || Apiary.intel.getEnemy(this.order.pos) instanceof Creep)
+          order.setup = setups.defender.normal.copy();
+      } else {
+        let enemy = Apiary.intel.getEnemy(this.order.pos);
+        if (enemy instanceof Creep) {
+          let stats = Apiary.intel.getComplexStats(enemy);
+          let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.5);
+          let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER);
+          let desiredTTK = 40; // desired time to kill
+          if (healNeeded > 3) {
+            healNeeded = 3;
+            desiredTTK = 20;
+          }
+          let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
 
-      if (this.hive.phase === 0) {
-        order.setup = order.setup.copy();
-        order.setup.fixed = [];
+          order.setup = setups.defender.normal.copy();
+          order.setup.patternLimit = Math.min(Math.max(rangedNeeded, killFastRangeNeeded, 2), 16);
+          if (healNeeded) {
+            let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
+            let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
+            let toughCost = BODYPART_COST[TOUGH] + BODYPART_COST[MOVE];
+            if (this.hive.room.energyCapacityAvailable < toughCost + healCost * healNeeded + rangedCost * order.setup.patternLimit)
+              healNeeded = 1;
+            if (this.hive.room.energyCapacityAvailable >= toughCost + healCost * healNeeded + rangedCost * 2)
+              order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
+          }
+        }
       }
 
       this.wish(order);

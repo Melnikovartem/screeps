@@ -136,7 +136,7 @@ export class Bee {
     return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
-  goTo(target: RoomPosition | { pos: RoomPosition }, opt: TravelToOptions = {}): ScreepsReturnCode {
+  goTo(target: ProtoPos, opt: TravelToOptions = {}): ScreepsReturnCode {
     Apiary.intel.getInfo(this.pos.roomName, 50); // collect intel
     /* Not sure how useful is this
     if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {
@@ -182,14 +182,12 @@ export class Bee {
 
   attack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
-    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.attack(t!) : ans;
   }
 
   rangedAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
-    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt, 3);
     if (t && this.pos.getRangeTo(t) <= 1)
       return this.creep.rangedMassAttack();
@@ -198,7 +196,6 @@ export class Bee {
 
   heal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
-    opt.goInDanger = true;
     if (t instanceof Bee)
       t = t.creep;
     let ans = this.actionCheck(t, opt);
@@ -207,7 +204,6 @@ export class Bee {
 
   rangedHeal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
-    opt.goInDanger = true;
     if (t instanceof Bee)
       t = t.creep;
     let ans = this.actionCheck(t, opt, 3);
@@ -215,7 +211,6 @@ export class Bee {
   }
 
   dismantle(t: Structure | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
-    opt.goInDanger = true;
     let ans = this.actionCheck(t, opt);
     return ans === OK ? this.creep.dismantle(t!) : ans;
   }
@@ -262,30 +257,35 @@ export class Bee {
     return ans;
   }
 
-  flee(enemy: Creep | Structure | PowerCreep, posToFlee: RoomPosition) {
+  flee(enemy: Creep | Structure | PowerCreep, posToFlee: ProtoPos) {
     let poss = this.pos.getOpenPositions(true);
     if (!poss.length)
       return ERR_NOT_FOUND;
+
+    let getTerrain = (pos: RoomPosition) => {
+      let terrain: -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
+      if (pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
+        terrain = -1;
+      return terrain;
+    }
+
+    let terrain_prev: -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(poss[0].roomName).get(poss[0].x, poss[0].y)
     let open = poss.reduce((prev, curr) => {
       let ans = prev.getRangeTo(enemy) - curr.getRangeTo(enemy);
+      let terrain_curr: -1 | 0 | 1 | 2 | undefined
       if (ans === 0) {
-        switch (Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y)) {
-          case TERRAIN_MASK_WALL:
-          case TERRAIN_MASK_SWAMP:
-            if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) === TERRAIN_MASK_WALL)
-              ans = -1;
-            else
-              ans = 1;
-            break;
-          case 0:
-            if (Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y) !== 0)
-              ans = -1;
-            else
-              ans = curr.getRangeTo(posToFlee) - prev.getRangeTo(posToFlee)
-            break;
-        }
+        terrain_curr = getTerrain(curr);
+        ans = terrain_curr - terrain_prev;
       }
-      return ans < 0 ? curr : prev;
+      if (ans === 0)
+        ans = curr.getRangeTo(posToFlee) - prev.getRangeTo(posToFlee);
+      if (ans < 0) {
+        if (terrain_curr === undefined)
+          terrain_curr = getTerrain(curr);
+        terrain_prev = terrain_curr;
+        return curr;
+      }
+      return prev;
     });
     return this.goTo(open);
   }

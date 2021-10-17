@@ -37,7 +37,6 @@ interface TravelToOptions {
   route?: { [roomName: string]: boolean };
   ensurePath?: boolean;
   // mine
-  goInDanger?: boolean;
 }
 
 interface TravelData {

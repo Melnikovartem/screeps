@@ -70,6 +70,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
     let mask = Apiary.useBucket ? 1 : 3;
     return this.showMap(hiveName, keep, (x, y, vis) => {
       if (x % mask === 0 && x % mask === 0) {
@@ -85,6 +86,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
     let targets = hive.cells.spawn.getTargets(-1);
     return this.showMap(hiveName, keep, (x, y, vis) => {
       // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
@@ -103,6 +105,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
     let max = Math.max(...hive.cells.defense.coefMap.map(row => Math.max(...row)));
     return this.showMap(hiveName, keep, (x, y, vis) => {
       vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max, 3) });
@@ -122,6 +125,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
     if (!hive.builder)
       return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
     let builder = setups.builder.copy();
@@ -136,6 +140,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
 
     let cell = hive && hive.cells.storage;
     if (!cell || !cell.terminal)
@@ -266,6 +271,7 @@ export class CustomConsole {
     let hive = Apiary.hives[roomName];
     if (!hive)
       return `NO VALID HIVE FOUND @ ${this.formatRoom(roomName)}`;
+    this.lastActionRoomName = hive.roomName;
     let terminal = hive.cells.storage && hive.cells.storage.terminal!;
     if (!terminal)
       return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
@@ -317,6 +323,7 @@ export class CustomConsole {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
     let pos = hive.cells.lab && hive.cells.lab.pos;
     if (!pos)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;

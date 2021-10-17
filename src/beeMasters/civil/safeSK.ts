@@ -47,7 +47,7 @@ export class SKMaster extends SwarmMaster {
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
       bee.rangedAttack(target, { movingTarget: true });
     if (shouldFlee)
-      return bee.flee(target, this.hive.getPos("center"));
+      return bee.flee(target, this.hive.cells.defense);
     return OK;
   }
 
@@ -61,7 +61,12 @@ export class SKMaster extends SwarmMaster {
     }
 
     if (!enemy) {
-      bee.goTo(lair, { range: 3 });
+      enemy = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3)[0];
+      let ans: number = OK;
+      if (enemy)
+        ans = this.attackOrFlee(bee, enemy);
+      if (ans === OK)
+        bee.goTo(lair, { range: 3 });
       bee.target = lair.id;
     }
   }
@@ -100,6 +105,8 @@ export class SKMaster extends SwarmMaster {
       if (bee.target) {
         let target = <Creep | Structure>Game.getObjectById(bee.target);
         if (target instanceof Creep) {
+          // update the enemies
+          Apiary.intel.getInfo(this.order.pos.roomName);
           this.attackOrFlee(bee, target);
           return;
         } else if (target instanceof StructureKeeperLair) {

@@ -314,10 +314,6 @@ export class Traveler {
         }
       }
 
-      if (!options.goInDanger && matrix) {
-        matrix = this.addDangerSKToMatrix(roomName, matrix);
-      }
-
       if (options.roomCallback) {
         if (!matrix) { matrix = new PathFinder.CostMatrix(); }
         let outcome = options.roomCallback(roomName, matrix.clone());
@@ -532,6 +528,10 @@ export class Traveler {
         matrix.set(structure.pos.x, structure.pos.y, roadCost);
       } else if (structure instanceof StructureContainer) {
         matrix.set(structure.pos.x, structure.pos.y, 5);
+      } else if (structure instanceof StructureKeeperLair) {
+        _.forEach(structure.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y,
+          Math.max(matrix.get(p.x, p.y), 4 * (4 - p.getRangeTo(structure)))));
+        matrix.set(structure.pos.x, structure.pos.y, 0xff);
       } else {
         impassibleStructures.push(structure);
       }
@@ -559,18 +559,6 @@ export class Traveler {
 
   public static addCreepsToMatrix(room: Room, matrix: CostMatrix): CostMatrix {
     room.find(FIND_CREEPS).forEach((creep: Creep) => matrix.set(creep.pos.x, creep.pos.y, 0xff));
-    return matrix;
-  }
-
-  public static addDangerSKToMatrix(roomName: string, matrix: CostMatrix): CostMatrix {
-    let roomInfo = Apiary.intel.getInfo(roomName, 25);
-    if (roomInfo.roomState !== roomStates.SKfrontier)
-      return matrix;
-    let enemies = roomInfo.enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
-    _.forEach(enemies, c => {
-      _.forEach(c.pos.getOpenPositions(false, 3), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 30 * (4 - p.getRangeTo(c)))));
-      matrix.set(c.pos.x, c.pos.y, 255);
-    });
     return matrix;
   }
 

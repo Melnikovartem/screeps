@@ -70,9 +70,12 @@ export class BuilderMaster extends Master {
   run() {
     _.forEach(this.activeBees, bee => {
 
-      let enemy = Apiary.intel.getEnemyCreep(bee, 10);
-      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
-        bee.state = beeStates.flee;
+      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
+      if (enemy) {
+        enemy = Apiary.intel.getEnemyCreep(bee);
+        if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+          bee.state = beeStates.flee;
+      }
 
       switch (bee.state) {
         case beeStates.refill:
@@ -149,7 +152,7 @@ export class BuilderMaster extends Master {
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(enemy, this.hive.getPos("center"));
+            bee.flee(enemy, this.hive.cells.defense);
           bee.state = beeStates.work;
           break;
       }

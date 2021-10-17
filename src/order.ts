@@ -383,10 +383,10 @@ export class Order {
               }
             });
             if (!planner)
-              Apiary.planner.addCustomRoad(this.hive.getPos("center"), this.pos);
+              Apiary.planner.addCustomRoad(this.hive.cells.defense.pos, this.pos);
             break;
           case COLOR_YELLOW:
-            Apiary.planner.addResourceRoads(this.hive.getPos("center"));
+            Apiary.planner.addResourceRoads(this.hive.cells.defense.pos, true);
             break;
         }
         break;
@@ -573,13 +573,15 @@ export class Order {
             delete Apiary.planner.activePlanning[name];
         }
         break;
-      case COLOR_ORANGE:
-        if (this.flag.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
-          let master = <PickupMaster>this.master;
-          let ans = master.getTarget();
-          if (ans.target && ans.amount > 500)
-            ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), master.maxSpawns) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
-        }
+      /*
+    case COLOR_ORANGE:
+      if (this.flag.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
+        let master = <PickupMaster>this.master;
+        let ans = master.getTarget();
+        if (ans.target && ans.amount > 500)
+          ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), master.maxSpawns) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+      }
+      */
     }
 
     if (this.master)

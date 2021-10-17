@@ -1,4 +1,5 @@
 import { makeId } from "./utils";
+import { roomStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 
@@ -51,8 +52,8 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
 ];
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
-
-function getPathArgs(opts: FindPathOpts = {}): FindPathOpts {
+interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
+function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
   return _.defaults(opts, {
     plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: 1,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
@@ -60,13 +61,27 @@ function getPathArgs(opts: FindPathOpts = {}): FindPathOpts {
         let plan = Apiary.planner.activePlanning[roomName].plan;
         for (let x in plan)
           for (let y in plan[x]) {
-            if (plan[x][y].s === STRUCTURE_ROAD)
-              costMatrix.set(+x, +y, 1);
-            else if (plan[x][y].s === STRUCTURE_WALL)
-              costMatrix.set(+x, +y, 3);
-            else if (plan[x][y].s)
-              costMatrix.set(+x, +y, 255);
+            let sType = plan[x][y].s
+            if (sType && (!opts.ignoreTypes || !opts.ignoreTypes.includes(sType)))
+              if (sType === STRUCTURE_ROAD)
+                costMatrix.set(+x, +y, 0x01);
+              else if (sType === STRUCTURE_WALL)
+                costMatrix.set(+x, +y, 0x03);
+              else
+                costMatrix.set(+x, +y, 0xff);
           }
+
+
+        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+        let room = Game.rooms[roomName];
+        if (roomInfo.roomState === roomStates.SKfrontier && room) {
+          for (let structure of room.find<Structure>(FIND_STRUCTURES))
+            if (structure instanceof StructureKeeperLair) {
+              _.forEach(structure.pos.getOpenPositions(true, 3), p => costMatrix.set(p.x, p.y,
+                Math.max(costMatrix.get(p.x, p.y), 0x03 * (4 - p.getTimeForPath(structure)))));
+              costMatrix.set(structure.pos.x, structure.pos.y, 0xff);
+            }
+        }
         return costMatrix;
       }
     }
@@ -442,9 +457,7 @@ export class RoomPlanner {
     });
   }
 
-  addResourceRoads(anchor: RoomPosition) {
-    if (!this.activePlanning[anchor.roomName])
-      this.toActive(anchor, undefined, [STRUCTURE_CONTAINER]);
+  addResourceRoads(anchor: RoomPosition, fromMem = false) {
 
     let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
@@ -453,6 +466,14 @@ export class RoomPlanner {
         return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;
     });
+
+    if (fromMem)
+      //this.toActive(anchor, undefined, [STRUCTURE_CONTAINER]);
+      _.forEach(futureResourceCells, f => {
+        if (!this.activePlanning[f.pos.roomName])
+          this.toActive(f.pos, undefined, [STRUCTURE_CONTAINER]);
+      });
+
 
     _.forEach(futureResourceCells, f => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
@@ -658,7 +679,7 @@ export class RoomPlanner {
     return false;
   }
 
-  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opts: FindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
+  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opts: CoustomFindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
     let roomName = anchor.roomName;
     if (!(pos.roomName in Game.rooms))
       return ERR_FULL;

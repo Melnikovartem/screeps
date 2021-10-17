@@ -14,7 +14,7 @@ export type FormationPositions = [Pos, CreepSetup][];
 export abstract class SquadMaster extends SwarmMaster {
   formation: FormationPositions = [];
   formationBees: Bee[] = [];
-  formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.getPos("center") : this.hive.pos;
+  formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.cells.defense.pos : this.hive.pos;
   formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP; // TODO rotate formation to enemy
   targetBeeCount = 1;
   maxSpawns = 1;
@@ -240,7 +240,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     }
     bee.goTo(moveTarget, {
-      movingTarget: true, goInDanger: true, maxOps: Math.min(2000, 750 * this.activeBees.length),
+      movingTarget: true, maxOps: Math.min(2000, 750 * this.activeBees.length),
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;

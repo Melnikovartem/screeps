@@ -342,44 +342,51 @@ export class Intel {
       }
     }
 
+    ans.current.hits = creep.hits;
+    ans.max.hits = creep.hitsMax;
     _.forEach(creep.body, b => {
-      let stat;
+      let stat: number;
       switch (b.type) {
         case RANGED_ATTACK:
-          stat = ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost] : { rangedAttack: 1 }).rangedAttack;
+          stat = RANGED_ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost].rangedAttack : 1);
           ans.max.dmgRange += stat;
           ans.max.dmgClose += stat;
           ans.max.dism += stat;
           if (b.hits) {
             ans.current.dmgRange += stat;
             ans.current.dmgClose += stat;
-            ans.max.dism += stat;
+            ans.current.dism += stat;
           }
           break;
         case ATTACK:
-          stat = ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost] : { attack: 1 }).attack;
+          stat = ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost].attack : 1);
           ans.max.dmgClose += stat;
           if (b.hits)
             ans.current.dmgClose += stat;
           break;
         case HEAL:
-          stat = HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost] : { heal: 1 }).heal;
+          stat = HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost].heal : 1);
           ans.max.heal += stat;
           if (b.hits)
             ans.current.heal += stat;
           break;
         case WORK:
-          let boost = b.boost && BOOSTS.work[b.boost] && BOOSTS.work[b.boost];
+          let boost = b.boost && BOOSTS.work[b.boost];
           stat = DISMANTLE_POWER * (boost && "dismantle" in boost ? boost.dismantle : 1);
           ans.max.dism += stat;
           if (b.hits)
             ans.current.dism += stat;
           break;
+        case TOUGH:
+          stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 1;
+          ans.max.hits += stat;
+          if (b.hits)
+            ans.current.hits += stat;
       }
     });
 
-    ans.current.hits = creep.hits;
-    ans.max.hits = creep.hitsMax;
+    ans.current.hits = Math.ceil(ans.current.hits);
+    ans.max.hits = Math.ceil(ans.max.hits);
 
     return ans;
   }

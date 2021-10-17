@@ -51,15 +51,20 @@ export class MinerMaster extends Master {
       || this.cell.extractor && this.cell.extractor.cooldown > 0
       || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username);
 
-    let enemy = Apiary.intel.getEnemyCreep(this.cell, 10);
-
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 
+      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
+      if (enemy) {
+        enemy = Apiary.intel.getEnemyCreep(bee);
+        if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+          bee.state = beeStates.flee;
+      }
+
       let shouldTransfer = bee.state !== beeStates.chill && bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25;
       if ((enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
-        || (this.cell.lair && (!this.cell.lair.ticksToSpawn || this.cell.lair.ticksToSpawn < 10))) {
+        || (this.cell.lair && (!this.cell.lair.ticksToSpawn || this.cell.lair.ticksToSpawn <= 4))) {
         bee.state = beeStates.flee;
         shouldTransfer = true;
       }
@@ -104,11 +109,9 @@ export class MinerMaster extends Master {
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST) {
-            bee.flee(enemy, this.hive.getPos("center"));
-          } else {
-            if (this.cell.lair && this.cell.lair.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-              bee.flee(this.cell.lair, this.hive.pos);
-          }
+            bee.flee(enemy, this.hive.cells.defense);
+          } else if (this.cell.lair && this.cell.lair.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
+            bee.flee(this.cell.lair, this.hive.cells.defense);
           bee.state = beeStates.work;
           break;
       }

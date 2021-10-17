@@ -46,7 +46,7 @@ export class HordeMaster extends SwarmMaster {
 
   attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
     let action;
-    let range = 2;
+    let range = 3;
     if (bee.getActiveBodyParts(RANGED_ATTACK))
       action = () => bee.rangedAttack(target)
     if (bee.getActiveBodyParts(ATTACK)) {
@@ -60,8 +60,11 @@ export class HordeMaster extends SwarmMaster {
     if (action)
       if (bee.pos.getRangeTo(target) <= range) {
         action();
-      } else if (bee.hits === bee.hitsMax || !bee.getActiveBodyParts(HEAL))
+      } else if (bee.hits === bee.hitsMax || !bee.getActiveBodyParts(HEAL)) {
         action();
+        if (range === bee.pos.getRangeTo(target))
+          bee.goTo(target);
+      }
 
     if (this.defendNearFlag)
       return OK;
