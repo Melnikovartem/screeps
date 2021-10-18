@@ -20,14 +20,14 @@ export class BuilderMaster extends Master {
 
   recalculateTargetBee() {
     let target = this.hive.sumCost > 0 ? 1 : 0;
-    this.patternPerBee = 5;
+    this.patternPerBee = 3;
 
     if (this.hive.sumCost > 1200) {
-      this.patternPerBee = 10;
+      this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
         target = 2;
       if (this.hive.sumCost > 15000 && this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
-        this.patternPerBee = 15;
+        this.patternPerBee = 8;
     }
 
     if (this.hive.state >= hiveStates.nukealert) {
@@ -68,13 +68,14 @@ export class BuilderMaster extends Master {
   }
 
   run() {
+    let fleeDist = this.hive.state === hiveStates.battle ? 3 : CIVILIAN_FLEE_DIST;
     _.forEach(this.activeBees, bee => {
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
       let contr = Game.rooms[bee.pos.roomName].controller;
       if (enemy && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
-        if (enemy && enemy.pos.getRangeTo(bee) <= (this.hive.state === hiveStates.battle ? 3 : CIVILIAN_FLEE_DIST))
+        if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
           bee.state = beeStates.flee;
       }
 
@@ -112,8 +113,22 @@ export class BuilderMaster extends Master {
               }
             }
 
-            if (!target)
-              target = this.hive.findProject(bee, this.hive.state === hiveStates.battle ? "ignore_constructions" : undefined);
+            let opts: TravelToOptions = {};
+            if (this.hive.state === hiveStates.battle) {
+              opts.roomCallback = (roomName, matrix) => {
+                if (roomName !== this.hive.roomName)
+                  return;
+                let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
+                _.forEach(enemies, c => {
+                  _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, 0xff));
+                  matrix.set(c.pos.x, c.pos.y, 0xff);
+                });
+                return matrix;
+              }
+            }
+
+            if (!target || this.hive.state === hiveStates.battle)
+              target = this.hive.findProject(bee);
 
             if (target) {
               let ans;
@@ -152,7 +167,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.chill;
           break;
         case beeStates.flee:
-          if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
+          if (enemy && enemy.pos.getRangeTo(bee) < fleeDist)
             bee.flee(enemy, this.hive);
           bee.state = beeStates.work;
           break;

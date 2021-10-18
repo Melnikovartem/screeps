@@ -27,7 +27,7 @@ export class HordeDefenseMaster extends HordeMaster {
     if (this.checkBees(true) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
       let order = {
         setup: setups.defender.normal,
-        priority: <1 | 8>1,
+        priority: <1 | 4 | 8>1,
       }
 
       let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
@@ -64,6 +64,8 @@ export class HordeDefenseMaster extends HordeMaster {
         }
       }
 
+      if (this.order.pos.roomName !== this.hive.roomName)
+        order.priority = <4 | 8>Math.min(4, order.priority);
       this.wish(order);
     }
   }

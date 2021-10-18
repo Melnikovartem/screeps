@@ -50,6 +50,10 @@ export class HaulerMaster extends Master {
   }
 
   recalculateTargetBee() {
+    if (!this.accumRoadTime) {
+      this.targetBeeCount = 0;
+      return;
+    }
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
     this.cell.fullContainer = Math.min(CONTAINER_CAPACITY, body.filter(b => b === CARRY).length * CARRY_CAPACITY) * 0.9;
     let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.1));

@@ -293,14 +293,23 @@ export class Hive {
     let target: Structure | ConstructionSite | undefined;
     let projects = this.structuresConst;
     let getProj = () => (<RoomPosition>pos).findClosest(projects);
-    if (this.state >= hiveStates.nukealert)
-      getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
     if (this.state === hiveStates.battle) {
       let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
+      ignore = "ignore_constructions";
       if (inDanger.length)
         projects = inDanger;
-    }
+      let enemy = Apiary.intel.getEnemyCreep(this);
+      if (enemy)
+        pos = enemy.pos; // dont work well with several points
+      getProj = () => projects.reduce((prev, curr) => {
+        let ans = curr.pos.getRangeTo(pos) - prev.pos.getRangeTo(pos);
+        if (ans === 0)
+          ans = prev.energyCost - curr.energyCost;
+        return ans < 0 ? curr : prev;
+      });
+    } else if (this.state === hiveStates.nukealert)
+      getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
     let proj = getProj();
     while (proj && !target) {
@@ -356,7 +365,7 @@ export class Hive {
           add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
             [STRUCTURE_WALL]: health,
             [STRUCTURE_RAMPART]: health,
-          }, 0.99));
+          }, 0.9));
         }
         break;
       case hiveStates.nukealert:

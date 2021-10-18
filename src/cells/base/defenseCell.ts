@@ -123,6 +123,24 @@ export class DefenseCell extends Cell {
 
     _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
 
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
+    this.isBreached = false;
+    let contr = this.hive.room.controller!;
+    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5 && (!contr.safeMode || contr.safeMode < 600));
+    if (this.hive.state === hiveStates.battle) {
+      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+      _.forEach(roomInfo.enemies, enemy => {
+        if (!(enemy instanceof Creep))
+          return;
+        let info = Apiary.intel.getStats(enemy).current;
+        if (info.dism < 100 && info.dmgClose < 100)
+          return;
+
+        if (this.wasBreached(enemy.pos))
+          this.isBreached = true;
+      });
+    }
+
     let storageCell = this.hive.cells.storage;
     if (!storageCell)
       return;
@@ -136,6 +154,7 @@ export class DefenseCell extends Cell {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
       if (roomInfo.dangerlvlmax > 3) {
+
         let enemy = roomInfo.enemies[0].object;
         if (!this.notDef(roomName))
           return;
@@ -233,12 +252,7 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    let contr = this.hive.room.controller!;
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5 && (!contr.safeMode || contr.safeMode < 600));
-    this.isBreached = false;
-
     if (roomInfo.enemies.length) {
-      roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       let enemy = Apiary.intel.getEnemy(this)!;
       if (!enemy)
         return;
@@ -250,8 +264,8 @@ export class DefenseCell extends Cell {
 
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy);
-      let myStats = Apiary.intel.getComplexMyStats(enemy)
-      if (stats.current.heal < TOWER_POWER_ATTACK_MY * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgRange + myStats.current.dmgClose)
+      let myStats = Apiary.intel.getComplexMyStats(enemy); // my stats toward a point
+      if (stats.current.heal < TOWER_POWER_ATTACK_MY * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose)
         shouldAttack = true;
 
       _.forEach(this.towers, tower => {
@@ -266,18 +280,6 @@ export class DefenseCell extends Cell {
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });
-
-      if (this.hive.state === hiveStates.battle)
-        _.forEach(roomInfo.enemies, enemy => {
-          if (!(enemy instanceof Creep))
-            return;
-          let info = Apiary.intel.getStats(enemy).current;
-          if (info.dism < 100 && info.dmgClose < 100)
-            return;
-
-          if (this.wasBreached(enemy.pos))
-            this.isBreached = true;
-        });
 
       if (this.isBreached) {
         let contr = this.hive.room.controller!;
