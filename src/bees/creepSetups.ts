@@ -149,7 +149,6 @@ export const setups = {
     }, 25),
     destroyer: new CreepSetup(setupsNames.defender, {
       pattern: [ATTACK],
-      patternLimit: Infinity,
     }, 25),
     sk: new CreepSetup(setupsNames.defender + " SK", {
       fixed: [HEAL, HEAL, HEAL],

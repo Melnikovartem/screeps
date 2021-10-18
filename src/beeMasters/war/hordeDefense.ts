@@ -35,8 +35,6 @@ export class HordeDefenseMaster extends HordeMaster {
       if (roomInfo.dangerlvlmax < 4) {
         order.priority = 8;
         order.setup = setups.defender.destroyer.copy();
-        if (roomInfo.dangerlvlmax < 3 || Apiary.intel.getEnemy(this.order.pos) instanceof Creep)
-          order.setup = setups.defender.normal.copy();
       } else {
         let enemy = Apiary.intel.getEnemy(this.order.pos);
         if (enemy instanceof Creep) {

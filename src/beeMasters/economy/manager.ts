@@ -41,7 +41,7 @@ export class ManagerMaster extends Master {
     let non_refill_needed = refilling > 1;
     if (non_refill_needed) {
       let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority);
-      if (non_refill_requests.length) {
+      if (non_refill_needed && non_refill_requests.length) {
         this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell.pos) - b.pos.getRangeTo(this.cell.pos));
         requests = non_refill_requests;
       } else

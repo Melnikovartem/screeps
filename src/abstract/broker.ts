@@ -129,7 +129,7 @@ export class Broker {
       if (order)
         Apiary.logger.marketLong(order);
     }
-    Game.market.cancelOrder(orderId);
+    return Game.market.cancelOrder(orderId);
   }
 
   getTargetLongOrders(roomName: string) {

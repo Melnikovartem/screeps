@@ -257,7 +257,7 @@ export class Bee {
     return ans;
   }
 
-  flee(enemy: Creep | Structure | PowerCreep, posToFlee: ProtoPos) {
+  flee(enemy: Creep | Structure | PowerCreep, posToFlee: ProtoPos, opt?: TravelToOptions) {
     let poss = this.pos.getOpenPositions(true);
     if (!poss.length)
       return ERR_NOT_FOUND;
@@ -290,7 +290,7 @@ export class Bee {
       }
       return prev;
     });
-    return this.goTo(open);
+    return this.goTo(open, opt);
   }
 
   static checkBees() {

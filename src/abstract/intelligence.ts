@@ -310,7 +310,7 @@ export class Intel {
       });
     });
 
-    if (roomInfo.roomState >= roomStates.SKfrontier || Game.time % 500 === 0)
+    if (roomInfo.roomState >= roomStates.SKfrontier)
       _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE) {
@@ -334,27 +334,22 @@ export class Intel {
           else if (dangerlvl < 3)
             dangerlvl = 3;
         }
-        if (dangerlvl > 0 || roomInfo.roomState === roomStates.ownedByEnemy)
+        roomInfo.enemies.push({
+          object: s,
+          dangerlvl: dangerlvl,
+          type: enemyTypes.static,
+        });
+      });
+
+    if (roomInfo.roomState >= roomStates.reservedByEnemy)
+      _.forEach(room.find(FIND_STRUCTURES), s => {
+        if (s.structureType === STRUCTURE_ROAD || s.structureType === STRUCTURE_CONTAINER)
           roomInfo.enemies.push({
             object: s,
-            dangerlvl: dangerlvl,
+            dangerlvl: 0,
             type: enemyTypes.static,
           });
       });
-
-    _.forEach(room.find(FIND_FLAGS), f => {
-      if (f.color !== COLOR_GREY || f.secondaryColor !== COLOR_RED)
-        return;
-      let s = f.pos.lookFor(LOOK_STRUCTURES)[0];
-      if (!s)
-        return;
-      let dangerlvl: DangerLvl = 3;
-      roomInfo.enemies.push({
-        object: s,
-        dangerlvl: dangerlvl,
-        type: enemyTypes.static,
-      });
-    });
 
     if (roomInfo.enemies.length)
       roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev).dangerlvl;

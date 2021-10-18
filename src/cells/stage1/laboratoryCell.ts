@@ -113,7 +113,8 @@ export class LaboratoryCell extends Cell {
     return sum;
   }
 
-  getBoostInfo(r: BoostRequest) {
+  getBoostInfo(original: BoostRequest) {
+    let r = { ...original };
     if (r.lvl === undefined)
       r.lvl = 2;
     let res = BOOST_MINERAL[r.type][r.lvl];

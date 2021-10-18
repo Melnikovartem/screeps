@@ -1,6 +1,7 @@
 import { signText } from "../enums"
 
 import { TERMINAL_ENERGY } from "../abstract/terminalNetwork";
+import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
 import { makeId } from "../abstract/utils";
 import { setups } from "../bees/creepSetups";
 
@@ -215,7 +216,7 @@ export class CustomConsole {
   }
 
   cancelOrder(orderId: string) {
-    return this.marketReturn(Game.market.cancelOrder(orderId), "ORDER CANCEL");
+    return this.marketReturn(Apiary.broker.cancelOrder(orderId), "ORDER CANCEL");
   }
 
   completeOrder(orderId: string, roomName?: string, sets: number = 1) {
@@ -282,6 +283,33 @@ export class CustomConsole {
     if (checkCooldown && terminal.cooldown)
       return `TERMINAL COOLDOWN`;
     return terminal;
+  }
+
+  buyComplex(hiveName: string = this.lastActionRoomName, mode = "") {
+    let state = Apiary.network.state[hiveName];
+    if (!state)
+      return `NO VALID TERMINAL NOT FOUND @ ${this.format(hiveName)}`;
+    let ans = `OK @ ${this.format(hiveName)}`;
+    _.forEach(state, (amount, r) => {
+      if (!amount || !r)
+        return;
+      let res = <ResourceConstant>r;
+      if (!(res in REACTION_MAP) || amount > 0)
+        return;
+      let sets = Math.min(Math.round((-amount + 1000) / 5000 * 1000) / 1000, 1);
+      switch (mode) {
+        case "short":
+          this.buyShort(res, hiveName, sets);
+          break;
+        case "long":
+          this.buyLong(res, hiveName, sets);
+          break;
+        default:
+          this.buy(res, hiveName, sets);
+      }
+      ans += `\n${res}: ${sets * 5000}`;
+    });
+    return ans;
   }
 
   buy(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, hurry: boolean = false) {

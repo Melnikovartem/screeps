@@ -86,7 +86,7 @@ export class Logger {
     let res = <ResourceConstant>order.resourceType;
     if (!RESOURCES_ALL.includes(res) || !order.roomName)
       return;
-    let amount = order.totalAmount ? order.totalAmount : 0;
+    let amount = order.totalAmount ? order.totalAmount - order.remainingAmount : 0;
     let type = "import";
     if (order.type === ORDER_SELL) {
       amount *= -1;

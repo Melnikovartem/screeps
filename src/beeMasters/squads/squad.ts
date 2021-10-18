@@ -216,20 +216,23 @@ export abstract class SquadMaster extends SwarmMaster {
           this.formationRotation = TOP;
           break;
         case TOP_RIGHT:
-          if (this.formationRotation === TOP)
-            break;
+          if (this.formationRotation !== TOP)
+            this.formationRotation = RIGHT;
+          break;
         case RIGHT:
           this.formationRotation = RIGHT;
           break;
         case BOTTOM_RIGHT:
-          if (this.formationRotation === RIGHT)
-            break;
+          if (this.formationRotation !== BOTTOM)
+            this.formationRotation = RIGHT;
+          break;
         case BOTTOM:
           this.formationRotation = BOTTOM;
           break;
         case BOTTOM_LEFT:
-          if (this.formationRotation === BOTTOM)
-            break;
+          if (this.formationRotation !== BOTTOM)
+            this.formationRotation = LEFT;
+          break;
         case LEFT:
           this.formationRotation = LEFT;
           break;
@@ -314,14 +317,14 @@ export abstract class SquadMaster extends SwarmMaster {
             b.targetPosition = pos;
         });
     } else {
-      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4) {
+      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4 && !centerBee.pos.getEnteranceToRoom()) {
         this.stuckValue += 1;
         valid = this.validateFormation();
       }
       if (valid !== OK) {
         this.stuckValue = 0;
         this.moveCenter(centerBee, enemy);
-        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.ref !== centerBee.ref && bee.goTo(this.formationCenter, { movingTarget: true }));
+        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.ref !== centerBee.ref && bee.goTo(centerBee, { movingTarget: true }));
       }
     }
 

@@ -85,7 +85,7 @@ export class SiegeMaster extends Master {
     let underRamp = findRamp(bee.pos) || (bee.targetPosition && findRamp(bee.targetPosition));
     if (!underRamp && bee.pos.getRangeTo(target) < targetedRange && bee.hits <= bee.hitsMax * 0.9)
       bee.flee(target, posToStay);
-    else if (provoke)
+    else if (!provoke)
       bee.goTo(posToStay);
     return OK;
   }

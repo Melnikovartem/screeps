@@ -29,8 +29,10 @@ export class HordeMaster extends SwarmMaster {
   setup() {
     if (this.order.ref.includes("_hold_"))
       this.defendNearFlag = true;
-    if (this.order.ref.includes("_noboost_"))
+    if (!this.order.ref.includes("_boost_"))
       this.boosts = undefined;
+    if (this.order.ref.includes("Flag"))
+      this.maxSpawns = Infinity;
   }
 
   update() {
@@ -44,52 +46,62 @@ export class HordeMaster extends SwarmMaster {
     }
   }
 
-  attackOrFlee(bee: Bee, target: Creep | Structure | PowerCreep) {
-    let action;
-    let range = 3;
-    if (bee.getActiveBodyParts(RANGED_ATTACK))
-      action = () => bee.rangedAttack(target)
-    if (bee.getActiveBodyParts(ATTACK)) {
-      if (action)
-        action = () => bee.attack(target) && bee.rangedAttack(target);
-      else
-        action = () => bee.attack(target);
-      range = 1;
+  beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined) {
+    let action1;
+    let action2;
+
+    let opts: TravelToOptions = {};
+    if (bee.pos.roomName === this.order.pos.roomName)
+      opts.maxRooms = 1;
+
+    let beeStats = Apiary.intel.getStats(bee.creep).current;
+
+    let healingTarget: Creep | Bee | PowerCreep | undefined | null;
+    if (bee.hits < bee.hitsMax)
+      healingTarget = bee;
+
+    if (beeStats.heal > 0 && !healingTarget)
+      healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
+
+    let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
+    let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
+
+    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
+      action2 = () => bee.rangedAttack(target, opts);
+    else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
+      action2 = () => bee.rangedHeal(healingTarget, opts);
+
+    if (rangeToHealingTarget < 1 && beeStats.heal > 0)
+      action1 = () => bee.heal(healingTarget, opts);
+    else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
+      action1 = () => bee.attack(target, opts);
+    else if (rangeToHealingTarget === 1 && beeStats.heal > 0)
+      action1 = () => bee.heal(healingTarget, opts);
+
+    if (action1)
+      action1();
+
+    if (action2)
+      action2();
+
+    let targetedRange = 1;
+    if (target instanceof Creep) {
+      let info = Apiary.intel.getComplexStats(target).current;
+      if (info.dmgClose > beeStats.heal)
+        targetedRange = 3;
+      if (info.dmgRange > beeStats.heal)
+        targetedRange = 5;
     }
 
-    if (action)
-      if (bee.pos.getRangeTo(target) <= range) {
-        action();
-      } else if (bee.hits === bee.hitsMax || !bee.getActiveBodyParts(HEAL)) {
-        action();
-        if (range === bee.pos.getRangeTo(target))
-          bee.goTo(target);
-      }
-
-    if (this.defendNearFlag)
+    if (this.defendNearFlag || !target)
       return OK;
 
-    let targetRange = 1;
-    let shouldFlee = !action;
-    if (!shouldFlee)
-      if (target instanceof Creep) {
-        let info = Apiary.intel.getStats(target).current;
-        if (info.dmgRange) {
-          targetRange = 3;
-          if (!info.dmgClose && bee.hits >= bee.hitsMax * 0.8)
-            range = 2;
-        } else if (info.dmgClose)
-          targetRange = 1;
-        else
-          targetRange = 0;
-        shouldFlee = targetRange > 0;
-      } else if (target instanceof StructureTower) {
-        // prob should calc if i will be able to get out of range with current healing or just suicide
-        shouldFlee = target.store.getUsedCapacity(RESOURCE_ENERGY) >= 50;
-        targetRange = 20;
-      }
-    if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.9 || bee.pos.getRangeTo(target) < range))
-      bee.flee(target, this.order.pos);
+    if (rangeToTarget < targetedRange && bee.hits <= bee.hitsMax * 0.9)
+      bee.flee(target, this.order.pos, opts);
+    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget === Math.max(targetedRange, 2) && bee.hits === bee.hitsMax))
+      bee.goTo(target, opts);
+    if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
+      return ERR_BUSY;
     return OK;
   }
 
@@ -105,9 +117,12 @@ export class HordeMaster extends SwarmMaster {
       let enemy;
       switch (bee.state) {
         case beeStates.work:
-          enemy = Apiary.intel.getEnemy(this.order.pos);
-          if (enemy && (!this.defendNearFlag || bee.pos.getRangeTo(enemy) < 3)) {
-            this.attackOrFlee(bee, enemy);
+          let pos = bee.pos;
+          if (bee.pos.roomName !== this.order.pos.roomName)
+            pos = this.order.pos;
+          enemy = Apiary.intel.getEnemy(pos);
+          if (enemy) {
+            this.beeAct(bee, enemy);
           } else
             bee.goRest(this.order.pos);
           break;
@@ -116,26 +131,15 @@ export class HordeMaster extends SwarmMaster {
           let ans: number = OK;
           if (enemy && bee.pos.getRangeTo(enemy) <= 3) {
             enemy = Apiary.intel.getEnemy(bee.pos);
-            if (enemy && bee.pos.getRangeTo(enemy) <= 3)
-              ans = this.attackOrFlee(bee, enemy);
+            if (enemy && bee.pos.getRangeTo(enemy) > 3)
+              enemy = undefined;
           }
-          if (ans === OK) {
-            bee.goTo(this.order.pos, { range: bee.pos.roomName !== this.order.pos.roomName ? 1 : 5 });
-            if (bee.pos.getRangeTo(this.order.pos) <= (enemy ? 20 : 5))
-              bee.state = beeStates.work;
-          }
+          ans = this.beeAct(bee, enemy);
+          if (bee.pos.roomName === this.order.pos.roomName)
+            bee.state = beeStates.work;
+          if (ans === OK)
+            bee.goTo(this.order.pos);
       }
-      if (bee.getActiveBodyParts(HEAL))
-        if (bee.hits < bee.hitsMax)
-          bee.heal(bee);
-        else if (this.defendNearFlag) {
-          let healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
-          if (healingTarget)
-            if (healingTarget.pos.getRangeTo(bee) <= 1)
-              bee.heal(healingTarget);
-            else if (!enemy)
-              bee.rangedHeal(healingTarget);
-        }
     });
   }
 }
