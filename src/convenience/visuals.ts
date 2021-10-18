@@ -130,7 +130,9 @@ export class Visuals {
   }
 
   visualizePlanner() {
-    for (let roomName in Apiary.planner.activePlanning) {
+    for (const roomName in Apiary.planner.activePlanning) {
+      if (this.caching[roomName] && this.caching[roomName].lastRecalc > Game.time)
+        continue;
       this.changeAnchor(0, 0, roomName);
       let vis = this.anchor.vis;
       for (let x in Apiary.planner.activePlanning[roomName].plan)

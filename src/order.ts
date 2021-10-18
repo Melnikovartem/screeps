@@ -342,10 +342,17 @@ export class Order {
                 break;
               default:
                 if (!Apiary.planner.activePlanning[this.pos.roomName])
-                  Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
-                if (this.ref in CONTROLLER_STRUCTURES)
-                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, <BuildableStructureConstant>this.ref, true);
-                else
+                  Apiary.planner.toActive(this.hive.cells.defense.pos, this.pos.roomName);
+                let sType = this.ref.split("_")[0];
+                if (sType === "wall")
+                  sType = STRUCTURE_WALL;
+                if (sType in CONTROLLER_STRUCTURES)
+                  Apiary.planner.addToPlan(this.pos, this.pos.roomName, <BuildableStructureConstant>sType, true);
+                else if (sType === "norampart") {
+                  let plan = Apiary.planner.activePlanning[this.pos.roomName].plan;
+                  if (plan[this.pos.x] && plan[this.pos.x][this.pos.y])
+                    plan[this.pos.x][this.pos.y].r = false;
+                } else
                   Apiary.planner.addToPlan(this.pos, this.pos.roomName, undefined, true);
             }
             this.acted = false;
@@ -417,6 +424,22 @@ export class Order {
             if (!this.master)
               this.master = new PortalMaster(this);
             break;
+          case COLOR_BROWN:
+            let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
+            let res = parsed && <ResourceConstant>parsed[2];
+            let mode = parsed && parsed[1];
+            if (res && mode && RESOURCES_ALL.includes(res) && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
+              this.acted = false;
+              if (Game.time % 10 === 0)
+                if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
+                  Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 4096, this.ref.includes("hurry"), this.ref.includes("inf") ? Infinity : undefined);
+                else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
+                  Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 4096, this.ref.includes("hurry"), this.ref.includes("inf") ? Infinity : undefined);
+                else if (!this.ref.includes("keep"))
+                  this.delete();
+            } else
+              this.delete();
+            break;
           case COLOR_CYAN:
             this.acted = false;
             if (this.pos.roomName !== this.hive.roomName || !this.hive.cells.lab) {
@@ -448,8 +471,15 @@ export class Order {
             dfs(final);
             createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
             let sCell = this.hive.cells.storage;
-            if (sCell)
+            if (sCell) {
+              let createQueNorm = createQue.filter(res => {
+                let recipe = REACTION_MAP[<ReactionConstant>res]!;
+                return sCell!.getUsedCapacity(recipe.res1) >= LAB_MINERAL_CAPACITY && sCell!.getUsedCapacity(recipe.res2) >= LAB_MINERAL_CAPACITY;
+              })
+              if (createQueNorm.length)
+                createQue = createQueNorm;
               createQue.sort((a, b) => sCell!.getUsedCapacity(a) - sCell!.getUsedCapacity(b));
+            }
             let ans = _.some(createQue, res => this.hive.cells.lab!.newSynthesizeRequest(res));
             if (!ans) {
               if (sCell && sCell.terminal && ingredients.length) {

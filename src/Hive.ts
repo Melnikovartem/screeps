@@ -85,8 +85,7 @@ export class Hive {
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
-  wallsHealth = WALL_HEALTH;
-  readonly wallsHealthMax = WALL_HEALTH * 10;
+  readonly wallsHealthMax = WALL_HEALTH * 20;
 
   state: hiveStates = hiveStates.economy;
 
@@ -112,7 +111,7 @@ export class Hive {
       let spawn = this.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_SPAWN)[0];
       if (spawn)
         pos = spawn.pos;
-      Memory.cache.hives[this.roomName] = { positions: { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos } }
+      Memory.cache.hives[this.roomName] = { positions: { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos }, wallsHealth: WALL_HEALTH }
     }
 
     this.pos = this.getPos("hive");
@@ -177,6 +176,7 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
+        this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     }
@@ -320,6 +320,21 @@ export class Hive {
     return target;
   }
 
+  get wallsHealth() {
+    return Memory.cache.hives[this.roomName].wallsHealth;
+  }
+
+  set wallsHealth(value) {
+    Memory.cache.hives[this.roomName].wallsHealth = value;
+  }
+
+  get wallMap() {
+    return {
+      [STRUCTURE_WALL]: this.wallsHealth,
+      [STRUCTURE_RAMPART]: this.wallsHealth,
+    };
+  }
+
   updateStructures() {
     let reCheck = this.sumCost > 0;
     this.structuresConst = [];
@@ -331,12 +346,14 @@ export class Hive {
 
     switch (this.state) {
       case hiveStates.battle:
-        add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
-          [STRUCTURE_WALL]: this.wallsHealth,
-          [STRUCTURE_RAMPART]: this.wallsHealth,
-        }, 0.99));
-        if (!this.sumCost && this.wallsHealth < Math.min(this.wallsHealthMax, RAMPART_HITS_MAX[this.room.controller!.level]))
-          this.wallsHealth += WALL_HEALTH;
+        let health = this.wallsHealth;
+        while (!this.sumCost && health < Math.min(this.wallsHealthMax + WALL_HEALTH * 4, RAMPART_HITS_MAX[this.room.controller!.level])) {
+          health += WALL_HEALTH * 4;
+          add(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_WALL, STRUCTURE_RAMPART], {
+            [STRUCTURE_WALL]: health,
+            [STRUCTURE_RAMPART]: health,
+          }, 0.99));
+        }
         break;
       case hiveStates.nukealert:
         add(this.cells.defense.getNukeDefMap());
@@ -350,22 +367,19 @@ export class Hive {
             if (Apiary.intel.getInfo(annexName).safePlace)
               add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
-
-        if (this.phase === 2 && !reCheck && !this.sumCost && this.wallsHealth < this.wallsHealthMax) {
+        if (!reCheck && !this.sumCost && this.wallsHealth < this.wallsHealthMax) {
           let sCell = this.cells.storage;
-          if (sCell && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY])
+          if (sCell && Game.time !== Apiary.createTime && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
             this.wallsHealth += WALL_HEALTH;
-          add(Apiary.planner.checkBuildings(this.roomName, undefined, {
-            [STRUCTURE_WALL]: this.wallsHealth,
-            [STRUCTURE_RAMPART]: this.wallsHealth,
-          }));
+          add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
           break;
         }
 
         if (!reCheck && !this.sumCost && this.builder && this.builder.activeBees) {
-          add(Apiary.planner.checkBuildings(this.roomName, undefined, undefined, 0.99));
+          add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap, 0.99));
           break;
         }
+        add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
       default:
         add(Apiary.planner.checkBuildings(this.roomName));
     }

@@ -16,8 +16,8 @@ const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_PADDING = 0.001;
 
-const MAX_SPENDING_HIVE = 50000;
-const SPENDING_PERIOD = 250;
+/*const MAX_SPENDING_HIVE = 50000;
+const SPENDING_PERIOD = 250;*/
 
 type PriceStat = { [key in ResourceConstant]?: number };
 
@@ -34,8 +34,6 @@ export class Broker {
   bestPriceBuy: PriceStat = {};
   bestPriceSell: PriceStat = {};
 
-  hiveSpending: { [id: string]: { credits: number, lastUpdated: number } } = {};
-
   energyPrice: number = Infinity;
 
   lastUpdated: number = -1;
@@ -49,10 +47,6 @@ export class Broker {
     this.lastUpdated = Game.time;
     this.goodBuy = {};
     this.goodSell = {};
-
-    for (let roomName in this.hiveSpending)
-      if (Game.time - this.hiveSpending[roomName].lastUpdated >= SPENDING_PERIOD)
-        this.hiveSpending[roomName] = { credits: 0, lastUpdated: Game.time };
 
     let bestPriceBuy: PriceStat = {};
     let bestPriceSell: PriceStat = {};
@@ -124,7 +118,16 @@ export class Broker {
 
     for (let id in Game.market.orders)
       if (!Game.market.orders[id].remainingAmount)
-        Game.market.cancelOrder(id);
+        this.cancelOrder(id);
+  }
+
+  cancelOrder(orderId: string) {
+    if (Apiary.logger) {
+      let order = Game.market.getOrderById(orderId);
+      if (order)
+        Apiary.logger.marketLong(order);
+    }
+    Game.market.cancelOrder(orderId);
   }
 
   getTargetLongOrders(roomName: string) {
@@ -154,7 +157,6 @@ export class Broker {
 
     if (res === RESOURCE_ENERGY)
       priceToBuyInstant *= 1.5654; // approx transfer costs
-
 
     if (hurry || priceToBuyInstant <= price * 1.05) {
       let ans: number = ERR_NOT_ENOUGH_RESOURCES;
@@ -207,10 +209,8 @@ export class Broker {
     return "long";
   }
 
-  creditsToUse(roomName: string) {
-    if (!this.hiveSpending[roomName])
-      this.hiveSpending[roomName] = { credits: 0, lastUpdated: Game.time }
-    return Math.min(MAX_SPENDING_HIVE - this.hiveSpending[roomName].credits, Game.market.credits - Memory.settings.minBalance);
+  creditsToUse(_: string) {
+    return Game.market.credits - Memory.settings.minBalance;
   }
 
   // i buy as long
@@ -238,8 +238,6 @@ export class Broker {
       price: price,
       roomName: roomName,
     });
-    if (ans === OK)
-      this.hiveSpending[roomName].credits += amount * price * 1.05;
     return ans;
   }
 
@@ -268,7 +266,7 @@ export class Broker {
     let orders = this.goodBuy[res];
     if (!orders)
       return ERR_NOT_FOUND;
-    if (!_.filter(COMPRESS_MAP, r => r === res).length)
+    if (creditsToUse !== Infinity && !_.filter(COMPRESS_MAP, r => r === res).length)
       orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
       return ERR_NOT_FOUND;
@@ -284,11 +282,8 @@ export class Broker {
       return ERR_NOT_ENOUGH_RESOURCES;
 
     let ans = Game.market.deal(order.id, amount, roomName);
-    if (ans === OK) {
-      this.hiveSpending[roomName].credits += amount * order.price;
-      if (Apiary.logger)
-        Apiary.logger.newMarketOperation(order, amount, roomName);
-    }
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.marketShort(order, amount, roomName);
     return ans;
   }
 
@@ -317,11 +312,8 @@ export class Broker {
       return ERR_NOT_ENOUGH_RESOURCES;
 
     let ans = Game.market.deal(order.id, amount, roomName);
-    if (ans === OK) {
-      terminal.cooldown = 10;
-      if (Apiary.logger)
-        Apiary.logger.newMarketOperation(order, amount, roomName);
-    }
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.marketShort(order, amount, roomName);
     return ans;
   }
 }

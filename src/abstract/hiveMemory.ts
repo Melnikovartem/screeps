@@ -2,6 +2,7 @@ import type { HivePositions } from "../Hive";
 
 export interface HiveCache {
   positions: HivePositions,
+  wallsHealth: number,
 }
 
 export interface HiveLog {

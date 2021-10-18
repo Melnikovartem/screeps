@@ -26,7 +26,7 @@ const CONSTRUCTIONS_PER_ROOM = 8;
 export const WALL_HEALTH = 100000;
 
 // oh no i need to def
-const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = [STRUCTURE_TOWER, STRUCTURE_SPAWN];//, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_LINK];
+const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = [STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 } },
@@ -43,22 +43,23 @@ const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
   STRUCTURE_TERMINAL,
   STRUCTURE_CONTAINER,
   STRUCTURE_LINK,
+  STRUCTURE_ROAD,
+  STRUCTURE_WALL,
+  STRUCTURE_RAMPART,
+
   STRUCTURE_LAB,
   STRUCTURE_EXTRACTOR,
   STRUCTURE_OBSERVER,
   STRUCTURE_POWER_SPAWN,
   STRUCTURE_FACTORY,
   STRUCTURE_NUKER,
-  STRUCTURE_ROAD,
-  STRUCTURE_WALL,
-  STRUCTURE_RAMPART,
 ];
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
   return _.defaults(opts, {
-    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: 1,
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false, maxRooms: 1,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -69,7 +70,7 @@ function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
               if (sType === STRUCTURE_ROAD)
                 costMatrix.set(+x, +y, 0x01);
               else if (sType === STRUCTURE_WALL)
-                costMatrix.set(+x, +y, 0x03);
+                costMatrix.set(+x, +y, 0x05);
               else
                 costMatrix.set(+x, +y, 0xff);
           }
@@ -273,12 +274,20 @@ export class RoomPlanner {
         for (let y in { 0: 1, 49: 1 }) {
           let start = -1;
           let end = -1;
+          let yy = +y === 0 ? +y + 2 : +y - 2;
+
           for (let x = 0; x <= 49; ++x) {
             if (terrain.get(x, +y) !== TERRAIN_MASK_WALL) {
               if (start === -1) {
                 start = x;
                 addXEnd(1, start, +y);
               }
+
+              if (x % 3 == 0)
+                this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_RAMPART);
+              else
+                this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_WALL);
+
               this.addToPlan({ x: x, y: +y === 0 ? +y + 2 : +y - 2 }, anchor.roomName, STRUCTURE_WALL);
               end = x;
             } else if (start !== -1) {
@@ -312,13 +321,18 @@ export class RoomPlanner {
         for (let x in { 0: 1, 49: 1 }) {
           let start = -1;
           let end = -1;
+          let xx = +x === 0 ? +x + 2 : +x - 2;
+
           for (let y = 0; y <= 49; ++y) {
             if (terrain.get(+x, y) !== TERRAIN_MASK_WALL) {
               if (start === -1) {
                 start = y;
                 addYEnd(1, +x, start);
               }
-              this.addToPlan({ y: y, x: +x === 0 ? +x + 2 : +x - 2 }, anchor.roomName, STRUCTURE_WALL);
+              if (y % 3 == 0)
+                this.addToPlan({ y: y, x: xx }, anchor.roomName, STRUCTURE_RAMPART);
+              else
+                this.addToPlan({ y: y, x: xx }, anchor.roomName, STRUCTURE_WALL);
               end = y;
             } else if (start !== -1) {
               let pos = new RoomPosition(+x, start + Math.round((end - start) / 2), anchor.roomName);
@@ -339,7 +353,6 @@ export class RoomPlanner {
         return OK;
       },
     });
-
 
     this.addResourceRoads(anchor);
 
@@ -440,7 +453,7 @@ export class RoomPlanner {
     if (warchance)
       jobs.push({
         context: "adding walls adding jobs",
-        func: () => this.addWalls(anchor, [4, 3, 2]),
+        func: () => this.addWalls(anchor, [4, 2]),
       });
   }
 
@@ -486,7 +499,17 @@ export class RoomPlanner {
           if (typeof ans === "number")
             return ans;
           if (f.secondaryColor === COLOR_YELLOW) {
-            this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            let existingContainer = f.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_CONTAINER)[0];
+            let existingLink;
+            if (f.pos.roomName === anchor.roomName)
+              existingLink = f.pos.findInRange(FIND_STRUCTURES, 2).filter(s => s.structureType === STRUCTURE_LINK)[0];
+            if (!existingLink)
+              if (existingContainer && existingContainer.pos.getRangeTo(new RoomPosition(ans.x, ans.y, f.pos.roomName)) <= 1) {
+                this.addToPlan(ans, f.pos.roomName, undefined, true);
+                this.addToPlan(existingContainer.pos, f.pos.roomName, STRUCTURE_CONTAINER, true);
+              } else
+                this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+
             if (f.pos.roomName !== anchor.roomName)
               return OK;
             let poss = new RoomPosition(ans.x, ans.y, f.pos.roomName).getPositionsInRange(1);
@@ -505,7 +528,12 @@ export class RoomPlanner {
                 return ERR_FULL;
             }
           } else if (f.secondaryColor === COLOR_CYAN) {
-            this.addToPlan(<Pos>ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            let existingContainer = f.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_CONTAINER)[0];
+            if (existingContainer && existingContainer.pos.getRangeTo(new RoomPosition(ans.x, ans.y, f.pos.roomName)) <= 1) {
+              this.addToPlan(ans, f.pos.roomName, undefined, true);
+              this.addToPlan(existingContainer.pos, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            } else
+              this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
             this.addToPlan(f.pos, f.pos.roomName, STRUCTURE_EXTRACTOR);
           }
           return OK;
@@ -514,7 +542,7 @@ export class RoomPlanner {
     });
   }
 
-  addWalls(anchor: RoomPosition, ranges: number[]) {
+  addWalls(anchor: RoomPosition, ranges: number[], ramparts = true) {
     let plan = this.activePlanning[anchor.roomName].plan;
     let xx: number[] = [];
     let yy: number[] = [];
@@ -597,32 +625,39 @@ export class RoomPlanner {
           }
 
           /*
-            for (let x = 0; x <= 49; ++x)
-              for (let y = 0; y <= 49; ++y)
-                if (color[x + "_" + y])
-                  new RoomVisual().text("" + color[x + "_" + y], x, y);
-            */
+          Apiary.visuals.changeAnchor(0, 0, anchor.roomName);
+          for (let x = 0; x <= 49; ++x)
+            for (let y = 0; y <= 49; ++y)
+              if (color[x + "_" + y])
+                Apiary.visuals.anchor.vis.text("" + color[x + "_" + y], x, y);
+          Apiary.visuals.exportAnchor(20);
+          */
 
-          let addWall = (x_x: number, y_y: number) => {
+          let addWall = (x_x: number, y_y: number, rampart: boolean) => {
             if (!colorInterest[color[x_x + "_" + y_y]])
               return;
-            let ans = this.addToPlan({ x: x_x, y: y_y }, anchor.roomName, STRUCTURE_WALL);
+            let ans;
+            if (rampart) {
+              this.addToPlan({ x: x_x, y: y_y }, anchor.roomName, null);
+              ans = this.addToPlan({ x: x_x, y: y_y }, anchor.roomName, STRUCTURE_RAMPART);
+            } else
+              ans = this.addToPlan({ x: x_x, y: y_y }, anchor.roomName, STRUCTURE_WALL);
             if (ans === OK)
               addedWalls.push({ x: x_x, y: y_y });
           };
 
           for (let x = minx; x < maxx; ++x) {
-            addWall(x, miny);
-            addWall(x, maxy);
+            addWall(x, miny, ramparts && x % 3 === 0);
+            addWall(x, maxy, ramparts && x % 3 === 0);
           }
           for (let y = miny; y < maxy; ++y) {
-            addWall(minx, y);
-            addWall(maxx, y);
+            addWall(minx, y, ramparts && y % 3 === 0);
+            addWall(maxx, y, ramparts && y % 3 === 0);
           }
 
           _.forEach(addedWalls, p => {
             let pos = new RoomPosition(p.x, p.y, anchor.roomName);
-            let path = anchor.findPathTo(pos, getPathArgs({
+            let pathArgs = getPathArgs({
               costCallback: (roomName: string, costMatrix: CostMatrix) => {
                 let plan = this.activePlanning[roomName].plan;
                 for (let x in plan)
@@ -634,23 +669,12 @@ export class RoomPlanner {
                   }
                 return costMatrix;
               }
-            }));
+            });
 
+            let path = anchor.findPathTo(pos, pathArgs);
             let newPos = path.length && new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
             while (newPos && (newPos.x !== pos.x || newPos.y !== pos.y)) {
-              path = pos.findPathTo(pos, getPathArgs({
-                costCallback: (roomName: string, costMatrix: CostMatrix) => {
-                  let plan = this.activePlanning[roomName].plan;
-                  for (let x in plan)
-                    for (let y in plan[x]) {
-                      if (plan[x][y].s === STRUCTURE_WALL)
-                        costMatrix.set(+x, +y, 255);
-                      else if (plan[x][y].r)
-                        costMatrix.set(+x, +y, 255);
-                    }
-                  return costMatrix;
-                }
-              }));
+              path = pos.findPathTo(pos, pathArgs);
               if (path.length > 0)
                 newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
               else
@@ -846,7 +870,7 @@ export class RoomPlanner {
           this.addToCache({ x: +x, y: +y }, roomName, active.plan[+x][+y].s!);
         else if (active.plan[+x][+y].s === null && myRoom) {
           let s = new RoomPosition(+x, +y, roomName).lookFor(LOOK_STRUCTURES)[0];
-          if (s && s.structureType !== STRUCTURE_RAMPART)
+          if (s && s.structureType !== STRUCTURE_RAMPART && s.structureType !== STRUCTURE_ROAD)
             s.destroy();
         }
 
@@ -868,7 +892,7 @@ export class RoomPlanner {
             ans = 1;
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        return ans;
+        return ans * (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }
@@ -901,7 +925,7 @@ export class RoomPlanner {
       return [];
 
     let contr = Game.rooms[roomName].controller
-    let myRoom = contr && contr.my;
+    let hive = Apiary.hives[roomName];
     let controller: StructureController | { level: number } | undefined = contr;
     if (!controller)
       controller = { level: 0 };
@@ -929,9 +953,10 @@ export class RoomPlanner {
           if (!constructionSite) {
             let place = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_RAMPART)[0];
             if (place && sType !== STRUCTURE_RAMPART) {
-              if (myRoom)
-                place.destroy();
-              else if (!place.pos.lookFor(LOOK_FLAGS).length)
+              if (hive) {
+                if (sType !== STRUCTURE_SPAWN || Object.keys(hive.cells.spawn).length > 1)
+                  place.destroy();
+              } else if (!place.pos.lookFor(LOOK_FLAGS).length)
                 place.pos.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
             } else
               toadd.push(pos);
@@ -942,16 +967,25 @@ export class RoomPlanner {
               targetHits: 0,
               energyCost: constructionSite.progressTotal - constructionSite.progress,
             });
-            // if (!constructionSite.progress)
-            //  constructionSite.remove();
+            if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
+              let heal = this.getCase(constructionSite).heal;
+              if (specials[sType])
+                heal = specials[sType]!;
+              ans.push({
+                pos: pos,
+                sType: sType,
+                targetHits: heal,
+                energyCost: Math.ceil(heal / 100),
+              });
+            }
             ++constructions;
           } else if (constructionSite.my && constructionSite.structureType !== STRUCTURE_RAMPART && sType !== STRUCTURE_RAMPART)
             constructionSite.remove();
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
-          if (specials[structure.structureType])
-            heal = specials[structure.structureType]!;
+          if (specials[sType])
+            heal = specials[sType]!;
           if (structure.hits < heal * 0.25
             || (structure.hits < heal * coef && !constructions)
             || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * coef))

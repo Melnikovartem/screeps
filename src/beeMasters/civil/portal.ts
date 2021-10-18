@@ -36,7 +36,8 @@ export class PortalMaster extends SwarmMaster {
       if (this.res && _.filter(COMPRESS_MAP, r => r === this.res).length) {
         this.setup.fixed = [TOUGH];
         this.boosts = [{ type: "fatigue", lvl: 0 }, { type: "capacity", lvl: 0 }];
-      }
+      } else
+        this.setup.patternLimit = 50 / 3;
     } else {
       this.setup = setups.puppet;
       this.priority = 2; // well it IS cheap -_-
@@ -46,9 +47,18 @@ export class PortalMaster extends SwarmMaster {
   update() {
     super.update();
 
-    if (!this.beesAmount && this.res && (!this.hive.cells.storage || !this.hive.cells.storage.storage.store.getUsedCapacity(this.res))) {
-      this.order.delete(true);
-      return;
+    let shouldSpawn = Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100;
+    if (!this.beesAmount && this.res) {
+      if (!this.hive.cells.storage) {
+        this.order.delete(true);
+        return;
+      }
+      if (!this.ref.includes("keep") && !this.hive.cells.storage.getUsedCapacity(this.res)) {
+        this.order.delete(true);
+        return;
+      }
+      if (shouldSpawn && !this.hive.cells.storage.storage.store.getUsedCapacity(this.res))
+        shouldSpawn = false;
     }
 
     if (this.order.pos.roomName in Game.rooms) {
@@ -62,7 +72,7 @@ export class PortalMaster extends SwarmMaster {
       }
     }
 
-    if (this.checkBees() && Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100) {
+    if (shouldSpawn && this.checkBees()) {
       this.wish({
         setup: this.setup,
         priority: this.priority,

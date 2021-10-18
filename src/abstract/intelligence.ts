@@ -138,6 +138,37 @@ export class Intel {
     return ans;
   }
 
+  getComplexMyStats(pos: ProtoPos) {
+    if (!(pos instanceof RoomPosition))
+      pos = pos.pos;
+
+    let ans: CreepAllBattleInfo = {
+      max: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+      }, current: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+      }
+    }
+
+    _.forEach(pos.findInRange(FIND_MY_CREEPS, 3), creep => {
+      let stats = this.getStats(creep);
+      for (let i in stats.max) {
+        ans.max[<keyof CreepBattleInfo>i] += stats.max[<keyof CreepBattleInfo>i];
+        ans.current[<keyof CreepBattleInfo>i] += stats.current[<keyof CreepBattleInfo>i]
+      }
+    });
+
+    return ans;
+  }
+
   getInfo(roomName: string, lag: number = 0): RoomInfo {
     let roomInfo = this.roomInfo[roomName];
     if (!roomInfo) {

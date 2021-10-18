@@ -7,7 +7,6 @@ import { setups } from "../bees/creepSetups";
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
 import type { TransferRequest } from "../bees/transferRequest";
-import type { ProtoOrder } from "../abstract/broker";
 
 export class CustomConsole {
 
@@ -263,7 +262,7 @@ export class CustomConsole {
       energy = Game.market.calcTransactionCost(amount, terminal.pos.roomName, order.roomName);
       ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
       if (ans === OK && order.roomName && Apiary.logger)
-        Apiary.logger.newMarketOperation(<ProtoOrder>order, amount, terminal.pos.roomName);
+        Apiary.logger.marketShort(order, amount, terminal.pos.roomName);
     }
 
     let info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""

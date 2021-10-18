@@ -69,9 +69,30 @@ export class Logger {
     return OK;
   }
 
-  newMarketOperation(order: ProtoOrder, amount: number, hiveName: string) {
-    this.addResourceStat(hiveName, order.type === ORDER_BUY ? "export" : "import", order.type === ORDER_BUY ? -amount : amount, <ResourceConstant>order.resourceType);
+  marketShort(order: Order | ProtoOrder, amount: number, hiveName: string) {
+    let res = <ResourceConstant>order.resourceType;
+    if (!RESOURCES_ALL.includes(res) || !order.roomName)
+      return;
+    let type = "import";
+    if (order.type === ORDER_BUY) {
+      amount *= -1;
+      type = "export"
+    }
+    this.addResourceStat(hiveName, type, amount, res);
     this.addResourceStat(hiveName, "terminal", -Game.market.calcTransactionCost(amount, hiveName, order.roomName));
+  }
+
+  marketLong(order: Order) {
+    let res = <ResourceConstant>order.resourceType;
+    if (!RESOURCES_ALL.includes(res) || !order.roomName)
+      return;
+    let amount = order.totalAmount ? order.totalAmount : 0;
+    let type = "import";
+    if (order.type === ORDER_SELL) {
+      amount *= -1;
+      type = "export"
+    }
+    this.addResourceStat(order.roomName, type, amount, res);
   }
 
   newTerminalTransfer(terminalFrom: StructureTerminal, terminalTo: StructureTerminal, amount: number, resource: ResourceConstant) {
