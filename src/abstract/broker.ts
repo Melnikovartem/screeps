@@ -1,3 +1,5 @@
+import { COMPRESS_MAP } from "../cells/stage1/factoryCell";
+
 import { profile } from "../profiler/decorator";
 
 export interface ProtoOrder {
@@ -264,10 +266,11 @@ export class Broker {
       return ERR_TIRED;
     this.update();
     let orders = this.goodBuy[res];
-    if (orders)
+    if (!orders)
+      return ERR_NOT_FOUND;
+    if (!_.filter(COMPRESS_MAP, r => r === res).length)
       orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
-
-    if (!orders || !orders.length)
+    if (!orders.length)
       return ERR_NOT_FOUND;
 
     let roomName = terminal.pos.roomName;
@@ -296,7 +299,8 @@ export class Broker {
     let orders = this.goodSell[res];
     if (!orders)
       return ERR_NOT_FOUND;
-    orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+    if (!_.filter(COMPRESS_MAP, r => r === res).length)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
       return ERR_NOT_FOUND;
 

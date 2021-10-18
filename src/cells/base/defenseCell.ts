@@ -167,10 +167,8 @@ export class DefenseCell extends Cell {
         // + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
 
         if (ans !== OK) {
-          if (roomInfo.dangerlvlmax < 6)
+          if (roomInfo.dangerlvlmax < 9)
             this.setDefFlag(enemy.pos);
-          else if (roomInfo.dangerlvlmax < 9)
-            this.setDefFlag(enemy.pos, "power");
           else
             this.setDefFlag(enemy.pos, "surrender");
         }
@@ -232,7 +230,8 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5);
+    let contr = this.hive.room.controller!;
+    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5 && (!contr.safeMode || contr.safeMode < 600));
 
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
@@ -258,7 +257,7 @@ export class DefenseCell extends Cell {
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         } else {
           let target = <Structure | undefined>this.hive.findProject(enemy, "ignore_constructions");
-          if (target && tower.repair(target) === OK && Apiary.logger)
+          if (target && target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).length && tower.repair(target) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });
@@ -275,7 +274,7 @@ export class DefenseCell extends Cell {
               return;
 
             if (this.wasBreached(enemy.pos))
-              this.hive.room.controller!.activateSafeMode(); // red button
+              contr.activateSafeMode(); // red button
           });
       }
     }

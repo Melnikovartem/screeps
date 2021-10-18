@@ -28,7 +28,7 @@ export class PickupMaster extends SwarmMaster {
     let amount = 0;
     if (this.order.pos.roomName in Game.rooms) {
       let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = <StructureStorage[]>this.order.pos.findInRange(FIND_STRUCTURES, 3)
-        .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0);
+        .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0 && (!this.hive.room.storage || s.id !== this.hive.room.storage.id));
       if (!targets.length)
         targets = this.order.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.amount > 0);
       if (!targets.length)
@@ -86,7 +86,8 @@ export class PickupMaster extends SwarmMaster {
         bee.state = beeStates.refill;
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-      if (enemy) {
+      let contr = Game.rooms[bee.pos.roomName].controller;
+      if (enemy && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
         if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
           bee.state = beeStates.flee;
@@ -110,7 +111,7 @@ export class PickupMaster extends SwarmMaster {
             bee.state = beeStates.fflush;
           break;
         case beeStates.fflush:
-          if (!bee.target)
+          if (!bee.target || !(bee.target in RESOURCES_ALL))
             bee.target = findOptimalResource(bee.store);
           if (bee.target) {
             let res = <ResourceConstant>bee.target;

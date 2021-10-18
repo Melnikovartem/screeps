@@ -115,7 +115,8 @@ export class HaulerMaster extends Master {
         bee.state = beeStates.work;
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 10);
-      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+      let contr = Game.rooms[bee.pos.roomName].controller;
+      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST && (!contr || !contr.my || !contr.safeMode))
         bee.state = beeStates.flee;
 
       if (bee.state === beeStates.work) {

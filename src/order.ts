@@ -207,13 +207,10 @@ export class Order {
                   this.master = new AnnexMaster(this);
                   break;
                 case roomStates.SKfrontier:
-                  let hive = this.hive;
-                  this.hive = Apiary.hives["E12N48"];
                   this.master = new SKMaster(this);
                   if (!this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]])
                     this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]] = 0
                   this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]]! += LAB_BOOST_MINERAL * MAX_CREEP_SIZE;
-                  this.hive = hive;
                 default:
                   this.delete();
               }
@@ -556,6 +553,13 @@ export class Order {
             break;
         }
         break;
+      case COLOR_GREY:
+        if (this.flag.secondaryColor === COLOR_YELLOW && this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
+          this.hive.cells.upgrade.master.waitingForBees = 0;
+          for (const key in this.hive.spawOrders)
+            if (key.includes(this.hive.cells.upgrade.master.ref))
+              delete this.hive.spawOrders[key];
+        }
       case COLOR_RED:
         for (const key in Apiary.defenseSwarms)
           if (Apiary.defenseSwarms[key].ref === this.ref)

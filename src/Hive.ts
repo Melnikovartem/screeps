@@ -183,8 +183,10 @@ export class Hive {
 
     //look for new structures for those wich need them
     this.updateCellData();
-    this.shouldRecalc = 3;
+    if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
+      this.cells.dev = new DevelopmentCell(this);
 
+    this.shouldRecalc = 3;
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
   }
@@ -290,6 +292,12 @@ export class Hive {
     if (this.state >= hiveStates.nukealert)
       getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
+    if (this.state === hiveStates.battle) {
+      let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
+      if (inDanger.length)
+        projects = inDanger;
+    }
+
     let proj = getProj();
     while (proj && !target) {
       if (ignore !== "ignore_constructions")
@@ -366,22 +374,6 @@ export class Hive {
   update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
-    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.nukealert) {
-      this.updateAnnexes();
-      this.updateStructures();
-      if (this.shouldRecalc > 2) {
-        this.markResources();
-        _.forEach(this.rooms, r => {
-          if ((!Memory.cache.roomPlanner[r.name] || !Object.keys(Memory.cache.roomPlanner[r.name]).length) && !Apiary.planner.activePlanning[r.name])
-            Apiary.planner.resetPlanner(r.name, this.getPos("center"));
-        });
-      }
-      this.shouldRecalc = 0;
-    }
-    if (Game.time % 100 === 29 || this.state === hiveStates.nospawn)
-      this.updateCellData();
-    if (Apiary.logger)
-      Apiary.logger.hiveLog(this);
 
     // ask for boost
     if ((this.state === hiveStates.nospawn
@@ -396,6 +388,18 @@ export class Hive {
     _.forEach(this.cells, cell => {
       safeWrap(() => cell.update(), cell.print + " update");
     });
+
+    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.nukealert) {
+      this.updateAnnexes();
+      this.updateStructures();
+      if (this.shouldRecalc > 2)
+        this.markResources();
+      this.shouldRecalc = 0;
+    }
+    if (Game.time % 100 === 29 || this.state === hiveStates.nospawn)
+      this.updateCellData();
+    if (Apiary.logger)
+      Apiary.logger.hiveLog(this);
   }
 
   run() {

@@ -71,7 +71,8 @@ export class BuilderMaster extends Master {
     _.forEach(this.activeBees, bee => {
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-      if (enemy) {
+      let contr = Game.rooms[bee.pos.roomName].controller;
+      if (enemy && this.hive.state !== hiveStates.battle && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
         if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
           bee.state = beeStates.flee;

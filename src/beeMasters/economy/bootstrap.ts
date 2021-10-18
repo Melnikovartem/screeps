@@ -89,8 +89,8 @@ export class BootstrapMaster extends Master {
   checkBeesWithRecalc() {
     if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
       return false;
-    let check = () => this.checkBees(true) || !this.activeBees.length;
-    if (!check())
+    let check = () => this.checkBees(true);
+    if (!check() && !this.targetBeeCount)
       return false;
     this.recalculateTargetBee();
     return check();
@@ -152,7 +152,7 @@ export class BootstrapMaster extends Master {
           --i;
         } else
           target = structures.filter(s => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 50
-            && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.battle))[0];
+            && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.battle || this.hive.state === hiveStates.nospawn))[0];
       }
 
       if (target) {
@@ -311,7 +311,7 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.state !== hiveStates.battle) {
+          if (!target && this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn) {
             target = this.hive.room.storage;
             workType = "refill";
           }

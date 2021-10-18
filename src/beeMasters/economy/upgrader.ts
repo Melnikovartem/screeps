@@ -26,7 +26,7 @@ export class UpgraderMaster extends Master {
       this.boosts = undefined;
 
       this.targetBeeCount = 1;
-      this.patternPerBee = 2;
+      this.patternPerBee = 1;
       return;
     }
     this.fastMode = true;

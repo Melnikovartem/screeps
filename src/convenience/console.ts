@@ -73,11 +73,11 @@ export class CustomConsole {
     this.lastActionRoomName = hive.roomName;
     let mask = Apiary.useBucket ? 1 : 3;
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      if (x % mask === 0 && x % mask === 0) {
+      if (x % mask === 0 && y % mask === 0) {
         let pos = new RoomPosition(x, y, hiveName);
         if (!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
           && hive.cells.defense.wasBreached(pos))
-          vis.circle(x, x, { radius: 0.2, fill: "#E75050" });
+          vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
       }
     });
   }
@@ -285,12 +285,20 @@ export class CustomConsole {
     return terminal;
   }
 
-  buy(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
+  buy(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, hurry: boolean = false) {
     hiveName = hiveName.toUpperCase();
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
-    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets, false, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+  }
+
+  sell(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, hurry: boolean = false) {
+    hiveName = hiveName.toUpperCase();
+    let terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string")
+      return terminal;
+    return this.marketReturn(Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
   buyShort(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
