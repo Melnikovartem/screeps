@@ -117,9 +117,9 @@ export class MinerMaster extends Master {
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST) {
-            bee.flee(enemy, this.hive.cells.defense);
+            bee.flee(enemy, this.hive);
           } else if (this.cell.lair && this.cell.lair.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(this.cell.lair, this.hive.cells.defense);
+            bee.flee(this.cell.lair, this.hive);
           bee.state = beeStates.work;
           break;
       }

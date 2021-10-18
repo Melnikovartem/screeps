@@ -32,7 +32,7 @@ export class SKMaster extends SwarmMaster {
         this.lairs[i] = <StructureKeeperLair>Game.getObjectById(this.lairs[i].id);
     }
 
-    if (this.checkBees(false, CREEP_LIFE_TIME - 150) && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost.pos, true) < 5)) {
+    if (this.checkBees(false, CREEP_LIFE_TIME - 150) && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5)) {
       this.wish({
         setup: setups.defender.sk,
         priority: 6,
@@ -47,7 +47,7 @@ export class SKMaster extends SwarmMaster {
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
       bee.rangedAttack(target, { movingTarget: true });
     if (shouldFlee)
-      return bee.flee(target, this.hive.cells.defense);
+      return bee.flee(target, this.hive);
     return OK;
   }
 

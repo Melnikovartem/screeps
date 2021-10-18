@@ -14,7 +14,7 @@ export type FormationPositions = [Pos, CreepSetup][];
 export abstract class SquadMaster extends SwarmMaster {
   formation: FormationPositions = [];
   formationBees: Bee[] = [];
-  formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.cells.defense.pos : this.hive.pos;
+  formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest;
   formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP; // TODO rotate formation to enemy
   targetBeeCount = 1;
   maxSpawns = 1;

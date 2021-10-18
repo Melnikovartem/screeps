@@ -72,9 +72,9 @@ export class BuilderMaster extends Master {
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
       let contr = Game.rooms[bee.pos.roomName].controller;
-      if (enemy && this.hive.state !== hiveStates.battle && (!contr || !contr.my || !contr.safeMode)) {
+      if (enemy && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
-        if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
+        if (enemy && enemy.pos.getRangeTo(bee) <= (this.hive.state === hiveStates.battle ? 3 : CIVILIAN_FLEE_DIST))
           bee.state = beeStates.flee;
       }
 
@@ -144,7 +144,7 @@ export class BuilderMaster extends Master {
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
             bee.repairRoadOnMove(ans);
           } else
-            bee.goRest(this.hive.pos);
+            bee.goRest(this.hive.rest);
           break;
         case beeStates.boosting:
           if (!this.hive.cells.lab
@@ -153,7 +153,7 @@ export class BuilderMaster extends Master {
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(enemy, this.hive.cells.defense);
+            bee.flee(enemy, this.hive);
           bee.state = beeStates.work;
           break;
       }

@@ -262,8 +262,7 @@ export class Order {
           let type: keyof HivePositions | undefined;
           switch (this.flag.secondaryColor) {
             case COLOR_CYAN:
-              type = "hive";
-              this.hive.pos = this.pos;
+              type = "rest";
               this.hive.cells.excavation.pos = this.pos;
               break;
             case COLOR_GREEN:
@@ -342,7 +341,7 @@ export class Order {
                 break;
               default:
                 if (!Apiary.planner.activePlanning[this.pos.roomName])
-                  Apiary.planner.toActive(this.hive.cells.defense.pos, this.pos.roomName);
+                  Apiary.planner.toActive(this.hive.pos, this.pos.roomName);
                 let sType = this.ref.split("_")[0];
                 if (sType === "wall")
                   sType = STRUCTURE_WALL;
@@ -387,10 +386,10 @@ export class Order {
               }
             });
             if (!planner)
-              Apiary.planner.addCustomRoad(this.hive.cells.defense.pos, this.pos);
+              Apiary.planner.addCustomRoad(this.hive.pos, this.pos);
             break;
           case COLOR_YELLOW:
-            Apiary.planner.addResourceRoads(this.hive.cells.defense.pos, true);
+            Apiary.planner.addResourceRoads(this.hive.pos, true);
             break;
         }
         break;

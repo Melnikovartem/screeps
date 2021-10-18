@@ -252,7 +252,7 @@ export class BootstrapMaster extends Master {
           }
         case beeStates.chill:
           ++countCurrent.chilling;
-          bee.goRest(this.hive.pos);
+          bee.goRest(this.hive.rest);
           break;
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;

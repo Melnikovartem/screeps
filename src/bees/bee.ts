@@ -263,16 +263,19 @@ export class Bee {
       return ERR_NOT_FOUND;
 
     let getTerrain = (pos: RoomPosition) => {
-      let terrain: -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
-      if (pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
+      let terrain: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
+      let ss = pos.lookFor(LOOK_STRUCTURES);
+      if (ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+        terrain = -2;
+      else if (ss.filter(s => s.structureType === STRUCTURE_ROAD).length)
         terrain = -1;
       return terrain;
     }
 
-    let terrain_prev: -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(poss[0].roomName).get(poss[0].x, poss[0].y)
+    let terrain_prev: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(poss[0].roomName).get(poss[0].x, poss[0].y)
     let open = poss.reduce((prev, curr) => {
       let ans = prev.getRangeTo(enemy) - curr.getRangeTo(enemy);
-      let terrain_curr: -1 | 0 | 1 | 2 | undefined
+      let terrain_curr: -2 | -1 | 0 | 1 | 2 | undefined
       if (ans === 0) {
         terrain_curr = getTerrain(curr);
         ans = terrain_curr - terrain_prev;

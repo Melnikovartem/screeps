@@ -38,8 +38,10 @@ export class Broker {
 
   lastUpdated: number = -1;
 
-  update() {
-    if (this.lastUpdated === Game.time)
+  update(lag: number = 0) {
+    if (Game.cpu.limit <= 20)
+      lag = 4;
+    if (this.lastUpdated + lag >= Game.time)
       return;
 
     // on shard2 during 10.2021 it took about 9.5CPU to calc all this

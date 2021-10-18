@@ -161,8 +161,10 @@ export class Intel {
     _.forEach(pos.findInRange(FIND_MY_CREEPS, 3), creep => {
       let stats = this.getStats(creep);
       for (let i in stats.max) {
+        if ((i === "dmgClose" || i === "dism") && (<RoomPosition>pos).getRangeTo(creep) < 1)
+          continue;
         ans.max[<keyof CreepBattleInfo>i] += stats.max[<keyof CreepBattleInfo>i];
-        ans.current[<keyof CreepBattleInfo>i] += stats.current[<keyof CreepBattleInfo>i]
+        ans.current[<keyof CreepBattleInfo>i] += stats.current[<keyof CreepBattleInfo>i];
       }
     });
 

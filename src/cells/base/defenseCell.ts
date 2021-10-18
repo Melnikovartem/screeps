@@ -1,4 +1,5 @@
 import { Cell } from "../_Cell";
+import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
 
 import { makeId } from "../../abstract/utils";
 import { prefix, hiveStates } from "../../enums";
@@ -16,13 +17,15 @@ export class DefenseCell extends Cell {
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
-  master: undefined;
   coefMap: number[][] = [];
+  isBreached = false;
+  master: SiegeMaster;
 
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
     this.pos = this.hive.getPos("center");
+    this.master = new SiegeMaster(this);
   }
 
   bakeMap() {
@@ -232,6 +235,7 @@ export class DefenseCell extends Cell {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     let contr = this.hive.room.controller!;
     this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5 && (!contr.safeMode || contr.safeMode < 600));
+    this.isBreached = false;
 
     if (roomInfo.enemies.length) {
       roomInfo = Apiary.intel.getInfo(this.hive.roomName);
@@ -263,20 +267,22 @@ export class DefenseCell extends Cell {
         }
       });
 
-      if (roomInfo.dangerlvlmax > 5 && Game.time % 10 === 6) {
+      if (this.hive.state === hiveStates.battle)
+        _.forEach(roomInfo.enemies, enemy => {
+          if (!(enemy instanceof Creep))
+            return;
+          let info = Apiary.intel.getStats(enemy).current;
+          if (info.dism < 100 && info.dmgClose < 100)
+            return;
+
+          if (this.wasBreached(enemy.pos))
+            this.isBreached = true;
+        });
+
+      if (this.isBreached) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
-          _.forEach(roomInfo.enemies, enemy => {
-            if (!(enemy instanceof Creep))
-              return;
-
-            let info = Apiary.intel.getStats(enemy).current;
-            if (info.dism < 100 && info.dmgClose < 100)
-              return;
-
-            if (this.wasBreached(enemy.pos))
-              contr.activateSafeMode(); // red button
-          });
+          contr.activateSafeMode(); // red button
       }
     }
   }

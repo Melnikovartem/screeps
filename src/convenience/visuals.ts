@@ -210,7 +210,7 @@ export class Visuals {
           case "lab":
             style.color = "#91EFD8";
             break;
-          case "hive":
+          case "rest":
             style.color = "#000000";
             break;
           case "center":

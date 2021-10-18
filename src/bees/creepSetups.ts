@@ -131,7 +131,8 @@ export const setups = {
     }, 10, true),
   },
   builder: new CreepSetup(setupsNames.builder, {
-    pattern: [WORK, CARRY],
+    fixed: [CARRY, CARRY],
+    pattern: [WORK],
     patternLimit: 10,
   }, 50 / 3),
   bootstrap: new CreepSetup(setupsNames.bootstrap, {
@@ -155,6 +156,10 @@ export const setups = {
       fixed: [HEAL, HEAL, HEAL],
       pattern: [RANGED_ATTACK],
     }, 25),
+    siege: new CreepSetup(setupsNames.defender + " H", {
+      fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL],
+      pattern: [ATTACK],
+    }, "best"),
   },
   knight: new CreepSetup(setupsNames.knight, {
     fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL],

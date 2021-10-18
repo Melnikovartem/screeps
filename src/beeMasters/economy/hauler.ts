@@ -43,7 +43,7 @@ export class HaulerMaster extends Master {
             let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;
             coef = body.filter(b => b === WORK).length / 5;
           }
-          this.accumRoadTime += (cell.roadTime + cell.pos.getTimeForPath(this.hive.getPos("hive"))) * coef;
+          this.accumRoadTime += (cell.roadTime + cell.pos.getTimeForPath(this.hive.rest)) * coef;
         }
       });
     this.cell.shouldRecalc = false;
@@ -161,7 +161,7 @@ export class HaulerMaster extends Master {
 
       if (bee.state === beeStates.flee) {
         if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-          bee.flee(enemy, this.hive.cells.defense);
+          bee.flee(enemy, this.hive);
         bee.state = beeStates.refill;
       }
 

@@ -75,20 +75,20 @@ export class HordeMaster extends SwarmMaster {
       if (target instanceof Creep) {
         let info = Apiary.intel.getStats(target).current;
         if (info.dmgRange) {
-          targetRange = 2;
-          if (bee.hits <= bee.hitsMax * 0.7)
-            targetRange = 3;
+          targetRange = 3;
+          if (!info.dmgClose && bee.hits >= bee.hitsMax * 0.8)
+            range = 2;
         } else if (info.dmgClose)
           targetRange = 1;
         else
           targetRange = 0;
         shouldFlee = targetRange > 0;
       } else if (target instanceof StructureTower) {
-        // prob should calc if i will be able to get out of range with current healing
-        shouldFlee = target.store.getUsedCapacity(RESOURCE_ENERGY) >= 10;
+        // prob should calc if i will be able to get out of range with current healing or just suicide
+        shouldFlee = target.store.getUsedCapacity(RESOURCE_ENERGY) >= 50;
         targetRange = 20;
       }
-    if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.85 || bee.pos.getRangeTo(target) < range))
+    if (shouldFlee && (bee.pos.getRangeTo(target) <= targetRange && bee.hits <= bee.hitsMax * 0.9 || bee.pos.getRangeTo(target) < range))
       bee.flee(target, this.order.pos);
     return OK;
   }

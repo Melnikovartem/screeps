@@ -126,7 +126,7 @@ export class PickupMaster extends SwarmMaster {
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(enemy, this.hive.cells.defense);
+            bee.flee(enemy, this.hive);
           bee.state = beeStates.work;
           break;
       }

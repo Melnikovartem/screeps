@@ -27,7 +27,7 @@ export interface SpawnOrder {
 }
 
 export interface HivePositions {
-  hive: Pos,
+  rest: Pos,
   queen1: Pos,
   queen2: Pos,
   lab: Pos,
@@ -72,8 +72,6 @@ export class Hive {
 
   readonly builder?: BuilderMaster;
 
-  pos: RoomPosition; // aka idle pos for creeps
-
   readonly phase: 0 | 1 | 2;
   // 0 up to storage tech
   // 1 storage - 7lvl
@@ -111,10 +109,8 @@ export class Hive {
       let spawn = this.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_SPAWN)[0];
       if (spawn)
         pos = spawn.pos;
-      Memory.cache.hives[this.roomName] = { positions: { center: pos, hive: pos, queen1: pos, queen2: pos, lab: pos }, wallsHealth: WALL_HEALTH }
+      Memory.cache.hives[this.roomName] = { positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos }, wallsHealth: WALL_HEALTH }
     }
-
-    this.pos = this.getPos("hive");
 
     this.phase = 0;
     if (this.room.storage && this.room.storage.isActive())
@@ -251,6 +247,14 @@ export class Hive {
     return new RoomPosition(pos.x, pos.y, this.roomName);
   }
 
+  get pos() {
+    return this.getPos("center");
+  }
+
+  get rest() {
+    return this.getPos("rest");
+  }
+
   private updateCellData() {
     _.forEach(this.room.find(FIND_MY_STRUCTURES), structure => {
       if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) === ERR_INVALID_ARGS)
@@ -368,10 +372,9 @@ export class Hive {
               add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
         if (!reCheck && !this.sumCost && this.wallsHealth < this.wallsHealthMax) {
-          let sCell = this.cells.storage;
-          if (sCell && Game.time !== Apiary.createTime && sCell.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
-            this.wallsHealth += WALL_HEALTH;
           add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
+          if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
+            this.wallsHealth += WALL_HEALTH;
           break;
         }
 

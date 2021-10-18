@@ -89,7 +89,7 @@ export class DupletMaster extends SwarmMaster {
   run() {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.chill)
-        bee.goRest(this.hive.pos);
+        bee.goRest(this.hive.rest);
     });
 
     _.forEach(this.duplets, (couple => {
