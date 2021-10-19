@@ -125,7 +125,7 @@ export class BootstrapMaster extends Master {
     };
 
     let soruces = (<Source[]>_.compact(_.map(this.hive.cells.excavation.resourceCells,
-      cell => !cell.master.beesAmount && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
+      cell => (!cell.master.beesAmount || this.hive.room.energyCapacityAvailable <= 750) && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
       .filter(s => s.pos.getOpenPositions().length && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20));
 
     let targets: extraTarget[] = []

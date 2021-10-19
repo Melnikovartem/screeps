@@ -77,7 +77,7 @@ export abstract class SquadMaster extends SwarmMaster {
     this.targetBeeCount = this.formation.length;
     this.maxSpawns = this.formation.length;
 
-    if (this.checkBees()) {
+    if (this.checkBees(this.emergency)) {
       for (let i = 0; i < this.formation.length; ++i) {
         if (!this.formationBees[i])
           this.wish({
@@ -86,6 +86,10 @@ export abstract class SquadMaster extends SwarmMaster {
           }, this.ref + "_" + i);
       }
     }
+  }
+
+  get emergency() {
+    return true;
   }
 
   getDeisredPos(i: number, pos: RoomPosition = this.formationCenter) {

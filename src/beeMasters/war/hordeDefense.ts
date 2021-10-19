@@ -11,7 +11,7 @@ export class HordeDefenseMaster extends HordeMaster {
   maxSpawns: number = 2;
   boosts = undefined;
 
-  setup() {
+  init() {
     Apiary.defenseSwarms[this.order.pos.roomName] = this.order;
   }
 
@@ -24,7 +24,7 @@ export class HordeDefenseMaster extends HordeMaster {
       return;
     }
 
-    if (this.checkBees(true) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
+    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
       let order = {
         setup: setups.defender.normal,
         priority: <1 | 4 | 8>1,

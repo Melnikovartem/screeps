@@ -29,7 +29,7 @@ export class ManagerMaster extends Master {
       let transfer = bee.target && this.cell.requests[bee.target];
       if (transfer) {
         transfer.preprocess(bee);
-        if (!transfer.priority)
+        if (transfer.priority === 0 && transfer.isValid())
           ++refilling;
       }
     });
@@ -38,24 +38,25 @@ export class ManagerMaster extends Master {
     if (this.hive.state === hiveStates.lowenergy)
       requests = _.filter(requests, r => r.resource !== RESOURCE_ENERGY || r.priority <= 1 || r.to.id === this.cell.storage.id);
 
-    let non_refill_needed = refilling > 1;
-    if (non_refill_needed) {
-      let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority);
-      if (non_refill_needed && non_refill_requests.length) {
+    let non_refill_needed = false;
+    if (refilling) {
+      let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority > 0);
+      non_refill_needed = !!non_refill_requests.length;
+
+      if (non_refill_needed) {
         this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell.pos) - b.pos.getRangeTo(this.cell.pos));
         requests = non_refill_requests;
-      } else
-        non_refill_needed = false;
+      }
     }
 
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
 
-      if (!transfer || !transfer.isValid() || (non_refill_needed && !transfer.priority)) {
+      if (!transfer || !transfer.isValid() || (non_refill_needed && transfer.priority === 0 && refilling > 1)) {
         delete bee.target;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          transfer = _.reduce(_.filter(requests, (r: TransferRequest) => r.isValid() && !r.beeProcess)
+          let newTransfer = _.reduce(_.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess)
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {
@@ -70,9 +71,9 @@ export class ManagerMaster extends Master {
                 ans = Math.random() - 0.5;
               return ans < 0 ? curr : prev;
             });
-          if (transfer)
-            transfer.preprocess(bee);
-          if (non_refill_needed) {
+          newTransfer.preprocess(bee);
+          if (transfer && transfer.priority === 0) {
+            --refilling;
             requests = this.cell.requests;
             non_refill_needed = false;
           }

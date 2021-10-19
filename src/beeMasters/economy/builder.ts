@@ -60,7 +60,7 @@ export class BuilderMaster extends Master {
     if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
       let order = {
         setup: setups.builder,
-        priority: <1 | 5 | 8>(emergency ? 1 : (this.beesAmount ? 8 : 5)),
+        priority: <2 | 5 | 8>(emergency ? 2 : (this.beesAmount ? 8 : 5)),
       };
       order.setup.patternLimit = this.patternPerBee;
       this.wish(order);
@@ -69,6 +69,20 @@ export class BuilderMaster extends Master {
 
   run() {
     let fleeDist = this.hive.state === hiveStates.battle ? 3 : CIVILIAN_FLEE_DIST;
+
+    let opts: TravelToOptions = {};
+    if (this.hive.state === hiveStates.battle) {
+      opts.roomCallback = (roomName, matrix) => {
+        if (roomName !== this.hive.roomName)
+          return;
+        let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
+        _.forEach(enemies, c => {
+          _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, 0xff));
+          matrix.set(c.pos.x, c.pos.y, 0xff);
+        });
+        return matrix;
+      }
+    }
     _.forEach(this.activeBees, bee => {
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
@@ -83,14 +97,14 @@ export class BuilderMaster extends Master {
         case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             bee.state = beeStates.work;
-          else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY) === OK) {
+          else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, opts) === OK) {
             bee.state = beeStates.work;
             delete bee.target;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", this.sCell.storage.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
             if (target && target.pos.getRangeTo(bee) > 3)
-              bee.goTo(target.pos);
+              bee.goTo(target.pos, opts);
           }
           break;
         case beeStates.work:
@@ -113,20 +127,6 @@ export class BuilderMaster extends Master {
               }
             }
 
-            let opts: TravelToOptions = {};
-            if (this.hive.state === hiveStates.battle) {
-              opts.roomCallback = (roomName, matrix) => {
-                if (roomName !== this.hive.roomName)
-                  return;
-                let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
-                _.forEach(enemies, c => {
-                  _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, 0xff));
-                  matrix.set(c.pos.x, c.pos.y, 0xff);
-                });
-                return matrix;
-              }
-            }
-
             if (!target || this.hive.state === hiveStates.battle)
               target = this.hive.findProject(bee);
 
@@ -136,7 +136,7 @@ export class BuilderMaster extends Master {
                 ans = bee.build(target);
               else if (target instanceof Structure)
                 ans = bee.repair(target);
-              if (bee.pos.getRangeTo(target) <= 3) {
+              if (bee.pos.getRangeTo(target) <= 3 && this.hive.state == hiveStates.battle) {
                 let resource = target.pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
                 if (resource)
                   bee.pickup(resource);

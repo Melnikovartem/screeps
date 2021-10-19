@@ -1,5 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
+import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
 import { beeStates } from "../../enums";
 
@@ -19,28 +20,31 @@ export class HordeMaster extends SwarmMaster {
   boosts: Boosts | undefined = [{ type: "rangedAttack", lvl: BOOST_LVL }, { type: "attack", lvl: BOOST_LVL }
     , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL }];
   notify = false;
-  defendNearFlag = false;
+  holdPosition = false;
+  setup = setups.knight.copy();
 
   constructor(order: Order) {
     super(order);
-    this.setup();
+    this.init();
   }
 
-  setup() {
+  init() {
     if (this.order.ref.includes("_hold_"))
-      this.defendNearFlag = true;
+      this.holdPosition = true;
     if (!this.order.ref.includes("_boost_"))
       this.boosts = undefined;
-    if (this.order.ref.includes("Flag"))
-      this.maxSpawns = Infinity;
+    if (this.order.ref.includes("Flag")) {
+      // this.maxSpawns = Infinity; // fast placement to harass
+      // this.setup = setups.defender.destroyer
+    }
   }
 
   update() {
     super.update();
 
-    if (this.checkBees(true)) {
+    if (this.checkBees()) {
       this.wish({
-        setup: setups.knight,
+        setup: this.setup,
         priority: 1,
       });
     }
@@ -85,20 +89,28 @@ export class HordeMaster extends SwarmMaster {
       action2();
 
     let targetedRange = 1;
+    let loosingBattle = false;
     if (target instanceof Creep) {
-      let info = Apiary.intel.getComplexStats(target).current;
+      let info = Apiary.intel.getStats(target).current;
       if (info.dmgClose > beeStats.heal)
         targetedRange = 3;
       if (info.dmgRange > beeStats.heal)
         targetedRange = 5;
-    }
+      if (target.owner.username !== "Invaider" && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal)
+        > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal))
+        loosingBattle = true;
+    } else if (target instanceof StructureTower)
+      loosingBattle = target.store.getUsedCapacity(RESOURCE_ENERGY) > bee.hitsMax / (TOWER_POWER_ATTACK * towerCoef(target, bee)) * 10 / 2; // / 2 just beacause
 
-    if (this.defendNearFlag || !target)
+    if (this.holdPosition || !target)
       return OK;
 
-    if (rangeToTarget < targetedRange && bee.hits <= bee.hitsMax * 0.9)
+    let attackRange = 2;
+    if (beeStats.dmgClose)
+      attackRange = 1;
+    if (loosingBattle || rangeToTarget < targetedRange && bee.hits <= bee.hitsMax * 0.9)
       bee.flee(target, this.order.pos, opts);
-    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget === Math.max(targetedRange, 2) && bee.hits === bee.hitsMax))
+    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget <= attackRange && bee.hits === bee.hitsMax))
       bee.goTo(target, opts);
     if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
       return ERR_BUSY;

@@ -38,3 +38,14 @@ export function findOptimalResource(store: Store<ResourceConstant, false>): Reso
   }
   return ans;
 }
+
+export function towerCoef(tower: StructureTower, pos: ProtoPos) {
+  if (!(pos instanceof RoomPosition))
+    pos = pos.pos;
+  let range = pos.getRangeTo(tower.pos);
+  if (range >= TOWER_FALLOFF_RANGE)
+    return 1 - TOWER_FALLOFF;
+  else if (range <= TOWER_OPTIMAL_RANGE)
+    return 1;
+  return (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_OPTIMAL_RANGE - TOWER_FALLOFF_RANGE);
+}

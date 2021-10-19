@@ -1,14 +1,12 @@
 import { Cell } from "../_Cell";
 import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
 
-import { makeId } from "../../abstract/utils";
+import { makeId, towerCoef } from "../../abstract/utils";
 import { prefix, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
 import type { Order } from "../../order";
-
-const TOWER_POWER_ATTACK_MY = TOWER_POWER_ATTACK / 16;
 
 @profile
 export class DefenseCell extends Cell {
@@ -41,15 +39,8 @@ export class DefenseCell extends Cell {
 
     _.forEach(this.towers, t => {
       for (let x = 0; x <= 49; ++x)
-        for (let y = 0; y <= 49; ++y) {
-          let range = t.pos.getRangeTo(new RoomPosition(x, y, t.pos.roomName));
-          if (range > TOWER_FALLOFF_RANGE)
-            this.coefMap[x][y] += 4;
-          else if (range <= TOWER_OPTIMAL_RANGE)
-            this.coefMap[x][y] += 16;
-          else
-            this.coefMap[x][y] += TOWER_FALLOFF_RANGE - (range - TOWER_OPTIMAL_RANGE)
-        }
+        for (let y = 0; y <= 49; ++y)
+          this.coefMap[x][y] += towerCoef(t, new RoomPosition(x, y, t.pos.roomName));
     });
   }
 
@@ -265,7 +256,7 @@ export class DefenseCell extends Cell {
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy);
       let myStats = Apiary.intel.getComplexMyStats(enemy); // my stats toward a point
-      if (stats.current.heal < TOWER_POWER_ATTACK_MY * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose)
+      if (stats.current.heal < TOWER_POWER_ATTACK * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose)
         shouldAttack = true;
 
       _.forEach(this.towers, tower => {
@@ -274,7 +265,7 @@ export class DefenseCell extends Cell {
         if (shouldAttack) {
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
-        } else {
+        } else if (tower.store.getUsedCapacity(RESOURCE_ENERGY) >= tower.store.getCapacity(RESOURCE_ENERGY) * 0.7) {
           let target = <Structure | undefined>this.hive.findProject(enemy, "ignore_constructions");
           if (target && target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).length && tower.repair(target) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);

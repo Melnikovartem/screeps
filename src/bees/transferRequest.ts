@@ -59,8 +59,8 @@ export class TransferRequest {
     this.beeProcess = 0;
   }
 
-  isValid() {
-    if (this.amount > 0 && !this.fromAmount && !this.inProcess)
+  isValid(inBee = 0) {
+    if (!this.fromAmount && !this.inProcess && !inBee)
       return false;
     if (this.amount <= 0)
       return false;

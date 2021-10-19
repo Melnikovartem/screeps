@@ -222,7 +222,7 @@ export class Broker {
 
   // i sell as long
   getPriceLongSell(res: ResourceConstant) {
-    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : 0) - ORDER_PADDING;
+    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.25) - ORDER_PADDING;
   }
 
   buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, coef: number = 1) {

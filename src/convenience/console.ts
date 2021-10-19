@@ -108,7 +108,7 @@ export class CustomConsole {
     this.lastActionRoomName = hive.roomName;
     let max = Math.max(...hive.cells.defense.coefMap.map(row => Math.max(...row)));
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max, 3) });
+      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max * 16, 3) });
     });
   }
 

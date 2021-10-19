@@ -412,7 +412,7 @@ export class Traveler {
             return 1;
           case roomStates.SKfrontier:
           case roomStates.reservedByEnemy:
-            return 5;
+            return 4;
           case roomStates.ownedByEnemy:
             return 255;
           case roomStates.noOwner:

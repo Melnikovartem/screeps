@@ -121,8 +121,8 @@ export class StorageCell extends Cell {
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 8000 && !this.hive.cells.dev)
       Apiary.destroyTime = Game.time;
 
-    if (!Object.keys(this.requests).length)
-      this.updateTerminal();
+    //if (!Object.keys(this.requests).length)
+    this.updateTerminal();
   }
 
   updateTerminal() {
@@ -131,8 +131,8 @@ export class StorageCell extends Cell {
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res]) {
-        this.requestToStorage([this.terminal], 5, res, this.terminal.store.getUsedCapacity(res));
-        return;
+        if (this.requestToStorage([this.terminal], 5, res, this.terminal.store.getUsedCapacity(res)) > 0)
+          return;
       }
     }
 
@@ -140,11 +140,11 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       let balance = this.terminal.store.getUsedCapacity(res) - this.resTargetTerminal[res]!;
       if (balance < 0) {
-        this.requestFromStorage([this.terminal], 5, res, -balance);
-        return;
+        if (this.requestFromStorage([this.terminal], 5, res, -balance) > 0)
+          return;
       } else if (balance > 0) {
-        this.requestToStorage([this.terminal], 5, res, balance);
-        return;
+        if (this.requestToStorage([this.terminal], 5, res, balance) > 0)
+          return;
       }
     }
   }

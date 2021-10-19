@@ -57,8 +57,10 @@ export class PortalMaster extends SwarmMaster {
         this.order.delete(true);
         return;
       }
-      if (shouldSpawn && !this.hive.cells.storage.storage.store.getUsedCapacity(this.res))
-        shouldSpawn = false;
+
+      let inStore = this.hive.cells.storage.storage.store.getUsedCapacity(this.res);
+      shouldSpawn = inStore > 2048;
+      this.targetBeeCount = inStore > 20000 ? 2 : 1;
     }
 
     if (this.order.pos.roomName in Game.rooms) {

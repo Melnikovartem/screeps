@@ -9,6 +9,7 @@ export class TestSquad extends SquadMaster {
     [{ x: 0, y: 1 }, setups.puppet],
     [{ x: 1, y: 1 }, setups.puppet]];
 
-  boost = false;
-  boostMove = false;
+  get emergency() {
+    return true;
+  }
 }
