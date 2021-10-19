@@ -130,7 +130,7 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
-    if (bee.ticksToLive < 1200
+    if ((bee.ticksToLive < 1200 && "Vespa affinis H YqQc" !== bee.ref)
       || bee.pos.roomName !== this.pos.roomName
       || !bee.master || !bee.master.boosts)
       return rCode;
@@ -249,6 +249,8 @@ export class LaboratoryCell extends Cell {
           case "idle":
             if (l.mineralType)
               this.sCell.requestToStorage([l], 5, l.mineralType);
+            if (this.sourceLabs && (l.id === this.sourceLabs[0] || l.id === this.sourceLabs[1]))
+              this.labsStates[id] = "source";
             break;
           case "source":
             break;
@@ -279,6 +281,8 @@ export class LaboratoryCell extends Cell {
 
         let updateSourceLab = (l: StructureLab, r: BaseMineral | ReactionConstant) => {
           let freeCap = l.store.getFreeCapacity(r);
+          if (this.labsStates[l.id] !== "source")
+            return; // lab was borrowed for boosting
           if (l.mineralType && l.mineralType !== r)
             this.sCell!.requestToStorage([l], 3, l.mineralType);
           else if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.currentProduction!.plan <= LAB_MINERAL_CAPACITY)

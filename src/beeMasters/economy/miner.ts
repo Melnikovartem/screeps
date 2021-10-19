@@ -1,6 +1,6 @@
 import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
 
-import { beeStates, hiveStates } from "../../enums";
+import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
@@ -12,7 +12,7 @@ import type { Boosts } from "../_Master";
 export class MinerMaster extends Master {
   cell: ResourceCell;
   cooldown: number = 0;
-  movePriority = <3>3;
+  movePriority = <4>4;
 
   constructor(resourceCell: ResourceCell) {
     super(resourceCell.hive, resourceCell.ref);
@@ -28,7 +28,7 @@ export class MinerMaster extends Master {
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
 
-    if (this.checkBees(hiveStates.battle !== this.hive.state) && roomInfo.safePlace && this.cell.operational) {
+    if (this.checkBees(this.cell.resourceType === RESOURCE_ENERGY) && roomInfo.safePlace && this.cell.operational) {
       let order = {
         setup: setups.miner.energy,
         priority: <2 | 5 | 6>2,

@@ -8,13 +8,14 @@ import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 
-const findRamp = (pos: RoomPosition) => !!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length;
+const findRamp = (pos: RoomPosition) => !!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000).length;
 
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
   movePriority = <1>1;
-  boosts: Boosts | undefined = [{ type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }];
+  boosts: Boosts | undefined = [{ type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 }
+    , { type: "fatigue", lvl: 0 }, { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 2 }];
   cell: DefenseCell;
   patience = 0;
 
@@ -38,6 +39,20 @@ export class SiegeMaster extends Master {
     let action1;
     let action2;
 
+    let opts: TravelToOptions = { maxRooms: 1 };
+    if (this.hive.state === hiveStates.battle) {
+      opts.roomCallback = (roomName, matrix) => {
+        if (roomName !== this.hive.roomName)
+          return;
+        let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
+        _.forEach(enemies, c => {
+          _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (4 - p.getRangeTo(c)) * 0x20)));
+          matrix.set(c.pos.x, c.pos.y, 0xff);
+        });
+        return matrix;
+      }
+    }
+
     let beeStats = Apiary.intel.getStats(bee.creep).current;
 
     let healingTarget: Creep | Bee | PowerCreep | undefined | null;
@@ -51,16 +66,16 @@ export class SiegeMaster extends Master {
     let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
 
     if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedAttack(target);
+      action2 = () => bee.rangedAttack(target, opts);
     else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
-      action2 = () => bee.rangedHeal(healingTarget);
+      action2 = () => bee.rangedHeal(healingTarget, opts);
 
     if (rangeToHealingTarget < 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget);
+      action1 = () => bee.heal(healingTarget, opts);
     else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
-      action1 = () => bee.attack(target);
+      action1 = () => bee.attack(target, opts);
     else if (rangeToHealingTarget === 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget);
+      action1 = () => bee.heal(healingTarget, opts);
 
     if (action1)
       action1();
@@ -78,20 +93,22 @@ export class SiegeMaster extends Master {
     }
 
     // we do not fear this enemy
-    let provoke = targetedRange === 1 || (!beeStats.dmgRange && beeStats.hits > 5000 && rangeToTarget < 3);
-    if (provoke)
-      bee.goTo(target)
 
-    let nextPosUnderRamp = bee.targetPosition && findRamp(bee.targetPosition);
-    let underRamp = findRamp(bee.pos) || nextPosUnderRamp;
+    if (action1 || action2)
+      this.patience = 0;
+    else
+      ++this.patience;
+
+    let underRamp = findRamp(bee.pos) || bee.targetPosition && findRamp(bee.targetPosition);
     if (!underRamp && bee.pos.getRangeTo(target) < targetedRange && bee.hits <= bee.hitsMax * 0.9)
-      bee.flee(target, posToStay);
-    else if (!provoke)
-      bee.goTo(posToStay);
-    if (bee.targetPosition && !nextPosUnderRamp) {
+      bee.flee(target, posToStay, opts);
+    else
+      bee.goTo(posToStay, opts);
+
+    if (bee.targetPosition && !findRamp(bee.targetPosition)) {
       let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
       if (stats.dmgClose + stats.dmgRange > beeStats.hits / 2 && bee.targetPosition.getRangeTo(target) < bee.pos.getRangeTo(target))
-        bee.flee(target, posToStay);
+        bee.flee(target, posToStay, opts);
     }
     return OK;
   }
@@ -129,9 +146,9 @@ export class SiegeMaster extends Master {
           if (!pos) {
             let enemy = Apiary.intel.getEnemyCreep(this.cell.pos);
             if (enemy) {
-              let ramps = enemy.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my);
+              let ramps = enemy.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000);
               if (!ramps.length)
-                ramps = enemy.pos.findInRange(FIND_STRUCTURES, 3).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my);
+                ramps = enemy.pos.findInRange(FIND_STRUCTURES, 3).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000);
               let ramp = this.cell.pos.findClosest(ramps);
               if (ramp)
                 pos = ramp.pos;
@@ -145,19 +162,18 @@ export class SiegeMaster extends Master {
 
           let enemy = Apiary.intel.getEnemyCreep(pos);
 
+          if (this.patience > 20) {
+            if (pos.x === bee.pos.x && pos.y === bee.pos.y && pos.roomName === bee.pos.roomName)
+              bee.goTo(this.cell.pos);
+            bee.target = undefined;
+          }
+
           if (enemy) {
             this.beeAct(bee, enemy, pos);
-            if (bee.pos.getRangeTo(enemy) <= 1)
-              this.patience = 0;
-          } else if (this.patience > 20) {
-            bee.goTo(this.cell.pos);
-            bee.target = undefined;
-          } else {
-            ++this.patience;
-            bee.goTo(pos);
             if (!bee.targetPosition)
               bee.targetPosition = pos;
-          }
+          } else
+            bee.goTo(pos);
       }
 
       if (bee.getActiveBodyParts(HEAL))

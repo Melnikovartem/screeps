@@ -88,7 +88,7 @@ export class RespawnCell extends Cell {
       if (order.setup.moveMax === "best" && this.hive.cells.lab) {
         let master = Apiary.masters[order.master];
         if (master && master.boosts) {
-          _.forEach(master.boosts.filter(b => b.type === "fatigue"), speedBoost => {
+          _.some(master.boosts.filter(b => b.type === "fatigue"), speedBoost => {
             if (speedBoost && !speedBoost.amount) {
               let res = <"ZO" | "ZHO2" | "XZHO2">this.hive.cells.lab!.getBoostInfo(speedBoost).res;
               let toBoost = 25;
@@ -103,9 +103,12 @@ export class RespawnCell extends Cell {
                   toBoost = 10;
                   break;
               }
-              if (this.hive.cells.lab!.getMineralSum(res) >= LAB_BOOST_MINERAL * toBoost)
+              if (this.hive.cells.lab!.getMineralSum(res) >= LAB_BOOST_MINERAL * toBoost) {
                 moveMax = toBoost;
+                return true;
+              }
             }
+            return false;
           });
         }
       }

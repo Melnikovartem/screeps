@@ -47,5 +47,5 @@ export function towerCoef(tower: StructureTower, pos: ProtoPos) {
     return 1 - TOWER_FALLOFF;
   else if (range <= TOWER_OPTIMAL_RANGE)
     return 1;
-  return (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_OPTIMAL_RANGE - TOWER_FALLOFF_RANGE);
+  return (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_FALLOFF_RANGE - TOWER_OPTIMAL_RANGE);
 }

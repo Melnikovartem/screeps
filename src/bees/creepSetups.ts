@@ -133,7 +133,7 @@ export const setups = {
   builder: new CreepSetup(setupsNames.builder, {
     pattern: [WORK, WORK, CARRY],
     patternLimit: 10,
-  }, 50 / 3),
+  }, 20),
   bootstrap: new CreepSetup(setupsNames.bootstrap, {
     pattern: [WORK, CARRY],
     patternLimit: 6,

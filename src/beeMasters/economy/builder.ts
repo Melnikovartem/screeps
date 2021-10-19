@@ -1,4 +1,4 @@
-import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
+import { Master } from "../_Master";
 
 import { beeStates, hiveStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
@@ -45,11 +45,11 @@ export class BuilderMaster extends Master {
 
   update() {
     super.update();
-    let emergency = this.hive.state >= hiveStates.nukealert;
+    let emergency = this.hive.state >= hiveStates.nukealert || (this.hive.state === hiveStates.economy && this.hive.sumCost > 500000);
 
     if (!this.boosts && emergency) {
       _.forEach(this.activeBees.filter(b => b.ticksToLive > 1000), b => b.state = beeStates.boosting);
-      this.boosts = [{ type: "build" }, { type: "fatigue", lvl: 0 }];
+      this.boosts = [];
     } else if (this.boosts && !emergency) {
       this.boosts = undefined;
       _.forEach(this.activeBees, b => b.state = b.state === beeStates.boosting ? beeStates.chill : b.state);
@@ -68,35 +68,43 @@ export class BuilderMaster extends Master {
   }
 
   run() {
-    let fleeDist = this.hive.state === hiveStates.battle ? 3 : CIVILIAN_FLEE_DIST;
 
     let opts: TravelToOptions = {};
     if (this.hive.state === hiveStates.battle) {
+      opts.maxRooms = 1;
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.hive.roomName)
           return;
         let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
         _.forEach(enemies, c => {
           _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, 0xff));
-          matrix.set(c.pos.x, c.pos.y, 0xff);
+          matrix.set(c.pos.x, c.pos.y, 0x80);
         });
         return matrix;
       }
     }
+
     _.forEach(this.activeBees, bee => {
       if (this.boosts)
         _.forEach(this.bees, bee => {
           if (bee.state === beeStates.boosting)
-            if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+            if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }, { type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }]) === OK)
               bee.state = beeStates.chill;
         });
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
       let contr = Game.rooms[bee.pos.roomName].controller;
+      let fleeDist = 0;
       if (enemy && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
-        //if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
-        //bee.state = beeStates.flee;
+        fleeDist = Apiary.intel.getFleeDist(enemy);
+        if (this.hive.state === hiveStates.battle)
+          if (fleeDist === 5)
+            fleeDist = 3;
+          else
+            fleeDist = 2;
+        if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
+          bee.state = beeStates.flee;
       }
 
       switch (bee.state) {

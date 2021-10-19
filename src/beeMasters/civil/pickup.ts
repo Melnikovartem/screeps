@@ -15,7 +15,7 @@ export class PickupMaster extends SwarmMaster {
 
   update() {
     super.update();
-    if (this.checkBees()) {
+    if (this.checkBees(true)) {
       this.wish({
         setup: setups.pickup,
         priority: 4,

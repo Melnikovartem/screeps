@@ -256,7 +256,8 @@ export class DefenseCell extends Cell {
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy);
       let myStats = Apiary.intel.getComplexMyStats(enemy); // my stats toward a point
-      if (stats.current.heal < TOWER_POWER_ATTACK * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose)
+      let attackPower = TOWER_POWER_ATTACK * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose;
+      if (stats.current.heal < attackPower || enemy.hits < attackPower)
         shouldAttack = true;
 
       _.forEach(this.towers, tower => {

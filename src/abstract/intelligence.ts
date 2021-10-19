@@ -42,11 +42,11 @@ export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattle
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
   getEnemyStructure(pos: ProtoPos, lag?: number) {
-    return this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Structure));
+    return <Structure>this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Structure));
   }
 
   getEnemyCreep(pos: ProtoPos, lag?: number) {
-    return this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Creep));
+    return <Creep>this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Creep));
   }
 
   getEnemy(pos: ProtoPos, lag?: number, filter: (enemies: Enemy[], roomInfo: RoomInfo) => Enemy[]
@@ -303,6 +303,16 @@ export class Intel {
     */
   }
 
+  getFleeDist(creep: Creep) {
+    let info = this.getStats(creep).current;
+    if (info.dmgRange > 0)
+      return 5;
+    else if (info.dmgClose > 0)
+      return 3;
+    else
+      return 0;
+  }
+
   getStats(creep: Creep) {
     let ans: CreepAllBattleInfo = {
       max: {
@@ -353,7 +363,7 @@ export class Intel {
             ans.current.dism += stat;
           break;
         case TOUGH:
-          stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 1;
+          stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 100;
           ans.max.hits += stat;
           if (b.hits)
             ans.current.hits += stat;

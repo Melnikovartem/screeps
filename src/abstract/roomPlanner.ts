@@ -26,7 +26,7 @@ const CONSTRUCTIONS_PER_ROOM = 8;
 export const WALL_HEALTH = 100000;
 
 // oh no i need to def
-const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = [STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
+const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = [STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL]// STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
 
 const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
   [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 } },
@@ -36,17 +36,23 @@ const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amo
 }
 
 const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
+  // essential
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
   STRUCTURE_EXTENSION,
   STRUCTURE_STORAGE,
   STRUCTURE_TERMINAL,
+
+  // mining
+  STRUCTURE_ROAD,
   STRUCTURE_CONTAINER,
   STRUCTURE_LINK,
-  STRUCTURE_ROAD,
+
+  // def
   STRUCTURE_WALL,
   STRUCTURE_RAMPART,
 
+  // high tech
   STRUCTURE_LAB,
   STRUCTURE_EXTRACTOR,
   STRUCTURE_OBSERVER,
@@ -892,7 +898,7 @@ export class RoomPlanner {
             ans = 1;
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        return ans * (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
+        return ans; //* (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
     }

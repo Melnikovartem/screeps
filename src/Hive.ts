@@ -381,6 +381,7 @@ export class Hive {
             if (Apiary.intel.getInfo(annexName).safePlace)
               add(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
           });
+
         if (!reCheck && !this.sumCost && this.wallsHealth < this.wallsHealthMax) {
           add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
           if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
@@ -393,6 +394,7 @@ export class Hive {
           break;
         }
         add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
+        break;
       default:
         add(Apiary.planner.checkBuildings(this.roomName));
     }

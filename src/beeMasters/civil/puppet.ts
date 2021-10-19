@@ -1,5 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
+import { hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -10,7 +11,7 @@ export class PuppetMaster extends SwarmMaster {
 
   update() {
     super.update();
-    if (this.checkBees()) {
+    if (this.checkBees(hiveStates.battle !== this.hive.state)) {
       this.wish({
         setup: setups.puppet,
         priority: 2, // well it is mostly cheap -_-

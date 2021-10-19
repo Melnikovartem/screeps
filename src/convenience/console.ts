@@ -1,4 +1,4 @@
-import { signText } from "../enums"
+import { signText, prefix } from "../enums"
 
 import { TERMINAL_ENERGY } from "../abstract/terminalNetwork";
 import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
@@ -285,7 +285,7 @@ export class CustomConsole {
     return terminal;
   }
 
-  buyComplex(hiveName: string = this.lastActionRoomName, mode = "") {
+  buyComplex(padding = 1000, hiveName: string = this.lastActionRoomName, mode = "") {
     let state = Apiary.network.state[hiveName];
     if (!state)
       return `NO VALID TERMINAL NOT FOUND @ ${this.format(hiveName)}`;
@@ -296,7 +296,7 @@ export class CustomConsole {
       let res = <ResourceConstant>r;
       if (!(res in REACTION_MAP) || amount > 0)
         return;
-      let sets = Math.min(Math.round((-amount + 1000) / 5000 * 1000) / 1000, 1);
+      let sets = Math.min(Math.round((-amount + padding) / 5000 * 1000) / 1000, 1);
       switch (mode) {
         case "short":
           this.buyShort(res, hiveName, sets);
@@ -482,7 +482,8 @@ export class CustomConsole {
   }
 
   printOrders(ref?: string) {
-    let obj = _.filter(Apiary.orders, o => !ref || o.hive.roomName === ref || o.ref.includes(ref));
+    let extraFilter = (rr: string) => !rr.includes(prefix.annex) && !rr.includes(prefix.mine) && !rr.includes(prefix.puppet)
+    let obj = _.filter(Apiary.orders, o => (!ref || o.hive.roomName === ref || o.ref.includes(ref)) && extraFilter(o.ref));
     return this.printByHive(obj);
   }
 
