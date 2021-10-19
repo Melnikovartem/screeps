@@ -99,6 +99,8 @@ export class HordeMaster extends SwarmMaster {
       if (target.owner.username !== "Invaider" && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal)
         > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal))
         loosingBattle = true;
+      if (bee.pos.roomName in Apiary.hives)
+        loosingBattle = false;
     } else if (target instanceof StructureTower)
       loosingBattle = target.store.getUsedCapacity(RESOURCE_ENERGY) > bee.hitsMax / (TOWER_POWER_ATTACK * towerCoef(target, bee)) * 10 / 2; // / 2 just beacause
 

@@ -123,6 +123,9 @@ export class Logger {
   }
 
   reportEnemy(creep: Creep) {
+    if (2 % 1 == 0)
+      return; // remove
+
     if (!Memory.log.enemies)
       Memory.log.enemies = {};
 

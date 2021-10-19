@@ -147,9 +147,11 @@ export class Bee {
       opt.ignoreCreeps = false;
     } */
     let ans = this.creep.travelTo(target, opt);
-    if (typeof ans === "number")
+    if (typeof ans === "number") {
+      if (ans === OK)
+        this.targetPosition = undefined;
       return ans;
-    else
+    } else
       this.targetPosition = ans;
     if (target instanceof RoomPosition)
       target = { pos: target };

@@ -206,7 +206,7 @@ export class LaboratoryCell extends Cell {
       if (lab.store.getUsedCapacity(r.res) >= r.amount * LAB_BOOST_MINERAL
         && lab.store.getUsedCapacity(RESOURCE_ENERGY) >= r.amount * LAB_BOOST_ENERGY) {
         let pos = lab.pos.getOpenPositions(true)[0];
-        if (bee.pos.x === pos.x, bee.pos.y === pos.y) {
+        if (bee.pos.isNearTo(lab)) {
           let ans = lab.boostCreep(bee.creep, r.amount);
           if (ans === OK) {
             r.amount = 0;
@@ -217,13 +217,17 @@ export class LaboratoryCell extends Cell {
           }
           continue;
         } else {
-          bee.goRest(pos);
-          return ERR_NOT_IN_RANGE;
+          if (rCode !== ERR_NOT_IN_RANGE)
+            bee.goTo(pos);
+          rCode = ERR_NOT_IN_RANGE;
+          continue;
         }
       } else if (this.hive.state === hiveStates.lowenergy)
         continue; // help is not coming
-      bee.goRest(this.pos);
-      rCode = ERR_TIRED;
+      if (rCode !== ERR_NOT_IN_RANGE) {
+        bee.goRest(this.pos);
+        rCode = ERR_TIRED;
+      }
       continue;
     }
 

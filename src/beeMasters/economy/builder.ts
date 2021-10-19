@@ -84,13 +84,19 @@ export class BuilderMaster extends Master {
       }
     }
     _.forEach(this.activeBees, bee => {
+      if (this.boosts)
+        _.forEach(this.bees, bee => {
+          if (bee.state === beeStates.boosting)
+            if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+              bee.state = beeStates.chill;
+        });
 
       let enemy = Apiary.intel.getEnemyCreep(bee, 25);
       let contr = Game.rooms[bee.pos.roomName].controller;
       if (enemy && (!contr || !contr.my || !contr.safeMode)) {
         enemy = Apiary.intel.getEnemyCreep(bee);
-        if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
-          bee.state = beeStates.flee;
+        //if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
+        //bee.state = beeStates.flee;
       }
 
       switch (bee.state) {
@@ -160,11 +166,6 @@ export class BuilderMaster extends Master {
             bee.repairRoadOnMove(ans);
           } else
             bee.goRest(this.hive.rest);
-          break;
-        case beeStates.boosting:
-          if (!this.hive.cells.lab
-            || this.hive.cells.lab.askForBoost(bee) === OK)
-            bee.state = beeStates.chill;
           break;
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < fleeDist)
