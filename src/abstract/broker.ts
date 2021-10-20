@@ -166,6 +166,8 @@ export class Broker {
         ans = this.buyShort(terminal, res, amount, creditsToUse);
       if (ans === OK)
         return "short";
+      if (ans === ERR_TIRED)
+        return "short";
     }
 
     let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res && order.type === ORDER_BUY);
@@ -195,6 +197,8 @@ export class Broker {
     if (hurry || priceToSellInstant >= price * 0.95) {
       let ans = this.sellShort(terminal, res, amount);
       if (ans === OK)
+        return "short";
+      if (ans === ERR_TIRED)
         return "short";
     }
 

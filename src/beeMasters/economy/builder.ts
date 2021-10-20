@@ -57,7 +57,7 @@ export class BuilderMaster extends Master {
 
     this.movePriority = emergency ? 1 : 5;
 
-    if (this.checkBeesWithRecalc() || (emergency && !this.activeBees.length)) {
+    if (this.checkBeesWithRecalc() || (emergency && !this.beesAmount && !this.waitingForBees)) {
       let order = {
         setup: setups.builder,
         priority: <2 | 5 | 8>(emergency ? 2 : (this.beesAmount ? 8 : 5)),

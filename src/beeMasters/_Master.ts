@@ -84,13 +84,17 @@ export abstract class Master {
       master: this.ref,
       ref: ref,
     }
-    if (this.hive.bassboost && this.hive.state !== hiveStates.battle) {
-      if (this.hive.state !== hiveStates.nospawn
-        && (order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).cost <= this.hive.room.energyCapacityAvailable ||
-          Object.keys(this.hive.bassboost.spawOrders).length > 5 && order.setup.getBody(this.hive.room.energyAvailable).cost > 0)) {
-        // yey i can produce a minion locally or the main hive is just too busy ...
+    if (this.hive.bassboost && this.hive.bassboost.state !== hiveStates.battle) {
+      let localBodyMax;
+      if (this.hive.state !== hiveStates.nospawn) {
+        if (order.priority > 3)
+          localBodyMax = order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length;
+        else
+          localBodyMax = order.setup.getBody(this.hive.room.energyAvailable).body.length;
+      }
+      if (localBodyMax === order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length)
         this.hive.spawOrders[ref] = order;
-      } else {
+      else {
         order.priority = 9;
         this.hive.bassboost.spawOrders[ref] = order;
       }

@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { beeStates } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
 import { CIVILIAN_FLEE_DIST } from "../_Master";
 
@@ -15,7 +15,7 @@ export class PickupMaster extends SwarmMaster {
 
   update() {
     super.update();
-    if (this.checkBees(true)) {
+    if (this.checkBees(this.hive.state !== hiveStates.battle)) {
       this.wish({
         setup: setups.pickup,
         priority: 4,
@@ -127,7 +127,7 @@ export class PickupMaster extends SwarmMaster {
         case beeStates.flee:
           if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
             bee.flee(enemy, this.hive);
-          bee.state = beeStates.work;
+          bee.state = beeStates.refill;
           break;
       }
     });

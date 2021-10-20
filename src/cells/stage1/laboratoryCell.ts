@@ -130,8 +130,8 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
-    if ((bee.ticksToLive < 1200 && "Vespa affinis H YqQc" !== bee.ref)
-      || bee.pos.roomName !== this.pos.roomName
+    if (bee.ticksToLive < 1200
+      // || bee.pos.roomName !== this.pos.roomName
       || !bee.master || !bee.master.boosts)
       return rCode;
 
@@ -159,14 +159,15 @@ export class LaboratoryCell extends Cell {
       if (this.boostLabs[r.res])
         lab = this.laboratories[this.boostLabs[r.res]!];
       if (!lab || this.labsStates[lab.id] !== r.res) {
-        _.some(this.laboratories, l => {
-          if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
-            lab = l;
-          return lab;
-        });
+        if (this.currentProduction && this.currentProduction.res === r.res)
+          _.some(this.laboratories, l => {
+            if (this.labsStates[l.id] === "production" && l.mineralType === r.res)
+              lab = l;
+            return lab;
+          });
         if (!lab)
           _.some(this.laboratories, l => {
-            if (this.labsStates[l.id] === "idle")
+            if (this.labsStates[l.id] === "idle" && l.mineralType === r.res)
               lab = l;
             return lab;
           });
@@ -178,11 +179,17 @@ export class LaboratoryCell extends Cell {
           });
         if (!lab)
           _.some(this.laboratories, l => {
-            if (this.labsStates[l.id] === "production")
+            if (this.labsStates[l.id] === "idle")
               lab = l;
             return lab;
           });
         if (!lab)
+          _.some(this.laboratories, l => {
+            if (this.labsStates[l.id] === "production")
+              lab = l;
+            return lab;
+          });
+        if (!lab) // make this one first
           _.some(this.laboratories, l => {
             if (!_.sum(this.boostRequests, br => br.filter(r => r.res == this.labsStates[l.id]).length))
               lab = l;

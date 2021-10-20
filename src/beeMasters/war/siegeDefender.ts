@@ -8,7 +8,8 @@ import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 
-const findRamp = (pos: RoomPosition) => !!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000).length;
+const rampFilter = (ss: Structure[]) => ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000)
+const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STRUCTURES)).length;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -26,7 +27,6 @@ export class SiegeMaster extends Master {
 
   update() {
     super.update();
-
     if (this.hive.state === hiveStates.battle && this.checkBees(true)) {
       this.wish({
         setup: setups.defender.siege,
@@ -99,16 +99,15 @@ export class SiegeMaster extends Master {
     else
       ++this.patience;
 
-    let underRamp = findRamp(bee.pos) || bee.targetPosition && findRamp(bee.targetPosition);
-    if (!underRamp && bee.pos.getRangeTo(target) < targetedRange && bee.hits <= bee.hitsMax * 0.9)
-      bee.flee(target, posToStay, opts);
-    else
-      bee.goTo(posToStay, opts);
-
-    if (bee.targetPosition && !findRamp(bee.targetPosition)) {
+    bee.goTo(posToStay, opts);
+    if (this.cell.isBreached)
+      bee.goTo(target);
+    if (!bee.targetPosition)
+      bee.targetPosition = bee.pos;
+    if (bee.targetPosition && (!findRamp(bee.targetPosition) || bee.pos.getRangeTo(target) < targetedRange)) {
       let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
-      if (stats.dmgClose + stats.dmgRange > beeStats.hits / 2 && bee.targetPosition.getRangeTo(target) < bee.pos.getRangeTo(target))
-        bee.flee(target, posToStay, opts);
+      if (stats.dmgClose + stats.dmgRange > beeStats.hits / 2)
+        bee.flee(target, this.cell.pos, opts);
     }
     return OK;
   }
@@ -146,16 +145,16 @@ export class SiegeMaster extends Master {
           if (!pos) {
             let enemy = Apiary.intel.getEnemyCreep(this.cell.pos);
             if (enemy) {
-              let ramps = enemy.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000);
+              let ramps = rampFilter(enemy.pos.findInRange(FIND_STRUCTURES, 1));
               if (!ramps.length)
-                ramps = enemy.pos.findInRange(FIND_STRUCTURES, 3).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 1000);
+                ramps = rampFilter(enemy.pos.findInRange(FIND_STRUCTURES, 3));
               let ramp = this.cell.pos.findClosest(ramps);
               if (ramp)
                 pos = ramp.pos;
             }
           }
 
-          if (!pos || this.cell.isBreached)
+          if (!pos)
             pos = this.cell.pos;
           else
             bee.target = pos.to_str;

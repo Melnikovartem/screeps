@@ -1,6 +1,7 @@
 import { HordeMaster } from "./horde";
 import { SwarmMaster } from "../_SwarmMaster";
 
+import { hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -24,7 +25,7 @@ export class HordeDefenseMaster extends HordeMaster {
       return;
     }
 
-    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
+    if (this.checkBees(this.hive.state !== hiveStates.battle) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
       let order = {
         setup: setups.defender.normal,
         priority: <1 | 4 | 8>1,

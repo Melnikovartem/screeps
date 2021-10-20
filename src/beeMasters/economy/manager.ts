@@ -82,7 +82,7 @@ export class ManagerMaster extends Master {
     });
 
 
-    if (this.checkBees(true) && this.cell.storage.store.getUsedCapacity(RESOURCE_ENERGY)) {
+    if (this.checkBees(true)) {
       let order = {
         setup: setups.queen,
         priority: <0>0,

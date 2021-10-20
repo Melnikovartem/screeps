@@ -117,7 +117,7 @@ export class DefenseCell extends Cell {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
     this.isBreached = false;
     let contr = this.hive.room.controller!;
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 5 && (!contr.safeMode || contr.safeMode < 600));
+    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 4 && (!contr.safeMode || contr.safeMode < 600));
     if (this.hive.state === hiveStates.battle) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       _.forEach(roomInfo.enemies, enemy => {

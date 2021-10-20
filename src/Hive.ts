@@ -289,6 +289,14 @@ export class Hive {
       return;
     }
 
+    let emegency_reparis = this.room.find(FIND_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_WHITE);
+    if (emegency_reparis.length) {
+      let proj = _.compact(emegency_reparis.map(f => f.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0]));
+      if (proj.length)
+        return this.pos.findClosest(proj);
+    }
+
+
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
     let target: Structure | ConstructionSite | undefined;
@@ -395,7 +403,16 @@ export class Hive {
         }
         add(Apiary.planner.checkBuildings(this.roomName, undefined, this.wallMap));
         break;
+      case hiveStates.lowenergy:
+        if (reCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
+          _.forEach(this.annexNames, annexName => {
+            if (Apiary.intel.getInfo(annexName).safePlace)
+              add(Apiary.planner.checkBuildings(annexName, [STRUCTURE_ROAD, STRUCTURE_CONTAINER]))
+          });
+        add(Apiary.planner.checkBuildings(this.roomName, undefined));
+        break;
       default:
+        // never for now
         add(Apiary.planner.checkBuildings(this.roomName));
     }
   }
