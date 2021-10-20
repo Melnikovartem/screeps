@@ -231,9 +231,9 @@ export class Intel {
       let info = this.getStats(c).max;
       if (info.dmgRange >= RANGED_ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 2 || info.dmgClose >= ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 2)
         dangerlvl = 8;
-      else if (info.heal >= HEAL_POWER * (MAX_CREEP_SIZE - 10) || info.dism >= DISMANTLE_POWER * (MAX_CREEP_SIZE - 10))
+      else if (info.heal >= TOWER_POWER_ATTACK * 2 || info.dism >= DISMANTLE_POWER * (MAX_CREEP_SIZE - 10))
         dangerlvl = 6;
-      else if (info.dmgRange > RANGED_ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.dmgClose > ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.heal > HEAL_POWER * MAX_CREEP_SIZE / 2)
+      else if (info.dmgRange > RANGED_ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.dmgClose > ATTACK_POWER * MAX_CREEP_SIZE / 2)
         dangerlvl = 5;
       else if (info.dmgRange > 0 || info.dmgClose > 0 || info.heal > 0)
         dangerlvl = 4;

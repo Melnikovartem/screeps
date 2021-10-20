@@ -30,7 +30,7 @@ export class UpgraderMaster extends Master {
       return;
     }
     this.fastMode = true;
-    this.boosts = [{ type: "upgrade" }];
+    this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 2 }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere

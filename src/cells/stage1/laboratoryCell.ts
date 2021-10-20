@@ -34,7 +34,7 @@ interface SynthesizeRequest {
   cooldown: number,
 };
 
-export type BoostRequest = { type: BoostType, amount?: number, lvl?: 0 | 1 | 2 }
+export type BoostRequest = { type: BoostType, amount?: number, lvl: 0 | 1 | 2 }
 type BoostInfo = { type: BoostType, res: ReactionConstant, amount: number, lvl: 0 | 1 | 2 };
 type LabState = "idle" | "production" | "source" | ReactionConstant;
 @profile
@@ -43,8 +43,9 @@ export class LaboratoryCell extends Cell {
   // inLab check for delivery system
   boostLabs: { [key in ResourceConstant]?: string } = {};
   boostRequests: { [id: string]: { info: BoostInfo[], lastUpdated: number } } = {};
-  labsStates: { [id: string]: LabState } = {}
-  synthesizeRequests: SynthesizeRequest[] = [];
+  labsStates: { [id: string]: LabState } = {};
+  synthesizeTarget: { res: ReactionConstant, amount: number } | undefined;
+  synthesizeRes: SynthesizeRequest | undefined;
   prod?: SynthesizeRequest & { lab1: string, lab2: string };
   master: undefined;
   sCell: StorageCell;
@@ -56,7 +57,7 @@ export class LaboratoryCell extends Cell {
     this.pos = this.hive.getPos("lab");
   }
 
-  newSynthesizeRequest(resource: ReactionConstant, amount?: number, coef?: number): number {
+  newSynthesize(resource: ReactionConstant, amount?: number, coef?: number): number {
     if (!(resource in REACTION_TIME))
       return 0;
     if (!amount) {
@@ -69,19 +70,92 @@ export class LaboratoryCell extends Cell {
     if (coef)
       amount *= coef;
     if (amount > 0)
-      this.synthesizeRequests.push({
+      this.synthesizeRes = {
         plan: amount,
         res: resource,
         res1: REACTION_MAP[resource]!.res1,
         res2: REACTION_MAP[resource]!.res2,
         cooldown: REACTION_TIME[resource],
-      });
+      };
     return amount;
   }
 
+  stepToTarget() {
+    this.resTarget = {};
+    if (!this.synthesizeTarget) {
+      let targets: { res: ReactionConstant, amount: number }[] = [];
+      for (const r in this.hive.resState) {
+        let res = <ReactionConstant>r; // atually ResourceConstant
+        let toCreate = -this.hive.resState[res]!;
+        if (res in REACTION_MAP && toCreate > 0)
+          targets.push({ res: res, amount: toCreate });
+      }
+      if (!targets.length)
+        return;
+      targets.sort((a, b) => b.amount - a.amount);
+      this.synthesizeTarget = targets[0];
+    }
+
+    let ingredients: BaseMineral[] = [];
+    let createQue: ReactionConstant[] = [];
+
+    let dfs = (res: ResourceConstant) => {
+      let recipe = REACTION_MAP[<ReactionConstant>res];
+      if (!recipe) {
+        ingredients.push(<BaseMineral>res);
+        return;
+      }
+      createQue.push(<ReactionConstant>res);
+      dfs(recipe.res1);
+      dfs(recipe.res2);
+    }
+
+    dfs(this.synthesizeTarget.res);
+
+    _.forEach(ingredients, resource => {
+      if (this.sCell.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
+        this.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
+    });
+
+    createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
+    if (!createQue.length)
+      return;
+    this.newSynthesize(createQue.reduce((prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
+  }
+
+  newProd() {
+    if (!this.synthesizeRes)
+      return false;
+
+    let res1 = this.synthesizeRes.res1;
+    let res2 = this.synthesizeRes.res2;
+
+    let maxDists: { [id: string]: number } = {}
+    for (let id in this.laboratories)
+      maxDists[id] = Math.max(..._.map(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l)));
+    let comp = (prev: StructureLab, curr: StructureLab, res: BaseMineral | ReactionConstant) => {
+      let cond = maxDists[prev.id] - maxDists[curr.id];
+      if (cond === 0)
+        cond = curr.store.getUsedCapacity(res) - prev.store.getUsedCapacity(res);
+      if (cond === 0)
+        cond = prev.pos.getTimeForPath(this.sCell!) - curr.pos.getTimeForPath(this.sCell!);
+      return cond > 0 ? curr : prev;
+    }
+
+    let lab1 = _.map(this.laboratories, l => l).reduce((prev, curr) => comp(prev, curr, res1));
+    let lab2;
+    if (lab1)
+      lab2 = _.filter(this.laboratories, l => l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
+
+    if (lab1 && lab2) {
+      this.prod = { ...this.synthesizeRes, lab1: lab1.id, lab2: lab2.id };
+      this.synthesizeRes = undefined;
+    }
+    return true;
+  }
+
   getBoostInfo(r: BoostRequest, bee?: Bee): BoostInfo | void {
-    let lvl = r.lvl === undefined ? 2 : r.lvl;
-    let res = BOOST_MINERAL[r.type][lvl];
+    let res = BOOST_MINERAL[r.type][r.lvl];
     let sum = this.sCell.getUsedCapacity(res);
     let amount = r.amount ? r.amount : Infinity;
     amount = Math.min(amount, Math.floor(sum / LAB_BOOST_MINERAL));
@@ -89,7 +163,7 @@ export class LaboratoryCell extends Cell {
       amount = Math.min(amount - bee.getBodyParts(BOOST_PARTS[r.type]), bee.getBodyParts(BOOST_PARTS[r.type], -1));
     if (amount <= 0)
       return;
-    return { type: r.type, res: res, amount: amount, lvl: lvl };
+    return { type: r.type, res: res, amount: amount, lvl: r.lvl };
   }
 
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
@@ -176,24 +250,21 @@ export class LaboratoryCell extends Cell {
               Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_ENERGY, RESOURCE_ENERGY);
             }
           }
-          continue;
-        } else {
-          if (rCode !== ERR_NOT_IN_RANGE)
-            bee.goTo(pos);
+        } else if (rCode !== ERR_NOT_IN_RANGE) {
+          bee.goTo(pos);
           rCode = ERR_NOT_IN_RANGE;
-          continue;
         }
       } else if (this.hive.state === hiveStates.lowenergy)
         continue; // help is not coming
-      if (rCode !== ERR_NOT_IN_RANGE) {
-        bee.goRest(this.pos);
+      if (rCode !== ERR_NOT_IN_RANGE)
         rCode = ERR_TIRED;
-      }
       continue;
     }
 
     // console.log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
-    if (rCode === OK)
+    if (rCode === ERR_TIRED)
+      bee.goRest(this.pos);
+    else if (rCode === OK)
       delete this.boostRequests[bee.ref];
     return rCode;
   }
@@ -215,7 +286,7 @@ export class LaboratoryCell extends Cell {
         this.labsStates[l.id] = "idle";
       case "idle":
         if (this.prod) {
-          if (l.id === this.prod.lab1 || l.id === this.prod.lab1) {
+          if (l.id === this.prod.lab1 || l.id === this.prod.lab2) {
             this.labsStates[l.id] = "source";
             this.updateLabState(l, rec + 1);
           } else if (Game.time % this.prod.cooldown === 0 && !l.cooldown &&
@@ -276,57 +347,32 @@ export class LaboratoryCell extends Cell {
 
   update() {
     super.update(["laboratories"]);
-    if (Object.keys(this.laboratories).length) {
-      for (let id in this.laboratories)
-        this.updateLabState(this.laboratories[id]);
+    if (!Object.keys(this.laboratories).length)
+      return;
 
-      if (this.prod) {
-        this.prod.plan = Math.min(this.prod.plan,
-          this.sCell.getUsedCapacity(this.prod.res1),
-          this.sCell.getUsedCapacity(this.prod.res2));
-        if (this.prod.plan < 5)
-          this.prod = undefined;
-      } else {
-        let production: SynthesizeRequest | undefined = this.prod
-        if (!production)
-          production = this.synthesizeRequests[0];
+    for (let id in this.laboratories)
+      this.updateLabState(this.laboratories[id]);
 
-        if (production) {
-          let res1 = production.res1;
-          let res2 = production.res2;
-
-          let maxDists: { [id: string]: number } = {}
-          for (let id in this.laboratories)
-            maxDists[id] = Math.max(..._.map(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l)));
-          let comp = (prev: StructureLab, curr: StructureLab, res: BaseMineral | ReactionConstant) => {
-            let cond = maxDists[prev.id] - maxDists[curr.id];
-            if (cond === 0)
-              cond = curr.store.getUsedCapacity(res) - prev.store.getUsedCapacity(res);
-            if (cond === 0)
-              cond = prev.pos.getTimeForPath(this.sCell!) - curr.pos.getTimeForPath(this.sCell!);
-            return cond > 0 ? curr : prev;
-          }
-
-          let lab1 = _.map(this.laboratories, l => l).reduce((prev, curr) => comp(prev, curr, res1));
-          let lab2;
-          if (lab1)
-            lab2 = _.filter(this.laboratories, l => l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
-
-          if (lab1 && lab2) {
-            this.prod = { ...production, lab1: lab1.id, lab2: lab2.id };
-            this.synthesizeRequests.shift();
-          }
-        }
-      }
-
-      let priority = <2 | 5>5;
-      this.sCell.requestFromStorage(_.filter(this.laboratories,
-        l => {
-          if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
-            priority = 2;
-          return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-        }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
+    if (!this.prod && !this.newProd()) {
+      this.stepToTarget();
+      this.newProd();
     }
+
+    if (this.prod) {
+      this.prod.plan = Math.min(this.prod.plan,
+        this.sCell.getUsedCapacity(this.prod.res1),
+        this.sCell.getUsedCapacity(this.prod.res2));
+      if (this.prod.plan < 5)
+        this.prod = undefined;
+    }
+
+    let priority = <2 | 5>5;
+    this.sCell.requestFromStorage(_.filter(this.laboratories,
+      l => {
+        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
+          priority = 2;
+        return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+      }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
 
     for (const ref in this.boostRequests)
       if (this.boostRequests[ref].lastUpdated + 10 > Game.time)

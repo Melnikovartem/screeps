@@ -56,6 +56,8 @@ interface HiveCells {
   power?: PowerCell,
 }
 
+type ResTarget = { "energy": number } & { [key in ResourceConstant]?: number };
+
 const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
 type StructureGroups = "essential" | "mining" | "defense" | "hightech"
 const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant[] } = {
@@ -114,17 +116,17 @@ export class Hive {
 
   state: hiveStates = hiveStates.economy;
 
-  resTarget: {
-    "energy": number,
-  } & { [key in ResourceConstant]?: number } = {
-      [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
-      [BOOST_MINERAL.upgrade[2]]: HIVE_MINERAL,
-      [BOOST_MINERAL.build[2]]: HIVE_MINERAL,
-      [BOOST_MINERAL.heal[2]]: HIVE_MINERAL,
-      [BOOST_MINERAL.rangedAttack[2]]: HIVE_MINERAL,
-      [BOOST_MINERAL.fatigue[2]]: HIVE_MINERAL,
-      [BOOST_MINERAL.attack[2]]: HIVE_MINERAL,
-    }
+  resTarget: ResTarget = {
+    // energy
+    [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
+
+    // cheap but good
+    [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL * 2,
+    [BOOST_MINERAL.build[0]]: HIVE_MINERAL * 2,
+    [BOOST_MINERAL.attack[0]]: HIVE_MINERAL * 2,
+  }
+  resState: ResTarget = { energy: 0 };
+  shortages: ResTarget = { energy: 0 };
 
   constructor(roomName: string) {
     this.roomName = roomName;
@@ -187,7 +189,13 @@ export class Hive {
       if (factory)
         this.cells.factory = new FactoryCell(this, factory, sCell);
       if (this.phase === 2) {
-        this.resTarget[BOOST_MINERAL.attack[0]] = HIVE_MINERAL;
+        // hihgh lvl minerals to protect my hive
+        this.resTarget[BOOST_MINERAL.build[2]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.rangedAttack[2]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.fatigue[2]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
+
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
         _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
@@ -202,6 +210,10 @@ export class Hive {
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
         this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
+      } else {
+        // try to develop the hive
+        this.resTarget[BOOST_MINERAL.upgrade[0]] = HIVE_MINERAL * 2;
+        this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
       }
     }
 

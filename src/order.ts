@@ -440,55 +440,18 @@ export class Order {
               this.delete();
             break;
           case COLOR_CYAN:
-            this.acted = false;
             if (this.pos.roomName !== this.hive.roomName || !this.hive.cells.lab) {
               this.delete();
               break;
             }
-            this.hive.cells.lab.resTarget = {};
-            if (Object.keys(this.hive.cells.lab.synthesizeRequests).length)
-              break;
             let final = <ReactionConstant>this.flag.name.split("_")[1];
             if (!final || !REACTION_MAP[final]) {
               this.delete();
               break;
             }
-
-            let ingredients: ResourceConstant[] = [];
-            let createQue: ReactionConstant[] = [];
-
-            let dfs = (res: ResourceConstant) => {
-              let recipe = REACTION_MAP[<ReactionConstant>res];
-              if (!recipe) {
-                ingredients.push(res);
-                return;
-              }
-              createQue.push(<ReactionConstant>res);
-              dfs(recipe.res1);
-              dfs(recipe.res2);
-            }
-            dfs(final);
-            createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
-            let sCell = this.hive.cells.storage;
-            if (sCell) {
-              let createQueNorm = createQue.filter(res => {
-                let recipe = REACTION_MAP[<ReactionConstant>res]!;
-                return sCell!.getUsedCapacity(recipe.res1) >= LAB_MINERAL_CAPACITY && sCell!.getUsedCapacity(recipe.res2) >= LAB_MINERAL_CAPACITY;
-              })
-              if (createQueNorm.length)
-                createQue = createQueNorm;
-              createQue.sort((a, b) => sCell!.getUsedCapacity(a) - sCell!.getUsedCapacity(b));
-            }
-            let ans = _.some(createQue, res => this.hive.cells.lab!.newSynthesizeRequest(res));
-            if (!ans) {
-              if (sCell && sCell.terminal && ingredients.length) {
-                _.forEach(ingredients, resource => {
-                  if (sCell!.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
-                    this.hive.cells.lab!.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
-                });
-              } else
-                this.delete();
-            }
+            this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
+            this.hive.cells.lab.synthesizeRes = undefined;
+            this.hive.cells.lab.prod = undefined;
             break;
           case COLOR_YELLOW:
             if (this.fixedName(prefix.upgrade + this.hive.roomName))
@@ -583,12 +546,24 @@ export class Order {
         }
         break;
       case COLOR_GREY:
-        if (this.flag.secondaryColor === COLOR_YELLOW && this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
-          this.hive.cells.upgrade.master.waitingForBees = 0;
-          for (const key in this.hive.spawOrders)
-            if (key.includes(this.hive.cells.upgrade.master.ref))
-              delete this.hive.spawOrders[key];
+        switch (this.flag.secondaryColor) {
+          case COLOR_YELLOW:
+            if (this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
+              this.hive.cells.upgrade.master.waitingForBees = 0;
+              for (const key in this.hive.spawOrders)
+                if (key.includes(this.hive.cells.upgrade.master.ref))
+                  delete this.hive.spawOrders[key];
+            }
+            break;
+          case COLOR_GREY:
+            if (this.hive.cells.lab) {
+              this.hive.cells.lab.synthesizeTarget = undefined;
+              this.hive.cells.lab.synthesizeRes = undefined;
+              this.hive.cells.lab.prod = undefined;
+            }
+            break;
         }
+        break;
       case COLOR_RED:
         for (const key in Apiary.defenseSwarms)
           if (Apiary.defenseSwarms[key].ref === this.ref)

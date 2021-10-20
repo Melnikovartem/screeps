@@ -20,7 +20,7 @@ export abstract class SquadMaster extends SwarmMaster {
   maxSpawns = 1;
   movePriority = <2>2;
   priority = <1>1;
-  boosts: Boosts = [{ type: "rangedAttack" }, { type: "attack" }, { type: "heal" }, { type: "fatigue" }, { type: "damage" }];
+  boosts: Boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "attack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "fatigue", lvl: 2 }, { type: "damage", lvl: 2 }];
   stuckValue = 0;
   stats: CreepAllBattleInfo = {
     max: {

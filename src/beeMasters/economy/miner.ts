@@ -19,7 +19,7 @@ export class MinerMaster extends Master {
     this.cell = resourceCell;
     if (this.cell.resourceType !== RESOURCE_ENERGY) {
       this.boosts = <Boosts>[{ type: "harvest", lvl: 2 }]; //, { type: "work", lvl: 1 }, { type: "work", lvl: 0 }];
-      this.hive.resTarget[BOOST_MINERAL["harvest"][2]] = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
+      this.hive.resTarget[BOOST_MINERAL["harvest"][2]] = LAB_BOOST_MINERAL * MAX_CREEP_SIZE;
     }
   }
 

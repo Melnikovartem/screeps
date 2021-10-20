@@ -2,23 +2,35 @@ import { hiveStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 
+import type{ Hive } from "../hive"
+
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 export type ResourceTarget = { [key in ResourceConstant]?: number };
 const PADDING_RESOURCE = 5000;
 
+function add(dict: ResourceTarget, res: string, amount: number) {
+  if (!dict[<ResourceConstant>res])
+    dict[<ResourceConstant>res] = 0;
+  dict[<ResourceConstant>res]! += amount;
+}
+
 @profile
 export class Network {
-  state: { [hiveName: string]: ResourceTarget } = {}
+  nodes: Hive[] = [];
   aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number } } = {} // from -> to
-  shortages: { [hiveNameFrom: string]: ResourceTarget } = {}
+
+  constructor(hives?: { [id: string]: Hive }) {
+    if (!hives)
+      return;
+    this.nodes = _.filter(hives, h => h.cells.storage && h.cells.storage.terminal);
+  }
 
   update() {
-    for (const hiveName in Apiary.hives)
-      this.updateState(hiveName);
+    for (let i = 0; i < this.nodes.length; ++i)
+      this.updateState(this.nodes[i]);
 
-    this.shortages = {};
-    for (const hiveName in this.state)
-      this.reactToState(hiveName);
+    for (let i = 0; i < this.nodes.length; ++i)
+      this.reactToState(this.nodes[i]);
 
     for (const hiveName in this.aid) {
       let hive = Apiary.hives[hiveName];
@@ -31,18 +43,16 @@ export class Network {
         delete this.aid[hiveName];
         continue;
       }
-      if (!sCell.resTargetTerminal[aid.res])
-        sCell.resTargetTerminal[aid.res] = 0;
-      sCell.resTargetTerminal[aid.res]! += aid.amount;
+      add(sCell.resTargetTerminal, aid.res, aid.amount);
     }
   }
 
   calcAmount(from: string, to: string, res: ResourceConstant) {
-    let fromState = this.state[from][res];
+    let fromState = Apiary.hives[from].resState[res];
     if (fromState === undefined)
       fromState = 0;
 
-    let toState = this.state[to][res];
+    let toState = Apiary.hives[to].resState[res];
     if (toState === undefined)
       toState = 0;
     toState = -toState;
@@ -50,31 +60,27 @@ export class Network {
   }
 
   run() {
-    for (const hiveName in this.state) {
-      let hive = Apiary.hives[hiveName];
+    for (let i = 0; i < this.nodes.length; ++i) {
+      let hive = this.nodes[i];
       if (!hive.cells.storage || !hive.cells.storage.terminal)
         continue;
       let terminal = hive.cells.storage.terminal;
-      let state = this.state[hiveName];
 
       let usedTerminal = false;
-      let shortages = this.shortages[hiveName];
-      for (const r in shortages) {
-        let res = <ResourceConstant>r;
-        if (r.length === 1) {
-          let ans = Apiary.broker.buyIn(terminal, res, shortages[res]!);
+      for (const res in hive.shortages)
+        if (res.length === 1) {
+          let ans = Apiary.broker.buyIn(terminal, <ResourceConstant>res, hive.shortages[<ResourceConstant>res]!);
           if (ans === "short") {
             usedTerminal = true;
             break;
           }
         }
-      }
       if (usedTerminal)
         continue;
 
-      let aid = this.aid[hiveName];
+      let aid = this.aid[hive.roomName];
       if (aid && !terminal.cooldown) {
-        let energyCost = Game.market.calcTransactionCost(10000, hiveName, aid.to) / 10000;
+        let energyCost = Game.market.calcTransactionCost(10000, hive.roomName, aid.to) / 10000;
         let terminalEnergy = terminal.store.getUsedCapacity(RESOURCE_ENERGY);
         let energyCap = Math.floor(terminalEnergy / energyCost);
         if (aid.res === RESOURCE_ENERGY)
@@ -90,88 +96,67 @@ export class Network {
 
       let stStore = hive.cells.storage.storage.store;
       if (stStore.getUsedCapacity() > stStore.getCapacity() * 0.75) {
-        let keys = <(keyof ResourceTarget)[]>Object.keys(state).filter(s => s !== RESOURCE_ENERGY);
+        let keys = <(keyof ResourceTarget)[]>Object.keys(hive.resState).filter(s => s !== RESOURCE_ENERGY);
         if (!keys.length)
           continue;
-        let res = keys.reduce((prev, curr) => state[curr]! > state[prev]! ? curr : prev);
-        if (state[res]! < 0)
+        let res = keys.reduce((prev, curr) => hive.resState[curr]! > hive.resState[prev]! ? curr : prev);
+        if (hive.resState[res]! < 0)
           continue;
-        Apiary.broker.sellOff(terminal, res, Math.min(2048, state[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
+        Apiary.broker.sellOff(terminal, res, Math.min(2048, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
       }
     }
   }
 
-  reactToState(hiveName: string) {
-    let state = this.state[hiveName];
-    for (const r in state) {
+  reactToState(hive: Hive) {
+    for (const r in hive.resState) {
       const res = <ResourceConstant>r;
-      if (state[res]! < 0) {
-        let validHives = _.filter(Object.keys(this.state), hiveNameCheck => hiveNameCheck !== hiveName && this.state[hiveNameCheck][res]! > PADDING_RESOURCE && Apiary.hives[hiveNameCheck].state === hiveStates.economy);
-        let sendCost = (h: string) => Game.market.calcTransactionCost(100000, hiveName, h) / 100000;
+      if (hive.resState[res]! < 0) {
+        let validHives = _.filter(this.nodes, h => h.roomName !== hive.roomName && h.resState[res]! > PADDING_RESOURCE && h.state === hiveStates.economy).map(h => h.roomName);
+        let sendCost = (h: string) => Game.market.calcTransactionCost(100000, hive.roomName, h) / 100000;
         if (res === RESOURCE_ENERGY)
           validHives = validHives.filter(h => sendCost(h) <= 0.5);
         if (validHives.length) {
           let validHive = validHives.reduce((prev, curr) => sendCost(curr) < sendCost(prev) ? curr : prev);
-          let amount = this.calcAmount(validHive, hiveName, res);
+          let amount = this.calcAmount(validHive, hive.roomName, res);
           if (this.aid[validHive] && this.aid[validHive].amount > amount)
             continue;
           this.aid[validHive] = {
-            to: hiveName,
+            to: hive.roomName,
             res: res,
             amount: amount
           }
           break;
-        } else {
-          if (!this.shortages[hiveName])
-            this.shortages[hiveName] = {};
-          this.shortages[hiveName][res] = -state[res]!;
-        }
+        } else
+          hive.shortages[res] = hive.resState[res]!;
       }
     }
   }
 
-  updateState(hiveName: string) {
-    let hive = Apiary.hives[hiveName];
+  updateState(hive: Hive) {
+    hive.resState = { energy: 0 };
+    hive.shortages = { energy: 0 };
     if (!hive.cells.storage || !hive.cells.storage.terminal)
       return;
-    this.state[hiveName] = {}
-    let sate = this.state[hiveName];
 
     let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));
     if (hive.cells.lab)
       ress = ress.concat(Object.keys(hive.cells.lab.resTarget));
 
-    for (const i in ress) {
-      const res = <ResourceConstant>ress[i];
-      if (!sate[res])
-        sate[res] = hive.cells.storage.getUsedCapacity(res);
-    }
+    for (const i in ress)
+      add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
 
     if (hive.cells.lab)
-      for (const r in hive.cells.lab.resTarget) {
-        const res = <ResourceConstant>r;
-        if (!sate[res])
-          sate[res] = 0;
-        sate[res]! -= hive.cells.lab.resTarget[res]!;
-      }
+      for (const res in hive.cells.lab.resTarget)
+        add(hive.resState, res, -hive.cells.lab.resTarget[<ResourceConstant>res]!);
 
-    for (const r in hive.resTarget) {
-      const res = <ResourceConstant>r;
-      if (!sate[res])
-        sate[res] = 0;
-      sate[res]! -= hive.resTarget[res]!;
-    }
+    for (const res in hive.resTarget)
+      add(hive.resState, res, -hive.resTarget[<ResourceConstant>res]!);
 
     hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY / (hive.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000 ? 3 : 1) };
-    let tState = hive.cells.storage.resTargetTerminal;
     if (hive.state !== hiveStates.battle) {
-      let marketState = Apiary.broker.getTargetLongOrders(hiveName);
-      for (const r in marketState) {
-        const res = <ResourceConstant>r;
-        if (!tState[res])
-          tState[res] = 0;
-        tState[res]! += Math.min(marketState[res]!, 5000);
-      }
+      let marketState = Apiary.broker.getTargetLongOrders(hive.roomName);
+      for (const res in marketState)
+        add(hive.cells.storage.resTargetTerminal, res, Math.min(marketState[<ResourceConstant>res]!, 5000));
     }
   }
 

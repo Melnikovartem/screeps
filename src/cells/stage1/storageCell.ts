@@ -25,6 +25,7 @@ export class StorageCell extends Cell {
     super(hive, prefix.storageCell + hive.room.name);
 
     this.storage = storage;
+    this.terminal = this.hive.room.terminal;
 
     let links = <StructureLink[]>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
       structure => structure.structureType === STRUCTURE_LINK);
@@ -33,9 +34,6 @@ export class StorageCell extends Cell {
       this.links[l.id] = l;
       this.linksState[l.id] = "idle";
     });
-
-    this.terminal = <StructureTerminal>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 5),
-      structure => structure.structureType === STRUCTURE_TERMINAL)[0];
 
     this.pos = storage.pos;
     this.master = new ManagerMaster(this);
@@ -134,6 +132,7 @@ export class StorageCell extends Cell {
         if (this.requestToStorage([this.terminal], 5, res, this.terminal.store.getUsedCapacity(res)) > 0)
           return;
       }
+      delete this.requests[this.terminal.id];
     }
 
     for (let r in this.resTargetTerminal) {

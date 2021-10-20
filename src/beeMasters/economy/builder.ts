@@ -26,11 +26,15 @@ export class BuilderMaster extends Master {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
         target = 2;
-      if (this.hive.sumCost > 15000 && this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
-        this.patternPerBee = 8;
+      if (this.hive.sumCost > 15000)
+        if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY]) {
+          this.boosts = [{ type: "build", lvl: 0 }];
+          this.patternPerBee = 8;
+        }
     }
 
     if (this.hive.state >= hiveStates.nukealert) {
+      this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
     }
@@ -86,9 +90,9 @@ export class BuilderMaster extends Master {
       chill = true;
 
     _.forEach(this.bees, bee => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee,
-          [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }, { type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }]) === OK)
+      if (bee.state === beeStates.boosting && this.boosts)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts
+          .concat([{ type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }])) === OK)
           bee.state = beeStates.chill;
     });
 

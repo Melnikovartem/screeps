@@ -41,7 +41,7 @@ export class _Apiary {
     this.intel = new Intel();
     this.broker = new Broker();
     this.planner = new RoomPlanner();
-    this.network = new Network();
+    this.network = new Network({});
     if (LOGGING_CYCLE)
       this.logger = new Logger();
 
@@ -63,6 +63,7 @@ export class _Apiary {
       let roomName = Object.keys(Game.rooms)[0];
       this.hives[roomName] = new Hive(roomName);
     }
+    this.network = new Network(this.hives);
   }
 
   requestSight(roomName: string) {
@@ -82,7 +83,8 @@ export class _Apiary {
 
     if (this.broker.lastUpdated < 0)
       this.broker.update();
-    this.network.update();
+
+    safeWrap(() => this.network.update(), "network update");
 
     _.forEach(this.hives, hive => {
       safeWrap(() => hive.update(), hive.print + " update");
@@ -103,7 +105,7 @@ export class _Apiary {
 
   // run phase
   run() {
-    this.network.run();
+    safeWrap(() => this.network.run(), "network update");
     _.forEach(this.hives, hive => {
       safeWrap(() => hive.run(), hive.print + " run");
     });

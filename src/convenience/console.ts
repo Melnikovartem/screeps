@@ -286,9 +286,11 @@ export class CustomConsole {
   }
 
   buyComplex(padding = 1000, hiveName: string = this.lastActionRoomName, mode = "") {
-    let state = Apiary.network.state[hiveName];
-    if (!state)
-      return `NO VALID TERMINAL NOT FOUND @ ${this.format(hiveName)}`;
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
+    let state = hive.resState;
+
     let ans = `OK @ ${this.format(hiveName)}`;
     _.forEach(state, (amount, r) => {
       if (!amount || !r)
@@ -297,17 +299,18 @@ export class CustomConsole {
       if (!(res in REACTION_MAP) || amount > 0)
         return;
       let sets = Math.min(Math.round((-amount + padding) / 5000 * 1000) / 1000, 1);
+      let buyAns;
       switch (mode) {
         case "short":
-          this.buyShort(res, hiveName, sets);
+          buyAns = this.buyShort(res, hiveName, sets);
           break;
         case "long":
-          this.buyLong(res, hiveName, sets);
+          buyAns = this.buyLong(res, hiveName, sets);
           break;
         default:
-          this.buy(res, hiveName, sets);
+          buyAns = this.buy(res, hiveName, sets, mode === "fast");
       }
-      ans += `\n${res}: ${sets * 5000}`;
+      ans += `\n${res}: ${buyAns} ${sets * 5000}`;
     });
     return ans;
   }
@@ -385,9 +388,6 @@ export class CustomConsole {
     if (!hive.cells.lab)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
     let pos = hive.cells.lab.pos;
-
-    hive.cells.lab.synthesizeRequests = [];
-    hive.cells.lab.prod = undefined;
 
     let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
     let ref = hiveName + "_" + resource;

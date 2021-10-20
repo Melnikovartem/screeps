@@ -393,10 +393,9 @@ export class Visuals {
     if (!hive.cells.lab)
       return;
     let lab = hive.cells.lab;
-    let labRequest = lab.prod;
-    if (labRequest) {
-      this.updateAnchor(this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.anchor, undefined));
-    }
+    if (lab.prod && lab.synthesizeTarget)
+      this.updateAnchor(this.label(`🧪 ${lab.prod.res} ${lab.prod.plan} -> ${lab.synthesizeTarget.res} ${lab.synthesizeTarget.amount}`, this.anchor));
+
     if (Object.keys(hive.cells.lab.boostRequests).length) {
       let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
       for (const refBee in lab.boostRequests) {
