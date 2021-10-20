@@ -7,7 +7,6 @@ import type { Bee } from "../bees/bee";
 import type { BoostRequest } from "../cells/stage1/laboratoryCell";
 
 export type Boosts = BoostRequest[];
-export const CIVILIAN_FLEE_DIST = 5;
 
 // i will need to do something so i can build up structure from memory
 @profile
@@ -85,14 +84,14 @@ export abstract class Master {
       ref: ref,
     }
     if (this.hive.bassboost && this.hive.bassboost.state !== hiveStates.battle) {
-      let localBodyMax;
+      let localBodyMax = 0;
       if (this.hive.state !== hiveStates.nospawn) {
         if (order.priority > 3)
           localBodyMax = order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length;
         else
           localBodyMax = order.setup.getBody(this.hive.room.energyAvailable).body.length;
       }
-      if (localBodyMax === order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length)
+      if (localBodyMax >= order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length)
         this.hive.spawOrders[ref] = order;
       else {
         order.priority = 9;
@@ -106,6 +105,18 @@ export abstract class Master {
 
   // second stage of decision making like where do i need to move
   abstract run(): void;
+
+  checkFlee(bee: Bee, fleeTo?: ProtoPos) {
+    let enemy = Apiary.intel.getEnemyCreep(bee, 25);
+    let contr = Game.rooms[bee.pos.roomName].controller;
+    if (enemy && (!contr || !contr.my || !contr.safeMode)) {
+      let fleeDist = Apiary.intel.getFleeDist(enemy);
+      if (enemy.pos.getRangeTo(bee) < fleeDist) {
+        bee.flee(enemy, fleeTo ? fleeTo : this.hive);
+        bee.state = beeStates.flee;
+      }
+    }
+  }
 
   delete() {
     for (const key in this.bees) {

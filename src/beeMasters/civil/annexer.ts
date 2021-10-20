@@ -53,6 +53,7 @@ export class AnnexMaster extends SwarmMaster {
         else
           this.order.delete();
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }

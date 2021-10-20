@@ -19,7 +19,7 @@ export class CreepSetup {
   pattern: BodyPartConstant[];
   patternLimit: number;
   moveMax: number | "best";
-  ignoreCarry?: boolean
+  ignoreCarry?: boolean;
 
   constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", ignoreCarry?: boolean) {
     this.name = setupName;
@@ -147,15 +147,11 @@ export const setups = {
       pattern: [RANGED_ATTACK],
       patternLimit: 2,
     }, 25),
-    destroyer: new CreepSetup(setupsNames.defender, {
-      pattern: [ATTACK],
-    }, 25),
     sk: new CreepSetup(setupsNames.defender + " SK", {
       fixed: [HEAL, HEAL, HEAL],
       pattern: [RANGED_ATTACK],
     }, 25),
-    siege: new CreepSetup(setupsNames.defender + " H", {
-      fixed: [TOUGH, HEAL, HEAL, HEAL],
+    destroyer: new CreepSetup(setupsNames.defender + " DD", {
       pattern: [ATTACK],
     }, "best"),
   },

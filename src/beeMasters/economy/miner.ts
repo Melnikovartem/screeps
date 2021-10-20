@@ -1,4 +1,4 @@
-import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
+import { Master } from "../_Master";
 
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
@@ -63,19 +63,16 @@ export class MinerMaster extends Master {
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 
-      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-      if (enemy) {
-        enemy = Apiary.intel.getEnemyCreep(bee);
-        if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
-          bee.state = beeStates.flee;
+      this.checkFlee(bee);
+      if (this.cell.lair && bee.state !== beeStates.flee && (!this.cell.lair.ticksToSpawn || this.cell.lair.ticksToSpawn <= 5)) {
+        if (bee.pos.getRangeTo(this.cell.lair) < 5)
+          bee.goTo(this.hive);
+        bee.state = beeStates.flee;
       }
 
       let shouldTransfer = bee.state !== beeStates.chill && bee.creep.store.getUsedCapacity(this.cell.resourceType) > 25;
-      if ((enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
-        || (this.cell.lair && (!this.cell.lair.ticksToSpawn || this.cell.lair.ticksToSpawn <= 4))) {
-        bee.state = beeStates.flee;
+      if (bee.state === beeStates.flee)
         shouldTransfer = true;
-      }
 
       if (shouldTransfer) {
         let target;
@@ -116,10 +113,6 @@ export class MinerMaster extends Master {
           bee.state = beeStates.work;
           break;
         case beeStates.flee:
-          if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST) {
-            bee.flee(enemy, this.hive);
-          } else if (this.cell.lair && this.cell.lair.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(this.cell.lair, this.hive);
           bee.state = beeStates.work;
           break;
       }

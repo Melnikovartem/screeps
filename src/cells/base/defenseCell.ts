@@ -267,7 +267,7 @@ export class DefenseCell extends Cell {
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         } else if (tower.store.getUsedCapacity(RESOURCE_ENERGY) >= tower.store.getCapacity(RESOURCE_ENERGY) * 0.7) {
-          let target = <Structure | undefined>this.hive.findProject(enemy, "ignore_constructions");
+          let target = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
           if (target && target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).length && tower.repair(target) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }

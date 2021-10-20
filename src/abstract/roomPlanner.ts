@@ -23,7 +23,7 @@ const EXTRA_SIDE: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 
 
 const CONSTRUCTIONS_PER_ROOM = 8;
 
-export const WALL_HEALTH = 100000;
+export const WALL_HEALTH = 10000;
 
 // oh no i need to def
 const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = []//STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
@@ -34,32 +34,6 @@ const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amo
   [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } },
   [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } }
 }
-
-const BUILDABLE_PRIORITY: BuildableStructureConstant[] = [
-  // essential
-  STRUCTURE_TOWER,
-  STRUCTURE_SPAWN,
-  STRUCTURE_EXTENSION,
-  STRUCTURE_STORAGE,
-  STRUCTURE_TERMINAL,
-
-  // mining
-  STRUCTURE_ROAD,
-  STRUCTURE_CONTAINER,
-  STRUCTURE_LINK,
-
-  // def
-  STRUCTURE_WALL,
-  STRUCTURE_RAMPART,
-
-  // high tech
-  STRUCTURE_LAB,
-  STRUCTURE_EXTRACTOR,
-  STRUCTURE_OBSERVER,
-  STRUCTURE_POWER_SPAWN,
-  STRUCTURE_FACTORY,
-  STRUCTURE_NUKER,
-];
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
@@ -926,7 +900,7 @@ export class RoomPlanner {
     return { amount: amount ? amount : 0, heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax };
   }
 
-  checkBuildings(roomName: string, priorityQue = BUILDABLE_PRIORITY, specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {
+  checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return [];
 

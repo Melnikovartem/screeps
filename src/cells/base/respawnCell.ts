@@ -90,9 +90,11 @@ export class RespawnCell extends Cell {
         if (master && master.boosts) {
           _.some(master.boosts.filter(b => b.type === "fatigue"), speedBoost => {
             if (speedBoost && !speedBoost.amount) {
-              let res = <"ZO" | "ZHO2" | "XZHO2">this.hive.cells.lab!.getBoostInfo(speedBoost).res;
+              let info = this.hive.cells.lab!.getBoostInfo(speedBoost);
+              if (!info)
+                return false;
               let toBoost = 25;
-              switch (res) {
+              switch (info.res) {
                 case "ZO":
                   toBoost = 17;
                   break;
@@ -103,7 +105,7 @@ export class RespawnCell extends Cell {
                   toBoost = 10;
                   break;
               }
-              if (this.hive.cells.lab!.getMineralSum(res) >= LAB_BOOST_MINERAL * toBoost) {
+              if (info.amount >= toBoost) {
                 moveMax = toBoost;
                 return true;
               }

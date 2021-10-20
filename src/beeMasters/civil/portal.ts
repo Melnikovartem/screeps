@@ -2,7 +2,6 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { prefix, beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
-import { CIVILIAN_FLEE_DIST } from "../_Master";
 import { COMPRESS_MAP } from "../../cells/stage1/factoryCell";
 
 import { profile } from "../../profiler/decorator";
@@ -93,7 +92,7 @@ export class PortalMaster extends SwarmMaster {
       if (bee.state === beeStates.boosting)
         return;
       let pos = this.order.pos;
-      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
+      this.checkFlee(bee, this.hive);
 
       switch (bee.state) {
         case beeStates.chill:
@@ -109,9 +108,6 @@ export class PortalMaster extends SwarmMaster {
           bee.goTo(pos);
           break;
         case beeStates.flee:
-          if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST) {
-            bee.flee(enemy, this.hive);
-          }
           bee.state = beeStates.chill;
           break;
       }

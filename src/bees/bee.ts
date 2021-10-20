@@ -13,17 +13,10 @@ export class Bee {
   creep: Creep;
 
   ref: string;
-  pos: RoomPosition;
-  store: Store<ResourceConstant, false>;
-  memory: CreepMemory;
-  hits: number;
-  hitsMax: number;
   reusePath: number = 3;
-  ticksToLive: number = CREEP_LIFE_TIME;
+  lifeTime: number;
 
   // target caching and states to have some tools to work with in masters
-  state: beeStates;
-  target?: string;
 
   targetPosition: RoomPosition | undefined;
   actionPosition: RoomPosition | undefined;
@@ -31,41 +24,62 @@ export class Bee {
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
-
     this.ref = creep.name;
-    this.pos = creep.pos;
-    this.store = creep.store;
-    this.memory = creep.memory;
-    this.hits = creep.hits;
-    this.hitsMax = creep.hitsMax;
 
-    this.state = creep.memory.state;
     if (this.state === undefined)
       this.state = beeStates.idle;
-    this.target = creep.memory.target;
 
-    this.ticksToLive = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
+    this.lifeTime = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
 
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
   }
 
+  get state() {
+    return this.creep.memory.state;
+  }
+
+  set state(state) {
+    this.creep.memory.state = state;
+  }
+
+  get target() {
+    return this.creep.memory.target;
+  }
+
+  set target(target) {
+    this.creep.memory.target = target;
+  }
+
+  get hits() {
+    return this.creep.hits;
+  }
+
+  get hitsMax() {
+    return this.creep.hitsMax;
+  }
+
+  get store() {
+    return this.creep.store;
+  }
+
+  get pos() {
+    return this.creep.pos;
+  }
+
+  get ticksToLive() {
+    if (this.creep.ticksToLive)
+      return this.creep.ticksToLive;
+    else
+      return this.lifeTime;
+  }
+
+
   update() {
     this.creep = Game.creeps[this.ref];
-    this.pos = this.creep.pos;
-    this.store = this.creep.store;
-    this.memory = this.creep.memory;
-    this.hits = this.creep.hits;
-    this.hitsMax = this.creep.hitsMax;
-
-    this.creep.memory.state = this.state;
-    this.creep.memory.target = this.target;
 
     this.targetPosition = undefined;
     this.actionPosition = undefined;
-
-    if (this.creep.ticksToLive)
-      this.ticksToLive = this.creep.ticksToLive;
 
     if (!this.master) {
       if (!Apiary.masters[this.creep.memory.refMaster])

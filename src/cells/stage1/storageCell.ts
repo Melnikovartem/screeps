@@ -117,7 +117,7 @@ export class StorageCell extends Cell {
         this.requestToStorage([link], 3);
     }
 
-    this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000);
+    this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 8000 && !this.hive.cells.dev)
       Apiary.destroyTime = Game.time;
 

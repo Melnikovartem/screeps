@@ -3,7 +3,6 @@ import { SwarmMaster } from "../_SwarmMaster";
 import { setups } from "../../bees/creepsetups";
 import { beeStates, hiveStates } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
-import { CIVILIAN_FLEE_DIST } from "../_Master";
 
 import { profile } from "../../profiler/decorator";
 import type { Boosts } from "../_Master";
@@ -85,13 +84,7 @@ export class PickupMaster extends SwarmMaster {
       else if (bee.store.getUsedCapacity() === 0)
         bee.state = beeStates.refill;
 
-      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-      let contr = Game.rooms[bee.pos.roomName].controller;
-      if (enemy && (!contr || !contr.my || !contr.safeMode)) {
-        enemy = Apiary.intel.getEnemyCreep(bee);
-        if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST)
-          bee.state = beeStates.flee;
-      }
+      this.checkFlee(bee, this.hive);
 
       switch (bee.state) {
         case beeStates.chill:
@@ -125,8 +118,6 @@ export class PickupMaster extends SwarmMaster {
             bee.state = beeStates.chill;
           break;
         case beeStates.flee:
-          if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-            bee.flee(enemy, this.hive);
           bee.state = beeStates.refill;
           break;
       }

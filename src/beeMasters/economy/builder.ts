@@ -22,7 +22,7 @@ export class BuilderMaster extends Master {
     let target = this.hive.sumCost > 0 ? 1 : 0;
     this.patternPerBee = 3;
 
-    if (this.hive.sumCost > 1200) {
+    if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
         target = 2;
@@ -68,8 +68,8 @@ export class BuilderMaster extends Master {
   }
 
   run() {
-
     let opts: TravelToOptions = {};
+    let chill = false;
     if (this.hive.state === hiveStates.battle) {
       opts.maxRooms = 1;
       opts.roomCallback = (roomName, matrix) => {
@@ -82,30 +82,21 @@ export class BuilderMaster extends Master {
         });
         return matrix;
       }
-    }
+    } else if (this.sCell.getUsedCapacity(RESOURCE_ENERGY) < 2500)
+      chill = true;
+
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee,
+          [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }, { type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }]) === OK)
+          bee.state = beeStates.chill;
+    });
 
     _.forEach(this.activeBees, bee => {
-      if (this.boosts)
-        _.forEach(this.bees, bee => {
-          if (bee.state === beeStates.boosting)
-            if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, [{ type: "build" }, { type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }]) === OK)
-              bee.state = beeStates.chill;
-        });
+      if (chill && !bee.store.getUsedCapacity(RESOURCE_ENERGY))
+        bee.state = beeStates.chill;
 
-      let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-      let contr = Game.rooms[bee.pos.roomName].controller;
-      let fleeDist = 0;
-      if (enemy && (!contr || !contr.my || !contr.safeMode)) {
-        enemy = Apiary.intel.getEnemyCreep(bee);
-        fleeDist = Apiary.intel.getFleeDist(enemy);
-        if (this.hive.state === hiveStates.battle)
-          if (fleeDist === 5)
-            fleeDist = 3;
-          else
-            fleeDist = 2;
-        if (enemy && enemy.pos.getRangeTo(bee) <= fleeDist)
-          bee.state = beeStates.flee;
-      }
+      this.checkFlee(bee, this.hive);
 
       switch (bee.state) {
         case beeStates.refill:
@@ -142,7 +133,7 @@ export class BuilderMaster extends Master {
             }
 
             if (!target || this.hive.state === hiveStates.battle)
-              target = this.hive.findProject(bee);
+              target = this.hive.getBuildTarget(bee);
 
             if (target) {
               let ans;
@@ -176,8 +167,6 @@ export class BuilderMaster extends Master {
             bee.goRest(this.hive.rest);
           break;
         case beeStates.flee:
-          if (enemy && enemy.pos.getRangeTo(bee) < fleeDist)
-            bee.flee(enemy, this.hive);
           bee.state = beeStates.work;
           break;
       }

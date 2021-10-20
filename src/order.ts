@@ -234,7 +234,7 @@ export class Order {
             if (!this.fixedName(prefix.boost + this.pos.roomName))
               break;
 
-            if (this.hive.state !== hiveStates.economy && 2 % 1 != 0) {
+            if (this.hive.state !== hiveStates.economy) {
               hiveToBoos.bassboost = null;
               break;
             }

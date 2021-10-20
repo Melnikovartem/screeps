@@ -393,29 +393,20 @@ export class Visuals {
     if (!hive.cells.lab)
       return;
     let lab = hive.cells.lab;
-    let labRequest = lab.currentProduction;
+    let labRequest = lab.prod;
     if (labRequest) {
       this.updateAnchor(this.label(`🧪 ${labRequest.res} ${labRequest.plan}`, this.anchor, undefined));
     }
     if (Object.keys(hive.cells.lab.boostRequests).length) {
-      let boosts: { [id: string]: { [id: string]: { num: number, lab: StructureLab | undefined } } } = {};
-      _.forEach(lab.boostRequests, rr => _.forEach(rr, r => {
-        if (!r.amount || !r.res)
-          return;
-        if (!boosts[r.type])
-          boosts[r.type] = {};
-        if (!boosts[r.type][r.res])
-          boosts[r.type][r.res] = { num: 0, lab: undefined }
-        boosts[r.type][r.res].num += r.amount;
-        if (lab.boostLabs[r.res])
-          boosts[r.type][r.res].lab = lab.laboratories[lab.boostLabs[r.res]!];
-      }));
-      let ans = [["boosts", "🧬", " 🧪", "🥼"]];
-      for (let action in boosts)
-        for (let res in boosts[action]) {
-          let b = boosts[action][res];
-          ans.push([action, res, " " + b.num, b.lab ? b.lab.id.slice(b.lab.id.length - 4) : "not found"]);
+      let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
+      for (const refBee in lab.boostRequests) {
+        for (let i = 0; i < lab.boostRequests[refBee].info.length; ++i) {
+          let r = lab.boostRequests[refBee].info[i];
+          let l = lab.boostLabs[r.res];
+          ans.push([!i ? refBee : "-", r.type, r.res, " " + r.amount, l ? l.slice(l.length - 4) : "not found"]);
         }
+      }
+
       this.updateAnchor(this.table(ans, this.anchor, undefined));
     }
   }

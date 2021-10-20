@@ -20,9 +20,9 @@ export class ClaimerMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.pos.roomName !== this.order.pos.roomName)
+      if (bee.pos.roomName !== this.order.pos.roomName) {
         bee.goTo(this.order.pos);
-      else {
+      } else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
         if (controller && !controller.owner) {
           if (bee.claimController(controller) === OK) {
@@ -33,6 +33,7 @@ export class ClaimerMaster extends SwarmMaster {
         } else
           this.order.delete();
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }

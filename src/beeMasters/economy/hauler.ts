@@ -1,4 +1,4 @@
-import { Master, CIVILIAN_FLEE_DIST } from "../_Master";
+import { Master } from "../_Master";
 
 import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
@@ -118,10 +118,7 @@ export class HaulerMaster extends Master {
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
 
-      let enemy = Apiary.intel.getEnemyCreep(bee, 10);
-      let contr = Game.rooms[bee.pos.roomName].controller;
-      if (enemy && enemy.pos.getRangeTo(bee) <= CIVILIAN_FLEE_DIST && (!contr || !contr.my || !contr.safeMode))
-        bee.state = beeStates.flee;
+      this.checkFlee(bee);
 
       if (bee.state === beeStates.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
@@ -163,11 +160,8 @@ export class HaulerMaster extends Master {
           bee.state = beeStates.chill; //failsafe
       }
 
-      if (bee.state === beeStates.flee) {
-        if (enemy && enemy.pos.getRangeTo(bee) < CIVILIAN_FLEE_DIST)
-          bee.flee(enemy, this.hive);
+      if (bee.state === beeStates.flee)
         bee.state = beeStates.refill;
-      }
 
       if (bee.state === beeStates.chill)
         bee.goRest(this.cell.pos, { offRoad: true });

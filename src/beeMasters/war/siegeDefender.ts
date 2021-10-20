@@ -14,7 +14,7 @@ const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STRUCTURES
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
-  movePriority = <1>1;
+  movePriority = <2>2;
   boosts: Boosts | undefined = [{ type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 }
     , { type: "fatigue", lvl: 0 }, { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 2 }];
   cell: DefenseCell;
@@ -29,7 +29,7 @@ export class SiegeMaster extends Master {
     super.update();
     if (this.hive.state === hiveStates.battle && this.checkBees(true)) {
       this.wish({
-        setup: setups.defender.siege,
+        setup: setups.defender.destroyer,
         priority: 1,
       });
     }
@@ -40,7 +40,8 @@ export class SiegeMaster extends Master {
     let action2;
 
     let opts: TravelToOptions = { maxRooms: 1 };
-    if (this.hive.state === hiveStates.battle) {
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    if (roomInfo.dangerlvlmax >= 5) {
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.hive.roomName)
           return;
@@ -104,9 +105,9 @@ export class SiegeMaster extends Master {
       bee.goTo(target);
     if (!bee.targetPosition)
       bee.targetPosition = bee.pos;
-    if (bee.targetPosition && (!findRamp(bee.targetPosition) || bee.pos.getRangeTo(target) < targetedRange)) {
+    if (bee.targetPosition && !findRamp(bee.targetPosition)) {
       let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
-      if (stats.dmgClose + stats.dmgRange > beeStats.hits / 2)
+      if (bee.targetPosition.getRangeTo(target) < targetedRange - 2 && stats.dmgClose + stats.dmgRange > beeStats.hits / 4)
         bee.flee(target, this.cell.pos, opts);
     }
     return OK;

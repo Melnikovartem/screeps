@@ -102,8 +102,8 @@ export class BootstrapMaster extends Master {
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
 
-    if (this.hive.cells.storage)
-      this.hive.cells.storage.master.targetBeeCount = 1;
+    //if (this.hive.cells.storage)
+    //  this.hive.cells.storage.master.targetBeeCount = 1;
 
     if (this.checkBeesWithRecalc()) {
       this.wish({
@@ -229,6 +229,7 @@ export class BootstrapMaster extends Master {
             ++countCurrent.mining;
             break;
           } else if (source) {
+            bee.target = source.id;
             if (!containerTargetingCur[source.id])
               delete bee.target;
             else if (this.containerTargeting[source.id].current > this.containerTargeting[source.id].max) {
@@ -294,7 +295,7 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target && bee.pos.roomName !== this.hive.roomName) {
-            target = this.hive.findProject(bee, "ignore_repairs");
+            target = this.hive.getBuildTarget(bee, "ignoreRepair");
             if (target && target.pos.roomName !== bee.pos.roomName)
               target = null;
             if (target)
@@ -317,7 +318,7 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target) {
-            target = this.hive.findProject(bee);
+            target = this.hive.getBuildTarget(bee);
             if (target)
               if (target instanceof Structure)
                 workType = "repair";

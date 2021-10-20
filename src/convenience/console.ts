@@ -120,7 +120,7 @@ export class CustomConsole {
   }
 
 
-  spawnBuilder(hiveName: string = this.lastActionRoomName) {
+  spawnBuilder(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
     if (!hive)
@@ -129,7 +129,7 @@ export class CustomConsole {
     if (!hive.builder)
       return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
     let builder = setups.builder.copy();
-    builder.patternLimit = Infinity;
+    builder.patternLimit = patternLimit;
     hive.builder.wish({ setup: builder, priority: 1 });
     return `BUILDER SPAWNED @ ${hiveName}`;
   }
@@ -386,8 +386,8 @@ export class CustomConsole {
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
     let pos = hive.cells.lab.pos;
 
-    hive.cells.lab!.synthesizeRequests = [];
-    hive.cells.lab!.currentProduction = undefined;
+    hive.cells.lab.synthesizeRequests = [];
+    hive.cells.lab.prod = undefined;
 
     let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
     let ref = hiveName + "_" + resource;

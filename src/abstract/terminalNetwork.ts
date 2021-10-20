@@ -162,7 +162,7 @@ export class Network {
       sate[res]! -= hive.resTarget[res]!;
     }
 
-    hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY / (hive.state === hiveStates.lowenergy ? 3 : 1) };
+    hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY / (hive.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000 ? 3 : 1) };
     let tState = hive.cells.storage.resTargetTerminal;
     if (hive.state !== hiveStates.battle) {
       let marketState = Apiary.broker.getTargetLongOrders(hiveName);
