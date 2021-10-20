@@ -262,20 +262,21 @@ export class BootstrapMaster extends Master {
 
           if (bee.target) {
             target = Game.getObjectById(bee.target);
-            if (target) {
-              if (target instanceof ConstructionSite)
-                workType = "build";
-              else if (target.structureType === STRUCTURE_CONTROLLER)
+            if (target instanceof ConstructionSite)
+              workType = "build";
+            else if (target instanceof Structure) {
+              if (target.structureType === STRUCTURE_CONTROLLER)
                 workType = "upgrade";
               else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
                 || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)
                 && (<StructureStorage>target).store.getFreeCapacity(RESOURCE_ENERGY) > 0)
                 workType = "refill"; // also can be different types of <Store>, so just storage for easy check
-              else if (target.hits < Apiary.planner.getCase(target).heal) {
+              else if (target.hits < Apiary.planner.getCase(target).heal)
                 workType = "repair";
-              } else
-                target = undefined;
             }
+            if (workType === "chilling")
+              target = undefined;
+
             if (target)
               oldTarget = workType;
             else if (!this.hive.structuresConst.length && this.hive.shouldRecalc < 2)

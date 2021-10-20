@@ -47,11 +47,8 @@ export class UpgraderMaster extends Master {
 
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2);
-    if (this.targetBeeCount && !check())
-      return false;
     this.recalculateTargetBee();
-    return check();
+    return this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2)
   }
 
   update() {

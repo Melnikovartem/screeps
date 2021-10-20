@@ -92,7 +92,6 @@ export class PortalMaster extends SwarmMaster {
       if (bee.state === beeStates.boosting)
         return;
       let pos = this.order.pos;
-      this.checkFlee(bee, this.hive);
 
       switch (bee.state) {
         case beeStates.chill:
@@ -107,10 +106,8 @@ export class PortalMaster extends SwarmMaster {
           }
           bee.goTo(pos);
           break;
-        case beeStates.flee:
-          bee.state = beeStates.chill;
-          break;
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }

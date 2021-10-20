@@ -16,6 +16,9 @@ const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_PADDING = 0.001;
 
+const REASONABLE_MONEY = 50;
+const MARKET_LAG = 2;
+
 /*const MAX_SPENDING_HIVE = 50000;
 const SPENDING_PERIOD = 250;*/
 
@@ -146,14 +149,20 @@ export class Broker {
     return ans;
   }
 
+  longOrders(roomName: string, res: ResourceConstant, type: ORDER_SELL | ORDER_BUY) {
+    return _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res && order.type === type);
+  }
+
   buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number): "no money" | "short" | "long" {
     let roomName = terminal.pos.roomName;
     if (creditsToUse === undefined)
       creditsToUse = this.creditsToUse(roomName);
-    if (creditsToUse <= 0)
+    if (creditsToUse < REASONABLE_MONEY)
       return "no money";
-
-    this.update();
+    let orders;
+    if (!hurry)
+      orders = this.longOrders(roomName, res, ORDER_BUY);
+    this.update(orders && orders.length ? 16 : MARKET_LAG);
     let price = this.getPriceLongBuy(res);
     let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
 
@@ -170,7 +179,8 @@ export class Broker {
         return "short";
     }
 
-    let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res && order.type === ORDER_BUY);
+    if (!orders) // prob never
+      orders = this.longOrders(roomName, res, ORDER_BUY);
 
     if (!orders.length && Math.floor(creditsToUse / (price * 1.05)) > 0)
       this.buyLong(terminal, res, amount, creditsToUse);
@@ -187,10 +197,13 @@ export class Broker {
     let roomName = terminal.pos.roomName;
     if (creditsToUse === undefined)
       creditsToUse = this.creditsToUse(roomName);
-    if (creditsToUse <= 0)
+    if (creditsToUse < REASONABLE_MONEY)
       return "no money";
 
-    this.update();
+    let orders;
+    if (!hurry)
+      orders = this.longOrders(roomName, res, ORDER_SELL);
+    this.update(orders && orders.length ? 16 : MARKET_LAG);
     let price = this.getPriceLongSell(res);
     let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
 
@@ -202,7 +215,8 @@ export class Broker {
         return "short";
     }
 
-    let orders = _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res && order.type === ORDER_SELL);
+    if (!orders) // prob never
+      orders = this.longOrders(roomName, res, ORDER_SELL);;
 
     if (!orders.length)
       this.sellLong(terminal, res, amount, creditsToUse);
@@ -230,7 +244,7 @@ export class Broker {
   }
 
   buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, coef: number = 1) {
-    this.update();
+    this.update(MARKET_LAG);
     let price = this.getPriceLongBuy(res) * coef;
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 1.05));
@@ -248,7 +262,7 @@ export class Broker {
   }
 
   sellLong(terminal: StructureTerminal, res: ResourceConstant, creditsToUse: number, amount: number, coef: number = 1) {
-    this.update();
+    this.update(MARKET_LAG);
     let price = this.getPriceLongSell(res) * coef;
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 0.05));
@@ -268,7 +282,7 @@ export class Broker {
   buyShort(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number) {
     if (terminal.cooldown)
       return ERR_TIRED;
-    this.update();
+    this.update(MARKET_LAG);
     let orders = this.goodBuy[res];
     if (!orders)
       return ERR_NOT_FOUND;
@@ -296,7 +310,7 @@ export class Broker {
   sellShort(terminal: StructureTerminal, res: ResourceConstant, amount: number) {
     if (terminal.cooldown)
       return ERR_TIRED;
-    this.update();
+    this.update(MARKET_LAG);
     let orders = this.goodSell[res];
     if (!orders)
       return ERR_NOT_FOUND;

@@ -56,7 +56,10 @@ export class ManagerMaster extends Master {
         delete bee.target;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          let newTransfer = _.reduce(_.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess)
+          let beeRequests = _.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess);
+          if (!beeRequests.length)
+            return;
+          let newTransfer = _.reduce(beeRequests
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {

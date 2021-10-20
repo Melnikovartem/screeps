@@ -21,8 +21,8 @@ export function safeWrap(cycle: () => void, context: string): void {
         if (!Memory.log.crashes)
           Memory.log.crashes = {};
         let regex = /\["(.*)\"]/.exec(context);
-        if (DEVELOPING) console.log(context, e.message);
-        // console .log(e);
+        if (DEVELOPING) console.log(e.stack);
+        // console .log(context, e.message);
         Memory.log.crashes[regex ? regex[1] : context] = { time: Game.time, context: context, message: e.message, stack: e.stack }
       }
     }

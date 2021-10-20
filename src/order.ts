@@ -201,7 +201,7 @@ export class Order {
               let roomState = Apiary.intel.getInfo(this.pos.roomName, Infinity).roomState;
               switch (roomState) {
                 case roomStates.reservedByEnemy:
-                case roomStates.reservedByInvaider:
+                case roomStates.reservedByInvader:
                 case roomStates.noOwner:
                 case roomStates.reservedByMe:
                   this.master = new AnnexMaster(this);
@@ -454,9 +454,10 @@ export class Order {
             this.hive.cells.lab.prod = undefined;
             break;
           case COLOR_YELLOW:
-            if (this.fixedName(prefix.upgrade + this.hive.roomName))
-              if (this.hive.cells.upgrade)
-                this.hive.cells.upgrade.master.recalculateTargetBee();
+            this.fixedName(prefix.upgrade + this.hive.roomName);
+            break;
+          case COLOR_WHITE:
+            this.fixedName(prefix.build + this.hive.roomName)
             break;
         }
         break;

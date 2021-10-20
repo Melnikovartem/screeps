@@ -296,29 +296,30 @@ export class Hive {
   }
 
   private updateCellData() {
-    _.forEach(this.room.find(FIND_MY_STRUCTURES), structure => {
-      if (this.updateCellStructure(structure, this.cells.spawn.extensions, STRUCTURE_EXTENSION) === ERR_INVALID_ARGS)
-        if (this.updateCellStructure(structure, this.cells.spawn.spawns, STRUCTURE_SPAWN) === ERR_INVALID_ARGS)
-          if (this.updateCellStructure(structure, this.cells.defense.towers, STRUCTURE_TOWER) === ERR_INVALID_ARGS)
-            if (this.updateCellStructure(structure, this.cells.lab && this.cells.lab.laboratories, STRUCTURE_LAB) === ERR_INVALID_ARGS)
-              void (0);
+    _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
+      switch (s.structureType) {
+        case STRUCTURE_EXTENSION:
+          this.cells.spawn.extensions[s.id] = s;
+          break;
+        case STRUCTURE_SPAWN:
+          this.cells.spawn.spawns[s.id] = s;
+          break;
+        case STRUCTURE_TOWER:
+          this.cells.defense.towers[s.id] = s;
+          break;
+        case STRUCTURE_LAB:
+          if (!this.cells.lab) {
+            Apiary.destroyTime = Game.time;
+            return;
+          }
+          this.cells.lab.laboratories[s.id] = s;
+          break;
+      }
     });
 
     if (this.phase > 0)
       this.cells.spawn.bakeMap();
     this.cells.defense.bakeMap();
-  }
-
-  private updateCellStructure<S extends Structure>(structure: Structure, structureMap: { [id: string]: S } | undefined, type: StructureConstant) {
-    if (structureMap)
-      if (type === structure.structureType) {
-        if (structure.isActive())
-          structureMap[structure.id] = <S>structure;
-        else
-          return ERR_FULL;
-        return OK;
-      }
-    return ERR_INVALID_ARGS;
   }
 
   getBuildTarget(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignoreRepair" | "ignoreConst") {
@@ -443,7 +444,9 @@ export class Hive {
         checkAnnex();
         add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
         add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
-        if (!this.sumCost && this.builder && this.builder.activeBees)
+        if (this.sumCost)
+          return;
+        if (this.builder && this.builder.activeBees)
           add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         else
           add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));

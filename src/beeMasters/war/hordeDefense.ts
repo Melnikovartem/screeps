@@ -36,14 +36,16 @@ export class HordeDefenseMaster extends HordeMaster {
       let enemy = Apiary.intel.getEnemy(this.order.pos);
       if (enemy instanceof Creep) {
         order.setup = setups.defender.normal.copy();
+        order.setup.fixed = [];
         let stats = Apiary.intel.getComplexStats(enemy);
         let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.5);
-        let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER);
+        let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
         let desiredTTK = 40; // desired time to kill
 
         let healMax = 3;
-        if (roomInfo.dangerlvlmax < 4)
-          healMax = 1;
+        let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
+        if (noFear)
+          healMax = 2;
 
         if (healNeeded > healMax) {
           healNeeded = healMax;
@@ -61,9 +63,14 @@ export class HordeDefenseMaster extends HordeMaster {
           if (this.hive.room.energyCapacityAvailable >= toughCost + healCost * healNeeded + rangedCost * 2)
             order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
         }
+        if (noFear) {
+          order.setup.fixed.push(ATTACK);
+          if (order.setup.patternLimit > 1)
+            --order.setup.patternLimit;
+        }
       } else {
         order.priority = 8;
-        order.setup = setups.defender.destroyer.copy();
+        order.setup = setups.defender.destroyer;
       }
 
       if (this.order.pos.roomName !== this.hive.roomName)

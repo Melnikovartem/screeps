@@ -6,7 +6,7 @@ import type{ Hive } from "../hive"
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 export type ResourceTarget = { [key in ResourceConstant]?: number };
-const PADDING_RESOURCE = 5000;
+const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
 function add(dict: ResourceTarget, res: string, amount: number) {
   if (!dict[<ResourceConstant>res])
@@ -39,7 +39,7 @@ export class Network {
         continue;
       let aid = this.aid[hiveName];
       aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
-      if (aid.amount === 0 || hive.state !== hiveStates.economy) {
+      if (aid.amount <= 0 || hive.state !== hiveStates.economy) {
         delete this.aid[hiveName];
         continue;
       }
@@ -51,12 +51,15 @@ export class Network {
     let fromState = Apiary.hives[from].resState[res];
     if (fromState === undefined)
       fromState = 0;
+    else
+      fromState = - PADDING_RESOURCE;
 
     let toState = Apiary.hives[to].resState[res];
     if (toState === undefined)
       toState = 0;
-    toState = -toState;
-    return Math.max(Math.min(toState + PADDING_RESOURCE / 2, fromState - PADDING_RESOURCE / 2), 0);
+    else
+      toState = -toState + PADDING_RESOURCE;
+    return Math.max(Math.min(toState, fromState), 0);
   }
 
   run() {
@@ -65,11 +68,12 @@ export class Network {
       if (!hive.cells.storage || !hive.cells.storage.terminal)
         continue;
       let terminal = hive.cells.storage.terminal;
-
       let usedTerminal = false;
-      for (const res in hive.shortages)
-        if (res.length === 1) {
-          let ans = Apiary.broker.buyIn(terminal, <ResourceConstant>res, hive.shortages[<ResourceConstant>res]!);
+      for (const r in hive.shortages)
+        if (r.length === 1) {
+          let res = <ResourceConstant>r;
+          let amount = hive.shortages[res]!;
+          let ans = Apiary.broker.buyIn(terminal, res, amount, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
           if (ans === "short") {
             usedTerminal = true;
             break;
@@ -127,7 +131,7 @@ export class Network {
           }
           break;
         } else
-          hive.shortages[res] = hive.resState[res]!;
+          hive.shortages[res] = -hive.resState[res]!;
       }
     }
   }

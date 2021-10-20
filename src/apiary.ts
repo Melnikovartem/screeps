@@ -74,6 +74,7 @@ export class _Apiary {
   // update phase
   update() {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
+    this.intel.update();
 
     Order.checkFlags();
     _.forEach(Apiary.orders, order => {
@@ -81,8 +82,8 @@ export class _Apiary {
         safeWrap(() => order.update(), order.print + " update");
     });
 
-    if (this.broker.lastUpdated < 0)
-      this.broker.update();
+    //if (this.broker.lastUpdated < 0)
+    //  this.broker.update();
 
     safeWrap(() => this.network.update(), "network update");
 
@@ -98,9 +99,6 @@ export class _Apiary {
     _.forEach(this.masters, master => {
       safeWrap(() => master.update(), master.print + " update");
     });
-
-    if (Game.time % 50 === 0)
-      this.intel.toCache();
   }
 
   // run phase

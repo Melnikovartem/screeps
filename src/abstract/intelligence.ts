@@ -4,7 +4,6 @@
 
 import { enemyTypes, roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
-import { UPDATE_EACH_TICK } from "../settings";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
@@ -41,21 +40,28 @@ export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattle
 @profile
 export class Intel {
   roomInfo: { [id: string]: RoomInfo } = {};
+  stats: { [id: string]: CreepAllBattleInfo } = {};
+
+  update() {
+    this.stats = {};
+    this.toCache();
+  }
+
   getEnemyStructure(pos: ProtoPos, lag?: number) {
-    return <Structure | undefined>this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Structure));
+    return <Structure | undefined>this.getEnemy(pos, lag, es => es.filter(e => e.object instanceof Structure));
   }
 
   getEnemyCreep(pos: ProtoPos, lag?: number) {
-    return <Creep | undefined>this.getEnemy(pos, lag, (es, _) => es.filter(e => e.object instanceof Creep));
+    return <Creep | undefined>this.getEnemy(pos, lag, es => es.filter(e => e.object instanceof Creep));
   }
 
-  getEnemy(pos: ProtoPos, lag?: number, filter: (enemies: Enemy[], roomInfo: RoomInfo) => Enemy[]
-    = (es, ri) => es.filter(e => e.dangerlvl === ri.dangerlvlmax)) {
+  getEnemy(pos: ProtoPos, lag?: number, filter: (enemies: Enemy[], roomInfo: RoomInfo, pos: RoomPosition) => Enemy[]
+    = (es, ri, pos) => es.filter(e => e.dangerlvl === ri.dangerlvlmax || pos.getRangeTo(e.object) <= 3)) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
     let roomInfo = this.getInfo(pos.roomName, lag);
-    let enemies = filter(roomInfo.enemies, roomInfo);
+    let enemies = filter(roomInfo.enemies, roomInfo, pos);
     if (!enemies.length)
       return;
 
@@ -91,7 +97,7 @@ export class Intel {
     if (mode === FIND_HOSTILE_CREEPS) {
       range = 1;
       let enemyCreep = pos.lookFor(LOOK_CREEPS)[0];
-      if (enemyCreep && enemyCreep.owner.username === "Invaider")
+      if (enemyCreep && enemyCreep.owner.username === "Invader")
         range = 4;
     }
 
@@ -158,7 +164,6 @@ export class Intel {
     // it is cached after first check
     if (!Apiary.useBucket)
       lag = Math.max(4, lag);
-    if (UPDATE_EACH_TICK) lag = 0;
     if (roomInfo.lastUpdated + lag >= Game.time)
       return roomInfo;
 
@@ -189,8 +194,8 @@ export class Intel {
         owner = room.controller.reservation.username;
         if (owner === Apiary.username)
           roomInfo.roomState = roomStates.reservedByMe;
-        else if (owner === "Invaider")
-          roomInfo.roomState = roomStates.reservedByInvaider;
+        else if (owner === "Invader")
+          roomInfo.roomState = roomStates.reservedByInvader;
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
       }
@@ -212,12 +217,6 @@ export class Intel {
         safePlace: roomInfo.safePlace,
         safeModeEndTime: roomInfo.safeModeEndTime,
       }
-
-      if (Apiary.logger)
-        _.forEach(roomInfo.enemies, e => {
-          if (e.dangerlvl > 4 && e.object instanceof Creep)
-            Apiary.logger!.reportEnemy(e.object);
-        });
     }
   }
 
@@ -229,22 +228,28 @@ export class Intel {
     _.forEach(room.find(FIND_HOSTILE_CREEPS), c => {
       let dangerlvl: DangerLvl = 3;
       let info = this.getStats(c).max;
-      if (info.dmgRange >= RANGED_ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 2 || info.dmgClose >= ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 2)
+      if (info.dmgRange >= RANGED_ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 3 || info.dmgClose >= ATTACK_POWER * (MAX_CREEP_SIZE - 10) * 3)
         dangerlvl = 8;
-      else if (info.heal >= TOWER_POWER_ATTACK * 2 || info.dism >= DISMANTLE_POWER * (MAX_CREEP_SIZE - 10))
+      else if (info.dmgRange > RANGED_ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.dmgClose > ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.heal > HEAL_POWER * MAX_CREEP_SIZE / 2)
         dangerlvl = 6;
-      else if (info.dmgRange > RANGED_ATTACK_POWER * MAX_CREEP_SIZE / 2 || info.dmgClose > ATTACK_POWER * MAX_CREEP_SIZE / 2)
+      else if (info.heal >= TOWER_POWER_ATTACK * 2 || info.dism >= DISMANTLE_POWER * (MAX_CREEP_SIZE - 10))
         dangerlvl = 5;
-      else if (info.dmgRange > 0 || info.dmgClose > 0 || info.heal > 0)
+      else if (info.dmgRange > 0 || info.dmgClose > 0)
         dangerlvl = 4;
-      if (c.owner.username === "Source Keeper")
-        dangerlvl = 2;
-      else if (c.owner.username === "Invaider")
-        dangerlvl = 3;
-      else if (PEACE_PACKS.includes(c.owner.username))
-        dangerlvl = 0;
-      else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
-        dangerlvl = 2;
+      switch (c.owner.username) {
+        case "Source Keeper":
+          dangerlvl = 2;
+          break;
+        case "Invader":
+          break;
+        default:
+          if (Apiary.logger)
+            Apiary.logger.reportEnemy(c);
+          if (PEACE_PACKS.includes(c.owner.username))
+            dangerlvl = 0;
+          else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
+            dangerlvl = 2;
+      }
       roomInfo.enemies.push({
         object: c,
         dangerlvl: dangerlvl,
@@ -316,6 +321,8 @@ export class Intel {
   }
 
   getStats(creep: Creep) {
+    if (creep.id in this.stats)
+      return this.stats[creep.id];
     let ans: CreepAllBattleInfo = {
       max: {
         dmgClose: 0,
@@ -375,6 +382,7 @@ export class Intel {
     ans.current.hits = Math.ceil(ans.current.hits);
     ans.max.hits = Math.ceil(ans.max.hits);
 
+    this.stats[creep.id] = ans;
     return ans;
   }
 }

@@ -18,7 +18,7 @@ export enum roomStates {
   corridor = 3,
   SKcentral = 4,
   SKfrontier = 5,
-  reservedByInvaider = 6,
+  reservedByInvader = 6,
   reservedByEnemy = 7,
   ownedByEnemy = 8,
 }
@@ -30,12 +30,12 @@ export enum beeStates {
   fflush = 3,
   refill = 4,
   boosting = 5,
-  flee = 6,
 }
 
 export enum prefix {
   // orders
   upgrade = "polen",
+  build = "wax",
   surrender = "FFF",
   boost = "boost_",
   def = "def_",

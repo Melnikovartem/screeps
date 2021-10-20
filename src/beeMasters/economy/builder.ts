@@ -22,46 +22,36 @@ export class BuilderMaster extends Master {
     let target = this.hive.sumCost > 0 ? 1 : 0;
     this.patternPerBee = 3;
 
-    if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
-      this.patternPerBee = 5;
-      if (this.hive.sumCost > 5000)
-        target = 2;
-      if (this.hive.sumCost > 15000)
-        if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY]) {
-          this.boosts = [{ type: "build", lvl: 0 }];
-          this.patternPerBee = 8;
-        }
-    }
+    this.boosts = undefined;
 
-    if (this.hive.state >= hiveStates.nukealert) {
+    if (this.hive.state >= hiveStates.nukealert || Apiary.orders[prefix.build + this.hive.roomName]) {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
+    } else if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
+      this.patternPerBee = 5;
+      if (this.hive.sumCost > 5000)
+        target = 2;
+      if (this.hive.sumCost > 15000) {
+        this.boosts = [{ type: "build", lvl: 0 }];
+        if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
+          this.patternPerBee = 8;
+      }
     }
 
     this.targetBeeCount = target;
   }
 
-  checkBeesWithRecalc() {
-    this.recalculateTargetBee();
-    return this.checkBees(this.hive.state !== hiveStates.lowenergy);
-  }
 
   update() {
     super.update();
-    let emergency = this.hive.state >= hiveStates.nukealert || (this.hive.state === hiveStates.economy && this.hive.sumCost > 500000);
+    let emergency = this.hive.state >= hiveStates.nukealert;
 
-    if (!this.boosts && emergency) {
-      _.forEach(this.activeBees.filter(b => b.ticksToLive > 1000), b => b.state = beeStates.boosting);
-      this.boosts = [];
-    } else if (this.boosts && !emergency) {
-      this.boosts = undefined;
-      _.forEach(this.activeBees, b => b.state = b.state === beeStates.boosting ? beeStates.chill : b.state);
-    }
 
+    this.recalculateTargetBee();
     this.movePriority = emergency ? 1 : 5;
 
-    if (this.checkBeesWithRecalc() || (emergency && !this.beesAmount && !this.waitingForBees)) {
+    if (this.checkBees(this.hive.state !== hiveStates.lowenergy)) {
       let order = {
         setup: setups.builder,
         priority: <2 | 5 | 8>(emergency ? 2 : (this.beesAmount ? 8 : 5)),
@@ -90,9 +80,12 @@ export class BuilderMaster extends Master {
       chill = true;
 
     _.forEach(this.bees, bee => {
-      if (bee.state === beeStates.boosting && this.boosts)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts
-          .concat([{ type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }])) === OK)
+      if (bee.state === beeStates.boosting)
+        if (this.boosts) {
+          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts
+            .concat([{ type: "fatigue", lvl: 0, amount: Math.ceil(bee.getBodyParts(MOVE) / 2) }])) === OK)
+            bee.state = beeStates.chill;
+        } else
           bee.state = beeStates.chill;
     });
 
@@ -100,15 +93,12 @@ export class BuilderMaster extends Master {
       if (chill && !bee.store.getUsedCapacity(RESOURCE_ENERGY))
         bee.state = beeStates.chill;
 
-      this.checkFlee(bee, this.hive);
-
       switch (bee.state) {
         case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             bee.state = beeStates.work;
           else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, opts) === OK) {
             bee.state = beeStates.work;
-            delete bee.target;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", this.sCell.storage.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
@@ -117,9 +107,10 @@ export class BuilderMaster extends Master {
           }
           break;
         case beeStates.work:
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0)
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
-          else {
+            delete bee.target;
+          } else {
             let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
               target = Game.getObjectById(bee.target);
@@ -170,10 +161,9 @@ export class BuilderMaster extends Master {
           } else
             bee.goRest(this.hive.rest);
           break;
-        case beeStates.flee:
-          bee.state = beeStates.work;
-          break;
       }
+
+      this.checkFlee(bee, this.hive);
     });
   }
 }

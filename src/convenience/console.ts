@@ -320,6 +320,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -328,6 +329,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -336,6 +338,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -344,6 +347,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.sellShort(terminal, resource, 5000 * sets), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -352,6 +356,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.buyLong(terminal, resource, 5000 * sets, Infinity, coef), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -360,6 +365,7 @@ export class CustomConsole {
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
+    Apiary.broker.update();
     return this.marketReturn(Apiary.broker.sellLong(terminal, resource, Infinity, 5000 * sets, coef), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 

@@ -84,7 +84,6 @@ export class PickupMaster extends SwarmMaster {
       else if (bee.store.getUsedCapacity() === 0)
         bee.state = beeStates.refill;
 
-      this.checkFlee(bee, this.hive);
 
       switch (bee.state) {
         case beeStates.chill:
@@ -117,10 +116,8 @@ export class PickupMaster extends SwarmMaster {
           } else
             bee.state = beeStates.chill;
           break;
-        case beeStates.flee:
-          bee.state = beeStates.refill;
-          break;
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }

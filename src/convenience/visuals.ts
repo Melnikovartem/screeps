@@ -393,8 +393,8 @@ export class Visuals {
     if (!hive.cells.lab)
       return;
     let lab = hive.cells.lab;
-    if (lab.prod && lab.synthesizeTarget)
-      this.updateAnchor(this.label(`🧪 ${lab.prod.res} ${lab.prod.plan} -> ${lab.synthesizeTarget.res} ${lab.synthesizeTarget.amount}`, this.anchor));
+    if (lab.synthesizeTarget)
+      this.updateAnchor(this.label(`🧪 ${lab.prod ? lab.prod.res + " " + lab.prod.plan : "??"} -> ${lab.synthesizeTarget.res} ${lab.synthesizeTarget.amount}`, this.anchor));
 
     if (Object.keys(hive.cells.lab.boostRequests).length) {
       let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];

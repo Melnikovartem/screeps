@@ -111,11 +111,12 @@ export abstract class Master {
     let contr = Game.rooms[bee.pos.roomName].controller;
     if (enemy && (!contr || !contr.my || !contr.safeMode)) {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
-      if (enemy.pos.getRangeTo(bee) < fleeDist) {
-        bee.flee(enemy, fleeTo ? fleeTo : this.hive);
-        bee.state = beeStates.flee;
+      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist + 1 || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
+        bee.flee(enemy, fleeTo || this.hive);
+        return true;
       }
     }
+    return false;
   }
 
   delete() {

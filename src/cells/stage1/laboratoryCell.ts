@@ -43,7 +43,7 @@ export class LaboratoryCell extends Cell {
   // inLab check for delivery system
   boostLabs: { [key in ResourceConstant]?: string } = {};
   boostRequests: { [id: string]: { info: BoostInfo[], lastUpdated: number } } = {};
-  labsStates: { [id: string]: LabState } = {};
+  labStates: { [id: string]: LabState } = {};
   synthesizeTarget: { res: ReactionConstant, amount: number } | undefined;
   synthesizeRes: SynthesizeRequest | undefined;
   prod?: SynthesizeRequest & { lab1: string, lab2: string };
@@ -118,6 +118,10 @@ export class LaboratoryCell extends Cell {
     });
 
     createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
+    createQue = createQue.filter(res => {
+      let recipe = REACTION_MAP[<ReactionConstant>res]!;
+      return this.sCell.getUsedCapacity(recipe.res1) >= LAB_BOOST_MINERAL * 2 && this.sCell.getUsedCapacity(recipe.res2) >= LAB_BOOST_MINERAL * 2;
+    })
     if (!createQue.length)
       return;
     this.newSynthesize(createQue.reduce((prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
@@ -149,6 +153,10 @@ export class LaboratoryCell extends Cell {
 
     if (lab1 && lab2) {
       this.prod = { ...this.synthesizeRes, lab1: lab1.id, lab2: lab2.id };
+      this.labStates[lab1.id] = "source";
+      this.updateLabState(lab1, 1);
+      this.labStates[lab2.id] = "source";
+      this.updateLabState(lab2, 1);
       this.synthesizeRes = undefined;
     }
     return true;
@@ -157,10 +165,10 @@ export class LaboratoryCell extends Cell {
   getBoostInfo(r: BoostRequest, bee?: Bee): BoostInfo | void {
     let res = BOOST_MINERAL[r.type][r.lvl];
     let sum = this.sCell.getUsedCapacity(res);
-    let amount = r.amount ? r.amount : Infinity;
+    let amount = r.amount || Infinity;
     amount = Math.min(amount, Math.floor(sum / LAB_BOOST_MINERAL));
     if (bee)
-      amount = Math.min(amount - bee.getBodyParts(BOOST_PARTS[r.type]), bee.getBodyParts(BOOST_PARTS[r.type], -1));
+      amount = Math.min(amount - bee.getBodyParts(BOOST_PARTS[r.type], 1), bee.getBodyParts(BOOST_PARTS[r.type], -1));
     if (amount <= 0)
       return;
     return { type: r.type, res: res, amount: amount, lvl: r.lvl };
@@ -198,26 +206,26 @@ export class LaboratoryCell extends Cell {
 
       if (this.boostLabs[r.res])
         lab = this.laboratories[this.boostLabs[r.res]!];
-      if (!lab || this.labsStates[lab.id] !== r.res) {
+      if (!lab || this.labStates[lab.id] !== r.res) {
         let getLab = (state?: LabState, sameMineral = true) => {
           _.some(this.laboratories, l => {
-            if ((!state || this.labsStates[l.id] === state) && (!sameMineral || l.mineralType === r.res))
+            if ((!sameMineral || l.mineralType === r.res) && ((!state && this.labStates[l.id] !== "source") || this.labStates[l.id] === state))
               lab = l;
             return lab;
           });
         }
-        if (this.prod) {
+        if (this.prod)
           switch (r.res) {
             case this.prod.res1:
               lab = this.laboratories[this.prod.lab1];
               break;
             case this.prod.res2:
-              lab = this.laboratories[this.prod.lab1];
+              lab = this.laboratories[this.prod.lab2];
               break;
             case this.prod.res:
               getLab("production", false);
+              break;
           }
-        }
         if (!lab)
           getLab(); //any lab same mineral
         if (!lab)
@@ -226,7 +234,7 @@ export class LaboratoryCell extends Cell {
           getLab("idle", false);
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
-          this.labsStates[lab.id] = r.res;
+          this.labStates[lab.id] = r.res;
         }
       }
 
@@ -280,18 +288,18 @@ export class LaboratoryCell extends Cell {
       case 0:
         break;
     }
-    let state = this.labsStates[l.id];
+    let state = this.labStates[l.id];
     switch (state) {
       case undefined:
-        this.labsStates[l.id] = "idle";
+        this.labStates[l.id] = "idle";
       case "idle":
         if (this.prod) {
           if (l.id === this.prod.lab1 || l.id === this.prod.lab2) {
-            this.labsStates[l.id] = "source";
+            this.labStates[l.id] = "source";
             this.updateLabState(l, rec + 1);
           } else if (Game.time % this.prod.cooldown === 0 && !l.cooldown &&
             l.pos.getRangeTo(this.laboratories[this.prod.lab1]) <= 2 && l.pos.getRangeTo(this.laboratories[this.prod.lab1]) <= 2) {
-            this.labsStates[l.id] = "production";
+            this.labStates[l.id] = "production";
             this.updateLabState(l, rec + 1);
           } else if (l.mineralType)
             this.sCell.requestToStorage([l], 5, l.mineralType);
@@ -299,7 +307,7 @@ export class LaboratoryCell extends Cell {
         break;
       case "source":
         if (!this.prod) {
-          this.labsStates[l.id] = "idle";
+          this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
           break;
         }
@@ -309,7 +317,7 @@ export class LaboratoryCell extends Cell {
         } else if (l.id === this.prod.lab2) {
           r = this.prod.res2;
         } else {
-          this.labsStates[l.id] = "idle";
+          this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
           break;
         }
@@ -325,15 +333,15 @@ export class LaboratoryCell extends Cell {
       case "production":
         let res = l.mineralType;
         if (!this.prod) {
-          this.labsStates[l.id] = "idle";
+          this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
           break;
         } else if (res && (res !== this.prod.res || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
           this.sCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
         break;
       default: // boosting lab : state === resource
-        if (!_.sum(this.boostRequests, br => br.info.filter(r => r.res == this.labsStates[l.id]).length)) {
-          this.labsStates[l.id] = "idle";
+        if (!_.sum(this.boostRequests, br => br.info.filter(r => r.res == this.labStates[l.id]).length)) {
+          this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
           return;
         }
@@ -385,7 +393,7 @@ export class LaboratoryCell extends Cell {
       let lab2 = this.laboratories[this.prod.lab2];
       let amount = Math.min(lab1.store[this.prod.res1], lab2.store[this.prod.res2])
       if (amount >= 5) {
-        let labs = _.filter(this.laboratories, lab => this.labsStates[lab.id] === "production" && !lab.cooldown && lab.store.getFreeCapacity(this.prod!.res) >= 5);
+        let labs = _.filter(this.laboratories, lab => this.labStates[lab.id] === "production" && !lab.cooldown && lab.store.getFreeCapacity(this.prod!.res) >= 5);
         for (let k = 0; k < labs.length && amount >= 5; ++k) {
           let ans = labs[k].runReaction(lab1, lab2);
           if (ans === OK) {

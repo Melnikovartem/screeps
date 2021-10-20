@@ -118,8 +118,6 @@ export class HaulerMaster extends Master {
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
 
-      this.checkFlee(bee);
-
       if (bee.state === beeStates.work) {
         let res: ResourceConstant = RESOURCE_ENERGY;
 
@@ -160,11 +158,10 @@ export class HaulerMaster extends Master {
           bee.state = beeStates.chill; //failsafe
       }
 
-      if (bee.state === beeStates.flee)
-        bee.state = beeStates.refill;
-
       if (bee.state === beeStates.chill)
         bee.goRest(this.cell.pos, { offRoad: true });
+
+      this.checkFlee(bee);
     });
   }
 }
