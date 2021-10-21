@@ -53,7 +53,7 @@ export class ManagerMaster extends Master {
       let transfer = bee.target && this.cell.requests[bee.target];
 
       if (!transfer || !transfer.isValid() || (non_refill_needed && transfer.priority === 0 && refilling > 1)) {
-        delete bee.target;
+        bee.target = undefined;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
           let beeRequests = _.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess);

@@ -82,7 +82,7 @@ export class LaboratoryCell extends Cell {
 
   stepToTarget() {
     this.resTarget = {};
-    if (!this.synthesizeTarget) {
+    if (!this.synthesizeTarget || !this.synthesizeTarget.amount) {
       let targets: { res: ReactionConstant, amount: number }[] = [];
       for (const r in this.hive.resState) {
         let res = <ReactionConstant>r; // atually ResourceConstant
@@ -324,11 +324,8 @@ export class LaboratoryCell extends Cell {
         let freeCap = l.store.getFreeCapacity(r);
         if (l.mineralType && l.mineralType !== r)
           this.sCell.requestToStorage([l], 3, l.mineralType);
-        else if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.prod.plan <= LAB_MINERAL_CAPACITY) && l.store.getUsedCapacity(r) < this.prod.plan) {
-          let amount = this.sCell.requestFromStorage([l], 3, r, Math.min(this.prod.plan, freeCap));
-          if (!amount)
-            this.prod.plan = Math.min(this.prod.plan, l.store.getUsedCapacity(r));
-        }
+        else if ((freeCap > LAB_MINERAL_CAPACITY / 2 || this.prod.plan <= LAB_MINERAL_CAPACITY) && l.store.getUsedCapacity(r) < this.prod.plan)
+          this.sCell.requestFromStorage([l], 3, r, Math.min(this.prod.plan, freeCap));
         break;
       case "production":
         let res = l.mineralType;
@@ -393,18 +390,22 @@ export class LaboratoryCell extends Cell {
       let lab2 = this.laboratories[this.prod.lab2];
       let amount = Math.min(lab1.store[this.prod.res1], lab2.store[this.prod.res2])
       if (amount >= 5) {
-        let labs = _.filter(this.laboratories, lab => this.labStates[lab.id] === "production" && !lab.cooldown && lab.store.getFreeCapacity(this.prod!.res) >= 5);
+        let labs = _.filter(this.laboratories, lab => lab.store.getFreeCapacity(this.prod!.res) >= 5 &&
+          (this.labStates[lab.id] === "production" || this.labStates[lab.id] === this.prod!.res) && !lab.cooldown);
+        let cc = 0;
         for (let k = 0; k < labs.length && amount >= 5; ++k) {
           let ans = labs[k].runReaction(lab1, lab2);
-          if (ans === OK) {
-            this.prod.plan -= 5;
-            amount -= 5;
-            if (Apiary.logger) {
-              Apiary.logger.addResourceStat(this.hive.roomName, "labs", 5, this.prod.res);
-              Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.prod.res1);
-              Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5, this.prod.res2);
-            }
-          }
+          if (ans === OK)
+            ++cc;
+        }
+        if (this.synthesizeTarget && this.prod.res === this.synthesizeTarget.res)
+          this.synthesizeTarget.amount -= cc * 5;
+        this.prod.plan -= 5 * cc;
+        amount -= 5 * cc;
+        if (Apiary.logger) {
+          Apiary.logger.addResourceStat(this.hive.roomName, "labs", 5 * cc, this.prod.res);
+          Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5 * cc, this.prod.res1);
+          Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5 * cc, this.prod.res2);
         }
       }
     }

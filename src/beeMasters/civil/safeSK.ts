@@ -113,7 +113,7 @@ export class SKMaster extends SwarmMaster {
           this.useLair(bee, target);
           return;
         } else
-          delete bee.target;
+          bee.target = undefined;
       }
 
       if (!this.lairs.length)

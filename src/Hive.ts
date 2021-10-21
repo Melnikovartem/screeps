@@ -124,6 +124,9 @@ export class Hive {
     [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL * 2,
     [BOOST_MINERAL.build[0]]: HIVE_MINERAL * 2,
     [BOOST_MINERAL.attack[0]]: HIVE_MINERAL * 2,
+
+    // hightech but needed
+    [BOOST_MINERAL.build[2]]: HIVE_MINERAL * 2,
   }
   resState: ResTarget = { energy: 0 };
   shortages: ResTarget = { energy: 0 };
@@ -190,7 +193,6 @@ export class Hive {
         this.cells.factory = new FactoryCell(this, factory, sCell);
       if (this.phase === 2) {
         // hihgh lvl minerals to protect my hive
-        this.resTarget[BOOST_MINERAL.build[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.rangedAttack[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.fatigue[2]] = HIVE_MINERAL;

@@ -52,7 +52,7 @@ export class Network {
     if (fromState === undefined)
       fromState = 0;
     else
-      fromState = - PADDING_RESOURCE;
+      fromState = fromState - PADDING_RESOURCE;
 
     let toState = Apiary.hives[to].resState[res];
     if (toState === undefined)
@@ -87,10 +87,10 @@ export class Network {
         let energyCost = Game.market.calcTransactionCost(10000, hive.roomName, aid.to) / 10000;
         let terminalEnergy = terminal.store.getUsedCapacity(RESOURCE_ENERGY);
         let energyCap = Math.floor(terminalEnergy / energyCost);
-        if (aid.res === RESOURCE_ENERGY)
-          terminalEnergy -= TERMINAL_ENERGY;
-
         let amount = Math.min(aid.amount, PADDING_RESOURCE, terminal.store.getUsedCapacity(aid.res), energyCap);
+
+        if (aid.res === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalEnergy)
+          amount = Math.floor(amount * (1 - energyCost));
 
         if (amount > 0) {
           terminal.send(aid.res, amount, aid.to);
@@ -147,7 +147,8 @@ export class Network {
       ress = ress.concat(Object.keys(hive.cells.lab.resTarget));
 
     for (const i in ress)
-      add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
+      if (!hive.resState[<ResourceConstant>ress[i]])
+        add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
 
     if (hive.cells.lab)
       for (const res in hive.cells.lab.resTarget)

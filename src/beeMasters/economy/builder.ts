@@ -33,7 +33,7 @@ export class BuilderMaster extends Master {
       if (this.hive.sumCost > 5000)
         target = 2;
       if (this.hive.sumCost > 15000) {
-        this.boosts = [{ type: "build", lvl: 0 }];
+        this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
         if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
           this.patternPerBee = 8;
       }
@@ -109,7 +109,7 @@ export class BuilderMaster extends Master {
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
-            delete bee.target;
+            bee.target = undefined;
           } else {
             let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
@@ -144,7 +144,7 @@ export class BuilderMaster extends Master {
               bee.target = target.id;
               bee.repairRoadOnMove(ans);
             } else {
-              delete bee.target;
+              bee.target = undefined;
               bee.state = beeStates.chill;
             }
           }

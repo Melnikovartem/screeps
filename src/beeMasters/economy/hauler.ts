@@ -139,7 +139,7 @@ export class HaulerMaster extends Master {
 
         if (bee.store.getUsedCapacity() === 0) {
           bee.state = beeStates.chill;
-          delete bee.target;
+          bee.target = undefined;
         }
       }
 

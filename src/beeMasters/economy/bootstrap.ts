@@ -175,7 +175,7 @@ export class BootstrapMaster extends Master {
         case beeStates.work:
           if (!bee.creep.store.getUsedCapacity(RESOURCE_ENERGY)) {
             bee.state = beeStates.refill;
-            delete bee.target;
+            bee.target = undefined;
           }
           break;
         case beeStates.refill:
@@ -183,7 +183,7 @@ export class BootstrapMaster extends Master {
             if (Apiary.logger)
               Apiary.logger.addResourceStat(this.hive.roomName, "larva", bee.creep.store.getUsedCapacity(RESOURCE_ENERGY));
             bee.state = beeStates.work;
-            delete bee.target;
+            bee.target = undefined;
           }
           break;
         case beeStates.chill:
@@ -214,7 +214,7 @@ export class BootstrapMaster extends Master {
 
           if (source instanceof Source) {
             if (source.energy === 0 && source.ticksToRegeneration > 20)
-              delete bee.target;
+              bee.target = undefined;
             else {
               if (bee.pos.isNearTo(source))
                 bee.harvest(source);
@@ -223,7 +223,7 @@ export class BootstrapMaster extends Master {
                 if (pos)
                   bee.goTo(pos, { ignoreRoads: bee.store.getUsedCapacity() === 0 });
                 else if (bee.pos.getRangeTo(source) > 4)
-                  delete bee.target;
+                  bee.target = undefined;
               }
             }
             ++countCurrent.mining;
@@ -231,10 +231,10 @@ export class BootstrapMaster extends Master {
           } else if (source) {
             bee.target = source.id;
             if (!containerTargetingCur[source.id])
-              delete bee.target;
+              bee.target = undefined;
             else if (this.containerTargeting[source.id].current > this.containerTargeting[source.id].max) {
               --this.containerTargeting[source.id].current;
-              delete bee.target;
+              bee.target = undefined;
             }
 
             if (bee.target) {
@@ -249,7 +249,7 @@ export class BootstrapMaster extends Master {
             break;
           } else {
             bee.state = beeStates.chill;
-            delete bee.target;
+            bee.target = undefined;
           }
         case beeStates.chill:
           ++countCurrent.chilling;

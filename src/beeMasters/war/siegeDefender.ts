@@ -133,7 +133,7 @@ export class SiegeMaster extends Master {
           let pos;
           if (this.hive.state !== hiveStates.battle) {
             bee.state = beeStates.chill;
-            delete bee.target;
+            bee.target = undefined;
             break;
           }
           if (bee.target) {
