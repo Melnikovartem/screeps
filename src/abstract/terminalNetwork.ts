@@ -2,19 +2,12 @@ import { hiveStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 
-import type{ Hive } from "../hive"
+import type { Hive, ResTarget } from "../hive"
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
-export type ResourceTarget = { [key in ResourceConstant]?: number };
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
 const ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U"]; //"X", "O", "Z"];
-
-function add(dict: ResourceTarget, res: string, amount: number) {
-  if (!dict[<ResourceConstant>res])
-    dict[<ResourceConstant>res] = 0;
-  dict[<ResourceConstant>res]! += amount;
-}
 
 @profile
 export class Network {
@@ -45,7 +38,7 @@ export class Network {
         delete this.aid[hiveName];
         continue;
       }
-      add(sCell.resTargetTerminal, aid.res, aid.amount);
+      hive.add(sCell.resTargetTerminal, aid.res, aid.amount);
     }
   }
 
@@ -104,7 +97,7 @@ export class Network {
 
       let stStore = hive.cells.storage.storage.store;
       if (stStore.getUsedCapacity() > stStore.getCapacity() * 0.75) {
-        let keys = <(keyof ResourceTarget)[]>Object.keys(hive.resState).filter(s => s !== RESOURCE_ENERGY);
+        let keys = <(keyof ResTarget)[]>Object.keys(hive.resState).filter(s => s !== RESOURCE_ENERGY);
         if (!keys.length)
           continue;
         let res = keys.reduce((prev, curr) => hive.resState[curr]! > hive.resState[prev]! ? curr : prev);
@@ -142,7 +135,7 @@ export class Network {
 
   updateState(hive: Hive) {
     hive.resState = { energy: 0 };
-    hive.shortages = { energy: 0 };
+    hive.shortages = {};
     if (!hive.cells.storage || !hive.cells.storage.terminal)
       return;
 
@@ -152,20 +145,23 @@ export class Network {
 
     for (const i in ress)
       if (!hive.resState[<ResourceConstant>ress[i]])
-        add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
+        hive.add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
 
     if (hive.cells.lab)
       for (const res in hive.cells.lab.resTarget)
-        add(hive.resState, res, -hive.cells.lab.resTarget[<ResourceConstant>res]!);
+        hive.add(hive.resState, res, -hive.cells.lab.resTarget[<ResourceConstant>res]!);
 
     for (const res in hive.resTarget)
-      add(hive.resState, res, -hive.resTarget[<ResourceConstant>res]!);
+      hive.add(hive.resState, res, -hive.resTarget[<ResourceConstant>res]!);
+
+    for (const res in hive.mastersResTarget)
+      hive.add(hive.resState, res, -hive.mastersResTarget[<ResourceConstant>res]!);
 
     hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY / (hive.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000 ? 3 : 1) };
     if (hive.state !== hiveStates.battle) {
       let marketState = Apiary.broker.getTargetLongOrders(hive.roomName);
       for (const res in marketState)
-        add(hive.cells.storage.resTargetTerminal, res, Math.min(marketState[<ResourceConstant>res]!, 5000));
+        hive.add(hive.cells.storage.resTargetTerminal, res, Math.min(marketState[<ResourceConstant>res]!, 5000));
     }
   }
 

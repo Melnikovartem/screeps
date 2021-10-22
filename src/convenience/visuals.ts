@@ -25,7 +25,7 @@ export class Visuals {
 
     if (x !== undefined)
       this.anchor.x = x;
-    this.anchor.y = y === undefined ? this.anchor.y + 0.2 : y;
+    this.anchor.y = y === undefined ? this.anchor.y + SPACING : y;
 
     if (roomName) {
       this.anchor.vis = new RoomVisual(makeId(8));
@@ -386,11 +386,31 @@ export class Visuals {
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
     let minSize = 0;
-    this.updateAnchor(this.table(ans, this.anchor, undefined, minSize));
+    let table = this.table(ans, this.anchor, undefined, minSize);
+    this.changeAnchor(table.x, table.y);
     minSize = Math.max(minSize, this.anchor.x - 1);
   }
 
   statsNetwork(hive: Hive) {
+    let negative: string[][] = [["deficiency"], ["💱", "📉"]];
+
+    for (const res in hive.resState) {
+      let amount = hive.resState[<ResourceConstant>res];
+      if (amount && amount < 0) {
+        let str = " " + -amount;
+        if (amount < -1000)
+          str = " " + -Math.round(amount / 100) / 10 + "K"
+        negative.push([res, str]);
+      }
+    }
+    let [x, y] = [this.anchor.x, this.anchor.y];
+    let y_new = this.anchor.y;
+    if (negative.length > 2) {
+      this.changeAnchor(x + SPACING, 1);
+      y_new = this.table(negative, this.anchor, undefined).y;
+    }
+    this.changeAnchor(1, Math.max(y, y_new) + SPACING);
+
     let aid = Apiary.network.aid[hive.roomName];
     if (aid)
       this.updateAnchor(this.label(`💸 ${aid.to} -> ${aid.res} ${aid.amount}`, this.anchor));

@@ -123,9 +123,9 @@ export class DefenseCell extends Cell {
       _.forEach(roomInfo.enemies, enemy => {
         if (!(enemy instanceof Creep))
           return;
-        let info = Apiary.intel.getStats(enemy).current;
-        if (info.dism < 100 && info.dmgClose < 100)
-          return;
+        // let info = Apiary.intel.getStats(enemy).current;
+        // if (info.dism < 100 && info.dmgClose < 100 && info.dmgRange < 100)
+        //  return;
 
         if (this.wasBreached(enemy.pos))
           this.isBreached = true;

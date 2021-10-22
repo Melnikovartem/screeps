@@ -77,7 +77,7 @@ export abstract class SquadMaster extends SwarmMaster {
     this.targetBeeCount = this.formation.length;
     this.maxSpawns = this.formation.length;
 
-    if (this.checkBees(this.emergency)) {
+    if (this.checkBees(this.emergency) && this.checkup) {
       for (let i = 0; i < this.formation.length; ++i) {
         if (!this.formationBees[i])
           this.wish({
@@ -86,6 +86,10 @@ export abstract class SquadMaster extends SwarmMaster {
           }, this.ref + "_" + i);
       }
     }
+  }
+
+  get checkup() {
+    return true;
   }
 
   get emergency() {
@@ -263,7 +267,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = enemy && (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5) ? enemy.pos : this.order.pos;
-    if (enemy && bee.pos.getRangeTo(enemy) > 3)
+    if (enemy && bee.pos.getRangeTo(moveTarget) > 3)
       this.rotateFormation(bee.pos.getDirectionTo(enemy));
 
     bee.goTo(moveTarget, this.getPathArgs(bee.ref));

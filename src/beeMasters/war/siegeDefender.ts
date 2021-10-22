@@ -27,7 +27,10 @@ export class SiegeMaster extends Master {
 
   update() {
     super.update();
-    if (this.hive.state === hiveStates.battle && this.checkBees(true)) {
+    if (this.hive.state !== hiveStates.battle)
+      return;
+    this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 100000);
+    if (this.checkBees(true)) {
       this.wish({
         setup: setups.defender.destroyer,
         priority: 1,

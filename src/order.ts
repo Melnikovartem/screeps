@@ -3,7 +3,8 @@ import { HordeMaster } from "./beeMasters/war/horde";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismantlerMaster } from "./beeMasters/war/dismantler";
 import { WaiterMaster } from "./beeMasters/war/waiter";
-import { FirstSquad } from "./beeMasters/squads/quadSquad";
+
+import { GangDuo } from "./beeMasters/squads/gangDuo";
 
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
@@ -27,17 +28,17 @@ import type { Hive, HivePositions } from "./Hive";
 
 @profile
 export class Order {
-  ref: string;
   flag: Flag;
-  pos: RoomPosition;
   master?: SwarmMaster;
   hive: Hive;
   acted: boolean = false;
 
+  get ref() {
+    return this.flag.name;
+  }
+
   constructor(flag: Flag) {
-    this.ref = flag.name;
     this.flag = flag;
-    this.pos = flag.pos;
 
     if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive]) {
       this.hive = Apiary.hives[this.flag.memory.hive];
@@ -45,14 +46,14 @@ export class Order {
         this.delete();
     } else {
       let filter: (h: Hive) => boolean = h => h.phase >= 2;;
-      switch (this.flag.color) {
+      switch (this.color) {
         case COLOR_CYAN:
           filter = h => h.roomName === this.pos.roomName && h.phase >= 1;
           break;
         case COLOR_PURPLE:
-          if (this.flag.secondaryColor === COLOR_WHITE)
+          if (this.secondaryColor === COLOR_WHITE)
             filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
-          if (this.flag.secondaryColor !== COLOR_PURPLE)
+          if (this.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
           filter = _ => true;
@@ -103,7 +104,7 @@ export class Order {
   uniqueFlag(local: boolean = true) {
     if (this.pos.roomName in Game.rooms) {
       _.forEach(Game.flags, f => {
-        if (f.color === this.flag.color && f.secondaryColor === this.flag.secondaryColor
+        if (f.color === this.color && f.secondaryColor === this.secondaryColor
           && (!local || f.pos.roomName === this.pos.roomName) && f.name !== this.ref && Apiary.orders[f.name])
           Apiary.orders[f.name].delete();
       });
@@ -115,7 +116,7 @@ export class Order {
   fixedName(name: string) {
     if (this.ref !== name && this.pos.roomName in Game.rooms) {
       if (!(name in Game.flags))
-        this.pos.createFlag(name, this.flag.color, this.flag.secondaryColor);
+        this.pos.createFlag(name, this.color, this.secondaryColor);
       this.delete(true);
       return false;
     }
@@ -124,11 +125,11 @@ export class Order {
 
   act() {
     this.acted = true;
-    switch (this.flag.color) {
+    switch (this.color) {
       case COLOR_RED:
         this.flag.memory.repeat = this.flag.memory.repeat ? this.flag.memory.repeat : 0;
         if (!this.master)
-          switch (this.flag.secondaryColor) {
+          switch (this.secondaryColor) {
             case COLOR_BLUE:
               this.master = new HordeDefenseMaster(this);
               break;
@@ -148,7 +149,7 @@ export class Order {
               this.master = new WaiterMaster(this);
               break;
             case COLOR_ORANGE:
-              this.master = new FirstSquad(this);
+              this.master = new GangDuo(this);
               break;
             case COLOR_CYAN:
               this.master = new SKMaster(this);
@@ -164,7 +165,7 @@ export class Order {
           }
         break;
       case COLOR_PURPLE:
-        switch (this.flag.secondaryColor) {
+        switch (this.secondaryColor) {
           case COLOR_PURPLE:
             if (this.pos.getRoomRangeTo(this.hive) > 5) {
               this.delete(true);
@@ -260,7 +261,7 @@ export class Order {
         this.uniqueFlag();
         if (this.hive.roomName === this.pos.roomName) {
           let type: keyof HivePositions | undefined;
-          switch (this.flag.secondaryColor) {
+          switch (this.secondaryColor) {
             case COLOR_CYAN:
               type = "rest";
               this.hive.cells.excavation.pos = this.pos;
@@ -292,13 +293,13 @@ export class Order {
         this.delete();
         break;
       case COLOR_WHITE:
-        if (this.flag.secondaryColor !== COLOR_PURPLE && this.flag.secondaryColor !== COLOR_RED)
+        if (this.secondaryColor !== COLOR_PURPLE && this.secondaryColor !== COLOR_RED)
           _.forEach(Game.flags, f => {
             if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
               Apiary.orders[f.name].delete();
           });
 
-        switch (this.flag.secondaryColor) {
+        switch (this.secondaryColor) {
           case COLOR_WHITE:
             let baseRotation: ExitConstant = BOTTOM;
             if (this.ref.includes("right"))
@@ -395,7 +396,7 @@ export class Order {
         break;
       case COLOR_ORANGE:
         if (!this.master)
-          switch (this.flag.secondaryColor) {
+          switch (this.secondaryColor) {
             case COLOR_GREEN:
               this.master = new PickupMaster(this);
               let regex = /^\d*/.exec(this.ref);
@@ -409,7 +410,7 @@ export class Order {
           }
         break;
       case COLOR_GREY:
-        switch (this.flag.secondaryColor) {
+        switch (this.secondaryColor) {
           case COLOR_RED:
             this.acted = false;
             if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
@@ -454,10 +455,16 @@ export class Order {
             this.hive.cells.lab.prod = undefined;
             break;
           case COLOR_YELLOW:
-            this.fixedName(prefix.upgrade + this.hive.roomName);
+            if (this.hive.roomName !== this.pos.roomName)
+              this.delete();
+            else
+              this.fixedName(prefix.upgrade + this.hive.roomName);
             break;
           case COLOR_WHITE:
-            this.fixedName(prefix.build + this.hive.roomName)
+            if (this.hive.roomName !== this.pos.roomName)
+              this.delete();
+            else
+              this.fixedName(prefix.build + this.hive.roomName)
             break;
         }
         break;
@@ -468,7 +475,7 @@ export class Order {
         }
         if (this.pos.roomName in Game.rooms) {
           let resource: Source | Mineral | undefined;
-          switch (this.flag.secondaryColor) {
+          switch (this.secondaryColor) {
             case COLOR_YELLOW:
               resource = this.pos.lookFor(LOOK_SOURCES)[0];
               if (resource) {
@@ -522,9 +529,9 @@ export class Order {
       }
     }
 
-    switch (this.flag.color) {
+    switch (this.color) {
       case COLOR_PURPLE:
-        switch (this.flag.secondaryColor) {
+        switch (this.secondaryColor) {
           case COLOR_WHITE:
             let hiveBoosted = Apiary.hives[this.pos.roomName];
             if (hiveBoosted) {
@@ -547,7 +554,7 @@ export class Order {
         }
         break;
       case COLOR_GREY:
-        switch (this.flag.secondaryColor) {
+        switch (this.secondaryColor) {
           case COLOR_YELLOW:
             if (this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
               this.hive.cells.upgrade.master.waitingForBees = 0;
@@ -586,7 +593,7 @@ export class Order {
         break;
       /*
     case COLOR_ORANGE:
-      if (this.flag.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
+      if (this.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
         let master = <PickupMaster>this.master;
         let ans = master.getTarget();
         if (ans.target && ans.amount > 500)
@@ -603,12 +610,23 @@ export class Order {
     delete Apiary.orders[this.ref];
   }
 
+  get pos() {
+    return this.flag.pos;
+  }
+
+  get color() {
+    return this.flag.color;
+  }
+
+  get secondaryColor() {
+    return this.flag.secondaryColor;
+  }
+
 
   update() {
     this.flag = Game.flags[this.ref];
     if (this.flag.pos.x !== this.pos.x || this.flag.pos.y !== this.pos.y)
       this.acted = false;
-    this.pos = this.flag.pos;
     if (!this.acted)
       this.act();
   }

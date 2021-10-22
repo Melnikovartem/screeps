@@ -949,7 +949,7 @@ export class RoomPlanner {
             });
             if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
               let heal = this.getCase(constructionSite).heal;
-              if (specials[sType])
+              if (sType in specials)
                 heal = specials[sType]!;
               ans.push({
                 pos: pos,
@@ -964,7 +964,7 @@ export class RoomPlanner {
         } else if (structure) {
           placed++;
           let heal = this.getCase(structure).heal;
-          if (specials[sType])
+          if (sType in specials)
             heal = specials[sType]!;
           if (structure.hits < heal * 0.25
             || (structure.hits < heal * coef && !constructions)
