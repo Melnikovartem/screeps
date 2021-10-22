@@ -104,8 +104,8 @@ export class BuilderMaster extends Master {
             let target = bee.pos.findClosest(this.hive.structuresConst);
             if (target && target.pos.getRangeTo(bee) > 3)
               bee.goTo(target.pos, opts);
+            break;
           }
-          break;
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
@@ -151,8 +151,8 @@ export class BuilderMaster extends Master {
           if (bee.state !== beeStates.chill)
             break;
         case beeStates.chill:
-          if (this.hive.structuresConst.length)
-            bee.state = beeStates.work;
+          if (this.hive.structuresConst.length && !chill)
+            bee.state = beeStates.refill;
           else if (bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
             let ans = bee.transfer(this.sCell.storage, RESOURCE_ENERGY);
             if (ans === OK && Apiary.logger)

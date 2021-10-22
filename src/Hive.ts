@@ -59,20 +59,22 @@ interface HiveCells {
 type ResTarget = { "energy": number } & { [key in ResourceConstant]?: number };
 
 const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
-type StructureGroups = "essential" | "mining" | "defense" | "hightech"
+type StructureGroups = "essential" | "mining" | "defense" | "hightech" | "trade";
 const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant[] } = {
   essential: [
     STRUCTURE_TOWER,
     STRUCTURE_SPAWN,
     STRUCTURE_EXTENSION,
-    STRUCTURE_STORAGE,
-    STRUCTURE_TERMINAL,
   ],
   mining: [
     STRUCTURE_ROAD,
     STRUCTURE_CONTAINER,
     STRUCTURE_LINK,
     STRUCTURE_EXTRACTOR,
+  ],
+  trade: [
+    STRUCTURE_STORAGE,
+    STRUCTURE_TERMINAL,
   ],
   defense: [
     STRUCTURE_WALL,
@@ -213,6 +215,8 @@ export class Hive {
         this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       } else {
+        this.wallsHealth = WALL_HEALTH;
+        this.wallsHealthMax = WALL_HEALTH;
         // try to develop the hive
         this.resTarget[BOOST_MINERAL.upgrade[0]] = HIVE_MINERAL * 2;
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
@@ -448,12 +452,16 @@ export class Hive {
         add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
         if (this.sumCost)
           return;
+        add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
+        if (this.sumCost)
+          return;
         if (this.builder && this.builder.activeBees)
           add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         else
           add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
-        if (!this.sumCost)
-          add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
+        if (this.sumCost)
+          return;
+        add(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
         if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
           this.wallsHealth += WALL_HEALTH;
         break;

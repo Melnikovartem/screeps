@@ -18,7 +18,11 @@ export class ResourceCell extends Cell {
   parentCell: ExcavationCell;
   master: MinerMaster;
   roadTime: number = Infinity;
+  restTime: number = Infinity;
+
   lair?: StructureKeeperLair;
+
+  ratePT: number = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
 
   operational: boolean = false;
 
@@ -38,6 +42,10 @@ export class ResourceCell extends Cell {
     if (!(this.pos.roomName in Game.rooms))
       return;
 
+
+    this.roadTime = Infinity;
+    this.restTime = Infinity;
+
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
       s => s.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
@@ -48,6 +56,11 @@ export class ResourceCell extends Cell {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
       this.operational = !!(this.extractor && this.container && !this.resource.ticksToRegeneration);
+      this.ratePT = 0
+      if (this.operational) {
+        let timeToChop = Math.max(this.master.activeBees.length ? this.master.activeBees[0].ticksToLive : CREEP_LIFE_TIME, 201) - 200;
+        this.ratePT = this.resource.mineralAmount / timeToChop;
+      }
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);
@@ -61,9 +74,12 @@ export class ResourceCell extends Cell {
     }
 
     if (this.operational) {
-      if (this.container)
+      if (this.container) {
         this.pos = this.container.pos;
-      else if (this.link) {
+        let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
+        this.roadTime = this.pos.getTimeForPath(storagePos);
+        this.restTime = this.pos.getTimeForPath(this.hive.rest);
+      } else if (this.link) {
         let poss = this.resource.pos.getOpenPositions(true);
         let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => pp.x === p.x && pp.y === p.y).length)[0];
         if (pos)
@@ -72,8 +88,6 @@ export class ResourceCell extends Cell {
           this.pos = this.resource.pos;
       } else
         this.pos = this.resource.pos;
-      let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.getPos("center");
-      this.roadTime = this.pos.getTimeForPath(storagePos);
     }
 
     if (this.hive.cells.dev)
@@ -90,17 +104,28 @@ export class ResourceCell extends Cell {
     if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
       this.parentCell.shouldRecalc = true;
       this.operational = false;
+      this.ratePT = 0;
     }
   }
 
   run() {
     if (this.link) {
       let usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY)
-      if (usedCap >= LINK_CAPACITY / 8 && this.link.cooldown === 0 && this.hive.cells.storage) {
-        let storageLink = this.hive.cells.storage.getFreeLink(true);
+      if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
+        let upgradeLink = this.hive.cells.upgrade && this.hive.cells.upgrade.link;
+        if (upgradeLink && usedCap >= upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY)
+          && upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8) {
+          let ans = this.link.transferEnergy(upgradeLink);
+          if (Apiary.logger && ans === OK) {
+            Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
+              this.link.store, upgradeLink.store, RESOURCE_ENERGY, 1, 0.03);
+          }
+        }
+
+        let storageLink = this.hive.cells.storage && this.hive.cells.storage.getFreeLink(true);
         if (storageLink && (usedCap <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY) || usedCap >= LINK_CAPACITY / 1.1428)) {
           let ans = this.link.transferEnergy(storageLink);
-          this.hive.cells.storage.linksState[storageLink.id] = "busy";
+          this.hive.cells.storage!.linksState[storageLink.id] = "busy";
           if (Apiary.logger && ans === OK)
             Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
               this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);

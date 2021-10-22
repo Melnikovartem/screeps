@@ -48,7 +48,7 @@ export class BootstrapMaster extends Master {
       if (cell.resourceType !== RESOURCE_ENERGY)
         return;
 
-      let roadTime = source.pos.getTimeForPath(this.cell.pos) - 2;
+      let roadTime = cell.restTime - 2;
       let cycleWithoutEnergy = roadTime * 2 + this.patternCount;
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
@@ -90,7 +90,7 @@ export class BootstrapMaster extends Master {
     if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
       return false;
     let check = () => this.checkBees(true);
-    if (!check() && !this.targetBeeCount)
+    if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
     return check();
@@ -205,7 +205,7 @@ export class BootstrapMaster extends Master {
           if (!source || source instanceof Source) {
             let pickupTarget = bee.pos.findClosest(targets);
             if (pickupTarget && this.containerTargeting[pickupTarget.id].current < this.containerTargeting[pickupTarget.id].max
-              && (!source || bee.pos.getRangeApprox(pickupTarget) < bee.pos.getRangeApprox(source) + 50)) {
+              && (!source || bee.pos.getRangeApprox(pickupTarget) * 2 < bee.pos.getRangeApprox(source) + 35)) {
               source = pickupTarget;
               bee.target = source.id;
               ++this.containerTargeting[source.id].current;
@@ -313,14 +313,13 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn) {
-            target = this.hive.room.storage;
-            workType = "refill";
-          }
-
           if (!target) {
             target = this.hive.getBuildTarget(bee);
-            if (target)
+            let storage = this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn && this.hive.room.storage;
+            if (storage && storage.isActive() && (!target || bee.pos.getRangeTo(storage) + 5 < bee.pos.getRangeTo(target))) {
+              target = this.hive.room.storage;
+              workType = "refill";
+            } else if (target)
               if (target instanceof Structure)
                 workType = "repair";
               else

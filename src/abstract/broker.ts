@@ -26,7 +26,6 @@ type PriceStat = { [key in ResourceConstant]?: number };
 
 @profile
 export class Broker {
-
   // if it will become to heavy will switch to storing orderId
 
   // buy - i buy in resource

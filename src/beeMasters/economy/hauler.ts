@@ -37,13 +37,9 @@ export class HaulerMaster extends Master {
     this.accumRoadTime = 0; // roadTime * minePotential
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
-        if (cell.operational && cell.roadTime !== Infinity && cell.container && !cell.link) {
-          let coef = 10; // mineral production
-          if (cell.resourceType !== RESOURCE_ENERGY) {
-            let body = setups.miner.minerals.getBody(this.hive.room.energyCapacityAvailable).body;
-            coef = body.filter(b => b === WORK).length / 5;
-          }
-          this.accumRoadTime += (cell.roadTime + cell.pos.getTimeForPath(this.hive.rest)) * coef;
+        if (cell.operational && cell.roadTime !== Infinity && cell.restTime !== Infinity && cell.container && !cell.link) {
+          let coef = Math.min(cell.master.getBeeRate(), cell.ratePT);
+          this.accumRoadTime += (cell.roadTime + cell.restTime) * coef;
         }
       });
     this.cell.shouldRecalc = false;
@@ -85,8 +81,8 @@ export class HaulerMaster extends Master {
       if (target && Apiary.bees[target.beeRef])
         return;
 
-      let bee = container.pos.findClosest(_.filter(this.activeBees, b => b.state === beeStates.chill
-        && b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell)));
+      let bee = container.pos.findClosest(_.filter(this.activeBees, b => b.state === beeStates.chill && b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell)));
+
       if (bee) {
         bee.state = beeStates.refill;
         bee.target = container.id;
@@ -113,54 +109,64 @@ export class HaulerMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.refill && bee.store.getFreeCapacity() === 0)
-        bee.state = beeStates.work;
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
-
-      if (bee.state === beeStates.work) {
-        let res: ResourceConstant = RESOURCE_ENERGY;
-
-        if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && bee.repairRoadOnMove() === OK)
-          this.roadUpkeepCost[bee.ref]++;
-
-        if (bee.pos.isNearTo(this.dropOff))
-          res = findOptimalResource(bee.store);
-        let ans = bee.transfer(this.dropOff, res);
-
-        if (Apiary.logger && ans === OK && bee.target) {
-          let ref = "mining_" + bee.target.slice(bee.target.length - 4);
-          Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.dropOff.store, res, 1);
-          if (this.roadUpkeepCost[bee.ref] > 0) {
-            Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
-            Apiary.logger.addResourceStat(this.hive.roomName, "build", -this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+      let res: ResourceConstant;
+      switch (bee.state) {
+        case beeStates.refill:
+          if (!bee.target || !this.targetMap[bee.target]) {
+            bee.state = beeStates.work;
+            break;
           }
-        }
 
-        if (bee.store.getUsedCapacity() === 0) {
-          bee.state = beeStates.chill;
-          bee.target = undefined;
-        }
-      }
-
-      if (bee.state === beeStates.refill) {
-        if (bee.target && this.targetMap[bee.target]) {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
-          if (target && bee.withdraw(target, this.targetMap[bee.target]!.resource, undefined, { offRoad: true }) === OK) {
+          res = this.targetMap[bee.target]!.resource;
+          let overproduction;
+          if (target && bee.pos.getRangeTo(target) <= 2) {
+            overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2).filter(r => r.resourceType === res)[0];
+            // overproduction or energy from SK defenders
+            if (overproduction)
+              bee.pickup(overproduction);
+          }
+
+          if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, res, undefined, { offRoad: true }) === OK) {
             this.targetMap[bee.target] = undefined;
             bee.state = beeStates.work;
-            let res: Source | Mineral | null = bee.pos.findClosest(target!.pos.findInRange(FIND_SOURCES, 2));
-            if (!res)
-              res = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 2));
-            bee.target = res ? res.id : undefined;
+            if (target) {
+              let source: Source | Mineral | null = bee.pos.findClosest(target.pos.findInRange(FIND_SOURCES, 1));
+              if (!source)
+                source = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 1));
+              bee.target = source ? source.id : undefined;
+            } else
+              bee.target = undefined;
           }
-        } else
-          bee.state = beeStates.chill; //failsafe
+          break;
+
+        case beeStates.work:
+          res = findOptimalResource(bee.store);
+
+          if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && bee.repairRoadOnMove() === OK)
+            this.roadUpkeepCost[bee.ref]++;
+
+          let ans = bee.transfer(this.dropOff, res);
+          if (ans === OK && Apiary.logger && bee.target) {
+            let ref = "mining_" + bee.target.slice(bee.target.length - 4);
+            Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.dropOff.store, res, 1);
+            if (this.roadUpkeepCost[bee.ref] > 0) {
+              Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+              Apiary.logger.addResourceStat(this.hive.roomName, "build", -this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+            }
+          }
+
+          if (!bee.store.getUsedCapacity()) {
+            bee.state = beeStates.chill;
+            bee.target = undefined;
+          } else
+            break;
+
+        case beeStates.chill:
+          bee.goRest(this.cell.pos, { offRoad: true });
       }
-
-      if (bee.state === beeStates.chill)
-        bee.goRest(this.cell.pos, { offRoad: true });
-
       this.checkFlee(bee);
     });
   }

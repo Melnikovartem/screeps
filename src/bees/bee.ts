@@ -67,6 +67,10 @@ export class Bee {
     return this.creep.pos;
   }
 
+  get body() {
+    return this.creep.body;
+  }
+
   get ticksToLive() {
     if (this.creep.ticksToLive)
       return this.creep.ticksToLive;
@@ -139,7 +143,7 @@ export class Bee {
 
   goRest(pos: RoomPosition, opt?: TravelToOptions): ScreepsReturnCode {
     this.actionPosition = pos;
-    if ((this.pos.x !== pos.x || this.pos.y !== pos.y) && (!this.pos.isNearTo(pos) || pos.isFree()) || this.pos.roomName !== pos.roomName)
+    if (!pos.equal(this) && (!this.pos.isNearTo(pos) || pos.isFree(false)))
       this.goTo(pos, opt);
     else
       return OK;

@@ -50,6 +50,7 @@ export class LaboratoryCell extends Cell {
   master: undefined;
   sCell: StorageCell;
   resTarget: { [key in ResourceConstant]?: number } = {};
+  patience: number = 0;
 
   constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
@@ -87,7 +88,7 @@ export class LaboratoryCell extends Cell {
       for (const r in this.hive.resState) {
         let res = <ReactionConstant>r; // atually ResourceConstant
         let toCreate = -this.hive.resState[res]!;
-        if (res in REACTION_MAP && toCreate > 0)
+        if (toCreate > 0 && res in REACTION_MAP)
           targets.push({ res: res, amount: toCreate });
       }
       if (!targets.length)
@@ -96,6 +97,27 @@ export class LaboratoryCell extends Cell {
       this.synthesizeTarget = targets[0];
     }
 
+    let [createQue, ingredients] = this.getCreateQue(this.synthesizeTarget.res);
+
+    _.forEach(ingredients, resource => {
+      if (this.sCell.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
+        this.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
+    });
+
+    let amount = this.newSynthesize(createQue.reduce((prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
+    if (!amount)
+      this.patience = 0;
+    else
+      ++this.patience;
+
+    if (this.patience > 64) {
+      this.patience = 0;
+      this.synthesizeTarget = undefined;
+    }
+  }
+
+  getCreateQue(res: ResourceConstant): [ReactionConstant[], BaseMineral[]] {
+    // prob should precal for each resource
     let ingredients: BaseMineral[] = [];
     let createQue: ReactionConstant[] = [];
 
@@ -110,21 +132,14 @@ export class LaboratoryCell extends Cell {
       dfs(recipe.res2);
     }
 
-    dfs(this.synthesizeTarget.res);
-
-    _.forEach(ingredients, resource => {
-      if (this.sCell.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
-        this.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
-    });
+    dfs(res);
 
     createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
     createQue = createQue.filter(res => {
       let recipe = REACTION_MAP[<ReactionConstant>res]!;
       return this.sCell.getUsedCapacity(recipe.res1) >= LAB_BOOST_MINERAL * 2 && this.sCell.getUsedCapacity(recipe.res2) >= LAB_BOOST_MINERAL * 2;
     })
-    if (!createQue.length)
-      return;
-    this.newSynthesize(createQue.reduce((prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
+    return [createQue, ingredients]
   }
 
   newProd() {
@@ -184,7 +199,7 @@ export class LaboratoryCell extends Cell {
     if (!requests) {
       requests = bee.master && bee.master.boosts;
       if (!requests)
-        return;
+        return rCode;
     }
 
     if (!this.boostRequests[bee.ref] || this.boostRequests[bee.ref].lastUpdated + 10 >= Game.time) {

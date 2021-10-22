@@ -163,7 +163,7 @@ export class SiegeMaster extends Master {
           let enemy = Apiary.intel.getEnemyCreep(pos);
 
           if (this.patience > 20) {
-            if (pos.x === bee.pos.x && pos.y === bee.pos.y && pos.roomName === bee.pos.roomName)
+            if (pos.equal(bee))
               bee.goTo(this.cell.pos);
             bee.target = undefined;
           }

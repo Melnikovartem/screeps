@@ -164,8 +164,11 @@ export class Intel {
     // it is cached after first check
     if (!Apiary.useBucket)
       lag = Math.max(4, lag);
-    if (roomInfo.lastUpdated + lag >= Game.time)
+    if (roomInfo.lastUpdated + lag >= Game.time) {
+      if (lag > 0)
+        roomInfo.enemies = roomInfo.enemies.filter(e => Game.getObjectById(e.object.id));
       return roomInfo;
+    }
 
     if (!(roomName in Game.rooms)) {
       Apiary.requestSight(roomName);

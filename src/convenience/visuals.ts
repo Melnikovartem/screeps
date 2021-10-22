@@ -76,6 +76,7 @@ export class Visuals {
           let hive = Apiary.hives[name];
           this.changeAnchor(1, 1, name);
           this.statsHive(hive);
+          this.statsNetwork(hive);
           this.statsLab(hive);
 
           _.forEach(hive.annexNames, annex => {
@@ -387,6 +388,12 @@ export class Visuals {
     let minSize = 0;
     this.updateAnchor(this.table(ans, this.anchor, undefined, minSize));
     minSize = Math.max(minSize, this.anchor.x - 1);
+  }
+
+  statsNetwork(hive: Hive) {
+    let aid = Apiary.network.aid[hive.roomName];
+    if (aid)
+      this.updateAnchor(this.label(`💸 ${aid.to} -> ${aid.res} ${aid.amount}`, this.anchor));
   }
 
   statsLab(hive: Hive) {

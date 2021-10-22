@@ -15,7 +15,6 @@ declare global {
     state: beeStates;
     target?: string;
 
-
     //for TRAVELER
     _trav?: any;
     _travel?: any;

@@ -18,7 +18,7 @@ export abstract class SquadMaster extends SwarmMaster {
   formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP; // TODO rotate formation to enemy
   targetBeeCount = 1;
   maxSpawns = 1;
-  movePriority = <2>2;
+  movePriority = <1>1;
   priority = <1>1;
   boosts: Boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "attack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "fatigue", lvl: 2 }, { type: "damage", lvl: 2 }];
   stuckValue = 0;
@@ -131,7 +131,7 @@ export abstract class SquadMaster extends SwarmMaster {
         continue;
       let beePos = this.formationBees[i]!.pos;
       let desiredPos = this.getDeisredPos(i);
-      if (!desiredPos || beePos.x !== desiredPos.x || beePos.y !== desiredPos.y || beePos.roomName !== desiredPos.roomName)
+      if (!desiredPos || !beePos.equal(desiredPos))
         return ERR_NOT_IN_RANGE;
     }
 
@@ -212,58 +212,61 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
-    let moveTarget = enemy && (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5) ? enemy.pos : this.order.pos;
-    if (enemy && bee.pos.getRangeTo(enemy) > 3) {
-      switch (bee.pos.getDirectionTo(enemy)) {
-        case TOP:
-          this.formationRotation = TOP;
-          break;
-        case TOP_RIGHT:
-          if (this.formationRotation !== TOP)
-            this.formationRotation = RIGHT;
-          break;
-        case RIGHT:
+  rotateFormation(direction: DirectionConstant) {
+    switch (direction) {
+      case TOP:
+        this.formationRotation = TOP;
+        break;
+      case TOP_RIGHT:
+        if (this.formationRotation !== TOP)
           this.formationRotation = RIGHT;
-          break;
-        case BOTTOM_RIGHT:
-          if (this.formationRotation !== BOTTOM)
-            this.formationRotation = RIGHT;
-          break;
-        case BOTTOM:
-          this.formationRotation = BOTTOM;
-          break;
-        case BOTTOM_LEFT:
-          if (this.formationRotation !== BOTTOM)
-            this.formationRotation = LEFT;
-          break;
-        case LEFT:
+        break;
+      case RIGHT:
+        this.formationRotation = RIGHT;
+        break;
+      case BOTTOM_RIGHT:
+        if (this.formationRotation !== BOTTOM)
+          this.formationRotation = RIGHT;
+        break;
+      case BOTTOM:
+        this.formationRotation = BOTTOM;
+        break;
+      case BOTTOM_LEFT:
+        if (this.formationRotation !== BOTTOM)
           this.formationRotation = LEFT;
-          break;
-        case TOP_LEFT:
-          if (this.formationRotation !== TOP)
-            this.formationRotation = LEFT;
-          break;
-      }
+        break;
+      case LEFT:
+        this.formationRotation = LEFT;
+        break;
+      case TOP_LEFT:
+        if (this.formationRotation !== TOP)
+          this.formationRotation = LEFT;
+        break;
     }
-    bee.goTo(moveTarget, {
-      movingTarget: true, maxOps: Math.min(2000, 750 * this.activeBees.length),
+  }
+
+  getPathArgs(centerBeeRef: string): TravelToOptions {
+    return {
+      movingTarget: true,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;
         for (let x = 0; x <= 49; ++x)
           for (let y = 0; y <= 49; ++y) {
-            let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), bee.ref);
+            let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), centerBeeRef);
             matrix.set(x, y, moveMent);
           }
         return matrix;
       }
-    });
-    let direction: DirectionConstant | undefined;
-    if (bee.targetPosition && (bee.targetPosition.x !== bee.pos.x || bee.targetPosition.y !== bee.pos.y || bee.targetPosition.roomName !== bee.pos.roomName))
-      direction = bee.pos.getDirectionTo(bee.targetPosition);
+    }
+  }
 
-    return direction;
+  moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
+    let moveTarget = enemy && (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5) ? enemy.pos : this.order.pos;
+    if (enemy && bee.pos.getRangeTo(enemy) > 3)
+      this.rotateFormation(bee.pos.getDirectionTo(enemy));
+
+    bee.goTo(moveTarget, this.getPathArgs(bee.ref));
   }
 
   run() {
@@ -311,7 +314,10 @@ export abstract class SquadMaster extends SwarmMaster {
     let valid: number = this.validFormation();
     if (valid === OK) {
       this.stuckValue = 0;
-      let direction = this.moveCenter(centerBee, enemy);
+      this.moveCenter(centerBee, enemy);
+      let direction: DirectionConstant | undefined;
+      if (centerBee.targetPosition && !centerBee.targetPosition.equal(centerBee))
+        direction = centerBee.pos.getDirectionTo(centerBee.targetPosition);
       if (direction)
         _.forEach(this.activeBees, b => {
           if (b.ref === centerBee.ref)

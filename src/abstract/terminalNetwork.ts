@@ -8,6 +8,8 @@ export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 export type ResourceTarget = { [key in ResourceConstant]?: number };
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
+const ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U"]; //"X", "O", "Z"];
+
 function add(dict: ResourceTarget, res: string, amount: number) {
   if (!dict[<ResourceConstant>res])
     dict[<ResourceConstant>res] = 0;
@@ -69,9 +71,9 @@ export class Network {
         continue;
       let terminal = hive.cells.storage.terminal;
       let usedTerminal = false;
-      for (const r in hive.shortages)
-        if (r.length === 1) {
-          let res = <ResourceConstant>r;
+      for (const r in hive.shortages) {
+        let res = <ResourceConstant>r;
+        if (ALLOWED_TO_BUYIN.includes(res)) {
           let amount = hive.shortages[res]!;
           let ans = Apiary.broker.buyIn(terminal, res, amount, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
           if (ans === "short") {
@@ -79,6 +81,8 @@ export class Network {
             break;
           }
         }
+      }
+
       if (usedTerminal)
         continue;
 

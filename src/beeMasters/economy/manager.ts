@@ -128,7 +128,7 @@ export class ManagerMaster extends Master {
         let poss = [this.hive.getPos("queen1"), this.hive.getPos("queen2")];
         let shouldMove = true
         _.forEach(poss, p => {
-          if (p.x === bee.pos.x && p.y === bee.pos.y)
+          if (p.equal(bee))
             shouldMove = false;
         });
         if (shouldMove) {

@@ -21,7 +21,7 @@ const EXTRA_SIDE: Module = { poss: {}, exits: [{ x: 20, y: 23 }, { x: 20, y: 27 
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
-const CONSTRUCTIONS_PER_ROOM = 8;
+const CONSTRUCTIONS_PER_TYPE = 4;
 
 export const WALL_HEALTH = 10000;
 
@@ -983,7 +983,7 @@ export class RoomPlanner {
         console .log(`${roomName} ${sType} : ${ans.length}/(${constructions}+${toadd.length}) : ${_.sum(ans, e => e.targetHits / 100)}/${_.sum(ans, e => e.energyCost)}`);
       */
       if (!constructions)
-        for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_ROOM; ++i) {
+        for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_TYPE; ++i) {
           let anss;
           if (sType === STRUCTURE_SPAWN)
             anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
