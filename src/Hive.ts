@@ -431,6 +431,8 @@ export class Hive {
             [STRUCTURE_WALL]: health,
             [STRUCTURE_RAMPART]: health,
           }, 0.9));
+          if (!this.sumCost)
+            this.wallsHealth = health;
         }
         break;
       case hiveStates.nukealert:

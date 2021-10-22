@@ -181,25 +181,43 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined | null, healingTarget: Creep | Bee | undefined | null) {
+  beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined | null, healingTargets: { bee: Bee, heal: number }[]) {
     let action1;
     let action2;
 
     let beeStats = Apiary.intel.getStats(bee.creep).current;
 
-    if (beeStats.heal > 0 && !healingTarget)
-      healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
+    let healingTarget: { bee: Bee | Creep | null, heal: number } = { bee: null, heal: 0 };
+
+    if (beeStats.heal > 0) {
+      let fromCore = healingTargets.filter(t => t.heal > 0);
+      if (fromCore.length)
+        healingTarget = fromCore.reduce((prev, curr) => {
+          let ans = curr.bee.pos.getRangeTo(bee) - prev.bee.pos.getRangeTo(bee);
+          if (ans === 0)
+            ans = prev.heal - curr.heal;
+          return ans < 0 ? curr : prev;
+        });
+      if (!healingTarget.bee)
+        healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
+    }
 
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
-    let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
+    let rangeToHealingTarget = healingTarget.bee ? bee.pos.getRangeTo(healingTarget.bee) : Infinity;
 
     if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
       action2 = () => bee.rangedAttack(target);
-    else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
-      action2 = () => bee.rangedHeal(healingTarget);
+    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
+      action2 = () => {
+        healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
+        return bee.rangedHeal(healingTarget.bee)
+      }
 
     if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget);
+      action1 = () => {
+        healingTarget.heal -= beeStats.heal;
+        return bee.heal(healingTarget.bee);
+      }
     else if (rangeToTarget === 1) {
       if (beeStats.dism > 0 && target instanceof Structure)
         action1 = () => bee.dismantle(target);
@@ -266,32 +284,40 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
-    let moveTarget = enemy && (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5) ? enemy.pos : this.order.pos;
-    if (enemy && bee.pos.getRangeTo(moveTarget) > 3)
-      this.rotateFormation(bee.pos.getDirectionTo(enemy));
+    let moveTarget = this.order.pos;
+    let opts = this.getPathArgs(bee.ref);
+    if (enemy) {
+      if (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5)
+        moveTarget = enemy.pos;
+      if (!this.stats.current.dmgClose)
+        opts.range = 2;
+      if (enemy && bee.pos.getRangeTo(moveTarget) > 3)
+        this.rotateFormation(bee.pos.getDirectionTo(enemy));
+    }
 
-    bee.goTo(moveTarget, this.getPathArgs(bee.ref));
+    bee.goTo(moveTarget, opts);
   }
 
   run() {
     let enemy: Enemy["object"] | undefined;
 
-    if (this.stats.current.dmgClose > 0)
+    if (this.stats.current.dmgClose > 0 || this.stats.current.dmgRange > 0)
       enemy = Apiary.intel.getEnemy(this.formationCenter);
     else if (this.stats.current.dism > 0)
       enemy = Apiary.intel.getEnemyStructure(this.formationCenter);
 
-    let healingTarget: Bee | null | undefined;
+    let healingTargets: { bee: Bee, heal: number }[] = [];
     if (this.stats.current.heal) {
-      let healingTargets = this.activeBees.filter(b => b.hits < b.hitsMax);
-      if (healingTargets.length)
-        healingTarget = healingTargets.reduce((prev, curr) => curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev);
-      else if (enemy instanceof StructureTower)
-        healingTarget = enemy.pos.findClosest(this.activeBees);
+      healingTargets = this.activeBees.filter(b => b.hits < b.hitsMax).map(b => { return { bee: b, heal: b.hitsMax - b.hits } });
+      if (!healingTargets.length && enemy instanceof StructureTower) {
+        let toHeal = enemy.pos.findClosest(this.activeBees);
+        if (toHeal)
+          healingTargets = [{ bee: toHeal, heal: Infinity }];
+      }
     }
 
     _.forEach(this.activeBees, bee => {
-      this.beeAct(bee, enemy, healingTarget);
+      this.beeAct(bee, enemy, healingTargets);
     });
 
     let readyToGo = true;

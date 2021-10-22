@@ -14,7 +14,7 @@ type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "ran
 export const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant] } = { "harvest": ["UO", "UHO2", "XUHO2"], "build": ["LH", "LH2O", "XLH2O"], "dismantle": ["ZH", "ZH2O", "XZH2O"], "upgrade": ["GH", "GH2O", "XGH2O"], "attack": ["UH", "UH2O", "XUH2O"], "rangedAttack": ["KO", "KHO2", "XKHO2"], "heal": ["LO", "LHO2", "XLHO2"], "capacity": ["KH", "KH2O", "XKH2O"], "fatigue": ["ZO", "ZHO2", "XZHO2"], "damage": ["GO", "GHO2", "XGHO2"] };
 export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
-
+export const BASE_MINERALS: ResourceConstant[] = ["H", "K", "L", "U", "X", "O", "Z"];
 export const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
 for (const res1 in REACTIONS) {
   for (const res2 in REACTIONS[res1])
@@ -83,7 +83,7 @@ export class LaboratoryCell extends Cell {
 
   stepToTarget() {
     this.resTarget = {};
-    if (!this.synthesizeTarget || !this.synthesizeTarget.amount) {
+    if (!this.synthesizeTarget || this.synthesizeTarget.amount <= 0) {
       let targets: { res: ReactionConstant, amount: number }[] = [];
       for (const r in this.hive.resState) {
         let res = <ReactionConstant>r; // atually ResourceConstant
@@ -92,7 +92,7 @@ export class LaboratoryCell extends Cell {
           targets.push({ res: res, amount: toCreate });
       }
       if (!targets.length)
-        return;
+        targets = [{ res: "XGH2O", amount: 2048 }];
       targets.sort((a, b) => b.amount - a.amount);
       this.synthesizeTarget = targets[0];
     }
@@ -100,11 +100,12 @@ export class LaboratoryCell extends Cell {
     let [createQue, ingredients] = this.getCreateQue(this.synthesizeTarget.res);
 
     _.forEach(ingredients, resource => {
-      if (this.sCell.getUsedCapacity(resource) < LAB_MINERAL_CAPACITY)
-        this.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
+      this.resTarget[resource] = LAB_MINERAL_CAPACITY * 2;
     });
 
-    let amount = this.newSynthesize(createQue.reduce((prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
+
+    let amount = createQue.length && this.newSynthesize(createQue.reduce(
+      (prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
     if (!amount)
       this.patience = 0;
     else
@@ -224,7 +225,8 @@ export class LaboratoryCell extends Cell {
       if (!lab || this.labStates[lab.id] !== r.res) {
         let getLab = (state?: LabState, sameMineral = true) => {
           _.some(this.laboratories, l => {
-            if ((!sameMineral || l.mineralType === r.res) && ((!state && this.labStates[l.id] !== "source") || this.labStates[l.id] === state))
+            let currState = this.labStates[l.id]
+            if ((!sameMineral || l.mineralType === r.res) && ((!state && currState !== "source" && !(currState in REACTION_TIME)) || currState === state))
               lab = l;
             return lab;
           });

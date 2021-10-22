@@ -79,8 +79,8 @@ export class UpgraderMaster extends Master {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting)
         return;
-      if ((this.fastModePossible && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME
-        && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25) || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+      if (((this.fastModePossible && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME && bee.store.getUsedCapacity(RESOURCE_ENERGY) <= 25)
+        || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) && bee.ticksToLive > 2) {
         let suckerTarget;
         if (this.cell.link && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME / 2) {
           let carryPart = bee.getActiveBodyParts(CARRY);

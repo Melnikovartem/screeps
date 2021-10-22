@@ -74,7 +74,7 @@ export class Broker {
     });
 
     _.forEach(orders, order => {
-      if (!order.roomName || !order.amount)
+      if (!order.roomName || !order.amount || order.id in Game.market.orders)
         return;
       let res = <ResourceConstant>order.resourceType;
 

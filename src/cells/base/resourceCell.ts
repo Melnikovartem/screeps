@@ -116,9 +116,11 @@ export class ResourceCell extends Cell {
         if (upgradeLink && usedCap >= upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY)
           && upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8) {
           let ans = this.link.transferEnergy(upgradeLink);
-          if (Apiary.logger && ans === OK) {
-            Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
-              this.link.store, upgradeLink.store, RESOURCE_ENERGY, 1, 0.03);
+          if (ans === OK) {
+            if (Apiary.logger)
+              Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
+                this.link.store, upgradeLink.store, RESOURCE_ENERGY, 1, 0.03);
+            return;
           }
         }
 

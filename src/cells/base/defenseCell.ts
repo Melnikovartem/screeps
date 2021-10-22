@@ -144,8 +144,7 @@ export class DefenseCell extends Cell {
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.dangerlvlmax > 3) {
-
+      if (roomInfo.dangerlvlmax > 3 && roomInfo.enemies.length) {
         let enemy = roomInfo.enemies[0].object;
         if (!this.notDef(roomName))
           return;

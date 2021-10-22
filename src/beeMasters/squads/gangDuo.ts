@@ -19,13 +19,13 @@ export class GangDuo extends SquadMaster {
   get checkup() {
     if (!this.hive.cells.storage)
       return false;
-    let usedCap = this.hive.cells.storage.getUsedCapacity;
+    let starge = this.hive.cells.storage;
     let body = GANG.getBody(this.hive.room.energyCapacityAvailable, 17).body;
     let ans = true;
     _.forEach(this.boosts, b => {
       let res = BOOST_MINERAL[b.type][b.lvl];
       let amountNeeded = LAB_BOOST_MINERAL * _.sum(body, bb => bb === BOOST_PARTS[b.type] ? 1 : 0) * this.formation.length;
-      if (amountNeeded && usedCap(res) < amountNeeded) {
+      if (amountNeeded && starge.getUsedCapacity(res) < amountNeeded) {
         this.hive.add(this.hive.mastersResTarget, res, amountNeeded);
         ans = false;
       }

@@ -285,20 +285,20 @@ export class CustomConsole {
     return terminal;
   }
 
-  buyComplex(padding = 1000, hiveName: string = this.lastActionRoomName, mode = "") {
+  buyMastersMinerals(padding = 0, hiveName: string = this.lastActionRoomName, mode = "short") {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
-    let state = hive.resState;
+    let state = hive.mastersResTarget;
 
     let ans = `OK @ ${this.format(hiveName)}`;
     _.forEach(state, (amount, r) => {
       if (!amount || !r)
         return;
       let res = <ResourceConstant>r;
-      if (!(res in REACTION_MAP) || amount > 0)
+      if (!(res in REACTION_MAP) || hive.resTarget[res]! > 0)
         return;
-      let sets = Math.min(Math.round((-amount + padding) / 5000 * 1000) / 1000, 1);
+      let sets = Math.min(Math.round((amount + padding) / 5000 * 1000) / 1000, 1);
       let buyAns;
       switch (mode) {
         case "short":

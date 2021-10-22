@@ -148,8 +148,13 @@ export class Network {
         hive.add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
 
     if (hive.cells.lab)
-      for (const res in hive.cells.lab.resTarget)
-        hive.add(hive.resState, res, -hive.cells.lab.resTarget[<ResourceConstant>res]!);
+      for (const res in hive.cells.lab.resTarget) {
+        let amount = -hive.cells.lab.resTarget[<ResourceConstant>res]! / 2;
+        // so we dont move when there are still enough minerals
+        hive.add(hive.resState, res, amount);
+        if (hive.resState[<ResourceConstant>res]! < 0)
+          hive.add(hive.resState, res, amount);
+      }
 
     for (const res in hive.resTarget)
       hive.add(hive.resState, res, -hive.resTarget[<ResourceConstant>res]!);
@@ -164,111 +169,4 @@ export class Network {
         hive.add(hive.cells.storage.resTargetTerminal, res, Math.min(marketState[<ResourceConstant>res]!, 5000));
     }
   }
-
-  /*
-    run() {
-      if (this.terminal && !this.terminal.cooldown) {
-        let amountSend: number = 0;
-
-        for (let resourceConstant in this.hive.resTarget) {
-          let resource = <ResourceConstant>resourceConstant;
-          let desire = this.hive.resTarget[resource]!;
-          let balance = this.getUsedCapacity(resource) - desire;
-          if (balance < 0) {
-            let amount = -balance;
-            let hurry = amount > desire * 0.9;
-            if (hurry)
-              amount = Math.floor(amount * 0.25);
-            if (this.askAid(resource, amount, hurry))
-              return;
-          }
-        }
-
-        amountSend = 0;
-
-        if (this.terminal.store.getFreeCapacity() > this.terminal.store.getCapacity() * 0.3)
-          return;
-
-        let res: ResourceConstant = RESOURCE_ENERGY;
-        let amount: number = 0;
-        for (let resourceConstant in this.terminal.store) {
-          let resource = <ResourceConstant>resourceConstant;
-
-          if (resource in this.hive.resTarget && this.getUsedCapacity(resource) <= this.hive.resTarget[resource]!)
-            continue;
-
-          let newAmount = this.terminal.store.getUsedCapacity(resource);
-          if (resource === RESOURCE_ENERGY)
-            newAmount -= this.terminalState.energy;
-          if (newAmount > amount) {
-            res = resource;
-            amount = newAmount;
-          }
-        }
-
-        amountSend = this.sendAid(res, amount);
-
-        if (amountSend === 0)
-          Apiary.broker.sellShort(this.terminal, res, amount);
-      }
-    }
-
-
-
-
-    askAid(res: ResourceConstant, amount: number, hurry?: boolean) {
-      if (!this.terminal)
-        return 0;
-      let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName
-        && h.cells.storage && h.cells.storage.terminal
-        && (!(res in h.resTarget) || h.cells.storage.storage.store.getUsedCapacity(res) > h.resTarget[res]!));
-
-      if (!hives.length) {
-        if (res === RESOURCE_ENERGY)
-          return 0;
-        let ans = Apiary.broker.buyIn(this.terminal, res, amount, hurry);
-        if (ans === "short")
-          return amount;
-        return 0;
-      }
-
-      let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
-      let sCell = closest.cells.storage!;
-      if (!sCell.requests[STRUCTURE_TERMINAL + "_" + sCell.terminal!.id]) {
-        let deiseredIn = closest.resTarget[res] ? closest.resTarget[res]! : 0;
-        sCell.requestFromStorage([sCell.terminal!], 5, res, sCell.storage.store.getUsedCapacity(res) - deiseredIn, true);
-      }
-
-      return 0;
-    }
-
-    sendAid(res: ResourceConstant, amount: number) {
-      if (!this.terminal)
-        return 0;
-      let hives = _.filter(Apiary.hives, h => h.roomName != this.hive.roomName
-        && h.cells.storage && h.cells.storage.terminal
-        && res in h.resTarget && h.cells.storage.storage.store.getUsedCapacity(res) < h.resTarget[res]!);
-
-      if (!hives.length)
-        return 0;
-
-      let amoundSend: number = 0;
-      let closest = hives.reduce((prev, curr) => this.pos.getRoomRangeTo(prev) > this.pos.getRoomRangeTo(curr) ? curr : prev);
-      let terminalTo = closest.cells.storage! && closest.cells.storage!.terminal!;
-      amoundSend = Math.min(amount, terminalTo.store.getFreeCapacity(res));
-
-      let energyCost = Game.market.calcTransactionCost(10000, this.pos.roomName, terminalTo.pos.roomName) / 10000;
-      let energyCap = Math.floor(this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
-      amoundSend = Math.min(amoundSend, energyCap);
-
-      if (res === RESOURCE_ENERGY && amoundSend * (1 + energyCost) > this.terminal.store.getUsedCapacity(RESOURCE_ENERGY))
-        amoundSend = Math.floor(amoundSend * (1 - energyCost));
-
-      let ans = this.terminal.send(res, amoundSend, terminalTo.pos.roomName);
-      if (ans === OK && Apiary.logger)
-        Apiary.logger.newTerminalTransfer(this.terminal, terminalTo, amoundSend, res);
-
-      return amoundSend;
-    }
-    */
 }
