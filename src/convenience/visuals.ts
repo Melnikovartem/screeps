@@ -20,6 +20,7 @@ export class Visuals {
     [GLOBAL_VISUALS_HEAVY]: { data: "", lastRecalc: -1 },
   };
   anchor: VisInfo = { x: 49, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
+  usedAnchors: { [roomName: string]: VisInfo } = {}
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
 
@@ -28,8 +29,13 @@ export class Visuals {
     this.anchor.y = y === undefined ? this.anchor.y + SPACING : y;
 
     if (roomName) {
-      this.anchor.vis = new RoomVisual(makeId(8));
-      this.anchor.ref = roomName;
+      this.usedAnchors[this.anchor.ref] = this.anchor;
+      if (roomName in this.usedAnchors)
+        this.anchor = this.usedAnchors[roomName];
+      else {
+        this.anchor.vis = new RoomVisual(makeId(8));
+        this.anchor.ref = roomName;
+      }
     }
 
     return this.anchor;
@@ -45,6 +51,7 @@ export class Visuals {
 
   update() {
     let allglobal = true;
+    this.usedAnchors = {};
     for (const name in this.caching)
       if (name !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);

@@ -139,7 +139,6 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       let balance = this.terminal.store.getUsedCapacity(res) - this.resTargetTerminal[res]!;
       if (balance < 0) {
-        console.log(res, balance, this.hive.print)
         if (this.requestFromStorage([this.terminal], 5, res, -balance) > 0)
           return;
       } else if (balance > 0) {

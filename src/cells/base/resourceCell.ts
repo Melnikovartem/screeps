@@ -109,12 +109,14 @@ export class ResourceCell extends Cell {
   }
 
   run() {
-    if (this.link) {
+    if (this.link && !this.link.cooldown) {
       let usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY)
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
+        let closeToFull = usedCap >= LINK_CAPACITY / 1.1428;
+
         let upgradeLink = this.hive.cells.upgrade && this.hive.cells.upgrade.link;
-        if (upgradeLink && usedCap >= upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY)
-          && upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8) {
+        if (upgradeLink && (upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= usedCap
+          || upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && !closeToFull)) {
           let ans = this.link.transferEnergy(upgradeLink);
           if (ans === OK) {
             if (Apiary.logger)
@@ -125,7 +127,7 @@ export class ResourceCell extends Cell {
         }
 
         let storageLink = this.hive.cells.storage && this.hive.cells.storage.getFreeLink(true);
-        if (storageLink && (usedCap <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY) || usedCap >= LINK_CAPACITY / 1.1428)) {
+        if (storageLink && (usedCap <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY) || closeToFull)) {
           let ans = this.link.transferEnergy(storageLink);
           this.hive.cells.storage!.linksState[storageLink.id] = "busy";
           if (Apiary.logger && ans === OK)

@@ -7,7 +7,18 @@ import type { Hive, ResTarget } from "../hive"
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
-const ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U"]; //"X", "O", "Z"];
+const CHECK_FOR_SHORTAGES = 5;
+
+let ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U", "X", "O", "Z"];
+
+switch (Game.shard.name) {
+  case "shard2":
+    ALLOWED_TO_BUYIN = ["H", "K", "L", "U"];
+    break;
+  case "shard3":
+    ALLOWED_TO_BUYIN = ["H", "K", "L", "U", "X", "Z"];
+    break;
+}
 
 @profile
 export class Network {
@@ -109,6 +120,8 @@ export class Network {
   }
 
   reactToState(hive: Hive) {
+    if (Game.time % CHECK_FOR_SHORTAGES !== 0 || Game.time === Apiary.createTime)
+      return;
     for (const r in hive.resState) {
       const res = <ResourceConstant>r;
       if (hive.resState[res]! < 0) {

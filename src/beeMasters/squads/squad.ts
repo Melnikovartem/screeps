@@ -9,11 +9,13 @@ import type { CreepSetup } from "../../bees/creepSetups";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
 export type FormationPositions = [Pos, CreepSetup][];
+const SQUAD_VISUALS = true;
+
 //first tandem btw
 @profile
 export abstract class SquadMaster extends SwarmMaster {
   formation: FormationPositions = [];
-  formationBees: Bee[] = [];
+  formationBees: (Bee | undefined)[] = [];
   formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest;
   formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP; // TODO rotate formation to enemy
   targetBeeCount = 1;
@@ -86,6 +88,12 @@ export abstract class SquadMaster extends SwarmMaster {
           }, this.ref + "_" + i);
       }
     }
+
+    for (let i = 0; i < this.formationBees.length; ++i) {
+      let bee = this.formationBees[i];
+      if (bee && !Object.keys(this.bees).includes(bee.ref))
+        this.formationBees[i] = undefined;
+    }
   }
 
   get checkup() {
@@ -96,9 +104,9 @@ export abstract class SquadMaster extends SwarmMaster {
     return true;
   }
 
-  getDeisredPos(i: number, pos: RoomPosition = this.formationCenter) {
+  getDeisredPos(i: number, centerPos: RoomPosition = this.formationCenter) {
     let p = this.formation[i][0];
-    let [x, y] = [pos.x, pos.y];
+    let [x, y] = [centerPos.x, centerPos.y];
     switch (this.formationRotation) {
       case TOP:
         x += p.x;
@@ -119,21 +127,15 @@ export abstract class SquadMaster extends SwarmMaster {
     }
     if (x < 0 || y < 0 || x > 49 || y > 49)
       return null;
-    return new RoomPosition(x, y, pos.roomName);
-  }
-
-  isAlive(bee: Bee | undefined) {
-    return bee && Object.keys(this.bees).includes(bee.ref);
+    return new RoomPosition(x, y, centerPos.roomName);
   }
 
   validFormation() {
-    if (this.maxSpawns !== this.spawned)
-      return ERR_BUSY;
-
     for (let i = 0; i < this.formation.length; ++i) {
-      if (!this.isAlive(this.formationBees[i]))
+      let bee = this.formationBees[i];
+      if (!bee)
         continue;
-      let beePos = this.formationBees[i]!.pos;
+      let beePos = bee.pos;
       let desiredPos = this.getDeisredPos(i);
       if (!desiredPos || !beePos.equal(desiredPos))
         return ERR_NOT_IN_RANGE;
@@ -146,13 +148,14 @@ export abstract class SquadMaster extends SwarmMaster {
     let max = 1;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
-      if (!this.isAlive(this.formationBees[i]))
+      let bee = this.formationBees[i];
+      if (!bee)
         continue;
       let desiredPos = this.getDeisredPos(i, pos);
       if (!desiredPos)
         continue; // exit
       if (!desiredPos.isFree(true))
-        if (this.formationBees[i].ref === centerRef)
+        if (bee.ref === centerRef)
           return 255;
         else
           max = 64
@@ -166,14 +169,14 @@ export abstract class SquadMaster extends SwarmMaster {
     let terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
       let desiredPos = this.getDeisredPos(i);
-      if (!desiredPos || !desiredPos.isFree(true) && this.isAlive(this.formationBees[i]) || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
+      if (!desiredPos || !desiredPos.isFree(true) && this.formationBees[i] || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
         return ERR_NO_PATH;
     }
 
     for (let i = 0; i < this.formationBees.length; ++i) {
-      if (!this.isAlive(this.formationBees[i]))
-        continue;
       let bee = this.formationBees[i];
+      if (!bee)
+        continue;
       let desiredPos = this.getDeisredPos(i)!;
       bee.goTo(desiredPos, { movingTarget: true, ignoreCreeps: false });
       bee.actionPosition = desiredPos;
@@ -287,15 +290,43 @@ export abstract class SquadMaster extends SwarmMaster {
     let moveTarget = this.order.pos;
     let opts = this.getPathArgs(bee.ref);
     if (enemy) {
-      if (bee.pos.roomName === this.order.pos.roomName || bee.pos.getRangeTo(enemy) < 5)
+      if (bee.pos.roomName === this.order.pos.roomName)
         moveTarget = enemy.pos;
       if (!this.stats.current.dmgClose)
         opts.range = 2;
-      if (enemy && bee.pos.getRangeTo(moveTarget) > 3)
+      if (enemy && (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 3)) {
+        let prevRotation = this.rotateFormation;
         this.rotateFormation(bee.pos.getDirectionTo(enemy));
+        if (prevRotation !== this.rotateFormation)
+          bee.memory._trav = undefined;
+      }
     }
+    if (enemy && this.canBeOutDmged(bee.pos)) {
+      bee.flee(enemy, this.order);
+    } else {
+      bee.goTo(moveTarget, opts);
+      if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition))
+        bee.targetPosition = undefined;
+    }
+  }
 
-    bee.goTo(moveTarget, opts);
+  canBeOutDmged(pos: RoomPosition) {
+    let roomInfo = Apiary.intel.getInfo(pos.roomName);
+    if (roomInfo.safePlace)
+      return false;
+    for (let i = 0; i < this.formation.length; ++i) {
+      if (!this.formationBees[i])
+        continue;
+      let desiredPos = this.getDeisredPos(i, pos);
+      if (!desiredPos)
+        continue;
+      let stats = Apiary.intel.getComplexStats(desiredPos, undefined, 3).current;
+      let creepDmg = stats.dmgClose + stats.dmgRange;
+      let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
+      if (towerDmg + creepDmg > this.stats.current.heal)
+        return true;
+    }
+    return false;
   }
 
   run() {
@@ -320,7 +351,7 @@ export abstract class SquadMaster extends SwarmMaster {
       this.beeAct(bee, enemy, healingTargets);
     });
 
-    let readyToGo = true;
+    let readyToGo = this.spawned === this.maxSpawns;
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting) {
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts) === OK)
@@ -337,7 +368,7 @@ export abstract class SquadMaster extends SwarmMaster {
       return;
     }
 
-    let centerBee = this.formationBees.filter(b => this.isAlive(b))[0];
+    let centerBee = _.compact(this.formationBees)[0];
     if (!centerBee)
       return;
 
@@ -350,7 +381,7 @@ export abstract class SquadMaster extends SwarmMaster {
         direction = centerBee.pos.getDirectionTo(centerBee.targetPosition);
       if (direction)
         _.forEach(this.activeBees, b => {
-          if (b.ref === centerBee.ref)
+          if (b.ref === centerBee!.ref)
             return;
           let pos = b.pos.getPosInDirection(direction!);
           if (pos.isFree(true))
@@ -364,13 +395,26 @@ export abstract class SquadMaster extends SwarmMaster {
       if (valid !== OK) {
         this.stuckValue = 0;
         this.moveCenter(centerBee, enemy);
-        _.forEach(this.activeBees, bee => this.isAlive(bee) && bee.ref !== centerBee.ref && bee.goTo(centerBee, { movingTarget: true }));
+        _.forEach(this.activeBees, bee => bee && bee.ref !== centerBee!.ref && bee.goTo(centerBee!, { movingTarget: true }));
       }
     }
 
-    if (valid !== ERR_BUSY)
-      this.formationCenter = centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos;
+    this.formationCenter = centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos;
 
-    new RoomVisual(this.formationCenter.roomName).circle(this.formationCenter.x, this.formationCenter.y);
+    if (SQUAD_VISUALS)
+      for (let i = 0; i < this.formationBees.length; ++i) {
+        let bee = this.formationBees[i];
+        if (!bee)
+          continue;
+        let desiredPos = this.getDeisredPos(i);
+        if (!desiredPos)
+          continue;
+        let style: CircleStyle = {};
+        if (this.formationBees[i] && bee.ref === centerBee.ref)
+          style.fill = "#FF0000";
+        Apiary.visuals.changeAnchor(1, 1, desiredPos.roomName);
+        Apiary.visuals.anchor.vis.circle(desiredPos.x, desiredPos.y, style);
+        Apiary.visuals.exportAnchor();
+      }
   }
 }

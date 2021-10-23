@@ -22,7 +22,6 @@ export class DefenseCell extends Cell {
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
-    this.pos = this.hive.getPos("center");
     this.master = new SiegeMaster(this);
   }
 
@@ -144,7 +143,7 @@ export class DefenseCell extends Cell {
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.dangerlvlmax > 3 && roomInfo.enemies.length) {
+      if (roomInfo.dangerlvlmax >= 3 && roomInfo.enemies.length) {
         let enemy = roomInfo.enemies[0].object;
         if (!this.notDef(roomName))
           return;
@@ -157,7 +156,7 @@ export class DefenseCell extends Cell {
           let roomInfoDef = Apiary.intel.getInfo(roomDefName, Infinity);
           if (roomInfoDef.dangerlvlmax < 3) {
             let order = Apiary.defenseSwarms[roomDefName];
-            if (order.master && _.filter(order.master.bees, bee => bee.getActiveBodyParts(HEAL)).length)
+            if (order.master && (roomInfo.dangerlvlmax === 3 || _.filter(order.master.bees, bee => bee.getActiveBodyParts(HEAL)).length))
               freeSwarms.push(order);
           }
         }
@@ -215,9 +214,13 @@ export class DefenseCell extends Cell {
   setDefFlag(pos: RoomPosition, info: "normal" | "power" | "surrender" | Flag = "normal") {
     let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
-    let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 8);
+    let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 3);
     if (centerPoss.length) {
-      pos = centerPoss.filter(p => terrain.get(p.x, p.y) !== TERRAIN_MASK_SWAMP)[0];
+      for (let i = 0; i < centerPoss.length; ++i)
+        if (terrain.get(centerPoss[i].x, centerPoss[i].y) !== TERRAIN_MASK_SWAMP) {
+          pos = centerPoss[i];
+          break;
+        }
       if (!pos)
         pos = centerPoss[0];
     } else if (pos.getEnteranceToRoom())

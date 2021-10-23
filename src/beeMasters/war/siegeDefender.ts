@@ -108,9 +108,9 @@ export class SiegeMaster extends Master {
       bee.goTo(target);
     if (!bee.targetPosition)
       bee.targetPosition = bee.pos;
-    if (bee.targetPosition && !findRamp(bee.targetPosition)) {
+    if (!findRamp(bee.targetPosition) && bee.targetPosition.getRangeTo(target) <= targetedRange - 2) {
       let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
-      if (bee.targetPosition.getRangeTo(target) < targetedRange - 2 && stats.dmgClose + stats.dmgRange > beeStats.hits / 4)
+      if (stats.dmgClose + stats.dmgRange > beeStats.hits / 4)
         bee.flee(target, this.cell.pos, opts);
     }
     return OK;

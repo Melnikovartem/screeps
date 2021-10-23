@@ -3,6 +3,7 @@
 // in this case on battlefield
 
 import { enemyTypes, roomStates } from "../enums";
+import { towerCoef } from "./utils";
 import { profile } from "../profiler/decorator";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -73,7 +74,19 @@ export class Intel {
     }).object;
   }
 
-  getComplexStats(pos: ProtoPos, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS) {
+  getTowerAttack(pos: RoomPosition, lag?: number) {
+    let roomInfo = this.getInfo(pos.roomName, lag);
+    let ans = 0;
+    _.forEach(roomInfo.enemies, e => {
+      if (!(e.object instanceof StructureTower))
+        return;
+      if (e.object.store.getUsedCapacity(RESOURCE_ENERGY) >= 10)
+        ans += towerCoef(e.object, pos) * TOWER_POWER_ATTACK;
+    });
+    return ans;
+  }
+
+  getComplexStats(pos: ProtoPos, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS, range = 1) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -93,13 +106,12 @@ export class Intel {
       }
     }
 
-    let range = 1;
     if (mode === FIND_HOSTILE_CREEPS) {
-      range = 1;
       let enemyCreep = pos.lookFor(LOOK_CREEPS)[0];
       if (enemyCreep && enemyCreep.owner.username === "Invader")
-        range = 4;
-    }
+        range = Math.max(range, 5);
+    } else
+      range = Math.max(range, 3);
 
     _.forEach(pos.findInRange(mode, range), creep => {
       let stats = this.getStats(creep);
@@ -260,8 +272,15 @@ export class Intel {
       });
     });
 
-    if (roomInfo.roomState >= roomStates.SKfrontier)
-      _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => {
+    let controller = room.controller;
+    let structures;
+    if (controller && roomInfo.roomState === roomStates.reservedByMe) {
+      structures = controller.pos.findInRange(FIND_STRUCTURES, 5);
+    } else if (roomInfo.roomState >= roomStates.SKfrontier)
+      structures = room.find(FIND_HOSTILE_STRUCTURES);
+
+    if (structures)
+      _.forEach(structures, s => {
         let dangerlvl: DangerLvl = 0;
         if (s.structureType === STRUCTURE_INVADER_CORE) {
           dangerlvl = 3;
@@ -275,7 +294,7 @@ export class Intel {
           if (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
 
-        if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED)) {
+        if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length) {
           if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy
             || (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_TOWER)))
             dangerlvl = 9;
@@ -283,16 +302,13 @@ export class Intel {
             dangerlvl = 3;
         }
 
-        roomInfo.enemies.push({
-          object: s,
-          dangerlvl: dangerlvl,
-          type: enemyTypes.static,
-        });
-      });
-
-    if (roomInfo.roomState >= roomStates.reservedByEnemy)
-      _.forEach(room.find(FIND_STRUCTURES), s => {
-        if (s.structureType === STRUCTURE_ROAD || s.structureType === STRUCTURE_CONTAINER)
+        if (dangerlvl > 0)
+          roomInfo.enemies.push({
+            object: s,
+            dangerlvl: dangerlvl,
+            type: enemyTypes.static,
+          });
+        else if (roomInfo.roomState >= roomStates.reservedByEnemy && (s.structureType === STRUCTURE_ROAD || s.structureType === STRUCTURE_CONTAINER))
           roomInfo.enemies.push({
             object: s,
             dangerlvl: 0,

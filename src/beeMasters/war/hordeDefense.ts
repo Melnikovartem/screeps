@@ -38,7 +38,7 @@ export class HordeDefenseMaster extends HordeMaster {
         order.setup = setups.defender.normal.copy();
         order.setup.fixed = [];
         let stats = Apiary.intel.getComplexStats(enemy);
-        let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.5);
+        let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER);
         let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
         let desiredTTK = 40; // desired time to kill
 
@@ -53,7 +53,7 @@ export class HordeDefenseMaster extends HordeMaster {
         }
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, 16), rangedNeeded);
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 2, 15);
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
@@ -63,11 +63,12 @@ export class HordeDefenseMaster extends HordeMaster {
           if (this.hive.room.energyCapacityAvailable >= toughCost + healCost * healNeeded + rangedCost * 2)
             order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
         }
-        if (noFear) {
+
+        /* if (noFear) {
           order.setup.fixed.push(ATTACK);
           if (order.setup.patternLimit > 1)
             --order.setup.patternLimit;
-        }
+        } */
       } else {
         order.priority = 8;
         order.setup = setups.defender.destroyer;

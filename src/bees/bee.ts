@@ -78,6 +78,9 @@ export class Bee {
       return this.lifeTime;
   }
 
+  get memory() {
+    return this.creep.memory;
+  }
 
   update() {
     this.creep = Game.creeps[this.ref];
