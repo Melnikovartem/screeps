@@ -33,6 +33,9 @@ export class SiegeMaster extends Master {
     super.update();
     if (this.hive.state !== hiveStates.battle)
       return;
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    if (roomInfo.dangerlvlmax < 5)
+      return;
     this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 100000);
     if (this.checkBees(true)) {
       this.wish({
@@ -110,10 +113,10 @@ export class SiegeMaster extends Master {
     else {
       ++this.patience;
       if (rangeToTarget <= 2 && onPosition && bee.hits === bee.hitsMax && findRamp(bee.pos))
-        bee.goTo(target, opts);
+        bee.targetPosition = bee.pos.getPosInDirection(bee.pos.getDirectionTo(target));
     }
 
-    if (!onPosition)
+    if (!onPosition && !(rangeToTarget === 1 && bee.hits === bee.hitsMax && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
       bee.goTo(posToStay, opts);
     if (this.cell.isBreached)
       bee.goTo(target);

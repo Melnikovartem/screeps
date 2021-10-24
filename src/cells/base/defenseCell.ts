@@ -119,26 +119,11 @@ export class DefenseCell extends Cell {
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
 
-    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
 
     this.isBreached = false;
     let contr = this.hive.room.controller!;
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax > 4 && (!contr.safeMode || contr.safeMode < 600));
-    if (this.hive.state === hiveStates.battle) {
-      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
-      _.forEach(roomInfo.enemies, enemy => {
-        if (!(enemy instanceof Creep))
-          return;
-        // let info = Apiary.intel.getStats(enemy).current;
-        // if (info.dism < 100 && info.dmgClose < 100 && info.dmgRange < 100)
-        //  return;
-
-        if (this.wasBreached(enemy.pos))
-          this.isBreached = true;
-      });
-    }
-
-    _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
+    this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
 
     let storageCell = this.hive.cells.storage;
     if (!storageCell)
@@ -147,16 +132,25 @@ export class DefenseCell extends Cell {
       storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 2);
     else
       storageCell.requestFromStorage(Object.values(this.towers), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
+
+    if (this.hive.state === hiveStates.battle) {
+      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+      _.forEach(roomInfo.enemies, enemy => {
+        if (this.wasBreached(enemy.object.pos))
+          this.isBreached = true;
+      });
+    }
+
+    _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
   }
 
   checkOrDefendSwarms(roomName: string) {
     if (roomName in Game.rooms) {
       let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.dangerlvlmax >= 3 && roomInfo.enemies.length) {
+      if (roomInfo.dangerlvlmax >= 3 && roomInfo.dangerlvlmax <= 5 && roomInfo.enemies.length) {
         let enemy = roomInfo.enemies[0].object;
         if (!this.notDef(roomName))
           return;
-
         let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
         if (!pos)
           pos = enemy.pos;
@@ -186,12 +180,8 @@ export class DefenseCell extends Cell {
         // console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
         // + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
 
-        if (ans !== OK) {
-          if (roomInfo.dangerlvlmax < 9)
-            this.setDefFlag(enemy.pos);
-          else
-            this.setDefFlag(enemy.pos, "surrender");
-        }
+        if (ans !== OK)
+          this.setDefFlag(enemy.pos);
       }
     }
   }
@@ -199,28 +189,29 @@ export class DefenseCell extends Cell {
   wasBreached(pos: RoomPosition) {
     let path = pos.findPathTo(this, {
       maxRooms: 1,
-      swampCost: 1,
-      plainCost: 1,
-      ignoreDestructibleStructures: true,
-      ignoreCreeps: true,
-      ignoreRoads: true,
       costCallback: (roomName, matrix) => {
         if (!(roomName in Game.rooms))
           return matrix;
-        let obstacles = Game.rooms[roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART);
-        _.forEach(obstacles, s => {
-          if (s.hits > 1000)
-            matrix.set(s.pos.x, s.pos.y, 255)
-        });
+        matrix = new PathFinder.CostMatrix();
+        let terrain = Game.map.getRoomTerrain(roomName);
+        for (let x = 0; x <= 49; ++x)
+          for (let y = 0; y <= 49; ++y)
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL)
+              matrix.set(x, y, 0xff);
+        let obstacles = Game.rooms[roomName].find(FIND_STRUCTURES).filter(s => s.hits > 5000
+          && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART));
+        _.forEach(obstacles, s => matrix.set(s.pos.x, s.pos.y, 0xff));
         return matrix;
       }
     });
-    if (!path.length)
-      return pos.x === this.pos.x && this.pos.y === pos.y;
-    return path[path.length - 1].x === this.pos.x && path[path.length - 1].y === this.pos.y;
+    let lastStep = path.pop();
+    if (!lastStep)
+      return pos.isNearTo(this);
+    let endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
+    return endOfPath.isNearTo(this);
   }
 
-  setDefFlag(pos: RoomPosition, info: "normal" | "power" | "surrender" | Flag = "normal") {
+  setDefFlag(pos: RoomPosition, flag?: Flag) {
     let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(true, 3);
@@ -235,13 +226,9 @@ export class DefenseCell extends Cell {
     } else if (pos.getEnteranceToRoom())
       pos = pos.getOpenPositions(true).reduce((prev, curr) => prev.getEnteranceToRoom() ? curr : prev);
 
-    if (info instanceof Flag) {
-      return info.setPosition(pos);
-    } else if (info === "surrender") {
-      ans = pos.createFlag(prefix.surrender + pos.roomName, COLOR_RED, COLOR_WHITE);
-    } else if (info === "power")
-      ans = pos.createFlag(prefix.def + "D_" + makeId(4), COLOR_RED, COLOR_RED);
-    else if (info === "normal")
+    if (flag) {
+      return flag.setPosition(pos);
+    } else
       ans = pos.createFlag(prefix.def + makeId(4), COLOR_RED, COLOR_BLUE);
     if (typeof ans === "string")
       Game.flags[ans].memory = { hive: this.hive.roomName };

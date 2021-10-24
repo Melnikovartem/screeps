@@ -37,7 +37,7 @@ export class HordeDefenseMaster extends HordeMaster {
       if (enemy instanceof Creep) {
         order.setup = setups.defender.normal.copy();
         order.setup.fixed = [];
-        let stats = Apiary.intel.getComplexStats(enemy);
+        let stats = Apiary.intel.getComplexStats(enemy, undefined, 8);
         let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER);
         let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
         let desiredTTK = 40; // desired time to kill

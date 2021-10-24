@@ -114,6 +114,13 @@ export class Bee {
       refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.annex)));
       if (refMaster)
         return refMaster;
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade")));
+      if (refMaster)
+        return refMaster;
+    } else if (this.ref.includes(setupsNames.knight)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 2 && m.ref.includes("gang")));
+      if (refMaster)
+        return refMaster;
     }
     return this.creep.memory.refMaster === undefined ? "" : this.creep.memory.refMaster;
   }
@@ -212,7 +219,7 @@ export class Bee {
   rangedAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
     let ans = this.actionCheck(t, opt, 3);
-    if (t && this.pos.getRangeTo(t) <= 1)
+    if (t && this.pos.getRangeTo(t) <= 1 && "owner" in t)
       return this.creep.rangedMassAttack();
     return ans === OK ? this.creep.rangedAttack(t!) : ans;
   }

@@ -50,7 +50,7 @@ export class ResourceCell extends Cell {
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
         s => s.structureType === STRUCTURE_LINK && s.isActive())[0];
-      this.operational = this.container || this.link ? true : false;
+      this.operational = this.container || (this.link && this.hive.cells.storage && Object.keys(this.hive.cells.storage.links).length) ? true : false;
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
@@ -72,22 +72,19 @@ export class ResourceCell extends Cell {
         this.lair = lair;
     }
 
-    if (this.operational) {
-      if (this.container) {
-        this.pos = this.container.pos;
-        let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
-        this.roadTime = this.pos.getTimeForPath(storagePos);
-        this.restTime = this.pos.getTimeForPath(this.hive.rest);
-      } else if (this.link) {
-        let poss = this.resource.pos.getOpenPositions(true);
-        let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => pp.x === p.x && pp.y === p.y).length)[0];
-        if (pos)
-          this.pos = pos;
-        else
-          this.pos = this.resource.pos;
-      } else
-        this.pos = this.resource.pos;
+    this.pos = this.resource.pos;
+    if (this.container)
+      this.pos = this.container.pos;
+    else if (this.link) {
+      let poss = this.resource.pos.getOpenPositions(true);
+      let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => p.equal(pp)).length)[0];
+      if (pos)
+        this.pos = pos;
     }
+
+    let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
+    this.roadTime = this.pos.getTimeForPath(storagePos);
+    this.restTime = this.pos.getTimeForPath(this.hive.rest);
 
     if (this.hive.cells.dev)
       this.hive.cells.dev.shouldRecalc = true;

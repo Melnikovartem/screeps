@@ -354,15 +354,19 @@ export class LaboratoryCell extends Cell {
           this.sCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
         break;
       default: // boosting lab : state === resource
-        if (!_.sum(this.boostRequests, br => br.info.filter(r => r.res == this.labStates[l.id]).length)) {
+        let toBoostMinerals = _.sum(this.boostRequests, br => {
+          let sameType = br.info.filter(r => r.res == this.labStates[l.id])
+          return _.sum(sameType, r => r.amount * LAB_BOOST_MINERAL);
+        });
+        if (!toBoostMinerals) {
           this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
           return;
         }
         if (l.mineralType && l.mineralType !== state)
           this.sCell.requestToStorage([l], 1, l.mineralType);
-        else if (l.store.getUsedCapacity(state) < LAB_MINERAL_CAPACITY / 2)
-          this.sCell.requestFromStorage([l], 1, state, LAB_MINERAL_CAPACITY / 2, true);
+        else if (l.store.getUsedCapacity(state) < toBoostMinerals)
+          this.sCell.requestFromStorage([l], 1, state, toBoostMinerals * 3, true);
         break;
     }
   }

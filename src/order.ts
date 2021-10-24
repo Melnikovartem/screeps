@@ -175,7 +175,7 @@ export class Order {
             if (this.hive.addAnex(this.pos.roomName) !== OK) {
               if (this.hive.cells.observe)
                 Apiary.requestSight(this.pos.roomName)
-              else if (!this.master) {
+              else if (!this.master && !Game.flags[prefix.puppet + this.pos.roomName]) {
                 this.master = new PuppetMaster(this);
                 this.master.maxSpawns = this.master.spawned + 1;
               }

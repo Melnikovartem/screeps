@@ -33,12 +33,14 @@ export abstract class SquadMaster extends SwarmMaster {
       dism: 0,
       heal: 0,
       hits: 0,
+      resist: 0,
     }, current: {
       dmgClose: 0,
       dmgRange: 0,
       dism: 0,
       heal: 0,
       hits: 0,
+      resist: 0,
     }
   };
 
@@ -75,12 +77,14 @@ export abstract class SquadMaster extends SwarmMaster {
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }
     };
 
@@ -323,7 +327,7 @@ export abstract class SquadMaster extends SwarmMaster {
     if (enemy) {
       if (bee.pos.roomName === this.order.pos.roomName)
         moveTarget = enemy.pos;
-      if (!this.stats.current.dmgClose)
+      if (enemy instanceof Creep && !this.stats.current.dmgClose)
         opts.range = 2;
       if (enemy && (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 3)) {
         let prevRotation = this.rotateFormation;
@@ -348,7 +352,8 @@ export abstract class SquadMaster extends SwarmMaster {
     if (roomInfo.safePlace)
       return false;
     for (let i = 0; i < this.formation.length; ++i) {
-      if (!this.formationBees[i])
+      let bee = this.formationBees[i];
+      if (!bee)
         continue;
       let desiredPos = this.getDeisredPos(i, pos);
       if (!desiredPos)
@@ -356,7 +361,8 @@ export abstract class SquadMaster extends SwarmMaster {
       let stats = Apiary.intel.getComplexStats(desiredPos, undefined, 3).current;
       let creepDmg = stats.dmgClose + stats.dmgRange;
       let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
-      if (towerDmg + creepDmg > this.stats.current.heal)
+      let beeStats = Apiary.intel.getStats(bee.creep).current;
+      if (towerDmg + creepDmg > this.stats.current.heal + beeStats.resist)
         return true;
     }
     return false;
@@ -427,7 +433,16 @@ export abstract class SquadMaster extends SwarmMaster {
       if (valid !== OK) {
         this.stuckValue = 0;
         this.moveCenter(centerBee, enemy);
-        _.forEach(this.activeBees, bee => bee.ref !== centerBee!.ref && bee.goTo(centerBee!, { movingTarget: true }));
+        for (let i = 0; i < this.formationBees.length; ++i) {
+          let bee = this.formationBees[i];
+          if (!bee || bee.ref === centerBee.ref)
+            continue;
+          let desiredPos = this.getDeisredPos(i);
+          if (!desiredPos || !desiredPos.isFree(true))
+            bee.goTo(centerBee, { movingTarget: true })
+          else
+            bee.goTo(desiredPos, { movingTarget: true })
+        }
       }
     }
 

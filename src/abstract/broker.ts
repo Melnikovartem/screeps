@@ -185,8 +185,13 @@ export class Broker {
       this.buyLong(terminal, res, amount, creditsToUse);
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
-      let newPrice = o.price + ORDER_PADDING * 4; // cant set to 1 cause case where i am the best price
-      if (newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
+      let newPrice;
+      let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
+      if (priceToSellInstant >= o.price - ORDER_PADDING * 100)
+        newPrice = o.price - ORDER_PADDING * 100;
+      else if (priceToSellInstant > o.price)
+        newPrice = o.price - ORDER_PADDING;
+      if (newPrice && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
     return "long";
@@ -221,8 +226,13 @@ export class Broker {
       this.sellLong(terminal, res, amount, creditsToUse);
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
-      let newPrice = o.price - ORDER_PADDING * 4; // cant set to 1 cause case where i am the best price
-      if (newPrice >= price && priceToSellInstant <= newPrice * 0.9)
+      let newPrice;
+      let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
+      if (priceToBuyInstant <= o.price - ORDER_PADDING * 100)
+        newPrice = o.price - ORDER_PADDING * 100;
+      else if (priceToBuyInstant < o.price)
+        newPrice = o.price - ORDER_PADDING;
+      if (newPrice && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
     return "long";

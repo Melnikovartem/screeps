@@ -109,11 +109,7 @@ export class Intel {
       }
     }
 
-    if (mode === FIND_HOSTILE_CREEPS) {
-      let enemyCreep = pos.lookFor(LOOK_CREEPS)[0];
-      if (enemyCreep && enemyCreep.owner.username === "Invader")
-        range = Math.max(range, 5);
-    } else
+    if (mode === FIND_MY_CREEPS)
       range = Math.max(range, 3);
 
     _.forEach(pos.findInRange(mode, range), creep => {
@@ -123,7 +119,8 @@ export class Intel {
         if ((key === "dmgClose" || key === "dism") && (<RoomPosition>pos).getRangeTo(creep) > 1)
           continue;
         else if (key === "resist" && (<RoomPosition>pos).getRangeTo(creep) > 0)
-          ans.max[key] += stats.max[key];
+          continue;
+        ans.max[key] += stats.max[key];
         ans.current[key] += stats.current[key]
       }
     });
@@ -276,12 +273,19 @@ export class Intel {
       });
     });
 
-    let controller = room.controller;
     let structures;
-    if (controller && roomInfo.roomState === roomStates.reservedByMe) {
-      structures = controller.pos.findInRange(FIND_STRUCTURES, 5);
-    } else if (roomInfo.roomState >= roomStates.SKfrontier)
-      structures = room.find(FIND_HOSTILE_STRUCTURES);
+    switch (roomInfo.roomState) {
+      case roomStates.reservedByMe:
+      // removing old walls and cores (if only cores then set to 5 around controller)
+      case roomStates.reservedByEnemy:
+      case roomStates.ownedByEnemy:
+        structures = room.find(FIND_STRUCTURES);
+        break;
+      case roomStates.SKfrontier:
+      case roomStates.reservedByInvader:
+        structures = room.find(FIND_HOSTILE_STRUCTURES);
+        break;
+    }
 
     if (structures)
       _.forEach(structures, s => {
@@ -304,11 +308,11 @@ export class Intel {
           if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy
             || (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_TOWER)))
             dangerlvl = 9;
-          else if (dangerlvl < 3)
-            dangerlvl = 3;
+          else if (dangerlvl < 4)
+            dangerlvl = 4;
         }
 
-        if (dangerlvl > 0 || roomInfo.roomState >= roomStates.ownedByEnemy)
+        if (dangerlvl > 0 || (roomInfo.roomState >= roomStates.reservedByEnemy && s.structureType !== STRUCTURE_CONTROLLER))
           roomInfo.enemies.push({
             object: s,
             dangerlvl: dangerlvl,
@@ -399,8 +403,12 @@ export class Intel {
             ans.current.resist += stat;
       }
     });
-    ans.current.resist = Math.ceil(ans.current.resist);
-    ans.max.resist = Math.ceil(ans.max.resist);
+    let rounding = (x: number) => Math.ceil(x);
+    if (creep.my)
+      rounding = (x: number) => Math.floor(x);
+
+    ans.current.resist = rounding(ans.current.resist);
+    ans.max.resist = rounding(ans.max.resist);
 
     ans.current.hits += ans.current.resist;
     ans.max.hits += ans.max.resist;

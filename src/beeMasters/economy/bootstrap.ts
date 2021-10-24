@@ -1,6 +1,6 @@
 import { Master } from "../_Master";
 
-import { beeStates, hiveStates } from "../../enums";
+import { beeStates, hiveStates, roomStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -42,23 +42,26 @@ export class BootstrapMaster extends Master {
       this.patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
     if (setups.bootstrap.patternLimit)
       this.patternCount = Math.min(setups.bootstrap.patternLimit, this.patternCount);
-
+    this.patternCount = Math.max(this.patternCount, 1);
     _.forEach(this.hive.cells.excavation.resourceCells, cell => {
       let source = cell.resource;
-      if (cell.resourceType !== RESOURCE_ENERGY)
+      if (cell.resourceType !== RESOURCE_ENERGY || cell.restTime === Infinity)
         return;
-
       let roadTime = cell.restTime - 2;
       let cycleWithoutEnergy = roadTime * 2 + this.patternCount;
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
       let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
-      if (roomInfo.currentOwner !== Apiary.username)
+      if (!roomInfo.currentOwner)
         energyPerTick = 5;
+      else if (roomInfo.currentOwner !== Apiary.username)
+        energyPerTick = 0;
       let openPos = source.pos.getOpenPositions(true).length;
 
       if (cell.operational) {
         let miningPower = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 150), setups.miner.energy.patternLimit);
+        if (miningPower < 0)
+          return;
         this.targetBeeCount += Math.min(energyPerTick, miningPower * 2)
           / (this.patternCount * 50 / cycleWithoutEnergy);
         energyPerTick = Math.max(energyPerTick - miningPower * 2, 0);
@@ -126,7 +129,10 @@ export class BootstrapMaster extends Master {
 
     let soruces = (<Source[]>_.compact(_.map(this.hive.cells.excavation.resourceCells,
       cell => (!cell.master.beesAmount || this.hive.room.energyCapacityAvailable <= 750) && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
-      .filter(s => s.pos.getOpenPositions().length && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20));
+      .filter(s => {
+        let roomInfo = Apiary.intel.getInfo(s.pos.roomName, Infinity);
+        return roomInfo.roomState <= roomStates.noOwner && s.pos.getOpenPositions().length && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20)
+      });
 
     let targets: extraTarget[] = []
     let containerTargetingCur: { [id: string]: { current: number, max: number } } = {};

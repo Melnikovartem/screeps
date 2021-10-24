@@ -12,10 +12,14 @@ export class DowngradeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-    if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username)
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+    if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username) {
       this.order.delete();
-
+      return;
+    }
+    let room = Game.rooms[this.order.pos.roomName];
+    if (room && room.controller && room.controller.upgradeBlocked)
+      this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + room.controller.upgradeBlocked;
     if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
       this.wish({
         setup: setups.claimer,
@@ -35,17 +39,14 @@ export class DowngradeMaster extends SwarmMaster {
         if (room && room.controller && roomInfo.currentOwner) {
           if (!roomInfo.safePlace && !Game.flags["attack_" + room.name])
             roomInfo.enemies[0].object.pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
-
           let ans = bee.attackController(room.controller);
           if (ans === OK) {
-            this.lastAttacked = Game.time;
             if (Memory.settings.framerate)
               bee.creep.say("💥");
           }
-          else if (ans === ERR_TIRED)
-            this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE / 2; // not sure what to DO if reboot and it is tired
         }
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }

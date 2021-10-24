@@ -262,13 +262,10 @@ export class RoomPlanner {
                 start = x;
                 addXEnd(1, start, +y);
               }
-
               if (x % 3 == 0)
                 this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_RAMPART);
               else
                 this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_WALL);
-
-              this.addToPlan({ x: x, y: +y === 0 ? +y + 2 : +y - 2 }, anchor.roomName, STRUCTURE_WALL);
               end = x;
             } else if (start !== -1) {
               let pos = new RoomPosition(start + Math.round((end - start) / 2), +y, anchor.roomName);

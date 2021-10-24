@@ -2,7 +2,7 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
-import { beeStates } from "../../enums";
+import { beeStates, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -29,13 +29,14 @@ export class HordeMaster extends SwarmMaster {
   }
 
   init() {
-    if (this.order.ref.includes("_hold_"))
+    if (this.order.ref.includes("hold"))
       this.holdPosition = true;
-    if (!this.order.ref.includes("_boost_"))
+    if (!this.order.ref.includes("boost"))
       this.boosts = undefined;
-    if (this.order.ref.includes("Flag")) {
-      // this.maxSpawns = Infinity; // fast placement to harass
-      // this.setup = setups.defender.destroyer
+    if (this.order.ref.includes("harass")) {
+      this.maxSpawns = Infinity;
+      this.setup.fixed = [HEAL, ATTACK];
+      this.setup.patternLimit = 3;
     }
   }
 
@@ -57,8 +58,8 @@ export class HordeMaster extends SwarmMaster {
     let opts: TravelToOptions = {};
     if (bee.pos.roomName === this.order.pos.roomName)
       opts.maxRooms = 1;
-
     let beeStats = Apiary.intel.getStats(bee.creep).current;
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
 
     let healingTarget: Creep | Bee | PowerCreep | undefined | null;
     if (bee.hits < bee.hitsMax)
@@ -74,6 +75,8 @@ export class HordeMaster extends SwarmMaster {
       action2 = () => bee.rangedAttack(target, opts);
     else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
       action2 = () => bee.rangedHeal(healingTarget, opts);
+    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0 && roomInfo.enemies.filter(e => bee.pos.getRangeTo(e.object) <= 3).length)
+      action2 = () => bee.rangedMassAttack();
 
     if (rangeToHealingTarget < 1 && beeStats.heal > 0)
       action1 = () => bee.heal(healingTarget, opts);
@@ -84,14 +87,13 @@ export class HordeMaster extends SwarmMaster {
 
     if (action1)
       action1();
-
     if (action2)
       action2();
 
     let targetedRange = 1;
     let loosingBattle = false;
     if (target instanceof Creep) {
-      let info = Apiary.intel.getStats(target).current;
+      let info = Apiary.intel.getComplexStats(target).current;
       if (info.dmgClose > beeStats.heal)
         targetedRange = 3;
       if (info.dmgRange > beeStats.heal)
@@ -106,7 +108,7 @@ export class HordeMaster extends SwarmMaster {
         targetedRange = 3;
     }
 
-    if (!loosingBattle)
+    if (!loosingBattle && (bee.hits > bee.hitsMax * 0.5 || !beeStats.heal))
       targetedRange -= 2;
 
     if (this.holdPosition || !target)

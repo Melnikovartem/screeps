@@ -15,6 +15,7 @@ export class PortalMaster extends SwarmMaster {
   setup = setups.puppet;
   priority: 2 | 9 = 9;
   res: ResourceConstant | undefined;
+  cycle: number = CREEP_LIFE_TIME;
 
   constructor(order: Order) {
     super(order);
@@ -23,6 +24,7 @@ export class PortalMaster extends SwarmMaster {
       this.setup.patternLimit += 4;
     } else if (this.order.ref.includes(prefix.claim)) {
       this.setup = setups.claimer;
+      this.cycle = CREEP_CLAIM_LIFE_TIME;
     } else if (this.order.ref.includes(prefix.annex)) {
       this.setup = setups.claimer.copy();
       this.setup.patternLimit += 2;
@@ -46,7 +48,7 @@ export class PortalMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let shouldSpawn = Game.time >= this.oldestSpawn + CREEP_LIFE_TIME - 100;
+    let shouldSpawn = Game.time >= this.oldestSpawn + this.cycle - 100;
     if (!this.beesAmount && this.res) {
       if (!this.hive.cells.storage) {
         this.order.delete(true);
