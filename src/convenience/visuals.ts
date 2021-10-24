@@ -23,7 +23,6 @@ export class Visuals {
   usedAnchors: { [roomName: string]: VisInfo } = {}
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
-
     if (x !== undefined)
       this.anchor.x = x;
     this.anchor.y = y === undefined ? this.anchor.y + SPACING : y;
@@ -52,6 +51,7 @@ export class Visuals {
   update() {
     let allglobal = true;
     this.usedAnchors = {};
+    this.anchor = { x: 49, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
     for (const name in this.caching)
       if (name !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);

@@ -142,8 +142,11 @@ export class HordeMaster extends SwarmMaster {
           enemy = Apiary.intel.getEnemy(pos);
           if (enemy) {
             this.beeAct(bee, enemy);
-          } else
+          } else {
             bee.goRest(this.order.pos);
+            if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
+              bee.heal(bee);
+          }
           break;
         case beeStates.chill:
           enemy = Apiary.intel.getEnemy(bee.pos, 10);
@@ -156,8 +159,11 @@ export class HordeMaster extends SwarmMaster {
           ans = this.beeAct(bee, enemy);
           if (bee.pos.roomName === this.order.pos.roomName)
             bee.state = beeStates.work;
-          if (ans === OK)
+          if (ans === OK) {
             bee.goTo(this.order.pos);
+            if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
+              bee.heal(bee);
+          }
       }
     });
   }

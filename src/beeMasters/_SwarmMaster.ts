@@ -13,7 +13,6 @@ import { profile } from "../profiler/decorator";
 export abstract class SwarmMaster extends Master {
 
   readonly order: Order;
-  spawned: number = 0;
   maxSpawns: number = 1;
 
   constructor(order: Order) {
@@ -39,5 +38,15 @@ export abstract class SwarmMaster extends Master {
     if (bee.creep.memory.born + 1 === Game.time)
       ++this.spawned;
     this.order.flag.memory.info = this.spawned;
+  }
+
+  set spawned(value) {
+    this.order.flag.memory.info = value;
+  }
+
+  get spawned() {
+    if (this.order.flag.memory.info === undefined)
+      this.order.flag.memory.info = 0;
+    return this.order.flag.memory.info;
   }
 }

@@ -69,23 +69,28 @@ export class Network {
   }
 
   run() {
+    let tryToBuyIn = Game.cpu.getUsed() + Object.keys(Game.market.getAllOrders()).length * 0.005 < Game.cpu.tickLimit - 100;
+    // to be able to save some cpu on buyIns
+
     for (let i = 0; i < this.nodes.length; ++i) {
       let hive = this.nodes[i];
       if (!hive.cells.storage || !hive.cells.storage.terminal)
         continue;
       let terminal = hive.cells.storage.terminal;
       let usedTerminal = false;
-      for (const r in hive.shortages) {
-        let res = <ResourceConstant>r;
-        if (ALLOWED_TO_BUYIN.includes(res)) {
-          let amount = hive.shortages[res]!;
-          let ans = Apiary.broker.buyIn(terminal, res, amount, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
-          if (ans === "short") {
-            usedTerminal = true;
-            break;
+
+      if (tryToBuyIn)
+        for (const r in hive.shortages) {
+          let res = <ResourceConstant>r;
+          if (ALLOWED_TO_BUYIN.includes(res)) {
+            let amount = hive.shortages[res]!;
+            let ans = Apiary.broker.buyIn(terminal, res, amount, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
+            if (ans === "short") {
+              usedTerminal = true;
+              break;
+            }
           }
         }
-      }
 
       if (usedTerminal)
         continue;

@@ -46,7 +46,7 @@ export class Broker {
     if (this.lastUpdated + lag >= Game.time)
       return;
 
-    // on shard2 during 10.2021 it took about 9.5CPU to calc all this
+    // on shard2 during 10.2021 it took about 10.5CPU to calc all this
     // let cpu = Game.cpu.getUsed();
     this.lastUpdated = Game.time;
     this.goodBuy = {};
@@ -58,7 +58,7 @@ export class Broker {
     let orders = Game.market.getAllOrders();
 
     _.forEach(orders, order => {
-      if (!order.roomName || !order.amount)
+      if (!order.roomName || !order.amount || order.id in Game.market.orders)
         return;
       let res = <ResourceConstant>order.resourceType;
 

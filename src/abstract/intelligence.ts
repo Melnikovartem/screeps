@@ -57,7 +57,7 @@ export class Intel {
   }
 
   getEnemy(pos: ProtoPos, lag?: number, filter: (enemies: Enemy[], roomInfo: RoomInfo, pos: RoomPosition) => Enemy[]
-    = (es, ri, pos) => es.filter(e => e.dangerlvl === ri.dangerlvlmax || pos.getRangeTo(e.object) <= 3)) {
+    = (es, ri, pos) => es.filter(e => e.dangerlvl === ri.dangerlvlmax || (e.dangerlvl >= 4 && pos.getRangeTo(e.object) <= 3))) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -175,7 +175,7 @@ export class Intel {
 
     // it is cached after first check
     if (!Apiary.useBucket)
-      lag = Math.max(4, lag);
+      lag = Math.max(2, lag);
     if (roomInfo.lastUpdated + lag >= Game.time) {
       if (lag > 0)
         roomInfo.enemies = roomInfo.enemies.filter(e => Game.getObjectById(e.object.id));
@@ -290,9 +290,11 @@ export class Intel {
           dangerlvl = 7;
         else if (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_RAMPART)
           dangerlvl = 3;
-        else if (roomInfo.roomState === roomStates.ownedByEnemy)
+        else if (roomInfo.roomState >= roomStates.ownedByEnemy)
           if (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN)
             dangerlvl = 2;
+          else if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_TERMINAL)
+            dangerlvl = 1;
 
         if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length) {
           if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy
@@ -302,16 +304,10 @@ export class Intel {
             dangerlvl = 3;
         }
 
-        if (dangerlvl > 0)
+        if (dangerlvl > 0 || roomInfo.roomState >= roomStates.ownedByEnemy)
           roomInfo.enemies.push({
             object: s,
             dangerlvl: dangerlvl,
-            type: enemyTypes.static,
-          });
-        else if (roomInfo.roomState >= roomStates.reservedByEnemy && (s.structureType === STRUCTURE_ROAD || s.structureType === STRUCTURE_CONTAINER))
-          roomInfo.enemies.push({
-            object: s,
-            dangerlvl: 0,
             type: enemyTypes.static,
           });
       });

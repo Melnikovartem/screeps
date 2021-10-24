@@ -103,7 +103,6 @@ export class _Apiary {
 
   // run phase
   run() {
-    safeWrap(() => this.network.run(), "network update");
     _.forEach(this.hives, hive => {
       safeWrap(() => hive.run(), hive.print + " run");
     });
@@ -112,6 +111,9 @@ export class _Apiary {
       safeWrap(() => master.run(), master.print + " run");
     });
     Bee.beesMove();
+
+    safeWrap(() => this.network.run(), "network update");
+
     this.requestRoomSight = [];
 
     if (this.useBucket)

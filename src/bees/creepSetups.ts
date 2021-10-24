@@ -159,10 +159,6 @@ export const setups = {
     fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL],
     pattern: [RANGED_ATTACK],
   }, "best"),
-  archer: new CreepSetup(setupsNames.knight, {
-    fixed: [TOUGH],
-    pattern: [RANGED_ATTACK],
-  }, "best"),
   dismantler: new CreepSetup(setupsNames.dismantler, {
     pattern: [WORK, TOUGH],
   }, 50 / 3),

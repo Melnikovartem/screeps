@@ -115,7 +115,7 @@ export class Bee {
       if (refMaster)
         return refMaster;
     }
-    return this.creep.memory.refMaster;
+    return this.creep.memory.refMaster === undefined ? "" : this.creep.memory.refMaster;
   }
 
   findClosestByHive(masters: Master[]) {
@@ -215,6 +215,10 @@ export class Bee {
     if (t && this.pos.getRangeTo(t) <= 1)
       return this.creep.rangedMassAttack();
     return ans === OK ? this.creep.rangedAttack(t!) : ans;
+  }
+
+  rangedMassAttack(): ScreepsReturnCode {
+    return this.creep.rangedMassAttack();
   }
 
   heal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
