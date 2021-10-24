@@ -243,25 +243,34 @@ export abstract class SquadMaster extends SwarmMaster {
 
     if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
       action2 = () => bee.rangedAttack(target);
+    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0 && healingTarget.heal > 0)
+      action2 = () => {
+        healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
+        return bee.rangedHeal(healingTarget.bee)
+      }
+    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0
+      && roomInfo.enemies.filter(e => bee.pos.getRangeTo(e.object) <= 3 && "owner" in e.object).length)
+      action2 = () => bee.rangedMassAttack();
     else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
       action2 = () => {
         healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
         return bee.rangedHeal(healingTarget.bee)
       }
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0 && roomInfo.enemies.filter(e => bee.pos.getRangeTo(e.object) <= 3).length)
-      action2 = () => bee.rangedMassAttack();
 
-    if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
+    if (rangeToHealingTarget <= 1 && beeStats.heal > 0 && healingTarget.heal > 0)
       action1 = () => {
         healingTarget.heal -= beeStats.heal;
         return bee.heal(healingTarget.bee);
       }
-    else if (rangeToTarget === 1) {
-      if (beeStats.dism > 0 && target instanceof Structure)
-        action1 = () => bee.dismantle(target);
-      else if (beeStats.dmgClose > 0)
-        action1 = () => bee.attack(target);
-    }
+    else if (rangeToTarget === 1 && beeStats.dism > 0 && target instanceof Structure)
+      action1 = () => bee.dismantle(target);
+    else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
+      action1 = () => bee.attack(target);
+    else if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
+      action1 = () => {
+        healingTarget.heal -= beeStats.heal;
+        return bee.heal(healingTarget.bee);
+      }
 
     if (action1)
       action1();
@@ -327,7 +336,7 @@ export abstract class SquadMaster extends SwarmMaster {
     if (enemy) {
       if (bee.pos.roomName === this.order.pos.roomName)
         moveTarget = enemy.pos;
-      if (enemy instanceof Creep && !this.stats.current.dmgClose)
+      if (enemy instanceof Creep && this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
         opts.range = 2;
       if (enemy && (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 3)) {
         let prevRotation = this.rotateFormation;

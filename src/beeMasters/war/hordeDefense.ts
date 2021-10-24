@@ -19,7 +19,7 @@ export class HordeDefenseMaster extends HordeMaster {
   update() {
     SwarmMaster.prototype.update.call(this);
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
     if (roomInfo.dangerlvlmax < 3 && !this.beesAmount) {
       this.order.delete();
       return;

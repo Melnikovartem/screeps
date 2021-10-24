@@ -37,13 +37,9 @@ export class DowngradeMaster extends SwarmMaster {
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
         let room = Game.rooms[this.order.pos.roomName];
         if (room && room.controller && roomInfo.currentOwner) {
-          if (!roomInfo.safePlace && !Game.flags["attack_" + room.name])
-            roomInfo.enemies[0].object.pos.createFlag("attack_" + room.name, COLOR_RED, COLOR_RED);
           let ans = bee.attackController(room.controller);
-          if (ans === OK) {
-            if (Memory.settings.framerate)
-              bee.creep.say("💥");
-          }
+          if (ans === OK && Memory.settings.framerate)
+            bee.creep.say("💥");
         }
       }
       this.checkFlee(bee, this.hive);

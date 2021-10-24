@@ -160,8 +160,8 @@ export const setups = {
     pattern: [RANGED_ATTACK],
   }, "best"),
   dismantler: new CreepSetup(setupsNames.dismantler, {
-    pattern: [WORK, TOUGH],
-  }, 50 / 3),
+    pattern: [WORK],
+  }, "best"),
   healer: new CreepSetup(setupsNames.healer, {
     pattern: [HEAL],
   }, "best"),

@@ -1,7 +1,7 @@
 import { HordeDefenseMaster } from "./beeMasters/war/hordeDefense";
 import { HordeMaster } from "./beeMasters/war/horde";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
-import { DismantlerMaster } from "./beeMasters/war/dismantler";
+import { DismanleBoys } from "./beeMasters/squads/dismatleBoys";
 import { WaiterMaster } from "./beeMasters/war/waiter";
 
 import { GangDuo } from "./beeMasters/squads/gangDuo";
@@ -142,14 +142,14 @@ export class Order {
             case COLOR_PURPLE:
               this.master = new DowngradeMaster(this);
               break;
-            case COLOR_BROWN:
-              this.master = new DismantlerMaster(this);
-              break;
             case COLOR_GREEN:
               this.master = new WaiterMaster(this);
               break;
             case COLOR_ORANGE:
               this.master = new GangDuo(this);
+              break;
+            case COLOR_YELLOW:
+              this.master = new DismanleBoys(this);
               break;
             case COLOR_CYAN:
               this.master = new SKMaster(this);
