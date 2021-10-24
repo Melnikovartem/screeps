@@ -71,8 +71,8 @@ export class BuilderMaster extends Master {
           return;
         let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
         _.forEach(enemies, c => {
-          _.forEach(c.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y, 0xff));
-          matrix.set(c.pos.x, c.pos.y, 0x80);
+          _.forEach(c.pos.getOpenPositions(true, 4), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (5 - p.getRangeTo(c)) * 0x20)));
+          matrix.set(c.pos.x, c.pos.y, 0xff);
         });
         return matrix;
       }
@@ -129,17 +129,16 @@ export class BuilderMaster extends Master {
 
             if (!target || this.hive.state === hiveStates.battle)
               target = this.hive.getBuildTarget(bee);
-
             if (target) {
               let ans;
               if (target instanceof ConstructionSite)
-                ans = bee.build(target);
+                ans = bee.build(target, opts);
               else if (target instanceof Structure)
-                ans = bee.repair(target);
+                ans = bee.repair(target, opts);
               if (bee.pos.getRangeTo(target) <= 3 && this.hive.state == hiveStates.battle) {
                 let resource = target.pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
                 if (resource)
-                  bee.pickup(resource);
+                  bee.pickup(resource, opts);
               }
               bee.target = target.id;
               bee.repairRoadOnMove(ans);
@@ -159,11 +158,19 @@ export class BuilderMaster extends Master {
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
             bee.repairRoadOnMove(ans);
           } else
-            bee.goRest(this.hive.rest);
+            bee.goRest(this.hive.rest, opts);
           break;
       }
-
-      this.checkFlee(bee, this.hive);
+      if (this.hive.state !== hiveStates.battle)
+        this.checkFlee(bee, this.hive);
+      else {
+        let enemy = Apiary.intel.getEnemyCreep(bee, 25);
+        if (enemy) {
+          let fleeDist = Apiary.intel.getFleeDist(enemy);
+          if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist || enemy.pos.getRangeTo(bee.pos) < fleeDist)
+            bee.flee(enemy, this.hive);
+        }
+      }
     });
   }
 }

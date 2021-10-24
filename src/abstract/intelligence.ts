@@ -34,6 +34,7 @@ export interface CreepBattleInfo {
   dism: number,
   heal: number,
   hits: number,
+  resist: number,
 };
 
 export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
@@ -97,12 +98,14 @@ export class Intel {
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }
     }
 
@@ -119,7 +122,8 @@ export class Intel {
         let key = <keyof CreepBattleInfo>i;
         if ((key === "dmgClose" || key === "dism") && (<RoomPosition>pos).getRangeTo(creep) > 1)
           continue;
-        ans.max[key] += stats.max[key];
+        else if (key === "resist" && (<RoomPosition>pos).getRangeTo(creep) > 0)
+          ans.max[key] += stats.max[key];
         ans.current[key] += stats.current[key]
       }
     });
@@ -345,12 +349,14 @@ export class Intel {
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
         dism: 0,
         heal: 0,
         hits: 0,
+        resist: 0,
       }
     }
 
@@ -388,14 +394,16 @@ export class Intel {
           break;
         case TOUGH:
           stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 100;
-          ans.max.hits += stat;
+          ans.max.resist += stat;
           if (b.hits)
-            ans.current.hits += stat;
+            ans.current.resist += stat;
       }
     });
+    ans.current.resist = Math.ceil(ans.current.resist);
+    ans.max.resist = Math.ceil(ans.max.resist);
 
-    ans.current.hits = Math.ceil(ans.current.hits);
-    ans.max.hits = Math.ceil(ans.max.hits);
+    ans.current.hits += ans.current.resist;
+    ans.max.hits += ans.max.resist;
 
     this.stats[creep.id] = ans;
     return ans;

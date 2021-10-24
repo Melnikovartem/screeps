@@ -88,12 +88,20 @@ export class DefenseCell extends Cell {
             energy = map[x][y] / 100;
             if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
               pos.createConstructionSite(STRUCTURE_RAMPART);
+            ans.push({
+              pos: pos,
+              sType: STRUCTURE_RAMPART,
+              targetHits: map[x][y],
+              energyCost: 1,
+              type: "construction",
+            });
           }
           ans.push({
             pos: pos,
             sType: STRUCTURE_RAMPART,
             targetHits: map[x][y],
             energyCost: Math.ceil(energy),
+            type: "repair",
           });
           if (energy > 0)
             this.nukeCoverReady = false;
@@ -111,9 +119,8 @@ export class DefenseCell extends Cell {
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
 
-    _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
-
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 5);
+
     this.isBreached = false;
     let contr = this.hive.room.controller!;
     this.hive.stateChange("battle", roomInfo.dangerlvlmax > 4 && (!contr.safeMode || contr.safeMode < 600));
@@ -130,6 +137,8 @@ export class DefenseCell extends Cell {
           this.isBreached = true;
       });
     }
+
+    _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
 
     let storageCell = this.hive.cells.storage;
     if (!storageCell)
@@ -244,8 +253,14 @@ export class DefenseCell extends Cell {
   }
 
   run() {
-    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    if (roomInfo.enemies.length) {
+    if (this.hive.state === hiveStates.battle) {
+      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+      if (this.isBreached) {
+        let contr = this.hive.room.controller!;
+        if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
+          contr.activateSafeMode(); // red button
+      }
+
       let enemy = Apiary.intel.getEnemy(this)!;
       if (!enemy)
         return;
@@ -259,7 +274,7 @@ export class DefenseCell extends Cell {
       let stats = Apiary.intel.getComplexStats(enemy);
       let myStats = Apiary.intel.getComplexMyStats(enemy); // my stats toward a point
       let attackPower = TOWER_POWER_ATTACK * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose;
-      if (stats.current.heal < attackPower || enemy.hits < attackPower)
+      if (stats.current.heal + stats.current.resist < attackPower || (stats.current.resist && stats.current.resist < attackPower) || stats.current.hits < attackPower)
         shouldAttack = true;
 
       _.forEach(this.towers, tower => {
@@ -269,17 +284,22 @@ export class DefenseCell extends Cell {
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         } else if (tower.store.getUsedCapacity(RESOURCE_ENERGY) >= tower.store.getCapacity(RESOURCE_ENERGY) * 0.7) {
-          let target = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
-          if (target && target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).length && tower.repair(target) === OK && Apiary.logger)
+          let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+          if (!healTargets.length)
+            healTargets = enemy.pos.findInRange(FIND_MY_CREEPS, 4).filter(c => c.hits < c.hitsMax);
+          if (healTargets.length) {
+            let healTarget = healTargets.reduce((prev, curr) => {
+              return curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev;
+            });
+            if (tower.heal(healTarget) === OK && Apiary.logger)
+              Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+            return;
+          }
+          let repairTarget = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
+          if (repairTarget && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });
-
-      if (this.isBreached) {
-        let contr = this.hive.room.controller!;
-        if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
-          contr.activateSafeMode(); // red button
-      }
     }
   }
 }

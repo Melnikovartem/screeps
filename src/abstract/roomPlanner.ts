@@ -946,6 +946,7 @@ export class RoomPlanner {
               sType: sType,
               targetHits: 0,
               energyCost: constructionSite.progressTotal - constructionSite.progress,
+              type: "construction",
             });
             if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
               let heal = this.getCase(constructionSite).heal;
@@ -956,6 +957,7 @@ export class RoomPlanner {
                 sType: sType,
                 targetHits: heal,
                 energyCost: Math.ceil(heal / 100),
+                type: "repair",
               });
             }
             ++constructions;
@@ -975,6 +977,7 @@ export class RoomPlanner {
               sType: sType,
               targetHits: heal,
               energyCost: Math.ceil((heal - structure.hits) / 100),
+              type: "repair",
             });
         }
       }
@@ -995,6 +998,7 @@ export class RoomPlanner {
               sType: sType,
               targetHits: 0,
               energyCost: CONSTRUCTION_COST[sType],
+              type: "construction",
             });
             constructions++;
           }

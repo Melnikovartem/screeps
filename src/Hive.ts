@@ -39,6 +39,7 @@ export interface BuildProject {
   sType: StructureConstant,
   targetHits: number,
   energyCost: number,
+  type: "repair" | "construction",
 }
 
 export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
@@ -353,7 +354,7 @@ export class Hive {
     let getProj = () => (<RoomPosition>pos).findClosest(projects);
 
     if (this.state === hiveStates.battle) {
-      let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 2));
+      let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
       ignore = "ignoreConst";
       if (inDanger.length)
         projects = inDanger;
@@ -371,10 +372,15 @@ export class Hive {
 
     let proj = getProj();
     while (proj && !target) {
-      if (ignore !== "ignoreConst")
-        target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-      if (!target && ignore !== "ignoreRepair")
-        target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
+      switch (proj.type) {
+        case "construction":
+          if (ignore !== "ignoreConst")
+            target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+          break;
+        case "repair":
+          if (ignore !== "ignoreRepair")
+            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
+      }
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
           if (projects[k].pos.x == proj.pos.x && projects[k].pos.y == proj.pos.y) {

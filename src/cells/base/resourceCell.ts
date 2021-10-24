@@ -42,7 +42,6 @@ export class ResourceCell extends Cell {
     if (!(this.pos.roomName in Game.rooms))
       return;
 
-
     this.roadTime = Infinity;
     this.restTime = Infinity;
 
