@@ -161,15 +161,17 @@ export class BuilderMaster extends Master {
             bee.goRest(this.hive.rest, opts);
           break;
       }
-      if (this.hive.state !== hiveStates.battle)
+      if (this.hive.state !== hiveStates.battle) {
         this.checkFlee(bee, this.hive);
-      else {
+      } else {
         let enemy = Apiary.intel.getEnemyCreep(bee, 25);
         if (enemy) {
           let fleeDist = Apiary.intel.getFleeDist(enemy);
           if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist || enemy.pos.getRangeTo(bee.pos) < fleeDist)
             bee.flee(enemy, this.hive);
         }
+        if (!bee.targetPosition)
+          bee.targetPosition = bee.pos;
       }
     });
   }

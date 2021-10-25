@@ -84,6 +84,8 @@ export class LaboratoryCell extends Cell {
   stepToTarget() {
     this.resTarget = {};
     if (!this.synthesizeTarget || this.synthesizeTarget.amount <= 0) {
+      if (Game.flags[prefix.haltlab + this.hive.roomName])
+        return;
       let targets: { res: ReactionConstant, amount: number }[] = [];
       for (const r in this.hive.resState) {
         let res = <ReactionConstant>r; // atually ResourceConstant
@@ -366,7 +368,7 @@ export class LaboratoryCell extends Cell {
         if (l.mineralType && l.mineralType !== state)
           this.sCell.requestToStorage([l], 1, l.mineralType);
         else if (l.store.getUsedCapacity(state) < toBoostMinerals)
-          this.sCell.requestFromStorage([l], 1, state, toBoostMinerals * 3, true);
+          this.sCell.requestFromStorage([l], 1, state, toBoostMinerals * 2, true);
         break;
     }
   }
@@ -395,7 +397,7 @@ export class LaboratoryCell extends Cell {
     let priority = <2 | 5>5;
     this.sCell.requestFromStorage(_.filter(this.laboratories,
       l => {
-        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 4)
+        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 2)
           priority = 2;
         return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
       }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);

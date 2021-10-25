@@ -82,7 +82,6 @@ export class HaulerMaster extends Master {
         return;
 
       let bee = container.pos.findClosest(_.filter(this.activeBees, b => b.state === beeStates.chill && b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell)));
-
       if (bee) {
         bee.state = beeStates.refill;
         bee.target = container.id;

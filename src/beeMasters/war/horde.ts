@@ -9,7 +9,7 @@ import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { Order } from "../../order";
 
-const BOOST_LVL = 0;
+const BOOST_LVL = 1;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -121,13 +121,13 @@ export class HordeMaster extends SwarmMaster {
     if (this.holdPosition || !target)
       return OK;
 
-    let attackRange = 2;
+    let attackRange = loosingBattle ? 3 : 2;
     if (beeStats.dmgClose || beeStats.dism)
       attackRange = 1;
     if (rangeToTarget < targetedRange)
       bee.flee(target, this.order.pos, opts);
     else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget <= attackRange && bee.hits === bee.hitsMax))
-      bee.goTo(target, opts);
+      bee.goTo(target, opts); // think about when do we want to attack and when to flee
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;

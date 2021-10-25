@@ -44,7 +44,7 @@ export class Order {
     if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive]) {
       this.hive = Apiary.hives[this.flag.memory.hive];
       if (!this.hive)
-        this.delete();
+        this.delete(true);
     } else {
       let filter: (h: Hive) => boolean = h => h.phase >= 2;;
       switch (this.color) {
@@ -399,11 +399,20 @@ export class Order {
         if (!this.master)
           switch (this.secondaryColor) {
             case COLOR_GREEN:
-              this.master = new PickupMaster(this);
-              let regex = /^\d*/.exec(this.ref);
-              if (regex && regex[0])
-                this.master.maxSpawns = +regex[0];
-              this.master.targetBeeCount = this.master.maxSpawns;
+              if (!this.master) {
+                let master = new PickupMaster(this);
+                if (this.pos.getRangeTo(this.hive) <= 10) {
+                  let target = master.getTarget();
+                  if (target.target)
+                    this.hive.cells.storage!.requestToStorage([target.target], 1, RESOURCE_ENERGY, target.amount)
+                  master.delete();
+                }
+                this.master = master;
+                let regex = /^\d*/.exec(this.ref);
+                if (regex && regex[0])
+                  this.master.maxSpawns = +regex[0];
+                this.master.targetBeeCount = this.master.maxSpawns;
+              }
               break;
             case COLOR_YELLOW:
               this.master = new DupletMaster(this);
@@ -429,15 +438,30 @@ export class Order {
             let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
             let res = parsed && <ResourceConstant>parsed[2];
             let mode = parsed && parsed[1];
-            if (res && mode && RESOURCES_ALL.includes(res) && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
-              this.acted = false;
-              if (Game.time % 10 === 0)
-                if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
-                  Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 4096, this.ref.includes("hurry"), this.ref.includes("inf") ? Infinity : undefined);
-                else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
-                  Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 4096, this.ref.includes("hurry"), this.ref.includes("inf") ? Infinity : undefined);
-                else if (!this.ref.includes("keep"))
-                  this.delete();
+            this.acted = false;
+            if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
+              if ("all" === parsed![2]) {
+                let amount = 0;
+                _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
+                  let newAmount = this.hive.cells.storage!.getUsedCapacity(<ResourceConstant>ress);
+                  if (!amount || (newAmount && newAmount < amount)) {
+                    res = <ResourceConstant>ress;
+                    amount = newAmount;
+                  }
+                });
+                console.log(res);
+              }
+              if (RESOURCES_ALL.includes(res)) {
+                let hurry = this.ref.includes("hurry");
+                if (hurry || Game.time % 10 === 0)
+                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
+                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 4096, hurry, this.ref.includes("inf") ? Infinity : undefined);
+                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
+                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 4096, hurry, this.ref.includes("inf") ? Infinity : undefined);
+                  else if (!this.ref.includes("keep") && !this.ref.includes("all"))
+                    this.delete();
+              } else
+                this.delete();
             } else
               this.delete();
             break;
@@ -446,14 +470,21 @@ export class Order {
               this.delete();
               break;
             }
-            let final = <ReactionConstant>this.flag.name.split("_")[1];
-            if (!final || !REACTION_MAP[final]) {
-              this.delete();
-              break;
+            if (this.ref.includes("produce")) {
+              let final = <ReactionConstant>this.flag.name.split("_")[1];
+              if (!final || !REACTION_MAP[final]) {
+                this.delete();
+                break;
+              }
+              this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
+              this.hive.cells.lab.synthesizeRes = undefined;
+              this.hive.cells.lab.prod = undefined;
+            } else {
+              this.hive.cells.lab.synthesizeTarget = undefined;
+              this.hive.cells.lab.synthesizeRes = undefined;
+              this.hive.cells.lab.prod = undefined;
+              this.fixedName(prefix.haltlab + this.hive.roomName);
             }
-            this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
-            this.hive.cells.lab.synthesizeRes = undefined;
-            this.hive.cells.lab.prod = undefined;
             break;
           case COLOR_YELLOW:
             if (this.hive.roomName !== this.pos.roomName)
@@ -626,7 +657,7 @@ export class Order {
 
   update() {
     this.flag = Game.flags[this.ref];
-    this.acted = this.prevpos === this.pos.to_str;
+    this.acted = this.acted && this.prevpos === this.pos.to_str;
     this.prevpos = this.pos.to_str;
     if (!this.acted)
       this.act();

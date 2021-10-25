@@ -43,6 +43,7 @@ export enum prefix {
   annex = "annex_",
   claim = "claim",
   mine = "mine_",
+  haltlab = "haltlab_",
 
   //cells
   defenseCell = "DefenseCell_",

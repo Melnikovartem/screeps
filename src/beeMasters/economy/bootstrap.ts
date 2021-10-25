@@ -158,7 +158,7 @@ export class BootstrapMaster extends Master {
           --i;
         } else
           target = structures.filter(s => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 50
-            && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.battle || this.hive.state === hiveStates.nospawn))[0];
+            && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.nospawn))[0];
       }
 
       if (target) {

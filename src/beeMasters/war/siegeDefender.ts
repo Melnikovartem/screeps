@@ -18,7 +18,6 @@ DEFENDER.fixed = [TOUGH, TOUGH, TOUGH, TOUGH];
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
-  movePriority = <2>2;
   boosts: Boosts | undefined = [{ type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
   { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
   { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
@@ -32,8 +31,11 @@ export class SiegeMaster extends Master {
 
   update() {
     super.update();
-    if (this.hive.state !== hiveStates.battle)
+    if (this.hive.state !== hiveStates.battle) {
+      this.movePriority = <5>5;
       return;
+    }
+    this.movePriority = <1>1;
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     if (roomInfo.dangerlvlmax < 5)
       return;
@@ -117,15 +119,14 @@ export class SiegeMaster extends Master {
     if (action1 || action2)
       this.patience[bee.ref] = 0;
     else
-      ++this.patience[bee.ref]
-    let stats = Apiary.intel.getComplexStats(target);
-    let attackPower = this.cell.getDmgAtPos(target.pos);
-    let provoke = rangeToTarget <= 2 && attackPower > stats.current.resist + stats.current.heal;
-
-    if (provoke && onPosition && bee.hits === bee.hitsMax && findRamp(bee.pos))
+      this.patience[bee.ref] += rangeToTarget <= 4 ? 1 : 3;
+    let stats = Apiary.intel.getComplexStats(target).current;
+    let attackPower = this.cell.getDmgAtPos(target.pos) + (rangeToTarget > 1 ? beeStats.dmgClose : 0);
+    let provoke = rangeToTarget <= 2 && attackPower > stats.resist + stats.heal && stats.dmgClose + stats.dmgRange < beeStats.hits * 0.9;
+    if (provoke && onPosition && bee.hits >= bee.hitsMax * 0.8 && findRamp(bee.pos))
       bee.targetPosition = bee.pos.getPosInDirection(bee.pos.getDirectionTo(target));
 
-    if (!onPosition && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
+    if (!(this.patience[bee.ref] === 0 && posToStay.isNearTo(bee)) && !onPosition && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
       bee.goTo(posToStay, opts);
     if (this.cell.isBreached)
       bee.goTo(target);

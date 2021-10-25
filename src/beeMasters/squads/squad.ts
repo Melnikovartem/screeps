@@ -184,14 +184,14 @@ export abstract class SquadMaster extends SwarmMaster {
       if (!bee)
         continue;
       let desiredPos = this.getDeisredPos(i, pos);
-      if (!desiredPos)
-        continue; // exit
-      if (!desiredPos.isFree(true))
+      if (!desiredPos || !desiredPos.isFree(true))
         if (bee.ref === centerRef)
           return 255;
         else
-          max = 64
-      if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
+          max = 64;
+      else if (desiredPos.getEnteranceToRoom())
+        max = Math.max(max, 16);
+      else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
         max = Math.max(max, 5);
     }
     return max;

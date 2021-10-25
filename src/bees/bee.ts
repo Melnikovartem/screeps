@@ -114,11 +114,15 @@ export class Bee {
       refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.annex)));
       if (refMaster)
         return refMaster;
-      /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade")));
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade")));
       if (refMaster)
-        return refMaster; */
+        return refMaster;
     } else if (this.ref.includes(setupsNames.defender)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
+      if (refMaster)
+        return refMaster;
+    } else if (this.ref.includes(setupsNames.knight)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
       if (refMaster)
         return refMaster;
     }
@@ -127,11 +131,6 @@ export class Bee {
       if (refMaster)
         return refMaster;
     }
-    else if (this.ref.includes(setupsNames.knight)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("gang")));
-      if (refMaster)
-        return refMaster;
-      }
     }*/
     return this.creep.memory.refMaster === undefined ? "" : this.creep.memory.refMaster;
   }

@@ -29,7 +29,7 @@ export class PortalMaster extends SwarmMaster {
       this.setup = setups.claimer.copy();
       this.setup.patternLimit += 2;
     } else if (this.order.ref.includes("defense")) {
-      this.setup = setups.knight.copy();
+      this.setup = setups.defender.destroyer.copy();
     } else if (this.order.ref.includes("transfer")) {
       this.setup = setups.pickup.copy();
       this.setup.patternLimit = Infinity;

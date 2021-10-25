@@ -273,7 +273,7 @@ export class Visuals {
   statsOrders(hiveName: string): string[][] {
     let orders = _.filter(Apiary.orders, o => o.hive.roomName === hiveName && !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
     let length = orders.length;
-    const MAX_STATS = 6;
+    const MAX_STATS = 10;
     let ans: string[][] = [];
     if (orders.length > MAX_STATS)
       orders = orders.filter(o => !o.ref.includes(prefix.def) && !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
@@ -381,6 +381,7 @@ export class Visuals {
       });
       ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)
         + (operational !== all ? this.getBeesAmount(statsPuppet) : "")]);
+      if (operational !== all) ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
     }
 
     let constLen = hive.structuresConst.length;
@@ -392,6 +393,11 @@ export class Visuals {
     ans.push(["upgrade",
       ` ${!hive.room.controller!.progressTotal ? "" : Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%"}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
+
+    if (hive.cells.defense.master.activeBees.length || hive.cells.defense.master.waitingForBees)
+      ans.push(["defense",
+        ` ${Apiary.intel.getInfo(hive.roomName).dangerlvlmax}`,
+        this.getBeesAmount(hive.cells.defense.master)]);
 
     let minSize = 0;
     let table = this.table(ans, this.anchor, undefined, minSize);

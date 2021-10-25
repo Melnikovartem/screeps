@@ -108,6 +108,7 @@ export class DefenseCell extends Cell {
             this.nukeCoverReady = false;
         }
       }
+    this.nukeCoverReady = true;
     return ans;
   }
 
@@ -296,7 +297,7 @@ export class DefenseCell extends Cell {
             return;
           }
           let repairTarget = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
-          if (repairTarget && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)
+          if (repairTarget && tower.pos.getRangeTo(repairTarget) <= tower.pos.getRangeTo(enemy) && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });

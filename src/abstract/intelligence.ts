@@ -261,9 +261,10 @@ export class Intel {
         default:
           if (Apiary.logger)
             Apiary.logger.reportEnemy(c);
-          if (PEACE_PACKS.includes(c.owner.username))
+          if (PEACE_PACKS.includes(c.owner.username)) {
             dangerlvl = 0;
-          else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
+            return;
+          } else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
             dangerlvl = 2;
       }
       roomInfo.enemies.push({

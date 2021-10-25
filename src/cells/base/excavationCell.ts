@@ -3,7 +3,7 @@ import { ResourceCell } from "./resourceCell";
 import { HaulerMaster } from "../../beeMasters/economy/hauler";
 
 import { safeWrap } from "../../abstract/utils";
-import { prefix, roomStates } from "../../enums";
+import { prefix } from "../../enums";
 
 import { DEVELOPING } from "../../settings";
 import { profile } from "../../profiler/decorator";
@@ -43,7 +43,7 @@ export class ExcavationCell extends Cell {
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
         if (cell.container.store.getUsedCapacity() >= this.fullContainer) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
-          if (roomInfo.safePlace || roomInfo.roomState === roomStates.SKfrontier)
+          if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)
             this.quitefullCells.push(cell);
         }
       }

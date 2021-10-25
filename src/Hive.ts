@@ -452,7 +452,7 @@ export class Hive {
         checkAnnex();
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         break;
       case hiveStates.economy:
         checkAnnex();
@@ -461,7 +461,7 @@ export class Hive {
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
         if (!this.sumCost)
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
 

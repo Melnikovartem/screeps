@@ -36,6 +36,8 @@ export class Broker {
   bestPriceBuy: PriceStat = {};
   bestPriceSell: PriceStat = {};
 
+  shortOrders = {}
+
   energyPrice: number = Infinity;
 
   lastUpdated: number = -1;

@@ -5,7 +5,7 @@ import type { Boosts } from "../_Master";
 
 const GANG = setups.knight.copy();
 
-const TOWER_NUM = 2; // 6;
+const TOWER_NUM = 4; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
 const TOUGHT_AMOUNT = Math.ceil(TOWER_DMG / 100);
 
@@ -23,5 +23,9 @@ export class GangDuo extends SquadMaster {
 
   get checkup() {
     return this.checkMinerals(GANG.getBody(this.hive.room.energyCapacityAvailable, 17).body);
+  }
+
+  get extreme() {
+    return true;
   }
 }

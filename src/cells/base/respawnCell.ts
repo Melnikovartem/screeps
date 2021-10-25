@@ -62,11 +62,11 @@ export class RespawnCell extends Cell {
 
     this.roadMap[p.x][p.y] = depth;
     _.forEach(p.getPositionsInRange(1), pp => {
-      if (pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length)
+      if (this.roadMap[pp.x][pp.y] === Infinity && pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length)
         this.roadMap[pp.x][pp.y] = depth;
     });
     _.forEach(p.getPositionsInRange(1).sort((a, b) => b.getRangeTo(this) - a.getRangeTo(this)), pp => {
-      if (pp.isFree(true))
+      if (pp.isFree(true) && pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD))
         depth = this.dfs(pp, depth + 1, maxRange);
     });
     return depth;
