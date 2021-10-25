@@ -239,17 +239,24 @@ export class RoomPlanner {
     jobs.push({
       context: "outer ring",
       func: () => {
+        let addedWalls: Pos[] = [];
         let terrain = Game.map.getRoomTerrain(anchor.roomName);
         let addXEnd = (coef: number, x: number, y: number) => {
           let close = y === 0 ? y + 1 : y - 1;
           let far = y === 0 ? y + 2 : y - 2;
           let inner = x - 1 * coef;
           let outer = x - 2 * coef;
-          this.addToPlan({ x: inner, y: far }, anchor.roomName, STRUCTURE_WALL);
+          if (inner % 3 == 0)
+            this.addToPlan({ x: inner, y: far }, anchor.roomName, STRUCTURE_RAMPART);
+          else
+            this.addToPlan({ x: inner, y: far }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ x: inner, y: far });
           if (terrain.get(inner, close) === TERRAIN_MASK_WALL)
             return;
           this.addToPlan({ x: outer, y: close }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ x: outer, y: close });
           this.addToPlan({ x: outer, y: far }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ x: outer, y: far });
         };
         for (let y in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -266,6 +273,7 @@ export class RoomPlanner {
                 this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_RAMPART);
               else
                 this.addToPlan({ x: x, y: yy }, anchor.roomName, STRUCTURE_WALL);
+              addedWalls.push({ x: x, y: yy });
               end = x;
             } else if (start !== -1) {
               let pos = new RoomPosition(start + Math.round((end - start) / 2), +y, anchor.roomName);
@@ -289,11 +297,17 @@ export class RoomPlanner {
           let far = x === 0 ? x + 2 : x - 2;
           let inner = y - 1 * coef;
           let outer = y - 2 * coef;
-          this.addToPlan({ y: inner, x: far }, anchor.roomName, STRUCTURE_WALL);
+          if (inner % 3 == 0)
+            this.addToPlan({ y: inner, x: far }, anchor.roomName, STRUCTURE_RAMPART);
+          else
+            this.addToPlan({ y: inner, x: far }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ y: inner, x: far });
           if (terrain.get(close, inner) === TERRAIN_MASK_WALL)
             return;
           this.addToPlan({ y: outer, x: close }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ y: outer, x: close });
           this.addToPlan({ y: outer, x: far }, anchor.roomName, STRUCTURE_WALL);
+          addedWalls.push({ y: outer, x: close });
         };
         for (let x in { 0: 1, 49: 1 }) {
           let start = -1;
@@ -310,6 +324,7 @@ export class RoomPlanner {
                 this.addToPlan({ y: y, x: xx }, anchor.roomName, STRUCTURE_RAMPART);
               else
                 this.addToPlan({ y: y, x: xx }, anchor.roomName, STRUCTURE_WALL);
+              addedWalls.push({ y: y, x: xx });
               end = y;
             } else if (start !== -1) {
               let pos = new RoomPosition(+x, start + Math.round((end - start) / 2), anchor.roomName);
@@ -327,6 +342,7 @@ export class RoomPlanner {
             }
           }
         }
+        this.removeNonUsedWalls(anchor, addedWalls);
         return OK;
       },
     });
@@ -632,44 +648,48 @@ export class RoomPlanner {
             addWall(maxx, y, ramparts && y % 3 === 0);
           }
 
-          _.forEach(addedWalls, p => {
-            let pos = new RoomPosition(p.x, p.y, anchor.roomName);
-            let pathArgs = getPathArgs({
-              costCallback: (roomName: string, costMatrix: CostMatrix) => {
-                let plan = this.activePlanning[roomName].plan;
-                for (let x in plan)
-                  for (let y in plan[x]) {
-                    if (plan[x][y].s === STRUCTURE_WALL)
-                      costMatrix.set(+x, +y, 255);
-                    else if (plan[x][y].r)
-                      costMatrix.set(+x, +y, 255);
-                  }
-                return costMatrix;
-              }
-            });
-
-            let path = anchor.findPathTo(pos, pathArgs);
-            let newPos = path.length && new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
-            while (newPos && (newPos.x !== pos.x || newPos.y !== pos.y)) {
-              path = pos.findPathTo(pos, pathArgs);
-              if (path.length > 0)
-                newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
-              else
-                break;
-            }
-
-            let plan = this.activePlanning[anchor.roomName].plan;
-            if (newPos && (p.x !== newPos.x || p.y !== newPos.y))
-              if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
-                this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
-              else if (plan[p.x] && plan[p.x][p.y])
-                this.activePlanning[anchor.roomName].plan[p.x][p.y].r = false;
-          });
+          this.removeNonUsedWalls(anchor, addedWalls);
           return OK;
         }
       });
     });
     return OK;
+  }
+
+  removeNonUsedWalls(anchor: RoomPosition, addedWalls: Pos[]) {
+    _.forEach(addedWalls, p => {
+      let pos = new RoomPosition(p.x, p.y, anchor.roomName);
+      let pathArgs = getPathArgs({
+        costCallback: (roomName: string, costMatrix: CostMatrix) => {
+          let plan = this.activePlanning[roomName].plan;
+          for (let x in plan)
+            for (let y in plan[x]) {
+              if (plan[x][y].s === STRUCTURE_WALL)
+                costMatrix.set(+x, +y, 255);
+              else if (plan[x][y].r)
+                costMatrix.set(+x, +y, 255);
+            }
+          return costMatrix;
+        }
+      });
+
+      let path = anchor.findPathTo(pos, pathArgs);
+      let newPos = path.length && new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
+      while (newPos && (newPos.x !== pos.x || newPos.y !== pos.y)) {
+        path = pos.findPathTo(pos, pathArgs);
+        if (path.length > 0)
+          newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
+        else
+          break;
+      }
+
+      let plan = this.activePlanning[anchor.roomName].plan;
+      if (newPos && (p.x !== newPos.x || p.y !== newPos.y))
+        if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
+          this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
+        else if (plan[p.x] && plan[p.x][p.y])
+          this.activePlanning[anchor.roomName].plan[p.x][p.y].r = false;
+    });
   }
 
   roadNearBy(p: Pos, roomName: string) {

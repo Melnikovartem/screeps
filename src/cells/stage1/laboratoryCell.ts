@@ -351,7 +351,7 @@ export class LaboratoryCell extends Cell {
           this.updateLabState(l, rec + 1);
           break;
         } else if (res && (res !== this.prod.res || l.store.getUsedCapacity(res) >= LAB_MINERAL_CAPACITY / 2))
-          this.sCell.requestToStorage([l], 3, res, l.store.getUsedCapacity(res));
+          this.sCell.requestToStorage([l], 4, res, l.store.getUsedCapacity(res));
         break;
       default: // boosting lab : state === resource
         let toBoostMinerals = _.sum(this.boostRequests, br => {

@@ -18,6 +18,7 @@ export class DefenseCell extends Cell {
   coefMap: number[][] = [];
   isBreached = false;
   master: SiegeMaster;
+  dmgAtPos: { [id: string]: number } = {}
 
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
@@ -112,7 +113,7 @@ export class DefenseCell extends Cell {
 
   update() {
     super.update(["towers"]);
-
+    this.dmgAtPos = {};
     if (Game.time % 500 === 333 || this.timeToLand-- < 0 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady))
       this.updateNukes();
 
@@ -239,6 +240,17 @@ export class DefenseCell extends Cell {
     return !Apiary.defenseSwarms[roomName] && !_.filter(Game.rooms[roomName].find(FIND_FLAGS), f => f.color === COLOR_RED).length;
   }
 
+  getDmgAtPos(pos: RoomPosition) {
+    let str = pos.to_str;
+    if (this.dmgAtPos[str])
+      return this.dmgAtPos[str];
+    if (this.coefMap[pos.x] === undefined || this.coefMap[pos.x][pos.y] === undefined)
+      return 0;
+    let myStats = Apiary.intel.getComplexMyStats(pos); // my stats toward a point
+    this.dmgAtPos[str] = TOWER_POWER_ATTACK * this.coefMap[pos.x][pos.y] + myStats.current.dmgClose;
+    return this.dmgAtPos[str];
+  }
+
   run() {
     if (this.hive.state === hiveStates.battle) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
@@ -253,20 +265,21 @@ export class DefenseCell extends Cell {
         return;
 
       _.forEach(roomInfo.enemies, e => {
-        if (this.coefMap[e.object.pos.x][e.object.pos.y] < this.coefMap[enemy.pos.x][enemy.pos.y])
+        if (this.getDmgAtPos(e.object.pos) > this.getDmgAtPos(enemy.pos))
           enemy = e.object;
       });
 
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy);
-      let myStats = Apiary.intel.getComplexMyStats(enemy); // my stats toward a point
-      let attackPower = TOWER_POWER_ATTACK * this.coefMap[enemy.pos.x][enemy.pos.y] + myStats.current.dmgClose;
+      let attackPower = this.getDmgAtPos(enemy.pos);
       if (stats.current.heal + stats.current.resist < attackPower || (stats.current.resist && stats.current.resist < attackPower) || stats.current.hits < attackPower)
         shouldAttack = true;
 
+      let workingTower = false;
       _.forEach(this.towers, tower => {
         if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < 10)
           return;
+        workingTower = true;
         if (shouldAttack) {
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
@@ -287,6 +300,8 @@ export class DefenseCell extends Cell {
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });
+      if (!workingTower && !this.notDef(this.pos.roomName))
+        this.setDefFlag(this.pos);
     }
   }
 }

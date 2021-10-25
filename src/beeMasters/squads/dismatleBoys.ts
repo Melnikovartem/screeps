@@ -26,8 +26,8 @@ export class DismanleBoys extends SquadMaster {
   ];
 
   get checkup() {
-    let healerMinerals = this.checkMinerals(HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body);
-    let archerMinerals = this.checkMinerals(DISMANTLER.getBody(this.hive.room.energyCapacityAvailable, 10).body);
+    let healerMinerals = this.checkMinerals(HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body, 1);
+    let archerMinerals = this.checkMinerals(DISMANTLER.getBody(this.hive.room.energyCapacityAvailable, 10).body, 2);
     return healerMinerals && archerMinerals;
   }
 }

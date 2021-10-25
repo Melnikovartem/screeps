@@ -19,10 +19,11 @@ DEFENDER.fixed = [TOUGH, TOUGH, TOUGH, TOUGH];
 @profile
 export class SiegeMaster extends Master {
   movePriority = <2>2;
-  boosts: Boosts | undefined = [{ type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
-  { type: "fatigue", lvl: 2 }, { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 }];
+  boosts: Boosts | undefined = [{ type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
+  { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
+  { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
   cell: DefenseCell;
-  patience = 0;
+  patience: { [id: string]: number } = {};
 
   constructor(defenseCell: DefenseCell) {
     super(defenseCell.hive, defenseCell.ref);
@@ -43,6 +44,11 @@ export class SiegeMaster extends Master {
         priority: 1,
       });
     }
+  }
+
+  newBee(bee: Bee) {
+    super.newBee(bee);
+    this.patience[bee.ref] = 0;
   }
 
   beeAct(bee: Bee, target: Creep | Structure | PowerCreep, posToStay: RoomPosition) {
@@ -109,14 +115,17 @@ export class SiegeMaster extends Master {
     // we do not fear this enemy
     let onPosition = posToStay.equal(bee);
     if (action1 || action2)
-      this.patience = 0;
-    else {
-      ++this.patience;
-      if (rangeToTarget <= 2 && onPosition && bee.hits === bee.hitsMax && findRamp(bee.pos))
-        bee.targetPosition = bee.pos.getPosInDirection(bee.pos.getDirectionTo(target));
-    }
+      this.patience[bee.ref] = 0;
+    else
+      ++this.patience[bee.ref]
+    let stats = Apiary.intel.getComplexStats(target);
+    let attackPower = this.cell.getDmgAtPos(target.pos);
+    let provoke = rangeToTarget <= 2 && attackPower > stats.current.resist + stats.current.heal;
 
-    if (!onPosition && !(rangeToTarget === 1 && bee.hits === bee.hitsMax && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
+    if (provoke && onPosition && bee.hits === bee.hitsMax && findRamp(bee.pos))
+      bee.targetPosition = bee.pos.getPosInDirection(bee.pos.getDirectionTo(target));
+
+    if (!onPosition && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
       bee.goTo(posToStay, opts);
     if (this.cell.isBreached)
       bee.goTo(target);
@@ -124,7 +133,7 @@ export class SiegeMaster extends Master {
       bee.targetPosition = bee.pos;
     if (!findRamp(bee.targetPosition) && bee.targetPosition.getRangeTo(target) <= targetedRange - 2) {
       let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
-      if (stats.dmgClose + stats.dmgRange > beeStats.hits / 2 - 300)
+      if (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.9 || stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.5 && !findRamp(bee.pos))
         bee.flee(target, this.cell.pos, opts);
     }
     return OK;
@@ -142,14 +151,12 @@ export class SiegeMaster extends Master {
         case beeStates.chill:
           if (this.hive.state !== hiveStates.battle) {
             bee.goRest(this.hive.rest);
-            if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
-              bee.heal(bee);
             break;
           }
           bee.state = beeStates.work;
         case beeStates.work:
           let pos;
-          if (this.hive.state !== hiveStates.battle && this.patience > 50) {
+          if (this.hive.state !== hiveStates.battle && this.patience[bee.ref] > 50) {
             bee.state = beeStates.chill;
             bee.target = undefined;
             break;
@@ -182,7 +189,7 @@ export class SiegeMaster extends Master {
 
           let enemy = Apiary.intel.getEnemyCreep(pos);
 
-          if (this.patience > 20) {
+          if (this.patience[bee.ref] > 20) {
             if (pos.equal(bee))
               bee.goTo(this.cell.pos);
             bee.target = undefined;
@@ -193,7 +200,7 @@ export class SiegeMaster extends Master {
             if (!bee.targetPosition)
               bee.targetPosition = pos;
           } else {
-            ++this.patience;
+            ++this.patience[bee.ref]
             bee.goTo(pos);
           }
       }

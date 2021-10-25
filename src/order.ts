@@ -32,6 +32,7 @@ export class Order {
   master?: SwarmMaster;
   hive: Hive;
   acted: boolean = false;
+  prevpos: string = "";
 
   get ref() {
     return this.flag.name;
@@ -313,7 +314,7 @@ export class Order {
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
-              Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+              Apiary.planner.toActive(this.hive.pos, this.pos.roomName);
               if (this.hive.shouldRecalc < 3)
                 if (this.hive.roomName === this.pos.roomName)
                   this.hive.shouldRecalc = 1;
@@ -325,11 +326,11 @@ export class Order {
           case COLOR_RED:
             switch (this.ref) {
               case "all":
-                Apiary.planner.currentToActive(this.pos.roomName, this.hive.getPos("center"));
+                Apiary.planner.currentToActive(this.pos.roomName, this.hive.pos);
                 break;
               case "add":
                 if (!Apiary.planner.activePlanning[this.pos.roomName])
-                  Apiary.planner.toActive(this.hive.getPos("center"), this.pos.roomName);
+                  Apiary.planner.toActive(this.hive.pos, this.pos.roomName);
                 Apiary.planner.addToPlan(this.pos, this.pos.roomName, undefined, true);
                 _.forEach(this.pos.lookFor(LOOK_STRUCTURES), s => {
                   if (s.structureType in CONTROLLER_STRUCTURES)
@@ -625,8 +626,8 @@ export class Order {
 
   update() {
     this.flag = Game.flags[this.ref];
-    if (this.flag.pos.x !== this.pos.x || this.flag.pos.y !== this.pos.y)
-      this.acted = false;
+    this.acted = this.prevpos === this.pos.to_str;
+    this.prevpos = this.pos.to_str;
     if (!this.acted)
       this.act();
   }

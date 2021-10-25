@@ -434,10 +434,11 @@ export class Visuals {
     if (Object.keys(hive.cells.lab.boostRequests).length) {
       let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
       for (const refBee in lab.boostRequests) {
+        let name = refBee.split(" ").map(s => s.slice(0, 5) + (s.length > 5 ? "." : "")).join(" ")
         for (let i = 0; i < lab.boostRequests[refBee].info.length; ++i) {
           let r = lab.boostRequests[refBee].info[i];
           let l = lab.boostLabs[r.res];
-          ans.push([!i ? refBee : "-", r.type, r.res, " " + r.amount, l ? l.slice(l.length - 4) : "not found"]);
+          ans.push([!i ? name : "-", r.type, r.res, "  " + r.amount, l ? l.slice(l.length - 4) : "not found"]);
         }
       }
 
@@ -524,7 +525,7 @@ export class Visuals {
     return lab;
   }
 
-  table(strings: string[][], info: VisInfo, style: TextStyle = {}, minSize: number = 1, maxSize: number = 20,
+  table(strings: string[][], info: VisInfo, style: TextStyle = {}, minSize: number = 1, maxSize: number = Infinity,
     align: "center" | "right" | "left" = "left", snap: "bottom" | "top" = "top") {
     let pad = 0.2;
 

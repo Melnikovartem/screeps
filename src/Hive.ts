@@ -125,8 +125,10 @@ export class Hive {
 
     // cheap but good
     [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL * 2,
-    [BOOST_MINERAL.build[0]]: HIVE_MINERAL * 2,
-    [BOOST_MINERAL.attack[0]]: HIVE_MINERAL * 2,
+    [BOOST_MINERAL.build[0]]: HIVE_MINERAL,
+    [BOOST_MINERAL.damage[1]]: HIVE_MINERAL,
+    [BOOST_MINERAL.attack[0]]: HIVE_MINERAL,
+    [BOOST_MINERAL.attack[1]]: HIVE_MINERAL * 2,
   }
   resState: { "energy": number } & ResTarget = { energy: 0 };
   mastersResTarget: ResTarget = {}
@@ -351,7 +353,7 @@ export class Hive {
       pos = pos.pos;
     let target: Structure | ConstructionSite | undefined;
     let projects = this.structuresConst;
-    let getProj = () => (<RoomPosition>pos).findClosest(projects);
+    let getProj = () => projects.length && (<RoomPosition>pos).findClosest(projects);
 
     if (this.state === hiveStates.battle) {
       let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
@@ -361,14 +363,14 @@ export class Hive {
       let enemy = Apiary.intel.getEnemyCreep(this);
       if (enemy)
         pos = enemy.pos; // dont work well with several points
-      getProj = () => projects.reduce((prev, curr) => {
+      getProj = () => projects.length && projects.reduce((prev, curr) => {
         let ans = curr.pos.getRangeTo(pos) - prev.pos.getRangeTo(pos);
         if (ans === 0)
           ans = prev.energyCost - curr.energyCost;
         return ans < 0 ? curr : prev;
       });
     } else if (this.state === hiveStates.nukealert)
-      getProj = () => projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
+      getProj = () => projects.length && projects.reduce((prev, curr) => curr.energyCost > prev.energyCost ? curr : prev);
 
     let proj = getProj();
     while (proj && !target) {
@@ -379,7 +381,7 @@ export class Hive {
           break;
         case "repair":
           if (ignore !== "ignoreRepair")
-            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === proj!.sType && s.hits < proj!.targetHits)[0];
+            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === (<BuildProject>proj).sType && s.hits < (<BuildProject>proj).targetHits)[0];
       }
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
@@ -431,14 +433,13 @@ export class Hive {
     switch (this.state) {
       case hiveStates.battle:
         let health = this.wallsHealth;
-        while (!this.sumCost && health < Math.min(this.wallsHealthMax + WALL_HEALTH * 4, RAMPART_HITS_MAX[this.room.controller!.level])) {
+        while (!this.sumCost && health < Math.min(this.wallsHealthMax + WALL_HEALTH * 5, RAMPART_HITS_MAX[this.room.controller!.level])) {
           health += WALL_HEALTH * 5;
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, {
+          let proj = Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, {
             [STRUCTURE_WALL]: health,
             [STRUCTURE_RAMPART]: health,
-          }, 0.9));
-          if (!this.sumCost)
-            this.wallsHealth = health;
+          }, 0.9);
+          addCC(proj.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 6).length));
         }
         break;
       case hiveStates.nukealert:

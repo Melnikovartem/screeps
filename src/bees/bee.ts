@@ -117,12 +117,17 @@ export class Bee {
       /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade")));
       if (refMaster)
         return refMaster; */
-    } else if (this.ref.includes(setupsNames.healer) || this.ref.includes(setupsNames.dismantler)) {
+    } else if (this.ref.includes(setupsNames.defender)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
+      if (refMaster)
+        return refMaster;
+    }
+    /* else if (this.ref.includes(setupsNames.healer) || this.ref.includes(setupsNames.dismantler)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("dismantle")));
       if (refMaster)
         return refMaster;
     }
-    /*else if (this.ref.includes(setupsNames.knight)) {
+    else if (this.ref.includes(setupsNames.knight)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("gang")));
       if (refMaster)
         return refMaster;
@@ -135,7 +140,7 @@ export class Bee {
     if (!masters.length)
       return null;
     let ans = masters.reduce((prev, curr) => curr.hive.pos.getRoomRangeTo(this) < prev.hive.pos.getRoomRangeTo(this) ? curr : prev);
-    if (ans.hive.pos.getRoomRangeTo(this) > this.ticksToLive / 25)
+    if (ans.hive.pos.getRoomRangeTo(this) * 25 > this.ticksToLive)
       return null;
     return ans.ref;
   }

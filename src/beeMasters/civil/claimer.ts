@@ -7,6 +7,7 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class ClaimerMaster extends SwarmMaster {
+  maxSpawns = Infinity;
   update() {
     super.update();
 
@@ -23,13 +24,14 @@ export class ClaimerMaster extends SwarmMaster {
       if (bee.pos.roomName !== this.order.pos.roomName) {
         bee.goTo(this.order.pos);
       } else {
-        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
+        let controller = Game.rooms[this.order.pos.roomName].controller;
         if (controller && !controller.owner) {
           if (bee.claimController(controller) === OK) {
             bee.pos.createFlag(prefix.boost + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
             bee.creep.signController(controller, signText.my);
+            this.order.delete(true);
+            Apiary.destroyTime = Game.time; // create new hive
           }
-          Apiary.destroyTime = Game.time; // create new hive
         } else
           this.order.delete();
       }

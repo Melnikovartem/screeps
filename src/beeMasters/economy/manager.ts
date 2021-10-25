@@ -40,7 +40,7 @@ export class ManagerMaster extends Master {
 
     let non_refill_needed = false;
     if (refilling) {
-      let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority > 0);
+      let non_refill_requests = _.filter(requests, (r: TransferRequest) => r.priority > 0 && r.priority < 5);
       non_refill_needed = !!non_refill_requests.length;
 
       if (non_refill_needed) {
@@ -51,8 +51,8 @@ export class ManagerMaster extends Master {
 
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
-
-      if (!transfer || !transfer.isValid() || (non_refill_needed && transfer.priority === 0 && refilling > 1)) {
+      if (!transfer || !transfer.isValid() || (non_refill_needed && transfer.priority === 0 && refilling > 1)
+        || (transfer.priority === 2 && this.hive.state === hiveStates.battle && transfer.toAmount < 20)) {
         bee.target = undefined;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);

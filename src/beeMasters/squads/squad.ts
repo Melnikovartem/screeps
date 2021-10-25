@@ -117,13 +117,13 @@ export abstract class SquadMaster extends SwarmMaster {
     return true;
   }
 
-  checkMinerals(body: BodyPartConstant[]) {
+  checkMinerals(body: BodyPartConstant[], coef = this.formation.length) {
     if (!this.hive.cells.storage)
       return false;
     for (let i = 0; i < this.boosts.length; ++i) {
       let b = this.boosts[i];
       let res = BOOST_MINERAL[b.type][b.lvl];
-      let amountNeeded = LAB_BOOST_MINERAL * _.sum(body, bb => bb === BOOST_PARTS[b.type] ? 1 : 0) * this.formation.length;
+      let amountNeeded = LAB_BOOST_MINERAL * _.sum(body, bb => bb === BOOST_PARTS[b.type] ? 1 : 0) * coef;
       if (amountNeeded && this.hive.cells.storage.getUsedCapacity(res) < amountNeeded) {
         this.hive.add(this.hive.mastersResTarget, res, amountNeeded);
         return false;
@@ -197,7 +197,7 @@ export abstract class SquadMaster extends SwarmMaster {
     return max;
   }
 
-  validateFormation() {
+  validateFormation(obs: { pos: RoomPosition }[]) {
     let terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
       let desiredPos = this.getDeisredPos(i);
@@ -210,7 +210,7 @@ export abstract class SquadMaster extends SwarmMaster {
       if (!bee)
         continue;
       let desiredPos = this.getDeisredPos(i)!;
-      bee.goTo(desiredPos, { movingTarget: true, ignoreCreeps: false });
+      bee.goTo(desiredPos, { movingTarget: true, obstacles: obs });
       bee.actionPosition = desiredPos;
     }
     return OK;
@@ -314,16 +314,33 @@ export abstract class SquadMaster extends SwarmMaster {
     }
   }
 
+  getDesiredPoss() {
+    let ans = []
+    for (let i = 0; i < this.formationBees.length; ++i) {
+      let bee = this.formationBees[i];
+      if (!bee)
+        continue;
+      let desiredPos = this.getDeisredPos(i);
+      if (desiredPos)
+        ans.push({ pos: desiredPos });
+    }
+    return ans;
+  }
+
   getPathArgs(centerBeeRef: string): TravelToOptions {
     return {
       movingTarget: true,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;
+        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         for (let x = 0; x <= 49; ++x)
           for (let y = 0; y <= 49; ++y) {
             let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), centerBeeRef);
-            matrix.set(x, y, moveMent);
+            if (roomInfo.roomState === roomStates.ownedByEnemy && moveMent === 64)
+              matrix.set(x, y, 255);
+            else
+              matrix.set(x, y, moveMent);
           }
         return matrix;
       }
@@ -435,9 +452,10 @@ export abstract class SquadMaster extends SwarmMaster {
             b.targetPosition = pos;
         });
     } else {
+      let desired = this.getDesiredPoss();
       if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4 && !centerBee.pos.getEnteranceToRoom()) {
         this.stuckValue += 1;
-        valid = this.validateFormation();
+        valid = this.validateFormation(desired);
       }
       if (valid !== OK) {
         this.stuckValue = 0;
@@ -448,9 +466,9 @@ export abstract class SquadMaster extends SwarmMaster {
             continue;
           let desiredPos = this.getDeisredPos(i);
           if (!desiredPos || !desiredPos.isFree(true))
-            bee.goTo(centerBee, { movingTarget: true })
+            bee.goTo(centerBee, { movingTarget: true, obstacles: desired })
           else
-            bee.goTo(desiredPos, { movingTarget: true })
+            bee.goTo(desiredPos, { movingTarget: true, obstacles: desired })
         }
       }
     }

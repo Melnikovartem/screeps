@@ -49,7 +49,7 @@ export class BuilderMaster extends Master {
 
 
     this.recalculateTargetBee();
-    this.movePriority = emergency ? 1 : 5;
+    this.movePriority = emergency ? 2 : 5;
 
     if (this.checkBees(this.hive.state !== hiveStates.lowenergy)) {
       let order = {
