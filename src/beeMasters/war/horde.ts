@@ -39,6 +39,8 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
+    else if (this.order.ref.includes("keep"))
+      this.maxSpawns = Infinity;
   }
 
   update() {

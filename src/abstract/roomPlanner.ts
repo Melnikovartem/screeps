@@ -39,7 +39,7 @@ type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
   return _.defaults(opts, {
-    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: true, maxRooms: 1,
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false, maxRooms: 1,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -488,6 +488,7 @@ export class RoomPlanner {
       this.activePlanning[anchor.roomName].jobsToDo.push({
         context: `resource road for ${f.pos}`,
         func: () => {
+          this.activePlanning[anchor.roomName].exits = [anchor].concat(this.activePlanning[anchor.roomName].exits.filter(e => e.roomName !== anchor.roomName));
           let ans = this.connectWithRoad(anchor, f.pos, true);
           if (typeof ans === "number")
             return ans;
@@ -502,6 +503,8 @@ export class RoomPlanner {
                 this.addToPlan(existingContainer.pos, f.pos.roomName, STRUCTURE_CONTAINER, true);
               } else
                 this.addToPlan(ans, f.pos.roomName, STRUCTURE_CONTAINER, true);
+            else
+              this.addToPlan(ans, f.pos.roomName, undefined, true);
 
             if (f.pos.roomName !== anchor.roomName)
               return OK;
@@ -711,8 +714,7 @@ export class RoomPlanner {
     let exits = this.activePlanning[roomName].exits;
     if (roomName !== pos.roomName)
       opts.maxRooms = 16;
-    if (pos.roomName === roomName)
-      exit = pos.findClosestByPath(exits, getPathArgs(opts));
+    exit = pos.findClosestByPath(exits, getPathArgs(opts));
     if (!exit)
       exit = pos.findClosest(exits);
     if (!exit)

@@ -24,7 +24,8 @@ export class BuilderMaster extends Master {
 
     this.boosts = undefined;
 
-    if (this.hive.state >= hiveStates.nukealert || Apiary.orders[prefix.build + this.hive.roomName]) {
+    if (this.hive.state >= hiveStates.nukealert || Apiary.orders[prefix.build + this.hive.roomName]
+      || this.hive.wallsHealth < this.hive.wallsHealthMax && this.hive.resState[RESOURCE_ENERGY] > 0) {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
@@ -92,8 +93,22 @@ export class BuilderMaster extends Master {
     _.forEach(this.activeBees, bee => {
       if (chill && !bee.store.getUsedCapacity(RESOURCE_ENERGY))
         bee.state = beeStates.chill;
+      let old = bee.ticksToLive <= 25;
+      if (old)
+        if (bee.boosted && this.hive.cells.lab)
+          bee.state = beeStates.fflush;
+        else
+          bee.state = beeStates.chill;
 
       switch (bee.state) {
+        case beeStates.fflush:
+          if (!this.hive.cells.lab || !bee.boosted) {
+            bee.state = beeStates.chill;
+            break;
+          }
+          let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
+          bee.goRest(lab.pos);
+          break;
         case beeStates.refill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             bee.state = beeStates.work;
@@ -150,7 +165,7 @@ export class BuilderMaster extends Master {
           if (bee.state !== beeStates.chill)
             break;
         case beeStates.chill:
-          if (this.hive.structuresConst.length && !chill)
+          if (this.hive.structuresConst.length && !chill && !old)
             bee.state = beeStates.refill;
           else if (bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
             let ans = bee.transfer(this.sCell.storage, RESOURCE_ENERGY);

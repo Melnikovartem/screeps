@@ -7,6 +7,7 @@ import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { CreepSetup } from "../../bees/creepSetups";
+import type { Order } from "../../order";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
 export type FormationPositions = [Pos, CreepSetup][];
@@ -19,8 +20,29 @@ export abstract class SquadMaster extends SwarmMaster {
   abstract formation: FormationPositions;
   formationBees: (Bee | undefined)[] = [];
 
-  formationCenter: RoomPosition = this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest;
-  formationRotation: TOP | BOTTOM | LEFT | RIGHT = TOP;
+  constructor(order: Order) {
+    super(order);
+    if (!(this.formationCenter instanceof RoomPosition))
+      this.formationCenter = (this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest);
+    if (![TOP, BOTTOM, LEFT, RIGHT].includes(this.formationRotation))
+      this.formationRotation = TOP;
+  }
+
+  get formationCenter() {
+    return this.order.flag.memory.extraPos!;
+  }
+
+  set formationCenter(value) {
+    this.order.flag.memory.extraPos = value;
+  }
+
+  get formationRotation() {
+    return <TOP | BOTTOM | LEFT | RIGHT>this.order.flag.memory.extraInfo;
+  }
+
+  set formationRotation(value: TOP | BOTTOM | LEFT | RIGHT) {
+    this.order.flag.memory.extraInfo = value;
+  }
 
   movePriority = <1>1;
   priority = <1>1;

@@ -26,6 +26,9 @@ declare global {
     hive: string;
     repeat?: number;
     info?: number; // for different tasks
+
+    extraPos?: RoomPosition
+    extraInfo?: any;
   }
 
   interface Memory {

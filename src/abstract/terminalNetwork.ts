@@ -29,6 +29,9 @@ export class Network {
     if (!hives)
       return;
     this.nodes = _.filter(hives, h => h.cells.storage && h.cells.storage.terminal);
+    _.forEach(this.nodes, node => {
+      Apiary.broker.shortOrdersSell[node.roomName] = { orders: {}, lastUpdated: Game.time };
+    });
   }
 
   update() {

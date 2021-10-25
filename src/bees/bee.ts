@@ -21,6 +21,8 @@ export class Bee {
   targetPosition: RoomPosition | undefined;
   actionPosition: RoomPosition | undefined;
 
+  boosted = false;
+
   // for now it will be forever binded
   constructor(creep: Creep) {
     this.creep = creep;
@@ -30,6 +32,7 @@ export class Bee {
       this.state = beeStates.idle;
 
     this.lifeTime = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
+    this.boosted = !!this.body.filter(b => b.boost).length
 
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
@@ -406,11 +409,14 @@ export class Bee {
         let outPos = beeIn.targetPosition;
         // should i check that beeIn will be the max priority in outPos or it is too edge case?
         red = (prev: InfoMove, curr: InfoMove) => {
-          if (curr.bee.pos.x === outPos.x && curr.bee.pos.y === outPos.y)
-            return curr;
-          if (prev.bee.pos.x === outPos.x && prev.bee.pos.y === outPos.y)
-            return prev;
-          return curr.priority < prev.priority ? curr : prev
+          let ans = curr.priority - prev.priority;
+          if (ans === 0) {
+            if (outPos.equal(curr.bee))
+              return curr;
+            if (outPos.equal(prev.bee))
+              return prev;
+          }
+          return ans < 0 ? curr : prev
         };
         bee = moveMap[pos.to_str].reduce(red).bee;
       }

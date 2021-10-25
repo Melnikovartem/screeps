@@ -52,6 +52,8 @@ export class LaboratoryCell extends Cell {
   resTarget: { [key in ResourceConstant]?: number } = {};
   patience: number = 0;
 
+  checkDropped: string[] = [];
+
   constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
     this.sCell = sCell;
@@ -183,6 +185,15 @@ export class LaboratoryCell extends Cell {
   getBoostInfo(r: BoostRequest, bee?: Bee): BoostInfo | void {
     let res = BOOST_MINERAL[r.type][r.lvl];
     let sum = this.sCell.getUsedCapacity(res);
+    if (bee && this.prod && res === this.prod.res) {
+      sum = this.sCell.storage.store.getUsedCapacity(res);
+      let inBees = _.sum(this.sCell.master.activeBees, b => b.store.getUsedCapacity(res));
+      if (inBees)
+        sum += inBees;
+      let boostLab = this.boostLabs[res];
+      if (boostLab)
+        sum += this.laboratories[boostLab].store.getUsedCapacity(res);
+    }
     let amount = r.amount || Infinity;
     amount = Math.min(amount, Math.floor(sum / LAB_BOOST_MINERAL));
     if (bee)
@@ -226,12 +237,15 @@ export class LaboratoryCell extends Cell {
         lab = this.laboratories[this.boostLabs[r.res]!];
       if (!lab || this.labStates[lab.id] !== r.res) {
         let getLab = (state?: LabState, sameMineral = true) => {
-          _.some(this.laboratories, l => {
+          let labs = _.filter(this.laboratories, l => {
             let currState = this.labStates[l.id]
-            if ((!sameMineral || l.mineralType === r.res) && ((!state && currState !== "source" && !(currState in REACTION_TIME)) || currState === state))
-              lab = l;
-            return lab;
+            return (!sameMineral || l.mineralType === r.res)
+              && ((!state && currState !== "source" && !(currState in REACTION_TIME))
+                || currState === state);
           });
+          if (labs.length)
+            return labs.reduce((prev, curr) => curr.pos.getRangeTo(this.sCell) < prev.pos.getRangeTo(this.sCell) ? curr : prev);
+          return undefined;
         }
         if (this.prod)
           switch (r.res) {
@@ -242,15 +256,15 @@ export class LaboratoryCell extends Cell {
               lab = this.laboratories[this.prod.lab2];
               break;
             case this.prod.res:
-              getLab("production", false);
+              lab = getLab("production", false);
               break;
           }
         if (!lab)
-          getLab(); //any lab same mineral
+          lab = getLab(); //any lab same mineral
         if (!lab)
-          getLab("production", false);
+          lab = getLab("production", false);
         if (!lab)
-          getLab("idle", false);
+          lab = getLab("idle", false);
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
           this.labStates[lab.id] = r.res;
@@ -271,6 +285,7 @@ export class LaboratoryCell extends Cell {
         if (bee.pos.isNearTo(lab)) {
           let ans = lab.boostCreep(bee.creep, r.amount);
           if (ans === OK) {
+            bee.boosted = true;
             r.amount = 0;
             if (Apiary.logger) {
               Apiary.logger.addResourceStat(this.hive.roomName, "boosts", r.amount * LAB_BOOST_MINERAL, r.res);
@@ -405,9 +420,43 @@ export class LaboratoryCell extends Cell {
     for (const ref in this.boostRequests)
       if (this.boostRequests[ref].lastUpdated + 10 > Game.time)
         delete this.boostRequests[ref];
+
+    for (let i = 0; i < this.checkDropped.length; ++i) {
+      let lab = <StructureLab | undefined>Game.getObjectById(this.checkDropped[i]);
+      if (!lab)
+        continue;
+      _.forEach(lab.pos.getOpenPositions(true), p => this.sCell.requestToStorage(p.lookFor(LOOK_RESOURCES), 2));
+    }
+    this.checkDropped = [];
+  }
+
+  getUnboostLab() {
+    let lab: StructureLab | undefined;
+    _.some(this.laboratories, l => {
+      if (l.cooldown || this.labStates[l.id] === "production")
+        return false;
+      lab = l;
+      return true;
+    });
+    return lab;
   }
 
   run() {
+    _.forEach(this.laboratories, l => {
+      if (l.cooldown || this.labStates[l.id] === "production")
+        return;
+      let creep = l.pos.findInRange(FIND_CREEPS, 1).filter(c => c.ticksToLive && c.ticksToLive < 20 && c.body.filter(b => b.boost).length)[0];
+      if (creep) {
+        let ans = l.unboostCreep(creep);
+        if (ans === OK) {
+          this.checkDropped.push(l.id);
+          let bee = Apiary.bees[creep.name];
+          if (bee)
+            bee.boosted = false;
+        }
+      }
+    });
+
     if (this.prod && Game.time % this.prod.cooldown === 0 && this.prod.plan >= 5) {
       let lab1 = this.laboratories[this.prod.lab1];
       let lab2 = this.laboratories[this.prod.lab2];

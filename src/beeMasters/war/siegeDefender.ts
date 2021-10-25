@@ -18,8 +18,8 @@ DEFENDER.fixed = [TOUGH, TOUGH, TOUGH, TOUGH];
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
-  boosts: Boosts | undefined = [{ type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
-  { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
+  boosts: Boosts | undefined = [{ type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
+  { type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
   { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
   cell: DefenseCell;
   patience: { [id: string]: number } = {};
@@ -148,7 +148,18 @@ export class SiegeMaster extends Master {
     });
 
     _.forEach(this.activeBees, bee => {
+      let old = bee.ticksToLive <= 25
+      if (old && bee.boosted)
+        bee.state = beeStates.fflush;
       switch (bee.state) {
+        case beeStates.fflush:
+          if (!this.hive.cells.lab || !bee.boosted) {
+            bee.state = beeStates.work;
+            break;
+          }
+          let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
+          bee.goRest(lab.pos);
+          break;
         case beeStates.chill:
           if (this.hive.state !== hiveStates.battle) {
             bee.goRest(this.hive.rest);

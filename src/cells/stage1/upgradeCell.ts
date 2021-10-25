@@ -20,6 +20,8 @@ export class UpgradeCell extends Cell {
   maxRate = 1;
   ratePerCreepMax = 1;
 
+  roadTime: number;
+
   constructor(hive: Hive, controller: StructureController, sCell: StorageCell) {
     super(hive, prefix.upgradeCell + hive.room.name);
     this.sCell = sCell;
@@ -32,6 +34,10 @@ export class UpgradeCell extends Cell {
       this.pos = this.link.pos;
     else
       this.pos = this.controller.pos;
+
+    this.roadTime = this.hive.pos.getTimeForPath(this);
+    if (this.roadTime === Infinity)
+      this.roadTime = 0;
 
     this.master = new UpgraderMaster(this);
     this.recalculateRate();

@@ -50,9 +50,6 @@ export class Visuals {
 
   update() {
     let allglobal = true;
-    this.usedAnchors = {};
-    this.anchor = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
-
     for (const name in this.caching)
       if (name.slice(0, GLOBAL_VISUALS.length) !== GLOBAL_VISUALS) {
         let vis = new RoomVisual(name);
@@ -71,6 +68,9 @@ export class Visuals {
           vis.import(this.caching[GLOBAL_VISUALS].data);
           vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
+
+    this.usedAnchors = {};
+    this.anchor = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
   }
 
   create() {
@@ -98,7 +98,7 @@ export class Visuals {
             this.exportAnchor();
         }
 
-        this.changeAnchor(25, 1, GLOBAL_VISUALS_HEAVY);
+        this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY);
         this.battleInfo();
         this.exportAnchor();
       }
@@ -379,8 +379,7 @@ export class Visuals {
             statsPuppet.targetBeeCount += o.master.targetBeeCount;
           }
       });
-      ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)
-        + (operational !== all ? this.getBeesAmount(statsPuppet) : "")]);
+      ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
       if (operational !== all) ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
     }
 
@@ -394,7 +393,7 @@ export class Visuals {
       ` ${!hive.room.controller!.progressTotal ? "" : Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%"}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
-    if (hive.cells.defense.master.activeBees.length || hive.cells.defense.master.waitingForBees)
+    if (hive.state === hiveStates.battle || hive.cells.defense.master.activeBees.length || hive.cells.defense.master.waitingForBees)
       ans.push(["defense",
         ` ${Apiary.intel.getInfo(hive.roomName).dangerlvlmax}`,
         this.getBeesAmount(hive.cells.defense.master)]);

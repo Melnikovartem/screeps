@@ -41,7 +41,12 @@ export class ExcavationCell extends Cell {
       safeWrap(() => { cell.update() }, cell.print + " update");
 
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
-        if (cell.container.store.getUsedCapacity() >= this.fullContainer) {
+        let padding;
+        if (cell.resourceType === RESOURCE_ENERGY)
+          padding = cell.restTime * 10 + 50;
+        else
+          padding = cell.restTime * 16 + 50;
+        if (cell.container.store.getUsedCapacity() + padding >= this.fullContainer) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)
             this.quitefullCells.push(cell);

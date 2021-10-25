@@ -271,9 +271,10 @@ export class DefenseCell extends Cell {
       });
 
       let shouldAttack = false;
-      let stats = Apiary.intel.getComplexStats(enemy);
+      let stats = Apiary.intel.getComplexStats(enemy).current;
       let attackPower = this.getDmgAtPos(enemy.pos);
-      if (stats.current.heal + stats.current.resist < attackPower || (stats.current.resist && stats.current.resist < attackPower) || stats.current.hits < attackPower)
+      if (stats.heal + stats.resist < attackPower || !stats.heal
+        || (stats.resist && stats.resist < attackPower) || stats.hits < attackPower)
         shouldAttack = true;
 
       let workingTower = false;
@@ -303,6 +304,19 @@ export class DefenseCell extends Cell {
       });
       if (!workingTower && !this.notDef(this.pos.roomName))
         this.setDefFlag(this.pos);
+    } else {
+      let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+      if (healTargets.length) {
+        let healTarget = healTargets.reduce((prev, curr) => {
+          return curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev;
+        });
+        _.forEach(this.towers, tower => {
+          if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < tower.store.getCapacity(RESOURCE_ENERGY) * 0.7)
+            return;
+          if (tower.heal(healTarget) === OK && Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+        });
+      }
     }
   }
 }

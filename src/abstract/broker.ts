@@ -36,7 +36,7 @@ export class Broker {
   bestPriceBuy: PriceStat = {};
   bestPriceSell: PriceStat = {};
 
-  shortOrders = {}
+  shortOrdersSell: { [roomName: string]: { orders: PriceStat, lastUpdated: number } } = {};
 
   energyPrice: number = Infinity;
 
@@ -122,9 +122,13 @@ export class Broker {
     console .log(`transfer energy buyLimit ${energyToBuy} sellLimit ${energyToSell}`);
     */
 
-    for (let id in Game.market.orders)
+    for (const id in Game.market.orders)
       if (!Game.market.orders[id].remainingAmount)
         this.cancelOrder(id);
+
+    for (const roomName in this.shortOrdersSell)
+      if (Game.time > this.shortOrdersSell[roomName].lastUpdated + 20)
+        this.shortOrdersSell[roomName] = { orders: {}, lastUpdated: Game.time };
   }
 
   cancelOrder(orderId: string) {
@@ -147,6 +151,12 @@ export class Broker {
         ans[res] = 0
       ans[res]! += o.remainingAmount
     });
+    for (const r in this.shortOrdersSell[roomName].orders) {
+      let res = <ResourceConstant>r;
+      if (!ans[res])
+        ans[res] = 0;
+      ans[res]! += this.shortOrdersSell[roomName].orders[res]!;
+    }
     return ans;
   }
 
@@ -215,10 +225,22 @@ export class Broker {
 
     if (hurry || priceToSellInstant >= price * 0.95) {
       let ans = this.sellShort(terminal, res, amount);
-      if (ans === OK)
-        return "short";
-      if (ans === ERR_TIRED)
-        return "short";
+      switch (ans) {
+        case OK:
+          this.shortOrdersSell[roomName].orders[res] = amount;
+          this.shortOrdersSell[roomName].lastUpdated = Game.time;
+          return "short";
+        case ERR_TIRED:
+          return "short";
+        case ERR_NOT_FOUND:
+        case ERR_NOT_ENOUGH_RESOURCES:
+        case ERR_FULL:
+          this.shortOrdersSell[roomName].orders[res] = amount;
+          this.shortOrdersSell[roomName].lastUpdated = Game.time;
+          return "long";
+        default:
+          console.log(ans, res)
+      }
     }
 
     if (!orders) // prob never
@@ -300,7 +322,7 @@ export class Broker {
     if (creditsToUse !== Infinity && !_.filter(COMPRESS_MAP, r => r === res).length)
       orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
-      return ERR_NOT_FOUND;
+      return ERR_NOT_IN_RANGE;
 
     let roomName = terminal.pos.roomName;
     let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
@@ -325,10 +347,10 @@ export class Broker {
     let orders = this.goodSell[res];
     if (!orders)
       return ERR_NOT_FOUND;
-    if (!_.filter(COMPRESS_MAP, r => r === res).length)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+    // if (!_.filter(COMPRESS_MAP, r => r === res).length)
+    // orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
-      return ERR_NOT_FOUND;
+      return ERR_NOT_IN_RANGE;
 
     let roomName = terminal.pos.roomName;
     let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);

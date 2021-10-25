@@ -440,25 +440,27 @@ export class Order {
             let mode = parsed && parsed[1];
             this.acted = false;
             if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
+              let hurry = this.ref.includes("hurry");
               if ("all" === parsed![2]) {
-                let amount = 0;
-                _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
-                  let newAmount = this.hive.cells.storage!.getUsedCapacity(<ResourceConstant>ress);
-                  if (!amount || (newAmount && newAmount < amount)) {
-                    res = <ResourceConstant>ress;
-                    amount = newAmount;
-                  }
-                });
-                console.log(res);
+                if (mode === "sell") {
+                  if (hurry || Game.time % 10 === 0)
+                    _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
+                      if (ress === RESOURCE_ENERGY)
+                        return;
+                      // get rid of shit in this hive
+                      Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, <ResourceConstant>ress, 500, hurry, Infinity);
+                    });
+                } else
+                  this.delete();
+                return;
               }
               if (RESOURCES_ALL.includes(res)) {
-                let hurry = this.ref.includes("hurry");
                 if (hurry || Game.time % 10 === 0)
                   if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
-                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 4096, hurry, this.ref.includes("inf") ? Infinity : undefined);
+                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
                   else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
-                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 4096, hurry, this.ref.includes("inf") ? Infinity : undefined);
-                  else if (!this.ref.includes("keep") && !this.ref.includes("all"))
+                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
+                  else if (!this.ref.includes("keep"))
                     this.delete();
               } else
                 this.delete();

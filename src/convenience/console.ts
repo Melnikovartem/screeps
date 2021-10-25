@@ -215,6 +215,15 @@ export class CustomConsole {
     return this.marketReturn(Game.market.changeOrderPrice(orderId, newPrice), "ORDER CHANGE TO " + newPrice);
   }
 
+  cancelOrdersHive(hiveName: string = this.lastActionRoomName) {
+    let ans = `OK @ ${this.format(hiveName)}`;
+    _.forEach(Game.market.orders, o => {
+      if (o.roomName === hiveName)
+        ans += this.marketReturn(Apiary.broker.cancelOrder(o.id), `canceled ${o.resourceType}`) + "\n";
+    });
+    return ans;
+  }
+
   cancelOrder(orderId: string) {
     return this.marketReturn(Apiary.broker.cancelOrder(orderId), "ORDER CANCEL");
   }
@@ -290,8 +299,8 @@ export class CustomConsole {
     if (!hive)
       return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
     let state = hive.mastersResTarget;
-
     let ans = `OK @ ${this.format(hiveName)}`;
+
     _.forEach(state, (amount, r) => {
       if (!amount || !r)
         return;
