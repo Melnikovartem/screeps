@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 
-import { prefix } from "../../enums";
+import { prefix, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -87,7 +87,7 @@ export class UpgradeCell extends Cell {
     if (freeCap && freeCap >= LINK_CAPACITY / 2) {
       this.storageLink = this.sCell.getFreeLink();
       if (this.storageLink) {
-        if (!this.sCell.master.activeBees.length || this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 25000)
+        if (!this.sCell.master.activeBees.length || this.hive.state === hiveStates.lowenergy)
           return;
         this.sCell.linksState[this.storageLink.id] = "busy";
         let usedCap = this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY);

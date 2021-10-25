@@ -125,7 +125,8 @@ export class DefenseCell extends Cell {
 
     this.isBreached = false;
     let contr = this.hive.room.controller!;
-    this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
+    if (this.hive.state !== hiveStates.battle || Game.time % 10 === 0)
+      this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
 
     let storageCell = this.hive.cells.storage;
     if (!storageCell)
@@ -254,13 +255,13 @@ export class DefenseCell extends Cell {
 
   run() {
     if (this.hive.state === hiveStates.battle) {
-      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       if (this.isBreached) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
           contr.activateSafeMode(); // red button
       }
 
+      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
       let enemy = Apiary.intel.getEnemy(this)!;
       if (!enemy)
         return;
@@ -274,8 +275,16 @@ export class DefenseCell extends Cell {
       let stats = Apiary.intel.getComplexStats(enemy).current;
       let attackPower = this.getDmgAtPos(enemy.pos);
       if (stats.heal + stats.resist < attackPower || !stats.heal
-        || (stats.resist && stats.resist < attackPower) || stats.hits < attackPower)
+        || (stats.resist && stats.resist < attackPower) || stats.hits <= attackPower)
         shouldAttack = true;
+      /*let healer: undefined | Creep;
+       let fisrtTower = _.filter(this.towers, t => t.store.getCapacity(RESOURCE_ENERGY) >= 10)[0];
+      if (shouldAttack && stats.hits + stats.heal - attackPower * 2 > 0 && fisrtTower
+        && stats.heal + stats.resist < attackPower - ATTACK_POWER * towerCoef(fisrtTower, enemy))
+        healer = enemy.pos.findInRange(FIND_HOSTILE_CREEPS, 1).filter(c => {
+          let stats = Apiary.intel.getStats(c).current;
+          return stats.dmgClose + stats.dmgRange < stats.heal;
+        })[0]; */
 
       let workingTower = false;
       _.forEach(this.towers, tower => {
@@ -283,6 +292,8 @@ export class DefenseCell extends Cell {
           return;
         workingTower = true;
         if (shouldAttack) {
+          // let toAttack = healer ? healer : enemy;
+          // healer = undefined;
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         } else if (tower.store.getUsedCapacity(RESOURCE_ENERGY) >= tower.store.getCapacity(RESOURCE_ENERGY) * 0.7) {

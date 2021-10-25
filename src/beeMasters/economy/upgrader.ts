@@ -31,12 +31,12 @@ export class UpgraderMaster extends Master {
       return;
     }
     this.fastMode = true;
-    this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 2 }];
+    this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
     let desiredRate = Math.min(this.cell.maxRate, Math.ceil(2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) + 3.5 * Math.pow(10, -5) * storeAmount - 1));
-    if (this.hive.roomName === "E12N48" && this.hive.phase < 2)
+    if (this.hive.roomName === "E12N48" && this.cell.controller.level < 8)
       desiredRate = 70;
     // ceil(desiredRate) === 0 @ ~30K
     this.targetBeeCount = Math.ceil(desiredRate / this.cell.ratePerCreepMax);
@@ -62,6 +62,9 @@ export class UpgraderMaster extends Master {
         setup: setups.upgrader.manual,
         priority: <8 | 7 | 3>(this.cell.controller.level === 8 ? 8 : 7),
       };
+
+      if (this.hive.roomName === "E12N48" && this.cell.controller.level < 8)
+        order.priority = <7>6;
 
       if (this.fastModePossible)
         order.setup = setups.upgrader.fast;

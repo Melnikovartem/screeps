@@ -212,7 +212,9 @@ export abstract class SquadMaster extends SwarmMaster {
         else
           max = 64;
       else if (desiredPos.getEnteranceToRoom())
-        max = Math.max(max, 16);
+        max = Math.max(max, 20);
+      else if (desiredPos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000))
+        max = Math.max(max, 10);
       else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
         max = Math.max(max, 5);
     }

@@ -60,6 +60,7 @@ export class SiegeMaster extends Master {
     let opts: TravelToOptions = { maxRooms: 1 };
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     if (roomInfo.dangerlvlmax >= 5) {
+      opts.stuckValue = 20;
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.hive.roomName)
           return;
@@ -103,11 +104,11 @@ export class SiegeMaster extends Master {
       action2();
 
     let targetedRange = 1;
+    let stats = Apiary.intel.getComplexStats(target).current;
     if (target instanceof Creep) {
-      let info = Apiary.intel.getComplexStats(target).current;
-      if (info.dmgClose > beeStats.heal)
+      if (stats.dmgClose > beeStats.heal)
         targetedRange = 3;
-      if (info.dmgRange > beeStats.heal)
+      if (stats.dmgRange > beeStats.heal)
         targetedRange = 5;
     }
 
@@ -120,22 +121,25 @@ export class SiegeMaster extends Master {
       this.patience[bee.ref] = 0;
     else
       this.patience[bee.ref] += rangeToTarget <= 4 ? 1 : 3;
-    let stats = Apiary.intel.getComplexStats(target).current;
     let attackPower = this.cell.getDmgAtPos(target.pos) + (rangeToTarget > 1 ? beeStats.dmgClose : 0);
-    let provoke = rangeToTarget <= 2 && attackPower > stats.resist + stats.heal && stats.dmgClose + stats.dmgRange < beeStats.hits * 0.9;
-    if (provoke && onPosition && bee.hits >= bee.hitsMax * 0.8 && findRamp(bee.pos))
+    let provoke = rangeToTarget <= 2 && attackPower > stats.resist + stats.heal && stats.dmgClose + stats.dmgRange < beeStats.hits * 0.75;
+    if (provoke && onPosition && bee.hits >= bee.hitsMax * 0.75 && findRamp(bee.pos))
       bee.targetPosition = bee.pos.getPosInDirection(bee.pos.getDirectionTo(target));
 
-    if (!(this.patience[bee.ref] === 0 && posToStay.isNearTo(bee)) && !onPosition && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
+    if (!(this.patience[bee.ref] === 0 && posToStay.isNearTo(bee)) && !onPosition
+      && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
       bee.goTo(posToStay, opts);
     if (this.cell.isBreached)
       bee.goTo(target);
     if (!bee.targetPosition)
       bee.targetPosition = bee.pos;
     if (!findRamp(bee.targetPosition) && bee.targetPosition.getRangeTo(target) <= targetedRange - 2) {
-      let stats = Apiary.intel.getComplexStats(bee.targetPosition).current;
-      if (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.9 || stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.5 && !findRamp(bee.pos))
-        bee.flee(target, this.cell.pos, opts);
+      let stats = Apiary.intel.getComplexStats(target, undefined, 4, 2).current;
+      if (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.75)
+        if (findRamp(bee.pos))
+          bee.targetPosition = undefined;
+        else
+          bee.flee(target, this.cell.pos, opts);
     }
     return OK;
   }

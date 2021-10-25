@@ -29,6 +29,8 @@ export class BuilderMaster extends Master {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
+      if (this.hive.state === hiveStates.battle)
+        ++target;
     } else if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)

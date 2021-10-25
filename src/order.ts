@@ -15,7 +15,7 @@ import { ClaimerMaster } from "./beeMasters/civil/claimer";
 import { SKMaster } from "./beeMasters/civil/safeSK";
 
 import { hiveStates, prefix, roomStates } from "./enums";
-import { makeId } from "./abstract/utils";
+import { makeId, findOptimalResource } from "./abstract/utils";
 import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
 import { BOOST_MINERAL } from "./cells/stage1/laboratoryCell";
 
@@ -400,14 +400,23 @@ export class Order {
           switch (this.secondaryColor) {
             case COLOR_GREEN:
               if (!this.master) {
-                let master = new PickupMaster(this);
-                if (this.pos.getRangeTo(this.hive) <= 10) {
-                  let target = master.getTarget();
-                  if (target.target)
-                    this.hive.cells.storage!.requestToStorage([target.target], 1, RESOURCE_ENERGY, target.amount)
-                  master.delete();
+                let hive = Apiary.hives[this.pos.roomName];
+                if (hive && hive.cells.storage) {
+                  let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = this.pos.lookFor(LOOK_RESOURCES).filter(r => r.amount > 0);
+                  targets = targets.concat(this.pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity() > 0));
+                  targets = targets.concat(this.pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0));
+                  _.forEach(targets, t => {
+                    if (t instanceof Resource)
+                      hive.cells.storage!.requestToStorage([t], 1, t.resourceType, t.amount);
+                    else
+                      hive.cells.storage!.requestToStorage([t], 1, findOptimalResource(t.store));
+                  });
+                  if (!targets.length)
+                    this.delete();
+                  this.acted = false;
+                  return;
                 }
-                this.master = master;
+                this.master = new PickupMaster(this);
                 let regex = /^\d*/.exec(this.ref);
                 if (regex && regex[0])
                   this.master.maxSpawns = +regex[0];

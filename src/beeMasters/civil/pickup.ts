@@ -31,9 +31,9 @@ export class PickupMaster extends SwarmMaster {
       if (!targets.length)
         targets = this.order.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.amount > 0);
       if (!targets.length)
-        targets = this.order.pos.findInRange(FIND_RUINS, 3).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0);
+        targets = this.order.pos.findInRange(FIND_RUINS, 3).filter(r => r.store.getUsedCapacity() > 0);
       if (!targets.length)
-        targets = this.order.pos.findInRange(FIND_TOMBSTONES, 3).filter(r => r.store.getUsedCapacity(RESOURCE_ENERGY) > 0);
+        targets = this.order.pos.findInRange(FIND_TOMBSTONES, 3).filter(r => r.store.getUsedCapacity() > 0);
 
       target = this.order.pos.findClosest(targets);
 
@@ -41,7 +41,7 @@ export class PickupMaster extends SwarmMaster {
         if (target instanceof Resource)
           amount = target.amount;
         else
-          amount = target.store.getUsedCapacity(RESOURCE_ENERGY)
+          amount = target.store.getUsedCapacity()
       else {
         let room = Game.rooms[this.order.pos.roomName];
         target = room.find(FIND_DROPPED_RESOURCES)[0];

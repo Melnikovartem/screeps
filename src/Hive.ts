@@ -60,6 +60,7 @@ interface HiveCells {
 export type ResTarget = { [key in ResourceConstant]?: number };
 
 const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
+export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
 type StructureGroups = "essential" | "mining" | "defense" | "hightech" | "trade";
 const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant[] } = {
   essential: [
@@ -121,7 +122,7 @@ export class Hive {
 
   resTarget: { "energy": number } & ResTarget = {
     // energy
-    [RESOURCE_ENERGY]: Math.round(STORAGE_CAPACITY * 0.4),
+    [RESOURCE_ENERGY]: HIVE_ENERGY,
 
     // cheap but good
     [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL * 2,
@@ -355,6 +356,13 @@ export class Hive {
     let projects = this.structuresConst;
     let getProj = () => projects.length && (<RoomPosition>pos).findClosest(projects);
 
+    /*let wax = Game.flags[prefix.build + this.roomName];
+    if (wax) {
+      let proj = projects.filter(p => wax.pos.getRangeTo(p) <= 1);
+      if (proj.length)
+        projects = proj
+    }*/
+
     if (this.state === hiveStates.battle) {
       let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
       ignore = "ignoreConst";
@@ -452,16 +460,16 @@ export class Hive {
         checkAnnex();
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
         break;
       case hiveStates.economy:
-        checkAnnex();
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
+        checkAnnex();
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
         if (!this.sumCost)
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         if (!this.sumCost)
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
 

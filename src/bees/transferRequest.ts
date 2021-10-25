@@ -27,11 +27,13 @@ export class TransferRequest {
 
     this.priority = priority;
     amount = amount;
-    this.resource = res;
-    if (from instanceof Resource)
+    if (from instanceof Resource) {
+      this.resource = from.resourceType;
       this.fromAmount = from.amount;
-    else
+    } else {
+      this.resource = res;
       this.fromAmount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(this.resource);
+    }
     this.toAmount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(this.resource);
     this.amount = amount;
     this.stillExists = true;

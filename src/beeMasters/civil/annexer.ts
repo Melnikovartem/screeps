@@ -1,7 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 
@@ -14,8 +13,7 @@ export class AnnexMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
-
-    let doAnnex = (roomInfo.roomState === roomStates.reservedByMe || roomInfo.roomState === roomStates.noOwner) && roomInfo.safePlace;
+    let doAnnex = roomInfo.safePlace;
 
     if (doAnnex && this.hive.bassboost)
       doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
@@ -48,9 +46,12 @@ export class AnnexMaster extends SwarmMaster {
         bee.goTo(this.order.pos);
       else {
         let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
-        if (controller)
-          bee.reserveController(controller);
-        else
+        if (controller) {
+          if (!controller.owner || controller.owner.username === Apiary.username)
+            bee.reserveController(controller);
+          else
+            bee.attackController(controller);
+        } else
           this.order.delete();
       }
       this.checkFlee(bee, this.hive);

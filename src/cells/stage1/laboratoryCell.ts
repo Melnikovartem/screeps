@@ -182,7 +182,7 @@ export class LaboratoryCell extends Cell {
     return true;
   }
 
-  getBoostInfo(r: BoostRequest, bee?: Bee): BoostInfo | void {
+  getBoostInfo(r: BoostRequest, bee?: Bee, boostedSameType?: number): BoostInfo | void {
     let res = BOOST_MINERAL[r.type][r.lvl];
     let sum = this.sCell.getUsedCapacity(res);
     if (bee && this.prod && res === this.prod.res) {
@@ -196,8 +196,11 @@ export class LaboratoryCell extends Cell {
     }
     let amount = r.amount || Infinity;
     amount = Math.min(amount, Math.floor(sum / LAB_BOOST_MINERAL));
-    if (bee)
-      amount = Math.min(amount - bee.getBodyParts(BOOST_PARTS[r.type], 1), bee.getBodyParts(BOOST_PARTS[r.type], -1));
+    if (bee) {
+      if (!boostedSameType)
+        boostedSameType = 0;
+      amount = Math.min(amount - bee.getBodyParts(BOOST_PARTS[r.type], 1), bee.getBodyParts(BOOST_PARTS[r.type], -1)) - boostedSameType;
+    }
     if (amount <= 0)
       return;
     return { type: r.type, res: res, amount: amount, lvl: r.lvl };
@@ -220,8 +223,9 @@ export class LaboratoryCell extends Cell {
       this.boostRequests[bee.ref] = { info: [], lastUpdated: Game.time };
       for (let k = 0; k < requests.length; ++k) {
         let r = requests[k];
-        let ans = this.getBoostInfo(r, bee);
-        if (ans && !this.boostRequests[bee.ref].info.filter(br => br.type === r.type).length)
+        let sameType = _.sum(this.boostRequests[bee.ref].info.filter(br => br.type === r.type), br => br.amount);
+        let ans = this.getBoostInfo(r, bee, sameType);
+        if (ans)
           this.boostRequests[bee.ref].info.push(ans);
       }
     }
@@ -233,9 +237,15 @@ export class LaboratoryCell extends Cell {
       if (!r.res || !r.amount)
         continue;
 
-      if (this.boostLabs[r.res])
-        lab = this.laboratories[this.boostLabs[r.res]!];
-      if (!lab || this.labStates[lab.id] !== r.res) {
+      let boostLabId = this.boostLabs[r.res];
+      if (boostLabId) {
+        if (this.labStates[boostLabId] !== r.res)
+          this.boostLabs[r.res] = undefined;
+        else
+          lab = this.laboratories[boostLabId];
+      }
+
+      if (!lab) {
         let getLab = (state?: LabState, sameMineral = true) => {
           let labs = _.filter(this.laboratories, l => {
             let currState = this.labStates[l.id]

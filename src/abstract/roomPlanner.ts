@@ -960,26 +960,29 @@ export class RoomPlanner {
             } else
               toadd.push(pos);
           } else if (constructionSite.structureType === sType) {
-            ans.push({
-              pos: pos,
-              sType: sType,
-              targetHits: 0,
-              energyCost: constructionSite.progressTotal - constructionSite.progress,
-              type: "construction",
-            });
-            if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
-              let heal = this.getCase(constructionSite).heal;
-              if (sType in specials)
-                heal = specials[sType]!;
-              ans.push({
-                pos: pos,
-                sType: sType,
-                targetHits: heal,
-                energyCost: Math.ceil(heal / 100),
-                type: "repair",
-              });
+            switch (sType) {
+              case STRUCTURE_RAMPART:
+              case STRUCTURE_WALL:
+                let heal = this.getCase(constructionSite).heal;
+                if (sType in specials)
+                  heal = specials[sType]!;
+                ans.push({
+                  pos: pos,
+                  sType: sType,
+                  targetHits: heal,
+                  energyCost: Math.ceil(heal / 100),
+                  type: "repair",
+                });
+              default:
+                ans.push({
+                  pos: pos,
+                  sType: sType,
+                  targetHits: 0,
+                  energyCost: constructionSite.progressTotal - constructionSite.progress,
+                  type: "construction",
+                });
+                ++constructions;
             }
-            ++constructions;
           } else if (constructionSite.my && constructionSite.structureType !== STRUCTURE_RAMPART && sType !== STRUCTURE_RAMPART)
             constructionSite.remove();
         } else if (structure) {
@@ -1012,17 +1015,33 @@ export class RoomPlanner {
           else
             anss = toadd[i].createConstructionSite(sType);
           if (anss === OK) {
-            ans.push({
-              pos: toadd[i],
-              sType: sType,
-              targetHits: 0,
-              energyCost: CONSTRUCTION_COST[sType],
-              type: "construction",
-            });
-            constructions++;
+            switch (sType) {
+              case STRUCTURE_RAMPART:
+              case STRUCTURE_WALL:
+                let heal = this.getCase({ structureType: sType, pos: toadd[i], hitsMax: WALL_HITS_MAX }).heal;
+                if (sType in specials)
+                  heal = specials[sType]!;
+                ans.push({
+                  pos: toadd[i],
+                  sType: sType,
+                  targetHits: heal,
+                  energyCost: Math.ceil(heal / 100),
+                  type: "repair",
+                });
+              default:
+                ans.push({
+                  pos: toadd[i],
+                  sType: sType,
+                  targetHits: 0,
+                  energyCost: CONSTRUCTION_COST[sType],
+                  type: "construction",
+                });
+                ++constructions;
+            }
           }
         }
     }
+
     return ans;
   }
 }

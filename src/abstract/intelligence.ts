@@ -9,7 +9,7 @@ import { profile } from "../profiler/decorator";
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 const PEACE_PACKS: string[] = ["Hi_Melnikov"];
-const NON_AGRESSION_PACKS: string[] = ["Bulletproof"];
+const NON_AGRESSION_PACKS: string[] = [];
 
 export interface Enemy {
   object: Creep | PowerCreep | Structure,
@@ -87,9 +87,13 @@ export class Intel {
     return ans;
   }
 
-  getComplexStats(pos: ProtoPos, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS, range = 1) {
+  getComplexStats(pos: ProtoPos, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS, range = 1, closePadding = 0) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
+
+    let ref = mode + "_" + range + "_" + closePadding + "_" + pos.to_str;
+    if (this.stats[ref])
+      return this.stats[ref];
 
     let ans: CreepAllBattleInfo = {
       max: {
@@ -116,7 +120,7 @@ export class Intel {
       let stats = this.getStats(creep);
       for (let i in stats.max) {
         let key = <keyof CreepBattleInfo>i;
-        if ((key === "dmgClose" || key === "dism") && (<RoomPosition>pos).getRangeTo(creep) > 1)
+        if ((key === "dmgClose" || key === "dism") && (<RoomPosition>pos).getRangeTo(creep) > 1 + closePadding)
           continue;
         else if (key === "resist" && (<RoomPosition>pos).getRangeTo(creep) > 0)
           continue;
@@ -124,7 +128,7 @@ export class Intel {
         ans.current[key] += stats.current[key]
       }
     });
-
+    this.stats[ref] = ans;
     return ans;
   }
 

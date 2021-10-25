@@ -330,9 +330,7 @@ export class Bee {
       if (ans === 0)
         ans = curr.getRangeTo(posToFlee) - prev.getRangeTo(posToFlee);
       if (ans < 0) {
-        if (terrain_curr === undefined)
-          terrain_curr = getTerrain(curr);
-        terrain_prev = terrain_curr;
+        terrain_prev = terrain_curr || getTerrain(curr);
         return curr;
       }
       return prev;
