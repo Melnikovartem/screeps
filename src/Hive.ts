@@ -421,17 +421,23 @@ export class Hive {
 
   get opts() {
     let opts: TravelToOptions = {};
-    opts.maxRooms = 1;
-    opts.roomCallback = (roomName, matrix) => {
-      if (roomName !== this.roomName)
-        return;
-      let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
-      _.forEach(enemies, c => {
-        _.forEach(c.pos.getOpenPositions(true, 4), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (5 - p.getRangeTo(c)) * 0x20)));
-        matrix.set(c.pos.x, c.pos.y, 0xff);
-      });
-      return matrix;
-    }
+    if (this.state === hiveStates.battle)
+      opts.roomCallback = (roomName, matrix) => {
+        if (roomName !== this.roomName)
+          return;
+        let terrain = Game.map.getRoomTerrain(roomName);
+        let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+        _.forEach(enemies, c => {
+          _.forEach(c.pos.getOpenPositions(true, 3), p => {
+            if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+              return;
+            let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 2 : 1;
+            matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (4 - p.getRangeTo(c)) * 0x20 * coef))
+          });
+          matrix.set(c.pos.x, c.pos.y, 0xff);
+        });
+        return matrix;
+      }
     return opts;
   }
 

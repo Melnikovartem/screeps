@@ -131,7 +131,9 @@ export class SiegeMaster extends Master {
       this.patience[bee.ref] += rangeToTarget <= 4 ? 1 : 3;
     let attackPower = this.cell.getDmgAtPos(target.pos) + (rangeToTarget > 1 ? beeStats.dmgClose : 0);
     let provoke = rangeToTarget <= 2 && attackPower > stats.resist + stats.heal && beeStats.hits * 0.9 > (stats.dmgClose + stats.dmgRange) * 1.5;
-    if (this.cell.isBreached || provoke && beeStats.hits >= allBeeStats.max.hits * 0.85 && (onPosition && findRamp(bee.pos) || !(stats.dmgClose + stats.dmgRange)))
+    if (this.cell.isBreached
+      || (provoke && beeStats.hits >= allBeeStats.max.hits * 0.85 && findRamp(bee.pos))
+      || !(stats.dmgClose + stats.dmgRange))
       bee.goTo(target, opts);
     else if (!(posToStay.isNearTo(bee) && this.patience[bee.ref] === 0 && beeStats.hits === allBeeStats.max.hits) &&
       !onPosition && !(rangeToTarget === 1 && provoke && bee.pos.getOpenPositions(true).filter(p => findRamp(p)).length))
@@ -224,8 +226,9 @@ export class SiegeMaster extends Master {
           if (enemy) {
             this.beeAct(bee, enemy, pos);
           } else {
-            ++this.patience[bee.ref]
-            bee.goTo(pos);
+            if (!(pos.isNearTo(bee) && this.patience[bee.ref] === 0 && bee.hits === bee.hitsMax))
+              bee.goTo(pos);
+            ++this.patience[bee.ref];
           }
       }
     });

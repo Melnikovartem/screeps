@@ -116,6 +116,8 @@ export class HordeMaster extends SwarmMaster {
         loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
       if (!info.heal && target.owner.username === "Awaii")
         loosingBattle = false; // not optimal code
+      if (target.owner.username === "Bulletproof")
+        loosingBattle = false; // the guy fucking crashed
     } else if (target instanceof StructureTower) {
       targetedRange = 20;
       loosingBattle = target.store.getUsedCapacity(RESOURCE_ENERGY) > bee.hitsMax / (TOWER_POWER_ATTACK * towerCoef(target, bee)) * 10 / 2; // / 2 just beacause

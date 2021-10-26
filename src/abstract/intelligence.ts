@@ -268,7 +268,9 @@ export class Intel {
           if (PEACE_PACKS.includes(c.owner.username)) {
             dangerlvl = 0;
             return;
-          } else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
+          } else if (c.owner.username === "Bulletproof")
+            dangerlvl = 3;
+          else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
             dangerlvl = 2;
       }
       roomInfo.enemies.push({

@@ -44,7 +44,6 @@ export class BootstrapMaster extends Master {
       this.patternCount = Math.min(setups.bootstrap.patternLimit, this.patternCount);
     this.patternCount = Math.max(this.patternCount, 1);
     _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-      let source = cell.resource;
       if (cell.resourceType !== RESOURCE_ENERGY || cell.restTime === Infinity)
         return;
       let roadTime = cell.restTime - 2;
@@ -56,7 +55,7 @@ export class BootstrapMaster extends Master {
         energyPerTick = 5;
       else if (roomInfo.currentOwner !== Apiary.username)
         energyPerTick = 0;
-      let openPos = source.pos.getOpenPositions(true).length;
+      let openPos = (cell.resource || cell).pos.getOpenPositions(true).length;
 
       if (cell.operational) {
         let miningPower = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 150), setups.miner.energy.patternLimit);
