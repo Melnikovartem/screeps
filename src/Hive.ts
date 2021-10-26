@@ -69,9 +69,9 @@ const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant
     STRUCTURE_EXTENSION,
   ],
   mining: [
+    STRUCTURE_LINK,
     STRUCTURE_ROAD,
     STRUCTURE_CONTAINER,
-    STRUCTURE_LINK,
     STRUCTURE_EXTRACTOR,
   ],
   trade: [
@@ -389,7 +389,11 @@ export class Hive {
           break;
         case "repair":
           if (ignore !== "ignoreRepair")
-            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === (<BuildProject>proj).sType && s.hits < (<BuildProject>proj).targetHits)[0];
+            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s =>
+              s.structureType === (<BuildProject>proj).sType
+              && s.hits < (<BuildProject>proj).targetHits
+              && s.hits < s.hitsMax)[0];
+          break;
       }
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
@@ -413,6 +417,22 @@ export class Hive {
 
   set wallsHealth(value) {
     Memory.cache.hives[this.roomName].wallsHealth = value;
+  }
+
+  get opts() {
+    let opts: TravelToOptions = {};
+    opts.maxRooms = 1;
+    opts.roomCallback = (roomName, matrix) => {
+      if (roomName !== this.roomName)
+        return;
+      let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl > 1).map(e => e.object);
+      _.forEach(enemies, c => {
+        _.forEach(c.pos.getOpenPositions(true, 4), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (5 - p.getRangeTo(c)) * 0x20)));
+        matrix.set(c.pos.x, c.pos.y, 0xff);
+      });
+      return matrix;
+    }
+    return opts;
   }
 
   get wallMap() {
@@ -440,15 +460,19 @@ export class Hive {
 
     switch (this.state) {
       case hiveStates.battle:
-        let health = this.wallsHealth;
-        while (!this.sumCost && health < Math.min(this.wallsHealthMax + WALL_HEALTH * 5, RAMPART_HITS_MAX[this.room.controller!.level])) {
-          health += WALL_HEALTH * 5;
-          let proj = Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, {
-            [STRUCTURE_WALL]: health,
-            [STRUCTURE_RAMPART]: health,
-          }, 0.9);
-          addCC(proj.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 6).length));
-        }
+        let roomInfo = Apiary.intel.getInfo(this.roomName);
+        if (roomInfo.enemies.length) {
+          let health = this.wallsHealth;
+          while (!this.sumCost && health < Math.min(this.wallsHealthMax, this.wallsHealth * 2)) {
+            health += WALL_HEALTH * 2;
+            let proj = Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, {
+              [STRUCTURE_WALL]: health,
+              [STRUCTURE_RAMPART]: health,
+            }, 0.9);
+            addCC(proj.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 7).length));
+          }
+        } else
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         break;
       case hiveStates.nukealert:
         addCC(this.cells.defense.getNukeDefMap());
@@ -468,6 +492,8 @@ export class Hive {
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
+        else
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
         if (!this.sumCost)

@@ -101,7 +101,7 @@ export class StorageCell extends Cell {
 
     this.usedCapacity = {};
 
-    if (!this.storage) {
+    if (!this.storage && Apiary.useBucket) {
       Apiary.destroyTime = Game.time;
       return;
     }
@@ -117,7 +117,7 @@ export class StorageCell extends Cell {
     }
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
-    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 8000 && !this.hive.cells.dev)
+    if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && !this.hive.cells.dev && Apiary.useBucket)
       Apiary.destroyTime = Game.time;
 
     //if (!Object.keys(this.requests).length)

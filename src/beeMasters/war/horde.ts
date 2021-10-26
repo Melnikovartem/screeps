@@ -99,17 +99,23 @@ export class HordeMaster extends SwarmMaster {
 
     let targetedRange = 1;
     let loosingBattle = false;
+    let attackRange = 2;
     if (target instanceof Creep) {
       let info = Apiary.intel.getComplexStats(target).current;
-      if (info.dmgClose > beeStats.heal)
+      if (info.dmgClose)
         targetedRange = 3;
-      if (info.dmgRange > beeStats.heal)
+      if (info.dmgClose >= beeStats.dmgClose)
+        attackRange = 3;
+      else
+        attackRange = 1;
+      if (info.dmgRange)
         targetedRange = 5;
-      loosingBattle = info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
+      if (beeStats.dmgClose || beeStats.dism)
+        loosingBattle = info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
+      else
+        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
       if (!info.heal && target.owner.username === "Awaii")
         loosingBattle = false; // not optimal code
-      if (target.owner.username === "Invader")
-        loosingBattle = beeStats.dmgClose + beeStats.dmgRange > info.dmgClose + info.dmgRange;
     } else if (target instanceof StructureTower) {
       targetedRange = 20;
       loosingBattle = target.store.getUsedCapacity(RESOURCE_ENERGY) > bee.hitsMax / (TOWER_POWER_ATTACK * towerCoef(target, bee)) * 10 / 2; // / 2 just beacause
@@ -123,13 +129,10 @@ export class HordeMaster extends SwarmMaster {
     if (this.holdPosition || !target)
       return OK;
 
-    let attackRange = loosingBattle ? 3 : 2;
-    if (beeStats.dmgClose || beeStats.dism)
-      attackRange = 1;
     if (rangeToTarget < targetedRange)
       bee.flee(target, this.order.pos, opts);
-    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget <= attackRange && bee.hits === bee.hitsMax))
-      bee.goTo(target, opts); // think about when do we want to attack and when to flee
+    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget < attackRange && !loosingBattle && bee.hits === bee.hitsMax))
+      bee.goTo(target, opts);
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;
@@ -150,8 +153,9 @@ export class HordeMaster extends SwarmMaster {
           let pos = bee.pos;
           if (bee.pos.roomName !== this.order.pos.roomName)
             pos = this.order.pos;
-          enemy = Apiary.intel.getEnemy(pos);
+          enemy = Apiary.intel.getEnemy(pos, 10);
           if (enemy) {
+            enemy = Apiary.intel.getEnemy(pos);
             this.beeAct(bee, enemy);
           } else {
             bee.goRest(this.order.pos);

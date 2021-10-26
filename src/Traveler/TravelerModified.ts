@@ -80,6 +80,16 @@ export class Traveler {
       options.ignoreCreeps = false;
       options.freshMatrix = true;
       delete travelData.path;
+      if (state.stuckCount >= 15 && !options.roomCallback) {
+        options.roomCallback = (roomName, matrix) => {
+          let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+          _.forEach(enemies, c => {
+            _.forEach(c.pos.getOpenPositions(true, 4), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (5 - p.getRangeTo(c)) * 0x20)));
+            matrix.set(c.pos.x, c.pos.y, 0xff);
+          });
+          return matrix;
+        }
+      }
     }
 
     // TODO:handle case where creep moved by some other function, but destination is still the same

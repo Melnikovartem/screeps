@@ -83,7 +83,7 @@ export abstract class Master {
       master: this.ref,
       ref: ref,
     }
-    if (this.hive.bassboost && this.hive.bassboost.state !== hiveStates.battle) {
+    if (this.hive.bassboost && this.hive.bassboost.state === hiveStates.economy) {
       let localBodyMax = 0;
       if (this.hive.state !== hiveStates.nospawn) {
         if (order.priority > 3)
@@ -91,7 +91,7 @@ export abstract class Master {
         else
           localBodyMax = order.setup.getBody(this.hive.room.energyAvailable).body.length;
       }
-      if (localBodyMax >= order.setup.getBody(this.hive.room.energyCapacityAvailable).body.length)
+      if (localBodyMax >= order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).body.length)
         this.hive.spawOrders[ref] = order;
       else {
         order.priority = 9;
@@ -111,6 +111,8 @@ export abstract class Master {
     let contr = Game.rooms[bee.pos.roomName].controller;
     if (enemy && (!contr || !contr.my || !contr.safeMode)) {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
+      if (fleeDist === 0)
+        return false;
       if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist + 1 || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
         bee.flee(enemy, fleeTo || this.hive);
         return true;
@@ -130,7 +132,9 @@ export abstract class Master {
         delete this.hive.spawOrders[key];
 
     if (this.hive.bassboost)
-      delete this.hive.bassboost.spawOrders[this.ref];
+      for (const key in this.hive.bassboost.spawOrders)
+        if (key.includes(this.ref))
+          delete this.hive.bassboost.spawOrders[key];
     delete Apiary.masters[this.ref];
   }
 

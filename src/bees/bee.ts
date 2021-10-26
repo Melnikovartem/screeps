@@ -110,6 +110,9 @@ export class Bee {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.developmentCell)));
       if (refMaster)
         return refMaster;
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder)));
+      if (refMaster)
+        return refMaster;
     } else if (this.ref.includes(setupsNames.claimer)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.claim)));
       if (refMaster)
@@ -121,11 +124,21 @@ export class Bee {
       if (refMaster)
         return refMaster;
     } else if (this.ref.includes(setupsNames.defender)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("harass")));
       if (refMaster)
         return refMaster;
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
+      if (refMaster)
+        return refMaster;
+      /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
+      if (refMaster)
+        return refMaster;*/
     } else if (this.ref.includes(setupsNames.knight)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
+      if (refMaster)
+        return refMaster;
+    } else if (this.ref.includes(setupsNames.builder)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder)));
       if (refMaster)
         return refMaster;
     }

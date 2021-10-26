@@ -20,12 +20,14 @@ export class HordeDefenseMaster extends HordeMaster {
     SwarmMaster.prototype.update.call(this);
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
-    if (roomInfo.dangerlvlmax < 3 && !this.beesAmount) {
+    let shouldSpawn = Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
+
+    if (!this.beesAmount && (!shouldSpawn || this.hive.cells.defense.reposessFlag(this.order.pos, roomInfo.dangerlvlmax) === OK)) {
       this.order.delete();
       return;
     }
 
-    if (this.checkBees(this.hive.state !== hiveStates.battle) && (Game.time >= roomInfo.safeModeEndTime - 250) && roomInfo.dangerlvlmax > 2) {
+    if (shouldSpawn && this.checkBees(this.hive.state !== hiveStates.battle)) {
       let order = {
         setup: setups.defender.normal,
         priority: <1 | 4 | 8>1,
@@ -38,22 +40,21 @@ export class HordeDefenseMaster extends HordeMaster {
         order.setup = setups.defender.normal.copy();
         order.setup.fixed = [];
         let stats = Apiary.intel.getComplexStats(enemy, undefined, 8);
-        let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER);
+        let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.75);
         let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
         let desiredTTK = 40; // desired time to kill
 
-        let healMax = 3;
+        let healMax = 5;
         let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
         if (noFear)
           healMax = 2;
-
         if (healNeeded > healMax) {
           healNeeded = healMax;
           desiredTTK = 20;
         }
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 2, 15);
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 2, 20);
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
@@ -63,6 +64,9 @@ export class HordeDefenseMaster extends HordeMaster {
           if (this.hive.room.energyCapacityAvailable >= toughCost + healCost * healNeeded + rangedCost * 2)
             order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
         }
+
+        if (!noFear && order.setup.patternLimit * RANGED_ATTACK_POWER <= stats.max.heal)
+          return;
 
         /* if (noFear) {
           order.setup.fixed.push(ATTACK);

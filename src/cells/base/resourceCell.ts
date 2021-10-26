@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { MinerMaster } from "../../beeMasters/economy/miner";
 
-import { prefix, roomStates } from "../../enums";
+import { prefix, roomStates, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "./excavationCell";
@@ -92,7 +92,7 @@ export class ResourceCell extends Cell {
   }
 
   update() {
-    super.update(undefined, false);
+    super.update();
 
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();
@@ -110,7 +110,7 @@ export class ResourceCell extends Cell {
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
         let closeToFull = usedCap >= LINK_CAPACITY / 1.1428;
 
-        let upgradeLink = this.hive.cells.upgrade && this.hive.cells.upgrade.link;
+        let upgradeLink = this.hive.state === hiveStates.economy && this.hive.cells.upgrade && this.hive.cells.upgrade.link;
         if (upgradeLink && (upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= usedCap
           || upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && !closeToFull)) {
           let ans = this.link.transferEnergy(upgradeLink);

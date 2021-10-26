@@ -41,6 +41,8 @@ export class RespawnCell extends Cell {
   }
 
   bakeMap() {
+    if (this.roadMap.length)
+      return // remove with caching
     this.roadMap = [];
     for (let x = 0; x <= 49; ++x) {
       this.roadMap[x] = [];

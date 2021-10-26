@@ -213,7 +213,7 @@ export class Logger {
 
       _.forEach(excavation.resourceCells, cell => {
         if (cell.resourceType === RESOURCE_ENERGY) {
-          let ref = "mining_" + cell.resource.id.slice(cell.resource.id.length - 4);
+          let ref = "mining_" + cell.ref.slice(cell.ref.length - 4);
           ans[ref] = {
             profit: getRate(ref) + minerExp + (cell.link ? 0 : haulerExp)
               + (cell.pos.roomName !== hive.roomName && hive.annexNames.includes(cell.pos.roomName)

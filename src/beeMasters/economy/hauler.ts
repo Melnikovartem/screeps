@@ -59,7 +59,7 @@ export class HaulerMaster extends Master {
   }
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(hiveStates.battle !== this.hive.state);
+    let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount);
     if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();

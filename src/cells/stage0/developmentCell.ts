@@ -46,12 +46,12 @@ export class DevelopmentCell extends Cell {
 
   update() {
     super.update();
-    if (this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.phase === 0)
+    if (this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.phase === 0 && Apiary.useBucket)
       Apiary.destroyTime = Game.time;
   }
 
   run() {
-    if (!this.master.beesAmount && this.hive.phase > 0 && this.hive.state === hiveStates.economy)
+    if (!this.master.beesAmount && this.hive.phase > 0 && this.hive.state === hiveStates.economy && Apiary.useBucket)
       Apiary.destroyTime = Game.time;
   }
 }

@@ -18,19 +18,17 @@ export class AnnexMaster extends SwarmMaster {
     if (doAnnex && this.hive.bassboost)
       doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
 
-    this.targetBeeCount = doAnnex ? 1 : 0;
-
-    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
+    if (doAnnex && this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let order = {
         setup: setups.claimer,
         priority: <6>6,
       };
 
       if (this.order.pos.roomName in Game.rooms) {
-        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
+        let controller = Game.rooms[this.order.pos.roomName].controller;
 
         // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
-        if (controller && (!controller.reservation || controller.reservation.ticksToEnd < 4200)) {
+        if (controller && (!controller.reservation || controller.reservation.username !== Apiary.username || controller.reservation.ticksToEnd < 4200)) {
           order.setup = order.setup.copy();
           order.setup.patternLimit = 2;
         }
@@ -45,12 +43,13 @@ export class AnnexMaster extends SwarmMaster {
       if (bee.pos.roomName !== this.order.pos.roomName)
         bee.goTo(this.order.pos);
       else {
-        let controller = <StructureController>_.filter(this.order.pos.lookFor(LOOK_STRUCTURES), s => s.structureType === STRUCTURE_CONTROLLER)[0];
+        let controller = Game.rooms[this.order.pos.roomName].controller;
         if (controller) {
-          if (!controller.owner || controller.owner.username === Apiary.username)
-            bee.reserveController(controller);
+          if ((controller.reservation && controller.reservation.username !== Apiary.username)
+            || (controller.owner && controller.owner.username !== Apiary.username))
+            bee.attackController(controller)
           else
-            bee.attackController(controller);
+            bee.reserveController(controller);
         } else
           this.order.delete();
       }

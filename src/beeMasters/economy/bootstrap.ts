@@ -105,9 +105,6 @@ export class BootstrapMaster extends Master {
     if (this.cell.shouldRecalc)
       this.recalculateTargetBee();
 
-    //if (this.hive.cells.storage)
-    //  this.hive.cells.storage.master.targetBeeCount = 1;
-
     if (this.checkBeesWithRecalc()) {
       this.wish({
         setup: setups.bootstrap,
@@ -361,6 +358,7 @@ export class BootstrapMaster extends Master {
           bee.target = target.id;
           break;
       }
+      this.checkFlee(bee, this.hive);
     });
     this.count = countCurrent;
     this.containerTargeting = containerTargetingCur;

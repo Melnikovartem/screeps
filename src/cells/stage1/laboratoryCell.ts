@@ -95,8 +95,15 @@ export class LaboratoryCell extends Cell {
         if (toCreate > 0 && res in REACTION_MAP)
           targets.push({ res: res, amount: toCreate });
       }
+      let canCreate = targets.filter(t => {
+        let [, ingr] = this.getCreateQue(t.res);
+        return !ingr.filter(r => this.sCell.getUsedCapacity(r) <= LAB_BOOST_MINERAL).length
+      });
+      if (canCreate.length)
+        targets = canCreate;
       if (!targets.length)
         targets = [{ res: "XGH2O", amount: 2048 }];
+      this.patience = 0;
       targets.sort((a, b) => b.amount - a.amount);
       this.synthesizeTarget = targets[0];
     }
@@ -250,8 +257,7 @@ export class LaboratoryCell extends Cell {
           let labs = _.filter(this.laboratories, l => {
             let currState = this.labStates[l.id]
             return (!sameMineral || l.mineralType === r.res)
-              && ((!state && currState !== "source" && !(currState in REACTION_TIME))
-                || currState === state);
+              && ((!state && currState !== "source") || currState === state);
           });
           if (labs.length)
             return labs.reduce((prev, curr) => curr.pos.getRangeTo(this.sCell) < prev.pos.getRangeTo(this.sCell) ? curr : prev);

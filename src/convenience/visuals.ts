@@ -276,7 +276,9 @@ export class Visuals {
     const MAX_STATS = 10;
     let ans: string[][] = [];
     if (orders.length > MAX_STATS)
-      orders = orders.filter(o => !o.ref.includes(prefix.def) && !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
+      orders = orders.filter(o => !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
+    if (orders.length > MAX_STATS)
+      orders = orders.filter(o => !o.ref.includes(prefix.def));
     if (orders.length > MAX_STATS)
       orders = orders.filter(o => Apiary.intel.getInfo(o.pos.roomName, 25).dangerlvlmax > 0);
     if (orders.length > MAX_STATS)
