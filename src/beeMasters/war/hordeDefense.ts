@@ -9,7 +9,6 @@ import { profile } from "../../profiler/decorator";
 // most basic of bitches a horde full of wasps
 @profile
 export class HordeDefenseMaster extends HordeMaster {
-  maxSpawns: number = 2;
   boosts = undefined;
 
   init() {
@@ -48,10 +47,9 @@ export class HordeDefenseMaster extends HordeMaster {
         let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
         if (noFear)
           healMax = 2;
-        if (healNeeded > healMax) {
-          healNeeded = healMax;
+        else
           desiredTTK = 20;
-        }
+        healNeeded = Math.min(healMax, healNeeded);
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
         order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 2, 20);
@@ -67,12 +65,6 @@ export class HordeDefenseMaster extends HordeMaster {
 
         if (!noFear && order.setup.patternLimit * RANGED_ATTACK_POWER <= stats.max.heal)
           return;
-
-        /* if (noFear) {
-          order.setup.fixed.push(ATTACK);
-          if (order.setup.patternLimit > 1)
-            --order.setup.patternLimit;
-        } */
       } else {
         order.priority = 8;
         order.setup = setups.defender.destroyer;

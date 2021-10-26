@@ -19,7 +19,7 @@ export class Visuals {
     [GLOBAL_VISUALS]: { data: "", lastRecalc: -1 },
     [GLOBAL_VISUALS_HEAVY]: { data: "", lastRecalc: -1 },
   };
-  anchor: VisInfo = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
+  anchor: VisInfo = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: "" };
   usedAnchors: { [roomName: string]: VisInfo } = {}
 
   changeAnchor(x?: number, y?: number, roomName?: string) {
@@ -70,7 +70,7 @@ export class Visuals {
         }
 
     this.usedAnchors = {};
-    this.anchor = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: GLOBAL_VISUALS };
+    this.anchor = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: "" };
   }
 
   create() {

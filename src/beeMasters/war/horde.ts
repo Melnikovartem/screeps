@@ -16,7 +16,7 @@ const BOOST_LVL = 0;
 export class HordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 1;
-  movePriority = <2>2;
+  movePriority = <3>3;
   boosts: Boosts | undefined = [{ type: "rangedAttack", lvl: BOOST_LVL }, { type: "attack", lvl: BOOST_LVL }
     , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL },
   { type: "dismantle", lvl: 2 }, { type: "dismantle", lvl: 1 }, { type: "dismantle", lvl: 0 }];
@@ -51,7 +51,7 @@ export class HordeMaster extends SwarmMaster {
     if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 250)) {
       this.wish({
         setup: this.setup,
-        priority: 1,
+        priority: 4,
       });
     }
   }
@@ -103,16 +103,15 @@ export class HordeMaster extends SwarmMaster {
     let attackRange = 2;
     if (target instanceof Creep) {
       let info = Apiary.intel.getComplexStats(target).current;
-      if (info.dmgClose)
-        targetedRange = 3;
       if (info.dmgClose >= beeStats.dmgClose) {
+        targetedRange = 3;
         attackRange = 3;
-        loosingBattle = !!(info.dmgClose + info.dmgRange) && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
+        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
       } else {
         attackRange = 1;
-        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
+        loosingBattle = !!(info.dmgClose + info.dmgRange) && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
       }
-      if (info.dmgRange)
+      if (info.dmgRange > beeStats.heal)
         targetedRange = 5;
       if (!info.heal && target.owner.username === "Awaii")
         loosingBattle = false; // not optimal code

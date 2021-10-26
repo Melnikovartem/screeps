@@ -77,12 +77,14 @@ export class RespawnCell extends Cell {
   run() {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
-    let sortedOrders = _.map(this.hive.spawOrders, o => o).sort((a, b) => a.priority - b.priority);
-    for (let key = 0; key < sortedOrders.length; ++key) {
-      if (!this.freeSpawns.length)
-        break;
-
-      let order = sortedOrders[key];
+    let orders = _.map(this.hive.spawOrders, o => o);
+    for (let key = 0; key < orders.length && this.freeSpawns.length; ++key) {
+      let order = orders.reduce((prev, curr) => {
+        let ans = curr.priority - prev.priority;
+        if (ans === 0)
+          ans = prev.priority - curr.createTime;
+        return ans < 0 ? curr : prev;
+      });
       let spawn = this.freeSpawns.pop()!;
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)

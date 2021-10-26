@@ -20,8 +20,6 @@ export class ExcavationCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, prefix.excavationCell + hive.room.name);
-    if (this.hive.phase > 0 && this.hive.room.storage)
-      this.master = new HaulerMaster(this, this.hive.room.storage);
     this.pos = this.hive.rest;
   }
 
@@ -36,6 +34,11 @@ export class ExcavationCell extends Cell {
   }
 
   update() {
+    if (!this.master)
+      if (this.hive.cells.storage)
+        this.master = new HaulerMaster(this, this.hive.cells.storage.storage);
+      else
+        return;
     this.quitefullCells = [];
     _.forEach(this.resourceCells, cell => {
       safeWrap(() => { cell.update() }, cell.print + " update");

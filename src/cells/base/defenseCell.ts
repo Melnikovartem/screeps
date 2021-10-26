@@ -137,7 +137,8 @@ export class DefenseCell extends Cell {
       this.updateNukes();
 
     // cant't survive a nuke if your controller lvl is below 5
-    this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady && this.hive.room.controller!.level > 4);
+    this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady
+      && (!this.hive.cells.storage || this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY] / 2));
 
 
 

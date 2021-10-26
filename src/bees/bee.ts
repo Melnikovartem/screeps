@@ -130,6 +130,9 @@ export class Bee {
       refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
       if (refMaster)
         return refMaster;
+      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.def)));
+      if (refMaster)
+        return refMaster;
       /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
       if (refMaster)
         return refMaster;*/

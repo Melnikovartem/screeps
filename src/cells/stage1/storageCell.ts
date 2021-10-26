@@ -139,9 +139,11 @@ export class StorageCell extends Cell {
 
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;
-      if (!this.resTargetTerminal[res])
-        if (this.requestToStorage([this.terminal], 4, res, this.terminal.store.getUsedCapacity(res)) > 0)
+      if (!this.resTargetTerminal[res]) {
+        let used = this.terminal.store.getUsedCapacity(res);
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 5000)) > 0)
           return;
+      }
       delete this.requests[this.terminal.id];
     }
 
@@ -149,10 +151,10 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       let balance = this.terminal.store.getUsedCapacity(res) - this.resTargetTerminal[res]!;
       if (balance < 0) {
-        if (this.requestFromStorage([this.terminal], 4, res, -balance) > 0)
+        if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 5000)) > 0)
           return;
       } else if (balance > 0) {
-        if (this.requestToStorage([this.terminal], 4, res, balance) > 0)
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 5000)) > 0)
           return;
       }
     }

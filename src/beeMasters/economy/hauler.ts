@@ -14,9 +14,9 @@ export class HaulerMaster extends Master {
   targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
   roadUpkeepCost: { [id: string]: number } = {};
   accumRoadTime = 0;
-  dropOff: StructureStorage // | StructureContainer | StructureLink;
+  dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
 
-  constructor(excavationCell: ExcavationCell, storage: StructureStorage) {
+  constructor(excavationCell: ExcavationCell, storage: StructureStorage | StructureTerminal) {
     super(excavationCell.hive, excavationCell.ref);
     this.cell = excavationCell;
     this.dropOff = storage;
@@ -101,7 +101,7 @@ export class HaulerMaster extends Master {
     if (this.checkBeesWithRecalc()) {
       this.wish({
         setup: setups.hauler,
-        priority: 6,
+        priority: this.beesAmount ? 5 : 3,
       });
     }
   }

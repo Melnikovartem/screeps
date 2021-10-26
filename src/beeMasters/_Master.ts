@@ -82,6 +82,7 @@ export abstract class Master {
       priority: template.priority,
       master: this.ref,
       ref: ref,
+      createTime: Game.time,
     }
     if (this.hive.bassboost && this.hive.bassboost.state === hiveStates.economy) {
       let localBodyMax = 0;
