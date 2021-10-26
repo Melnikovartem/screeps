@@ -312,10 +312,10 @@ export class Intel {
             dangerlvl = 1;
 
         if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length) {
-          if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy
-            || (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_TOWER)))
-            dangerlvl = 9;
-          else if (dangerlvl < 4)
+          if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier)) {
+            if (s.structureType !== STRUCTURE_ROAD)
+              dangerlvl = 9;
+          } else if (dangerlvl < 4)
             dangerlvl = 4;
         }
 

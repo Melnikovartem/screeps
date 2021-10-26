@@ -30,11 +30,12 @@ export function safeWrap(cycle: () => void, context: string): void {
     cycle();
 }
 
-export function findOptimalResource(store: Store<ResourceConstant, false>): ResourceConstant {
+export function findOptimalResource(store: Store<ResourceConstant, false>, mode: -1 | 1 = 1): ResourceConstant {
   let ans: ResourceConstant = RESOURCE_ENERGY;
   for (let resourceConstant in store) {
-    if (ans !== resourceConstant && store[<ResourceConstant>resourceConstant] > store.getUsedCapacity(ans))
-      ans = <ResourceConstant>resourceConstant;
+    let res = <ResourceConstant>resourceConstant;
+    if (ans !== resourceConstant && (store.getUsedCapacity(res) - store.getUsedCapacity(ans)) * mode > 0)
+      ans = res;
   }
   return ans;
 }

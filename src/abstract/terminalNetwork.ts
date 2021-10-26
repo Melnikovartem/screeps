@@ -77,8 +77,8 @@ export class Network {
       toState = -toState + PADDING_RESOURCE;
 
     // help those in need
-    if (res === RESOURCE_ENERGY && toState - PADDING_RESOURCE > HIVE_ENERGY - PADDING_RESOURCE * 12
-      && fromState < 10000 && fromState + PADDING_RESOURCE > -(HIVE_ENERGY - PADDING_RESOURCE * 40))
+    if (res === RESOURCE_ENERGY && fromState < 10000 && toState - PADDING_RESOURCE > HIVE_ENERGY - PADDING_RESOURCE * 12
+      && fromState + PADDING_RESOURCE > -(HIVE_ENERGY / 2))
       fromState = 10000;
     return Math.max(Math.min(toState, fromState), 0);
   }
@@ -134,14 +134,15 @@ export class Network {
       }
 
       let stStore = hive.cells.storage.storage.store;
-      if (stStore.getUsedCapacity() > stStore.getCapacity() * 0.75) {
-        let keys = <(keyof ResTarget)[]>Object.keys(hive.resState).filter(s => s !== RESOURCE_ENERGY);
+      if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.75 && hive.cells.storage.storage instanceof StructureStorage) {
+        let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
+        // keys = keys.filter(s => s !== RESOURCE_ENERGY)
         if (!keys.length)
           continue;
         let res = keys.reduce((prev, curr) => hive.resState[curr]! > hive.resState[prev]! ? curr : prev);
         if (hive.resState[res]! < 0)
           continue;
-        Apiary.broker.sellOff(terminal, res, Math.min(2048, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
+        Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
       }
     }
   }

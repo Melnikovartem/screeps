@@ -77,7 +77,7 @@ export class BootstrapMaster extends Master {
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
-    if (this.hive.phase > 0)
+    if (this.hive.phase > 0 || this.hive.room.terminal)
       this.targetBeeCount = Math.min(this.targetBeeCount, 2);
     /*
       if (this.hive.bassboost)

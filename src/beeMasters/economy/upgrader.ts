@@ -61,7 +61,7 @@ export class UpgraderMaster extends Master {
         upgrader = setups.upgrader.fast.copy();
       upgrader.patternLimit = this.patternPerBee;
       this.wish({
-        setup: setups.upgrader.manual,
+        setup: upgrader,
         priority: this.cell.controller.level === 8 ? 8 : 7,
       });
     }

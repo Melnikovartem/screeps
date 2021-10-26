@@ -4,6 +4,7 @@ import { TransferRequest } from "../../bees/transferRequest";
 
 import { prefix } from "../../enums";
 import { BASE_MINERALS } from "./laboratoryCell";
+import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -11,7 +12,7 @@ import type { Hive } from "../../Hive";
 @profile
 export class StorageCell extends Cell {
 
-  storage: StructureStorage;
+  storage: StructureStorage | StructureTerminal;
   links: { [id: string]: StructureLink } = {};
   linksState: { [id: string]: "idle" | "busy" } = {};
   terminal: StructureTerminal | undefined;
@@ -22,7 +23,7 @@ export class StorageCell extends Cell {
 
   usedCapacity: { [key in ResourceConstant]?: number } = {}
 
-  constructor(hive: Hive, storage: StructureStorage) {
+  constructor(hive: Hive, storage: StructureStorage | StructureTerminal) {
     super(hive, prefix.storageCell + hive.room.name);
 
     this.storage = storage;
@@ -121,12 +122,21 @@ export class StorageCell extends Cell {
       Apiary.destroyTime = Game.time;
 
     //if (!Object.keys(this.requests).length)
-    this.updateTerminal();
+    if (this.storage instanceof StructureStorage)
+      this.updateTerminal();
+    else if (this.hive.room.storage)
+      Apiary.destroyTime = Game.time;
   }
 
   updateTerminal() {
     if (!this.terminal)
       return;
+    if (Game.flags[prefix.terminal + this.hive.roomName]) {
+      let res = findOptimalResource(this.storage.store, -1);
+      this.requestFromStorage([this.terminal], 4, res);
+      return;
+    }
+
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res])

@@ -86,12 +86,14 @@ export class Visuals {
           this.statsHive(hive);
           this.statsNetwork(hive);
           this.statsLab(hive);
+          this.statsNukes(hive);
 
           _.forEach(hive.annexNames, annex => {
             if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
               this.exportAnchor(0, annex);
           });
 
+          this.nukeInfo(hive);
           this.spawnInfo(hive);
 
           if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
@@ -144,6 +146,14 @@ export class Visuals {
         continue;
       this.changeAnchor(0, 0, roomName);
       let vis = this.anchor.vis;
+      let hive = Apiary.hives[roomName];
+      if (hive) {
+        this.nukeInfo(hive);
+        _.forEach(hive.cells.defense.getNukeDefMap(), (p) => {
+          vis.circle(p.pos.x, p.pos.y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
+        });
+      }
+
       for (let x in Apiary.planner.activePlanning[roomName].plan)
         for (let y in Apiary.planner.activePlanning[roomName].plan[+x]) {
           let style: CircleStyle = {
@@ -200,13 +210,8 @@ export class Visuals {
               break;
           }
           vis.circle(+x, +y, style);
-          if (Apiary.planner.activePlanning[roomName].plan[+x][+y].r) {
-            vis.circle(+x, +y, {
-              opacity: 0.3,
-              fill: "#A1FF80",
-              radius: 0.5,
-            });
-          }
+          if (Apiary.planner.activePlanning[roomName].plan[+x][+y].r)
+            vis.circle(+x, +y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
         }
 
       for (let t in Apiary.planner.activePlanning[roomName].poss) {
@@ -453,6 +458,27 @@ export class Visuals {
     }
   }
 
+  statsNukes(hive: Hive) {
+    _.forEach(hive.cells.defense.nukes, n => {
+      let nuke = n.lookFor(LOOK_NUKES)[0];
+      if (nuke) {
+        let percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
+        this.updateAnchor(this.progressbar(`☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${Math.round(percent * 1000) / 10}%`, this.anchor, percent));
+      }
+    });
+  }
+
+  nukeInfo(hive: Hive) {
+    _.forEach(hive.cells.defense.nukes, n => {
+      let xMin = n.x - 2.5;
+      let xMax = n.x + 2.5;
+      let yMin = n.y - 2.5;
+      let yMax = n.y + 2.5;
+      this.anchor.vis.poly([[xMin, yMin], [xMin, yMax], [xMax, yMax], [xMax, yMin], [xMin, yMin]], { stroke: "#F1AFA1" });
+      this.anchor.vis.circle(n.x, n.y, { fill: "#000000" });
+    });
+  }
+
   spawnInfo(hive: Hive) {
     let usedY: number[] = [];
     _.forEach(hive.cells.spawn.spawns, s => {
@@ -467,7 +493,7 @@ export class Visuals {
         }
         usedY.push(Math.round(y));
         this.anchor.vis.text(`⚒️ ${s.spawning.name.slice(0, s.spawning.name.length - 5)} ${
-          Math.round((1 - s.spawning.remainingTime / s.spawning.needTime) * 100)}%`, x, y, this.textStyle({ stroke: "#2E2E2E", strokeWidth: 0.1 }));
+          Math.round((1 - s.spawning.remainingTime / s.spawning.needTime) * 100)}%`, x, y, this.textStyle({ stroke: "#2E2E2E", strokeWidth: 0.1, opacity: 0.75 }));
       }
     });
   }

@@ -112,6 +112,18 @@ export class CustomConsole {
     });
   }
 
+  showNukeDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    let defMap = hive.cells.defense.getNukeDefMap()
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      if (_.filter(defMap, p => p.pos.x === x && p.pos.y === y).length)
+        vis.circle(x, y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
+    });
+  }
+
   showEnergy(hiveName: string = this.lastActionRoomName, keep?: boolean, x: number = 1, y: number = 1) {
     Apiary.visuals.changeAnchor(x, y, hiveName);
     Apiary.visuals.visualizeEnergy(hiveName);
@@ -305,7 +317,7 @@ export class CustomConsole {
       if (!amount || !r)
         return;
       let res = <ResourceConstant>r;
-      if (!(res in REACTION_MAP) || hive.resTarget[res]! > 0)
+      if (!(res in REACTION_MAP))// || hive.resTarget[res]! > 0)
         return;
       let sets = Math.min(Math.round((amount + padding) / 5000 * 1000) / 1000, 1);
       let buyAns;

@@ -29,7 +29,7 @@ export class BuilderMaster extends Master {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
-      if (this.hive.state === hiveStates.battle && this.hive.sumCost > 100000) {
+      if (this.hive.state === hiveStates.battle && this.hive.sumCost > 10000) {
         _.forEach(this.activeBees, b => {
           if (!b.boosted && b.ticksToLive > 1350)
             b.state = beeStates.boosting;
@@ -39,7 +39,7 @@ export class BuilderMaster extends Master {
     } else if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
-        ++target
+        ++target;
       if (this.hive.sumCost > 15000) {
         this.boosts = [{ type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
         if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
@@ -53,7 +53,7 @@ export class BuilderMaster extends Master {
 
   update() {
     super.update();
-    let emergency = this.hive.state >= hiveStates.nukealert;
+    let emergency = this.hive.state >= hiveStates.nukealert || this.sCell.storage instanceof StructureTerminal;
 
 
     this.recalculateTargetBee();

@@ -4,7 +4,7 @@ import { SquadMaster, FormationPositions } from "./squad";
 import type { Boosts } from "../_Master";
 
 
-const TOWER_NUM = 4.5; // 6;
+const TOWER_NUM = 6; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
 const TOUGHT_AMOUNT = Math.ceil(TOWER_DMG / 100);
 

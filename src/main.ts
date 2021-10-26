@@ -19,7 +19,7 @@ function onGlobalReset(): void {
   // check if all memory position were created
   Mem.init();
 
-  console.log("Reset? Cool time is", Game.time);
+  console.log(`Reset ${Game.shard.name}? Cool time is ${Game.time}`);
   if (LOGGING_CYCLE) Memory.log.reset = Game.time;
   if (PROFILER) profiler.enable();
 

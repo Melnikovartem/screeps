@@ -149,12 +149,6 @@ export class Hive {
       Memory.cache.hives[this.roomName] = { positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos }, wallsHealth: WALL_HEALTH * 10 }
     }
 
-    this.phase = 0;
-    if (this.room.storage && this.room.storage.isActive())
-      this.phase = 1;
-
-    if (this.phase === 1 && this.room.controller!.level === 8)
-      this.phase = 2;
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -163,28 +157,13 @@ export class Hive {
       excavation: new ExcavationCell(this),
     };
 
-    if (this.phase === 0) {
-      this.wallsHealth = WALL_HEALTH;
-      this.wallsHealthMax = WALL_HEALTH;
-      this.cells.dev = new DevelopmentCell(this);
-      if (Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road)
-        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, r => {
-          let pos = new RoomPosition(r.x, r.y, roomName);
-          if (pos.getRangeTo(this.getPos("center")) <= 6)
-            return;
-          let structures = pos.lookFor(LOOK_STRUCTURES);
-          if (structures.filter(s => s.structureType === STRUCTURE_ROAD).length)
-            return;
-          if (structures.length)
-            structures[0].destroy();
-          if (pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
-            return;
-          pos.createConstructionSite(STRUCTURE_ROAD);
-        });
-    } else {
-      if (this.room.storage!.store.getUsedCapacity(RESOURCE_ENERGY) < 10000)
+    this.phase = 0;
+    let storage = this.room.storage || this.room.terminal;
+    if (storage && storage.isActive()) {
+      this.phase = 1;
+      if (this.room.storage && this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 6000)
         this.cells.dev = new DevelopmentCell(this);
-      let sCell = new StorageCell(this, this.room.storage!);
+      let sCell = new StorageCell(this, storage);
       this.cells.storage = sCell;
       this.cells.upgrade = new UpgradeCell(this, this.room.controller!, sCell);
       this.cells.lab = new LaboratoryCell(this, sCell);
@@ -197,7 +176,12 @@ export class Hive {
       });
       if (factory)
         this.cells.factory = new FactoryCell(this, factory, sCell);
-      if (this.phase === 2) {
+      if (this.room.controller!.level < 8) {
+        // try to develop the hive
+        this.resTarget[BOOST_MINERAL.upgrade[0]] = HIVE_MINERAL * 2;
+        this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
+      } else {
+        this.phase = 2;
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.rangedAttack[2]] = HIVE_MINERAL;
@@ -219,11 +203,25 @@ export class Hive {
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
         this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
-      } else {
-        // try to develop the hive
-        this.resTarget[BOOST_MINERAL.upgrade[0]] = HIVE_MINERAL * 2;
-        this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
       }
+    } else {
+      this.wallsHealth = WALL_HEALTH;
+      this.wallsHealthMax = WALL_HEALTH;
+      this.cells.dev = new DevelopmentCell(this);
+      if (Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road)
+        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, r => {
+          let pos = new RoomPosition(r.x, r.y, roomName);
+          if (pos.getRangeTo(this.getPos("center")) <= 6)
+            return;
+          let structures = pos.lookFor(LOOK_STRUCTURES);
+          if (structures.filter(s => s.structureType === STRUCTURE_ROAD).length)
+            return;
+          if (structures.length)
+            structures[0].destroy();
+          if (pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
+            return;
+          pos.createConstructionSite(STRUCTURE_ROAD);
+        });
     }
 
     //look for new structures for those wich need them
@@ -428,11 +426,11 @@ export class Hive {
         let terrain = Game.map.getRoomTerrain(roomName);
         let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
         _.forEach(enemies, c => {
-          _.forEach(c.pos.getOpenPositions(true, 3), p => {
+          _.forEach(c.pos.getPositionsInRange(3), p => {
             if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
               return;
-            let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 2 : 1;
-            matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (4 - p.getRangeTo(c)) * 0x20 * coef))
+            let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 1.5 : 1;
+            matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 0xa0 * coef))
           });
           matrix.set(c.pos.x, c.pos.y, 0xff);
         });
@@ -494,14 +492,14 @@ export class Hive {
         break;
       case hiveStates.economy:
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
-        checkAnnex();
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
+        if (!this.sumCost)
+          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
+        checkAnnex();
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         else
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
-        if (!this.sumCost)
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade));
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
 
@@ -527,7 +525,7 @@ export class Hive {
 
     // ask for boost
     if ((this.state === hiveStates.nospawn
-      || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
+      || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
       && !Apiary.orders[prefix.boost + this.roomName]) {
       let validHives = _.filter(Apiary.hives, h => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRoomRangeTo(h) < 5 && h.phase > 0)
       if (validHives.length)

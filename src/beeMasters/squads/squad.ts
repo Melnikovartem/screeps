@@ -22,14 +22,16 @@ export abstract class SquadMaster extends SwarmMaster {
 
   constructor(order: Order) {
     super(order);
-    if (!(this.formationCenter instanceof RoomPosition))
-      this.formationCenter = (this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest);
+    let extraPos = this.order.flag.memory.extraPos;
+    if (!extraPos || !("x" in extraPos) || !("y" in extraPos) || !("roomName" in extraPos))
+      this.order.flag.memory.extraPos = (this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest);
     if (![TOP, BOTTOM, LEFT, RIGHT].includes(this.formationRotation))
       this.formationRotation = TOP;
   }
 
   get formationCenter() {
-    return this.order.flag.memory.extraPos!;
+    let pos = this.order.flag.memory.extraPos!;
+    return new RoomPosition(pos.x, pos.y, pos.roomName);
   }
 
   set formationCenter(value) {
@@ -117,7 +119,6 @@ export abstract class SquadMaster extends SwarmMaster {
         this.stats.current[<keyof CreepBattleInfo>i] += stats.current[<keyof CreepBattleInfo>i]
       }
     });
-
     if (this.checkBees(this.emergency) && this.checkup) {
       for (let i = 0; i < this.formation.length; ++i) {
         if (!this.formationBees[i])
@@ -240,6 +241,11 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
+
+  getAction1() {
+
+  }
+
   beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined | null, healingTargets: { bee: Bee, heal: number }[]) {
     let action1;
     let action2;
@@ -253,7 +259,7 @@ export abstract class SquadMaster extends SwarmMaster {
       let fromCore = healingTargets.filter(t => t.heal > 0);
       if (fromCore.length)
         healingTarget = fromCore.reduce((prev, curr) => {
-          let ans = curr.bee.pos.getRangeTo(bee) - prev.bee.pos.getRangeTo(bee);
+          let ans = (curr.bee.pos.getRangeTo(bee) || 1) - (prev.bee.pos.getRangeTo(bee) || 1);
           if (ans === 0)
             ans = prev.heal - curr.heal;
           return ans < 0 ? curr : prev;
@@ -272,10 +278,14 @@ export abstract class SquadMaster extends SwarmMaster {
         healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
         return bee.rangedHeal(healingTarget.bee)
       }
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0
-      && roomInfo.enemies.filter(e => bee.pos.getRangeTo(e.object) <= 3 && "owner" in e.object).length)
-      action2 = () => bee.rangedMassAttack();
-    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
+    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0) {
+      let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
+      if (!tempTarget)
+        tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
+      if (tempTarget)
+        action2 = () => bee.rangedAttack(tempTarget);
+    }
+    if (!action2 && rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
       action2 = () => {
         healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
         return bee.rangedHeal(healingTarget.bee)
@@ -286,11 +296,24 @@ export abstract class SquadMaster extends SwarmMaster {
         healingTarget.heal -= beeStats.heal;
         return bee.heal(healingTarget.bee);
       }
-    else if (rangeToTarget === 1 && beeStats.dism > 0 && target instanceof Structure)
-      action1 = () => bee.dismantle(target);
-    else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
-      action1 = () => bee.attack(target);
-    else if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
+    else if (beeStats.dism > 0 || beeStats.dmgClose > 0) {
+      if (rangeToTarget === 1)
+        if (beeStats.dism > 0 && target instanceof Structure)
+          action1 = () => bee.dismantle(target);
+        else if (beeStats.dmgClose > 0)
+          action1 = () => bee.attack(target);
+      if (!action1) {
+        let tempTarget: Structure | Creep | undefined = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
+        if (!tempTarget)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1)[0];
+        if (tempTarget)
+          if (beeStats.dism > 0 && target instanceof Structure)
+            action1 = () => bee.dismantle(target);
+          else if (beeStats.dmgClose > 0)
+            action1 = () => bee.attack(target);
+      }
+    }
+    if (!action1 && rangeToHealingTarget <= 1 && beeStats.heal > 0)
       action1 = () => {
         healingTarget.heal -= beeStats.heal;
         return bee.heal(healingTarget.bee);
@@ -374,7 +397,7 @@ export abstract class SquadMaster extends SwarmMaster {
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = this.order.pos;
     let opts = this.getPathArgs(bee.ref);
-    if (enemy) {
+    if (enemy && bee.pos.roomName === this.order.pos.roomName) {
       if (bee.pos.roomName === this.order.pos.roomName)
         moveTarget = enemy.pos;
       if (enemy instanceof Creep && this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
@@ -386,10 +409,23 @@ export abstract class SquadMaster extends SwarmMaster {
           bee.memory._trav = undefined;
       }
     }
-    if (enemy && this.canBeOutDmged(bee.pos)) {
-      bee.flee(enemy, this.order);
+    if (enemy && this.stats.current.heal && this.canBeOutDmged(bee.pos)) {
+      bee.flee(enemy, this.order, opts);
     } else {
       bee.goTo(moveTarget, opts);
+      if (bee.pos.isNearTo(moveTarget) && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {
+        let poss = bee.pos.getOpenPositions(true);
+        if (poss.length) {
+          let newPos = poss.reduce((prev, curr) => {
+            let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
+            if (ans === 0)
+              ans = this.getSquadMoveMentValue(curr, bee.ref) - this.getSquadMoveMentValue(prev, bee.ref);
+            return ans < 0 ? curr : prev;
+          });
+          if (!newPos.equal(bee.pos))
+            bee.goTo(newPos, opts);
+        }
+      }
       if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition)) {
         bee.targetPosition = undefined;
         bee.memory._trav = undefined;
@@ -477,7 +513,7 @@ export abstract class SquadMaster extends SwarmMaster {
         });
     } else {
       let desired = this.getDesiredPoss();
-      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4 && !centerBee.pos.getEnteranceToRoom()) {
+      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4 && !centerBee.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length) {
         this.stuckValue += 1;
         valid = this.validateFormation(desired);
       }
@@ -497,7 +533,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     }
 
-    this.formationCenter = centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos;
+    this.formationCenter = (centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos);
 
     if (SQUAD_VISUALS)
       for (let i = 0; i < this.formationBees.length; ++i) {

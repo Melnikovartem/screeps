@@ -41,8 +41,8 @@ export class Order {
   constructor(flag: Flag) {
     this.flag = flag;
 
-    if (this.flag.memory.hive && Apiary.hives[this.flag.memory.hive]) {
-      this.hive = Apiary.hives[this.flag.memory.hive];
+    if (this.memory.hive && Apiary.hives[this.flag.memory.hive]) {
+      this.hive = Apiary.hives[this.memory.hive];
       if (!this.hive)
         this.delete(true);
     } else {
@@ -56,7 +56,7 @@ export class Order {
             filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
           if (this.secondaryColor !== COLOR_PURPLE)
             break;
-        case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY:
+        case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY: case COLOR_BLUE:
           filter = _ => true;
           break;
         case COLOR_RED:
@@ -67,12 +67,18 @@ export class Order {
       }
       this.hive = this.findHive(filter);
     }
-    let newMemory: FlagMemory = { hive: this.hive.roomName };
-    if (this.flag.memory.info)
-      newMemory.info = this.flag.memory.info;
-    if (this.flag.memory.repeat)
-      newMemory.info = this.flag.memory.repeat;
+    let newMemory: FlagMemory = {
+      hive: this.hive.roomName,
+      info: this.memory.info,
+      repeat: this.memory.repeat,
+      extraPos: this.memory.extraPos,
+      extraInfo: this.memory.extraInfo,
+    };
     this.flag.memory = newMemory;
+  }
+
+  get memory() {
+    return this.flag.memory;
   }
 
   findHive(filter: (h: Hive) => boolean = () => true): Hive {
@@ -428,21 +434,12 @@ export class Order {
               break;
           }
         break;
-      case COLOR_GREY:
+      case COLOR_BLUE:
+        if (this.hive.roomName !== this.pos.roomName) {
+          this.delete();
+          break;
+        }
         switch (this.secondaryColor) {
-          case COLOR_RED:
-            this.acted = false;
-            if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
-              this.delete();
-            break;
-          case COLOR_PURPLE:
-            if (!this.master)
-              this.master = new PuppetMaster(this);
-            break;
-          case COLOR_BLUE:
-            if (!this.master)
-              this.master = new PortalMaster(this);
-            break;
           case COLOR_BROWN:
             let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
             let res = parsed && <ResourceConstant>parsed[2];
@@ -477,10 +474,12 @@ export class Order {
               this.delete();
             break;
           case COLOR_CYAN:
-            if (this.pos.roomName !== this.hive.roomName || !this.hive.cells.lab) {
+            if (!this.hive.cells.lab) {
               this.delete();
               break;
             }
+            this.hive.cells.lab.synthesizeRes = undefined;
+            this.hive.cells.lab.prod = undefined;
             if (this.ref.includes("produce")) {
               let final = <ReactionConstant>this.flag.name.split("_")[1];
               if (!final || !REACTION_MAP[final]) {
@@ -488,26 +487,41 @@ export class Order {
                 break;
               }
               this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
-              this.hive.cells.lab.synthesizeRes = undefined;
-              this.hive.cells.lab.prod = undefined;
             } else {
               this.hive.cells.lab.synthesizeTarget = undefined;
-              this.hive.cells.lab.synthesizeRes = undefined;
-              this.hive.cells.lab.prod = undefined;
               this.fixedName(prefix.haltlab + this.hive.roomName);
             }
             break;
           case COLOR_YELLOW:
-            if (this.hive.roomName !== this.pos.roomName)
-              this.delete();
-            else
-              this.fixedName(prefix.upgrade + this.hive.roomName);
+            this.fixedName(prefix.upgrade + this.hive.roomName);
             break;
           case COLOR_WHITE:
-            if (this.hive.roomName !== this.pos.roomName)
+            this.fixedName(prefix.build + this.hive.roomName);
+            break;
+          case COLOR_RED:
+            this.fixedName(prefix.nukes + this.hive.roomName);
+            if (this.ref === prefix.nukes + this.hive.roomName)
+              this.hive.cells.defense.updateNukes();
+            break;
+          case COLOR_ORANGE:
+            this.fixedName(prefix.terminal + this.hive.roomName);
+            break;
+        }
+        break;
+      case COLOR_GREY:
+        switch (this.secondaryColor) {
+          case COLOR_RED:
+            this.acted = false;
+            if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
               this.delete();
-            else
-              this.fixedName(prefix.build + this.hive.roomName)
+            break;
+          case COLOR_PURPLE:
+            if (!this.master)
+              this.master = new PuppetMaster(this);
+            break;
+          case COLOR_BLUE:
+            if (!this.master)
+              this.master = new PortalMaster(this);
             break;
         }
         break;
@@ -596,7 +610,7 @@ export class Order {
             break;
         }
         break;
-      case COLOR_GREY:
+      case COLOR_BLUE:
         switch (this.secondaryColor) {
           case COLOR_YELLOW:
             if (this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
@@ -612,6 +626,9 @@ export class Order {
               this.hive.cells.lab.synthesizeRes = undefined;
               this.hive.cells.lab.prod = undefined;
             }
+            break;
+          case COLOR_RED:
+            this.hive.cells.defense.updateNukes();
             break;
         }
         break;
@@ -634,15 +651,6 @@ export class Order {
             delete Apiary.planner.activePlanning[name];
         }
         break;
-      /*
-    case COLOR_ORANGE:
-      if (this.secondaryColor === COLOR_GREEN && this.master && this.pos.roomName !== this.hive.roomName) {
-        let master = <PickupMaster>this.master;
-        let ans = master.getTarget();
-        if (ans.target && ans.amount > 500)
-          ans.target.pos.createFlag(Math.min(Math.ceil(ans.amount / 3000), master.maxSpawns) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
-      }
-      */
     }
 
     if (this.master)

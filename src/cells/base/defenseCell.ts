@@ -54,7 +54,10 @@ export class DefenseCell extends Cell {
     });
     if (!this.nukes.length)
       this.timeToLand = Infinity;
-    this.getNukeDefMap();
+    if (Game.time !== this.time)
+      this.getNukeDefMap();
+    if (Game.flags[prefix.nukes + this.hive.roomName])
+      this.nukeCoverReady = true;
   }
 
   // mini roomPlanner
@@ -69,7 +72,7 @@ export class DefenseCell extends Cell {
         if (!map[p.x])
           map[p.x] = {};
         if (!map[p.x][p.y])
-          map[p.x][p.y] = 10000;
+          map[p.x][p.y] = 0;
         map[p.x][p.y] += 5000000;
       });
       map[pp.x][pp.y] += 10000000;
@@ -77,15 +80,30 @@ export class DefenseCell extends Cell {
 
     let ans: BuildProject[] = [];
     // todo?? save some of the extensions / not all spawns
+    let extraCovers: string[] = [];
+    let leaveOne = (ss: { [id: string]: Structure }) => {
+      let underStrike = _.filter(ss, s => map[s.pos.x] && map[s.pos.x][s.pos.y])
+      if (underStrike.length !== Object.keys(ss).length)
+        return;
+      let cover = underStrike.reduce((prev, curr) => map[curr.pos.x][curr.pos.y] < map[prev.pos.x][prev.pos.y] ? curr : prev);
+      extraCovers.push(cover.pos.x + "_" + cover.pos.y)
+    }
+
+    leaveOne(this.hive.cells.spawn.spawns)
+    if (this.hive.cells.lab)
+      leaveOne(this.hive.cells.lab.laboratories)
+
     for (let x in map)
       for (let y in map[x]) {
         let pos = new RoomPosition(+x, +y, this.hive.roomName);
         let structures = pos.lookFor(LOOK_STRUCTURES)
-        if (structures.filter(s => CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= 15000).length) {
+        if (structures.filter(s => extraCovers.includes(s.pos.x + "_" + s.pos.y)
+          || CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= map[x][y] / 100).length) {
           let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
+          let heal = map[x][y] + 10000;
           if (rampart)
-            energy = Math.max(map[x][y] - rampart.hits, 0) / 100;
+            energy = Math.max(heal - rampart.hits, 0) / 100;
           else {
             energy = map[x][y] / 100;
             if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
@@ -93,7 +111,7 @@ export class DefenseCell extends Cell {
             ans.push({
               pos: pos,
               sType: STRUCTURE_RAMPART,
-              targetHits: map[x][y],
+              targetHits: heal,
               energyCost: 1,
               type: "construction",
             });
@@ -101,7 +119,7 @@ export class DefenseCell extends Cell {
           ans.push({
             pos: pos,
             sType: STRUCTURE_RAMPART,
-            targetHits: map[x][y],
+            targetHits: heal,
             energyCost: Math.ceil(energy),
             type: "repair",
           });
@@ -109,7 +127,6 @@ export class DefenseCell extends Cell {
             this.nukeCoverReady = false;
         }
       }
-    this.nukeCoverReady = true;
     return ans;
   }
 
@@ -330,7 +347,7 @@ export class DefenseCell extends Cell {
             Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
         }
       });
-      if (!workingTower && !this.notDef(this.pos.roomName))
+      if (!workingTower && this.notDef(this.pos.roomName))
         this.setDefFlag(this.pos);
     } else {
       let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);

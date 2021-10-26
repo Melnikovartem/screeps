@@ -1,6 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { towerCoef } from "../../abstract/utils";
+// import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
 import { beeStates, roomStates } from "../../enums";
 
@@ -9,7 +9,7 @@ import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { Order } from "../../order";
 
-const BOOST_LVL = 1;
+const BOOST_LVL = 0;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -18,7 +18,8 @@ export class HordeMaster extends SwarmMaster {
   maxSpawns: number = 1;
   movePriority = <2>2;
   boosts: Boosts | undefined = [{ type: "rangedAttack", lvl: BOOST_LVL }, { type: "attack", lvl: BOOST_LVL }
-    , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL }];
+    , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL },
+  { type: "dismantle", lvl: 2 }, { type: "dismantle", lvl: 1 }, { type: "dismantle", lvl: 0 }];
   notify = false;
   holdPosition = false;
   setup = setups.knight.copy();
@@ -104,26 +105,25 @@ export class HordeMaster extends SwarmMaster {
       let info = Apiary.intel.getComplexStats(target).current;
       if (info.dmgClose)
         targetedRange = 3;
-      if (info.dmgClose >= beeStats.dmgClose)
+      if (info.dmgClose >= beeStats.dmgClose) {
         attackRange = 3;
-      else
+        loosingBattle = !!(info.dmgClose + info.dmgRange) && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
+      } else {
         attackRange = 1;
+        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
+      }
       if (info.dmgRange)
         targetedRange = 5;
-      if (beeStats.dmgClose || beeStats.dism)
-        loosingBattle = info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
-      else
-        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
       if (!info.heal && target.owner.username === "Awaii")
         loosingBattle = false; // not optimal code
-      if (target.owner.username === "Bulletproof")
-        loosingBattle = false; // the guy fucking crashed
-    } else if (target instanceof StructureTower) {
+      // loosingBattle = false; // the guy fucking crashed
+    }
+    /* else if (target instanceof StructureTower) {
       targetedRange = 20;
       loosingBattle = target.store.getUsedCapacity(RESOURCE_ENERGY) > bee.hitsMax / (TOWER_POWER_ATTACK * towerCoef(target, bee)) * 10 / 2; // / 2 just beacause
       if (!loosingBattle)
         targetedRange = 3;
-    }
+    } */
 
     if (!loosingBattle && (bee.hits > bee.hitsMax * 0.5 || !beeStats.heal))
       targetedRange -= 2;
@@ -133,7 +133,7 @@ export class HordeMaster extends SwarmMaster {
 
     if (rangeToTarget < targetedRange)
       bee.flee(target, this.order.pos, opts);
-    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget < attackRange && !loosingBattle && bee.hits === bee.hitsMax))
+    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget > attackRange && !loosingBattle))
       bee.goTo(target, opts);
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
