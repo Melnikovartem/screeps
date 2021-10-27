@@ -29,12 +29,13 @@ interface RoomInfo {
 };
 
 export interface CreepBattleInfo {
-  dmgClose: number,
-  dmgRange: number,
-  dism: number,
-  heal: number,
-  hits: number,
-  resist: number,
+  dmgClose: number, // in natral hits
+  dmgRange: number, // in natral hits
+  dism: number, // in natral hits
+  heal: number, // in natral hits
+  hits: number, // in natral hits
+  resist: number, // in natral hits
+  move: number, // pertick on plain
 };
 
 export interface CreepAllBattleInfo { max: CreepBattleInfo, current: CreepBattleInfo };
@@ -103,6 +104,7 @@ export class Intel {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
@@ -110,6 +112,7 @@ export class Intel {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }
     }
 
@@ -365,6 +368,7 @@ export class Intel {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
@@ -372,6 +376,7 @@ export class Intel {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }
     }
 
@@ -412,6 +417,8 @@ export class Intel {
           ans.max.resist += stat;
           if (b.hits)
             ans.current.resist += stat;
+          break;
+        case MOVE:
       }
     });
     let rounding = (x: number) => Math.ceil(x);

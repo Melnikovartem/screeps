@@ -86,18 +86,17 @@ export class ManagerMaster extends Master {
 
 
     if (this.checkBees(true)) {
-      let order = {
-        setup: setups.queen,
-        priority: <0>0,
-      };
-
+      let setup = setups.queen;
       let lvl = this.hive.room.controller!.level;
       // some cool function i came up with. It works utill lvl 8 though
-      order.setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
+      setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
       if (this.hive.state === hiveStates.lowenergy)
-        order.setup.patternLimit = Math.ceil(order.setup.patternLimit / 2);
+        setup.patternLimit = Math.ceil(setup.patternLimit / 2);
 
-      this.wish(order);
+      this.wish({
+        setup: setup,
+        priority: <0>0,
+      });
     }
   }
 

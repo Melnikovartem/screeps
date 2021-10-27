@@ -58,6 +58,7 @@ export abstract class SquadMaster extends SwarmMaster {
       heal: 0,
       hits: 0,
       resist: 0,
+      move: 0,
     }, current: {
       dmgClose: 0,
       dmgRange: 0,
@@ -65,6 +66,7 @@ export abstract class SquadMaster extends SwarmMaster {
       heal: 0,
       hits: 0,
       resist: 0,
+      move: 0,
     }
   };
 
@@ -102,6 +104,7 @@ export abstract class SquadMaster extends SwarmMaster {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }, current: {
         dmgClose: 0,
         dmgRange: 0,
@@ -109,6 +112,7 @@ export abstract class SquadMaster extends SwarmMaster {
         heal: 0,
         hits: 0,
         resist: 0,
+        move: 0,
       }
     };
 

@@ -10,7 +10,6 @@ import { profile } from "../../profiler/decorator";
 export class UpgraderMaster extends Master {
   cell: UpgradeCell;
   patternPerBee = 0;
-  fastMode = false;
   fastModePossible = false;
 
   constructor(upgradeCell: UpgradeCell) {
@@ -22,14 +21,12 @@ export class UpgraderMaster extends Master {
     this.fastModePossible = !!(this.cell.link && Object.keys(this.cell.sCell.links).length || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4);
 
     if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
-      this.fastMode = false;
       this.boosts = undefined;
 
       this.targetBeeCount = 1;
       this.patternPerBee = 1;
       return;
     }
-    this.fastMode = true;
     this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
@@ -56,9 +53,11 @@ export class UpgraderMaster extends Master {
     super.update();
 
     if (this.checkBeesWithRecalc()) {
-      let upgrader = setups.upgrader.manual.copy();
+      let upgrader;
       if (this.fastModePossible)
         upgrader = setups.upgrader.fast.copy();
+      else
+        upgrader = setups.upgrader.manual.copy();
       upgrader.patternLimit = this.patternPerBee;
       this.wish({
         setup: upgrader,

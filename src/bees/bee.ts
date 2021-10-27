@@ -336,10 +336,9 @@ export class Bee {
         _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
           if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
             return;
-          let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 1.5 : 1;
-          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 0x20 * coef * (fleeDist + 1 - p.getRangeTo(c))))
+          let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
+          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)))));
         });
-        matrix.set(c.pos.x, c.pos.y, 0xff);
       });
       return matrix;
     }

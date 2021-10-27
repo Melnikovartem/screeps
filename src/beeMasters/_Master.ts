@@ -61,7 +61,8 @@ export abstract class Master {
       return false;
     if (!spawnExtreme && this.hive.state !== hiveStates.economy)
       return false;
-    if (this.hive.cells.defense.timeToLand < spawnCycle / 2 || this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < spawnCycle / 2)
+    if (this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < CREEP_SPAWN_TIME * MAX_CREEP_SIZE * 2
+      || this.hive.cells.defense.timeToLand < spawnCycle / 2)
       return false;
     return this.targetBeeCount > this.beesAmount || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle);
   }
@@ -114,9 +115,9 @@ export abstract class Master {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
       if (fleeDist === 0)
         return false;
-      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1)
+      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
         bee.targetPosition = bee.pos;
-      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
+      else if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
         bee.flee(fleeTo || this.hive);
         return true;
       }

@@ -47,7 +47,7 @@ export class BootstrapMaster extends Master {
       if (cell.resourceType !== RESOURCE_ENERGY || cell.restTime === Infinity)
         return;
       let roadTime = cell.restTime - 2;
-      let cycleWithoutEnergy = roadTime * 2 + this.patternCount;
+      let cycleWithoutEnergy = roadTime * 2 + 10;
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
       let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
@@ -77,7 +77,7 @@ export class BootstrapMaster extends Master {
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
-    if (this.hive.phase > 0 || this.hive.room.terminal)
+    if (this.hive.phase > 0)
       this.targetBeeCount = Math.min(this.targetBeeCount, 2);
     /*
       if (this.hive.bassboost)

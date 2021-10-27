@@ -28,13 +28,6 @@ export const WALL_HEALTH = 10000;
 // oh no i need to def
 const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = []//STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
 
-const SPECIAL_STRUCTURE: { [key in StructureConstant]?: { [level: number]: { amount: number, heal: number } } } = {
-  [STRUCTURE_ROAD]: { 1: { amount: 0, heal: ROAD_HITS / 2 }, 2: { amount: 0, heal: ROAD_HITS / 2 }, 3: { amount: 2500, heal: ROAD_HITS / 2 } },
-  [STRUCTURE_CONTAINER]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 5, heal: CONTAINER_HITS / 2 } },
-  [STRUCTURE_WALL]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } },
-  [STRUCTURE_RAMPART]: { 1: { amount: 0, heal: 0 }, 2: { amount: 0, heal: 0 }, 3: { amount: 0, heal: 0 }, 4: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 5: { amount: 2500, heal: WALL_HEALTH * 0.2 }, 6: { amount: 2500, heal: WALL_HEALTH }, 7: { amount: 2500, heal: WALL_HEALTH }, 8: { amount: 2500, heal: WALL_HEALTH } }
-}
-
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
@@ -235,6 +228,9 @@ export class RoomPlanner {
     });
 
     _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
+
+    let customBuildings = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_RED);
+    _.forEach(customBuildings, f => (f.name in CONSTRUCTION_COST) && this.addToPlan(f.pos, f.pos.roomName, <BuildableStructureConstant>f.name), true);
 
     jobs.push({
       context: "outer ring",
@@ -444,10 +440,7 @@ export class RoomPlanner {
     }
 
     if (warchance)
-      jobs.push({
-        context: "adding walls adding jobs",
-        func: () => this.addWalls(anchor, [4, 2]),
-      });
+      this.addWalls(anchor, [4, 2])
   }
 
   addCustomRoad(anchor: RoomPosition, pos: RoomPosition) {
@@ -539,36 +532,37 @@ export class RoomPlanner {
   }
 
   addWalls(anchor: RoomPosition, ranges: number[], ramparts = true) {
-    let plan = this.activePlanning[anchor.roomName].plan;
-    let xx: number[] = [];
-    let yy: number[] = [];
-    for (let x in plan)
-      for (let y in plan[x])
-        switch (plan[x][y].s) {
-          case STRUCTURE_WALL:
-          case STRUCTURE_RAMPART:
-          case STRUCTURE_ROAD:
-          case STRUCTURE_LINK:
-          case STRUCTURE_CONTAINER:
-          case STRUCTURE_EXTRACTOR:
-          case STRUCTURE_OBSERVER:
-          case STRUCTURE_WALL:
-          case STRUCTURE_RAMPART:
-          case undefined:
-          case null:
-            break;
-          default:
-            if (!xx.includes(+x))
-              xx.push(+x);
-            if (!yy.includes(+y))
-              yy.push(+y);
-        }
-    ranges.sort((a, b) => b - a);
-    let terrain = Game.map.getRoomTerrain(anchor.roomName);
     ranges.forEach(range => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
         context: "adding walls in range " + range,
         func: () => {
+          let plan = this.activePlanning[anchor.roomName].plan;
+          let xx: number[] = [];
+          let yy: number[] = [];
+          for (let x in plan)
+            for (let y in plan[x])
+              switch (plan[x][y].s) {
+                case STRUCTURE_WALL:
+                case STRUCTURE_RAMPART:
+                case STRUCTURE_ROAD:
+                case STRUCTURE_LINK:
+                case STRUCTURE_CONTAINER:
+                case STRUCTURE_EXTRACTOR:
+                case STRUCTURE_OBSERVER:
+                case STRUCTURE_WALL:
+                case STRUCTURE_RAMPART:
+                case undefined:
+                case null:
+                  break;
+                default:
+                  if (!xx.includes(+x))
+                    xx.push(+x);
+                  if (!yy.includes(+y))
+                    yy.push(+y);
+              }
+          ranges.sort((a, b) => b - a);
+          let terrain = Game.map.getRoomTerrain(anchor.roomName);
+
           let addedWalls: Pos[] = [];
           let minx = Math.max(Math.min(...xx) - range, 2);
           let maxx = Math.min(Math.max(...xx) + range, 47);
@@ -642,11 +636,11 @@ export class RoomPlanner {
               addedWalls.push({ x: x_x, y: y_y });
           };
 
-          for (let x = minx; x < maxx; ++x) {
+          for (let x = minx; x <= maxx; ++x) {
             addWall(x, miny, ramparts && x % 3 === 0);
             addWall(x, maxy, ramparts && x % 3 === 0);
           }
-          for (let y = miny; y < maxy; ++y) {
+          for (let y = miny; y <= maxy; ++y) {
             addWall(minx, y, ramparts && y % 3 === 0);
             addWall(maxx, y, ramparts && y % 3 === 0);
           }
@@ -687,11 +681,14 @@ export class RoomPlanner {
       }
 
       let plan = this.activePlanning[anchor.roomName].plan;
-      if (newPos && (p.x !== newPos.x || p.y !== newPos.y))
+      if (newPos && (p.x !== newPos.x || p.y !== newPos.y)) {
+        if (pos.x === 37 && pos.y === 45)
+          console.log(JSON.stringify(newPos))
         if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
           this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
         else if (plan[p.x] && plan[p.x][p.y])
           this.activePlanning[anchor.roomName].plan[p.x][p.y].r = false;
+      }
     });
   }
 
@@ -913,12 +910,21 @@ export class RoomPlanner {
     let controller: StructureController | { level: number } | undefined = Game.rooms[structure.pos.roomName] && Game.rooms[structure.pos.roomName].controller;
     if (!controller)
       controller = { level: 0 };
-    let specialCase = SPECIAL_STRUCTURE[structure.structureType];
-    if (specialCase && specialCase[controller.level])
-      return specialCase[controller.level]
-
+    let hitsMax = structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax;
     let amount = CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType][controller.level];
-    return { amount: amount ? amount : 0, heal: structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax };
+    switch (structure.structureType) {
+      case STRUCTURE_RAMPART:
+      case STRUCTURE_WALL:
+        hitsMax = WALL_HEALTH;
+        break;
+      case STRUCTURE_CONTAINER:
+        if (controller.level > 0 && controller.level < 3)
+          amount = 0;
+        break;
+      default:
+    }
+
+    return { amount: amount ? amount : 0, heal: hitsMax };
   }
 
   checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {

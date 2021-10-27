@@ -12,8 +12,11 @@ export class ClaimerMaster extends SwarmMaster {
     super.update();
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
+      let setup = setups.claimer.copy();
+      if (this.order.pos.getRoomRangeTo(this.hive, true) >= 5)
+        setup.fixed = [TOUGH, TOUGH]
       this.wish({
-        setup: setups.claimer,
+        setup: setup,
         priority: 6,
       });
     }
@@ -35,7 +38,7 @@ export class ClaimerMaster extends SwarmMaster {
         } else
           this.order.delete();
       }
-      this.checkFlee(bee);
+      this.checkFlee(bee, this.order.pos);
     });
   }
 }

@@ -41,10 +41,10 @@ export class Order {
   constructor(flag: Flag) {
     this.flag = flag;
 
-    if (this.memory.hive && Apiary.hives[this.flag.memory.hive]) {
+    if (this.memory.hive) {
       this.hive = Apiary.hives[this.memory.hive];
       if (!this.hive)
-        this.delete(true);
+        return;
     } else {
       let filter: (h: Hive) => boolean = h => h.phase >= 2;;
       switch (this.color) {
@@ -53,7 +53,7 @@ export class Order {
           break;
         case COLOR_PURPLE:
           if (this.secondaryColor === COLOR_WHITE)
-            filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy;
+            filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy && h.phase > 0;
           if (this.secondaryColor !== COLOR_PURPLE)
             break;
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY: case COLOR_BLUE:
@@ -302,12 +302,12 @@ export class Order {
       case COLOR_WHITE:
         if (this.secondaryColor !== COLOR_PURPLE && this.secondaryColor !== COLOR_RED)
           _.forEach(Game.flags, f => {
-            if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
+            if (f.color === COLOR_BLUE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
               Apiary.orders[f.name].delete();
           });
 
         switch (this.secondaryColor) {
-          case COLOR_WHITE:
+          case COLOR_BLUE:
             let baseRotation: ExitConstant = BOTTOM;
             if (this.ref.includes("right"))
               baseRotation = RIGHT;
@@ -526,7 +526,7 @@ export class Order {
         }
         break;
       case COLOR_YELLOW:
-        if (this.pos.getRoomRangeTo(this.hive) > 5) {
+        if (this.pos.getRoomRangeTo(this.hive) >= 5) {
           this.delete();
           break;
         }
@@ -684,8 +684,13 @@ export class Order {
 
   static checkFlags() {
     for (const name in Game.flags)
-      if (!Apiary.orders[name])
-        Apiary.orders[name] = new this(Game.flags[name]);
+      if (!Apiary.orders[name]) {
+        let order = new this(Game.flags[name]);
+        if (order.hive)
+          Apiary.orders[name] = order;
+        else
+          Game.flags[name].remove();
+      }
   }
 
   get print(): string {

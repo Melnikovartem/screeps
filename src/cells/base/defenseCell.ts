@@ -3,10 +3,14 @@ import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
 
 import { makeId, towerCoef } from "../../abstract/utils";
 import { prefix, hiveStates } from "../../enums";
+import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
 import type { Order } from "../../order";
+
+
+const PADDING_NUKES_RAMPS = 20000;
 
 @profile
 export class DefenseCell extends Cell {
@@ -56,6 +60,8 @@ export class DefenseCell extends Cell {
       this.timeToLand = Infinity;
     if (Game.time !== this.time)
       this.getNukeDefMap();
+    else if (this.nukes.length)
+      this.nukeCoverReady = false;
     if (Game.flags[prefix.nukes + this.hive.roomName])
       this.nukeCoverReady = true;
   }
@@ -89,19 +95,39 @@ export class DefenseCell extends Cell {
       extraCovers.push(cover.pos.x + "_" + cover.pos.y)
     }
 
-    leaveOne(this.hive.cells.spawn.spawns)
+    let coef = 1;
+    let storage = this.hive.cells.storage;
+    if (storage) {
+      let checkMineralLvl = (lvl: 0 | 1 | 2) => storage!.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
+      if (checkMineralLvl(2))
+        coef = 2;
+      else if (checkMineralLvl(1))
+        coef = 1.8;
+      else if (checkMineralLvl(0))
+        coef = 1.5;
+    }
+
+    leaveOne(this.hive.cells.spawn.spawns);
     if (this.hive.cells.lab)
-      leaveOne(this.hive.cells.lab.laboratories)
+      leaveOne(this.hive.cells.lab.laboratories);
 
     for (let x in map)
       for (let y in map[x]) {
         let pos = new RoomPosition(+x, +y, this.hive.roomName);
         let structures = pos.lookFor(LOOK_STRUCTURES)
-        if (structures.filter(s => extraCovers.includes(s.pos.x + "_" + s.pos.y)
-          || CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType] >= map[x][y] / 100).length) {
+        if (structures.filter(s => {
+          if (extraCovers.includes(s.pos.x + "_" + s.pos.y))
+            return true;
+          let cost = CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType];
+          let rampart = s.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART)[0];
+          let toDo = map[x][y];
+          if (rampart)
+            toDo -= rampart.hits;
+          return cost >= toDo / (100 * coef);
+        }).length) {
           let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
-          let heal = map[x][y] + 10000;
+          let heal = map[x][y] + PADDING_NUKES_RAMPS;
           if (rampart)
             energy = Math.max(heal - rampart.hits, 0) / 100;
           else {
@@ -116,7 +142,7 @@ export class DefenseCell extends Cell {
               type: "construction",
             });
           }
-          if (energy > 0) {
+          if (energy >= PADDING_NUKES_RAMPS / 100 / 2) {
             ans.push({
               pos: pos,
               sType: STRUCTURE_RAMPART,
@@ -144,13 +170,12 @@ export class DefenseCell extends Cell {
   update() {
     super.update(["towers"]);
     this.dmgAtPos = {};
-    if (Game.time % 500 === 333 || this.timeToLand-- < 0 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady))
+    if (Game.time % 500 === 333 || (this.timeToLand--) < 2 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady))
       this.updateNukes();
 
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady
-      && (!this.hive.cells.storage || this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY] / 2));
-
+      && (!this.hive.cells.storage || this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY] / 8));
 
 
     let contr = this.hive.room.controller!;
@@ -296,7 +321,8 @@ export class DefenseCell extends Cell {
   }
 
   run() {
-    if (this.hive.state === hiveStates.battle) {
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    if (roomInfo.enemies.length) {
       if (this.isBreached && this.hive.room.controller!.level >= 4) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)

@@ -1,6 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
+import { signText } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 
@@ -21,8 +22,10 @@ export class DowngradeMaster extends SwarmMaster {
     if (room && room.controller && room.controller.upgradeBlocked)
       this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + room.controller.upgradeBlocked;
     if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
+      let setup = setups.claimer.copy();
+      setup.patternLimit = Infinity;
       this.wish({
-        setup: setups.claimer,
+        setup: setup,
         priority: 9,
       });
     }
@@ -38,11 +41,13 @@ export class DowngradeMaster extends SwarmMaster {
         let room = Game.rooms[this.order.pos.roomName];
         if (room && room.controller && roomInfo.currentOwner) {
           let ans = bee.attackController(room.controller);
-          if (ans === OK && Memory.settings.framerate)
+          if (ans === OK) {
+            bee.creep.signController(room.controller, signText.other);
             bee.creep.say("💥");
+          }
         }
       }
-      this.checkFlee(bee);
+      this.checkFlee(bee, this.order.pos);
     });
   }
 }

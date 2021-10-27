@@ -146,6 +146,24 @@ export class CustomConsole {
     return `BUILDER SPAWNED @ ${hiveName}`;
   }
 
+  spawnUpgrader(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    if (!hive.cells.upgrade)
+      return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
+    let upgrader;
+    if (hive.cells.upgrade.master.fastModePossible)
+      upgrader = setups.upgrader.fast.copy();
+    else
+      upgrader = setups.upgrader.manual.copy();
+    upgrader.patternLimit = patternLimit;
+    hive.cells.upgrade.master.wish({ setup: upgrader, priority: 1 });
+    return `BUILDER SPAWNED @ ${hiveName}`;
+  }
+
   // some hand used functions
   terminal(hiveName: string = this.lastActionRoomName, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
     hiveName = this.format(hiveName);
@@ -476,7 +494,9 @@ export class CustomConsole {
         text = textAnnex;
       let ans = creep.signController(controller, text);
       if (ans === OK)
-        sgn.push(controller.pos.roomName + " " + text)
+        sgn.push(controller.pos.roomName + " " + text);
+      else
+        console.log(`ERROR @ ${this.formatRoom(controller.pos.roomName)}: ${ans}`);
     }
     return `SIGNED ${sgn.length} controllers${sgn.length ? "\n" : ""}` + sgn.join("\n");
   }

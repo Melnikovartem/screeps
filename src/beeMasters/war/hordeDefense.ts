@@ -26,7 +26,7 @@ export class HordeDefenseMaster extends HordeMaster {
       return;
     }
 
-    if (shouldSpawn && this.checkBees(this.hive.state !== hiveStates.battle)) {
+    if (shouldSpawn && this.checkBees(this.hive.state !== hiveStates.battle || this.order.pos.roomName === this.hive.roomName)) {
       let order = {
         setup: setups.defender.normal,
         priority: <1 | 4 | 8>1,

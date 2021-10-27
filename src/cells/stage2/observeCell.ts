@@ -65,7 +65,7 @@ export class ObserveCell extends Cell {
     if (!room)
       return;
 
-    if (this.sCell.getUsedCapacity(RESOURCE_ENERGY) < this.hive.resTarget[RESOURCE_ENERGY]!)
+    if (this.hive.resState[RESOURCE_ENERGY] < 0)
       return;
 
     let roomInfo = Apiary.intel.getInfo(this.prevRoom, 25);

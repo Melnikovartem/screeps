@@ -40,7 +40,9 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
-    else if (this.order.ref.includes("keep"))
+    else if (this.order.ref.includes("destroyer"))
+      this.setup = setups.defender.destroyer.copy();
+    if (this.order.ref.includes("keep"))
       this.maxSpawns = Infinity;
   }
 
@@ -136,7 +138,7 @@ export class HordeMaster extends SwarmMaster {
       return OK;
 
     if (rangeToTarget < targetedRange)
-      bee.flee(this.hive, opts);
+      bee.flee(loosingBattle ? this.hive : this.order, opts);
     else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget > attackRange && !loosingBattle))
       bee.goTo(target, opts);
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)

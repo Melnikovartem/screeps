@@ -209,20 +209,28 @@ export class Hive {
       this.wallsHealth = WALL_HEALTH;
       this.wallsHealthMax = WALL_HEALTH;
       this.cells.dev = new DevelopmentCell(this);
-      if (Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road)
-        _.forEach(Memory.cache.roomPlanner[roomName].road!.pos, r => {
-          let pos = new RoomPosition(r.x, r.y, roomName);
-          if (pos.getRangeTo(this.getPos("center")) <= 6)
-            return;
-          let structures = pos.lookFor(LOOK_STRUCTURES);
-          if (structures.filter(s => s.structureType === STRUCTURE_ROAD).length)
-            return;
-          if (structures.length)
-            structures[0].destroy();
-          if (pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
-            return;
-          pos.createConstructionSite(STRUCTURE_ROAD);
+      let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road
+      if (roads) {
+        _.forEach(this.room.find(FIND_SOURCES), s => {
+          let route = s.pos.findPathTo(this, {
+            maxRooms: 1,
+            plainCost: 2,
+            ignoreRoads: true,
+            ignoreCreeps: true,
+            costCallback: (roomName, matrix) => {
+              if (roomName !== this.roomName)
+                return;
+              _.forEach(roads!.pos, p => {
+                matrix.set(p.x, p.y, 1);
+              });
+            }
+          });
+          _.forEach(route, r => {
+            if (roads!.pos.filter(p => p.x === r.x && p.y == r.y).length)
+              new RoomPosition(r.x, r.y, this.roomName).createConstructionSite(STRUCTURE_ROAD);
+          });
         });
+      }
     }
 
     //look for new structures for those wich need them
@@ -540,14 +548,14 @@ export class Hive {
       safeWrap(() => cell.update(), cell.print + " update");
     });
 
-    if (Game.time % 40 === 5 || this.shouldRecalc || this.state >= hiveStates.nukealert) {
+    if (Game.time % 100 === 5 || this.shouldRecalc || this.state === hiveStates.battle) {
       this.updateAnnexes();
       this.updateStructures();
       if (this.shouldRecalc > 2)
         this.markResources();
       this.shouldRecalc = 0;
     }
-    if (Game.time % 100 === 29 || this.state === hiveStates.nospawn)
+    if (Game.time % 500 === 29 || this.state === hiveStates.nospawn)
       this.updateCellData();
     if (Apiary.logger)
       Apiary.logger.hiveLog(this);
