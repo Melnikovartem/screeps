@@ -357,7 +357,7 @@ export class BootstrapMaster extends Master {
           bee.target = target.id;
           break;
       }
-      this.checkFlee(bee, this.hive);
+      this.checkFlee(bee);
     });
     this.count = countCurrent;
     this.containerTargeting = containerTargetingCur;

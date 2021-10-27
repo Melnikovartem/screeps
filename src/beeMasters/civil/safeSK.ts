@@ -47,7 +47,7 @@ export class SKMaster extends SwarmMaster {
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
       bee.rangedAttack(target, { movingTarget: true });
     if (shouldFlee)
-      return bee.flee(target, this.hive);
+      return bee.flee(this.hive);
     return OK;
   }
 

@@ -45,9 +45,7 @@ export class HordeDefenseMaster extends HordeMaster {
 
         let healMax = 5;
         let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
-        if (noFear)
-          healMax = 2;
-        else
+        if (!noFear)
           desiredTTK = 20;
         healNeeded = Math.min(healMax, healNeeded);
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
@@ -63,8 +61,15 @@ export class HordeDefenseMaster extends HordeMaster {
             order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
         }
 
-        if (!noFear && order.setup.patternLimit * RANGED_ATTACK_POWER <= stats.max.heal)
-          return;
+        if (!noFear) {
+          let body = order.setup.getBody(this.hive.room.energyCapacityAvailable).body;
+          let enemyTTK = stats.max.hits / (body.filter(b => b === RANGED_ATTACK).length * RANGED_ATTACK_POWER - stats.max.heal);
+          let myTTK = body.length * 100 / (stats.max.dmgRange - body.filter(b => b === HEAL).length * HEAL_POWER);
+          let loosingBattle = (enemyTTK < 0 || enemyTTK > myTTK) && myTTK !== Infinity;
+          if (loosingBattle)
+            return;
+        }
+
       } else {
         order.priority = 8;
         order.setup = setups.defender.destroyer;

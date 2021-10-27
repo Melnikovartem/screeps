@@ -115,7 +115,7 @@ export class PortalMaster extends SwarmMaster {
           bee.goTo(pos);
           break;
       }
-      this.checkFlee(bee, this.hive);
+      this.checkFlee(bee);
     });
   }
 }

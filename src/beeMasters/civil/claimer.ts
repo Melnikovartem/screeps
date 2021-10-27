@@ -22,7 +22,7 @@ export class ClaimerMaster extends SwarmMaster {
   run() {
     _.forEach(this.activeBees, bee => {
       if (bee.pos.roomName !== this.order.pos.roomName) {
-        bee.goTo(this.order.pos);
+        bee.goTo(this.order.pos, { useFindRoute: true });
       } else {
         let controller = Game.rooms[this.order.pos.roomName].controller;
         if (controller && !controller.owner) {
@@ -35,7 +35,7 @@ export class ClaimerMaster extends SwarmMaster {
         } else
           this.order.delete();
       }
-      this.checkFlee(bee, this.hive);
+      this.checkFlee(bee);
     });
   }
 }

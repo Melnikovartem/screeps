@@ -42,7 +42,7 @@ export class DowngradeMaster extends SwarmMaster {
             bee.creep.say("💥");
         }
       }
-      this.checkFlee(bee, this.hive);
+      this.checkFlee(bee);
     });
   }
 }

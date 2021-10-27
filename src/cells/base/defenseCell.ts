@@ -61,7 +61,7 @@ export class DefenseCell extends Cell {
   }
 
   // mini roomPlanner
-  getNukeDefMap() {
+  getNukeDefMap(oneAtATime = false) {
     this.nukeCoverReady = true;
     if (!this.nukes.length)
       return [];
@@ -116,17 +116,28 @@ export class DefenseCell extends Cell {
               type: "construction",
             });
           }
-          ans.push({
-            pos: pos,
-            sType: STRUCTURE_RAMPART,
-            targetHits: heal,
-            energyCost: Math.ceil(energy),
-            type: "repair",
-          });
-          if (energy > 0)
+          if (energy > 0) {
+            ans.push({
+              pos: pos,
+              sType: STRUCTURE_RAMPART,
+              targetHits: heal,
+              energyCost: Math.ceil(energy),
+              type: "repair",
+            });
             this.nukeCoverReady = false;
+          }
         }
       }
+    if (oneAtATime) {
+      let theOne = ans.reduce((prev, curr) => {
+        let ans = prev.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_TERMINAL).length -
+          curr.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_TERMINAL).length;
+        if (ans === 0)
+          ans = map[curr.pos.x][curr.pos.y] - map[prev.pos.x][prev.pos.y]
+        return ans < 0 ? curr : prev;
+      });
+      return [theOne];
+    }
     return ans;
   }
 
@@ -286,7 +297,7 @@ export class DefenseCell extends Cell {
 
   run() {
     if (this.hive.state === hiveStates.battle) {
-      if (this.isBreached) {
+      if (this.isBreached && this.hive.room.controller!.level >= 4) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
           contr.activateSafeMode(); // red button

@@ -410,7 +410,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     }
     if (enemy && this.stats.current.heal && this.canBeOutDmged(bee.pos)) {
-      bee.flee(enemy, this.order, opts);
+      bee.flee(this.hive, opts);
     } else {
       bee.goTo(moveTarget, opts);
       if (bee.pos.isNearTo(moveTarget) && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {

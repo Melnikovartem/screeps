@@ -52,7 +52,8 @@ export class MinerMaster extends Master {
 
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
 
-    if (this.checkBees(this.cell.resourceType === RESOURCE_ENERGY) && (roomInfo.dangerlvlmax < 3 || this.cell.pos.roomName === this.hive.pos.roomName) && this.cell.operational) {
+    if (this.checkBees(this.cell.resourceType === RESOURCE_ENERGY) && (roomInfo.dangerlvlmax < 3 || this.cell.pos.roomName === this.hive.pos.roomName)
+      && this.cell.operational && (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username)) {
       let order = {
         setup: setups.miner.energy,
         priority: <2 | 5 | 6>2,
@@ -69,13 +70,14 @@ export class MinerMaster extends Master {
   }
 
   run() {
-    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
+    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, Infinity);
     let sourceOff = !this.cell.operational
-      || this.cell.resource instanceof Source && this.cell.resource.energy === 0
-      || this.cell.extractor && this.cell.extractor.cooldown > 0
-      || roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username
-      || this.cell.container && !this.cell.link && !this.cell.container.store.getFreeCapacity(this.cell.resourceType)
-      || this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType);
+      || (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
+      || (this.cell.extractor && this.cell.extractor.cooldown > 0)
+      || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
+      || (this.cell.container && !this.cell.link && !this.cell.container.store.getFreeCapacity(this.cell.resourceType))
+      || (this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType));
+
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting)
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK) {

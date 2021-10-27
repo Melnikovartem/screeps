@@ -757,6 +757,8 @@ export class RoomPlanner {
     if (sType === STRUCTURE_RAMPART)
       plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
     else if (sType === undefined && force) {
+      if (plan[pos.x][pos.y].s)
+        placed[plan[pos.x][pos.y].s!]!--;
       plan[pos.x][pos.y] = { s: undefined, r: false };
     } else if (plan[pos.x][pos.y].s === undefined) {
       if (sType) {

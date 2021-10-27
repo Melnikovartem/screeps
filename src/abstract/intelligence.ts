@@ -183,7 +183,13 @@ export class Intel {
       lag = Math.max(2, lag);
     if (roomInfo.lastUpdated + lag >= Game.time) {
       if (lag > 0)
-        roomInfo.enemies = roomInfo.enemies.filter(e => Game.getObjectById(e.object.id));
+        roomInfo.enemies = <Enemy[]>_.compact(roomInfo.enemies.map(e => {
+          let copy = <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
+          if (!copy)
+            return copy;
+          e.object = copy;
+          return e;
+        }));
       return roomInfo;
     }
 
@@ -268,9 +274,7 @@ export class Intel {
           if (PEACE_PACKS.includes(c.owner.username)) {
             dangerlvl = 0;
             return;
-          } else if (c.owner.username === "Bulletproof")
-            dangerlvl = 3;
-          else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
+          } else if (NON_AGRESSION_PACKS.includes(c.owner.username) && !Apiary.hives[room.name])
             dangerlvl = 2;
       }
       roomInfo.enemies.push({

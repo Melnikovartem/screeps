@@ -148,7 +148,7 @@ export class SiegeMaster extends Master {
         if (findRamp(bee.pos))
           bee.targetPosition = undefined;
         else
-          bee.flee(target, this.cell.pos, opts);
+          bee.flee(this.cell.pos, opts);
     }
     return OK;
   }

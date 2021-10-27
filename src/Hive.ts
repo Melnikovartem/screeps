@@ -394,6 +394,8 @@ export class Hive {
               && s.hits < s.hitsMax)[0];
           break;
       }
+      if (target && target.pos.roomName !== this.roomName && !Apiary.intel.getInfo(target.pos.roomName, 10).safePlace)
+        target = undefined;
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
           if (projects[k].pos.x == proj.pos.x && projects[k].pos.y == proj.pos.y) {
@@ -480,7 +482,7 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         break;
       case hiveStates.nukealert:
-        addCC(this.cells.defense.getNukeDefMap());
+        addCC(this.cells.defense.getNukeDefMap(true));
         break;
       case hiveStates.nospawn:
         addCC(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));

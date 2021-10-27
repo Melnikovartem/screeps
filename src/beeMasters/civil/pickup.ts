@@ -117,7 +117,7 @@ export class PickupMaster extends SwarmMaster {
             bee.state = beeStates.chill;
           break;
       }
-      this.checkFlee(bee, this.hive);
+      this.checkFlee(bee);
     });
   }
 }

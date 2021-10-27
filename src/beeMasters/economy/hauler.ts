@@ -122,7 +122,7 @@ export class HaulerMaster extends Master {
           res = this.targetMap[bee.target]!.resource;
           let overproduction;
           if (target && bee.pos.getRangeTo(target) <= 2) {
-            overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2).filter(r => r.resourceType === res)[0];
+            overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2)[0]; //.filter(r => r.resourceType === res)
             // overproduction or energy from SK defenders
             if (overproduction)
               bee.pickup(overproduction);

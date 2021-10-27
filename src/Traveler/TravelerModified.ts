@@ -80,16 +80,21 @@ export class Traveler {
       options.ignoreCreeps = false;
       options.freshMatrix = true;
       delete travelData.path;
-      if (state.stuckCount >= 15 && !options.roomCallback) {
+      if (state.stuckCount >= options.stuckValue * 2)
         options.roomCallback = (roomName, matrix) => {
           let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
           _.forEach(enemies, c => {
-            _.forEach(c.pos.getOpenPositions(true, 4), p => matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), (5 - p.getRangeTo(c)) * 0x20)));
-            matrix.set(c.pos.x, c.pos.y, 0xff);
+            let fleeDist = 0;
+            if (c instanceof Creep)
+              fleeDist = Apiary.intel.getFleeDist(c);
+            _.forEach(c.pos.getOpenPositions(true, fleeDist + 1), p => {
+              if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+                return;
+              matrix.set(p.x, p.y, 0xff)
+            });
           });
           return matrix;
         }
-      }
     }
 
     // TODO:handle case where creep moved by some other function, but destination is still the same
@@ -414,6 +419,8 @@ export class Traveler {
         }
 
         let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+        if (["E12N46", "E12N45", "E11N44"].includes(roomName))
+          return 0;
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
           case roomStates.reservedByMe:

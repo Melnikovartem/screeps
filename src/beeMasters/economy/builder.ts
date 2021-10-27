@@ -29,8 +29,8 @@ export class BuilderMaster extends Master {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
-      _.forEach(this.activeBees, b => {
-        if (!b.boosted && b.ticksToLive > 1350)
+      _.forEach(this.bees, b => {
+        if (!b.boosted && b.ticksToLive >= 1200)
           b.state = beeStates.boosting;
       });
       if (this.hive.state === hiveStates.battle && this.hive.sumCost > 30000)
@@ -131,6 +131,10 @@ export class BuilderMaster extends Master {
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
               }
+              if (target && target.pos.roomName !== this.hive.roomName && !Apiary.intel.getInfo(target.pos.roomName, 10).safePlace) {
+                target = undefined;
+                bee.target = undefined;
+              }
             }
 
             if (!target || (this.hive.state === hiveStates.battle && Game.time % 10 === 0))
@@ -168,13 +172,13 @@ export class BuilderMaster extends Master {
           break;
       }
       if (this.hive.state !== hiveStates.battle) {
-        this.checkFlee(bee, this.hive);
+        this.checkFlee(bee);
       } else {
         let enemy = Apiary.intel.getEnemyCreep(bee, 25);
         if (enemy) {
           let fleeDist = Apiary.intel.getFleeDist(enemy);
           if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist)
-            bee.flee(enemy, this.hive);
+            bee.flee(this.hive);
         }
         if (!bee.targetPosition)
           bee.targetPosition = bee.pos;

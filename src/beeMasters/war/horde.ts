@@ -103,15 +103,20 @@ export class HordeMaster extends SwarmMaster {
     let attackRange = 2;
     if (target instanceof Creep) {
       let info = Apiary.intel.getComplexStats(target).current;
+      let enemyTTK;
+      let myTTK;
       if (info.dmgClose >= beeStats.dmgClose) {
         targetedRange = 3;
         attackRange = 3;
-        loosingBattle = info.hits / (beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgRange - beeStats.heal);
+        enemyTTK = info.hits / (beeStats.dmgRange - info.heal);
+        myTTK = beeStats.hits / (info.dmgRange - beeStats.heal);
       } else {
         attackRange = 1;
-        loosingBattle = !!(info.dmgClose + info.dmgRange) && info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal) > beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
+        enemyTTK = info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal);
+        myTTK = beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
       }
-      if (info.dmgRange > beeStats.heal)
+      loosingBattle = (enemyTTK < 0 || enemyTTK > myTTK) && myTTK !== Infinity;
+      if (loosingBattle && info.dmgRange > beeStats.heal)
         targetedRange = 5;
       if (!info.heal && target.owner.username === "Awaii")
         loosingBattle = false; // not optimal code
@@ -131,7 +136,7 @@ export class HordeMaster extends SwarmMaster {
       return OK;
 
     if (rangeToTarget < targetedRange)
-      bee.flee(target, this.order.pos, opts);
+      bee.flee(this.hive, opts);
     else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget > attackRange && !loosingBattle))
       bee.goTo(target, opts);
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)

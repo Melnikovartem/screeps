@@ -124,6 +124,13 @@ export class Bee {
       if (refMaster)
         return refMaster;
     } else if (this.ref.includes(setupsNames.defender)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.def)));
+      if (refMaster)
+        return refMaster;
+      /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
+      if (refMaster)
+        return refMaster;*/
+    } else if (this.ref.includes(setupsNames.knight)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("harass")));
       if (refMaster)
         return refMaster;
@@ -131,13 +138,6 @@ export class Bee {
       if (refMaster)
         return refMaster;
       refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.def)));
-      if (refMaster)
-        return refMaster;
-      /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
-      if (refMaster)
-        return refMaster;*/
-    } else if (this.ref.includes(setupsNames.knight)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
       if (refMaster)
         return refMaster;
     } else if (this.ref.includes(setupsNames.builder)) {
@@ -320,12 +320,31 @@ export class Bee {
     return ans;
   }
 
-  flee(enemy: Creep | Structure | PowerCreep, posToFlee: ProtoPos, opt?: TravelToOptions) {
+  flee(posToFlee: ProtoPos, opt: TravelToOptions = {}) {
     let poss = this.pos.getOpenPositions(true);
     if (!poss.length)
       return ERR_NOT_FOUND;
 
-    let getTerrain = (pos: RoomPosition) => {
+    opt.maxRooms = 3;
+    opt.roomCallback = (roomName, matrix) => {
+      let terrain = Game.map.getRoomTerrain(roomName);
+      let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+      _.forEach(enemies, c => {
+        let fleeDist = 0;
+        if (c instanceof Creep)
+          fleeDist = Apiary.intel.getFleeDist(c);
+        _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
+          if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+            return;
+          let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 1.5 : 1;
+          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), 0x20 * coef * (fleeDist + 1 - p.getRangeTo(c))))
+        });
+        matrix.set(c.pos.x, c.pos.y, 0xff);
+      });
+      return matrix;
+    }
+
+    /* let getTerrain = (pos: RoomPosition) => {
       let terrain: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
       let ss = pos.lookFor(LOOK_STRUCTURES);
       if (ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
@@ -350,8 +369,10 @@ export class Bee {
         return curr;
       }
       return prev;
-    });
-    return this.goTo(open, opt);
+    }); */
+    let ans = this.goTo(posToFlee, opt);;
+    this.memory._trav = undefined;
+    return ans;
   }
 
   static checkBees() {

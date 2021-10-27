@@ -114,10 +114,10 @@ export abstract class Master {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
       if (fleeDist === 0)
         return false;
-      //if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1)
-      //bee.targetPosition = bee.pos;
-      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist + 1 || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
-        bee.flee(enemy, fleeTo || this.hive);
+      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1)
+        bee.targetPosition = bee.pos;
+      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
+        bee.flee(fleeTo || this.hive);
         return true;
       }
     }

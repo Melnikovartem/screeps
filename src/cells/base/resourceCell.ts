@@ -62,9 +62,7 @@ export class ResourceCell extends Cell {
       }
     }
 
-    let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, 10);
-    if (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
-      this.operational = false;
+    let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, Infinity);
 
     if (roomInfo.roomState === roomStates.SKfrontier) {
       let lair = <StructureKeeperLair>this.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
