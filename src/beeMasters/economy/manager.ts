@@ -59,6 +59,7 @@ export class ManagerMaster extends Master {
           let beeRequests = _.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess);
           if (!beeRequests.length)
             return;
+          console.log(beeRequests.map(r => r.priority))
           let newTransfer = _.reduce(beeRequests
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;

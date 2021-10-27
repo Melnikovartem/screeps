@@ -12,16 +12,18 @@ export abstract class Cell {
   readonly ref: string;
   master: Master | undefined;
   readonly time: number;
-  pos: RoomPosition;
 
   constructor(hive: Hive, cellName: string) {
     this.hive = hive;
     this.ref = cellName;
     this.time = Game.time;
-    this.pos = hive.getPos("center");
 
     if (Apiary.masters[prefix.master + this.ref])
       this.master = Apiary.masters[prefix.master + this.ref];
+  }
+
+  get pos() {
+    return this.hive.getPos("center");
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters
@@ -53,6 +55,29 @@ export abstract class Cell {
 
   // second stage of decision making like where do i need to spawn creeps or do i need
   abstract run(): void;
+
+  /* toCache<K extends keyof this>(keys: K[]) {
+    Memory.cache.hives[this.hive.roomName].cells[this.ref] = {}
+    let cellData = Memory.cache.hives[this.hive.roomName].cells[this.ref];
+    _.forEach(keys, k => {
+      (<{ [id: string]: any }>cellData)[<string>k] = this[k];
+    });
+  }*/
+  toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
+    let cellData = Memory.cache.hives[this.hive.roomName].cells;
+    if (!(this.ref in cellData))
+      cellData[this.ref] = {};
+    cellData[this.ref][<string>key] = value;
+  }
+
+  fromCache<K extends keyof this, T extends this[K]>(key: K, baseValue: T) {
+    let cellData = Memory.cache.hives[this.hive.roomName].cells;
+    if (!(this.ref in cellData))
+      cellData[this.ref] = {};
+    if (!(this.ref in cellData[this.ref]))
+      cellData[this.ref][<string>key] = baseValue;
+    return <T>cellData[this.ref][<string>key];
+  }
 
   get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;

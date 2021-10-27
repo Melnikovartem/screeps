@@ -35,29 +35,82 @@ interface SynthesizeRequest {
 };
 
 export type BoostRequest = { type: BoostType, amount?: number, lvl: 0 | 1 | 2 }
-type BoostInfo = { type: BoostType, res: ReactionConstant, amount: number, lvl: 0 | 1 | 2 };
+export type BoostInfo = { type: BoostType, res: ReactionConstant, amount: number, lvl: 0 | 1 | 2 };
 type LabState = "idle" | "production" | "source" | ReactionConstant;
 @profile
 export class LaboratoryCell extends Cell {
   laboratories: { [id: string]: StructureLab } = {};
   // inLab check for delivery system
-  boostLabs: { [key in ResourceConstant]?: string } = {};
-  boostRequests: { [id: string]: { info: BoostInfo[], lastUpdated: number } } = {};
-  labStates: { [id: string]: LabState } = {};
-  synthesizeTarget: { res: ReactionConstant, amount: number } | undefined;
-  synthesizeRes: SynthesizeRequest | undefined;
-  prod?: SynthesizeRequest & { lab1: string, lab2: string };
   master: undefined;
   sCell: StorageCell;
-  resTarget: { [key in ResourceConstant]?: number } = {};
-  patience: number = 0;
 
+  synthesizeRes: SynthesizeRequest | undefined;
   checkDropped: string[] = [];
+
+  get labStates(): { [id: string]: LabState } {
+    return this.fromCache("labStates", {});
+  }
+
+  set labStates(value) {
+    this.toCache("labStates", value);
+  }
+
+  get boostLabs(): { [key in ResourceConstant]?: string } {
+    return this.fromCache("boostLabs", {});
+  }
+
+  set boostLabs(value) {
+    this.toCache("boostLabs", value);
+  }
+
+  get boostRequests(): { [id: string]: { info: BoostInfo[], lastUpdated: number } } {
+    return this.fromCache("boostRequests", {});
+  }
+
+  set boostRequests(value) {
+    this.toCache("boostRequests", value);
+  }
+
+  get synthesizeTarget(): undefined | { res: ReactionConstant, amount: number } {
+    return this.fromCache("synthesizeTarget", undefined);
+  }
+
+  set synthesizeTarget(value) {
+    this.toCache("synthesizeTarget", value);
+  }
+
+  get prod(): undefined | SynthesizeRequest & { lab1: string, lab2: string } {
+    return this.fromCache("prod", undefined);
+  }
+
+  set prod(value) {
+    this.toCache("prod", value);
+  }
+
+  get resTarget(): { [key in ResourceConstant]?: number } {
+    return this.fromCache("resTarget", {});
+  }
+
+  set resTarget(value) {
+    this.toCache("resTarget", value);
+  }
+
+  get patience(): number {
+    return this.fromCache("patience", 0);
+  }
+
+  set patience(value) {
+    this.toCache("patience", value);
+  }
+
 
   constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
     this.sCell = sCell;
-    this.pos = this.hive.getPos("lab");
+  }
+
+  get pos() {
+    return this.hive.getPos("lab")
   }
 
   newSynthesize(resource: ReactionConstant, amount?: number, coef?: number): number {
@@ -228,6 +281,7 @@ export class LaboratoryCell extends Cell {
 
     if (!this.boostRequests[bee.ref] || this.boostRequests[bee.ref].lastUpdated + 10 >= Game.time) {
       this.boostRequests[bee.ref] = { info: [], lastUpdated: Game.time };
+      console.log(JSON.stringify(this.boostRequests))
       for (let k = 0; k < requests.length; ++k) {
         let r = requests[k];
         let sameType = _.sum(this.boostRequests[bee.ref].info.filter(br => br.type === r.type), br => br.amount);

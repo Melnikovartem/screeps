@@ -19,6 +19,7 @@ export class ResourceCell extends Cell {
   master: MinerMaster;
   roadTime: number = Infinity;
   restTime: number = Infinity;
+  pos: RoomPosition;
 
   lair?: StructureKeeperLair;
 

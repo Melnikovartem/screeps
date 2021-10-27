@@ -13,6 +13,7 @@ interface RoomPosition {
   findClosest<Obj extends ProtoPos>(structures: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
   getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
   equal(pos: ProtoPos): boolean;
+  oppositeDirection(pos: RoomPosition): DirectionConstant;
   readonly to_str: string;
 }
 

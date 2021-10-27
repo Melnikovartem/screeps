@@ -58,10 +58,10 @@ export class BuilderMaster extends Master {
     this.recalculateTargetBee();
     this.movePriority = emergency ? 2 : 5;
 
-    if (this.checkBees(this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000)) {
+    if (this.checkBees(this.hive.state !== hiveStates.lowenergy)) {
       let order = {
         setup: setups.builder,
-        priority: <2 | 5 | 8>(emergency ? 2 : (this.beesAmount ? 8 : 5)),
+        priority: <2 | 5 | 7>(emergency ? 2 : (this.beesAmount ? 6 : 5)),
       };
       order.setup.patternLimit = this.patternPerBee;
       this.wish(order);

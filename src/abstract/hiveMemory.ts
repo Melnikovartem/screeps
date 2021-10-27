@@ -3,6 +3,7 @@ import type { HivePositions } from "../Hive";
 export interface HiveCache {
   positions: HivePositions,
   wallsHealth: number,
+  cells: { [id: string]: { [id: string]: any } }
 }
 
 export interface HiveLog {

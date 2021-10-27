@@ -37,8 +37,11 @@ export class StorageCell extends Cell {
       this.linksState[l.id] = "idle";
     });
 
-    this.pos = storage.pos;
     this.master = new ManagerMaster(this);
+  }
+
+  get pos() {
+    return this.storage.pos
   }
 
   requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
@@ -47,7 +50,7 @@ export class StorageCell extends Cell {
     let prev: TransferRequest | undefined;
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
-      let ref = objects[i].structureType + "_" + objects[i].id;
+      let ref = objects[i].id;
       if (this.requests[ref] && this.requests[ref].priority === priority && this.requests[ref].to.id === objects[i].id)
         continue;
       let amountCC = amount;
@@ -136,6 +139,7 @@ export class StorageCell extends Cell {
       this.requestFromStorage([this.terminal], 4, res);
       return;
     }
+    delete this.requests[this.terminal.id];
 
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;
@@ -144,7 +148,6 @@ export class StorageCell extends Cell {
         if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 5000)) > 0)
           return;
       }
-      delete this.requests[this.terminal.id];
     }
 
     for (let r in this.resTargetTerminal) {
@@ -162,8 +165,10 @@ export class StorageCell extends Cell {
 
   run() {
     for (let k in this.requests)
-      if (!this.requests[k].isValid())
+      if (!this.requests[k].isValid()) {
+        console.log(this.requests[k].to)
         delete this.requests[k];
+      }
   }
 
   getUsedCapacity(resource: ResourceConstant) {

@@ -20,7 +20,6 @@ export class ObserveCell extends Cell {
     super(hive, prefix.observerCell + hive.room.name);
     this.sCell = sCell;
     this.obeserver = obeserver;
-    this.pos = obeserver.pos;
 
     let [x, y, we, ns] = this.hive.pos.getRoomCoorinates();
     if (Math.abs(Math.round(x / 10) - x) <= Math.abs(Math.round(y / 10) - y))
@@ -31,6 +30,10 @@ export class ObserveCell extends Cell {
 
     this.dfs(closest, this.powerRooms, this.hive.pos.getRoomRangeTo(closest, true));
     this.prevRoom = this.powerRooms[Math.floor(Math.random() * this.powerRooms.length)];
+  }
+
+  get pos() {
+    return this.obeserver.pos;
   }
 
   dfs(roomName: string, checked: string[], depth: number = 0, maxDepth: number = 12) {

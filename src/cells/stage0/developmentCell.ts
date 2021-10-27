@@ -14,6 +14,7 @@ export class DevelopmentCell extends Cell {
   shouldRecalc: boolean = true;
   handAddedResources: RoomPosition[] = [];
   addedRooms: string[] = [];
+  pos: RoomPosition;
 
   constructor(hive: Hive) {
     super(hive, prefix.developmentCell + hive.room.name);

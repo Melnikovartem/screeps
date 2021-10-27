@@ -292,7 +292,7 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && this.count.upgrade === 0) {
+          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && this.count.upgrade === 0 && !this.cell.controller.upgradeBlocked) {
             target = this.cell.controller;
             workType = "upgrade";
           }

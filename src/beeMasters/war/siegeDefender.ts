@@ -112,7 +112,7 @@ export class SiegeMaster extends Master {
       action2();
 
     let targetedRange = 1;
-    let stats = Apiary.intel.getComplexStats(target, FIND_HOSTILE_CREEPS, 4, 2).current;
+    let stats = Apiary.intel.getComplexStats(target, 4, 2).current;
     if (target instanceof Creep) {
       if (stats.dmgClose > beeStats.heal)
         targetedRange = 3;
@@ -142,7 +142,7 @@ export class SiegeMaster extends Master {
     if (!bee.targetPosition)
       bee.targetPosition = bee.pos;
     if (!findRamp(bee.targetPosition) && bee.targetPosition.getRangeTo(target) <= targetedRange - 2) {
-      let stats = Apiary.intel.getComplexStats(target, FIND_HOSTILE_CREEPS, 4, 2).current;
+      let stats = Apiary.intel.getComplexStats(target, 4, 2).current;
       if (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.9)
         // || (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.3 && !(bee.targetPosition.getOpenPositions(true).filter(p => findRamp(p))).length))
         if (findRamp(bee.pos))

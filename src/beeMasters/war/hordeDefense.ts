@@ -63,9 +63,13 @@ export class HordeDefenseMaster extends HordeMaster {
 
         if (!noFear) {
           let body = order.setup.getBody(this.hive.room.energyCapacityAvailable).body;
-          let enemyTTK = stats.max.hits / (body.filter(b => b === RANGED_ATTACK).length * RANGED_ATTACK_POWER - stats.max.heal);
-          let myTTK = body.length * 100 / (stats.max.dmgRange - body.filter(b => b === HEAL).length * HEAL_POWER);
-          let loosingBattle = (enemyTTK < 0 || enemyTTK > myTTK) && myTTK !== Infinity;
+          let myTTK = stats.max.hits / (body.filter(b => b === RANGED_ATTACK).length * RANGED_ATTACK_POWER - stats.max.heal);
+          let enemyTTK = body.length * 100 / (stats.max.dmgRange - body.filter(b => b === HEAL).length * HEAL_POWER);
+          if (enemyTTK < 0)
+            enemyTTK = Infinity;
+          if (myTTK < 0)
+            myTTK = Infinity;
+          let loosingBattle = myTTK === Infinity || enemyTTK < myTTK;
           if (loosingBattle)
             return;
         }

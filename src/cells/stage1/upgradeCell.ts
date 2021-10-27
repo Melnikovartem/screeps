@@ -16,7 +16,6 @@ export class UpgradeCell extends Cell {
   storageLink: StructureLink | undefined;
   master: UpgraderMaster;
   sCell: StorageCell;
-
   maxRate = 1;
   ratePerCreepMax = 1;
 
@@ -30,17 +29,16 @@ export class UpgradeCell extends Cell {
 
     this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
 
-    if (this.link)
-      this.pos = this.link.pos;
-    else
-      this.pos = this.controller.pos;
-
     this.roadTime = this.hive.pos.getTimeForPath(this);
     if (this.roadTime === Infinity)
       this.roadTime = 0;
 
     this.master = new UpgraderMaster(this);
     this.recalculateRate();
+  }
+
+  get post() {
+    return this.controller.pos;
   }
 
   recalculateRate() {

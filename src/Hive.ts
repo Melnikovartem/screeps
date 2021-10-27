@@ -147,8 +147,13 @@ export class Hive {
       let spawn = this.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_SPAWN)[0];
       if (spawn)
         pos = spawn.pos;
-      Memory.cache.hives[this.roomName] = { positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos }, wallsHealth: WALL_HEALTH * 10 }
+      Memory.cache.hives[this.roomName] = {
+        positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos },
+        wallsHealth: WALL_HEALTH * 10, cells: {},
+      }
     }
+
+    Memory.cache.hives[this.roomName].cells = {};
 
 
     // create your own fun hive with this cool brand new cells
@@ -340,22 +345,10 @@ export class Hive {
 
   getBuildTarget(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignoreRepair" | "ignoreConst") {
     if (!this.structuresConst.length) {
-      if (this.shouldRecalc < 2)
+      if (this.shouldRecalc < 2 && this.wallsHealth < this.wallsHealthMax)
         this.shouldRecalc = 2;
       return;
     }
-
-
-    /*
-    // my enemy had problems with walls so i build a lot of them but small ones
-    let emegencyBuilds = this.room.find(FIND_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_WHITE);
-    if (emegencyBuilds.length) {
-      let proj = _.compact(emegencyBuilds.map(f => f.pos.findInRange(FIND_CONSTRUCTION_SITES, 3)[0]));
-      if (proj.length)
-        return this.pos.findClosest(proj);
-    }
-    */
-
 
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
@@ -389,19 +382,20 @@ export class Hive {
 
     let proj = getProj();
     while (proj && !target) {
-      switch (proj.type) {
-        case "construction":
-          if (ignore !== "ignoreConst")
-            target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-          break;
-        case "repair":
-          if (ignore !== "ignoreRepair")
-            target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s =>
-              s.structureType === (<BuildProject>proj).sType
-              && s.hits < (<BuildProject>proj).targetHits
-              && s.hits < s.hitsMax)[0];
-          break;
-      }
+      if (proj.pos.roomName in Game.rooms)
+        switch (proj.type) {
+          case "construction":
+            if (ignore !== "ignoreConst")
+              target = proj.pos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+            break;
+          case "repair":
+            if (ignore !== "ignoreRepair")
+              target = proj.pos.lookFor(LOOK_STRUCTURES).filter(s =>
+                s.structureType === (<BuildProject>proj).sType
+                && s.hits < (<BuildProject>proj).targetHits
+                && s.hits < s.hitsMax)[0];
+            break;
+        }
       if (target && target.pos.roomName !== this.roomName && !Apiary.intel.getInfo(target.pos.roomName, 10).safePlace)
         target = undefined;
       if (!target) {

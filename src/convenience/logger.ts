@@ -26,7 +26,7 @@ export class Logger {
       Memory.log.hives[hiveName] = {
         loggedStates: {},
         spawns: {},
-        resourceBalance: { [RESOURCE_ENERGY]: {} }
+        resourceBalance: { [RESOURCE_ENERGY]: {} },
       }
   }
 

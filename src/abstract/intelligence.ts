@@ -88,7 +88,7 @@ export class Intel {
     return ans;
   }
 
-  getComplexStats(pos: ProtoPos, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS, range = 1, closePadding = 0) {
+  getComplexStats(pos: ProtoPos, range = 1, closePadding = 0, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -116,9 +116,6 @@ export class Intel {
       }
     }
 
-    if (mode === FIND_MY_CREEPS)
-      range = Math.max(range, 3);
-
     _.forEach(pos.findInRange(mode, range), creep => {
       let stats = this.getStats(creep);
       for (let i in stats.max) {
@@ -135,8 +132,8 @@ export class Intel {
     return ans;
   }
 
-  getComplexMyStats(pos: ProtoPos) {
-    return this.getComplexStats(pos, FIND_MY_CREEPS);
+  getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
+    return this.getComplexStats(pos, range, closePadding, FIND_MY_CREEPS);
   }
 
   getInfo(roomName: string, lag: number = 0): RoomInfo {
@@ -187,8 +184,8 @@ export class Intel {
     if (roomInfo.lastUpdated + lag >= Game.time) {
       if (lag > 0)
         roomInfo.enemies = <Enemy[]>_.compact(roomInfo.enemies.map(e => {
-          let copy = <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
-          if (!copy)
+          let copy = e.object && <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
+          if (!copy || copy.pos.roomName !== roomName)
             return copy;
           e.object = copy;
           return e;
@@ -240,12 +237,13 @@ export class Intel {
   toCache() {
     for (const roomName in this.roomInfo) {
       let roomInfo = this.roomInfo[roomName];
-      Memory.cache.intellegence[roomName] = {
-        roomState: roomInfo.roomState,
-        currentOwner: roomInfo.currentOwner,
-        safePlace: roomInfo.safePlace,
-        safeModeEndTime: roomInfo.safeModeEndTime,
-      }
+      if (roomInfo.roomState <= roomStates.reservedByMe || roomInfo.roomState >= roomStates.reservedByEnemy)
+        Memory.cache.intellegence[roomName] = {
+          roomState: roomInfo.roomState,
+          currentOwner: roomInfo.currentOwner,
+          safePlace: roomInfo.safePlace,
+          safeModeEndTime: roomInfo.safeModeEndTime,
+        }
     }
   }
 

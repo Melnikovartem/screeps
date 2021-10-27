@@ -1,4 +1,4 @@
-import { signText, prefix } from "../enums"
+import { signText, prefix, roomStates } from "../enums";
 
 import { TERMINAL_ENERGY } from "../abstract/terminalNetwork";
 import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
@@ -161,7 +161,7 @@ export class CustomConsole {
       upgrader = setups.upgrader.manual.copy();
     upgrader.patternLimit = patternLimit;
     hive.cells.upgrade.master.wish({ setup: upgrader, priority: 1 });
-    return `BUILDER SPAWNED @ ${hiveName}`;
+    return `UPGRADER SPAWNED @ ${hiveName}`;
   }
 
   // some hand used functions
@@ -565,5 +565,19 @@ export class CustomConsole {
           o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from instanceof Structure ? o.from.structureType : o.from} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}`).join('\n')
         } \n`
     }).join('\n');
+  }
+
+  cleanIntel(quadToclean: string, xmin: number, xmax: number, ymin: number, ymax: number) {
+    for (let roomName in Memory.cache.intellegence) {
+      let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+      let quad = /^([WE])([NS])$/.exec(quadToclean)
+      if (parsed && quad) {
+        let [, we, x, ns, y] = parsed;
+        let state = Apiary.intel.getInfo(roomName, Infinity).roomState;
+        if (we === quad[1] && ns == quad[2] && (+x < xmin || +x > xmax || +y < ymin || +y > ymax || (state > roomStates.reservedByMe && state < roomStates.reservedByEnemy)))
+          delete Memory.cache.intellegence[roomName];
+      } else
+        delete Memory.cache.intellegence[roomName];
+    }
   }
 }

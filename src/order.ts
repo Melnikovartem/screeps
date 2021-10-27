@@ -271,7 +271,6 @@ export class Order {
           switch (this.secondaryColor) {
             case COLOR_CYAN:
               type = "rest";
-              this.hive.cells.excavation.pos = this.pos;
               break;
             case COLOR_GREEN:
               type = "queen1";
@@ -281,13 +280,9 @@ export class Order {
               break;
             case COLOR_GREY:
               type = "lab";
-              if (this.hive.cells.lab)
-                this.hive.cells.lab.pos = this.pos;
               break;
             case COLOR_WHITE:
               type = "center";
-              this.hive.cells.defense.pos = this.pos;
-              this.hive.cells.spawn.pos = this.pos;
               break;
           }
           if (type) {

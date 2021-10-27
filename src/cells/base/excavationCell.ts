@@ -20,7 +20,10 @@ export class ExcavationCell extends Cell {
 
   constructor(hive: Hive) {
     super(hive, prefix.excavationCell + hive.room.name);
-    this.pos = this.hive.rest;
+  }
+
+  get pos() {
+    return this.hive.rest;
   }
 
   addResource(resource: Source | Mineral) {

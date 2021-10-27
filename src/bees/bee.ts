@@ -325,7 +325,13 @@ export class Bee {
     if (!poss.length)
       return ERR_NOT_FOUND;
 
-    opt.maxRooms = 3;
+    if (this.pos.isNearTo(posToFlee)) {
+      let exit = this.pos.findClosest(Game.rooms[this.pos.roomName].find(FIND_EXIT));
+      if (exit)
+        posToFlee = exit;
+    }
+
+    opt.maxRooms = 2;
     opt.roomCallback = (roomName, matrix) => {
       let terrain = Game.map.getRoomTerrain(roomName);
       let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
@@ -333,11 +339,15 @@ export class Bee {
         let fleeDist = 0;
         if (c instanceof Creep)
           fleeDist = Apiary.intel.getFleeDist(c);
+        if (!fleeDist)
+          return;
+        let rangeToEnemy = this.pos.getRangeTo(c);
         _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
           if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
-          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)))));
+          let padding = 0x04 * (p.getRangeTo(this) - rangeToEnemy); // we wan't to get as far as we can from enemy
+          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)) + padding)));
         });
       });
       return matrix;

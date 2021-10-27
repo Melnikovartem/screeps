@@ -40,8 +40,11 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
-    else if (this.order.ref.includes("destroyer"))
+    else if (this.order.ref.includes("destroyer")) {
       this.setup = setups.defender.destroyer.copy();
+      if (this.boosts || this.hive.pos.getRoomRangeTo(this.order) > 5)
+        this.setup.fixed = [TOUGH, TOUGH, TOUGH];
+    }
     if (this.order.ref.includes("keep"))
       this.maxSpawns = Infinity;
   }
@@ -104,24 +107,38 @@ export class HordeMaster extends SwarmMaster {
     let loosingBattle = false;
     let attackRange = 2;
     if (target instanceof Creep) {
-      let info = Apiary.intel.getComplexStats(target).current;
-      let enemyTTK;
+      let enemyInfo = Apiary.intel.getComplexStats(target).current;
+      let myInfo = Apiary.intel.getComplexMyStats(bee, 4, 2).current;
+      let enemyTTK = myInfo.hits / (enemyInfo.dmgClose + enemyInfo.dmgRange - myInfo.heal);
       let myTTK;
-      if (info.dmgClose >= beeStats.dmgClose) {
-        targetedRange = 3;
+      if (beeStats.dmgClose && !myInfo.dmgRange && enemyInfo.dmgRange && rangeToTarget > 1 && target.owner.username !== "Invader")
+        myTTK = Infinity;
+      else
+        myTTK = enemyInfo.hits / (myInfo.dmgClose + myInfo.dmgRange - enemyInfo.heal);
+      if (enemyTTK < 0)
+        enemyTTK = Infinity;
+      if (myTTK < 0)
+        myTTK = Infinity;
+      loosingBattle = myTTK === Infinity || enemyTTK < myTTK;
+
+      if (beeStats.dmgClose)
         attackRange = 3;
-        enemyTTK = info.hits / (beeStats.dmgRange - info.heal);
-        myTTK = beeStats.hits / (info.dmgRange - beeStats.heal);
-      } else {
-        attackRange = 1;
-        enemyTTK = info.hits / (beeStats.dmgClose + beeStats.dmgRange - info.heal);
-        myTTK = beeStats.hits / (info.dmgClose + info.dmgRange - beeStats.heal);
-      }
-      loosingBattle = (enemyTTK < 0 || enemyTTK > myTTK) && myTTK !== Infinity;
-      if (loosingBattle && info.dmgRange > beeStats.heal)
-        targetedRange = 5;
-      if (!info.heal && target.owner.username === "Awaii")
-        loosingBattle = false; // not optimal code
+      else if (beeStats.dmgRange)
+        attackRange = 4;
+      else
+        attackRange = 4;
+
+      if (loosingBattle)
+        if (enemyInfo.dmgRange > myInfo.heal)
+          targetedRange = 5;
+        else
+          targetedRange = 3;
+      else
+        targetedRange = attackRange;
+
+      //if (!enemyInfo.heal && target.owner.username === "Awaii")
+      // loosingBattle = false; // not optimal code
+      // if (target.owner.username === "Bulletproof")
       // loosingBattle = false; // the guy fucking crashed
     }
     /* else if (target instanceof StructureTower) {
@@ -131,7 +148,7 @@ export class HordeMaster extends SwarmMaster {
         targetedRange = 3;
     } */
 
-    if (!loosingBattle && (bee.hits > bee.hitsMax * 0.5 || !beeStats.heal))
+    if (!loosingBattle && (bee.hits > bee.hitsMax * 0.3 || !beeStats.heal))
       targetedRange -= 2;
 
     if (this.holdPosition || !target)
@@ -139,7 +156,7 @@ export class HordeMaster extends SwarmMaster {
 
     if (rangeToTarget < targetedRange)
       bee.flee(loosingBattle ? this.hive : this.order, opts);
-    else if ((rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) || (rangeToTarget > attackRange && !loosingBattle))
+    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9)
       bee.goTo(target, opts);
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
@@ -162,10 +179,11 @@ export class HordeMaster extends SwarmMaster {
           if (bee.pos.roomName !== this.order.pos.roomName)
             pos = this.order.pos;
           enemy = Apiary.intel.getEnemy(pos, 10);
-          if (enemy) {
-            enemy = Apiary.intel.getEnemy(pos);
-            this.beeAct(bee, enemy);
-          } else {
+          enemy = Apiary.intel.getEnemy(pos);
+          if (enemy instanceof Creep && enemy.body.length === 1)
+            enemy = undefined;
+          this.beeAct(bee, enemy);
+          if (!enemy) {
             bee.goRest(this.order.pos);
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
