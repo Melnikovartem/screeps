@@ -307,9 +307,13 @@ export abstract class SquadMaster extends SwarmMaster {
         else if (beeStats.dmgClose > 0)
           action1 = () => bee.attack(target);
       if (!action1) {
-        let tempTarget: Structure | Creep | undefined = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
+        let tempTarget: Structure | Creep | undefined;
+        if (beeStats.dism > 0)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
         if (!tempTarget)
           tempTarget = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1)[0];
+        if (!tempTarget && beeStats.dism === 0)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
         if (tempTarget)
           if (beeStats.dism > 0 && target instanceof Structure)
             action1 = () => bee.dismantle(target);

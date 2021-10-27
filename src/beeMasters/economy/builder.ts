@@ -25,7 +25,7 @@ export class BuilderMaster extends Master {
     this.boosts = undefined;
 
     if (this.hive.state >= hiveStates.nukealert || Apiary.orders[prefix.build + this.hive.roomName]
-      || this.hive.wallsHealth < this.hive.wallsHealthMax && this.hive.resState[RESOURCE_ENERGY] > 0) {
+      || (this.hive.wallsHealth < this.hive.wallsHealthMax && this.hive.resState[RESOURCE_ENERGY] > 0)) {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
@@ -175,13 +175,13 @@ export class BuilderMaster extends Master {
         this.checkFlee(bee);
       } else {
         let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-        if (enemy) {
-          let fleeDist = Apiary.intel.getFleeDist(enemy);
-          if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist)
-            bee.flee(this.hive);
-        }
         if (!bee.targetPosition)
           bee.targetPosition = bee.pos;
+        if (enemy) {
+          let fleeDist = Apiary.intel.getFleeDist(enemy);
+          if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist)
+            bee.flee(this.hive);
+        }
       }
     });
   }

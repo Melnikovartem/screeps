@@ -320,19 +320,16 @@ export class Bee {
     return ans;
   }
 
-  flee(posToFlee: ProtoPos, opt: TravelToOptions = {}) {
-    let poss = this.pos.getOpenPositions(true);
-    if (!poss.length)
-      return ERR_NOT_FOUND;
-
-    if (this.pos.isNearTo(posToFlee)) {
-      let exit = this.pos.findClosest(Game.rooms[this.pos.roomName].find(FIND_EXIT));
-      if (exit)
-        posToFlee = exit;
-    }
-
+  getFleeOpt(opt: TravelToOptions) {
     opt.maxRooms = 2;
+    let roomCallback = opt.roomCallback;
     opt.roomCallback = (roomName, matrix) => {
+      if (roomCallback) {
+        let postCallback = roomCallback(roomName, matrix);
+        if (!postCallback || typeof postCallback === "boolean")
+          return postCallback;
+        matrix = postCallback;
+      }
       let terrain = Game.map.getRoomTerrain(roomName);
       let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
       _.forEach(enemies, c => {
@@ -352,7 +349,22 @@ export class Bee {
       });
       return matrix;
     }
+    return opt;
+  }
 
+  flee(posToFlee: ProtoPos, opt: TravelToOptions = {}) {
+    let poss = this.pos.getOpenPositions(true);
+    if (!poss.length)
+      return ERR_NOT_FOUND;
+
+    if (this.pos.isNearTo(posToFlee)) {
+      let exit = this.pos.findClosest(Game.rooms[this.pos.roomName].find(FIND_EXIT));
+      if (exit)
+        posToFlee = exit;
+    }
+
+
+    opt = this.getFleeOpt(opt);
     /* let getTerrain = (pos: RoomPosition) => {
       let terrain: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
       let ss = pos.lookFor(LOOK_STRUCTURES);
@@ -462,7 +474,14 @@ export class Bee {
           }
           return ans < 0 ? curr : prev
         };
-        bee = moveMap[pos.to_str].reduce(red).bee;
+        let winner = moveMap[pos.to_str].reduce(red)
+        bee = winner.bee;
+        if (bee.pos.to_str !== pos.to_str && winner.priority <= 2) {
+          // i know still can softlock, but this can solve most important cases
+          let inPos = moveMap[pos.to_str].filter(m => m.bee.pos.to_str == pos.to_str)[0];
+          if (inPos)
+            inPos.bee.creep.move(bee.pos.getDirectionTo(bee.pos));
+        }
       }
     } else
       bee = moveMap[pos.to_str].reduce(red).bee;

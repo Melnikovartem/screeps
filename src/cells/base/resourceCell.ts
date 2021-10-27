@@ -17,9 +17,6 @@ export class ResourceCell extends Cell {
   extractor: StructureExtractor | undefined;
   parentCell: ExcavationCell;
   master: MinerMaster;
-  roadTime: number = Infinity;
-  restTime: number = Infinity;
-  pos: RoomPosition;
 
   lair?: StructureKeeperLair;
 
@@ -29,14 +26,38 @@ export class ResourceCell extends Cell {
 
   constructor(hive: Hive, resource: Source | Mineral, excavationCell: ExcavationCell) {
     super(hive, prefix.resourceCells + resource.id);
-
     this.resource = resource;
+
+    this.setCahe("roadTime", Infinity);
+    this.setCahe("restTime", Infinity);
+    this.setCahe("pos", this.resource.pos);
+
     if (resource instanceof Mineral)
       this.resourceType = resource.mineralType;
-    this.pos = this.resource.pos;
     this.parentCell = excavationCell;
     this.master = new MinerMaster(this);
     this.updateStructure();
+  }
+
+  get roadTime(): number {
+    return this.fromCache("roadTime");
+  }
+
+  set roadTime(value) {
+    this.toCache("roadTime", value);
+  }
+
+  get restTime(): number {
+    return this.fromCache("restTime");
+  }
+
+  set restTime(value) {
+    this.toCache("restTime", value);
+  }
+
+  get pos(): RoomPosition {
+    let p = this.fromCache("pos");
+    return new RoomPosition(p.x, p.y, p.roomName);
   }
 
   updateStructure() {
@@ -71,19 +92,11 @@ export class ResourceCell extends Cell {
         this.lair = lair;
     }
 
-    this.pos = this.resource.pos;
-    if (this.container)
-      this.pos = this.container.pos;
-    else if (this.link) {
-      let poss = this.resource.pos.getOpenPositions(true);
-      let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => p.equal(pp)).length)[0];
-      if (pos)
-        this.pos = pos;
-    }
-
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
-    this.roadTime = this.pos.getTimeForPath(storagePos);
-    this.restTime = this.pos.getTimeForPath(this.hive.rest);
+    if (this.roadTime === Infinity)
+      this.roadTime = this.pos.getTimeForPath(storagePos);
+    if (this.restTime === Infinity)
+      this.restTime = this.pos.getTimeForPath(this.hive.rest);
 
     if (this.hive.cells.dev)
       this.hive.cells.dev.shouldRecalc = true;

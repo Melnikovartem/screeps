@@ -45,10 +45,23 @@ export class LaboratoryCell extends Cell {
   sCell: StorageCell;
 
   synthesizeRes: SynthesizeRequest | undefined;
+  resTarget: { [key in ResourceConstant]?: number } = {};
   checkDropped: string[] = [];
+  prod?: SynthesizeRequest & { lab1: string, lab2: string };
+  patience: number = 0;
+
+  constructor(hive: Hive, sCell: StorageCell) {
+    super(hive, prefix.laboratoryCell + hive.room.name);
+    this.sCell = sCell;
+
+    this.setCahe("labStates", {});
+    this.setCahe("boostLabs", {});
+    this.setCahe("boostRequests", {});
+    this.setCahe("synthesizeTarget", undefined);
+  }
 
   get labStates(): { [id: string]: LabState } {
-    return this.fromCache("labStates", {});
+    return this.fromCache("labStates");
   }
 
   set labStates(value) {
@@ -56,7 +69,7 @@ export class LaboratoryCell extends Cell {
   }
 
   get boostLabs(): { [key in ResourceConstant]?: string } {
-    return this.fromCache("boostLabs", {});
+    return this.fromCache("boostLabs");
   }
 
   set boostLabs(value) {
@@ -64,7 +77,7 @@ export class LaboratoryCell extends Cell {
   }
 
   get boostRequests(): { [id: string]: { info: BoostInfo[], lastUpdated: number } } {
-    return this.fromCache("boostRequests", {});
+    return this.fromCache("boostRequests");
   }
 
   set boostRequests(value) {
@@ -72,41 +85,11 @@ export class LaboratoryCell extends Cell {
   }
 
   get synthesizeTarget(): undefined | { res: ReactionConstant, amount: number } {
-    return this.fromCache("synthesizeTarget", undefined);
+    return this.fromCache("synthesizeTarget");
   }
 
   set synthesizeTarget(value) {
     this.toCache("synthesizeTarget", value);
-  }
-
-  get prod(): undefined | SynthesizeRequest & { lab1: string, lab2: string } {
-    return this.fromCache("prod", undefined);
-  }
-
-  set prod(value) {
-    this.toCache("prod", value);
-  }
-
-  get resTarget(): { [key in ResourceConstant]?: number } {
-    return this.fromCache("resTarget", {});
-  }
-
-  set resTarget(value) {
-    this.toCache("resTarget", value);
-  }
-
-  get patience(): number {
-    return this.fromCache("patience", 0);
-  }
-
-  set patience(value) {
-    this.toCache("patience", value);
-  }
-
-
-  constructor(hive: Hive, sCell: StorageCell) {
-    super(hive, prefix.laboratoryCell + hive.room.name);
-    this.sCell = sCell;
   }
 
   get pos() {
@@ -281,7 +264,6 @@ export class LaboratoryCell extends Cell {
 
     if (!this.boostRequests[bee.ref] || this.boostRequests[bee.ref].lastUpdated + 10 >= Game.time) {
       this.boostRequests[bee.ref] = { info: [], lastUpdated: Game.time };
-      console.log(JSON.stringify(this.boostRequests))
       for (let k = 0; k < requests.length; ++k) {
         let r = requests[k];
         let sameType = _.sum(this.boostRequests[bee.ref].info.filter(br => br.type === r.type), br => br.amount);
@@ -373,7 +355,7 @@ export class LaboratoryCell extends Cell {
       continue;
     }
 
-    // console.log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
+    // console .log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
     if (rCode === ERR_TIRED)
       bee.goRest(this.pos);
     else if (rCode === OK)
@@ -463,6 +445,14 @@ export class LaboratoryCell extends Cell {
     if (!Object.keys(this.laboratories).length)
       return;
 
+    let priority = <2 | 5>5;
+    this.sCell.requestFromStorage(_.filter(this.laboratories,
+      l => {
+        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY * 0.7)
+          priority = 2;
+        return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+      }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
+
     for (let id in this.laboratories)
       this.updateLabState(this.laboratories[id]);
 
@@ -478,14 +468,6 @@ export class LaboratoryCell extends Cell {
       if (this.prod.plan < 5)
         this.prod = undefined;
     }
-
-    let priority = <2 | 5>5;
-    this.sCell.requestFromStorage(_.filter(this.laboratories,
-      l => {
-        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY / 2)
-          priority = 2;
-        return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-      }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
 
     for (const ref in this.boostRequests)
       if (this.boostRequests[ref].lastUpdated + 10 > Game.time)

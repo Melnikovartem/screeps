@@ -10,11 +10,10 @@ import type { Master } from "../beeMasters/_Master";
 import type { TransferRequest } from "../bees/transferRequest";
 
 export class CustomConsole {
-
   lastActionRoomName: string;
 
   constructor() {
-    this.lastActionRoomName = Object.keys(Apiary.hives)[0];
+    this.lastActionRoomName = _.map(Apiary.hives, h => h).reduce((prev, curr) => prev.room.controller!.level < curr.room.controller!.level ? curr : prev).roomName;
   }
 
   vis(framerate?: number, force: number = 0) {

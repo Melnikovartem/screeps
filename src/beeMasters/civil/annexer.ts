@@ -19,22 +19,22 @@ export class AnnexMaster extends SwarmMaster {
       doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
 
     if (doAnnex && this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
-      let order = {
-        setup: setups.claimer,
-        priority: <6>6,
-      };
+      let setup = setups.claimer;
 
       if (this.order.pos.roomName in Game.rooms) {
         let controller = Game.rooms[this.order.pos.roomName].controller;
 
         // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
         if (controller && (!controller.reservation || controller.reservation.username !== Apiary.username || controller.reservation.ticksToEnd < 4200)) {
-          order.setup = order.setup.copy();
-          order.setup.patternLimit = 2;
+          setup = setup.copy();
+          setup.patternLimit = 2;
         }
       }
 
-      this.wish(order);
+      this.wish({
+        setup: setup,
+        priority: <5>5,
+      });
     }
   }
 

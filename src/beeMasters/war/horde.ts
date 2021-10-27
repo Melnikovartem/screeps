@@ -42,8 +42,7 @@ export class HordeMaster extends SwarmMaster {
       this.setup = setups.dismantler.copy();
     else if (this.order.ref.includes("destroyer")) {
       this.setup = setups.defender.destroyer.copy();
-      if (this.boosts || this.hive.pos.getRoomRangeTo(this.order) > 5)
-        this.setup.fixed = [TOUGH, TOUGH, TOUGH];
+      this.setup.fixed = [TOUGH, TOUGH, TOUGH];
     }
     if (this.order.ref.includes("keep"))
       this.maxSpawns = Infinity;
@@ -82,21 +81,40 @@ export class HordeMaster extends SwarmMaster {
     let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
 
     if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedAttack(target, opts);
-    else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
-      action2 = () => bee.rangedHeal(healingTarget, opts);
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0
-      && roomInfo.enemies.filter(e => bee.pos.getRangeTo(e.object) <= 3 && "owner" in e.object).length)
-      action2 = () => bee.rangedMassAttack();
+      action2 = () => bee.rangedAttack(target);
+    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
+      action2 = () => bee.rangedHeal(healingTarget);
+    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0) {
+      let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
+      if (!tempTarget)
+        tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
+      if (tempTarget)
+        action2 = () => bee.rangedAttack(tempTarget);
+    }
 
-    if (rangeToHealingTarget < 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget, opts);
-    else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
-      action1 = () => bee.attack(target, opts);
-    else if (rangeToTarget === 1 && beeStats.dism > 0 && target instanceof Structure)
-      action1 = () => bee.dismantle(target, opts);
-    else if (rangeToHealingTarget === 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget, opts);
+    if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
+      action1 = () => bee.heal(healingTarget);
+    else if (beeStats.dism > 0 || beeStats.dmgClose > 0) {
+      if (rangeToTarget === 1)
+        if (beeStats.dism > 0 && target instanceof Structure)
+          action1 = () => bee.dismantle(target);
+        else if (beeStats.dmgClose > 0)
+          action1 = () => bee.attack(target);
+      if (!action1) {
+        let tempTarget: Structure | Creep | undefined;
+        if (beeStats.dism > 0)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
+        if (!tempTarget)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1)[0];
+        if (!tempTarget && beeStats.dism === 0)
+          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
+        if (tempTarget)
+          if (beeStats.dism > 0 && target instanceof Structure)
+            action1 = () => bee.dismantle(target);
+          else if (beeStats.dmgClose > 0)
+            action1 = () => bee.attack(target);
+      }
+    }
 
     if (action1)
       action1();
@@ -108,7 +126,7 @@ export class HordeMaster extends SwarmMaster {
     let attackRange = 2;
     if (target instanceof Creep) {
       let enemyInfo = Apiary.intel.getComplexStats(target).current;
-      let myInfo = Apiary.intel.getComplexMyStats(bee, 4, 2).current;
+      let myInfo = Apiary.intel.getComplexMyStats(bee, 5, 3).current;
       let enemyTTK = myInfo.hits / (enemyInfo.dmgClose + enemyInfo.dmgRange - myInfo.heal);
       let myTTK;
       if (beeStats.dmgClose && !myInfo.dmgRange && enemyInfo.dmgRange && rangeToTarget > 1 && target.owner.username !== "Invader")
@@ -122,7 +140,7 @@ export class HordeMaster extends SwarmMaster {
       loosingBattle = myTTK === Infinity || enemyTTK < myTTK;
 
       if (beeStats.dmgClose)
-        attackRange = 3;
+        attackRange = 2;
       else if (beeStats.dmgRange)
         attackRange = 4;
       else
@@ -148,6 +166,22 @@ export class HordeMaster extends SwarmMaster {
         targetedRange = 3;
     } */
 
+    if (loosingBattle && bee.pos.roomName === this.order.pos.roomName) {
+      let newEnemy = bee.pos.findClosest(roomInfo.enemies.filter(e => {
+        if (!(e.object instanceof Creep))
+          return false;
+        let stats = Apiary.intel.getStats(e.object).max;
+        return !(stats.dmgClose + stats.dmgRange) && (beeStats.dmgClose + beeStats.dmgRange < stats.heal);
+      }).map(e => e.object));
+      if (newEnemy) {
+        loosingBattle = false;
+        targetedRange = attackRange;
+        bee.memory._trav = false;
+        bee.goTo(newEnemy, bee.getFleeOpt(opts));
+        return OK;
+      }
+    }
+
     if (!loosingBattle && (bee.hits > bee.hitsMax * 0.3 || !beeStats.heal))
       targetedRange -= 2;
 
@@ -156,8 +190,12 @@ export class HordeMaster extends SwarmMaster {
 
     if (rangeToTarget < targetedRange)
       bee.flee(loosingBattle ? this.hive : this.order, opts);
-    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9)
+    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) {
+      opts.movingTarget = true;
       bee.goTo(target, opts);
+      if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.order.pos.roomName)
+        bee.targetPosition = bee.pos;
+    }
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;

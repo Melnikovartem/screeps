@@ -239,7 +239,6 @@ export class Broker {
           this.shortOrdersSell[roomName].lastUpdated = Game.time;
           return "long";
         default:
-          console.log(ans, res)
       }
     }
 

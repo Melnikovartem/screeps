@@ -153,8 +153,6 @@ export class Hive {
       }
     }
 
-    Memory.cache.hives[this.roomName].cells = {};
-
 
     // create your own fun hive with this cool brand new cells
     this.cells = {

@@ -15,7 +15,7 @@ const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STRUCTURES
 @profile
 export class SiegeMaster extends Master {
   boosts: Boosts | undefined = [{ type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
-  { type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
+  { type: "attack", lvl: 1 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
   { type: "damage", lvl: 2 }, { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
   cell: DefenseCell;
   patience: { [id: string]: number } = {};
@@ -27,13 +27,23 @@ export class SiegeMaster extends Master {
 
   update() {
     super.update();
-    if (this.hive.state !== hiveStates.battle) {
-      this.movePriority = <5>5;
+    if (this.hive.phase < 1)
       return;
-    }
+
     this.movePriority = <1>1;
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    if (roomInfo.dangerlvlmax < 5 || this.hive.phase < 1)
+    let shouldSpawn = roomInfo.dangerlvlmax < 5;
+    if (!shouldSpawn)
+      _.some(Game.map.describeExits(this.hive.roomName), exit => {
+        if (!exit)
+          return;
+        let roomInfoExit = Apiary.intel.getInfo(exit, 25);
+        if (roomInfoExit.dangerlvlmax >= 7)
+          shouldSpawn = true;
+        return shouldSpawn;
+      });
+    this.movePriority = <5>5;
+    if (!shouldSpawn)
       return;
     this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 100000);
     if (this.checkBees(true)) {

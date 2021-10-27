@@ -14,13 +14,10 @@ export class DevelopmentCell extends Cell {
   shouldRecalc: boolean = true;
   handAddedResources: RoomPosition[] = [];
   addedRooms: string[] = [];
-  pos: RoomPosition;
-
   constructor(hive: Hive) {
     super(hive, prefix.developmentCell + hive.room.name);
     this.controller = this.hive.room.controller!;
     this.master = new BootstrapMaster(this);
-    this.pos = this.hive.room.controller ? this.hive.room.controller.pos : this.hive.rest;
 
     _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), r => {
       if (r.resourceType === RESOURCE_ENERGY)
@@ -31,6 +28,10 @@ export class DevelopmentCell extends Cell {
       if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_TERMINAL)
         this.handAddedResources.push(s.pos);
     });
+  }
+
+  get pos() {
+    return this.hive.room.controller ? this.hive.room.controller.pos : this.hive.rest;
   }
 
   addRoom(room: Room) {

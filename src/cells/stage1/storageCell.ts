@@ -51,7 +51,7 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
-      if (this.requests[ref] && this.requests[ref].priority === priority && this.requests[ref].to.id === objects[i].id)
+      if (this.requests[ref] && this.requests[ref].to.id === objects[i].id && (this.requests[ref].resource === res || this.requests[ref].priority > priority))
         continue;
       let amountCC = amount;
       if (fitStore)
@@ -75,7 +75,7 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
-      if (this.requests[ref] && this.requests[ref].priority === priority && this.requests[ref].from.id === objects[i].id)
+      if (this.requests[ref] && this.requests[ref].to.id === objects[i].id && (this.requests[ref].resource === res || this.requests[ref].priority > priority))
         continue;
       let amountCC = amount;
       if (fitStore && !(objects[i] instanceof Resource))
@@ -164,11 +164,10 @@ export class StorageCell extends Cell {
   }
 
   run() {
-    for (let k in this.requests)
-      if (!this.requests[k].isValid()) {
-        console.log(this.requests[k].to)
+    for (let k in this.requests) {
+      if (!this.requests[k].isValid())
         delete this.requests[k];
-      }
+    }
   }
 
   getUsedCapacity(resource: ResourceConstant) {

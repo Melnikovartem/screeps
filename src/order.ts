@@ -2,6 +2,7 @@ import { HordeDefenseMaster } from "./beeMasters/war/hordeDefense";
 import { HordeMaster } from "./beeMasters/war/horde";
 import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismanleBoys } from "./beeMasters/squads/dismatleBoys";
+import { AnnoyOBot } from "./beeMasters/squads/annoyObot";
 import { WaiterMaster } from "./beeMasters/war/waiter";
 
 import { GangDuo } from "./beeMasters/squads/gangDuo";
@@ -157,6 +158,9 @@ export class Order {
               break;
             case COLOR_YELLOW:
               this.master = new DismanleBoys(this);
+              break;
+            case COLOR_BROWN:
+              this.master = new AnnoyOBot(this);
               break;
             case COLOR_CYAN:
               this.master = new SKMaster(this);
@@ -406,12 +410,14 @@ export class Order {
                   let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = this.pos.lookFor(LOOK_RESOURCES).filter(r => r.amount > 0);
                   targets = targets.concat(this.pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity() > 0));
                   targets = targets.concat(this.pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0));
+                  let resources: Resource[] = [];
                   _.forEach(targets, t => {
                     if (t instanceof Resource)
-                      hive.cells.storage!.requestToStorage([t], 1, t.resourceType, t.amount);
+                      resources.push(t);
                     else
                       hive.cells.storage!.requestToStorage([t], 1, findOptimalResource(t.store));
                   });
+                  hive.cells.storage.requestToStorage(resources, 1);
                   if (!targets.length)
                     this.delete();
                   this.acted = false;
@@ -435,39 +441,6 @@ export class Order {
           break;
         }
         switch (this.secondaryColor) {
-          case COLOR_BROWN:
-            let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
-            let res = parsed && <ResourceConstant>parsed[2];
-            let mode = parsed && parsed[1];
-            this.acted = false;
-            if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
-              let hurry = this.ref.includes("hurry");
-              if ("all" === parsed![2]) {
-                if (mode === "sell") {
-                  if (hurry || Game.time % 10 === 0)
-                    _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
-                      if (ress === RESOURCE_ENERGY)
-                        return;
-                      // get rid of shit in this hive
-                      Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, <ResourceConstant>ress, 500, hurry, Infinity);
-                    });
-                } else
-                  this.delete();
-                return;
-              }
-              if (RESOURCES_ALL.includes(res)) {
-                if (hurry || Game.time % 10 === 0)
-                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
-                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
-                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
-                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
-                  else if (!this.ref.includes("keep"))
-                    this.delete();
-              } else
-                this.delete();
-            } else
-              this.delete();
-            break;
           case COLOR_CYAN:
             if (!this.hive.cells.lab) {
               this.delete();
@@ -505,6 +478,39 @@ export class Order {
         break;
       case COLOR_GREY:
         switch (this.secondaryColor) {
+          case COLOR_BROWN:
+            let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
+            let res = parsed && <ResourceConstant>parsed[2];
+            let mode = parsed && parsed[1];
+            this.acted = false;
+            if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
+              let hurry = this.ref.includes("hurry");
+              if ("all" === parsed![2]) {
+                if (mode === "sell") {
+                  if (hurry || Game.time % 10 === 0)
+                    _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
+                      if (ress === RESOURCE_ENERGY)
+                        return;
+                      // get rid of shit in this hive
+                      Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, <ResourceConstant>ress, 500, hurry, Infinity);
+                    });
+                } else
+                  this.delete();
+                return;
+              }
+              if (RESOURCES_ALL.includes(res)) {
+                if (hurry || Game.time % 10 === 0)
+                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
+                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
+                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
+                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
+                  else if (!this.ref.includes("keep"))
+                    this.delete();
+              } else
+                this.delete();
+            } else
+              this.delete();
+            break;
           case COLOR_RED:
             this.acted = false;
             if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)

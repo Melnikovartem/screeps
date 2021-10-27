@@ -378,7 +378,7 @@ export class DefenseCell extends Cell {
               Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
             return;
           }
-          if (tower.store.getUsedCapacity(RESOURCE_ENERGY) <= tower.store.getCapacity(RESOURCE_ENERGY) * 0.85)
+          if (this.hive.builder && this.hive.builder.activeBees.filter(b => b.pos.roomName === this.hive.roomName).length)
             return;
           let repairTarget = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
           if (repairTarget && tower.pos.getRangeTo(repairTarget) <= tower.pos.getRangeTo(enemy) && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)

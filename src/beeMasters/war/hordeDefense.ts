@@ -29,7 +29,7 @@ export class HordeDefenseMaster extends HordeMaster {
     if (shouldSpawn && this.checkBees(this.hive.state !== hiveStates.battle || this.order.pos.roomName === this.hive.roomName)) {
       let order = {
         setup: setups.defender.normal,
-        priority: <1 | 4 | 8>1,
+        priority: <1 | 4 | 7 | 8>1,
       }
 
       let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
@@ -74,9 +74,13 @@ export class HordeDefenseMaster extends HordeMaster {
             return;
         }
 
+      } else if (enemy instanceof StructureInvaderCore) {
+        order.priority = 7;
+        order.setup = setups.defender.destroyer;
       } else {
         order.priority = 8;
-        order.setup = setups.defender.destroyer;
+        order.setup = setups.defender.destroyer.copy();
+        order.setup.patternLimit = 5;
       }
 
       if (this.order.pos.roomName !== this.hive.roomName)

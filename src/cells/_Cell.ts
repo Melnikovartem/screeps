@@ -18,6 +18,9 @@ export abstract class Cell {
     this.ref = cellName;
     this.time = Game.time;
 
+    if (!(this.ref in Memory.cache.hives[this.hive.roomName].cells))
+      Memory.cache.hives[this.hive.roomName].cells[this.ref] = {};
+
     if (Apiary.masters[prefix.master + this.ref])
       this.master = Apiary.masters[prefix.master + this.ref];
   }
@@ -63,20 +66,18 @@ export abstract class Cell {
       (<{ [id: string]: any }>cellData)[<string>k] = this[k];
     });
   }*/
-  toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
-    let cellData = Memory.cache.hives[this.hive.roomName].cells;
-    if (!(this.ref in cellData))
-      cellData[this.ref] = {};
-    cellData[this.ref][<string>key] = value;
+
+  setCahe<K extends keyof this, T extends this[K]>(key: K, baseValue: T) {
+    if (!(<string>key in Memory.cache.hives[this.hive.roomName].cells[this.ref]))
+      Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key] = baseValue;
   }
 
-  fromCache<K extends keyof this, T extends this[K]>(key: K, baseValue: T) {
-    let cellData = Memory.cache.hives[this.hive.roomName].cells;
-    if (!(this.ref in cellData))
-      cellData[this.ref] = {};
-    if (!(this.ref in cellData[this.ref]))
-      cellData[this.ref][<string>key] = baseValue;
-    return <T>cellData[this.ref][<string>key];
+  toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
+    Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key] = value;
+  }
+
+  fromCache<K extends keyof this, T extends this[K]>(key: K) {
+    return <T>Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key];
   }
 
   get print(): string {

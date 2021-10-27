@@ -204,7 +204,10 @@ export class Network {
     for (const res in hive.mastersResTarget)
       hive.add(hive.resState, res, -hive.mastersResTarget[<ResourceConstant>res]!);
 
-    let fullStorage = Math.min(1, Math.floor(hive.cells.storage.storage.store.getUsedCapacity(RESOURCE_ENERGY) / 120000) * 5 + 0.01);
+    let fullStorage = Math.min(1, Math.floor(hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) / 1200) / 100 + 0.01);
+    if (hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 150000)
+      fullStorage = Math.min(fullStorage, hive.cells.storage.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / TERMINAL_ENERGY);
+
     hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY * fullStorage };
     if (hive.state !== hiveStates.battle) {
       let marketState = Apiary.broker.getTargetLongOrders(hive.roomName);
