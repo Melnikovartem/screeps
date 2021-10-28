@@ -82,7 +82,9 @@ export class RespawnCell extends Cell {
       let order = orders.reduce((prev, curr) => {
         let ans = curr.priority - prev.priority;
         if (ans === 0)
-          ans = prev.priority - curr.createTime;
+          ans = prev.createTime - curr.createTime;
+        if (ans === 0)
+          ans = Math.random() - 0.5;
         return ans < 0 ? curr : prev;
       });
       let spawn = this.freeSpawns.pop()!;

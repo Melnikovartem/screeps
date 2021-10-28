@@ -51,8 +51,12 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
-      if (this.requests[ref] && this.requests[ref].to.id === objects[i].id && (this.requests[ref].resource === res || this.requests[ref].priority > priority))
+      let existing = this.requests[ref];
+      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority <= priority)) {
+        if (existing.resource === res)
+          sum += existing.amount;
         continue;
+      }
       let amountCC = amount;
       if (fitStore)
         amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>objects[i].store).getFreeCapacity(res));
@@ -75,8 +79,12 @@ export class StorageCell extends Cell {
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
-      if (this.requests[ref] && this.requests[ref].to.id === objects[i].id && (this.requests[ref].resource === res || this.requests[ref].priority > priority))
+      let existing = this.requests[ref];
+      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority >= priority)) {
+        if (existing.resource === res)
+          sum += existing.amount;
         continue;
+      }
       let amountCC = amount;
       if (fitStore && !(objects[i] instanceof Resource))
         amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>(<Exclude<TransferRequest["from"], Resource>>objects[i]).store).getUsedCapacity(res));
@@ -139,7 +147,6 @@ export class StorageCell extends Cell {
       this.requestFromStorage([this.terminal], 4, res);
       return;
     }
-    delete this.requests[this.terminal.id];
 
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;

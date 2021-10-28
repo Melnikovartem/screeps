@@ -39,9 +39,9 @@ export class BuilderMaster extends Master {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
         ++target;
-      if (this.hive.sumCost > 15000) {
-        this.boosts = [{ type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
-        if (this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY])
+      if (this.hive.sumCost > 10000) {
+        this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
+        if (this.hive.resState[RESOURCE_ENERGY] > 0)
           this.patternPerBee = 8;
       }
     }
@@ -58,7 +58,7 @@ export class BuilderMaster extends Master {
     this.recalculateTargetBee();
     this.movePriority = emergency ? 2 : 5;
 
-    if (this.checkBees(this.hive.state !== hiveStates.lowenergy)) {
+    if (this.checkBees(this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000)) {
       let order = {
         setup: setups.builder,
         priority: <2 | 5 | 7>(emergency ? 2 : (this.beesAmount ? 6 : 5)),

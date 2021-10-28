@@ -16,7 +16,7 @@ const BOOST_LVL = 0;
 export class HordeMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = 1;
-  movePriority = <3>3;
+  movePriority = <3 | 4>4;
   boosts: Boosts | undefined = [{ type: "rangedAttack", lvl: BOOST_LVL }, { type: "attack", lvl: BOOST_LVL }
     , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL },
   { type: "dismantle", lvl: 2 }, { type: "dismantle", lvl: 1 }, { type: "dismantle", lvl: 0 }];
@@ -35,12 +35,13 @@ export class HordeMaster extends SwarmMaster {
     if (!this.order.ref.includes("boost"))
       this.boosts = undefined;
     if (this.order.ref.includes("harass")) {
-      this.maxSpawns = Infinity;
+      this.maxSpawns = 8; // ~ 10H of non stop harass max ~ 10K energy
       this.setup.fixed = [HEAL, ATTACK];
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
     else if (this.order.ref.includes("destroyer")) {
+      this.movePriority = 3;
       this.setup = setups.defender.destroyer.copy();
       this.setup.fixed = [TOUGH, TOUGH, TOUGH];
     }
@@ -139,11 +140,14 @@ export class HordeMaster extends SwarmMaster {
         myTTK = Infinity;
       loosingBattle = myTTK === Infinity || enemyTTK < myTTK;
 
-      if (beeStats.dmgClose)
+      if (beeStats.dmgClose) {
         attackRange = 2;
-      else if (beeStats.dmgRange)
-        attackRange = 4;
-      else
+      } else if (beeStats.dmgRange) {
+        if (enemyInfo.dmgRange || enemyInfo.dmgClose)
+          attackRange = 4;
+        else
+          attackRange = 2;
+      } else
         attackRange = 4;
 
       if (loosingBattle)
@@ -189,8 +193,8 @@ export class HordeMaster extends SwarmMaster {
       return OK;
 
     if (rangeToTarget < targetedRange)
-      bee.flee(loosingBattle ? this.hive : this.order, opts);
-    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.9) {
+      bee.flee(loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive : this.order, opts);
+    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.5) {
       opts.movingTarget = true;
       bee.goTo(target, opts);
       if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.order.pos.roomName)
@@ -230,16 +234,17 @@ export class HordeMaster extends SwarmMaster {
         case beeStates.chill:
           enemy = Apiary.intel.getEnemy(bee.pos, 10);
           let ans: number = OK;
-          if (enemy && bee.pos.getRangeTo(enemy) <= 3) {
+          if (enemy) {
             enemy = Apiary.intel.getEnemy(bee.pos);
-            if (enemy && bee.pos.getRangeTo(enemy) > 3)
+            if (enemy && bee.pos.getRangeTo(enemy) > 4)
               enemy = undefined;
           }
           ans = this.beeAct(bee, enemy);
           if (bee.pos.roomName === this.order.pos.roomName)
             bee.state = beeStates.work;
           if (ans === OK) {
-            bee.goTo(this.order.pos);
+            let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+            bee.goTo(this.order.pos, roomInfo.roomState >= roomStates.reservedByEnemy ? { useFindRoute: true } : {});
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
           }

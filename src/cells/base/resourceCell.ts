@@ -55,10 +55,15 @@ export class ResourceCell extends Cell {
     this.toCache("restTime", value);
   }
 
+  set pos(value) {
+    this.toCache("pos", value);
+  }
+
   get pos(): RoomPosition {
     let p = this.fromCache("pos");
     return new RoomPosition(p.x, p.y, p.roomName);
   }
+
 
   updateStructure() {
     if (!(this.pos.roomName in Game.rooms))
@@ -90,6 +95,15 @@ export class ResourceCell extends Cell {
       let lair = <StructureKeeperLair>this.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
       if (lair)
         this.lair = lair;
+    }
+
+    if (this.container)
+      this.pos = this.container.pos;
+    else if (this.link) {
+      let poss = this.resource.pos.getOpenPositions(true);
+      let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => p.equal(pp)).length)[0];
+      if (pos)
+        this.pos = pos;
     }
 
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;

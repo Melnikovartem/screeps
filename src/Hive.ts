@@ -503,7 +503,7 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         else
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
-        if (!this.sumCost)
+        if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 4)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
 
         if (!this.sumCost && this.builder && this.builder.activeBees)

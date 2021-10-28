@@ -13,6 +13,7 @@ import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
+const STARVE_HIM_OUT_CLAIMS = ["E12N49", "E13N49", "E14N48", "E13N48", "E14N47"]
 
 @profile
 export class _Apiary {
@@ -53,6 +54,8 @@ export class _Apiary {
 
   init() {
     _.forEach(Game.rooms, room => {
+      if (STARVE_HIM_OUT_CLAIMS.includes(room.name))
+        return;
       if (room.controller && room.controller.my) {
         this.username = room.controller.owner!.username;
         this.hives[room.name] = new Hive(room.name);

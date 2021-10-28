@@ -421,6 +421,8 @@ export class Traveler {
         let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         if (["E12N46", "E12N45", "E11N44"].includes(roomName))
           return 0;
+        if (["E13N48"].includes(roomName))
+          return 255;
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
           case roomStates.reservedByMe:

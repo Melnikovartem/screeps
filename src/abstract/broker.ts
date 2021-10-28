@@ -149,7 +149,7 @@ export class Broker {
       let res = <ResourceConstant>o.resourceType;
       if (!ans[res])
         ans[res] = 0
-      ans[res]! += o.remainingAmount
+      ans[res]! += o.remainingAmount;
     });
     for (const r in this.shortOrdersSell[roomName].orders) {
       let res = <ResourceConstant>r;
@@ -180,7 +180,7 @@ export class Broker {
     if (res === RESOURCE_ENERGY)
       priceToBuyInstant *= 1.5654; // approx transfer costs
 
-    if (hurry || priceToBuyInstant <= price * 1.05) {
+    if ((hurry || priceToBuyInstant <= price * 1.05) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let ans: number = ERR_NOT_ENOUGH_RESOURCES;
       if (Math.floor(creditsToUse / priceToBuyInstant))
         ans = this.buyShort(terminal, res, amount, creditsToUse);
@@ -199,10 +199,11 @@ export class Broker {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
       let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
+      let coef = hurry ? 2 : 1;
       if (priceToSellInstant >= o.price - ORDER_PADDING * 100)
-        newPrice = o.price - ORDER_PADDING * 100;
+        newPrice = o.price - ORDER_PADDING * 100 * coef;
       else if (priceToSellInstant > o.price)
-        newPrice = o.price - ORDER_PADDING;
+        newPrice = o.price - ORDER_PADDING * coef;
       if (newPrice && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
@@ -223,7 +224,7 @@ export class Broker {
     let price = this.getPriceLongSell(res);
     let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
 
-    if (hurry || priceToSellInstant >= price * 0.95) {
+    if ((hurry || priceToSellInstant >= price * 0.95) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let ans = this.sellShort(terminal, res, amount);
       switch (ans) {
         case OK:
@@ -251,10 +252,11 @@ export class Broker {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
       let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
+      let coef = hurry ? 2 : 1;
       if (priceToBuyInstant <= o.price - ORDER_PADDING * 100)
-        newPrice = o.price - ORDER_PADDING * 100;
+        newPrice = o.price - ORDER_PADDING * 100 * coef;
       else if (priceToBuyInstant < o.price)
-        newPrice = o.price - ORDER_PADDING;
+        newPrice = o.price - ORDER_PADDING * coef;
       if (newPrice && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
@@ -319,6 +321,8 @@ export class Broker {
     if (!orders)
       return ERR_NOT_FOUND;
     if (creditsToUse !== Infinity && !_.filter(COMPRESS_MAP, r => r === res).length)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+    if (res === RESOURCE_ENERGY)
       orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
     if (!orders.length)
       return ERR_NOT_IN_RANGE;

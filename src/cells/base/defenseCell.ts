@@ -123,7 +123,7 @@ export class DefenseCell extends Cell {
           let toDo = map[x][y];
           if (rampart)
             toDo -= rampart.hits;
-          return cost >= toDo / (100 * coef);
+          return cost * 1.5 >= toDo / (100 * coef);
         }).length) {
           let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
@@ -320,26 +320,34 @@ export class DefenseCell extends Cell {
     return this.dmgAtPos[str];
   }
 
+  getEnemy() {
+    let enemy = Apiary.intel.getEnemy(this)!;
+    if (!enemy)
+      return;
+
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+    _.forEach(roomInfo.enemies, e => {
+      let statsE = Apiary.intel.getComplexStats(e.object).current;
+      let statsEnemy = Apiary.intel.getComplexStats(enemy).current;
+      if (this.getDmgAtPos(e.object.pos) - statsE.heal - statsE.resist > this.getDmgAtPos(enemy.pos) - statsEnemy.heal - statsEnemy.resist)
+        enemy = e.object;
+    });
+    return enemy;
+  }
+
+
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    if (roomInfo.enemies.length) {
+    if (roomInfo.enemies.length && Game.time > roomInfo.safeModeEndTime) {
       if (this.isBreached && this.hive.room.controller!.level >= 4) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
           contr.activateSafeMode(); // red button
       }
 
-      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
-      let enemy = Apiary.intel.getEnemy(this)!;
+      let enemy = this.getEnemy()!;
       if (!enemy)
         return;
-
-      _.forEach(roomInfo.enemies, e => {
-        let statsE = Apiary.intel.getComplexStats(e.object).current;
-        let statsEnemy = Apiary.intel.getComplexStats(enemy).current;
-        if (this.getDmgAtPos(e.object.pos) - statsE.heal - statsE.resist > this.getDmgAtPos(enemy.pos) - statsEnemy.heal - statsEnemy.resist)
-          enemy = e.object;
-      });
 
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy).current;
@@ -378,7 +386,7 @@ export class DefenseCell extends Cell {
               Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
             return;
           }
-          if (this.hive.builder && this.hive.builder.activeBees.filter(b => b.pos.roomName === this.hive.roomName).length)
+          if ((this.hive.builder && this.hive.builder.activeBees.filter(b => b.pos.roomName === this.hive.roomName).length) || tower.store.getUsedCapacity(RESOURCE_ENERGY) <= tower.store.getCapacity(RESOURCE_ENERGY) * 0.75)
             return;
           let repairTarget = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
           if (repairTarget && tower.pos.getRangeTo(repairTarget) <= tower.pos.getRangeTo(enemy) && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)

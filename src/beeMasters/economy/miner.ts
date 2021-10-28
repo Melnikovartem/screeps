@@ -110,8 +110,8 @@ export class MinerMaster extends Master {
 
       switch (bee.state) {
         case beeStates.work:
-          if (this.cell.container && !bee.pos.equal(this.cell.container) && this.cell.container.pos.isFree()) {
-            bee.goTo(this.cell.container.pos, this.hive.opts);
+          if (!bee.pos.equal(this.cell.pos)) {
+            bee.goTo(this.cell.pos, this.hive.opts);
             if (bee.pos.isNearTo(this.cell.resource))
               bee.harvest(this.cell.resource, this.hive.opts);
           } else

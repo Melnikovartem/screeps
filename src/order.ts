@@ -212,6 +212,8 @@ export class Order {
             if (!this.master) {
               let roomState = Apiary.intel.getInfo(this.pos.roomName, Infinity).roomState;
               switch (roomState) {
+                case roomStates.ownedByMe:
+                  break;
                 case roomStates.reservedByEnemy:
                 case roomStates.reservedByInvader:
                 case roomStates.noOwner:
@@ -275,6 +277,9 @@ export class Order {
           switch (this.secondaryColor) {
             case COLOR_CYAN:
               type = "rest";
+              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+                cell.restTime = Infinity;
+              });
               break;
             case COLOR_GREEN:
               type = "queen1";
@@ -287,6 +292,9 @@ export class Order {
               break;
             case COLOR_WHITE:
               type = "center";
+              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+                cell.roadTime = Infinity;
+              });
               break;
           }
           if (type) {
@@ -379,6 +387,10 @@ export class Order {
                 del = 2;
             }
             if (del > 1) {
+              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+                cell.roadTime = Infinity;
+                cell.restTime = Infinity;
+              });
               this.delete();
               this.pos.createFlag("OK_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
             } else if (del === 1)

@@ -144,7 +144,11 @@ export class Bee {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder)));
       if (refMaster)
         return refMaster;
-    }
+    } /* else if (this.ref.includes(setupsNames.miner)) {
+      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.beesAmount < 1 && m.ref.includes(prefix.resourceCells)));
+      if (refMaster)
+        return refMaster;
+    } */
     /* else if (this.ref.includes(setupsNames.healer) || this.ref.includes(setupsNames.dismantler)) {
       let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("dismantle")));
       if (refMaster)
@@ -157,7 +161,12 @@ export class Bee {
   findClosestByHive(masters: Master[]) {
     if (!masters.length)
       return null;
-    let ans = masters.reduce((prev, curr) => curr.hive.pos.getRoomRangeTo(this) < prev.hive.pos.getRoomRangeTo(this) ? curr : prev);
+    let ans = masters.reduce((prev, curr) => {
+      let ans = curr.hive.pos.getRoomRangeTo(this) - prev.hive.pos.getRoomRangeTo(this);
+      if (ans === 0)
+        ans = (prev.targetBeeCount - prev.beesAmount) - (curr.targetBeeCount - curr.beesAmount);
+      return ans < 0 ? curr : prev
+    });
     if (ans.hive.pos.getRoomRangeTo(this) * 25 > this.ticksToLive)
       return null;
     return ans.ref;
@@ -480,7 +489,7 @@ export class Bee {
           // i know still can softlock, but this can solve most important cases
           let inPos = moveMap[pos.to_str].filter(m => m.bee.pos.to_str == pos.to_str)[0];
           if (inPos)
-            inPos.bee.creep.move(bee.pos.getDirectionTo(bee.pos));
+            inPos.bee.creep.move(inPos.bee.pos.getDirectionTo(bee));
         }
       }
     } else

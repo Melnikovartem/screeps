@@ -206,7 +206,7 @@ export class Network {
 
     let fullStorage = Math.min(1, Math.floor(hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) / 1200) / 100 + 0.01);
     if (hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 150000)
-      fullStorage = Math.min(fullStorage, hive.cells.storage.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / TERMINAL_ENERGY);
+      fullStorage = Math.max(fullStorage / 2, Math.min(fullStorage, hive.cells.storage.terminal.store.getUsedCapacity(RESOURCE_ENERGY) / TERMINAL_ENERGY));
 
     hive.cells.storage.resTargetTerminal = { energy: TERMINAL_ENERGY * fullStorage };
     if (hive.state !== hiveStates.battle) {
