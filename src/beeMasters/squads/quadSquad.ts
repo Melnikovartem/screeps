@@ -5,16 +5,16 @@ import type { Boosts } from "../_Master";
 
 const GANG = setups.knight.copy();
 
-const TOWER_NUM = 2; // 6;
+const TOWER_NUM = 6; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
 const TOUGHT_AMOUNT = Math.ceil(TOWER_DMG / 100);
 
-const HEAL_AMOUNT = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal) / 4);
+const HEAL_AMOUNT = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal) / 4 + 1);
 
 GANG.fixed = Array(HEAL_AMOUNT).fill(HEAL).concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
 
 // my most powerfull weapon to date
-export class GangDuo extends SquadMaster {
+export class GangQuad extends SquadMaster {
   boosts: Boosts = [{ type: "fatigue", lvl: 2 }, { type: "rangedAttack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "damage", lvl: 2 }];
   formation: FormationPositions = [
     [{ x: 0, y: 0 }, GANG],

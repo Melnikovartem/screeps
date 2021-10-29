@@ -59,7 +59,7 @@ export class Intel {
   }
 
   getEnemy(pos: ProtoPos, lag?: number, filter: (enemies: Enemy[], roomInfo: RoomInfo, pos: RoomPosition) => Enemy[]
-    = (es, ri, pos) => es.filter(e => e.dangerlvl === ri.dangerlvlmax || (e.dangerlvl >= 4 && pos.getRangeTo(e.object) <= 3))) {
+    = (es, ri, pos) => es.filter(e => e.dangerlvl === ri.dangerlvlmax || (e.dangerlvl >= 4 && pos.getRangeTo(e.object) <= 5))) {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -317,7 +317,7 @@ export class Intel {
             dangerlvl = 1;
 
         if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length) {
-          if (dangerlvl < 8 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier)) {
+          if (dangerlvl < 7 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier)) {
             if (s.structureType !== STRUCTURE_ROAD)
               dangerlvl = 9;
           } else if (dangerlvl < 4)

@@ -1,5 +1,8 @@
-import type { Bee } from "./bee";
+
 import { beeStates } from "../enums";
+import { findOptimalResource } from "../abstract/utils";
+
+import type { Bee } from "./bee";
 
 type TransferTarget = StructureLink | StructureTerminal | StructureStorage | StructureTower
   | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn | StructureFactory;
@@ -10,17 +13,23 @@ export class TransferRequest {
   toAmount: number;
   from: TransferTarget | Tombstone | Ruin | Resource;
   fromAmount: number;
-  resource: ResourceConstant;
+  resource: ResourceConstant | undefined;
   inProcess = 0;
   beeProcess = 0;
   amount: number;
-  priority: 0 | 1 | 2 | 3 | 4 | 5;
+  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  // 0 - refill
+  // 1 - mostly labs boosting
+  // 2 - towers?
+  // 4 - terminal
+  // 5 - not important shit
+  // 6 - pickup
   stillExists: boolean
 
   nextup: TransferRequest | undefined;
 
-  constructor(ref: string, from: TransferRequest["from"], to: TransferRequest["to"], priority: 0 | 1 | 2 | 3 | 4 | 5
-    , res: ResourceConstant, amount: number) {
+  constructor(ref: string, from: TransferRequest["from"], to: TransferRequest["to"], priority: TransferRequest["priority"]
+    , res: ResourceConstant | undefined, amount: number) {
     this.ref = ref;
     this.to = to;
     this.from = from;
@@ -128,14 +137,14 @@ export class TransferRequest {
         if (this.from instanceof Resource)
           ans = bee.pickup(this.from);
         else
-          ans = bee.withdraw(this.from, this.resource, amountBee);
+          ans = bee.withdraw(this.from, this.resource || findOptimalResource(this.from.store), amountBee);
         if (ans === OK)
           bee.goTo(this.to);
         break;
 
       case beeStates.work:
         amountBee = Math.min(this.amount, bee.store.getUsedCapacity(this.resource), this.toAmount);
-        if (bee.transfer(this.to, this.resource, amountBee) === OK) {
+        if (bee.transfer(this.to, this.resource || findOptimalResource(bee.store), amountBee) === OK) {
           this.amount -= amountBee;
           this.toAmount -= amountBee;
           if (!this.isValid()) {

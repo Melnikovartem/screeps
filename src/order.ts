@@ -6,6 +6,7 @@ import { AnnoyOBot } from "./beeMasters/squads/annoyObot";
 import { WaiterMaster } from "./beeMasters/war/waiter";
 
 import { GangDuo } from "./beeMasters/squads/gangDuo";
+import { GangQuad } from "./beeMasters/squads/quadSquad";
 
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
@@ -155,6 +156,9 @@ export class Order {
               break;
             case COLOR_ORANGE:
               this.master = new GangDuo(this);
+              break;
+            case COLOR_GREY:
+              this.master = new GangQuad(this);
               break;
             case COLOR_YELLOW:
               this.master = new DismanleBoys(this);
@@ -418,7 +422,7 @@ export class Order {
             case COLOR_GREEN:
               if (!this.master) {
                 let hive = Apiary.hives[this.pos.roomName];
-                if (hive && hive.cells.storage) {
+                if (hive && hive.cells.storage && !this.ref.includes("manual")) {
                   let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = this.pos.lookFor(LOOK_RESOURCES).filter(r => r.amount > 0);
                   targets = targets.concat(this.pos.lookFor(LOOK_RUINS).filter(r => r.store.getUsedCapacity() > 0));
                   targets = targets.concat(this.pos.lookFor(LOOK_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0));
@@ -429,7 +433,7 @@ export class Order {
                     else
                       hive.cells.storage!.requestToStorage([t], 1, findOptimalResource(t.store));
                   });
-                  hive.cells.storage.requestToStorage(resources, 1);
+                  hive.cells.storage.requestToStorage(resources, 1, undefined);
                   if (!targets.length)
                     this.delete();
                   this.acted = false;
@@ -516,7 +520,7 @@ export class Order {
                     Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
                   else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
                     Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
-                  else if (!this.ref.includes("keep"))
+                  else if (this.ref.includes("nokeep"))
                     this.delete();
               } else
                 this.delete();

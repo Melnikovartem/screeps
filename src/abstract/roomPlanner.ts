@@ -1018,10 +1018,11 @@ export class RoomPlanner {
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_TYPE; ++i) {
           let anss;
-          if (sType === STRUCTURE_SPAWN)
-            anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
-          else
-            anss = toadd[i].createConstructionSite(sType);
+          if (!toadd[i].findInRange(FIND_NUKES, 2).length)
+            if (sType === STRUCTURE_SPAWN)
+              anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
+            else
+              anss = toadd[i].createConstructionSite(sType);
           if (anss === OK) {
             switch (sType) {
               case STRUCTURE_RAMPART:

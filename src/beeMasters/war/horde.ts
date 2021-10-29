@@ -2,7 +2,7 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
-import { beeStates, roomStates } from "../../enums";
+import { beeStates, roomStates, prefix } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -23,6 +23,7 @@ export class HordeMaster extends SwarmMaster {
   notify = false;
   holdPosition = false;
   setup = setups.knight.copy();
+  emergency = false;
 
   constructor(order: Order) {
     super(order);
@@ -30,6 +31,7 @@ export class HordeMaster extends SwarmMaster {
   }
 
   init() {
+    this.emergency = this.hive.roomName === this.order.pos.roomName;
     if (this.order.ref.includes("hold"))
       this.holdPosition = true;
     if (!this.order.ref.includes("boost"))
@@ -44,6 +46,12 @@ export class HordeMaster extends SwarmMaster {
       this.movePriority = 3;
       this.setup = setups.defender.destroyer.copy();
       this.setup.fixed = [TOUGH, TOUGH, TOUGH];
+    } else if (this.order.ref.includes(prefix.def)) {
+      this.setup.fixed = [];
+      if (this.boosts) {
+        this.boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "fatigue", lvl: 2 }]
+        this.setup.patternLimit = 15;
+      }
     }
     if (this.order.ref.includes("keep"))
       this.maxSpawns = Infinity;
@@ -53,7 +61,7 @@ export class HordeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
-    if (this.checkBees() && (Game.time >= roomInfo.safeModeEndTime - 250)) {
+    if (this.checkBees(this.emergency) && (Game.time >= roomInfo.safeModeEndTime - 250)) {
       this.wish({
         setup: this.setup,
         priority: 4,
@@ -128,12 +136,16 @@ export class HordeMaster extends SwarmMaster {
     if (target instanceof Creep) {
       let enemyInfo = Apiary.intel.getComplexStats(target).current;
       let myInfo = Apiary.intel.getComplexMyStats(bee, 5, 3).current;
-      let enemyTTK = myInfo.hits / (enemyInfo.dmgClose + enemyInfo.dmgRange - myInfo.heal);
+      let enemyTTK;
       let myTTK;
       if (beeStats.dmgClose && !myInfo.dmgRange && enemyInfo.dmgRange && rangeToTarget > 1 && target.owner.username !== "Invader")
         myTTK = Infinity;
       else
         myTTK = enemyInfo.hits / (myInfo.dmgClose + myInfo.dmgRange - enemyInfo.heal);
+      if (beeStats.dmgRange && !enemyInfo.dmgRange)
+        enemyTTK = Infinity;
+      else
+        enemyTTK = myInfo.hits / (enemyInfo.dmgClose + enemyInfo.dmgRange - myInfo.heal);
       if (enemyTTK < 0)
         enemyTTK = Infinity;
       if (myTTK < 0)
@@ -192,9 +204,10 @@ export class HordeMaster extends SwarmMaster {
     if (this.holdPosition || !target)
       return OK;
 
-    if (rangeToTarget < targetedRange)
-      bee.flee(loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive : this.order, opts);
-    else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.5) {
+    if (rangeToTarget < targetedRange) {
+      bee.flee(bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive : this.order, opts);
+      return ERR_BUSY;
+    } else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.5) {
       opts.movingTarget = true;
       bee.goTo(target, opts);
       if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.order.pos.roomName)
@@ -236,7 +249,7 @@ export class HordeMaster extends SwarmMaster {
           let ans: number = OK;
           if (enemy) {
             enemy = Apiary.intel.getEnemy(bee.pos);
-            if (enemy && bee.pos.getRangeTo(enemy) > 4)
+            if (enemy && bee.pos.getRangeTo(enemy) > 5)
               enemy = undefined;
           }
           ans = this.beeAct(bee, enemy);

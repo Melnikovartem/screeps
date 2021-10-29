@@ -2,6 +2,7 @@ import { Master } from "../_Master";
 
 import { beeStates, hiveStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 // import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -30,7 +31,7 @@ export class BuilderMaster extends Master {
       this.patternPerBee = Infinity;
       ++target;
       _.forEach(this.bees, b => {
-        if (!b.boosted && b.ticksToLive >= 1200)
+        if (!b.boosted && b.ticksToLive >= 1200 && this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL)
           b.state = beeStates.boosting;
       });
       if (this.hive.state === hiveStates.battle && this.hive.sumCost > 30000)
@@ -106,7 +107,7 @@ export class BuilderMaster extends Master {
           else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
             bee.state = beeStates.work;
             if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense" : "build", this.sCell.storage.store, bee.store);
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense_repair" : "build", this.sCell.storage.store, bee.store);
             let target = bee.pos.findClosest(this.hive.structuresConst);
             if (target && target.pos.getRangeTo(bee) > 3)
               bee.goTo(target.pos, this.hive.opts);
@@ -137,16 +138,21 @@ export class BuilderMaster extends Master {
               }
             }
 
-            if (!target || (this.hive.state === hiveStates.battle && Game.time % 10 === 0))
+            if (!target || (this.hive.state >= hiveStates.nukealert && Game.time % 10 === 0))
               target = this.hive.getBuildTarget(bee);
             if (target) {
+              if (bee.pos.getRangeTo(this.sCell.storage) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
+                bee.state = beeStates.refill;
+                bee.goTo(this.sCell.storage);
+                break;
+              }
               let ans;
               if (target instanceof ConstructionSite)
                 ans = bee.build(target, this.hive.opts);
               else if (target instanceof Structure)
                 ans = bee.repair(target, this.hive.opts);
-              if (bee.pos.getRangeTo(target) <= 3 && this.hive.state == hiveStates.battle) {
-                let resource = target.pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
+              if (bee.pos.getRangeTo(target) <= 3) {
+                let resource = bee.pos.findClosest(bee.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));
                 if (resource)
                   bee.pickup(resource, this.hive.opts);
               }
@@ -174,13 +180,23 @@ export class BuilderMaster extends Master {
       if (this.hive.state !== hiveStates.battle) {
         this.checkFlee(bee);
       } else {
-        let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-        if (!bee.targetPosition)
+        let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 25).enemies.map(e => e.object).filter(e => {
+          if (!(e instanceof Creep))
+            return false;
+          let stats = Apiary.intel.getStats(e).current;
+          return !!(stats.dmgClose + stats.dmgRange);
+        });
+        let enemy = bee.pos.findClosest(enemies);
+        if (!bee.targetPosition && enemy && enemy.pos.getRangeTo(bee) <= 4)
           bee.targetPosition = bee.pos;
         if (enemy) {
           let fleeDist = Apiary.intel.getFleeDist(enemy);
-          if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) < fleeDist)
+          if (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist
+            || (enemy && this.hive.cells.defense.wasBreached(enemy.pos, bee.targetPosition || bee.pos))) {
+            if (bee.store.getUsedCapacity() && enemy.pos.getRangeTo(bee) <= 5)
+              bee.drop(RESOURCE_ENERGY);
             bee.flee(this.hive);
+          }
         }
       }
     });

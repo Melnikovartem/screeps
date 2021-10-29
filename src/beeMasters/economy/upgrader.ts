@@ -37,6 +37,11 @@ export class UpgraderMaster extends Master {
     this.targetBeeCount = Math.ceil(desiredRate / this.cell.ratePerCreepMax);
     this.patternPerBee = Math.ceil(desiredRate / this.targetBeeCount);
 
+    if (this.hive.roomName === "E12N48" && this.cell.controller.level < 8) {
+      this.targetBeeCount = 1;
+      this.patternPerBee = Infinity;
+    }
+
     //this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
     //  1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
     if (this.cell.link)

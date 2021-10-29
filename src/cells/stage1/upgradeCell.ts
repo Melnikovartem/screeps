@@ -90,7 +90,7 @@ export class UpgradeCell extends Cell {
         this.sCell.linksState[this.storageLink.id] = "busy";
         let usedCap = this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY);
         if (freeCap >= usedCap + 50 || freeCap === LINK_CAPACITY - usedCap)
-          this.sCell.requestFromStorage([this.storageLink], freeCap >= LINK_CAPACITY - 100 ? 3 : 1);
+          this.sCell.requestFromStorage([this.storageLink], freeCap >= LINK_CAPACITY - 100 ? 3 : 1, RESOURCE_ENERGY);
         else
           delete this.sCell.requests[this.storageLink.id];
       }

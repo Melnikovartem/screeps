@@ -13,7 +13,7 @@ DISMANTLER.fixed = [RANGED_ATTACK, RANGED_ATTACK].concat(Array(TOUGHT_AMOUNT).fi
 
 const HEALER = setups.healer.copy();
 HEALER.fixed = [RANGED_ATTACK, RANGED_ATTACK].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
-HEALER.patternLimit = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal)) + 2;
+// HEALER.patternLimit = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal)) + 2;
 
 // my most powerfull weapon to date
 export class DismanleBoys extends SquadMaster {

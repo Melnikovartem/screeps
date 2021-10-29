@@ -130,11 +130,14 @@ export class MinerMaster extends Master {
           bee.state = beeStates.work;
           break;
       }
-      if (!this.checkFlee(bee) && lairSoonSpawn)
-        if (bee.pos.getRangeTo(this.cell.lair!) < 5)
-          bee.goTo(this.hive);
-        else
-          bee.targetPosition = undefined;
+      if (this.checkFlee(bee)) {
+      } else {
+        if (lairSoonSpawn)
+          if (bee.pos.getRangeTo(this.cell.lair!) < 5)
+            bee.goTo(this.hive);
+          else
+            bee.targetPosition = undefined;
+      }
     });
   }
 }

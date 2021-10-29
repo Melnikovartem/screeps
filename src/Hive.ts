@@ -422,7 +422,8 @@ export class Hive {
 
   get opts() {
     let opts: TravelToOptions = {};
-    if (this.state === hiveStates.battle)
+    if (this.state === hiveStates.battle) {
+      opts.stuckValue = 1;
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.roomName)
           return;
@@ -439,6 +440,7 @@ export class Hive {
         });
         return matrix;
       }
+    }
     return opts;
   }
 
@@ -482,6 +484,8 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         break;
       case hiveStates.nukealert:
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
         addCC(this.cells.defense.getNukeDefMap(true));
         break;
       case hiveStates.nospawn:
@@ -501,8 +505,12 @@ export class Hive {
         checkAnnex();
         if (!this.sumCost)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
-        else
-          addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
+        else {
+          let defenses = Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense);
+          if (defenses.length)
+            this.structuresConst = [];
+          addCC(defenses);
+        }
         if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 4)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
 

@@ -7,7 +7,7 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class ClaimerMaster extends SwarmMaster {
-  maxSpawns = Infinity;
+  maxSpawns = 8;
   movePriority = <3>3;
   update() {
     super.update();

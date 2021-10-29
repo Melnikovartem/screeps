@@ -85,14 +85,13 @@ export class DefenseCell extends Cell {
     });
 
     let ans: BuildProject[] = [];
-    // todo?? save some of the extensions / not all spawns
     let extraCovers: string[] = [];
     let leaveOne = (ss: { [id: string]: Structure }) => {
       let underStrike = _.filter(ss, s => map[s.pos.x] && map[s.pos.x][s.pos.y])
       if (underStrike.length !== Object.keys(ss).length)
         return;
       let cover = underStrike.reduce((prev, curr) => map[curr.pos.x][curr.pos.y] < map[prev.pos.x][prev.pos.y] ? curr : prev);
-      extraCovers.push(cover.pos.x + "_" + cover.pos.y)
+      extraCovers.push(cover.pos.x + "_" + cover.pos.y);
     }
 
     let coef = 1;
@@ -120,10 +119,12 @@ export class DefenseCell extends Cell {
             return true;
           let cost = CONSTRUCTION_COST[<BuildableStructureConstant>s.structureType];
           let rampart = s.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART)[0];
-          let toDo = map[x][y];
+          let workNotDone = map[x][y];
+          if (s instanceof StructureStorage)
+            workNotDone -= Math.max(0, s.store.getUsedCapacity() - TERMINAL_CAPACITY) * 100;
           if (rampart)
-            toDo -= rampart.hits;
-          return cost * 1.5 >= toDo / (100 * coef);
+            workNotDone -= rampart.hits;
+          return cost * 1.5 >= workNotDone / (100 * coef);
         }).length) {
           let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
@@ -154,12 +155,18 @@ export class DefenseCell extends Cell {
           }
         }
       }
-    if (oneAtATime) {
+    if (oneAtATime && ans.length) {
+      let findType = (prev: { pos: RoomPosition }, curr: { pos: RoomPosition }, type: StructureConstant) =>
+        prev.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === type).length -
+        curr.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === type).length
       let theOne = ans.reduce((prev, curr) => {
-        let ans = prev.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_TERMINAL).length -
-          curr.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_TERMINAL).length;
+        let ans = findType(prev, curr, STRUCTURE_STORAGE);
         if (ans === 0)
-          ans = map[curr.pos.x][curr.pos.y] - map[prev.pos.x][prev.pos.y]
+          ans = findType(prev, curr, STRUCTURE_TERMINAL);
+        if (ans === 0)
+          ans = findType(prev, curr, STRUCTURE_SPAWN);
+        if (ans === 0)
+          ans = map[curr.pos.x][curr.pos.y] - map[prev.pos.x][prev.pos.y];
         return ans < 0 ? curr : prev;
       });
       return [theOne];
@@ -184,10 +191,13 @@ export class DefenseCell extends Cell {
       this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
     }
 
+    if (this.hive.state === hiveStates.battle && Game.time % 10 === 0 && this.hive.cells.storage)
+      this.hive.cells.storage.pickupResources();
+
     let storageCell = this.hive.cells.storage;
     if (storageCell) {
       if (this.hive.state === hiveStates.battle)
-        storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 2);
+        storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 2, RESOURCE_ENERGY);
       else
         storageCell.requestFromStorage(Object.values(this.towers), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
     }
@@ -256,9 +266,14 @@ export class DefenseCell extends Cell {
     }
   }
 
-  wasBreached(pos: RoomPosition) {
-    let path = pos.findPathTo(this, {
+  get opts(): FindPathOpts {
+    return {
       maxRooms: 1,
+      ignoreRoads: true,
+      ignoreCreeps: true,
+      ignoreDestructibleStructures: true,
+      swampCost: 1,
+      plainCost: 1,
       costCallback: (roomName, matrix) => {
         if (!(roomName in Game.rooms))
           return matrix;
@@ -273,12 +288,18 @@ export class DefenseCell extends Cell {
         _.forEach(obstacles, s => matrix.set(s.pos.x, s.pos.y, 0xff));
         return matrix;
       }
-    });
+    }
+  }
+
+  wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
+    let path = pos.findPathTo(defPos, this.opts);
     let lastStep = path.pop();
     if (!lastStep)
-      return pos.isNearTo(this);
+      return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
+        && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART));
     let endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
-    return endOfPath.isNearTo(this);
+    return endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
+      && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART));
   }
 
   setDefFlag(pos: RoomPosition, flag?: Flag) {
@@ -338,6 +359,21 @@ export class DefenseCell extends Cell {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+
+    let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    if (!healTargets.length && this.hive.cells.storage)
+      healTargets = this.hive.cells.storage.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    if (!healTargets.length && this.hive.builder)
+      healTargets = this.hive.builder.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    if (!healTargets.length && this.hive.builder)
+      healTargets = this.hive.builder.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    let healTarget: Creep | undefined;
+    let toHeal = 0;
+    if (healTargets.length) {
+      healTarget = healTargets.reduce((prev, curr) => (curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev));
+      toHeal = healTarget.hitsMax - healTarget.hits;
+    }
+
     if (roomInfo.enemies.length && Game.time > roomInfo.safeModeEndTime) {
       if (this.isBreached && this.hive.room.controller!.level >= 4) {
         let contr = this.hive.room.controller!;
@@ -352,8 +388,12 @@ export class DefenseCell extends Cell {
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy).current;
       let attackPower = this.getDmgAtPos(enemy.pos);
-      if (stats.heal + stats.resist < attackPower || !stats.heal
-        || (stats.resist && stats.resist < attackPower) || stats.hits <= attackPower)
+      if ((stats.heal + Math.min(stats.resist, stats.heal * 1 / 0.3) < attackPower || stats.hits <= attackPower) // || (stats.resist && stats.resist < attackPower
+        && (roomInfo.dangerlvlmax < 8
+          || (enemy.pos.x > 2 && enemy.pos.x < 47 && enemy.pos.y > 2 && enemy.pos.y < 47)
+          || this.master.activeBees.filter(b => b.pos.getRangeTo(enemy) < 2).length
+          || stats.hits + stats.heal <= attackPower
+          || (!stats.heal && !enemy.pos.getEnteranceToRoom())))
         shouldAttack = true;
       /*let healer: undefined | Creep;
        let fisrtTower = _.filter(this.towers, t => t.store.getCapacity(RESOURCE_ENERGY) >= 10)[0];
@@ -365,6 +405,21 @@ export class DefenseCell extends Cell {
         })[0]; */
 
       let workingTower = false;
+
+      if (!healTarget) {
+        healTarget = enemy.pos.findInRange(FIND_MY_CREEPS, 4).filter(c => c.hits < c.hitsMax)[0];
+        if (healTarget)
+          toHeal = healTarget.hitsMax - healTarget.hits;
+      }
+      if (healTarget) {
+        let deadInfo = Apiary.intel.getComplexStats(healTarget).current;
+        let healTargetStats = Apiary.intel.getStats(healTarget).current;
+        if (deadInfo.dmgRange + deadInfo.dmgClose >= healTargetStats.hits) {
+          healTarget = undefined;
+          toHeal = 0;
+        }
+      }
+
       _.forEach(this.towers, tower => {
         if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < 10)
           return;
@@ -373,41 +428,37 @@ export class DefenseCell extends Cell {
           // let toAttack = healer ? healer : enemy;
           // healer = undefined;
           if (tower.attack(enemy) === OK && Apiary.logger)
-            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense_dmg", -10);
         } else if (tower.store.getUsedCapacity(RESOURCE_ENERGY) >= tower.store.getCapacity(RESOURCE_ENERGY) * 0.7) {
-          let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
-          if (!healTargets.length)
-            healTargets = enemy.pos.findInRange(FIND_MY_CREEPS, 4).filter(c => c.hits < c.hitsMax);
-          if (healTargets.length) {
-            let healTarget = healTargets.reduce((prev, curr) => {
-              return curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev;
-            });
-            if (tower.heal(healTarget) === OK && Apiary.logger)
-              Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
-            return;
+          if (healTarget && toHeal && tower.heal(healTarget) === OK) {
+            toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
+            if (Apiary.logger)
+              Apiary.logger.addResourceStat(this.hive.roomName, "defense_heal", -10);
           }
-          if ((this.hive.builder && this.hive.builder.activeBees.filter(b => b.pos.roomName === this.hive.roomName).length) || tower.store.getUsedCapacity(RESOURCE_ENERGY) <= tower.store.getCapacity(RESOURCE_ENERGY) * 0.75)
+          if (tower.store.getUsedCapacity(RESOURCE_ENERGY) <= tower.store.getCapacity(RESOURCE_ENERGY) * 0.75)
             return;
-          let repairTarget = <Structure | undefined>this.hive.getBuildTarget(enemy, "ignoreConst");
+          let repairTarget = <Structure | undefined>this.hive.getBuildTarget(tower, "ignoreConst");
+          if (!repairTarget || (repairTarget.structureType !== STRUCTURE_WALL && repairTarget.structureType !== STRUCTURE_RAMPART))
+            return;
+          if (this.hive.builder && (this.hive.builder.activeBees.filter(b => b.pos.getRangeTo(repairTarget!) <= 8).length
+            || this.hive.builder.activeBees.filter(b => b.pos.getRangeTo(repairTarget!) <= tower.pos.getRangeTo(repairTarget!)).length))
+            return;
           if (repairTarget && tower.pos.getRangeTo(repairTarget) <= tower.pos.getRangeTo(enemy) && repairTarget.pos.findInRange(FIND_HOSTILE_CREEPS, 3).length && tower.repair(repairTarget) === OK && Apiary.logger)
-            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense_repair", -10);
         }
       });
       if (!workingTower && this.notDef(this.pos.roomName))
         this.setDefFlag(this.pos);
-    } else {
-      let healTargets = this.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
-      if (healTargets.length) {
-        let healTarget = healTargets.reduce((prev, curr) => {
-          return curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev;
-        });
-        _.forEach(this.towers, tower => {
-          if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < tower.store.getCapacity(RESOURCE_ENERGY) * 0.7)
-            return;
-          if (tower.heal(healTarget) === OK && Apiary.logger)
-            Apiary.logger.addResourceStat(this.hive.roomName, "defense", -10);
-        });
-      }
+    } else if (healTarget) {
+      _.forEach(this.towers, tower => {
+        if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < tower.store.getCapacity(RESOURCE_ENERGY) * 0.7)
+          return;
+        if (healTarget && toHeal && tower.heal(healTarget) === OK) {
+          toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
+          if (Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "defense_heal", -10);
+        }
+      });
     }
   }
 }

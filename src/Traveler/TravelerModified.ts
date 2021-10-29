@@ -419,10 +419,12 @@ export class Traveler {
         }
 
         let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
-        if (["E12N46", "E12N45", "E11N44"].includes(roomName))
-          return 0;
-        if (["E13N48"].includes(roomName))
+        if ([""].includes(roomName))
           return 255;
+        if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
+          return 6;
+        if ([""].includes(roomName))
+          return 0;
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
           case roomStates.reservedByMe:

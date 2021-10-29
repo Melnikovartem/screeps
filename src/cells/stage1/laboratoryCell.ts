@@ -262,7 +262,7 @@ export class LaboratoryCell extends Cell {
         return rCode;
     }
 
-    if (!this.boostRequests[bee.ref] || this.boostRequests[bee.ref].lastUpdated + 10 >= Game.time) {
+    if (!this.boostRequests[bee.ref] || this.boostRequests[bee.ref].lastUpdated + 25 >= Game.time) {
       this.boostRequests[bee.ref] = { info: [], lastUpdated: Game.time };
       for (let k = 0; k < requests.length; ++k) {
         let r = requests[k];
@@ -445,11 +445,11 @@ export class LaboratoryCell extends Cell {
     if (!Object.keys(this.laboratories).length)
       return;
 
-    let priority = <2 | 5>5;
+    let priority = <1 | 5>5;
     this.sCell.requestFromStorage(_.filter(this.laboratories,
       l => {
-        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY * 0.7)
-          priority = 2;
+        if (l.store.getUsedCapacity(RESOURCE_ENERGY) < LAB_ENERGY_CAPACITY * 0.5)
+          priority = 1;
         return l.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
       }), priority, RESOURCE_ENERGY, LAB_ENERGY_CAPACITY, true);
 
@@ -477,7 +477,7 @@ export class LaboratoryCell extends Cell {
       let lab = <StructureLab | undefined>Game.getObjectById(this.checkDropped[i]);
       if (!lab)
         continue;
-      _.forEach(lab.pos.getOpenPositions(true), p => this.sCell.requestToStorage(p.lookFor(LOOK_RESOURCES), 2));
+      _.forEach(lab.pos.getOpenPositions(true), p => this.sCell.requestToStorage(p.lookFor(LOOK_RESOURCES), 2, undefined));
     }
     this.checkDropped = [];
   }

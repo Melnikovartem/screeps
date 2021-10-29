@@ -248,6 +248,10 @@ export class Bee {
     return ans === OK ? this.creep.pickup(t!) : ans;
   }
 
+  drop(resourceType: ResourceConstant, amount?: number) {
+    return this.creep.drop(resourceType, amount);
+  }
+
   attack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
     let ans = this.actionCheck(t, opt);
@@ -295,11 +299,15 @@ export class Bee {
 
   build(t: ConstructionSite | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt, 3);
+    if (ans === OK && this.pos.getEnteranceToRoom())
+      this.goTo(t!);
     return ans === OK ? this.creep.build(t!) : ans;
   }
 
   repair(t: Structure | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t, opt, 3);
+    if (ans === OK && this.pos.getEnteranceToRoom())
+      this.goTo(t!);
     return ans === OK ? this.creep.repair(t!) : ans;
   }
 
@@ -331,6 +339,7 @@ export class Bee {
 
   getFleeOpt(opt: TravelToOptions) {
     opt.maxRooms = 2;
+    opt.stuckValue = 1;
     let roomCallback = opt.roomCallback;
     opt.roomCallback = (roomName, matrix) => {
       if (roomCallback) {
@@ -352,8 +361,8 @@ export class Bee {
           if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
-          let padding = 0x04 * (p.getRangeTo(this) - rangeToEnemy); // we wan't to get as far as we can from enemy
-          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)) + padding)));
+          let padding = 0x08 * (p.getRangeTo(c) - rangeToEnemy); // we wan't to get as far as we can from enemy
+          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)) - padding)));
         });
       });
       return matrix;
@@ -401,7 +410,7 @@ export class Bee {
       return prev;
     }); */
     let ans = this.goTo(posToFlee, opt);;
-    this.memory._trav = undefined;
+    this.memory._trav.path = undefined;
     return ans;
   }
 
@@ -455,7 +464,7 @@ export class Bee {
         if (bee.ref === beeIn.ref)
           return ERR_FULL;
         let target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
-        let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.roomName + "_" + p.x + "_" + p.y]);
+        let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.to_str]);
         if (!open.length)
           return ERR_NOT_FOUND;
         let pp = open.reduce((prev, curr) => {
@@ -488,8 +497,21 @@ export class Bee {
         if (bee.pos.to_str !== pos.to_str && winner.priority <= 2) {
           // i know still can softlock, but this can solve most important cases
           let inPos = moveMap[pos.to_str].filter(m => m.bee.pos.to_str == pos.to_str)[0];
-          if (inPos)
-            inPos.bee.creep.move(inPos.bee.pos.getDirectionTo(bee));
+          if (inPos) {
+            let open = beeIn.pos.getOpenPositions(true).filter(p => !moveMap[p.to_str]);
+            if (!open.length)
+              return ERR_NOT_FOUND;
+            let pp = open.reduce((prev, curr) => {
+              let ans = curr.lookFor(LOOK_CREEPS).length - prev.lookFor(LOOK_CREEPS).length;
+              if (ans === 0)
+                ans = Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y) - Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y);
+              return ans < 0 ? curr : prev;
+            });
+            moveMap[pp.to_str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+            let ans = this.beeMove(moveMap, pp);
+            if (ans !== OK)
+              return ans;
+          }
         }
       }
     } else

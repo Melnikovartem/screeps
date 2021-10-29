@@ -78,7 +78,8 @@ export class HaulerMaster extends Master {
         return;
 
       let target = this.targetMap[container.id];
-      if (target && Apiary.bees[target.beeRef])
+      let oldBee = target && this.bees[target.beeRef];
+      if (oldBee && oldBee.target === container.id)
         return;
 
       let bee = container.pos.findClosest(_.filter(this.activeBees, b => b.state === beeStates.chill && b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell) + 15));
@@ -119,6 +120,23 @@ export class HaulerMaster extends Master {
           }
 
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
+
+          if (!target) {
+            bee.target = undefined;
+            if (bee.store.getUsedCapacity())
+              bee.state = beeStates.work;
+            else
+              bee.state = beeStates.chill;
+            break;
+          }
+
+          let roomInfo = Apiary.intel.getInfo(target.pos.roomName, 25);
+          if (!roomInfo.safePlace) {
+            this.targetMap[bee.target] = undefined;
+            bee.state = beeStates.chill;
+            break;
+          }
+
           res = this.targetMap[bee.target]!.resource;
           let overproduction;
           if (target && bee.pos.getRangeTo(target) <= 2) {
@@ -131,13 +149,10 @@ export class HaulerMaster extends Master {
           if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, res, undefined, { offRoad: true }) === OK) {
             this.targetMap[bee.target] = undefined;
             bee.state = beeStates.work;
-            if (target) {
-              let source: Source | Mineral | null = bee.pos.findClosest(target.pos.findInRange(FIND_SOURCES, 1));
-              if (!source)
-                source = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 1));
-              bee.target = source ? source.id : undefined;
-            } else
-              bee.target = undefined;
+            let source: Source | Mineral | null = bee.pos.findClosest(target.pos.findInRange(FIND_SOURCES, 1));
+            if (!source)
+              source = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 1));
+            bee.target = source ? source.id : undefined;
           }
           break;
 
@@ -166,7 +181,11 @@ export class HaulerMaster extends Master {
         case beeStates.chill:
           bee.goRest(this.cell.pos, { offRoad: true });
       }
-      this.checkFlee(bee);
+      if (this.checkFlee(bee)) {
+        let diff = bee.store.getUsedCapacity() - Math.floor(bee.store.getCapacity() * 0.5 + 50);
+        if (diff > 0)
+          bee.drop(findOptimalResource(bee.store), diff);
+      }
     });
   }
 }

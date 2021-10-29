@@ -45,14 +45,20 @@ export class PickupMaster extends SwarmMaster {
       else {
         let room = Game.rooms[this.order.pos.roomName];
         target = room.find(FIND_DROPPED_RESOURCES)[0];
-        if (!target && this.order.pos.roomName !== this.hive.roomName) {
+        if (!target) {
           // what a lie this is STRUCTURE_POWER_BANK
-          target = <StructureStorage>room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
+          if (this.order.pos.roomName !== this.hive.roomName) {
+            target = <StructureStorage>room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
+            if (!target)
+              target = <StructureStorage>room.find(FIND_STRUCTURES)
+                .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+          }
           if (!target)
-            target = <StructureStorage>room.find(FIND_STRUCTURES)
-              .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
+            target = room.find(FIND_DROPPED_RESOURCES)[0];
           if (!target)
-            target = this.hive.room.find(FIND_DROPPED_RESOURCES)[0];
+            target = room.find(FIND_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0)[0];
+          if (!target)
+            target = room.find(FIND_RUINS).filter(r => r.store.getUsedCapacity() > 0)[0];
         }
         if (target)
           this.order.flag.setPosition(target.pos);

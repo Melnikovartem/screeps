@@ -25,16 +25,19 @@ export class ManagerMaster extends Master {
     this.activeBees.sort((a, b) => a.pos.getRangeTo(this.cell) - b.pos.getRangeTo(this.cell));
 
     let refilling = 0;
+    let pickingup = 0;
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
       if (transfer) {
         transfer.preprocess(bee);
         if (transfer.priority === 0 && transfer.isValid())
           ++refilling;
+        else if (transfer.priority === 6 && transfer.isValid())
+          ++pickingup;
       }
     });
 
-    let requests: TransferRequest[] | { [id: string]: TransferRequest } = this.cell.requests;
+    let requests = _.map(this.cell.requests, r => r);
     if (this.hive.state === hiveStates.lowenergy)
       requests = _.filter(requests, r => r.resource !== RESOURCE_ENERGY || r.priority <= 1 || r.to.id === this.cell.storage.id);
 
@@ -56,7 +59,7 @@ export class ManagerMaster extends Master {
         bee.target = undefined;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          let beeRequests = _.filter(requests, (r: TransferRequest) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess);
+          let beeRequests = _.filter(requests, (r) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess && (!pickingup || r.priority < 6));
           if (!beeRequests.length)
             return;
           let newTransfer = _.reduce(beeRequests
@@ -77,7 +80,7 @@ export class ManagerMaster extends Master {
           newTransfer.preprocess(bee);
           if (transfer && transfer.priority === 0) {
             --refilling;
-            requests = this.cell.requests;
+            requests = _.map(this.cell.requests, r => r);
             non_refill_needed = false;
           }
         }

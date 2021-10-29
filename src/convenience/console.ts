@@ -130,6 +130,17 @@ export class CustomConsole {
     return `OK @ ${this.formatRoom(hiveName)}`;
   }
 
+  pickup(hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    if (!hive.cells.storage)
+      return `ERROR: NO STORAGE CELL @ ${this.formatRoom(hiveName)}`;
+    let ans = hive.cells.storage.pickupResources();
+    return `SCHEDULED ${ans} UNITS`;
+  }
 
   spawnBuilder(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
@@ -152,7 +163,7 @@ export class CustomConsole {
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     if (!hive.cells.upgrade)
-      return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
+      return `ERROR: NO UPGRADE CELL @ ${this.formatRoom(hiveName)}`;
     let upgrader;
     if (hive.cells.upgrade.master.fastModePossible)
       upgrader = setups.upgrader.fast.copy();
@@ -323,18 +334,17 @@ export class CustomConsole {
     return terminal;
   }
 
-  buyMastersMinerals(padding = 0, hiveName: string = this.lastActionRoomName, mode = "short") {
+  buyMastersMinerals(padding = 0, hiveName: string = this.lastActionRoomName, mode = "fast") {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
     let state = hive.mastersResTarget;
     let ans = `OK @ ${this.format(hiveName)}`;
-
     _.forEach(state, (amount, r) => {
-      if (!amount || !r)
+      if (!amount || !r || r === RESOURCE_ENERGY)
         return;
       let res = <ResourceConstant>r;
-      if (!(res in REACTION_MAP))// || hive.resTarget[res]! > 0)
+      if (!(res in REACTION_MAP) || hive.resState[res]! > 0)
         return;
       let sets = Math.min(Math.round((amount + padding) / 5000 * 1000) / 1000, 1);
       let buyAns;
@@ -348,7 +358,7 @@ export class CustomConsole {
         default:
           buyAns = this.buy(res, hiveName, sets, mode === "fast");
       }
-      ans += `\n${res}: ${buyAns} ${sets * 5000}`;
+      ans += `\n${res}: ${buyAns} ${sets * 5000}/${amount}`;
     });
     return ans;
   }

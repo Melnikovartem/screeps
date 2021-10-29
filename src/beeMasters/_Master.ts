@@ -109,12 +109,18 @@ export abstract class Master {
   abstract run(): void;
 
   checkFlee(bee: Bee, fleeTo?: ProtoPos) {
-    let enemy = Apiary.intel.getEnemyCreep(bee, 25);
-    let contr = Game.rooms[bee.pos.roomName].controller;
-    if (enemy && (!contr || !contr.my || !contr.safeMode)) {
-      let fleeDist = Apiary.intel.getFleeDist(enemy);
-      if (fleeDist === 0)
+    let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 25).enemies.map(e => e.object).filter(e => {
+      if (!(e instanceof Creep))
         return false;
+      let stats = Apiary.intel.getStats(e).current;
+      return !!(stats.dmgClose + stats.dmgRange);
+    });
+    let enemy = bee.pos.findClosest(enemies);
+    if (!enemy)
+      return false;
+    let contr = Game.rooms[bee.pos.roomName].controller;
+    if (!contr || !contr.my || !contr.safeMode) {
+      let fleeDist = Apiary.intel.getFleeDist(enemy);
       if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
         bee.targetPosition = bee.pos;
       else if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {

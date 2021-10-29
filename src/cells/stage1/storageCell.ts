@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
 import { TransferRequest } from "../../bees/transferRequest";
 
-import { prefix } from "../../enums";
+import { prefix, hiveStates } from "../../enums";
 import { BASE_MINERALS } from "./laboratoryCell";
 import { findOptimalResource } from "../../abstract/utils";
 
@@ -45,7 +45,7 @@ export class StorageCell extends Cell {
   }
 
   requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
-    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
+    , res: TransferRequest["resource"], amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
     amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
@@ -72,7 +72,7 @@ export class StorageCell extends Cell {
   }
 
   requestToStorage(objects: TransferRequest["from"][], priority: TransferRequest["priority"]
-    , res: TransferRequest["resource"] = RESOURCE_ENERGY, amount: number = Infinity, fitStore = false): number {
+    , res: TransferRequest["resource"], amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
 
@@ -80,7 +80,7 @@ export class StorageCell extends Cell {
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
       let existing = this.requests[ref];
-      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority >= priority)) {
+      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority <= priority)) {
         if (existing.resource === res)
           sum += existing.amount;
         continue;
@@ -97,6 +97,22 @@ export class StorageCell extends Cell {
       sum += this.requests[ref].amount;
     }
     return sum;
+  }
+
+  pickupResources() {
+    let resources = this.hive.room.find(FIND_DROPPED_RESOURCES).filter(r => r.resourceType !== RESOURCE_ENERGY || r.amount >= 100);
+    let tombstones = this.hive.room.find(FIND_TOMBSTONES).filter(t => t.store.getUsedCapacity() > 0);
+    let enemies = Apiary.intel.getInfo(this.hive.roomName).enemies.map(e => e.object);
+    let rrs = (<(Resource | Tombstone)[]>resources).concat(tombstones);
+    if (enemies.length)
+      rrs = rrs.filter(rr => {
+        let enemy = rr.pos.findClosest(enemies)!;
+        if (enemy.pos.getRangeTo(rr) > 4 && !this.hive.cells.defense.wasBreached(enemy.pos, rr.pos))
+          return true;
+        delete this.requests[rr.id];
+        return false;
+      });
+    return this.requestToStorage(rrs, 6, undefined, 1200, true);
   }
 
   getFreeLink(sendIn: boolean = false): StructureLink | undefined {
@@ -125,7 +141,7 @@ export class StorageCell extends Cell {
       let link = this.links[id];
       this.linksState[id] = "idle";
       if (link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
-        this.requestToStorage([link], 3);
+        this.requestToStorage([link], this.hive.state === hiveStates.battle ? 1 : 3, RESOURCE_ENERGY);
     }
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
@@ -152,7 +168,7 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res]) {
         let used = this.terminal.store.getUsedCapacity(res);
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 5000)) > 0)
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 2400)) > 0)
           return;
       }
     }
@@ -161,10 +177,10 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       let balance = this.terminal.store.getUsedCapacity(res) - this.resTargetTerminal[res]!;
       if (balance < 0) {
-        if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 5000)) > 0)
+        if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 2400)) > 0)
           return;
       } else if (balance > 0) {
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 5000)) > 0)
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 2400)) > 0)
           return;
       }
     }

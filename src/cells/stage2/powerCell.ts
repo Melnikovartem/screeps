@@ -30,7 +30,7 @@ export class PowerCell extends Cell {
       this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER);
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_CAPACITY / 2)
-      this.sCell.requestFromStorage([this.powerSpawn], 5);
+      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_ENERGY);
   }
 
   run() {

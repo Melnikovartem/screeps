@@ -46,7 +46,7 @@ export abstract class SquadMaster extends SwarmMaster {
     this.order.flag.memory.extraInfo = value;
   }
 
-  movePriority = <1>1;
+  movePriority = <2>2;
   priority = <1>1;
   stuckValue = 0;
 
@@ -160,7 +160,7 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   get emergency() {
-    return false;
+    return this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy;
   }
 
   getDeisredPos(i: number, centerPos: RoomPosition = this.formationCenter) {
@@ -405,6 +405,9 @@ export abstract class SquadMaster extends SwarmMaster {
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = this.order.pos;
     let opts = this.getPathArgs(bee.ref);
+    opts.useFindRoute = true;
+    opts.movingTarget = true;
+    opts.stuckValue = 1;
     if (enemy && bee.pos.roomName === this.order.pos.roomName) {
       if (bee.pos.roomName === this.order.pos.roomName)
         moveTarget = enemy.pos;
@@ -414,11 +417,13 @@ export abstract class SquadMaster extends SwarmMaster {
         let prevRotation = this.rotateFormation;
         this.rotateFormation(bee.pos.getDirectionTo(enemy));
         if (prevRotation !== this.rotateFormation)
-          bee.memory._trav = undefined;
+          bee.memory._trav.path = undefined;
       }
     }
-    if (enemy && this.stats.current.heal && this.canBeOutDmged(bee.pos)) {
-      bee.flee(this.hive, opts);
+    if (enemy && this.canBeOutDmged(bee.pos)) {
+      opts = bee.getFleeOpt(opts);
+      bee.goTo(this.order, opts);
+      bee.memory._trav.path = undefined;
     } else {
       bee.goTo(moveTarget, opts);
       if (bee.pos.isNearTo(moveTarget) && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {
@@ -434,10 +439,11 @@ export abstract class SquadMaster extends SwarmMaster {
             bee.goTo(newPos, opts);
         }
       }
-      if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition)) {
+      if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition) && this.hive.roomName !== bee.pos.roomName) {
         bee.targetPosition = undefined;
-        bee.memory._trav = undefined;
-      }
+        bee.memory._trav.path = undefined;
+      } else if (Game.time % 20 === 0)
+        bee.memory._trav.path = undefined;
     }
   }
 
@@ -452,7 +458,7 @@ export abstract class SquadMaster extends SwarmMaster {
       let desiredPos = this.getDeisredPos(i, pos);
       if (!desiredPos)
         continue;
-      let stats = Apiary.intel.getComplexStats(desiredPos, undefined, 3).current;
+      let stats = Apiary.intel.getComplexStats(desiredPos, 4, 1).current;
       let creepDmg = stats.dmgClose + stats.dmgRange;
       let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
       let beeStats = Apiary.intel.getStats(bee.creep).current;
@@ -495,7 +501,7 @@ export abstract class SquadMaster extends SwarmMaster {
     if (!readyToGo) {
       _.forEach(this.activeBees, bee => {
         if (bee.state !== beeStates.boosting)
-          bee.goTo(this.formationCenter);
+          bee.goRest(this.formationCenter);
       });
       return;
     }
@@ -521,7 +527,9 @@ export abstract class SquadMaster extends SwarmMaster {
         });
     } else {
       let desired = this.getDesiredPoss();
-      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4 && !centerBee.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length) {
+      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4
+        && Apiary.intel.getInfo(centerBee.pos.roomName, Infinity).roomState !== roomStates.ownedByMe
+        && !centerBee.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length) {
         this.stuckValue += 1;
         valid = this.validateFormation(desired);
       }

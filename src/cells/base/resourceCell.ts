@@ -69,6 +69,7 @@ export class ResourceCell extends Cell {
     if (!(this.pos.roomName in Game.rooms))
       return;
 
+
     this.roadTime = Infinity;
     this.restTime = Infinity;
 
@@ -118,7 +119,10 @@ export class ResourceCell extends Cell {
   }
 
   update() {
-    super.update();
+    super.update(undefined, false);
+
+    if (!this.resource && this.resourceType === RESOURCE_ENERGY)
+      this.resource = this.pos.findInRange(FIND_SOURCES, 1)[0];
 
     if (!this.operational && Game.time % 30 === 0)
       this.updateStructure();

@@ -51,6 +51,12 @@ export abstract class Cell {
               this[key][inMap] = <typeof data>gameObject;
             else if (force)
               delete this[key][inMap];
+          } else if (data === null) {
+            let gameObject = Game.getObjectById(inMap);
+            if (gameObject)
+              this[key][inMap] = <typeof data>gameObject;
+            else if (force)
+              delete this[key][inMap];
           }
         }
       });

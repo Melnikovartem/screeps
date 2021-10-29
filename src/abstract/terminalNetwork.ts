@@ -14,7 +14,7 @@ let ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U", "X", "O", "Z"];
 
 switch (Game.shard.name) {
   case "shard2":
-    ALLOWED_TO_BUYIN = ["H", "K", "L", "U"];
+    ALLOWED_TO_BUYIN = ALLOWED_TO_BUYIN;
     break;
   case "shard3":
     ALLOWED_TO_BUYIN = ["H", "K", "L", "U", "X", "Z"];
@@ -133,9 +133,27 @@ export class Network {
         }
       }
 
+      for (const r in hive.mastersResTarget) {
+        const res = <ResourceConstant>r;
+        let balance = hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res)
+        if (balance > 0 && tryToBuyIn) {
+          let amount = hive.shortages[res]!;
+          let ans = Apiary.broker.buyIn(terminal, res, amount, true);
+          if (ans === "short") {
+            usedTerminal = true;
+            break;
+          }
+        }
+      }
+
+      if (usedTerminal)
+        continue;
+
       let stStore = hive.cells.storage.storage.store;
       if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.75 && hive.cells.storage.storage instanceof StructureStorage) {
         let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
+        if (2 % 1 === 0) // remove
+          continue;
         // keys = keys.filter(s => s !== RESOURCE_ENERGY)
         if (!keys.length)
           continue;
