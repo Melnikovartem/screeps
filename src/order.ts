@@ -313,7 +313,7 @@ export class Order {
       case COLOR_WHITE:
         if (this.secondaryColor !== COLOR_PURPLE && this.secondaryColor !== COLOR_RED)
           _.forEach(Game.flags, f => {
-            if (f.color === COLOR_BLUE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
+            if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
               Apiary.orders[f.name].delete();
           });
 

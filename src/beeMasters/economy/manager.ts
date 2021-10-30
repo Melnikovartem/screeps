@@ -92,7 +92,8 @@ export class ManagerMaster extends Master {
       let setup = setups.queen;
       let lvl = this.hive.room.controller!.level;
       // some cool function i came up with. It works utill lvl 8 though
-      setup.patternLimit = Math.round(0.027 * Math.pow(lvl, 3) + 10.2);
+      setup.patternLimit = Math.ceil(0.03 * Math.pow(lvl, 3) + 14.2);
+
       if (this.hive.state === hiveStates.lowenergy)
         setup.patternLimit = Math.ceil(setup.patternLimit / 2);
 

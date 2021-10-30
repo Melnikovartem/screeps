@@ -388,11 +388,11 @@ export class DefenseCell extends Cell {
       let shouldAttack = false;
       let stats = Apiary.intel.getComplexStats(enemy).current;
       let attackPower = this.getDmgAtPos(enemy.pos);
-      if ((stats.heal + Math.min(stats.resist, stats.heal * 1 / 0.3) < attackPower || stats.hits <= attackPower) // || (stats.resist && stats.resist < attackPower
+      if ((stats.heal + Math.min(stats.resist, stats.heal * (1 / 0.3 - 1)) < attackPower || stats.hits <= attackPower) // || (stats.resist && stats.resist < attackPower
         && (roomInfo.dangerlvlmax < 8
           || (enemy.pos.x > 2 && enemy.pos.x < 47 && enemy.pos.y > 2 && enemy.pos.y < 47)
           || this.master.activeBees.filter(b => b.pos.getRangeTo(enemy) < 2).length
-          || stats.hits + stats.heal <= attackPower
+          || stats.hits <= attackPower
           || (!stats.heal && !enemy.pos.getEnteranceToRoom())))
         shouldAttack = true;
       /*let healer: undefined | Creep;

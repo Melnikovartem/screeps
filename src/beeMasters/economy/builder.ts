@@ -102,9 +102,10 @@ export class BuilderMaster extends Master {
           bee.goRest(lab.pos);
           break;
         case beeStates.refill:
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+          if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 2500) {
             bee.state = beeStates.work;
-          else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
+            break;
+          } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
             bee.state = beeStates.work;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense_repair" : "build", this.sCell.storage.store, bee.store);
@@ -113,6 +114,9 @@ export class BuilderMaster extends Master {
               bee.goTo(target.pos, this.hive.opts);
             break;
           }
+          let resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
+          if (resource)
+            bee.pickup(resource);
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
@@ -141,7 +145,7 @@ export class BuilderMaster extends Master {
             if (!target || (this.hive.state >= hiveStates.nukealert && Game.time % 10 === 0))
               target = this.hive.getBuildTarget(bee);
             if (target) {
-              if (bee.pos.getRangeTo(this.sCell.storage) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
+              if (bee.pos.getRangeTo(this.sCell) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
                 bee.state = beeStates.refill;
                 bee.goTo(this.sCell.storage);
                 break;
@@ -151,13 +155,15 @@ export class BuilderMaster extends Master {
                 ans = bee.build(target, this.hive.opts);
               else if (target instanceof Structure)
                 ans = bee.repair(target, this.hive.opts);
-              if (bee.pos.getRangeTo(target) <= 3) {
-                let resource = bee.pos.findClosest(bee.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));
-                if (resource)
-                  bee.pickup(resource, this.hive.opts);
-              }
               bee.target = target.id;
               bee.repairRoadOnMove(ans);
+              let resource;
+              if (bee.pos.getRangeTo(target) <= 3) {
+                resource = bee.pos.findClosest(target.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));
+              } else
+                resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
+              if (resource)
+                bee.pickup(resource, this.hive.opts);
             } else {
               bee.target = undefined;
               bee.state = beeStates.chill;

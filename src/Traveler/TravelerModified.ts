@@ -421,8 +421,8 @@ export class Traveler {
         let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         if ([""].includes(roomName))
           return 255;
-        if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
-          return 6;
+        /*if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
+          return 6;*/
         if ([""].includes(roomName))
           return 0;
         switch (roomInfo.roomState) {

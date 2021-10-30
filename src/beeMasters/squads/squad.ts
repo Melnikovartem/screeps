@@ -2,6 +2,7 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { beeStates, hiveStates, roomStates } from "../../enums";
 import { BOOST_MINERAL, BOOST_PARTS } from "../../cells/stage1/laboratoryCell";
+import { PEACE_PACKS } from "../../abstract/intelligence";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -204,26 +205,32 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   getSquadMoveMentValue(pos: RoomPosition, centerRef: string) {
-    let max = 1;
+    let sum = 0;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
       let bee = this.formationBees[i];
       if (!bee)
         continue;
       let desiredPos = this.getDeisredPos(i, pos);
-      if (!desiredPos || !desiredPos.isFree(true))
+      if (!desiredPos || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_WALL)
         if (bee.ref === centerRef)
           return 255;
         else
-          max = 64;
+          sum += 30;
       else if (desiredPos.getEnteranceToRoom())
-        max = Math.max(max, 20);
-      else if (desiredPos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000))
-        max = Math.max(max, 10);
+        sum += 20;
+      else if (desiredPos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length)
+        sum += 30;
       else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
-        max = Math.max(max, 5);
+        sum += 5;
+      else
+        sum += 1;
     }
-    return max;
+    let roomState = Apiary.intel.getInfo(pos.roomName).roomState;
+    if (roomState === roomStates.ownedByEnemy) {
+      sum += Math.floor(5 - new RoomPosition(25, 25, pos.roomName).getRoomRangeTo(pos) / 10)
+    }
+    return Math.ceil(sum / this.activeBees.length);
   }
 
   validateFormation(obs: { pos: RoomPosition }[]) {
@@ -245,67 +252,34 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-
-  getAction1() {
-
-  }
-
-  beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined | null, healingTargets: { bee: Bee, heal: number }[]) {
+  beeAct(bee: Bee, target: Creep | PowerCreep | Structure | undefined | null, healingTargets: { bee: Bee, heal: number }[]) {
     let action1;
     let action2;
 
     let beeStats = Apiary.intel.getStats(bee.creep).current;
 
-    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
+    // let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
     let healingTarget: { bee: Bee | Creep | null, heal: number } = { bee: null, heal: 0 };
 
-    if (beeStats.heal > 0) {
-      let fromCore = healingTargets.filter(t => t.heal > 0);
-      if (fromCore.length)
-        healingTarget = fromCore.reduce((prev, curr) => {
-          let ans = (curr.bee.pos.getRangeTo(bee) || 1) - (prev.bee.pos.getRangeTo(bee) || 1);
-          if (ans === 0)
-            ans = prev.heal - curr.heal;
-          return ans < 0 ? curr : prev;
-        });
-      if (!healingTarget.bee)
-        healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
-    }
-
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
-    let rangeToHealingTarget = healingTarget.bee ? bee.pos.getRangeTo(healingTarget.bee) : Infinity;
-
-    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedAttack(target);
-    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0 && healingTarget.heal > 0)
-      action2 = () => {
-        healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
-        return bee.rangedHeal(healingTarget.bee)
-      }
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0) {
-      let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
-      if (!tempTarget)
-        tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
-      if (tempTarget)
-        action2 = () => bee.rangedAttack(tempTarget);
+    if (!action2 && beeStats.dmgRange > 0) {
+      /*if (rangeToTarget <= 3 && !(target instanceof Structure))
+        action2 = () => bee.rangedAttack(target!);
+      else if (roomInfo.roomState >= roomStates.reservedByEnemy) {
+        let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(c => !PEACE_PACKS.includes(c.owner.username)));
+        if (!tempTarget)
+          tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
+        if (tempTarget)
+          action2 = () => bee.rangedAttack(tempTarget);
+      } else */if (rangeToTarget <= 3)
+        action2 = () => bee.rangedAttack(target!);
     }
-    if (!action2 && rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
-      action2 = () => {
-        healingTarget.heal -= beeStats.heal / HEAL_POWER * RANGED_HEAL_POWER;
-        return bee.rangedHeal(healingTarget.bee)
-      }
 
-    if (rangeToHealingTarget <= 1 && beeStats.heal > 0 && healingTarget.heal > 0)
-      action1 = () => {
-        healingTarget.heal -= beeStats.heal;
-        return bee.heal(healingTarget.bee);
-      }
-    else if (beeStats.dism > 0 || beeStats.dmgClose > 0) {
-      if (rangeToTarget === 1)
-        if (beeStats.dism > 0 && target instanceof Structure)
-          action1 = () => bee.dismantle(target);
-        else if (beeStats.dmgClose > 0)
-          action1 = () => bee.attack(target);
+    if (beeStats.dism + beeStats.dmgClose > 0) {
+      if (beeStats.dism > 0 && rangeToTarget <= 1 && target instanceof Structure)
+        action1 = () => bee.dismantle(target);
+      else if (beeStats.dmgClose > 0 && rangeToTarget <= 1)
+        action1 = () => bee.attack(target);
       if (!action1) {
         let tempTarget: Structure | Creep | undefined;
         if (beeStats.dism > 0)
@@ -321,11 +295,35 @@ export abstract class SquadMaster extends SwarmMaster {
             action1 = () => bee.attack(target);
       }
     }
-    if (!action1 && rangeToHealingTarget <= 1 && beeStats.heal > 0)
-      action1 = () => {
-        healingTarget.heal -= beeStats.heal;
-        return bee.heal(healingTarget.bee);
-      }
+
+    if (beeStats.heal > 0) {
+      let fromCore = healingTargets.filter(t => t.heal > 0);
+      if (fromCore.length)
+        healingTarget = fromCore.reduce((prev, curr) => {
+          let ans = (curr.bee.pos.getRangeTo(bee) || 1) - (prev.bee.pos.getRangeTo(bee) || 1);
+          if (ans === 0)
+            ans = prev.heal - curr.heal;
+          return ans < 0 ? curr : prev;
+        });
+      if (!healingTarget.bee)
+        healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
+      /* if (!healingTarget.bee)
+        healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
+          c => c.hits < c.hitsMax && PEACE_PACKS.includes(c.owner.username))); */
+
+      if (!healingTarget.bee && !action1)
+        healingTarget.bee = bee;
+
+      let rangeToHealingTarget = healingTarget.bee ? bee.pos.getRangeTo(healingTarget.bee) : Infinity;
+
+      if (rangeToHealingTarget <= 1 && (!action1 || beeStats.heal > beeStats.dism + beeStats.dmgClose))
+        action1 = () => {
+          healingTarget.heal -= beeStats.heal;
+          return bee.heal(healingTarget.bee);
+        }
+      else if (beeStats.heal > beeStats.dmgRange)
+        action2 = () => bee.rangedHeal(healingTarget.bee);
+    }
 
     if (action1)
       action1();
@@ -384,7 +382,8 @@ export abstract class SquadMaster extends SwarmMaster {
 
   getPathArgs(centerBeeRef: string): TravelToOptions {
     return {
-      movingTarget: true,
+      useFindRoute: true,
+      maxOps: 5000,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;
@@ -392,8 +391,8 @@ export abstract class SquadMaster extends SwarmMaster {
         for (let x = 0; x <= 49; ++x)
           for (let y = 0; y <= 49; ++y) {
             let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), centerBeeRef);
-            if (roomInfo.roomState === roomStates.ownedByEnemy && moveMent === 64)
-              matrix.set(x, y, 255);
+            if (moveMent > 5 && roomInfo.roomState === roomStates.ownedByEnemy)
+              matrix.set(x, y, Math.min(moveMent * 2, 255));
             else
               matrix.set(x, y, moveMent);
           }
@@ -405,51 +404,75 @@ export abstract class SquadMaster extends SwarmMaster {
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = this.order.pos;
     let opts = this.getPathArgs(bee.ref);
-    opts.useFindRoute = true;
-    opts.movingTarget = true;
-    opts.stuckValue = 1;
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
+    let fatigue = 0;
+
+    if (roomInfo.roomState === roomStates.ownedByEnemy) {
+      _.forEach(this.activeBees, b => {
+        fatigue += b.creep.fatigue;
+      });
+      if (fatigue)
+        return;
+    }
+
     if (enemy && bee.pos.roomName === this.order.pos.roomName) {
-      if (bee.pos.roomName === this.order.pos.roomName)
-        moveTarget = enemy.pos;
-      if (enemy instanceof Creep && this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
-        opts.range = 2;
-      if (enemy && (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 3)) {
+      moveTarget = enemy.pos;
+      // if (this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
+      // opts.range = 2;
+      if (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 4) {
         let prevRotation = this.rotateFormation;
         this.rotateFormation(bee.pos.getDirectionTo(enemy));
         if (prevRotation !== this.rotateFormation)
-          bee.memory._trav.path = undefined;
+          this.rotateFormation = prevRotation;
       }
     }
-    if (enemy && this.canBeOutDmged(bee.pos)) {
+
+    if (enemy && this.canBeOutDmged(bee.pos, roomInfo.safePlace)) {
       opts = bee.getFleeOpt(opts);
       bee.goTo(this.order, opts);
-      bee.memory._trav.path = undefined;
     } else {
       bee.goTo(moveTarget, opts);
-      if (bee.pos.isNearTo(moveTarget) && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {
+      if (moveTarget.getRangeTo(bee) <= 3 && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {
         let poss = bee.pos.getOpenPositions(true);
         if (poss.length) {
           let newPos = poss.reduce((prev, curr) => {
             let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
-            if (ans === 0)
+            if (ans === 0) {
               ans = this.getSquadMoveMentValue(curr, bee.ref) - this.getSquadMoveMentValue(prev, bee.ref);
+              console.log(ans, curr, prev);
+            }
             return ans < 0 ? curr : prev;
           });
           if (!newPos.equal(bee.pos))
             bee.goTo(newPos, opts);
         }
       }
-      if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition) && this.hive.roomName !== bee.pos.roomName) {
-        bee.targetPosition = undefined;
-        bee.memory._trav.path = undefined;
-      } else if (Game.time % 20 === 0)
-        bee.memory._trav.path = undefined;
+
+      let evrythingBad = bee.targetPosition && (this.canBeOutDmged(bee.targetPosition, roomInfo.safePlace) && this.hive.roomName !== bee.pos.roomName
+        || roomInfo.roomState === roomStates.ownedByEnemy
+        && (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47
+          && this.getSquadMoveMentValue(bee.targetPosition, bee.ref) > 5))
     }
   }
 
-  canBeOutDmged(pos: RoomPosition) {
-    let roomInfo = Apiary.intel.getInfo(pos.roomName);
-    if (roomInfo.safePlace)
+  /*getSquadDist(pos: RoomPosition) {
+    let sum = 0;
+    for (let i = 0; i < this.formation.length; ++i) {
+      let bee = this.formationBees[i];
+      if (!bee)
+        continue;
+      let desiredPos = this.getDeisredPos(i, pos);
+      if (!desiredPos) {
+        sum += Infinity;
+        continue;
+      }
+      sum += desiredPos.getRangeTo(pos);
+    }
+    return sum;
+  }*/
+
+  canBeOutDmged(pos: RoomPosition, safePlace: boolean) {
+    if (safePlace)
       return false;
     for (let i = 0; i < this.formation.length; ++i) {
       let bee = this.formationBees[i];
@@ -458,11 +481,13 @@ export abstract class SquadMaster extends SwarmMaster {
       let desiredPos = this.getDeisredPos(i, pos);
       if (!desiredPos)
         continue;
-      let stats = Apiary.intel.getComplexStats(desiredPos, 4, 1).current;
+      let stats = Apiary.intel.getComplexStats(desiredPos).current;
       let creepDmg = stats.dmgClose + stats.dmgRange;
       let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
       let beeStats = Apiary.intel.getStats(bee.creep).current;
-      if (towerDmg + creepDmg > this.stats.current.heal + beeStats.resist)
+      let myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
+      let enemyPower = towerDmg + creepDmg;
+      if (enemyPower > myStats.heal + Math.min(beeStats.resist, myStats.heal * (1 / 0.3 - 1)))
         return true;
     }
     return false;
@@ -470,7 +495,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
   run() {
     let enemy: Enemy["object"] | undefined;
-    if (this.stats.current.dmgClose > 0 || this.stats.current.dmgRange > 0)
+    if (this.stats.current.dmgClose + this.stats.current.dmgRange > 0)
       enemy = Apiary.intel.getEnemy(this.formationCenter);
     else if (this.stats.current.dism > 0)
       enemy = Apiary.intel.getEnemyStructure(this.formationCenter);
@@ -478,11 +503,6 @@ export abstract class SquadMaster extends SwarmMaster {
     let healingTargets: { bee: Bee, heal: number }[] = [];
     if (this.stats.current.heal) {
       healingTargets = this.activeBees.filter(b => b.hits < b.hitsMax).map(b => { return { bee: b, heal: b.hitsMax - b.hits } });
-      if (!healingTargets.length && enemy instanceof StructureTower) {
-        let toHeal = enemy.pos.findClosest(this.activeBees);
-        if (toHeal)
-          healingTargets = [{ bee: toHeal, heal: Infinity }];
-      }
     }
 
     _.forEach(this.activeBees, bee => {
@@ -529,7 +549,7 @@ export abstract class SquadMaster extends SwarmMaster {
       let desired = this.getDesiredPoss();
       if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4
         && Apiary.intel.getInfo(centerBee.pos.roomName, Infinity).roomState !== roomStates.ownedByMe
-        && !centerBee.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length) {
+        && !_.some(centerBee.pos.getOpenPositions(true), p => p.getEnteranceToRoom())) {
         this.stuckValue += 1;
         valid = this.validateFormation(desired);
       }

@@ -184,7 +184,7 @@ export class HaulerMaster extends Master {
       if (this.checkFlee(bee)) {
         let diff = bee.store.getUsedCapacity() - Math.floor(bee.store.getCapacity() * 0.5 + 50);
         if (diff > 0)
-          bee.drop(findOptimalResource(bee.store), diff);
+          bee.drop(findOptimalResource(bee.store));
       }
     });
   }

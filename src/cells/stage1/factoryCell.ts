@@ -37,11 +37,28 @@ export class FactoryCell extends Cell {
     super.update();
     this.roomsToCheck = this.hive.annexNames;
 
-    let balance = this.factory.store.getUsedCapacity(RESOURCE_ENERGY) - FACTORY_ENERGY
+    let balance = this.factory.store.getUsedCapacity(RESOURCE_ENERGY) - FACTORY_ENERGY;
     if (balance < 0)
       this.sCell.requestFromStorage([this.factory], 4, RESOURCE_ENERGY, -balance);
+    else if (balance > 0)
+      this.sCell.requestToStorage([this.factory], 4, RESOURCE_ENERGY, balance);
+
+    for (const r in COMPRESS_MAP) {
+      let res = <RESOURCE_HYDROGEN | RESOURCE_OXYGEN>r;
+      let hiveState = this.hive.resState[res];
+      if (hiveState && hiveState < 0) {
+        let decompress = COMPRESS_MAP[res];
+        if (this.sCell.getUsedCapacity(decompress) > 100)
+          this.sCell.requestFromStorage([this.factory], 4, decompress, Math.floor(this.sCell.getUsedCapacity(decompress) / 100) * 100);
+      }
+    }
   }
 
   run() {
+    for (const r in COMPRESS_MAP) {
+      let decompress = COMPRESS_MAP[<RESOURCE_HYDROGEN | RESOURCE_OXYGEN>r];
+      if (this.factory.store.getUsedCapacity(decompress) >= 100)
+        this.factory.produce(decompress);
+    }
   }
 }

@@ -424,6 +424,7 @@ export class Hive {
     let opts: TravelToOptions = {};
     if (this.state === hiveStates.battle) {
       opts.stuckValue = 1;
+      opts.maxRooms = 1;
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.roomName)
           return;

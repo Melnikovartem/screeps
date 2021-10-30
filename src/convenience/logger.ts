@@ -228,6 +228,8 @@ export class Logger {
     ans["mineral"] = { profit: getRate("spawn_" + setupsNames.miner + " M") };
     ans["build"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.builder), revenue: getRate("build") };
     ans["defense_dmg"] = { profit: getRate("defense_dmg") + getRate("spawn_" + setupsNames.defender), revenue: getRate("defense_dmg") };
+    ans["defense_repair"] = { profit: getRate("defense_repair") };
+    ans["defense_heal"] = { profit: getRate("defense_heal") };
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };

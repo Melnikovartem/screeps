@@ -8,7 +8,7 @@ import { profile } from "../profiler/decorator";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-const PEACE_PACKS: string[] = ["Hi_Melnikov"];
+export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital"];
 const NON_AGRESSION_PACKS: string[] = [];
 
 export interface Enemy {
@@ -281,6 +281,14 @@ export class Intel {
       roomInfo.enemies.push({
         object: c,
         dangerlvl: dangerlvl,
+        type: enemyTypes.moving,
+      });
+    });
+
+    _.forEach(room.find(FIND_HOSTILE_POWER_CREEPS), pc => {
+      roomInfo.enemies.push({
+        object: pc,
+        dangerlvl: 7,
         type: enemyTypes.moving,
       });
     });

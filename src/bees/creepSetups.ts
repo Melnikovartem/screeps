@@ -111,7 +111,7 @@ export const setups = {
       fixed: [CARRY],
       pattern: [WORK],
       patternLimit: 6,
-    }, 25, true),
+    }, 50 / 2, true),
     minerals: new CreepSetup(setupsNames.miner + " M", {
       pattern: [WORK],
     }, 50 / 5),
