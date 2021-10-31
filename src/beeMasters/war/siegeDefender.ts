@@ -9,7 +9,7 @@ import type { Boosts } from "../_Master";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 
 const rampFilter = (ss: Structure[]) => ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000)
-const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STRUCTURES)).length;
+export const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STRUCTURES)).length;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -51,7 +51,7 @@ export class SiegeMaster extends Master {
       return;
     }
     this.movePriority = <1>1;
-    this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 100000);
+    this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
     if (this.checkBees(true)) {
       let defender = setups.defender.destroyer.copy();
       /* if (roomInfo.dangerlvlmax >= 8)

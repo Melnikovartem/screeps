@@ -1,8 +1,8 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { beeStates, hiveStates, roomStates } from "../../enums";
+import { beeStates, hiveStates, roomStates, enemyTypes } from "../../enums";
 import { BOOST_MINERAL, BOOST_PARTS } from "../../cells/stage1/laboratoryCell";
-import { PEACE_PACKS } from "../../abstract/intelligence";
+// import { PEACE_PACKS, NON_AGRESSION_PACKS } from "../../abstract/intelligence";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -12,6 +12,7 @@ import type { Order } from "../../order";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
 export type FormationPositions = [Pos, CreepSetup][];
+// export type SquareFormationPositions = [[{ x: 0 | 1, y: 0 | 1 }, CreepSetup], [{ x: 0 | 1, y: 0 | 1 }, CreepSetup], [{ x: 0 | 1, y: 0 | 1 }, CreepSetup], [{ x: 0 | 1, y: 0 | 1 }, CreepSetup]];
 const SQUAD_VISUALS = true;
 
 //first tandem btw
@@ -132,6 +133,8 @@ export abstract class SquadMaster extends SwarmMaster {
             priority: this.priority,
           }, this.ref + "_" + i);
       }
+    } else if (_.some(this.bees, b => b.state === beeStates.boosting)) {
+      this.checkup;
     }
 
     for (let i = 0; i < this.formationBees.length; ++i) {
@@ -204,7 +207,7 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  getSquadMoveMentValue(pos: RoomPosition, centerRef: string) {
+  getSquadMoveMentValue(pos: RoomPosition, centerRef: string, ignoreEnemyCreeps = true) {
     let sum = 0;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
@@ -219,37 +222,23 @@ export abstract class SquadMaster extends SwarmMaster {
           sum += 30;
       else if (desiredPos.getEnteranceToRoom())
         sum += 20;
-      else if (desiredPos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length)
-        sum += 30;
+      else if (!desiredPos.isFree(true))
+        if (bee.ref === centerRef)
+          return 255;
+        else
+          sum += 30;
+      else if (!ignoreEnemyCreeps && desiredPos.lookFor(LOOK_CREEPS).filter(c => !c.my).length)
+        sum += 10;
       else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
         sum += 5;
       else
         sum += 1;
     }
-    let roomState = Apiary.intel.getInfo(pos.roomName).roomState;
-    if (roomState === roomStates.ownedByEnemy) {
+    /* let roomState = Apiary.intel.getInfo(pos.roomName).roomState;
+    if (roomState === roomStates.ownedByEnemy || true) {
       sum += Math.floor(5 - new RoomPosition(25, 25, pos.roomName).getRoomRangeTo(pos) / 10)
-    }
+    } */
     return Math.ceil(sum / this.activeBees.length);
-  }
-
-  validateFormation(obs: { pos: RoomPosition }[]) {
-    let terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
-    for (let i = 0; i < this.formation.length; ++i) {
-      let desiredPos = this.getDeisredPos(i);
-      if (this.formationBees[i] && (!desiredPos || !desiredPos.isFree(true) || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP))
-        return ERR_NO_PATH;
-    }
-
-    for (let i = 0; i < this.formationBees.length; ++i) {
-      let bee = this.formationBees[i];
-      if (!bee)
-        continue;
-      let desiredPos = this.getDeisredPos(i)!;
-      bee.goTo(desiredPos, { movingTarget: true, obstacles: obs });
-      bee.actionPosition = desiredPos;
-    }
-    return OK;
   }
 
   beeAct(bee: Bee, target: Creep | PowerCreep | Structure | undefined | null, healingTargets: { bee: Bee, heal: number }[]) {
@@ -258,41 +247,57 @@ export abstract class SquadMaster extends SwarmMaster {
 
     let beeStats = Apiary.intel.getStats(bee.creep).current;
 
-    // let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
     let healingTarget: { bee: Bee | Creep | null, heal: number } = { bee: null, heal: 0 };
 
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
-    if (!action2 && beeStats.dmgRange > 0) {
-      /*if (rangeToTarget <= 3 && !(target instanceof Structure))
+    if (beeStats.dmgRange > 0) {
+      if (rangeToTarget <= 3 && !(target instanceof Structure))
         action2 = () => bee.rangedAttack(target!);
-      else if (roomInfo.roomState >= roomStates.reservedByEnemy) {
-        let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(c => !PEACE_PACKS.includes(c.owner.username)));
-        if (!tempTarget)
-          tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
-        if (tempTarget)
-          action2 = () => bee.rangedAttack(tempTarget);
-      } else */if (rangeToTarget <= 3)
-        action2 = () => bee.rangedAttack(target!);
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 3);
+        let tempNoRamp = tempTargets.filter(e => !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length);
+        if (tempNoRamp.length)
+          tempTargets = tempNoRamp;
+        if (tempTargets.length) {
+          let tempTarget = tempTargets.reduce((prev, curr) => {
+            let ans = prev.type - curr.type;
+            if (ans === 0)
+              ans = bee.pos.getRangeTo(curr.object) - bee.pos.getRangeTo(prev.object);
+            return ans < 0 ? curr : prev;
+          });
+          if (tempTarget)
+            action2 = () => bee.rangedAttack(tempTarget.object);
+        }
+      }
     }
 
-    if (beeStats.dism + beeStats.dmgClose > 0) {
+    if (beeStats.dism > 0) {
       if (beeStats.dism > 0 && rangeToTarget <= 1 && target instanceof Structure)
         action1 = () => bee.dismantle(target);
-      else if (beeStats.dmgClose > 0 && rangeToTarget <= 1)
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
+        if (tempTargets.length)
+          action1 = () => bee.attack(tempTargets[0].object);
+      }
+    } else if (beeStats.dmgClose > 0) {
+      if (rangeToTarget <= 1)
         action1 = () => bee.attack(target);
-      if (!action1) {
-        let tempTarget: Structure | Creep | undefined;
-        if (beeStats.dism > 0)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
-        if (!tempTarget)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1)[0];
-        if (!tempTarget && beeStats.dism === 0)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
-        if (tempTarget)
-          if (beeStats.dism > 0 && target instanceof Structure)
-            action1 = () => bee.dismantle(target);
-          else if (beeStats.dmgClose > 0)
-            action1 = () => bee.attack(target);
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 1);
+        let tempNoRamp = tempTargets.filter(e => !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length);
+        if (tempNoRamp.length)
+          tempTargets = tempNoRamp;
+        if (tempTargets.length) {
+          let tempTarget = tempTargets.reduce((prev, curr) => {
+            let ans = prev.type - curr.type;
+            if (ans === 0)
+              ans = bee.pos.getRangeTo(curr.object) - bee.pos.getRangeTo(prev.object);
+            return ans < 0 ? curr : prev;
+          });
+          if (tempTarget)
+            action1 = () => bee.attack(tempTarget.object);
+        }
       }
     }
 
@@ -307,9 +312,6 @@ export abstract class SquadMaster extends SwarmMaster {
         });
       if (!healingTarget.bee)
         healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
-      /* if (!healingTarget.bee)
-        healingTarget.bee = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
-          c => c.hits < c.hitsMax && PEACE_PACKS.includes(c.owner.username))); */
 
       if (!healingTarget.bee && !action1)
         healingTarget.bee = bee;
@@ -334,40 +336,7 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  rotateFormation(direction: DirectionConstant) {
-    switch (direction) {
-      case TOP:
-        this.formationRotation = TOP;
-        break;
-      case TOP_RIGHT:
-        if (this.formationRotation !== TOP)
-          this.formationRotation = RIGHT;
-        break;
-      case RIGHT:
-        this.formationRotation = RIGHT;
-        break;
-      case BOTTOM_RIGHT:
-        if (this.formationRotation !== BOTTOM)
-          this.formationRotation = RIGHT;
-        break;
-      case BOTTOM:
-        this.formationRotation = BOTTOM;
-        break;
-      case BOTTOM_LEFT:
-        if (this.formationRotation !== BOTTOM)
-          this.formationRotation = LEFT;
-        break;
-      case LEFT:
-        this.formationRotation = LEFT;
-        break;
-      case TOP_LEFT:
-        if (this.formationRotation !== TOP)
-          this.formationRotation = LEFT;
-        break;
-    }
-  }
-
-  getDesiredPoss() {
+  get desiredPoss() {
     let ans = []
     for (let i = 0; i < this.formationBees.length; ++i) {
       let bee = this.formationBees[i];
@@ -415,32 +384,35 @@ export abstract class SquadMaster extends SwarmMaster {
         return;
     }
 
+    let busy = false;
+    let notNearExit = (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47);
     if (enemy && bee.pos.roomName === this.order.pos.roomName) {
       moveTarget = enemy.pos;
+      opts.movingTarget = true;
       // if (this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
       // opts.range = 2;
-      if (enemy instanceof Structure || bee.pos.getRangeTo(moveTarget) > 4) {
-        let prevRotation = this.rotateFormation;
-        this.rotateFormation(bee.pos.getDirectionTo(enemy));
-        if (prevRotation !== this.rotateFormation)
-          this.rotateFormation = prevRotation;
+      if (notNearExit) {
+        let rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
+        if (rotate)
+          busy = this.rotate(rotate);
       }
-    }
+    } /* else if (bee.pos.isNearTo(this.order)) {
+      let direction = [TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT][Math.floor(Math.random() * 4)];
+      let rotate = this.checkRotation(direction);
+      if (rotate)
+        busy = this.rotate(rotate);
+      console .log(direction, this.formationRotation, rotate, busy);
+    } testing rotation */
 
-    if (enemy && this.canBeOutDmged(bee.pos, roomInfo.safePlace)) {
-      opts = bee.getFleeOpt(opts);
-      bee.goTo(this.order, opts);
-    } else {
+    if (!busy) {
       bee.goTo(moveTarget, opts);
-      if (moveTarget.getRangeTo(bee) <= 3 && this.getSquadMoveMentValue(bee.pos, bee.ref) > 5) {
+      if (moveTarget.getRangeTo(bee) <= 3 && (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) && this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5) {
         let poss = bee.pos.getOpenPositions(true);
         if (poss.length) {
           let newPos = poss.reduce((prev, curr) => {
             let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
-            if (ans === 0) {
-              ans = this.getSquadMoveMentValue(curr, bee.ref) - this.getSquadMoveMentValue(prev, bee.ref);
-              console.log(ans, curr, prev);
-            }
+            if (ans === 0)
+              ans = this.getSquadMoveMentValue(curr, bee.ref, false) - this.getSquadMoveMentValue(prev, bee.ref, false);
             return ans < 0 ? curr : prev;
           });
           if (!newPos.equal(bee.pos))
@@ -448,14 +420,27 @@ export abstract class SquadMaster extends SwarmMaster {
         }
       }
 
-      let evrythingBad = bee.targetPosition && (this.canBeOutDmged(bee.targetPosition, roomInfo.safePlace) && this.hive.roomName !== bee.pos.roomName
-        || roomInfo.roomState === roomStates.ownedByEnemy
-        && (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47
-          && this.getSquadMoveMentValue(bee.targetPosition, bee.ref) > 5))
+      if (!roomInfo.safePlace && (this.canBeOutDmged(bee.pos) || (bee.targetPosition && this.canBeOutDmged(bee.targetPosition)))) {
+        opts = bee.getFleeOpt(opts);
+        let exit = bee.pos.findClosest(Game.rooms[bee.pos.roomName].find(FIND_EXIT));
+        bee.goTo(exit || this.order, opts);
+      }
+
+      if (roomInfo.roomState === roomStates.ownedByEnemy) {
+        let formationBreak = bee.targetPosition && notNearExit
+          && this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
+        if (formationBreak)
+          bee.targetPosition = undefined;
+      }
     }
+
+    if (!busy)
+      this.formationCenter = (bee.targetPosition && bee.targetPosition.isFree(true) ? bee.targetPosition : bee.pos);
+    else
+      bee.goTo(this.formationCenter);
   }
 
-  /*getSquadDist(pos: RoomPosition) {
+  /* getSquadDist(pos: RoomPosition) {
     let sum = 0;
     for (let i = 0; i < this.formation.length; ++i) {
       let bee = this.formationBees[i];
@@ -469,11 +454,20 @@ export abstract class SquadMaster extends SwarmMaster {
       sum += desiredPos.getRangeTo(pos);
     }
     return sum;
-  }*/
+  } */
 
-  canBeOutDmged(pos: RoomPosition, safePlace: boolean) {
-    if (safePlace)
-      return false;
+  canValidate() {
+    let terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
+    let poss = this.desiredPoss;
+    for (let i = 0; i < poss.length; ++i) {
+      let desiredPos = poss[i].pos;
+      if (!desiredPos.isFree(true) || desiredPos.getEnteranceToRoom() || terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
+        return ERR_NO_PATH;
+    }
+    return OK;
+  }
+
+  canBeOutDmged(pos: RoomPosition) {
     for (let i = 0; i < this.formation.length; ++i) {
       let bee = this.formationBees[i];
       if (!bee)
@@ -486,8 +480,10 @@ export abstract class SquadMaster extends SwarmMaster {
       let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
       let beeStats = Apiary.intel.getStats(bee.creep).current;
       let myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
+      let heal = Math.max(myStats.heal, this.stats.current.heal);
       let enemyPower = towerDmg + creepDmg;
-      if (enemyPower > myStats.heal + Math.min(beeStats.resist, myStats.heal * (1 / 0.3 - 1)))
+      // + 10% for safety
+      if (enemyPower * 1.1 > heal + Math.min(beeStats.resist, heal * 0.7 / 0.3))
         return true;
     }
     return false;
@@ -495,9 +491,19 @@ export abstract class SquadMaster extends SwarmMaster {
 
   run() {
     let enemy: Enemy["object"] | undefined;
-    if (this.stats.current.dmgClose + this.stats.current.dmgRange > 0)
-      enemy = Apiary.intel.getEnemy(this.formationCenter);
-    else if (this.stats.current.dism > 0)
+    let roomInfo = Apiary.intel.getInfo(this.formationCenter.roomName);
+    if (this.stats.current.dmgClose + this.stats.current.dmgRange > 0) {
+      let enemies = roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax
+        || (e.dangerlvl >= 4 && this.formationCenter.getRangeTo(e.object) <= 5
+          && (!(e.object instanceof Creep) || !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length)));
+      if (enemies.length)
+        enemy = enemies.reduce((prev, curr) => {
+          let ans = this.formationCenter.getRangeTo(curr.object) - this.formationCenter.getRangeTo(prev.object);
+          if (ans === 0)
+            ans = prev.dangerlvl - curr.dangerlvl;
+          return ans < 0 ? curr : prev;
+        }).object;
+    } else if (this.stats.current.dism > 0)
       enemy = Apiary.intel.getEnemyStructure(this.formationCenter);
 
     let healingTargets: { bee: Bee, heal: number }[] = [];
@@ -509,7 +515,7 @@ export abstract class SquadMaster extends SwarmMaster {
       this.beeAct(bee, enemy, healingTargets);
     });
 
-    let readyToGo = this.spawned === this.maxSpawns;
+    let readyToGo = this.beesAmount >= this.maxSpawns;
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting) {
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee, this.boosts) === OK)
@@ -531,45 +537,27 @@ export abstract class SquadMaster extends SwarmMaster {
       return;
 
     let valid: number = this.validFormation();
-    if (valid === OK) {
+
+    if (this.stuckValue > 0 && valid === OK)
+      centerBee.memory._trav.path = undefined;
+
+    if (valid === OK || this.canValidate() !== OK || this.stuckValue > 6) {
       this.stuckValue = 0;
       this.moveCenter(centerBee, enemy);
-      let direction: DirectionConstant | undefined;
-      if (centerBee.targetPosition && !centerBee.targetPosition.equal(centerBee))
-        direction = centerBee.pos.getDirectionTo(centerBee.targetPosition);
-      if (direction)
-        _.forEach(this.activeBees, b => {
-          if (b.ref === centerBee!.ref)
-            return;
-          let pos = b.pos.getPosInDirection(direction!);
-          if (pos.isFree(true))
-            b.targetPosition = pos;
-        });
-    } else {
-      let desired = this.getDesiredPoss();
-      if (valid === ERR_NOT_IN_RANGE && this.stuckValue <= 4
-        && Apiary.intel.getInfo(centerBee.pos.roomName, Infinity).roomState !== roomStates.ownedByMe
-        && !_.some(centerBee.pos.getOpenPositions(true), p => p.getEnteranceToRoom())) {
-        this.stuckValue += 1;
-        valid = this.validateFormation(desired);
-      }
-      if (valid !== OK) {
-        this.stuckValue = 0;
-        this.moveCenter(centerBee, enemy);
-        for (let i = 0; i < this.formationBees.length; ++i) {
-          let bee = this.formationBees[i];
-          if (!bee || bee.ref === centerBee.ref)
-            continue;
-          let desiredPos = this.getDeisredPos(i);
-          if (!desiredPos || !desiredPos.isFree(true))
-            bee.goTo(centerBee, { movingTarget: true, obstacles: desired })
-          else
-            bee.goTo(desiredPos, { movingTarget: true, obstacles: desired })
-        }
-      }
-    }
+    } else
+      this.stuckValue += 1;
 
-    this.formationCenter = (centerBee.targetPosition && centerBee.targetPosition.isFree(true) ? centerBee.targetPosition : centerBee.pos);
+    let desired = this.desiredPoss;
+    for (let i = 0; i < this.formationBees.length; ++i) {
+      let bee = this.formationBees[i];
+      if (!bee)
+        continue;
+      let desiredPos = this.getDeisredPos(i);
+      if (!desiredPos || !desiredPos.isFree(true))
+        bee.goTo(centerBee, { obstacles: desired });
+      else
+        bee.goTo(desiredPos) //, { obstacles: desiredPos.equal(bee.pos) ? undefined : desired });
+    }
 
     if (SQUAD_VISUALS)
       for (let i = 0; i < this.formationBees.length; ++i) {
@@ -587,4 +575,319 @@ export abstract class SquadMaster extends SwarmMaster {
         Apiary.visuals.exportAnchor();
       }
   }
+
+  checkRotation(direction: DirectionConstant) {
+    let ans: -1 | 0 | 1 = 0;
+    // -1 - rotete left (not clockwise)
+    // 1 - rotate right (clockwise)
+    switch (direction) {
+      case TOP:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case RIGHT:
+            ans = -1;
+            break;
+          case LEFT:
+            ans = 1;
+            break;
+          case TOP:
+        }
+        break;
+      case TOP_RIGHT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+            ans = -1;
+            break;
+          case LEFT:
+            ans = 1;
+            break;
+          case RIGHT:
+          case TOP:
+        }
+        break;
+      case RIGHT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case LEFT:
+            ans = -1;
+            break;
+          case TOP:
+            ans = 1;
+            break;
+          case RIGHT:
+        }
+        break;
+      case BOTTOM_RIGHT:
+        switch (this.formationRotation) {
+          case LEFT:
+            ans = -1;
+            break;
+          case TOP:
+            ans = 1;
+            break;
+          case RIGHT:
+          case BOTTOM:
+        }
+        break;
+      case BOTTOM:
+        switch (this.formationRotation) {
+          case LEFT:
+          case RIGHT:
+            ans = 1;
+            break;
+          case TOP:
+            ans = -1;
+          case BOTTOM:
+        }
+        break;
+      case BOTTOM_LEFT:
+        switch (this.formationRotation) {
+          case RIGHT:
+            ans = 1;
+            break;
+          case TOP:
+            ans = -1;
+            break;
+          case LEFT:
+          case BOTTOM:
+        }
+        break;
+      case LEFT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case RIGHT:
+            ans = 1;
+            break;
+          case TOP:
+            ans = -1;
+            break;
+          case LEFT:
+        }
+        break;
+      case TOP_LEFT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+            ans = 1;
+            break;
+          case RIGHT:
+            ans = -1;
+            break;
+          case LEFT:
+          case TOP:
+        }
+        break;
+    }
+    return ans;
+  }
+
+  /*checkRotation(direction: DirectionConstant) {
+    let ans: -1 | 0 | 1 = 0;
+    // -1 - rotete left (not clockwise)
+    // 1 - rotate right (clockwise)
+    switch (direction) {
+      case TOP:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case RIGHT:
+          case LEFT:
+            ans = 1;
+            break;
+          case TOP:
+        }
+        break;
+      case TOP_RIGHT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case LEFT:
+            ans = 1;
+            break;
+          case RIGHT:
+          case TOP:
+        }
+        break;
+      case RIGHT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case LEFT:
+          case TOP:
+            ans = 1;
+            break;
+          case RIGHT:
+        }
+      case BOTTOM_RIGHT:
+        switch (this.formationRotation) {
+          case LEFT:
+          case TOP:
+            ans = 1;
+            break;
+          case RIGHT:
+          case BOTTOM:
+        }
+      case BOTTOM: switch (this.formationRotation) {
+        case LEFT:
+        case RIGHT:
+        case TOP:
+          ans = 1;
+          break;
+        case BOTTOM:
+      }
+        break;
+      case BOTTOM_LEFT:
+        switch (this.formationRotation) {
+          case RIGHT:
+          case TOP:
+            ans = 1;
+            break;
+          case LEFT:
+          case BOTTOM:
+        }
+        break;
+      case LEFT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case RIGHT:
+          case TOP:
+            ans = 1;
+            break;
+          case LEFT:
+        }
+        break;
+      case TOP_LEFT:
+        switch (this.formationRotation) {
+          case BOTTOM:
+          case RIGHT:
+            ans = 1;
+            break;
+          case LEFT:
+          case TOP:
+        }
+        break;
+    }
+    return ans;
+  }*/
+
+  rotate(direction: -1 | 1) {
+    switch (this.formationRotation) {
+      case TOP:
+        switch (direction) {
+          case -1:
+            this.formationRotation = LEFT;
+            break;
+          case 1:
+            this.formationRotation = RIGHT;
+            break;
+        }
+        break;
+      case BOTTOM:
+        switch (direction) {
+          case -1:
+            this.formationRotation = RIGHT;
+            break;
+          case 1:
+            this.formationRotation = LEFT;
+            break;
+        }
+        break;
+      case LEFT:
+        switch (direction) {
+          case -1:
+            this.formationRotation = BOTTOM;
+            break;
+          case 1:
+            this.formationRotation = TOP;
+            break;
+        }
+        break;
+      case RIGHT:
+        switch (direction) {
+          case -1:
+            this.formationRotation = TOP;
+            break;
+          case 1:
+            this.formationRotation = BOTTOM;
+            break;
+        }
+        break;
+    }
+    let possibleCenters = this.formationCenter.getPositionsInRange(1);
+    let calcErrors = (newCenter: RoomPosition) => {
+      let sum = 0;
+      for (let i = 0; i < this.formationBees.length; ++i) {
+        let bee = this.formationBees[i];
+        if (!bee)
+          continue;
+        let desiredPos = this.getDeisredPos(i, newCenter);
+        if (!desiredPos || !desiredPos.isNearTo(bee))
+          ++sum;
+      }
+      return sum;
+    }
+    let newCenter = this.formationCenter;
+    let errors = calcErrors(newCenter);
+
+    for (let i = 0; i < possibleCenters.length; ++i) {
+      let pos = possibleCenters[i];
+      let newError = calcErrors(pos);
+      if (newError < errors) {
+        newCenter = pos;
+        errors = newError;
+      }
+    }
+    if (!this.formationCenter.equal(newCenter)) {
+      this.formationCenter = newCenter;
+      return true;
+    }
+    return false;
+  }
 }
+
+/* @profile
+export abstract class SquareSquadMaster extends SquadMaster {
+  abstract formation: SquareFormationPositions;
+
+  rotate(direction: -1 | 1) { // TODO efficient rotation
+    switch (this.formationRotation) {
+      case TOP:
+        switch (direction) {
+          case -1:
+            this.formationRotation = LEFT;
+            break;
+          case 1:
+            this.formationRotation = RIGHT;
+            break;
+        }
+        break;
+      case BOTTOM:
+        switch (direction) {
+          case -1:
+            this.formationRotation = RIGHT;
+            break;
+          case 1:
+            this.formationRotation = LEFT;
+            break;
+        }
+        break;
+      case LEFT:
+        switch (direction) {
+          case -1:
+            this.formationRotation = TOP;
+            break;
+          case 1:
+            this.formationRotation = BOTTOM;
+            break;
+        }
+        break;
+      case RIGHT:
+        switch (direction) {
+          case -1:
+            this.formationRotation = BOTTOM;
+            break;
+          case 1:
+            this.formationRotation = TOP;
+            break;
+        }
+        break;
+    }
+    return false;
+  }
+}*/

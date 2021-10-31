@@ -7,6 +7,7 @@ import { WaiterMaster } from "./beeMasters/war/waiter";
 
 import { GangDuo } from "./beeMasters/squads/gangDuo";
 import { GangQuad } from "./beeMasters/squads/quadSquad";
+// import { TestSquad } from "./beeMasters/squads/test";
 
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
@@ -528,6 +529,8 @@ export class Order {
               this.delete();
             break;
           case COLOR_RED:
+            if (this.ref.includes("keep"))
+              break;
             this.acted = false;
             if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
               this.delete();

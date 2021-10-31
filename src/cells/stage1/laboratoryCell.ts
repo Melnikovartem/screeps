@@ -252,6 +252,7 @@ export class LaboratoryCell extends Cell {
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
   askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
+
     if (bee.ticksToLive < 1000)
       // || bee.pos.roomName !== this.pos.roomName)
       return rCode;

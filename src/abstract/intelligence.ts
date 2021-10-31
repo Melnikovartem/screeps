@@ -199,7 +199,7 @@ export class Intel {
         roomInfo.enemies = <Enemy[]>_.compact(roomInfo.enemies.map(e => {
           let copy = e.object && <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
           if (!copy || copy.pos.roomName !== roomName)
-            return copy;
+            return null;
           e.object = copy;
           return e;
         }));
