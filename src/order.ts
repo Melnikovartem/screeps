@@ -588,6 +588,9 @@ export class Order {
         master: this.master ? true : false,
       }
       this.flag.memory.repeat -= 1;
+      this.flag.memory.info = undefined;
+      this.flag.memory.extraInfo = undefined;
+      this.flag.memory.extraPos = undefined;
       if (this.master)
         Apiary.masters[this.master.ref].delete();
       this.acted = false;

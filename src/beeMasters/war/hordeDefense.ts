@@ -43,14 +43,14 @@ export class HordeDefenseMaster extends HordeMaster {
         let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
         let desiredTTK = 40; // desired time to kill
 
-        let healMax = 4;
+        let healMax = 5;
         let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
         if (!noFear)
           desiredTTK = 20;
         healNeeded = Math.min(healMax, healNeeded);
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 2, 15);
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 3);
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];

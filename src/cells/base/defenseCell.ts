@@ -92,7 +92,7 @@ export class DefenseCell extends Cell {
     let extraCovers: string[] = [];
     let leaveOne = (ss: { [id: string]: Structure }) => {
       let underStrike = _.filter(ss, s => map[s.pos.x] && map[s.pos.x][s.pos.y])
-      if (underStrike.length !== Object.keys(ss).length)
+      if (!underStrike.length || underStrike.length !== Object.keys(ss).length)
         return;
       let cover = underStrike.reduce((prev, curr) => map[curr.pos.x][curr.pos.y] < map[prev.pos.x][prev.pos.y] ? curr : prev);
       extraCovers.push(cover.pos.x + "_" + cover.pos.y);
@@ -196,17 +196,6 @@ export class DefenseCell extends Cell {
       this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
     }
 
-    if (isWar && this.hive.state !== hiveStates.battle && this.hive.cells.storage)
-      this.hive.cells.storage.pickupResources();
-
-    let storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      if (this.hive.state === hiveStates.battle)
-        storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 2, RESOURCE_ENERGY);
-      else
-        storageCell.requestFromStorage(Object.values(this.towers), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
-    }
-
 
     if (this.hive.state === hiveStates.battle) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
@@ -220,6 +209,17 @@ export class DefenseCell extends Cell {
       }
     } else
       this.isBreached = false;
+
+    if (isWar && this.hive.state !== hiveStates.battle && this.hive.cells.storage)
+      this.hive.cells.storage.pickupResources();
+
+    let storageCell = this.hive.cells.storage;
+    if (storageCell) {
+      if (this.hive.state === hiveStates.battle)
+        storageCell.requestFromStorage(_.filter(this.towers, t => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1), 2, RESOURCE_ENERGY);
+      else
+        storageCell.requestFromStorage(Object.values(this.towers), 4, RESOURCE_ENERGY, TOWER_CAPACITY, true);
+    }
 
     _.forEach(this.hive.annexNames, h => this.checkOrDefendSwarms(h));
   }
@@ -299,12 +299,13 @@ export class DefenseCell extends Cell {
   wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
     let path = pos.findPathTo(defPos, this.opts);
     let lastStep = path.pop();
+    console.log(JSON.stringify(lastStep))
     if (!lastStep)
       return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
-        && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART));
+        && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
     let endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
     return endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
-      && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART));
+      && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
   }
 
   setDefFlag(pos: RoomPosition, flag?: Flag) {
@@ -319,8 +320,11 @@ export class DefenseCell extends Cell {
         }
       if (!pos)
         pos = centerPoss[0];
-    } else if (pos.getEnteranceToRoom())
-      pos = pos.getOpenPositions(true).reduce((prev, curr) => prev.getEnteranceToRoom() ? curr : prev);
+    } else if (pos.getEnteranceToRoom()) {
+      let poss = pos.getOpenPositions(true);
+      if (poss.length)
+        pos = poss.reduce((prev, curr) => prev.getEnteranceToRoom() ? curr : prev);
+    }
 
     if (flag) {
       return flag.setPosition(pos);
@@ -380,7 +384,7 @@ export class DefenseCell extends Cell {
     }
 
     if (roomInfo.enemies.length && Game.time > roomInfo.safeModeEndTime) {
-      if (this.isBreached && this.hive.room.controller!.level >= 4) {
+      if (this.isBreached && (this.hive.room.controller!.level >= 4 || _.filter(Apiary.hives, h => Object.keys(h.cells.spawn.spawns).length > 0).length <= 1)) {
         let contr = this.hive.room.controller!;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
           contr.activateSafeMode(); // red button

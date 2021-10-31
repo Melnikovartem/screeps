@@ -228,7 +228,7 @@ export abstract class SquadMaster extends SwarmMaster {
         else
           sum += 30;
       else if (!ignoreEnemyCreeps && desiredPos.lookFor(LOOK_CREEPS).filter(c => !c.my).length)
-        sum += 10;
+        sum += 20;
       else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP)
         sum += 5;
       else
@@ -390,7 +390,7 @@ export abstract class SquadMaster extends SwarmMaster {
       moveTarget = enemy.pos;
       opts.movingTarget = true;
       // if (this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
-      // opts.range = 2;
+      //  opts.range = 3;
       if (notNearExit) {
         let rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
         if (rotate)
@@ -495,7 +495,7 @@ export abstract class SquadMaster extends SwarmMaster {
     if (this.stats.current.dmgClose + this.stats.current.dmgRange > 0) {
       let enemies = roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax
         || (e.dangerlvl >= 4 && this.formationCenter.getRangeTo(e.object) <= 5
-          && (!(e.object instanceof Creep) || !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length)));
+          && !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length));
       if (enemies.length)
         enemy = enemies.reduce((prev, curr) => {
           let ans = this.formationCenter.getRangeTo(curr.object) - this.formationCenter.getRangeTo(prev.object);
@@ -631,11 +631,11 @@ export abstract class SquadMaster extends SwarmMaster {
         break;
       case BOTTOM:
         switch (this.formationRotation) {
-          case LEFT:
+          case TOP:
           case RIGHT:
             ans = 1;
             break;
-          case TOP:
+          case LEFT:
             ans = -1;
           case BOTTOM:
         }

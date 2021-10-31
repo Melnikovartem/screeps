@@ -488,9 +488,9 @@ export class Hive {
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, undefined, undefined, true));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, undefined, undefined, true));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, undefined, undefined, true));
-        checkAnnex();
         if (!this.sumCost)
           addCC(this.cells.defense.getNukeDefMap(true));
+        checkAnnex();
         break;
       case hiveStates.nospawn:
         addCC(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
@@ -530,6 +530,7 @@ export class Hive {
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
     }
+    // addCC([{ pos: new RoomPosition(3, 22, "E12N48"), sType: STRUCTURE_SPAWN, targetHits: 1, energyCost: 15000, type: "construction" }])
   }
 
   update() {
