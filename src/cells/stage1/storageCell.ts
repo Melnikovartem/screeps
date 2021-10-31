@@ -156,7 +156,7 @@ export class StorageCell extends Cell {
   }
 
   updateTerminal() {
-    if (!this.terminal)
+    if (!this.terminal || Game.time % 4 !== 0)
       return;
     if (Game.flags[prefix.terminal + this.hive.roomName]) {
       let res = findOptimalResource(this.storage.store, -1);
@@ -168,7 +168,7 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res]) {
         let used = this.terminal.store.getUsedCapacity(res);
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 2400)) > 0)
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 3000)) > 0)
           return;
       }
     }
@@ -177,10 +177,10 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       let balance = this.terminal.store.getUsedCapacity(res) - this.resTargetTerminal[res]!;
       if (balance < 0) {
-        if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 2400)) > 0)
+        if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 3000)) > 0)
           return;
       } else if (balance > 0) {
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 2400)) > 0)
+        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 3000)) > 0)
           return;
       }
     }

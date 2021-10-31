@@ -485,9 +485,12 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
         break;
       case hiveStates.nukealert:
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
-        addCC(this.cells.defense.getNukeDefMap(true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, undefined, undefined, true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, undefined, undefined, true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, undefined, undefined, true));
+        checkAnnex();
+        if (!this.sumCost)
+          addCC(this.cells.defense.getNukeDefMap(true));
         break;
       case hiveStates.nospawn:
         addCC(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));

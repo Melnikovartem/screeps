@@ -2,6 +2,7 @@ import { Master } from "../_Master";
 
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+import { findOptimalResource } from "../../abstract/utils";
 // import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
@@ -71,12 +72,14 @@ export class MinerMaster extends Master {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, Infinity);
-    let sourceOff = !this.cell.operational
-      || (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
-      || (this.cell.extractor && this.cell.extractor.cooldown > 0)
-      || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
-      || (this.cell.container && !this.cell.link && !this.cell.container.store.getFreeCapacity(this.cell.resourceType))
-      || (this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType));
+    let sourceOff: boolean | undefined = !this.cell.operational;
+    if (this.cell.pos.roomName in Game.rooms)
+      sourceOff = sourceOff
+        || (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
+        || (this.cell.extractor && this.cell.extractor.cooldown > 0)
+        || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
+        || (this.cell.container && !this.cell.link && !this.cell.container.store.getFreeCapacity(this.cell.resourceType))
+        || (this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType));
 
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting)
@@ -131,6 +134,8 @@ export class MinerMaster extends Master {
           break;
       }
       if (this.checkFlee(bee)) {
+        if (bee.targetPosition && bee.store.getUsedCapacity() > 0)
+          bee.drop(findOptimalResource(bee.store));
       } else {
         if (lairSoonSpawn)
           if (bee.pos.getRangeTo(this.cell.lair!) < 5)

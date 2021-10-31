@@ -2,6 +2,7 @@ import { Master } from "../_Master";
 
 import { beeStates, hiveStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+import { findRamp } from "../war/siegeDefender";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 // import { findOptimalResource } from "../../abstract/utils";
 
@@ -102,10 +103,16 @@ export class BuilderMaster extends Master {
           bee.goRest(lab.pos);
           break;
         case beeStates.refill:
-          if (bee.creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 2500) {
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === bee.creep.store.getCapacity(RESOURCE_ENERGY)
+            || this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 2500) {
             bee.state = beeStates.work;
             break;
           } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
+            if (bee.store.getUsedCapacity() > bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
+              let res = <ResourceConstant | undefined>Object.keys(bee.store).filter(r => r !== RESOURCE_ENERGY)[0];
+              if (res)
+                bee.transfer(this.sCell.storage, res);
+            }
             bee.state = beeStates.work;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense_repair" : "build", this.sCell.storage.store, bee.store);
@@ -150,13 +157,12 @@ export class BuilderMaster extends Master {
                 bee.goTo(this.sCell.storage);
                 break;
               }
-              let ans;
               if (target instanceof ConstructionSite)
-                ans = bee.build(target, this.hive.opts);
+                bee.build(target, this.hive.opts);
               else if (target instanceof Structure)
-                ans = bee.repair(target, this.hive.opts);
+                bee.repair(target, this.hive.opts);
               bee.target = target.id;
-              bee.repairRoadOnMove(ans);
+              // bee.repairRoadOnMove(ans);
               let resource;
               if (bee.pos.getRangeTo(target) <= 3) {
                 resource = bee.pos.findClosest(target.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));
@@ -178,7 +184,7 @@ export class BuilderMaster extends Master {
             let ans = bee.transfer(this.sCell.storage, RESOURCE_ENERGY);
             if (ans === OK && Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
-            bee.repairRoadOnMove(ans);
+            // bee.repairRoadOnMove(ans);
           } else
             bee.goRest(this.hive.rest, this.hive.opts);
           break;
@@ -195,7 +201,7 @@ export class BuilderMaster extends Master {
         let enemy = bee.pos.findClosest(enemies);
         if (!bee.targetPosition && enemy && enemy.pos.getRangeTo(bee) <= 4)
           bee.targetPosition = bee.pos;
-        if (enemy) {
+        if (enemy && bee.targetPosition && !findRamp(bee.targetPosition) && !findRamp(bee.pos)) {
           let fleeDist = Apiary.intel.getFleeDist(enemy);
           if (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist
             || (enemy && this.hive.cells.defense.wasBreached(enemy.pos, bee.targetPosition || bee.pos))) {

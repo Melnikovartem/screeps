@@ -136,9 +136,13 @@ export class TransferRequest {
         let ans;
         if (this.from instanceof Resource)
           ans = bee.pickup(this.from);
-        else
-          ans = bee.withdraw(this.from, this.resource || findOptimalResource(this.from.store), amountBee);
-        if (ans === OK)
+        else {
+          let res = this.resource || findOptimalResource(this.from.store, -1);
+          if (this.resource === undefined)
+            amountBee = Math.min(amountBee, (<Store<ResourceConstant, false>>this.from.store).getUsedCapacity(res));
+          ans = bee.withdraw(this.from, res, amountBee);
+        }
+        if (ans === OK && this.resource)
           bee.goTo(this.to);
         break;
 

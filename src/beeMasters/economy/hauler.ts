@@ -52,7 +52,7 @@ export class HaulerMaster extends Master {
     }
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
     this.cell.fullContainer = Math.min(CONTAINER_CAPACITY, body.filter(b => b === CARRY).length * CARRY_CAPACITY);
-    let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.1));
+    let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.15));
     if (this.hive.state === hiveStates.lowenergy)
       rounding = x => Math.max(1, Math.floor(x));
     this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
@@ -181,7 +181,7 @@ export class HaulerMaster extends Master {
         case beeStates.chill:
           bee.goRest(this.cell.pos, { offRoad: true });
       }
-      if (this.checkFlee(bee)) {
+      if (this.checkFlee(bee) && bee.targetPosition) {
         let diff = bee.store.getUsedCapacity() - Math.floor(bee.store.getCapacity() * 0.5 + 50);
         if (diff > 0)
           bee.drop(findOptimalResource(bee.store));

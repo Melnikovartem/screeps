@@ -459,17 +459,15 @@ export class Visuals {
   }
 
   statsNukes(hive: Hive) {
-    _.forEach(hive.cells.defense.nukes, n => {
-      let nuke = n.lookFor(LOOK_NUKES)[0];
-      if (nuke) {
-        let percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
-        this.updateAnchor(this.progressbar(`☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${Math.round(percent * 1000) / 10}%`, this.anchor, percent));
-      }
+    _.forEach(hive.cells.defense.nukes, nuke => {
+      let percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
+      this.updateAnchor(this.progressbar(`☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${Math.round(percent * 1000) / 10}%`, this.anchor, percent));
     });
   }
 
   nukeInfo(hive: Hive) {
-    _.forEach(hive.cells.defense.nukes, n => {
+    _.forEach(hive.cells.defense.nukes, nuke => {
+      let n = nuke.pos;
       let xMin = n.x - 2.5;
       let xMax = n.x + 2.5;
       let yMin = n.y - 2.5;

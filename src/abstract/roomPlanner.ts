@@ -682,8 +682,6 @@ export class RoomPlanner {
 
       let plan = this.activePlanning[anchor.roomName].plan;
       if (newPos && (p.x !== newPos.x || p.y !== newPos.y)) {
-        if (pos.x === 37 && pos.y === 45)
-          console.log(JSON.stringify(newPos))
         if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
           this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
         else if (plan[p.x] && plan[p.x][p.y])
@@ -927,7 +925,7 @@ export class RoomPlanner {
     return { amount: amount ? amount : 0, heal: hitsMax };
   }
 
-  checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {
+  checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], specials: { [key in StructureConstant]?: number } = {}, coef = 0.7, nukeAlert = false) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return [];
 
@@ -1018,7 +1016,7 @@ export class RoomPlanner {
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed && constructions < CONSTRUCTIONS_PER_TYPE; ++i) {
           let anss;
-          if (!toadd[i].findInRange(FIND_NUKES, 2).length)
+          if (!nukeAlert || !toadd[i].findInRange(FIND_NUKES, 2).length)
             if (sType === STRUCTURE_SPAWN)
               anss = toadd[i].createConstructionSite(sType, roomName.toLowerCase() + makeId(4));
             else

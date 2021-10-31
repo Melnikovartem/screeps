@@ -15,7 +15,7 @@ const PADDING_NUKES_RAMPS = 20000;
 @profile
 export class DefenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
-  nukes: RoomPosition[] = [];
+  nukes: Nuke[] = [];
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
@@ -52,7 +52,7 @@ export class DefenseCell extends Cell {
   updateNukes() {
     this.nukes = [];
     _.forEach(this.hive.room.find(FIND_NUKES), n => {
-      this.nukes.push(n.pos);
+      this.nukes.push(n);
       if (this.timeToLand > n.timeToLand)
         this.timeToLand = n.timeToLand;
     });
@@ -72,7 +72,11 @@ export class DefenseCell extends Cell {
     if (!this.nukes.length)
       return [];
     let map: { [id: number]: { [id: number]: number } } = {};
-    _.forEach(this.nukes, pp => {
+    let minLandTime = _.min(this.nukes, n => n.timeToLand).timeToLand;
+    _.forEach(this.nukes, n => {
+      if (n.timeToLand > minLandTime + NUKE_LAND_TIME / 2)
+        return;
+      let pp = n.pos;
       let poss = pp.getPositionsInRange(2);
       _.forEach(poss, p => {
         if (!map[p.x])
@@ -186,12 +190,13 @@ export class DefenseCell extends Cell {
 
 
     let contr = this.hive.room.controller!;
-    if (this.hive.state !== hiveStates.battle || Game.time % 10 === 0) {
+    let isWar = this.hive.state === hiveStates.battle;
+    if (!isWar || Game.time % 10 === 0) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
       this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!contr.safeMode || contr.safeMode < 600));
     }
 
-    if (this.hive.state === hiveStates.battle && Game.time % 10 === 0 && this.hive.cells.storage)
+    if (isWar && this.hive.state !== hiveStates.battle && this.hive.cells.storage)
       this.hive.cells.storage.pickupResources();
 
     let storageCell = this.hive.cells.storage;
@@ -234,7 +239,7 @@ export class DefenseCell extends Cell {
       let ans;
       if (swarm.pos.getRoomRangeTo(Game.rooms[pos.roomName], true) < 6)
         ans = this.setDefFlag(pos, swarm.flag);
-      //console.log(ans, swarm.pos.roomName, "->", roomName);
+      //console .log(ans, swarm.pos.roomName, "->", roomName);
       if (ans === OK) {
         swarm.hive = this.hive;
         swarm.flag.memory.hive = this.hive.roomName;
@@ -243,7 +248,7 @@ export class DefenseCell extends Cell {
         return OK;
       }
     }
-    return ERR_NOT_FOUND
+    return ERR_NOT_FOUND;
   }
 
   checkOrDefendSwarms(roomName: string) {
@@ -257,7 +262,7 @@ export class DefenseCell extends Cell {
         if (!pos)
           pos = enemy.pos;
 
-        // console.log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
+        // console .log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
         // + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
 
         if (this.reposessFlag(enemy.pos, roomInfo.dangerlvlmax) !== OK)
@@ -365,8 +370,8 @@ export class DefenseCell extends Cell {
       healTargets = this.hive.cells.storage.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
     if (!healTargets.length && this.hive.builder)
       healTargets = this.hive.builder.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
-    if (!healTargets.length && this.hive.builder)
-      healTargets = this.hive.builder.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    if (!healTargets.length && this.hive.cells.excavation.master)
+      healTargets = this.hive.cells.excavation.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
     let healTarget: Creep | undefined;
     let toHeal = 0;
     if (healTargets.length) {
