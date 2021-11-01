@@ -1,21 +1,4 @@
-type ProtoPos = RoomPosition | { pos: RoomPosition };
-type Pos = { x: number, y: number }
-
-interface RoomPosition {
-  getRoomCoorinates(): [number, number, string, string];
-  getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
-  getPositionsInRange(range: number): RoomPosition[];
-  getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
-  isFree(ignoreCreeps?: boolean): boolean;
-  getEnteranceToRoom(): RoomPosition | null;
-  getPosInDirection(direction: DirectionConstant): RoomPosition;
-  getTimeForPath(pos: ProtoPos): number;
-  findClosest<Obj extends ProtoPos>(structures: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
-  getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
-  equal(pos: ProtoPos): boolean;
-  oppositeDirection(pos: RoomPosition): DirectionConstant;
-  readonly to_str: string;
-}
+import { Traveler } from "../Traveler/TravelerModified";
 
 Object.defineProperty(RoomPosition.prototype, "to_str", {
   get: function str() {
@@ -214,7 +197,7 @@ RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
         if (!(enterance instanceof RoomPosition))
           enterance = room.find(enterance)[0];
         // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
-        let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByPath(room.find(route[i].exit));
+        let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByTravel(room.find(route[i].exit));
 
         if (exit) {
           len += enterance.findPathTo(exit, { ignoreCreeps: true }).length;
@@ -240,12 +223,12 @@ RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
   return len;
 }
 
-let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
+/* let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
   [FIND_EXIT_TOP]: pos => pos.y,
   [FIND_EXIT_BOTTOM]: pos => 49 - pos.y,
   [FIND_EXIT_LEFT]: pos => pos.x,
   [FIND_EXIT_RIGHT]: pos => 49 - pos.x,
-}
+}*/
 
 //cheap (in terms of CPU) est of dist
 RoomPosition.prototype.getRangeApprox = function(obj: ProtoPos, calcType?: "linear") {
@@ -330,6 +313,26 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
     }
   });
 
+
+  return ans;
+}
+
+RoomPosition.prototype.findClosestByTravel = function <Obj extends ProtoPos>(objects: Obj[], opts?: FindPathOpts): Obj | null {
+  if (objects.length === 0)
+    return null;
+
+  let ans: Obj = objects[0];
+  let distance = Infinity;
+
+  opts = opts || { maxRooms: 3 }
+
+  _.forEach(objects, (obj: Obj) => {
+    let newDistance = Traveler.findTravelPath(this, obj, opts).path.length;
+    if (newDistance < distance) {
+      ans = obj;
+      distance = newDistance;
+    }
+  });
 
   return ans;
 }

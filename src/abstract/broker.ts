@@ -164,7 +164,7 @@ export class Broker {
     return _.filter(Game.market.orders, order => order.roomName === roomName && order.resourceType === res && order.type === type);
   }
 
-  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number): "no money" | "short" | "long" {
+  buyIn(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number, coef = hurry ? 4 : 2): "no money" | "short" | "long" {
     let roomName = terminal.pos.roomName;
     if (creditsToUse === undefined)
       creditsToUse = this.creditsToUse(roomName);
@@ -174,7 +174,8 @@ export class Broker {
     if (!hurry)
       orders = this.longOrders(roomName, res, ORDER_BUY);
     this.update(orders && orders.length ? 16 : MARKET_LAG);
-    let price = this.getPriceLongBuy(res);
+    let step = ORDER_PADDING * coef;
+    let price = this.priceLongBuy(res, step);
     let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
@@ -194,23 +195,22 @@ export class Broker {
       orders = this.longOrders(roomName, res, ORDER_BUY);
 
     if (!orders.length && Math.floor(creditsToUse / (price * 1.05)) > 0)
-      this.buyLong(terminal, res, amount, creditsToUse);
+      this.buyLong(terminal, res, amount, creditsToUse, price);
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
-      let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
-      let coef = hurry ? 2 : 1;
-      if (priceToSellInstant >= o.price - ORDER_PADDING * 100)
-        newPrice = o.price - ORDER_PADDING * 100 * coef;
-      else if (priceToSellInstant > o.price)
-        newPrice = o.price - ORDER_PADDING * coef;
-      if (newPrice && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
+      let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0;
+      if (priceToSellInstant + step >= o.price + step * 100)
+        newPrice = o.price + step * 100;
+      else if (priceToSellInstant >= o.price)
+        newPrice = o.price + step;
+      if (newPrice) // ( && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
     return "long";
   }
 
-  sellOff(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number): "no money" | "short" | "long" {
+  sellOff(terminal: StructureTerminal, res: ResourceConstant, amount: number, hurry = false, creditsToUse?: number, coef = hurry ? 4 : 2): "no money" | "short" | "long" {
     let roomName = terminal.pos.roomName;
     if (creditsToUse === undefined)
       creditsToUse = this.creditsToUse(roomName);
@@ -221,7 +221,8 @@ export class Broker {
     if (!hurry)
       orders = this.longOrders(roomName, res, ORDER_SELL);
     this.update(orders && orders.length ? 16 : MARKET_LAG);
-    let price = this.getPriceLongSell(res);
+    let step = ORDER_PADDING * coef;
+    let price = this.priceLongSell(res, coef);
     let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
 
     if ((hurry || priceToSellInstant >= price * 0.95) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
@@ -247,17 +248,16 @@ export class Broker {
       orders = this.longOrders(roomName, res, ORDER_SELL);;
 
     if (!orders.length)
-      this.sellLong(terminal, res, amount, creditsToUse);
+      this.sellLong(terminal, res, amount, creditsToUse, price);
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
       let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
-      let coef = hurry ? 2 : 1;
-      if (priceToBuyInstant <= o.price - ORDER_PADDING * 100)
-        newPrice = o.price - ORDER_PADDING * 100 * coef;
-      else if (priceToBuyInstant < o.price)
-        newPrice = o.price - ORDER_PADDING * coef;
-      if (newPrice && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
+      if (priceToBuyInstant - step <= o.price - step * 100)
+        newPrice = o.price - step * 100;
+      else if (priceToBuyInstant <= o.price)
+        newPrice = o.price - step;
+      if (newPrice) // && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
         Game.market.changeOrderPrice(o.id, newPrice);
     }
     return "long";
@@ -268,18 +268,17 @@ export class Broker {
   }
 
   // i buy as long
-  getPriceLongBuy(res: ResourceConstant) {
-    return (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + ORDER_PADDING;
+  priceLongBuy(res: ResourceConstant, step: number) {
+    return (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + step / 2;
   }
 
   // i sell as long
-  getPriceLongSell(res: ResourceConstant) {
-    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.25) - ORDER_PADDING;
+  priceLongSell(res: ResourceConstant, step: number) {
+    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.25) - step / 2;
   }
 
-  buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, coef: number = 1) {
+  buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, price: number) {
     this.update(MARKET_LAG);
-    let price = this.getPriceLongBuy(res) * coef;
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 1.05));
     amount = Math.min(amount, priceCap);
@@ -295,9 +294,8 @@ export class Broker {
     return ans;
   }
 
-  sellLong(terminal: StructureTerminal, res: ResourceConstant, creditsToUse: number, amount: number, coef: number = 1) {
+  sellLong(terminal: StructureTerminal, res: ResourceConstant, creditsToUse: number, amount: number, price: number) {
     this.update(MARKET_LAG);
-    let price = this.getPriceLongSell(res) * coef;
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 0.05));
     amount = Math.min(amount, priceCap);

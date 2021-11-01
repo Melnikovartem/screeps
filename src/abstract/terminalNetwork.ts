@@ -2,10 +2,10 @@ import { hiveStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { HIVE_ENERGY } from "../hive";
+import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 
 import type { Hive, ResTarget } from "../hive"
 
-export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
 const BUY_SHORTAGES_CYCLE = 5;

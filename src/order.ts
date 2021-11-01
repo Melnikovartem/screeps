@@ -504,13 +504,16 @@ export class Order {
               let hurry = this.ref.includes("hurry");
               if ("all" === parsed![2]) {
                 if (mode === "sell") {
-                  if (hurry || Game.time % 10 === 0)
-                    _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
-                      if (ress === RESOURCE_ENERGY)
-                        return;
-                      // get rid of shit in this hive
-                      Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, <ResourceConstant>ress, 500, hurry, Infinity);
-                    });
+                  // if (hurry || Game.time % 10 === 0)
+                  Apiary.broker.update();
+                  let getAmount = (res?: ResourceConstant) => this.hive.cells.storage!.storage.store.getUsedCapacity() + this.hive.cells.storage!.terminal!.store.getUsedCapacity(res);
+                  _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
+                    let res = <ResourceConstant>ress;
+                    if (res === RESOURCE_ENERGY && getAmount() - getAmount(RESOURCE_ENERGY) > 2 * getAmount(RESOURCE_ENERGY))
+                      return;
+                    // get rid of shit in this hive
+                    Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, res, Math.min(5000, getAmount(res)), hurry || this.hive.cells.defense.isBreached, Infinity, 10);
+                  });
                 } else
                   this.delete();
                 return;
@@ -630,6 +633,15 @@ export class Order {
           case COLOR_PURPLE:
             if (!force)
               return;
+            let index = this.hive.annexNames.indexOf(this.pos.roomName);
+            if (index !== -1)
+              this.hive.annexNames.splice(index, 1);
+            _.forEach(_.filter(Game.flags, f => f.color === COLOR_YELLOW && f.pos.roomName === this.pos.roomName), f => f.remove());
+            for (const ref in this.hive.cells.excavation.resourceCells)
+              if (this.hive.cells.excavation.resourceCells[ref].pos.roomName === this.pos.roomName) {
+                this.hive.cells.excavation.resourceCells[ref].master.delete();
+                delete this.hive.cells.excavation.resourceCells[ref];
+              }
             break;
         }
         break;

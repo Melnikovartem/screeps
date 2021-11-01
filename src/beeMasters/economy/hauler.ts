@@ -15,6 +15,7 @@ export class HaulerMaster extends Master {
   roadUpkeepCost: { [id: string]: number } = {};
   accumRoadTime = 0;
   dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
+  minRoadTime: number = 0;
 
   constructor(excavationCell: ExcavationCell, storage: StructureStorage | StructureTerminal) {
     super(excavationCell.hive, excavationCell.ref);
@@ -35,13 +36,18 @@ export class HaulerMaster extends Master {
 
   recalculateRoadTime() {
     this.accumRoadTime = 0; // roadTime * minePotential
+    this.minRoadTime = Infinity;
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
         if (cell.operational && cell.roadTime !== Infinity && cell.restTime !== Infinity && cell.container && !cell.link) {
           let coef = Math.min(cell.master.getBeeRate(), cell.ratePT);
           this.accumRoadTime += (cell.roadTime + cell.restTime) * coef;
+          if (cell.restTime < this.minRoadTime)
+            this.minRoadTime = cell.restTime;
         }
       });
+    if (this.minRoadTime === Infinity)
+      this.minRoadTime = 0;
     this.cell.shouldRecalc = false;
   }
 
@@ -59,7 +65,7 @@ export class HaulerMaster extends Master {
   }
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount);
+    let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount, CREEP_LIFE_TIME - this.minRoadTime);
     if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();

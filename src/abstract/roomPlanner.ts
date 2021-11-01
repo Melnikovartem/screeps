@@ -2,6 +2,7 @@ import { makeId } from "./utils";
 import { roomStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
+import { Traveler } from "../Traveler/TravelerModified";
 
 import type { PossiblePositions, BuildProject } from "../Hive";
 
@@ -32,7 +33,7 @@ type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends FindPathOpts { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): FindPathOpts {
   return _.defaults(opts, {
-    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false, maxRooms: 1,
+    plainCost: 2, swampCost: 6, ignoreCreeps: true, ignoreDestructibleStructures: true, ignoreRoads: false, maxRooms: 1, range: 0,
     costCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (Apiary.planner.activePlanning[roomName]) {
         let plan = Apiary.planner.activePlanning[roomName].plan;
@@ -204,7 +205,7 @@ export class RoomPlanner {
         let close = anchorTemp.findClosest(room.find(x));
         if (!close)
           return Infinity;
-        let path = close.findPathTo(anchorTemp, getPathArgs());
+        let path = Traveler.findTravelPath(close, anchorTemp, getPathArgs()).path;
         if (!path.length)
           return Infinity;
         let last = path[path.length - 1];
@@ -394,10 +395,10 @@ export class RoomPlanner {
                 return a;
               let ans = (anchorDist(anchorTemp, a) - anchorDist(anchorTemp, b));
               if (ans === 0 || sType === STRUCTURE_OBSERVER) {
-                let pathA = new RoomPosition(a.x, a.y, anchor.roomName).findPathTo(anchorTemp, getPathArgs());
+                let pathA = Traveler.findTravelPath(new RoomPosition(a.x, a.y, anchor.roomName), anchorTemp, getPathArgs()).path;
                 if (!pathA.length || pathA[pathA.length - 1].x !== anchorTemp.x || pathA[pathA.length - 1].y !== anchorTemp.y)
                   ans = 1;
-                let pathB = new RoomPosition(b.x, b.y, anchor.roomName).findPathTo(anchorTemp, getPathArgs());
+                let pathB = Traveler.findTravelPath(new RoomPosition(b.x, b.y, anchor.roomName), anchorTemp, getPathArgs()).path;
                 if (!pathB.length || pathB[pathB.length - 1].x !== anchorTemp.x || pathB[pathB.length - 1].y !== anchorTemp.y)
                   ans = -1;
                 if (ans === 0)
@@ -670,18 +671,15 @@ export class RoomPlanner {
         }
       });
 
-      let path = anchor.findPathTo(pos, pathArgs);
-      let newPos = path.length && new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
-      while (newPos && (newPos.x !== pos.x || newPos.y !== pos.y)) {
-        path = pos.findPathTo(pos, pathArgs);
-        if (path.length > 0)
-          newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
-        else
-          break;
+      let path = Traveler.findTravelPath(pos, anchor, pathArgs).path;
+      let newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
+      while (!newPos.equal(anchor)) {
+        path = Traveler.findTravelPath(pos, anchor, pathArgs).path;
+        newPos = new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, anchor.roomName);
       }
 
       let plan = this.activePlanning[anchor.roomName].plan;
-      if (newPos && (p.x !== newPos.x || p.y !== newPos.y)) {
+      if (!newPos.equal(anchor)) {
         if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
           this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
         else if (plan[p.x] && plan[p.x][p.y])
@@ -703,18 +701,16 @@ export class RoomPlanner {
 
   connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opts: CoustomFindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
     let roomName = anchor.roomName;
-    if (!(pos.roomName in Game.rooms))
-      return ERR_FULL;
     let exit: RoomPosition | undefined | null;
     let exits = this.activePlanning[roomName].exits;
     if (roomName !== pos.roomName)
       opts.maxRooms = 16;
-    exit = pos.findClosestByPath(exits, getPathArgs(opts));
+    exit = pos.findClosestByTravel(exits, getPathArgs(opts));
     if (!exit)
       exit = pos.findClosest(exits);
     if (!exit)
       return ERR_FULL;
-    let path = exit.findPathTo(pos, getPathArgs(opts));
+    let path = Traveler.findTravelPath(exit, pos, getPathArgs(opts)).path;
     if (!path.length)
       return exit.x === pos.x && exit.y === pos.y ? exit : ERR_FULL;
 
@@ -726,11 +722,12 @@ export class RoomPlanner {
 
     // console. log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
     exit = new RoomPosition(lastPath.x, lastPath.y, exit.roomName);
-    if (pos.x !== lastPath.x || pos.y !== lastPath.y || pos.roomName !== exit.roomName) {
+    if (!pos.equal(exit)) {
       let ent = exit.getEnteranceToRoom();
       this.activePlanning[roomName].exits.push(ent ? ent : exit);
       return ERR_BUSY;
     }
+    console.log(exit, pos, JSON.stringify(path));
     return path.length > 0 ? new RoomPosition(path[path.length - 1].x, path[path.length - 1].y, exit.roomName) : exit;
   }
 

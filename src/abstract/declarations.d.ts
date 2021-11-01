@@ -9,6 +9,26 @@ declare global {
   var Apiary: _Apiary;
   var A: CustomConsole;
 
+  type ProtoPos = RoomPosition | { pos: RoomPosition };
+  type Pos = { x: number, y: number };
+
+  interface RoomPosition {
+    getRoomCoorinates(): [number, number, string, string];
+    getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
+    getPositionsInRange(range: number): RoomPosition[];
+    getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
+    isFree(ignoreCreeps?: boolean): boolean;
+    getEnteranceToRoom(): RoomPosition | null;
+    getPosInDirection(direction: DirectionConstant): RoomPosition;
+    getTimeForPath(pos: ProtoPos): number;
+    getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
+    equal(pos: ProtoPos): boolean;
+    oppositeDirection(pos: RoomPosition): DirectionConstant;
+    findClosest<Obj extends ProtoPos>(objects: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
+    findClosestByTravel<Obj extends ProtoPos>(objects: Obj[], opts?: FindPathOpts): Obj | null;
+    readonly to_str: string;
+  }
+
   interface CreepMemory {
     refMaster: string;
     born: number;

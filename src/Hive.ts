@@ -468,6 +468,11 @@ export class Hive {
         });
     }
 
+
+    if (2 % 1 == 0) {
+      return;
+    }
+
     switch (this.state) {
       case hiveStates.battle:
         let roomInfo = Apiary.intel.getInfo(this.roomName);

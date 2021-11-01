@@ -1,6 +1,6 @@
 import { signText, prefix, roomStates } from "../enums";
 
-import { TERMINAL_ENERGY } from "../abstract/terminalNetwork";
+import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
 import { makeId } from "../abstract/utils";
 import { setups } from "../bees/creepSetups";
@@ -399,22 +399,24 @@ export class CustomConsole {
     return this.marketReturn(Apiary.broker.sellShort(terminal, resource, 5000 * sets), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
-  buyLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, coef: number = 1) { // coef = 0.95
+  buyLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) { // coef = 0.95
     hiveName = hiveName.toUpperCase();
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.buyLong(terminal, resource, 5000 * sets, Infinity, coef), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(Apiary.broker.buyLong(terminal, resource, 5000 * sets, Infinity
+      , Apiary.broker.priceLongBuy(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
-  sellLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, coef: number = 1) { // coef = 1.05
+  sellLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) { // coef = 1.05
     hiveName = hiveName.toUpperCase();
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.sellLong(terminal, resource, Infinity, 5000 * sets, coef), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(Apiary.broker.sellLong(terminal, resource, Infinity, 5000 * sets
+      , Apiary.broker.priceLongSell(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
   marketReturn(ans: number | string, info: string) {

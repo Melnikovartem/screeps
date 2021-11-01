@@ -7,7 +7,9 @@ import { BASE_MINERALS } from "./laboratoryCell";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
-import type { Hive } from "../../Hive";
+import type { Hive, ResTarget } from "../../Hive";
+
+export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 
 @profile
 export class StorageCell extends Cell {
@@ -19,9 +21,11 @@ export class StorageCell extends Cell {
   master: ManagerMaster;
 
   requests: { [id: string]: TransferRequest } = {};
-  resTargetTerminal: { [key in ResourceConstant]?: number } = {};
+  resTargetTerminal: { "energy": number } & ResTarget = {
+    energy: TERMINAL_ENERGY,
+  };
 
-  usedCapacity: { [key in ResourceConstant]?: number } = {}
+  usedCapacity: ResTarget = {}
 
   constructor(hive: Hive, storage: StructureStorage | StructureTerminal) {
     super(hive, prefix.storageCell + hive.room.name);
@@ -159,8 +163,12 @@ export class StorageCell extends Cell {
     if (!this.terminal || Game.time % 4 !== 0)
       return;
     if (Game.flags[prefix.terminal + this.hive.roomName]) {
-      let res = findOptimalResource(this.storage.store, -1);
-      this.requestFromStorage([this.terminal], 4, res);
+      if (this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < this.resTargetTerminal[RESOURCE_ENERGY])
+        this.requestFromStorage([this.terminal], 4, RESOURCE_ENERGY);
+      else {
+        let res = findOptimalResource(this.storage.store, -1);
+        this.requestFromStorage([this.terminal], 4, res);
+      }
       return;
     }
 
