@@ -280,7 +280,7 @@ export class Order {
         if (this.hive.roomName === this.pos.roomName) {
           let type: keyof HivePositions | undefined;
           switch (this.secondaryColor) {
-            case COLOR_CYAN:
+            case COLOR_BROWN:
               type = "rest";
               _.forEach(this.hive.cells.excavation.resourceCells, cell => {
                 cell.restTime = Infinity;
@@ -292,7 +292,7 @@ export class Order {
             case COLOR_YELLOW:
               type = "queen2";
               break;
-            case COLOR_GREY:
+            case COLOR_CYAN:
               type = "lab";
               break;
             case COLOR_WHITE:
@@ -327,8 +327,10 @@ export class Order {
               baseRotation = TOP;
             else if (this.ref.includes("left"))
               baseRotation = LEFT;
-
-            Apiary.planner.generatePlan(this.pos, baseRotation, !this.ref.includes("safe"));
+            Apiary.planner.generatePlan(this.pos, baseRotation);
+            break;
+          case COLOR_GREY:
+            Apiary.planner.protectPoint(this.pos);
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
@@ -391,15 +393,19 @@ export class Order {
               if (!Object.keys(Apiary.planner.activePlanning).length)
                 del = 2;
             }
-            if (del > 1) {
-              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-                cell.roadTime = Infinity;
-                cell.restTime = Infinity;
-              });
-              this.delete();
-              this.pos.createFlag("OK_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
-            } else if (del === 1)
-              this.pos.createFlag("FAIL_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+            if (this.pos.roomName in Game.rooms) {
+              if (del > 1) {
+                _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+                  cell.roadTime = Infinity;
+                  cell.restTime = Infinity;
+                  cell.operational = false;
+                });
+                this.delete();
+                this.pos.createFlag("OK_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+              } else if (del === 1)
+                this.pos.createFlag("FAIL_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
+            } else
+              this.flag.setColor(COLOR_WHITE, COLOR_ORANGE);
             break;
           case COLOR_PURPLE:
             let planner = false;
@@ -502,6 +508,7 @@ export class Order {
             this.acted = false;
             if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
               let hurry = this.ref.includes("hurry");
+              let short = this.ref.includes("short");
               if ("all" === parsed![2]) {
                 if (mode === "sell") {
                   // if (hurry || Game.time % 10 === 0)
@@ -512,7 +519,8 @@ export class Order {
                     if (res === RESOURCE_ENERGY && getAmount() - getAmount(RESOURCE_ENERGY) > 2 * getAmount(RESOURCE_ENERGY))
                       return;
                     // get rid of shit in this hive
-                    Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, res, Math.min(5000, getAmount(res)), hurry || this.hive.cells.defense.isBreached, Infinity, 10);
+                    Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, res, Math.min(5000, getAmount(res))
+                      , this.hive.cells.defense.isBreached, Infinity, hurry ? 10 : 100);
                   });
                 } else
                   this.delete();
@@ -521,9 +529,11 @@ export class Order {
               if (RESOURCES_ALL.includes(res)) {
                 if (hurry || Game.time % 10 === 0)
                   if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
-                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
+                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, short
+                      , this.ref.includes("noinf") ? undefined : Infinity, hurry ? 2 : 50);
                   else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
-                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, hurry, this.ref.includes("noinf") ? undefined : Infinity);
+                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, short
+                      , this.ref.includes("noinf") ? undefined : Infinity, hurry ? 2 : 50);
                   else if (this.ref.includes("nokeep"))
                     this.delete();
               } else

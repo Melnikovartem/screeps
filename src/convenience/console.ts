@@ -174,6 +174,17 @@ export class CustomConsole {
     return `UPGRADER SPAWNED @ ${hiveName}`;
   }
 
+  removeConst() {
+    let saved: string[] = [];
+    _.forEach(Game.constructionSites, c => {
+      if (!c.progress)
+        c.remove();
+      else if (saved.indexOf(c.pos.roomName) === -1)
+        saved.push(c.pos.roomName);
+    });
+    return "non empty constructionSites in " + saved.map(r => this.formatRoom(r)).join(" ");
+  }
+
   // some hand used functions
   terminal(hiveName: string = this.lastActionRoomName, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
     hiveName = this.format(hiveName);
@@ -205,7 +216,38 @@ export class CustomConsole {
     return `${mode.toUpperCase()} TERMINAL @ ${hive.print} \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
   }
 
-  send(roomNameFrom: string, roomNameTo: string, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY) {
+  sendBlind(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant, amount: number = Infinity) {
+    roomNameFrom = this.format(roomNameFrom);
+    roomNameTo = this.format(roomNameTo);
+    let hiveFrom = Apiary.hives[roomNameFrom];
+    if (!hiveFrom)
+      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
+    let terminalFrom = hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage!.terminal;
+    if (!terminalFrom)
+      return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
+    if (terminalFrom.cooldown > 0)
+      return "TERMINAL COOLDOWN";
+
+    amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
+
+    let energyCost = Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
+    let energyCap = Math.floor(terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+    amount = Math.min(amount, energyCap);
+
+    if (resource === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY))
+      amount = Math.floor(amount * (1 - energyCost));
+
+    let ans = terminalFrom.send(resource, amount, roomNameTo);
+
+    let info = ` SEND FROM ${hiveFrom.print} TO ${roomNameTo} \nRESOURCE ${resource.toUpperCase()}: ${amount
+      } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
+    if (ans === OK)
+      return "OK" + info;
+    else
+      return `ERROR: ${ans}` + info;
+  }
+
+  send(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity) {
     roomNameFrom = this.format(roomNameFrom);
     roomNameTo = this.format(roomNameTo);
     let hiveFrom = Apiary.hives[roomNameFrom];
@@ -248,17 +290,17 @@ export class CustomConsole {
   transfer(roomNameFrom: string, roomNameTo: string, res: ResourceConstant = RESOURCE_ENERGY, amount?: number) {
     console.log(this.terminal(roomNameFrom, amount, res, "fill"));
     console.log(this.terminal(roomNameTo, amount, res, "empty"));
-    console.log(this.send(roomNameFrom, roomNameTo, amount, res));
+    console.log(this.send(roomNameFrom, roomNameTo, res, amount));
   }
 
   changeOrderPrice(orderId: string, newPrice: number) {
     return this.marketReturn(Game.market.changeOrderPrice(orderId, newPrice), "ORDER CHANGE TO " + newPrice);
   }
 
-  cancelOrdersHive(hiveName: string = this.lastActionRoomName) {
+  cancelOrdersHive(hiveName: string = this.lastActionRoomName, nonActive = false) {
     let ans = `OK @ ${this.format(hiveName)}`;
     _.forEach(Game.market.orders, o => {
-      if (o.roomName === hiveName)
+      if (o.roomName === hiveName && (!o.active || nonActive))
         ans += this.marketReturn(Apiary.broker.cancelOrder(o.id), `canceled ${o.resourceType}`) + "\n";
     });
     return ans;
@@ -409,14 +451,14 @@ export class CustomConsole {
       , Apiary.broker.priceLongBuy(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
-  sellLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) { // coef = 1.05
+  sellLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, price?: number) { // coef = 1.05
     hiveName = hiveName.toUpperCase();
     let terminal = this.getTerminal(hiveName);
     if (typeof terminal === "string")
       return terminal;
     Apiary.broker.update();
     return this.marketReturn(Apiary.broker.sellLong(terminal, resource, Infinity, 5000 * sets
-      , Apiary.broker.priceLongSell(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+      , price || Apiary.broker.priceLongSell(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
   marketReturn(ans: number | string, info: string) {

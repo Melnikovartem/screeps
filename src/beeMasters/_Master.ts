@@ -55,7 +55,7 @@ export abstract class Master {
       this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
   }
 
-  checkBees(spawnExtreme: boolean = false, spawnCycle: number = CREEP_LIFE_TIME): boolean {
+  checkBees(spawnExtreme: boolean = false, spawnCycle: number = CREEP_LIFE_TIME - 10): boolean {
     // in 4 ifs to be able to read...
     if (this.waitingForBees || this.targetBeeCount === 0)
       return false;

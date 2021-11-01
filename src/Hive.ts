@@ -11,6 +11,7 @@ import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
+import { Traveler } from "Traveler/TravelerModified";
 
 import { safeWrap, makeId } from "./abstract/utils";
 import { hiveStates, prefix } from "./enums";
@@ -212,28 +213,29 @@ export class Hive {
       this.wallsHealth = WALL_HEALTH;
       this.wallsHealthMax = WALL_HEALTH;
       this.cells.dev = new DevelopmentCell(this);
-      let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road
-      if (roads) {
-        _.forEach(this.room.find(FIND_SOURCES), s => {
-          let route = s.pos.findPathTo(this, {
-            maxRooms: 1,
-            plainCost: 2,
-            ignoreRoads: true,
-            ignoreCreeps: true,
-            costCallback: (roomName, matrix) => {
-              if (roomName !== this.roomName)
-                return;
-              _.forEach(roads!.pos, p => {
-                matrix.set(p.x, p.y, 1);
-              });
-            }
-          });
-          _.forEach(route, r => {
-            if (roads!.pos.filter(p => p.x === r.x && p.y == r.y).length)
-              new RoomPosition(r.x, r.y, this.roomName).createConstructionSite(STRUCTURE_ROAD);
-          });
+      let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === this.roomName);
+      _.forEach(futureResourceCells, f => {
+        if (!(f.pos.roomName in Game.rooms))
+          return
+        let route = Traveler.findTravelPath(f.pos, this, {
+          roomCallback: (roomName, matrix) => {
+            let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
+            if (!roads)
+              return;
+            _.forEach(roads.pos, p => {
+              matrix.set(p.x, p.y, 1);
+            });
+            return matrix;
+          }
+        }).path;
+        _.forEach(route, r => {
+          if (!(r.roomName in Game.rooms))
+            return
+          let roads = Memory.cache.roomPlanner[r.roomName] && Memory.cache.roomPlanner[r.roomName].road;
+          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length)
+            r.createConstructionSite(STRUCTURE_ROAD);
         });
-      }
+      });
     }
 
     //look for new structures for those wich need them
@@ -466,11 +468,6 @@ export class Hive {
           if (Apiary.intel.getInfo(annexName).safePlace)
             addCC(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : BUILDABLE_PRIORITY.mining));
         });
-    }
-
-
-    if (2 % 1 == 0) {
-      return;
     }
 
     switch (this.state) {

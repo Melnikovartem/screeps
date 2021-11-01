@@ -129,9 +129,14 @@ export class RespawnCell extends Cell {
         setup = order.setup.getBody(this.hive.room.energyCapacityAvailable, moveMax);
         if (!setup.body.length) {
           this.freeSpawns.push(spawn);
+          orders = orders.filter(o => order.ref !== o.ref);
+          --key;
           continue;
         }
       }
+
+      if (setup.cost > energyAvailable)
+        break;
 
       let name = order.setup.name + " " + makeId(4);
       let memory: CreepMemory = {
@@ -140,9 +145,6 @@ export class RespawnCell extends Cell {
         state: beeStates.idle,
       };
 
-      if (setup.cost > energyAvailable)
-        break;
-
       let ans = spawn.spawnCreep(setup.body, name, { memory: memory });
 
       if (ans === OK) {
@@ -150,6 +152,10 @@ export class RespawnCell extends Cell {
           Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, order.master);
         energyAvailable -= setup.cost;
         delete this.hive.spawOrders[order.ref];
+      }
+      if (this.freeSpawns.length) {
+        orders = orders.filter(o => order.ref !== o.ref);
+        --key;
       }
     }
     if (this.hive.phase === 0) // renewing Boost creeps if they are better than we can spawn

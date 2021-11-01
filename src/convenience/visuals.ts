@@ -22,14 +22,14 @@ export class Visuals {
   anchor: VisInfo = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: "" };
   usedAnchors: { [roomName: string]: VisInfo } = {}
 
-  changeAnchor(x?: number, y?: number, roomName?: string) {
+  changeAnchor(x?: number, y?: number, roomName?: string, newAnchor = false) {
     if (x !== undefined)
       this.anchor.x = x;
     this.anchor.y = y === undefined ? this.anchor.y + SPACING : y;
 
     if (roomName) {
       this.usedAnchors[this.anchor.ref] = this.anchor;
-      if (roomName in this.usedAnchors)
+      if (!newAnchor && roomName in this.usedAnchors)
         this.anchor = this.usedAnchors[roomName];
       else {
         this.anchor.vis = new RoomVisual(makeId(8));
@@ -68,16 +68,13 @@ export class Visuals {
           vis.import(this.caching[GLOBAL_VISUALS].data);
           vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
         }
-
     this.usedAnchors = {};
-    this.anchor = { x: 1, y: 1, vis: new RoomVisual(makeId(8)), ref: "" };
   }
 
   create() {
     if (Memory.settings.framerate < 0)
       return;
 
-    this.visualizePlanner();
     if (Game.time % Memory.settings.framerate === 0 || Game.time === Apiary.createTime) {
       if (Apiary.useBucket) {
         for (const name in Apiary.hives) {
@@ -100,15 +97,16 @@ export class Visuals {
             this.exportAnchor();
         }
 
-        this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY);
+        this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY, true);
         this.battleInfo();
         this.exportAnchor();
       }
 
-      this.changeAnchor(49, 1, GLOBAL_VISUALS);
+      this.changeAnchor(49, 1, GLOBAL_VISUALS, true);
       this.global();
       this.exportAnchor();
     }
+    this.visualizePlanner();
 
     this.update();
   }
@@ -144,7 +142,7 @@ export class Visuals {
     for (const roomName in Apiary.planner.activePlanning) {
       if (this.caching[roomName] && this.caching[roomName].lastRecalc > Game.time)
         continue;
-      this.changeAnchor(0, 0, roomName);
+      this.changeAnchor(0, 0, roomName, true);
       let vis = this.anchor.vis;
       let hive = Apiary.hives[roomName];
       if (hive) {
@@ -241,7 +239,7 @@ export class Visuals {
         vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
         vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
       }
-      this.exportAnchor(1);
+      this.exportAnchor();
     }
   }
 

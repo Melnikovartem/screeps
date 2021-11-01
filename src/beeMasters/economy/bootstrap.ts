@@ -127,7 +127,7 @@ export class BootstrapMaster extends Master {
       cell => (!cell.master.beesAmount || this.hive.room.energyCapacityAvailable <= 750) && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
       .filter(s => {
         let roomInfo = Apiary.intel.getInfo(s.pos.roomName, Infinity);
-        return roomInfo.roomState <= roomStates.noOwner && s.pos.getOpenPositions().length && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20)
+        return roomInfo.roomState <= roomStates.noOwner && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20)
       });
 
     let targets: extraTarget[] = []
@@ -198,7 +198,7 @@ export class BootstrapMaster extends Master {
         case beeStates.refill:
           let source: Source | null | undefined | extraTarget;
           if (!bee.target) {
-            source = bee.pos.findClosest(soruces);
+            source = bee.pos.findClosest(soruces.filter(s => s.pos.getOpenPositions(false).length || s.pos.isNearTo(bee)));
             if (source)
               bee.target = source.id;
           } else

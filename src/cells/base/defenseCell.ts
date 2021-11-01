@@ -299,7 +299,6 @@ export class DefenseCell extends Cell {
   wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
     let path = pos.findPathTo(defPos, this.opts);
     let lastStep = path.pop();
-    console.log(JSON.stringify(lastStep))
     if (!lastStep)
       return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
         && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;

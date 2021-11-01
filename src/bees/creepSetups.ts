@@ -8,8 +8,10 @@ interface BodySetup {
   pattern: BodyPartConstant[];
   patternLimit?: number;
 }
-
-const partsImportance = [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK, HEAL];
+const partScheme = {
+  normal: [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK, HEAL],
+  maxMove: [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL, MOVE]
+}
 const ROUNDING_ERROR = 0.0001;
 
 @profile
@@ -20,8 +22,9 @@ export class CreepSetup {
   patternLimit: number;
   moveMax: number | "best";
   ignoreCarry?: boolean;
+  scheme: 0 | 1;
 
-  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", ignoreCarry?: boolean) {
+  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", ignoreCarry?: boolean, scheme: 0 | 1 = 0) {
     this.name = setupName;
 
     this.moveMax = moveMax;
@@ -29,6 +32,7 @@ export class CreepSetup {
     this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
     this.pattern = bodySetup.pattern;
     this.patternLimit = bodySetup.patternLimit ? bodySetup.patternLimit : Infinity;
+    this.scheme = scheme;
   }
 
   getBody(energy: number, moveMax: number = this.moveMax === "best" ? 25 : this.moveMax): { body: BodyPartConstant[], cost: number } {
@@ -70,12 +74,18 @@ export class CreepSetup {
 
     addPattern(this.fixed, 1);
     addPattern(this.pattern, this.patternLimit);
-
-    body.sort((a, b) => partsImportance.indexOf(a) - partsImportance.indexOf(b));
-    let index = body.indexOf(MOVE);
-    if (index !== -1) {
-      body.splice(index, 1);
-      body.push(MOVE);
+    switch (this.scheme) {
+      case 0:
+        body.sort((a, b) => partScheme.normal.indexOf(a) - partScheme.normal.indexOf(b));
+        let index = body.indexOf(MOVE);
+        if (index !== -1) {
+          body.splice(index, 1);
+          body.push(MOVE);
+        }
+        break;
+      case 1:
+        body.sort((a, b) => partScheme.maxMove.indexOf(a) - partScheme.maxMove.indexOf(b));
+        break;
     }
 
     return {
@@ -111,10 +121,10 @@ export const setups = {
       fixed: [CARRY],
       pattern: [WORK],
       patternLimit: 6,
-    }, 50 / 2, true),
+    }, 20, true),
     minerals: new CreepSetup(setupsNames.miner + " M", {
       pattern: [WORK],
-    }, 50 / 5),
+    }, 50 / 5, true),
     power: new CreepSetup(setupsNames.miner + " P", {
       pattern: [ATTACK],
       patternLimit: 20,
@@ -153,7 +163,7 @@ export const setups = {
     }, 25),
     destroyer: new CreepSetup(setupsNames.defender + " DD", {
       pattern: [ATTACK],
-    }, "best"),
+    }, "best", undefined, 1),
   },
   knight: new CreepSetup(setupsNames.knight, {
     fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL],
@@ -176,11 +186,15 @@ let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
   return setup.body;
 }
 
+
+printSetup(setups.miner.energy)
+
+/*
 printSetup(new CreepSetup("test bee", {
   pattern: [MOVE],
 }, 50), 10000)
 
-/*
+
 printSetup(setups.defender.destroyer, 650)
 printSetup(setups.hauler, 3000)
 printSetup(setups.defender.destroyer, 650)
