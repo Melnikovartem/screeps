@@ -84,7 +84,7 @@ export class Network {
   }
 
   run() {
-    let tryToBuyIn = Game.time % BUY_SHORTAGES_CYCLE === 1
+    let tryToBuyIn = false && Game.time % BUY_SHORTAGES_CYCLE === 1
       && Game.cpu.getUsed() + Object.keys(Game.market.getAllOrders()).length * 0.005 < Game.cpu.tickLimit - 100;
     // to be able to save some cpu on buyIns
 
@@ -133,21 +133,21 @@ export class Network {
         }
       }
 
-      for (const r in hive.mastersResTarget) {
-        const res = <ResourceConstant>r;
-        let balance = hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res)
-        if (balance > 0 && tryToBuyIn) {
-          let amount = hive.shortages[res]!;
-          let ans = Apiary.broker.buyIn(terminal, res, amount, true);
-          if (ans === "short") {
-            usedTerminal = true;
-            break;
+      if (tryToBuyIn) {
+        for (const r in hive.mastersResTarget) {
+          const res = <ResourceConstant>r;
+          let balance = hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res)
+          if (balance > 0) {
+            let ans = Apiary.broker.buyIn(terminal, res, balance, true);
+            if (ans === "short") {
+              usedTerminal = true;
+              break;
+            }
           }
         }
+        if (usedTerminal)
+          continue;
       }
-
-      if (usedTerminal)
-        continue;
 
       let stStore = hive.cells.storage.storage.store;
       if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.75 && hive.cells.storage.storage instanceof StructureStorage) {
