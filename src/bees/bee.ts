@@ -336,9 +336,9 @@ export class Bee {
     return ans === OK ? this.creep.attackController(t!) : ans;
   }
 
-  repairRoadOnMove(ans: number = ERR_NOT_IN_RANGE) {
+  repairRoadOnMove(ans: ScreepsReturnCode = ERR_NOT_IN_RANGE): ScreepsReturnCode {
     if (ans === ERR_NOT_IN_RANGE)
-      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax)[0]);
+      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax && s.structureType === STRUCTURE_ROAD)[0]);
     return ans;
   }
 
@@ -366,7 +366,7 @@ export class Bee {
           if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
-          let padding = 0x08 * (p.getRangeTo(c) - rangeToEnemy); // we wan't to get as far as we can from enemy
+          let padding = 0x10 * (p.getRangeTo(c) - rangeToEnemy); // we wan't to get as far as we can from enemy
           matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)) - padding)));
         });
       });
@@ -385,7 +385,6 @@ export class Bee {
       if (exit)
         posToFlee = exit;
     }
-
 
     opt = this.getFleeOpt(opt);
     /* let getTerrain = (pos: RoomPosition) => {
@@ -414,7 +413,8 @@ export class Bee {
       }
       return prev;
     }); */
-    let ans = this.goTo(posToFlee, opt);;
+    this.memory._trav.path = undefined;
+    let ans = this.goTo(posToFlee, opt);
     this.memory._trav.path = undefined;
     return ans;
   }
@@ -438,8 +438,8 @@ export class Bee {
         continue;
       let p = bee.targetPosition;
       let priority = bee.master ? bee.master.movePriority : 6;
-      if (priority < 2 && !p)
-        p = bee.pos; // 0 and 1 won't move
+      if (priority === 0 && !p)
+        p = bee.pos; // 0 won't move
       if (!p)
         continue;
       let nodeId = p.to_str;

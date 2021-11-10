@@ -32,11 +32,12 @@ export abstract class Cell {
   // first stage of decision making like do i a logistic transfer do i need more masters
   update<K extends keyof this>(updateMapKey: K[] = [], force: boolean = true): void {
     // updating structure object to actual data
+
     _.forEach(Object.keys(this), (key: K) => {
       let data = this[key];
       if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
         let gameObject = Game.getObjectById(data.id);
-        if (force || gameObject)
+        if (gameObject || force)
           this[key] = <typeof data>gameObject;
       }
     });
@@ -45,19 +46,11 @@ export abstract class Cell {
       _.forEach(updateMapKey, (key: K) => {
         for (const inMap in this[key]) {
           let data = this[key][inMap];
-          if (data instanceof Structure || data instanceof Source || data instanceof Mineral) {
-            let gameObject = Game.getObjectById(data.id);
-            if (gameObject)
-              this[key][inMap] = <typeof data>gameObject;
-            else if (force)
-              delete this[key][inMap];
-          } else if (data === null) {
-            let gameObject = Game.getObjectById(inMap);
-            if (gameObject)
-              this[key][inMap] = <typeof data>gameObject;
-            else if (force)
-              delete this[key][inMap];
-          }
+          let gameObject = Game.getObjectById(inMap);
+          if (gameObject)
+            this[key][inMap] = <typeof data>gameObject;
+          else if (force)
+            delete this[key][inMap];
         }
       });
   }

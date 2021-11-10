@@ -31,35 +31,35 @@ type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends TravelToOptions { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): TravelToOptions {
   return _.defaults(opts, {
-    ignoreStructures: true, ignoreRoads: false, maxRooms: 1, range: 0,
+    ignoreStructures: true, ignoreRoads: false, maxRooms: 4, range: 0,
     roomCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
-      if (Apiary.planner.activePlanning[roomName]) {
-        let plan = Apiary.planner.activePlanning[roomName].plan;
-        for (let x in plan)
-          for (let y in plan[x]) {
-            let sType = plan[x][y].s
-            if (sType && (!opts.ignoreTypes || !opts.ignoreTypes.includes(sType)))
-              if (sType === STRUCTURE_ROAD)
-                costMatrix.set(+x, +y, 0x01);
-              else if (sType === STRUCTURE_WALL)
-                costMatrix.set(+x, +y, 0x05);
-              else
-                costMatrix.set(+x, +y, 0xff);
-          }
-
-
-        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
-        let room = Game.rooms[roomName];
-        if (roomInfo.roomState === roomStates.SKfrontier && room) {
-          for (let structure of room.find<Structure>(FIND_STRUCTURES))
-            if (structure instanceof StructureKeeperLair) {
-              _.forEach(structure.pos.getOpenPositions(true, 3), p => costMatrix.set(p.x, p.y,
-                Math.max(costMatrix.get(p.x, p.y), 0x03 * (4 - p.getTimeForPath(structure)))));
-              costMatrix.set(structure.pos.x, structure.pos.y, 0xff);
-            }
+      if (!Apiary.planner.activePlanning[roomName])
+        return;
+      let plan = Apiary.planner.activePlanning[roomName].plan;
+      for (let x in plan)
+        for (let y in plan[x]) {
+          let sType = plan[x][y].s
+          if (sType && (!opts.ignoreTypes || !opts.ignoreTypes.includes(sType)))
+            if (sType === STRUCTURE_ROAD)
+              costMatrix.set(+x, +y, 0x01);
+            else if (sType === STRUCTURE_WALL)
+              costMatrix.set(+x, +y, 0x05);
+            else
+              costMatrix.set(+x, +y, 0xff);
         }
-        return costMatrix;
+
+
+      let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+      let room = Game.rooms[roomName];
+      if (roomInfo.roomState === roomStates.SKfrontier && room) {
+        for (let structure of room.find<Structure>(FIND_STRUCTURES))
+          if (structure instanceof StructureKeeperLair) {
+            _.forEach(structure.pos.getOpenPositions(true, 3), p => costMatrix.set(p.x, p.y,
+              Math.max(costMatrix.get(p.x, p.y), 0x03 * (4 - p.getTimeForPath(structure)))));
+            costMatrix.set(structure.pos.x, structure.pos.y, 0xff);
+          }
       }
+      return costMatrix;
     }
   });
 }
@@ -113,9 +113,9 @@ export class RoomPlanner {
         }
         if (ans === ERR_BUSY)
           break;
-        let lastJob = jobs.shift()!;
+        jobs.shift()!;
         if (Game.cpu.getUsed() >= Game.cpu.limit * 0.9) {
-          console.log(`Planner for ${roomName}: ${jobs.length} left\n last job ${lastJob.context}`);
+          console.log(`Planner for ${roomName}: ${jobs.length} left`);
           return;
         }
       }
@@ -206,34 +206,7 @@ export class RoomPlanner {
 
     this.addResourceRoads(anchor);
 
-    jobs.push({
-      context: "upgrade site",
-      func: () => {
-        if (!(anchor.roomName in Game.rooms))
-          return ERR_FULL;
-        let contr = Game.rooms[anchor.roomName].controller;
-        if (contr) {
-          let ans = this.connectWithRoad(anchor, contr.pos, false);
-          if (typeof ans === "number")
-            return ans;
-          let poss = contr.pos.getPositionsInRange(1);
-          _.forEach(poss, p => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
-          poss = contr.pos.getPositionsInRange(3);
-          if (!poss.length)
-            return ERR_FULL;
-          let pos = poss.reduce((prev, curr) => {
-            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK
-              && anchor.getRangeTo(prev) > anchor.getRangeTo(curr) || this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK)
-              return curr;
-            return prev;
-          });
-          if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) !== OK)
-            return ERR_FULL;
-          return OK;
-        }
-        return ERR_FULL;
-      }
-    });
+    this.addUpgradeSite(anchor);
 
     let enterance = anchor.findClosestByTravel(this.protectPoint(anchor), getPathArgs());
 
@@ -298,7 +271,7 @@ export class RoomPlanner {
     }
   }
 
-  protectPoint(anchor: RoomPosition) {
+  protectPoint(anchor: RoomPosition, minDist = 5) {
     if (!this.activePlanning[anchor.roomName])
       this.toActive(anchor, undefined, [STRUCTURE_WALL, STRUCTURE_RAMPART]);
 
@@ -335,17 +308,20 @@ export class RoomPlanner {
     _.forEach(enterances, e => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
         context: `blocking off ${e}`,
-        func: () => this.exludePoint(anchor, e),
+        func: () => this.exludePoint(anchor, e, minDist),
       });
     });
     return enterances;
   }
 
-  exludePoint(anchor: RoomPosition, pos: RoomPosition) {
+  exludePoint(anchor: RoomPosition, pos: RoomPosition, minDist: number) {
     // not optimal, but good enough (can first block small gap, and than douple close a big one around)
     let pathArgs = getPathArgs({
       offRoad: true,
+      maxRooms: 1,
       roomCallback: (roomName: string, costMatrix: CostMatrix) => {
+        if (!this.activePlanning[roomName])
+          return;
         let plan = this.activePlanning[roomName].plan;
         for (let x in plan)
           for (let y in plan[x]) {
@@ -376,11 +352,19 @@ export class RoomPlanner {
         });
       });
 
+      // console .log(pos, _.map(costOfBlocking, c => [c.pos, anchor.getRangeTo(c), c.costs[TOP_LEFT].amount]))
+
       let toBlock = costOfBlocking.reduce((prev, curr) => {
-        let ans = _.min(curr.costs, c => c.amount).amount - _.min(prev.costs, c => c.amount).amount;
+        let ans = 0;
+        let prevRange = anchor.getRangeTo(prev);
+        let currRange = anchor.getRangeTo(curr);
+        if (prevRange <= minDist)
+          ans = -1;
+        if (currRange <= minDist)
+          ans = 1;
+        if (ans === 0)
+          ans = _.min(curr.costs, c => c.amount).amount - _.min(prev.costs, c => c.amount).amount;
         if (ans === 0) {
-          let prevRange = anchor.getRangeTo(prev);
-          let currRange = anchor.getRangeTo(curr)
           ans = currRange - prevRange;
           if (prevRange <= 10 && currRange <= 10)
             ans *= -1;
@@ -406,138 +390,152 @@ export class RoomPlanner {
       func: () => {
         this.removeNonUsedWalls(pos, addedWalls);
         this.removeNonUsedWalls(anchor, addedWalls);
+        /*this.activePlanning[pos.roomName].jobsToDo.push({
+          context: `thick walls for ${pos}`,
+          func: () => this.thickWalls(anchor, addedWalls),
+        });*/
         return OK;
       },
     });
     return OK;
   }
 
-  thickWalls(pos: RoomPosition, mode: BlockDirections, thicc = 2): { pos: Pos[], amount: number } {
-    let ans: Pos[] = [];
-    let amount = Infinity;
-    for (let i = 0; i < thicc; ++i) {
-      let [x, y] = [pos.x, pos.y];
-      switch (mode) {
-        case TOP:
-        case TOP_LEFT:
-        case TOP_RIGHT:
-          y += i;
-          break;
-        case RIGHT:
-          x += i;
-          break;
+  /* i don't see a usecase for thickwalls (mostly)
+  thickWalls(anchor: RoomPosition, poss: Pos[]): OK {
+    _.forEach(poss, p => {
+      let plan = this.activePlanning[anchor.roomName].plan;
+      let type = plan[p.x] && plan[p.x][p.y];
+      if (type && (type.r || type.s === STRUCTURE_WALL)) {
+        let y = p.y;
+        for (let x = p.x - 1; x < p.x + 1; x += 1)
+          if (x > 1 && x < 48 && y > 1 && y < 48) {
+            let type = plan[x] && plan[x][y];
+            if (!type || !(type.r || type.s === STRUCTURE_WALL)) {
+              this.addToPlan({ x: x, y: y }, anchor.roomName, STRUCTURE_RAMPART);
+            }
+          }
+        let x = p.x;
+        for (let y = p.y - 1; y < p.y + 1; y += 1)
+          if (x > 1 && x < 48 && y > 1 && y < 48) {
+            let type = plan[x] && plan[x][y];
+            if (!type || !(type.r || type.s === STRUCTURE_WALL)) {
+              this.addToPlan({ x: x, y: y }, anchor.roomName, STRUCTURE_RAMPART);
+            }
+          }
       }
-      if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
-        amount = Infinity;
-        break;
-      }
-      let layer = this.toBlock(new RoomPosition(x, y, pos.roomName), mode);
-      ans = ans.concat(layer.pos);
-      amount = Math.min(amount, layer.amount);
-    }
+    });
 
-    return { pos: ans, amount: amount };
-  }
+    return OK;
+  }*/
 
   toBlock(pos: RoomPosition, mode: BlockDirections): { pos: Pos[], amount: number } {
     let plan = this.activePlanning[pos.roomName].plan;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let ans: Pos[] = [pos];
-    let x;
-    let y;
-    let amount = pos.getEnteranceToRoom() ? Infinity : 0;
+    let x = pos.x;
+    let y = pos.y;
+    let amount = pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length ? Infinity : 0;
+    let nearEnterance = (x1: number, y1: number) =>
+      (x1 === 1 || x1 === 48 || y1 === 1 || y1 === 48) &&
+      new RoomPosition(x1, y1, pos.roomName).getPositionsInRange(1)
+        .filter(p => terrain.get(p.x, p.y) !== TERRAIN_MASK_WALL && p.getEnteranceToRoom()).length;
+    let checkEndOfRoom = (x1: number, y1: number) => {
+      if (x1 <= 0 || x1 >= 49 || y1 <= 0 || y1 >= 49 || nearEnterance(x1, y1))
+        amount = Infinity;
+    }
+    let shouldStop = (x1: number, y1: number) =>
+      terrain.get(x1, y1) === TERRAIN_MASK_WALL
+      || (plan[x1] && plan[x1][y1] && (plan[x1][y1].s === STRUCTURE_WALL || plan[x1][y1].r))
+      || nearEnterance(x1, y1);
+
     switch (mode) {
       case TOP:
         for (x = pos.x + 1; x < 49; ++x) {
-          if (terrain.get(x, pos.y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][pos.y] && (plan[x][pos.y].s === STRUCTURE_WALL || plan[x][pos.y].r)))
+          if (shouldStop(x, y))
             break;
-          ans.push({ x: x, y: pos.y });
+          ans.push({ x: x, y: y });
         }
-        if (x === 49)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
+
         for (x = pos.x - 1; x > 0; --x) {
-          if (terrain.get(x, pos.y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][pos.y] && (plan[x][pos.y].s === STRUCTURE_WALL || plan[x][pos.y].r)))
+          if (shouldStop(x, y))
             break;
-          ans.push({ x: x, y: pos.y });
+          ans.push({ x: x, y: y });
         }
-        if (x === 0)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
         break;
       case RIGHT:
         for (y = pos.y + 1; y < 49; ++y) {
-          if (terrain.get(pos.x, y) === TERRAIN_MASK_WALL || (plan[pos.x] && plan[pos.x][y] && (plan[pos.x][y].s === STRUCTURE_WALL || plan[pos.x][y].r)))
+          if (shouldStop(x, y))
             break;
           ans.push({ x: pos.x, y: y });
         }
-        if (y === 49)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
+
         for (y = pos.y - 1; y > 0; --y) {
-          if (terrain.get(pos.x, y) === TERRAIN_MASK_WALL || (plan[pos.x] && plan[pos.x][y] && (plan[pos.x][y].s === STRUCTURE_WALL || plan[pos.x][y].r)))
+          if (shouldStop(x, y))
             break;
-          ans.push({ x: pos.x, y: y });
+          ans.push({ x: x, y: y });
         }
-        if (y === 0)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
         break;
+
       case TOP_LEFT:
         y = pos.y;
         x = pos.x + 1;
         while (x < 49 && y < 49) {
-          if (terrain.get(x, y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][y] && (plan[x][y].s === STRUCTURE_WALL || plan[x][y].r)))
+          if (shouldStop(x, y))
             break;
           ans.push({ x: x, y: y });
-          if (x + y % 2 === pos.x + pos.y % 2)
-            ++y;
-          else
+          if ((x + y) % 2 === (pos.x + pos.y) % 2)
             ++x;
+          else
+            ++y;
         }
-        if (x === 49 || y === 49)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
 
-        y = pos.y;
-        x = pos.x - 1;
+        y = pos.y - 1;
+        x = pos.x;
         while (x > 0 && y > 0) {
-          if (terrain.get(x, y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][y] && (plan[x][y].s === STRUCTURE_WALL || plan[x][y].r)))
+          if (shouldStop(x, y))
             break;
           ans.push({ x: x, y: y });
-          if (x + y % 2 === pos.x + pos.y % 2)
+          if ((x + y) % 2 === (pos.x + pos.y) % 2)
             --y;
           else
             --x;
         }
-        if (x === 0 || y === 0)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
         break;
       case TOP_RIGHT:
         y = pos.y;
         x = pos.x + 1;
         while (x < 49 && y > 0) {
-          if (terrain.get(x, y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][y] && (plan[x][y].s === STRUCTURE_WALL || plan[x][y].r)))
+          if (shouldStop(x, y))
             break;
           ans.push({ x: x, y: y });
-          if (x + y % 2 === pos.x + pos.y % 2)
-            --y;
-          else
+          if ((x + y % 2) === (pos.x + pos.y % 2))
             ++x;
+          else
+            --y;
         }
-        if (x === 49 || y === 0)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
 
-        y = pos.y;
-        x = pos.x - 1;
+        y = pos.y + 1;
+        x = pos.x;
         while (x > 0 && y < 49) {
-          if (terrain.get(x, y) === TERRAIN_MASK_WALL || (plan[x] && plan[x][y] && (plan[x][y].s === STRUCTURE_WALL || plan[x][y].r)))
+          if (shouldStop(x, y))
             break;
           ans.push({ x: x, y: y });
-          if (x + y % 2 === pos.x + pos.y % 2)
+          if ((x + y) % 2 === (pos.x + pos.y) % 2)
             ++y;
           else
             --x;
         }
-        if (x === 0 || y === 49)
-          amount = Infinity;
+        checkEndOfRoom(x, y);
         break;
     }
+
     return { pos: ans, amount: amount || ans.length };
   }
 
@@ -557,8 +555,43 @@ export class RoomPlanner {
     });
   }
 
-  addResourceRoads(anchor: RoomPosition, fromMem = false) {
+  addUpgradeSite(anchor: RoomPosition) {
+    if (!this.activePlanning[anchor.roomName])
+      this.toActive(anchor);
 
+    this.activePlanning[anchor.roomName].jobsToDo.push({
+      context: "upgrade site",
+      func: () => {
+        if (!(anchor.roomName in Game.rooms))
+          return ERR_FULL;
+        let contr = Game.rooms[anchor.roomName].controller;
+        if (contr) {
+          let ans = this.connectWithRoad(anchor, contr.pos, false, { range: 1, maxRooms: 1 });
+          if (typeof ans === "number")
+            return ans;
+          let poss = contr.pos.getPositionsInRange(1);
+          _.forEach(poss, p => this.addToPlan(p, anchor.roomName, STRUCTURE_WALL));
+          poss = contr.pos.getPositionsInRange(3);
+          let plan = this.activePlanning[anchor.roomName].plan;
+          let pp = poss.filter(p => plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_LINK)[0];
+          if (pp || !poss.length)
+            return OK;
+          let pos = poss.reduce((prev, curr) => {
+            if (!this.roadNearBy(curr, anchor.roomName) && this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK
+              && anchor.getRangeTo(prev) > anchor.getRangeTo(curr) || this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK)
+              return curr;
+            return prev;
+          });
+          if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK, true) !== OK)
+            return ERR_FULL;
+          return OK;
+        }
+        return ERR_FULL;
+      }
+    });
+  }
+
+  addResourceRoads(anchor: RoomPosition, fromMem = false) {
     let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
       let ans = anchor.getRoomRangeTo(a) - anchor.getRoomRangeTo(b);
@@ -603,16 +636,16 @@ export class RoomPlanner {
               return ERR_FULL;
             let plan = this.activePlanning[anchor.roomName].plan;
             let pos = poss.filter(p => plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_LINK)[0];
-            if (!pos) {
-              pos = poss.reduce((prev, curr) => {
-                if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
-                  || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
-                  return curr;
-                return prev;
-              });
-              if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
-                return ERR_FULL;
-            }
+            if (pos)
+              return OK;
+            pos = poss.reduce((prev, curr) => {
+              if (this.addToPlan(prev, anchor.roomName, STRUCTURE_LINK, false, true) !== OK
+                || this.addToPlan(curr, anchor.roomName, STRUCTURE_LINK, false, true) === OK && anchor.getRangeTo(prev) > anchor.getRangeTo(curr))
+                return curr;
+              return prev;
+            });
+            if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
+              return ERR_FULL;
           } else if (f.secondaryColor === COLOR_CYAN) {
             let existingContainer = f.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_CONTAINER)[0];
             if (existingContainer && existingContainer.pos.getRangeTo(new RoomPosition(ans.x, ans.y, f.pos.roomName)) <= 1) {
@@ -631,9 +664,14 @@ export class RoomPlanner {
   removeNonUsedWalls(anchor: RoomPosition, addedWalls: Pos[]) {
     _.forEach(addedWalls, p => {
       let pos = new RoomPosition(p.x, p.y, anchor.roomName);
+      if (pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom()).length)
+        return;
       let pathArgs = getPathArgs({
         offRoad: true,
+        maxRooms: 1,
         roomCallback: (roomName: string, costMatrix: CostMatrix) => {
+          if (!this.activePlanning[roomName])
+            return;
           let plan = this.activePlanning[roomName].plan;
           for (let x in plan)
             for (let y in plan[x]) {
@@ -646,6 +684,11 @@ export class RoomPlanner {
         }
       });
 
+      let plan = this.activePlanning[anchor.roomName].plan;
+      let type = plan[p.x] && plan[p.x][p.y];
+      if (type && !(type.r || type.s === STRUCTURE_WALL))
+        return;
+
       let path = Traveler.findTravelPath(pos, anchor, pathArgs).path;
       let newPos = path.pop();
       let oldPos = anchor;
@@ -655,7 +698,6 @@ export class RoomPlanner {
         newPos = path.pop();
       }
 
-      let plan = this.activePlanning[anchor.roomName].plan;
       if (newPos && !newPos.equal(anchor)) {
         if (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s === STRUCTURE_WALL)
           this.addToPlan({ x: p.x, y: p.y }, anchor.roomName, undefined, true);
@@ -692,13 +734,11 @@ export class RoomPlanner {
     if (!path.length)
       return exit.getRangeTo(pos) > opts.range! ? exit : ERR_FULL;
 
-    if (addRoads)
-      _.forEach(path, pos => this.addToPlan(pos, pos.roomName, STRUCTURE_ROAD));
-    else
-      _.forEach(path, pos => this.addToPlan(pos, pos.roomName, null));
+    _.forEach(path.filter(p => !p.getEnteranceToRoom()), p => this.addToPlan(p, p.roomName, addRoads ? STRUCTURE_ROAD : null));
 
     // console. log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
-    if (path[path.length - 1].getRangeTo(pos) > opts.range!) {
+    exit = path[path.length - 1];
+    if (exit.getRangeTo(pos) > opts.range!) {
       let ent = exit.getEnteranceToRoom();
       this.activePlanning[roomName].exits.push(ent ? ent : exit);
       return ERR_BUSY;
@@ -850,7 +890,8 @@ export class RoomPlanner {
     for (let t in Memory.cache.roomPlanner[roomName]) {
       let sType = <BuildableStructureConstant>t;
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      let contr = Game.rooms[roomName] && Game.rooms[roomName].controller
+      let contr = Game.rooms[roomName] && Game.rooms[roomName].controller;
+      let terrain = Game.map.getRoomTerrain(roomName);
       poss.sort((a, b) => {
         let ans = anchorDist(anchor, a, roomName) - anchorDist(anchor, b, roomName);
         if (sType === STRUCTURE_LINK && contr)
@@ -860,6 +901,8 @@ export class RoomPlanner {
             ans = 1;
         if (ans === 0)
           ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
+        if (ans === 0)
+          ans = terrain.get(a.x, a.y) - terrain.get(b.x, b.y)
         return ans; //* (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
       });
       Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
@@ -881,7 +924,10 @@ export class RoomPlanner {
     if (!controller)
       controller = { level: 0 };
     let hitsMax = structure instanceof ConstructionSite ? structure.progressTotal : structure.hitsMax;
-    let amount = CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType][controller.level];
+    let perType = CONTROLLER_STRUCTURES[<BuildableStructureConstant>structure.structureType];
+    if (!perType)
+      return { amount: 0, heal: 0 };
+    let amount = perType[controller.level];
     switch (structure.structureType) {
       case STRUCTURE_RAMPART:
       case STRUCTURE_WALL:
@@ -890,6 +936,9 @@ export class RoomPlanner {
           amount = 0;
         break;
       case STRUCTURE_ROAD:
+        if (controller.level > 0 && controller.level < 4)
+          amount = 0;
+        break;
       case STRUCTURE_CONTAINER:
         if (controller.level > 0 && controller.level < 3)
           amount = 0;
@@ -971,10 +1020,7 @@ export class RoomPlanner {
           let heal = this.getCase(structure).heal;
           if (sType in specials)
             heal = specials[sType]!;
-          if (structure.hits < heal * 0.25
-            || (structure.hits < heal * coef && !constructions)
-            || (sType === STRUCTURE_RAMPART && structure.hits < Math.max(heal - 50000, heal * coef))
-            || (sType === STRUCTURE_WALL && structure.hits < Math.max(heal - 5000, heal * coef)))
+          if (structure.hits < heal * coef)
             ans.push({
               pos: pos,
               sType: sType,

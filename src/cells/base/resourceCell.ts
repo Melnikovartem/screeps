@@ -69,10 +69,6 @@ export class ResourceCell extends Cell {
     if (!(this.pos.roomName in Game.rooms))
       return;
 
-
-    this.roadTime = Infinity;
-    this.restTime = Infinity;
-
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
       s => s.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
@@ -85,22 +81,19 @@ export class ResourceCell extends Cell {
       this.operational = !!(this.extractor && this.container && !this.resource.ticksToRegeneration);
       this.ratePT = 0
       if (this.operational) {
-        let timeToChop = Math.max(this.master.activeBees.length ? this.master.activeBees[0].ticksToLive : CREEP_LIFE_TIME, 201) - 200;
+        let timeToChop = Math.max(this.master.activeBees.length ? _.max(this.master.activeBees, b => b.ticksToLive).ticksToLive : CREEP_LIFE_TIME, 201) - 200;
         this.ratePT = this.resource.mineralAmount / timeToChop;
       }
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, Infinity);
 
-    if (roomInfo.roomState === roomStates.SKfrontier) {
-      let lair = <StructureKeeperLair>this.pos.findInRange(FIND_STRUCTURES, 5, { filter: { structureType: STRUCTURE_KEEPER_LAIR } })[0];
-      if (lair)
-        this.lair = lair;
-    }
+    if (roomInfo.roomState === roomStates.SKfrontier)
+      this.lair = <StructureKeeperLair | undefined>this.pos.findInRange(FIND_STRUCTURES, 5).filter(s => s.structureType === STRUCTURE_KEEPER_LAIR)[0];
 
     if (this.container)
       this.pos = this.container.pos;
-    else if (this.link) {
+    if (this.link) {
       let poss = this.resource.pos.getOpenPositions(true);
       let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => p.equal(pp)).length)[0];
       if (pos)
@@ -108,23 +101,27 @@ export class ResourceCell extends Cell {
     }
 
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
-    if (this.roadTime === Infinity)
+    if (this.roadTime === Infinity || this.roadTime === null)
       this.roadTime = this.pos.getTimeForPath(storagePos);
-    if (this.restTime === Infinity)
+    if (this.restTime === Infinity || this.restTime === null)
       this.restTime = this.pos.getTimeForPath(this.hive.rest);
-
-    if (this.hive.cells.dev)
-      this.hive.cells.dev.shouldRecalc = true;
-    this.parentCell.shouldRecalc = true;
+    if (this.operational) {
+      if (this.hive.cells.dev)
+        this.hive.cells.dev.shouldRecalc = true;
+      this.parentCell.shouldRecalc = true;
+    }
   }
 
   update() {
     super.update(undefined, false);
 
-    if (!this.resource && this.resourceType === RESOURCE_ENERGY)
-      this.resource = this.pos.findInRange(FIND_SOURCES, 1)[0];
+    /* if (!this.resource)
+      if (this.resourceType === RESOURCE_ENERGY)
+        this.resource = this.pos.findInRange(FIND_SOURCES, 1)[0];
+      else
+        this.resource = this.pos.findInRange(FIND_MINERALS, 1)[0]; */
 
-    if (!this.operational && Game.time % 30 === 0)
+    if (!this.operational && Game.time % (this.resourceType === RESOURCE_ENERGY ? 10 : 100) === 0)
       this.updateStructure();
 
     if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
@@ -159,7 +156,6 @@ export class ResourceCell extends Cell {
           if (Apiary.logger && ans === OK)
             Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
               this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);
-
         }
       }
     }

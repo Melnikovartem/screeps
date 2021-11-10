@@ -37,15 +37,16 @@ export class ExcavationCell extends Cell {
   }
 
   update() {
+    _.forEach(this.resourceCells, cell => safeWrap(() => cell.update(), cell.print + " update"));
+
     if (!this.master)
       if (this.hive.cells.storage)
         this.master = new HaulerMaster(this, this.hive.cells.storage.storage);
       else
         return;
     this.quitefullCells = [];
-    _.forEach(this.resourceCells, cell => {
-      safeWrap(() => { cell.update() }, cell.print + " update");
 
+    _.forEach(this.resourceCells, cell => {
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
         let padding;
         if (cell.resourceType === RESOURCE_ENERGY)

@@ -3,6 +3,7 @@ import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
 
 import { hiveStates } from "../../enums";
 import { prefix } from "../../enums";
+import { Traveler } from "Traveler/TravelerModified";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -18,31 +19,32 @@ export class DevelopmentCell extends Cell {
     super(hive, prefix.developmentCell + hive.room.name);
     this.controller = this.hive.room.controller!;
     this.master = new BootstrapMaster(this);
-
-    _.forEach(this.hive.room.find(FIND_DROPPED_RESOURCES), r => {
-      if (r.resourceType === RESOURCE_ENERGY)
-        this.handAddedResources.push(r.pos);
-    });
-
-    _.forEach(this.hive.room.find(FIND_STRUCTURES), s => {
-      if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_TERMINAL)
-        this.handAddedResources.push(s.pos);
-    });
   }
 
   get pos() {
     return this.hive.room.controller ? this.hive.room.controller.pos : this.hive.rest;
   }
 
-  addRoom(room: Room) {
-    _.forEach(room.find(FIND_DROPPED_RESOURCES), r => {
-      if (r.resourceType === RESOURCE_ENERGY)
-        this.handAddedResources.push(r.pos);
-    });
+  addResources() {
+    this.handAddedResources = [];
+    _.forEach([this.hive.roomName].concat(this.hive.annexNames), miningRoom => {
+      let room = Game.rooms[miningRoom];
+      if (!room)
+        return;
 
-    _.forEach(room.find(FIND_STRUCTURES), s => {
-      if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER)
-        this.handAddedResources.push(s.pos);
+      _.forEach(room.find(FIND_DROPPED_RESOURCES), r => {
+        if (r.resourceType === RESOURCE_ENERGY)
+          this.handAddedResources.push(r.pos);
+      });
+
+      _.forEach(room.find(FIND_STRUCTURES), s => {
+        if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_TERMINAL)
+          this.handAddedResources.push(s.pos);
+      });
+    })
+    _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+      if (cell.container)
+        this.handAddedResources.push(cell.container.pos);
     });
   }
 
@@ -50,6 +52,36 @@ export class DevelopmentCell extends Cell {
     super.update();
     if (this.hive.room.storage && this.hive.room.storage.isActive() && this.hive.phase === 0 && Apiary.useBucket)
       Apiary.destroyTime = Game.time;
+
+    let futureResourceCells = _.filter(Game.flags, f => f.memory.hive === this.hive.roomName && f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW);
+    if (this.hive.room.controller!.level < 4 && Game.time % 100 === 0) {
+      _.forEach(futureResourceCells, f => {
+        if (!(f.pos.roomName in Game.rooms))
+          return
+        if (this.hive.room.energyCapacityAvailable < 400 && f.pos.roomName !== this.hive.roomName)
+          return;
+        let route = Traveler.findTravelPath(f.pos, this.hive, {
+          ignoreRoads: false,
+          roomCallback: (roomName, matrix) => {
+            let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
+            if (!roads)
+              return;
+            _.forEach(roads.pos, p => {
+              matrix.set(p.x, p.y, 1);
+            });
+            return matrix;
+          }
+        }).path;
+        _.forEach(route, r => {
+          if (!(r.roomName in Game.rooms))
+            return
+          let roads = Memory.cache.roomPlanner[r.roomName] && Memory.cache.roomPlanner[r.roomName].road;
+          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length)
+            r.createConstructionSite(STRUCTURE_ROAD);
+        });
+      });
+      this.hive.shouldRecalc = 2;
+    }
   }
 
   run() {
