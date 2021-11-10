@@ -13,7 +13,7 @@ import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
 
-const STARVE_HIM_OUT_CLAIMS = ["E12N49", "E13N49", "E14N48", "E13N48", "E14N47"]
+const STARVE_HIM_OUT_CLAIMS = [""];
 
 @profile
 export class _Apiary {

@@ -1,5 +1,5 @@
 // import { makeId } from "../utils/other";
-import { hiveStates, beeStates, prefix } from "../enums";
+import { hiveStates, beeStates, prefix, roomStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
@@ -108,8 +108,16 @@ export abstract class Master {
   // second stage of decision making like where do i need to move
   abstract run(): void;
 
-  checkFlee(bee: Bee, fleeTo?: ProtoPos) {
-    let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 25).enemies.map(e => e.object).filter(e => {
+  checkFlee(bee: Bee, fleeTo?: ProtoPos, opts?: TravelToOptions) {
+    let pos = bee.pos;
+    if (bee.targetPosition)
+      pos = (bee.targetPosition.roomName === pos.roomName && bee.targetPosition.getEnteranceToRoom()) || bee.targetPosition;
+    let roomInfo = Apiary.intel.getInfo(pos.roomName, 25);
+    if (!roomInfo.safePlace)
+      roomInfo = Apiary.intel.getInfo(pos.roomName, 0);
+    else if (roomInfo.roomState >= roomStates.reservedByEnemy)
+      roomInfo = Apiary.intel.getInfo(pos.roomName, 5);
+    let enemies = <Creep[]>roomInfo.enemies.map(e => e.object).filter(e => {
       if (!(e instanceof Creep))
         return false;
       let stats = Apiary.intel.getStats(e).current;
@@ -121,10 +129,10 @@ export abstract class Master {
     let contr = Game.rooms[bee.pos.roomName].controller;
     if (!contr || !contr.my || !contr.safeMode) {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
-      if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
+      if (enemy.pos.getRangeTo(pos) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
         bee.targetPosition = bee.pos;
-      else if (bee.targetPosition && enemy.pos.getRangeTo(bee.targetPosition) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
-        bee.flee(fleeTo || this.hive);
+      else if (enemy.pos.getRangeTo(pos) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
+        bee.flee(fleeTo || this.hive, opts);
         return true;
       }
     }

@@ -48,11 +48,12 @@ export class Intel {
 
   update() {
     this.stats = {};
-    this.toCache();
+    if (Game.time % 50 === 0)
+      this.toCache();
   }
 
   getEnemyStructure(pos: ProtoPos, lag?: number) {
-    return <Structure | undefined>this.getEnemy(pos, lag, es => es.filter(e => e.object instanceof Structure));
+    return <Structure | undefined>this.getEnemy(pos, lag, (es, ri, _) => es.filter(e => (![7, 9].includes(ri.dangerlvlmax) || e.dangerlvl === ri.dangerlvlmax) && e.object instanceof Structure));
   }
 
   getEnemyCreep(pos: ProtoPos, lag?: number) {
@@ -81,7 +82,7 @@ export class Intel {
     let roomInfo = this.getInfo(pos.roomName, lag);
     let ans = 0;
     _.forEach(roomInfo.towers, t => {
-      if (t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10)
+      if (t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10)
         ans += towerCoef(t, pos) * TOWER_POWER_ATTACK;
     });
     return ans;
@@ -195,7 +196,7 @@ export class Intel {
     if (!Apiary.useBucket)
       lag = Math.max(2, lag);
     if (roomInfo.lastUpdated + lag >= Game.time) {
-      if (lag > 0) {
+      if (roomInfo.lastUpdated > Game.time && roomName in Game.rooms) {
         roomInfo.enemies = <Enemy[]>_.compact(roomInfo.enemies.map(e => {
           let copy = e.object && <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
           if (!copy || copy.pos.roomName !== roomName)
@@ -259,6 +260,8 @@ export class Intel {
           safePlace: roomInfo.safePlace,
           safeModeEndTime: roomInfo.safeModeEndTime,
         }
+      else
+        delete Memory.cache.intellegence[roomName];
     }
   }
 
@@ -327,35 +330,44 @@ export class Intel {
     if (structures)
       _.forEach(structures, s => {
         let dangerlvl: DangerLvl = 0;
-        if (s.structureType === STRUCTURE_INVADER_CORE) {
-          dangerlvl = 3;
-          if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
-            dangerlvl = 9;
-        } else if (s.structureType === STRUCTURE_TOWER) {
-          dangerlvl = 7;
-          roomInfo.towers.push(s);
-        } else if (roomInfo.roomState === roomStates.SKfrontier && s.structureType === STRUCTURE_RAMPART)
-          dangerlvl = 3;
-        else if (roomInfo.roomState >= roomStates.ownedByEnemy)
-          if (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN)
-            dangerlvl = 2;
-          else if (s.structureType === STRUCTURE_STORAGE || s.structureType === STRUCTURE_TERMINAL)
-            dangerlvl = 1;
-          else if (room.controller && room.controller.reservation
-            && room.controller.reservation.username !== Apiary.username
-            && room.controller.reservation.ticksToEnd >= CONTROLLER_RESERVE_MAX * 0.4
-            && s.structureType === STRUCTURE_CONTAINER)
-            dangerlvl = 1;
-
-        if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length) {
-          if (dangerlvl < 7 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier)) {
-            if (s.structureType !== STRUCTURE_ROAD)
+        switch (s.structureType) {
+          case STRUCTURE_INVADER_CORE:
+            if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
               dangerlvl = 9;
-          } else if (dangerlvl < 4)
-            dangerlvl = 4;
+            else
+              dangerlvl = 3;
+            break;
+          case STRUCTURE_TOWER:
+            dangerlvl = 7;
+            roomInfo.towers.push(s);
+            break;
+          case STRUCTURE_EXTENSION:
+          case STRUCTURE_SPAWN:
+            if (roomInfo.roomState >= roomStates.ownedByEnemy)
+              dangerlvl = 2;
+            break;
+          case STRUCTURE_STORAGE:
+          case STRUCTURE_TERMINAL:
+            if (roomInfo.roomState >= roomStates.ownedByEnemy)
+              dangerlvl = 1;
+            break;
+          case STRUCTURE_CONTAINER:
+          case STRUCTURE_ROAD:
+            if (roomInfo.roomState === roomStates.reservedByEnemy
+              && room.controller && room.controller.reservation
+              && room.controller.reservation.username !== Apiary.username
+              && room.controller.reservation.ticksToEnd >= CONTROLLER_RESERVE_MAX * 0.4)
+              dangerlvl = 1;
+            break;
         }
 
-        if (dangerlvl > 0 || (roomInfo.roomState >= roomStates.reservedByEnemy && s.hits))
+        if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
+          if (dangerlvl < 7 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier) && s.structureType !== STRUCTURE_ROAD)
+            dangerlvl = 9;
+          else if (dangerlvl < 4)
+            dangerlvl = 4;
+
+        if (dangerlvl > 0 || (roomInfo.roomState === roomStates.ownedByEnemy && s.hits))
           roomInfo.enemies.push({
             object: s,
             dangerlvl: dangerlvl,
@@ -369,11 +381,6 @@ export class Intel {
       roomInfo.dangerlvlmax = 0;
 
     roomInfo.safePlace = roomInfo.dangerlvlmax < 4;
-
-    /*
-      let targetFlags = _.filter(room.find(FIND_FLAGS), flag => flag.color === COLOR_GREY && flag.secondaryColor === COLOR_RED);
-      let flagTargets = _.compact(_.map(targetFlags, flag => flag.pos.lookFor(LOOK_STRUCTURES)[0]));
-    */
   }
 
   getFleeDist(creep: Creep) {
