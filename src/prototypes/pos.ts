@@ -102,13 +102,13 @@ const oppositeExit = {
 
 RoomPosition.prototype.getEnteranceToRoom = function(): RoomPosition | null {
   let exits = Game.map.describeExits(this.roomName);
-  if (exits[FIND_EXIT_TOP] && this.y === 0)
+  if (this.y === 0 && exits[FIND_EXIT_TOP])
     return new RoomPosition(this.x, 49, exits[FIND_EXIT_TOP]!);
-  else if (exits[FIND_EXIT_BOTTOM] && this.y === 49)
+  else if (this.y === 49 && exits[FIND_EXIT_BOTTOM])
     return new RoomPosition(this.x, 0, exits[FIND_EXIT_BOTTOM]!);
-  else if (exits[FIND_EXIT_LEFT] && this.x === 0)
+  else if (this.x === 0 && exits[FIND_EXIT_LEFT])
     return new RoomPosition(49, this.y, exits[FIND_EXIT_LEFT]!);
-  else if (exits[FIND_EXIT_RIGHT] && this.x === 49)
+  else if (this.x === 49 && exits[FIND_EXIT_RIGHT])
     return new RoomPosition(0, this.y, exits[FIND_EXIT_RIGHT]!);
   return null;
 }

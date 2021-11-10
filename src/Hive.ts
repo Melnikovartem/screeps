@@ -11,7 +11,6 @@ import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
-import { Traveler } from "Traveler/TravelerModified";
 
 import { safeWrap, makeId } from "./abstract/utils";
 import { hiveStates, prefix } from "./enums";
@@ -118,7 +117,7 @@ export class Hive {
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
-  readonly wallsHealthMax = WALL_HEALTH * 200;
+  readonly wallsHealthMax = WALL_HEALTH * 50;
 
   state: hiveStates = hiveStates.economy;
 
@@ -126,12 +125,13 @@ export class Hive {
     // energy
     [RESOURCE_ENERGY]: HIVE_ENERGY,
 
+    [BOOST_MINERAL.build[2]]: HIVE_MINERAL,
     // cheap but good
-    [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL * 2,
-    [BOOST_MINERAL.build[0]]: HIVE_MINERAL,
-    [BOOST_MINERAL.damage[1]]: HIVE_MINERAL,
-    [BOOST_MINERAL.attack[0]]: HIVE_MINERAL,
-    [BOOST_MINERAL.attack[1]]: HIVE_MINERAL * 2,
+    [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL / 2,
+    // [BOOST_MINERAL.build[0]]: HIVE_MINERAL,
+    // [BOOST_MINERAL.attack[0]]: HIVE_MINERAL,
+    // [BOOST_MINERAL.damage[1]]: HIVE_MINERAL,
+    // [BOOST_MINERAL.attack[1]]: HIVE_MINERAL,
   }
   resState: { "energy": number } & ResTarget = { energy: 0 };
   mastersResTarget: ResTarget = {}
@@ -153,7 +153,6 @@ export class Hive {
         wallsHealth: WALL_HEALTH * 10, cells: {},
       }
     }
-
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -181,9 +180,9 @@ export class Hive {
       });
       if (factory)
         this.cells.factory = new FactoryCell(this, factory, sCell);
+      this.wallsHealth = Math.max(WALL_HEALTH * 5, this.wallsHealth);
       if (this.room.controller!.level < 8) {
         // try to develop the hive
-        this.resTarget[BOOST_MINERAL.upgrade[0]] = HIVE_MINERAL * 2;
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
       } else {
         this.phase = 2;
@@ -206,39 +205,16 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
-        this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
+        this.wallsHealthMax = this.wallsHealthMax * 40; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     } else {
       this.wallsHealth = WALL_HEALTH;
       this.wallsHealthMax = WALL_HEALTH;
       this.cells.dev = new DevelopmentCell(this);
-      let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === this.roomName);
-      _.forEach(futureResourceCells, f => {
-        if (!(f.pos.roomName in Game.rooms))
-          return
-        let route = Traveler.findTravelPath(f.pos, this, {
-          roomCallback: (roomName, matrix) => {
-            let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
-            if (!roads)
-              return;
-            _.forEach(roads.pos, p => {
-              matrix.set(p.x, p.y, 1);
-            });
-            return matrix;
-          }
-        }).path;
-        _.forEach(route, r => {
-          if (!(r.roomName in Game.rooms))
-            return
-          let roads = Memory.cache.roomPlanner[r.roomName] && Memory.cache.roomPlanner[r.roomName].road;
-          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length)
-            r.createConstructionSite(STRUCTURE_ROAD);
-        });
-      });
     }
 
-    //look for new structures for those wich need them
+
     this.updateCellData();
     if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
       this.cells.dev = new DevelopmentCell(this);
@@ -253,7 +229,7 @@ export class Hive {
       this.annexNames.push(annexName);
     if (annexName in Game.rooms) {
       if (this.cells.dev)
-        this.cells.dev.addRoom(Game.rooms[annexName]);
+        this.cells.dev.shouldRecalc = true;
       if (this.shouldRecalc < 3)
         this.shouldRecalc = 3;
       return OK;
@@ -316,6 +292,14 @@ export class Hive {
     return this.getPos("rest");
   }
 
+  get powerManager() {
+    return Memory.cache.hives[this.roomName].powerManager;
+  }
+
+  set powerManager(value) {
+    Memory.cache.hives[this.roomName].powerManager = value;
+  }
+
   private updateCellData() {
     _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
       switch (s.structureType) {
@@ -329,12 +313,19 @@ export class Hive {
           this.cells.defense.towers[s.id] = s;
           break;
         case STRUCTURE_LAB:
-          if (!this.cells.lab) {
-            Apiary.destroyTime = Game.time;
+          if (!this.cells.lab)
             return;
-          }
           this.cells.lab.laboratories[s.id] = s;
           break;
+        case STRUCTURE_STORAGE:
+          if (!this.cells.storage && Apiary.useBucket)
+            Apiary.destroyTime = Game.time;
+          break;
+        case STRUCTURE_TERMINAL:
+          if (this.cells.storage && !this.cells.storage.terminal && !(this.cells.storage.storage instanceof StructureTerminal) && Apiary.useBucket)
+            Apiary.destroyTime = Game.time;
+          break;
+
       }
     });
 
@@ -353,7 +344,13 @@ export class Hive {
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
     let target: Structure | ConstructionSite | undefined;
-    let projects = this.structuresConst;
+    let projects: BuildProject[];
+
+    if (ignore)
+      projects = [...this.structuresConst];
+    else
+      projects = this.structuresConst;
+
     let getProj = () => projects.length && (<RoomPosition>pos).findClosest(projects);
 
     /*let wax = Game.flags[prefix.build + this.roomName];
@@ -363,11 +360,15 @@ export class Hive {
         projects = proj
     }*/
 
+
     if (this.state === hiveStates.battle) {
       let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
       ignore = "ignoreConst";
       if (inDanger.length)
         projects = inDanger;
+      else
+        projects = [...projects];
+
       let enemy = Apiary.intel.getEnemyCreep(this);
       if (enemy)
         pos = enemy.pos; // dont work well with several points
@@ -407,9 +408,6 @@ export class Hive {
         proj = getProj();
       }
     }
-
-    if (!ignore)
-      this.structuresConst = projects;
 
     return target;
   }
@@ -463,9 +461,11 @@ export class Hive {
       this.sumCost += _.sum(ans, pr => pr.energyCost);
     }
     let checkAnnex = () => {
+      if (this.room.energyCapacityAvailable < 400)
+        return;
       if (reCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
         _.forEach(this.annexNames, annexName => {
-          if (Apiary.intel.getInfo(annexName).safePlace)
+          if (annexName in Game.rooms && Apiary.intel.getInfo(annexName).safePlace)
             addCC(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : BUILDABLE_PRIORITY.mining));
         });
     }
@@ -513,16 +513,15 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         else {
           let defenses = Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense);
-          if (defenses.length)
+          if (defenses.length && this.room.controller!.level >= 6)
             this.structuresConst = [];
           addCC(defenses);
         }
-        if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 4)
+        if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >= this.resTarget[RESOURCE_ENERGY] / 2)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
-
         if (!this.sumCost && this.builder && this.builder.activeBees)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
-        if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.resTarget[RESOURCE_ENERGY] / 2)
+        if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >= this.resTarget[RESOURCE_ENERGY])
           this.wallsHealth += WALL_HEALTH;
         break;
       default:
@@ -532,7 +531,6 @@ export class Hive {
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
     }
-    // addCC([{ pos: new RoomPosition(3, 22, "E12N48"), sType: STRUCTURE_SPAWN, targetHits: 1, energyCost: 15000, type: "construction" }])
   }
 
   update() {
@@ -555,7 +553,10 @@ export class Hive {
       safeWrap(() => cell.update(), cell.print + " update");
     });
 
-    if (Game.time % 100 === 5 || this.shouldRecalc || this.state === hiveStates.battle) {
+    if (Game.time % 25 === 5
+      || this.shouldRecalc
+      || this.state === hiveStates.battle
+      || (!this.structuresConst.length && this.builder && this.builder.activeBees && this.wallsHealth < this.wallsHealthMax)) {
       this.updateAnnexes();
       this.updateStructures();
       if (this.shouldRecalc > 2)

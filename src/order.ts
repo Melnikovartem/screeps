@@ -20,7 +20,6 @@ import { SKMaster } from "./beeMasters/civil/safeSK";
 import { hiveStates, prefix, roomStates } from "./enums";
 import { makeId, findOptimalResource } from "./abstract/utils";
 import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
-import { BOOST_MINERAL } from "./cells/stage1/laboratoryCell";
 
 import { LOGGING_CYCLE } from "./settings";
 import { profile } from "./profiler/decorator";
@@ -223,13 +222,16 @@ export class Order {
                 case roomStates.reservedByInvader:
                 case roomStates.noOwner:
                 case roomStates.reservedByMe:
-                  this.master = new AnnexMaster(this);
+                  if (this.hive.room.energyCapacityAvailable < 650) {
+                    this.master = new PuppetMaster(this);
+                    this.master.maxSpawns = Infinity;
+                  } else
+                    this.master = new AnnexMaster(this);
                   break;
                 case roomStates.SKfrontier:
-                  this.master = new SKMaster(this);
-                  if (!this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]])
-                    this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]] = 0
-                  this.hive.resTarget[BOOST_MINERAL.rangedAttack[0]]! += LAB_BOOST_MINERAL * MAX_CREEP_SIZE;
+                  if (this.hive.room.energyCapacityAvailable >= 5000)
+                    this.master = new SKMaster(this);
+                  break;
                 default:
                   this.delete();
               }
@@ -331,6 +333,7 @@ export class Order {
             break;
           case COLOR_GREY:
             Apiary.planner.protectPoint(this.pos);
+            Apiary.planner.addUpgradeSite(this.hive.pos);
             break;
           case COLOR_ORANGE:
             if (Memory.cache.roomPlanner[this.pos.roomName] && Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length) {
@@ -478,13 +481,23 @@ export class Order {
                 break;
               }
               this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
-            } else {
-              this.hive.cells.lab.synthesizeTarget = undefined;
-              this.fixedName(prefix.haltlab + this.hive.roomName);
-            }
+            } else
+              this.delete();
             break;
           case COLOR_YELLOW:
-            this.fixedName(prefix.upgrade + this.hive.roomName);
+            if (this.fixedName(prefix.upgrade + this.hive.roomName) && this.hive.cells.upgrade) {
+              this.hive.cells.upgrade.master.waitingForBees = 0;
+              for (const key in this.hive.spawOrders)
+                if (key.includes(this.hive.cells.upgrade.master.ref))
+                  delete this.hive.spawOrders[key];
+            }
+            break;
+          case COLOR_GREY:
+            if (this.hive.cells.lab && this.fixedName(prefix.haltlab + this.hive.roomName)) {
+              this.hive.cells.lab.synthesizeTarget = undefined;
+              this.hive.cells.lab.synthesizeRes = undefined;
+              this.hive.cells.lab.prod = undefined;
+            }
             break;
           case COLOR_WHITE:
             this.fixedName(prefix.build + this.hive.roomName);
@@ -508,12 +521,12 @@ export class Order {
             this.acted = false;
             if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
               let hurry = this.ref.includes("hurry");
-              let short = this.ref.includes("short");
+              let fast = this.ref.includes("fast");
               if ("all" === parsed![2]) {
                 if (mode === "sell") {
                   // if (hurry || Game.time % 10 === 0)
                   Apiary.broker.update();
-                  let getAmount = (res?: ResourceConstant) => this.hive.cells.storage!.storage.store.getUsedCapacity() + this.hive.cells.storage!.terminal!.store.getUsedCapacity(res);
+                  let getAmount = (res?: ResourceConstant) => this.hive.cells.storage!.storage.store.getUsedCapacity(res) + this.hive.cells.storage!.terminal!.store.getUsedCapacity(res);
                   _.forEach(Object.keys(this.hive.cells.storage.storage.store).concat(Object.keys(this.hive.cells.storage.terminal.store)), ress => {
                     let res = <ResourceConstant>ress;
                     if (res === RESOURCE_ENERGY && getAmount() - getAmount(RESOURCE_ENERGY) > 2 * getAmount(RESOURCE_ENERGY))
@@ -529,11 +542,11 @@ export class Order {
               if (RESOURCES_ALL.includes(res)) {
                 if (hurry || Game.time % 10 === 0)
                   if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
-                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, short
-                      , this.ref.includes("noinf") ? undefined : Infinity, hurry ? 2 : 50);
-                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < 4096)
-                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, 500, short
-                      , this.ref.includes("noinf") ? undefined : Infinity, hurry ? 2 : 50);
+                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
+                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
+                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192))
+                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
+                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
                   else if (this.ref.includes("nokeep"))
                     this.delete();
               } else
@@ -605,7 +618,7 @@ export class Order {
       this.flag.memory.extraInfo = undefined;
       this.flag.memory.extraPos = undefined;
       if (this.master)
-        Apiary.masters[this.master.ref].delete();
+        this.master.delete();
       this.acted = false;
       return;
     }
@@ -652,28 +665,6 @@ export class Order {
                 this.hive.cells.excavation.resourceCells[ref].master.delete();
                 delete this.hive.cells.excavation.resourceCells[ref];
               }
-            break;
-        }
-        break;
-      case COLOR_BLUE:
-        switch (this.secondaryColor) {
-          case COLOR_YELLOW:
-            if (this.ref == prefix.upgrade + this.hive.roomName && this.pos.roomName === this.hive.roomName && this.hive.cells.upgrade) {
-              this.hive.cells.upgrade.master.waitingForBees = 0;
-              for (const key in this.hive.spawOrders)
-                if (key.includes(this.hive.cells.upgrade.master.ref))
-                  delete this.hive.spawOrders[key];
-            }
-            break;
-          case COLOR_GREY:
-            if (this.hive.cells.lab) {
-              this.hive.cells.lab.synthesizeTarget = undefined;
-              this.hive.cells.lab.synthesizeRes = undefined;
-              this.hive.cells.lab.prod = undefined;
-            }
-            break;
-          case COLOR_RED:
-            this.hive.cells.defense.updateNukes();
             break;
         }
         break;

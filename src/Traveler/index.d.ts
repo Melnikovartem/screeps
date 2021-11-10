@@ -55,5 +55,9 @@ interface Creep {
   travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): ScreepsReturnCode | RoomPosition;
 }
 
+interface PowerCreep {
+  travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): ScreepsReturnCode | RoomPosition;
+}
+
 type Coord = { x: number, y: number };
 type HasPos = { pos: RoomPosition }

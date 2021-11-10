@@ -419,26 +419,26 @@ export class Traveler {
         }
 
         let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
-        if ([""].includes(roomName))
+        /*if ([""].includes(roomName))
           return 255;
-        /*if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
+        if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
           return 6;*/
-        if ([""].includes(roomName))
-          return 0;
+        if (["E45N8"].includes(roomName))
+          return 1;
+
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
-          case roomStates.reservedByMe:
             return 1;
           case roomStates.corridor:
-            return 1;
+          case roomStates.reservedByMe:
+          case roomStates.noOwner:
+          default:
+            return 2;
           case roomStates.SKfrontier:
           case roomStates.reservedByEnemy:
             return 4;
           case roomStates.ownedByEnemy:
             return 255;
-          case roomStates.noOwner:
-          default:
-            return 2;
         }
 
         /*
