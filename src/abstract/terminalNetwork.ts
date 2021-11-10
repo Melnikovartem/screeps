@@ -84,8 +84,9 @@ export class Network {
   }
 
   run() {
-    let tryToBuyIn = false && Game.time % BUY_SHORTAGES_CYCLE === 1
+    let tryToBuyIn = Game.time % BUY_SHORTAGES_CYCLE === 1
       && Game.cpu.getUsed() + Object.keys(Game.market.getAllOrders()).length * 0.005 < Game.cpu.tickLimit - 100;
+
     // to be able to save some cpu on buyIns
 
     for (let i = 0; i < this.nodes.length; ++i) {
@@ -95,7 +96,7 @@ export class Network {
       let terminal = hive.cells.storage.terminal;
       let usedTerminal = false;
 
-      if (tryToBuyIn)
+      if (tryToBuyIn) {
         for (const r in hive.shortages) {
           let res = <ResourceConstant>r;
           if (ALLOWED_TO_BUYIN.includes(res)) {
@@ -107,9 +108,9 @@ export class Network {
             }
           }
         }
-
-      if (usedTerminal)
-        continue;
+        if (usedTerminal)
+          continue;
+      }
 
       let aid = this.aid[hive.roomName];
       if (aid && !terminal.cooldown) {
@@ -150,10 +151,8 @@ export class Network {
       }
 
       let stStore = hive.cells.storage.storage.store;
-      if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.75 && hive.cells.storage.storage instanceof StructureStorage) {
+      if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.85 && hive.cells.storage.storage instanceof StructureStorage) {
         let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
-        if (2 % 1 === 0) // remove
-          continue;
         // keys = keys.filter(s => s !== RESOURCE_ENERGY)
         if (!keys.length)
           continue;
@@ -196,7 +195,9 @@ export class Network {
 
   updateState(hive: Hive) {
     hive.resState = { energy: 0 };
-    if (!hive.cells.storage || !hive.cells.storage.terminal)
+    if (!hive.cells.storage || !hive.cells.storage.terminal
+      || (hive.cells.storage.terminal.effects
+        && hive.cells.storage.terminal.effects.filter(e => e.effect === PWR_DISRUPT_TERMINAL)))
       return;
 
     let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));

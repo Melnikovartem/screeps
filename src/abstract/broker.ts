@@ -179,7 +179,7 @@ export class Broker {
     let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
-      priceToBuyInstant *= 1.5654; // approx transfer costs
+      priceToBuyInstant *= 2; // 1.5654; // approx transfer costs
 
     if ((hurry || priceToBuyInstant <= price * 1.05) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let ans: number = ERR_NOT_ENOUGH_RESOURCES;
@@ -224,6 +224,9 @@ export class Broker {
     let step = ORDER_PADDING * coef;
     let price = this.priceLongSell(res, coef);
     let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
+
+    if (res === RESOURCE_ENERGY)
+      priceToSellInstant *= 0.5; // 1 / 1.5654; // approx transfer costs
 
     if ((hurry || priceToSellInstant >= price * 0.95) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
       let ans = this.sellShort(terminal, res, amount);

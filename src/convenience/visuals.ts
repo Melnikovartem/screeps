@@ -2,6 +2,7 @@ import { hiveStates, prefix } from "../enums";
 import { makeId } from "../abstract/utils";
 
 import { profile } from "../profiler/decorator";
+import { AnnexMaster } from "../beeMasters/civil/annexer";
 import type { PossiblePositions, Hive } from "../hive";
 
 const TEXT_SIZE = 0.8;
@@ -356,7 +357,7 @@ export class Visuals {
     _.forEach(hive.cells.excavation.resourceCells, rcell => {
       ++all;
       operational += rcell.operational ? 1 : 0;
-      if (rcell.master && rcell.operational) {
+      if (rcell.master && (rcell.operational || rcell.master.beesAmount || rcell.master.waitingForBees)) {
         stats.beesAmount += rcell.master.beesAmount;
         stats.waitingForBees += rcell.master.waitingForBees;
         stats.targetBeeCount += rcell.master.targetBeeCount;
@@ -374,7 +375,7 @@ export class Visuals {
         ++all;
         operational += o.acted ? 1 : 0;
         if (o.master)
-          if (o.master.maxSpawns === Infinity) {
+          if (o.master instanceof AnnexMaster) {
             stats.beesAmount += o.master.beesAmount;
             stats.waitingForBees += o.master.waitingForBees;
             stats.targetBeeCount += o.master.targetBeeCount;
@@ -385,13 +386,12 @@ export class Visuals {
           }
       });
       ans.push(["annex", operational === all ? "" : ` ${operational}/${all}`, this.getBeesAmount(stats)]);
-      if (operational !== all) ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
+      if (statsPuppet.targetBeeCount > 0) ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
     }
 
-    let constLen = hive.structuresConst.length;
-    if (constLen > 0 || (hive.builder && hive.builder.beesAmount)) {
-      ans.push(["build", !hive.sumCost ? "" : ` ${hive.sumCost >= 5000 ? Math.round(hive.sumCost / 1000) : Math.round(hive.sumCost / 1000 * 10) / 10}K/${hive.structuresConst.length}`,
-        this.getBeesAmount(hive.builder)])
+    if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
+      ans.push(["build", !hive.sumCost ? "" : ` ${hive.sumCost >= 5000 ? Math.round(hive.sumCost / 1000)
+        : Math.round(hive.sumCost / 1000 * 10) / 10}K/${hive.structuresConst.length}`, this.getBeesAmount(hive.builder)]);
     }
 
     ans.push(["upgrade",

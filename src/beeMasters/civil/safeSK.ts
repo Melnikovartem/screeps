@@ -2,10 +2,12 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
 import { beeStates } from "../../enums";
+// import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
-import type { Boosts } from "../_Master";
+// import type { Boosts } from "../_Master";
+import type { Order } from "../../order";
 
 // most basic of bitches a horde full of wasps
 
@@ -16,7 +18,12 @@ export class SKMaster extends SwarmMaster {
   // failsafe
   maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];
-  boosts: Boosts = [{ type: "rangedAttack", lvl: 0, amount: 6 }, { type: "fatigue", lvl: 0, amount: 5 }];
+  // boosts: Boosts = [{ type: "rangedAttack", lvl: 0, amount: 6 }, { type: "fatigue", lvl: 0, amount: 5 }];
+
+  constructor(order: Order) {
+    super(order)
+    // this.hive.add(this.hive.resTarget, BOOST_MINERAL.rangedAttack[0], LAB_BOOST_MINERAL * MAX_CREEP_SIZE);
+  }
 
   update() {
     super.update();

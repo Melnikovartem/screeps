@@ -11,7 +11,8 @@ export class PuppetMaster extends SwarmMaster {
 
   update() {
     super.update();
-    if (this.checkBees(hiveStates.battle !== this.hive.state)) {
+    let shouldSpawn = this.maxSpawns !== Infinity || this.oldestSpawn + CREEP_LIFE_TIME <= Game.time;
+    if (shouldSpawn && this.checkBees(hiveStates.battle !== this.hive.state) && !(this.order.pos.roomName in Game.rooms)) {
       this.wish({
         setup: setups.puppet,
         priority: 2, // well it is mostly cheap -_-
@@ -20,6 +21,9 @@ export class PuppetMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.activeBees, bee => bee.goRest(this.order.pos));
+    _.forEach(this.activeBees, bee => {
+      bee.goRest(this.order.pos);
+      this.checkFlee(bee, this.order.pos);
+    });
   }
 }

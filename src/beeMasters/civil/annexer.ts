@@ -16,10 +16,17 @@ export class AnnexMaster extends SwarmMaster {
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
     let doAnnex = roomInfo.safePlace;
 
+    if (!this.order.memory.extraInfo) {
+      this.order.memory.extraInfo = 0;
+      let controller = Game.rooms[this.order.pos.roomName] && Game.rooms[this.order.pos.roomName].controller;
+      if (controller)
+        this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
+    }
+
     if (doAnnex && this.hive.bassboost)
       doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
 
-    if (doAnnex && this.checkBees(true, CREEP_CLAIM_LIFE_TIME)) {
+    if (doAnnex && this.checkBees(true, CREEP_CLAIM_LIFE_TIME - this.order.memory.extraInfo - 10)) {
       let setup = setups.claimer.copy();
 
       if (this.order.pos.roomName in Game.rooms) {

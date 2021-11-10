@@ -382,12 +382,17 @@ export class CustomConsole {
       return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
     let state = hive.mastersResTarget;
     let ans = `OK @ ${this.format(hiveName)}`;
+    let skip = false;
     _.forEach(state, (amount, r) => {
       if (!amount || !r || r === RESOURCE_ENERGY)
         return;
       let res = <ResourceConstant>r;
       if (!(res in REACTION_MAP) || hive.resState[res]! > 0)
         return;
+      if (skip) {
+        ans += `\n${res}: skipped ${amount}`;
+        return;
+      }
       let sets = Math.min(Math.round((amount + padding) / 5000 * 1000) / 1000, 1);
       let buyAns;
       switch (mode) {
@@ -400,6 +405,7 @@ export class CustomConsole {
         default:
           buyAns = this.buy(res, hiveName, sets, mode === "fast");
       }
+      skip = buyAns.includes("short");
       ans += `\n${res}: ${buyAns} ${sets * 5000}/${amount}`;
     });
     return ans;
@@ -621,9 +627,9 @@ export class CustomConsole {
   }
 
   cleanIntel(quadToclean: string, xmin: number, xmax: number, ymin: number, ymax: number) {
+    let quad = /^([WE])([NS])$/.exec(quadToclean);
     for (let roomName in Memory.cache.intellegence) {
       let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
-      let quad = /^([WE])([NS])$/.exec(quadToclean)
       if (parsed && quad) {
         let [, we, x, ns, y] = parsed;
         let state = Apiary.intel.getInfo(roomName, Infinity).roomState;

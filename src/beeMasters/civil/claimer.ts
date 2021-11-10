@@ -14,12 +14,12 @@ export class ClaimerMaster extends SwarmMaster {
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let setup = setups.claimer.copy();
-      if (this.order.pos.getRoomRangeTo(this.hive, true) >= 5)
-        setup.fixed = [TOUGH, TOUGH];
+      if (this.order.pos.getRoomRangeTo(this.hive, true) >= 4)
+        setup.fixed = [TOUGH, TOUGH, TOUGH];
       let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
       if (roomInfo.roomState >= roomStates.reservedByInvader) {
         setup.patternLimit = 5;
-        setup.fixed = [TOUGH, TOUGH];
+        setup.fixed = [TOUGH, TOUGH, TOUGH];
       }
       this.wish({
         setup: setup,
@@ -35,18 +35,25 @@ export class ClaimerMaster extends SwarmMaster {
       } else {
         let controller = Game.rooms[this.order.pos.roomName].controller;
         if (controller) {
-          if (controller.owner || controller.reservation)
+          if (!bee.pos.isNearTo(controller))
+            bee.goTo(controller);
+          else if (controller.owner && controller.owner.username !== Apiary.username || controller.reservation && controller.reservation.username !== Apiary.username)
             bee.attackController(controller)
-          else if (bee.claimController(controller) === OK) {
-            bee.pos.createFlag(prefix.boost + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
+          else {
+            if (!controller.owner)
+              if (bee.claimController(controller) !== OK)
+                return;
+              else {
+                bee.pos.createFlag(prefix.boost + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
+                Apiary.destroyTime = Game.time; // create new hive
+              }
             bee.creep.signController(controller, signText.my);
             this.order.delete(true);
-            Apiary.destroyTime = Game.time; // create new hive
           }
         } else
           this.order.delete();
       }
-      this.checkFlee(bee, this.order.pos);
+      this.checkFlee(bee, this.order.pos, { useFindRoute: true });
     });
   }
 }

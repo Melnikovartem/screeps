@@ -126,7 +126,7 @@ export class Logger {
     if (!Memory.log.enemies)
       Memory.log.enemies = {};
 
-    Memory.log.enemies[creep.owner.username + "_" + creep.pos.roomName] = {
+    Memory.log.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
       time: Game.time,
       info: Apiary.intel.getStats(creep),
       pos: creep.pos,
