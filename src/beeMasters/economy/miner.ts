@@ -56,11 +56,7 @@ export class MinerMaster extends Master {
       && (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username);
 
     if (shouldSpawn)
-      shouldSpawn = this.cell.operational
-        || (this.cell.resourceType === RESOURCE_ENERGY
-          && (!!this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 1).filter(c => c.structureType === STRUCTURE_CONTAINER).length
-            || (this.cell.pos.roomName === this.hive.roomName
-              && !!this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 2).filter(c => c.structureType === STRUCTURE_LINK).length)));
+      shouldSpawn = this.cell.operational || (this.cell.resourceType === RESOURCE_ENERGY && this.cell.pos.roomName in Game.rooms && !!this.construction);
 
     if (shouldSpawn && this.checkBees(this.cell.resourceType === RESOURCE_ENERGY, CREEP_LIFE_TIME - this.cell.roadTime - 10)) {
       let order = {
@@ -78,9 +74,10 @@ export class MinerMaster extends Master {
     }
   }
 
-  get contruction() {
+  get construction() {
     if (this.cell.resourceType !== RESOURCE_ENERGY)
       return undefined;
+
     if (this.cell.pos.roomName === this.hive.roomName) {
       let construction = this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 2).filter(c => c.structureType === STRUCTURE_LINK)[0];
       if (construction)
@@ -93,7 +90,7 @@ export class MinerMaster extends Master {
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, Infinity);
     let sourceOff: boolean | undefined = !this.cell.operational;
     if (this.cell.pos.roomName in Game.rooms)
-      sourceOff = sourceOff
+      sourceOff = (sourceOff && !this.construction)
         || (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
         || (this.cell.extractor && this.cell.extractor.cooldown > 0)
         || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
@@ -132,8 +129,9 @@ export class MinerMaster extends Master {
           if (bee.pos.isNearTo(target) || bee.store.getFreeCapacity(this.cell.resourceType) === 0)
             bee.transfer(target, this.cell.resourceType);
         } else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 25) {
-          let construction = this.contruction;
+          let construction = this.construction;
           bee.build(construction);
+          sourceOff = true;
         }
       }
 

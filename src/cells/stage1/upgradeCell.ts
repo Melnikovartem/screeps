@@ -18,6 +18,8 @@ export class UpgradeCell extends Cell {
   sCell: StorageCell;
   maxRate = 1;
   ratePerCreepMax = 1;
+  workPerCreepMax = 1;
+  maxBees = 10;
 
   roadTime: number;
 
@@ -37,7 +39,7 @@ export class UpgradeCell extends Cell {
     this.recalculateRate();
   }
 
-  get post() {
+  get pos() {
     return this.controller.pos;
   }
 
@@ -59,20 +61,27 @@ export class UpgradeCell extends Cell {
       else
         setup = setups.upgrader.manual;
     }
+
     setup.patternLimit = Infinity;
     let body = setup.getBody(this.hive.room.energyCapacityAvailable).body
     let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
     let work = body.filter(b => b === WORK).length;
     this.ratePerCreepMax = carry / (suckerTime + carry / work);
+    this.workPerCreepMax = work;
+
+    this.maxBees = 10;
+    if (this.link)
+      this.maxBees = this.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.controller) <= 3).length;
 
     if (this.hive.phase === 2)
       this.maxRate = Math.min(this.maxRate, 15);
-    this.master.recalculateTargetBee();
   }
 
   update() {
+
+
     super.update();
-    if (!this.link && Game.time % 30 === 7) {
+    if (!this.link && Game.time % 30 === 7 && this.controller.level >= 5) {
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
       if (this.link)
         this.recalculateRate();

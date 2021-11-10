@@ -52,15 +52,11 @@ export class HaulerMaster extends Master {
   }
 
   recalculateTargetBee() {
-    if (!this.accumRoadTime) {
-      this.targetBeeCount = 0;
-      return;
-    }
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
     this.cell.fullContainer = Math.min(CONTAINER_CAPACITY, body.filter(b => b === CARRY).length * CARRY_CAPACITY);
     let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.15));
     if (this.hive.state === hiveStates.lowenergy)
-      rounding = x => Math.max(1, Math.floor(x));
+      rounding = x => Math.max(1, Math.floor(x + 0.15));
     this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
   }
 
@@ -128,6 +124,7 @@ export class HaulerMaster extends Master {
           let target = <StructureContainer | undefined>Game.getObjectById(bee.target);
 
           if (!target) {
+            this.targetMap[bee.target] = undefined;
             bee.target = undefined;
             if (bee.store.getUsedCapacity())
               bee.state = beeStates.work;
@@ -139,6 +136,7 @@ export class HaulerMaster extends Master {
           let roomInfo = Apiary.intel.getInfo(target.pos.roomName, 25);
           if (!roomInfo.safePlace) {
             this.targetMap[bee.target] = undefined;
+            bee.target = undefined;
             bee.state = beeStates.chill;
             break;
           }
@@ -148,8 +146,7 @@ export class HaulerMaster extends Master {
           if (target && bee.pos.getRangeTo(target) <= 2) {
             overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2)[0]; //.filter(r => r.resourceType === res)
             // overproduction or energy from SK defenders
-            if (overproduction)
-              bee.pickup(overproduction);
+            bee.pickup(overproduction);
           }
 
           if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, res, undefined, { offRoad: true }) === OK) {

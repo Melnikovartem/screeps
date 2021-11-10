@@ -23,6 +23,7 @@ export class BootstrapMaster extends Master {
   };
   patternCount = 0;
   containerTargeting: { [id: string]: { current: number, max: number } } = {};
+  minRoadTime = 0;
 
   constructor(developmentCell: DevelopmentCell) {
     super(developmentCell.hive, developmentCell.ref);
@@ -36,7 +37,7 @@ export class BootstrapMaster extends Master {
 
   recalculateTargetBee() {
     this.targetBeeCount = 0;
-
+    this.minRoadTime = Infinity;
     this.patternCount = Math.floor(this.hive.room.energyCapacityAvailable / 200);
     if (this.hive.bassboost)
       this.patternCount = Math.floor(this.hive.bassboost.room.energyCapacityAvailable / 200)
@@ -47,7 +48,8 @@ export class BootstrapMaster extends Master {
       if (cell.resourceType !== RESOURCE_ENERGY || cell.restTime === Infinity)
         return;
       let roadTime = cell.restTime - 2;
-      let cycleWithoutEnergy = roadTime * 2 + 10;
+      this.minRoadTime = Math.min(this.minRoadTime, cell.restTime);
+      let cycleWithoutEnergy = roadTime * 2 + (this.hive.sumCost ? 10 : (this.hive.phase > 0 ? 0 : 50));
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
       let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
@@ -61,37 +63,35 @@ export class BootstrapMaster extends Master {
         let miningPower = Math.min(Math.floor((this.hive.room.energyCapacityAvailable - 50) / 150), setups.miner.energy.patternLimit);
         if (miningPower < 0)
           return;
-        this.targetBeeCount += Math.min(energyPerTick, miningPower * 2)
-          / (this.patternCount * 50 / cycleWithoutEnergy);
+        this.targetBeeCount += Math.min(energyPerTick, miningPower * 2) / (this.patternCount * 50 / cycleWithoutEnergy);
         energyPerTick = Math.max(energyPerTick - miningPower * 2, 0);
         --openPos;
         if (!openPos)
           return;
       }
 
-      let maxCycleByEnergy = energyPerTick / (2 * this.patternCount * openPos * 25 / (cycleWithoutEnergy + 25))
-        * (cell.pos.roomName === this.hive.pos.roomName ? 1.5 : 0.5); // much higher chance to mine in same room then in faraway
+      let maxCycleByEnergy = energyPerTick / (this.patternCount * 50 / (cycleWithoutEnergy + 25));
+      // * (cell.pos.roomName === this.hive.pos.roomName ? 1.5 : 0.5); // much higher chance to mine in same room then in faraway
       // amount of positions * bees can 1 position support
-      let maxcycleByPos = openPos * (1 + Math.round(cycleWithoutEnergy / (25 + roadTime * 0.5)));
+      let maxcycleByPos = openPos * (1 + cycleWithoutEnergy / (25 + cycleWithoutEnergy));
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
     if (this.hive.phase > 0)
       this.targetBeeCount = Math.min(this.targetBeeCount, 2);
-    /*
-      if (this.hive.bassboost)
-        this.targetBeeCount = Math.min(this.targetBeeCount, 6);
-      else if (Game.shard.name === "shard3")
-        this.targetBeeCount = Math.min(this.targetBeeCount, 10);
-    */
-    this.cell.shouldRecalc = false;
+    if (this.minRoadTime === Infinity)
+      this.minRoadTime = 0;
+    if (this.cell.shouldRecalc) {
+      this.cell.addResources();
+      this.cell.shouldRecalc = false;
+    }
   }
 
   checkBeesWithRecalc() {
     if (this.count.chilling || (this.hive.phase > 0 && this.hive.state === hiveStates.economy))
       return false;
-    let check = () => this.checkBees(true);
+    let check = () => this.checkBees(true, CREEP_LIFE_TIME - this.minRoadTime - 10);
     if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
@@ -123,14 +123,14 @@ export class BootstrapMaster extends Master {
       picking: 0,
     };
 
-    let soruces = (<Source[]>_.compact(_.map(this.hive.cells.excavation.resourceCells,
-      cell => (!cell.master.beesAmount || this.hive.room.energyCapacityAvailable <= 750) && cell.resourceType === RESOURCE_ENERGY ? cell.resource : undefined)))
+    let sources = _.filter(this.hive.cells.excavation.resourceCells,
+      cell => (!cell.master.beesAmount || this.hive.room.energyCapacityAvailable <= 750) && cell.resourceType === RESOURCE_ENERGY).map(cell => <Source>cell.resource)
       .filter(s => {
         let roomInfo = Apiary.intel.getInfo(s.pos.roomName, Infinity);
         return roomInfo.roomState <= roomStates.noOwner && (s.energy > this.patternCount * 50 || s.ticksToRegeneration < 20)
       });
 
-    let targets: extraTarget[] = []
+    let targets: extraTarget[] = [];
     let containerTargetingCur: { [id: string]: { current: number, max: number } } = {};
 
     for (let i = 0; i < this.cell.handAddedResources.length; ++i) {
@@ -198,7 +198,7 @@ export class BootstrapMaster extends Master {
         case beeStates.refill:
           let source: Source | null | undefined | extraTarget;
           if (!bee.target) {
-            source = bee.pos.findClosest(soruces.filter(s => s.pos.getOpenPositions(false).length || s.pos.isNearTo(bee)));
+            source = bee.pos.findClosest(sources.filter(s => s.pos.getOpenPositions(false).length || s.pos.isNearTo(bee)));
             if (source)
               bee.target = source.id;
           } else
@@ -223,7 +223,7 @@ export class BootstrapMaster extends Master {
               else {
                 let pos = source.pos.getOpenPositions()[0];
                 if (pos)
-                  bee.goTo(pos, { ignoreRoads: bee.store.getUsedCapacity() === 0 });
+                  bee.goTo(pos, { ignoreRoads: bee.store.getUsedCapacity() === 0, useFindRoute: !!this.hive.bassboost });
                 else if (bee.pos.getRangeTo(source) > 4)
                   bee.target = undefined;
               }
@@ -243,14 +243,17 @@ export class BootstrapMaster extends Master {
               if (containerTargetingCur[source.id])
                 containerTargetingCur[source.id].current += 1;
               if (source instanceof Resource)
-                bee.pickup(source);
+                bee.pickup(source, { useFindRoute: !!this.hive.bassboost });
               else
-                bee.withdraw(source, RESOURCE_ENERGY);
+                bee.withdraw(source, RESOURCE_ENERGY, undefined, { useFindRoute: !!this.hive.bassboost });
             }
             ++countCurrent.picking;
             break;
           } else {
-            bee.state = beeStates.chill;
+            if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+              bee.state = beeStates.work;
+            else
+              bee.state = beeStates.chill;
             bee.target = undefined;
           }
         case beeStates.chill:
@@ -299,7 +302,7 @@ export class BootstrapMaster extends Master {
 
           if (!target && bee.pos.roomName !== this.hive.roomName) {
             target = this.hive.getBuildTarget(bee, "ignoreRepair");
-            if (target && target.pos.roomName !== bee.pos.roomName)
+            if (target && !(target.pos.roomName === bee.pos.roomName || target.structureType === STRUCTURE_ROAD))
               target = null;
             if (target)
               if (target instanceof Structure)
@@ -310,22 +313,23 @@ export class BootstrapMaster extends Master {
 
           let refillTarget = bee.pos.findClosest(refillTargets);
           if (refillTarget && (!this.hive.cells.storage || !this.hive.cells.storage.master.activeBees.length)
-            && (refillTarget.pos.getRangeTo(bee) < 10 && !this.count.refill || !target)) {
+            && (!target || refillTarget.pos.getRangeTo(bee) < target.pos.getRangeTo(bee) - 3)) {
             target = refillTarget;
             workType = "refill";
           }
 
-          if (!target) {
+          if (!target && ((this.count["repair"] + this.count["build"]) * CARRY_CAPACITY * 2 < this.hive.sumCost || this.hive.state === hiveStates.battle)) {
             target = this.hive.getBuildTarget(bee);
-            let storage = this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn && this.hive.room.storage;
-            if (storage && storage.isActive() && (!target || bee.pos.getRangeTo(storage) + 5 < bee.pos.getRangeTo(target))) {
-              target = this.hive.room.storage;
-              workType = "refill";
-            } else if (target)
-              if (target instanceof Structure)
-                workType = "repair";
-              else
-                workType = "build";
+            if (target instanceof Structure)
+              workType = "repair";
+            else
+              workType = "build";
+          }
+
+          let storage = this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn && this.hive.room.storage;
+          if (storage && storage.isActive() && (!target || bee.pos.getRangeTo(storage) + 5 < bee.pos.getRangeTo(target))) {
+            target = this.hive.room.storage;
+            workType = "refill";
           }
 
           if (!target) {
@@ -333,7 +337,7 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          let ans;
+          let ans: ScreepsReturnCode | undefined;
           if (workType === "repair") {
             ans = bee.repair(<Structure>target);
             if (ans === OK && Apiary.logger)
@@ -345,9 +349,9 @@ export class BootstrapMaster extends Master {
           } else if (workType === "refill")
             ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
           else if (workType === "upgrade") {
+            ans = bee.upgradeController(<StructureController>target);
             if (ans === OK && Apiary.logger)
               Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -bee.getActiveBodyParts(WORK));
-            ans = bee.upgradeController(<StructureController>target);
           }
           bee.repairRoadOnMove(ans);
 
@@ -357,7 +361,8 @@ export class BootstrapMaster extends Master {
           bee.target = target.id;
           break;
       }
-      this.checkFlee(bee);
+      if (this.checkFlee(bee))
+        bee.drop(RESOURCE_ENERGY);
     });
     this.count = countCurrent;
     this.containerTargeting = containerTargetingCur;

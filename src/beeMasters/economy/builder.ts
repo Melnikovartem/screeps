@@ -31,10 +31,11 @@ export class BuilderMaster extends Master {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
       this.patternPerBee = Infinity;
       ++target;
-      _.forEach(this.bees, b => {
-        if (!b.boosted && b.ticksToLive >= 1200 && this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL)
-          b.state = beeStates.boosting;
-      });
+      if (this.hive.cells.lab && this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL)
+        _.forEach(this.bees, b => {
+          if (!b.boosted && b.ticksToLive >= 1200)
+            b.state = beeStates.boosting;
+        });
       if (this.hive.state === hiveStates.battle && this.hive.sumCost > 30000)
         ++target;
     } else if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
@@ -56,11 +57,10 @@ export class BuilderMaster extends Master {
     super.update();
     let emergency = this.hive.state >= hiveStates.nukealert || this.sCell.storage instanceof StructureTerminal;
 
-
     this.recalculateTargetBee();
     this.movePriority = emergency ? 2 : 5;
 
-    if (this.checkBees(this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000)) {
+    if (this.checkBees(this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000, CREEP_LIFE_TIME - 20)) {
       let order = {
         setup: setups.builder,
         priority: <2 | 5 | 7>(emergency ? 2 : (this.beesAmount ? 6 : 5)),
@@ -149,20 +149,22 @@ export class BuilderMaster extends Master {
               }
             }
 
-            if (!target || (this.hive.state >= hiveStates.nukealert && Game.time % 10 === 0))
+            if (!target || (this.hive.state >= hiveStates.nukealert && Game.time % 25 === 0))
               target = this.hive.getBuildTarget(bee);
             if (target) {
-              if (bee.pos.getRangeTo(this.sCell) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
+              if (bee.pos.getRangeTo(this.sCell.storage) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
                 bee.state = beeStates.refill;
                 bee.goTo(this.sCell.storage);
                 break;
               }
+              let ans: ScreepsReturnCode | undefined;
               if (target instanceof ConstructionSite)
-                bee.build(target, this.hive.opts);
+                ans = bee.build(target, this.hive.opts);
               else if (target instanceof Structure)
-                bee.repair(target, this.hive.opts);
+                ans = bee.repair(target, this.hive.opts);
               bee.target = target.id;
-              // bee.repairRoadOnMove(ans);
+              if (this.hive.state !== hiveStates.battle)
+                bee.repairRoadOnMove(ans);
               let resource;
               if (bee.pos.getRangeTo(target) <= 3) {
                 resource = bee.pos.findClosest(target.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));

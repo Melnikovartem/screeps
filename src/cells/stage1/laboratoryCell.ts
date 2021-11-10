@@ -191,6 +191,8 @@ export class LaboratoryCell extends Cell {
   }
 
   newProd() {
+    if (Object.keys(this.laboratories).length < 3)
+      return true;
     if (!this.synthesizeRes)
       return false;
 
@@ -318,14 +320,19 @@ export class LaboratoryCell extends Cell {
           lab = getLab("production", false);
         if (!lab)
           lab = getLab("idle", false);
+        if (!lab)
+          lab = getLab("source", false);
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
           this.labStates[lab.id] = r.res;
         }
       }
 
-      if (!lab)
+      if (!lab) {
+        if (rCode === OK)
+          rCode = ERR_TIRED;
         continue;
+      }
 
       if (bee.creep.spawning) {
         rCode = ERR_BUSY;

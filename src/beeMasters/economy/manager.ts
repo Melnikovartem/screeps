@@ -28,13 +28,14 @@ export class ManagerMaster extends Master {
     let pickingup = 0;
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
-      if (transfer) {
+      if (transfer && !transfer.beeProcess) {
         transfer.preprocess(bee);
         if (transfer.priority === 0 && transfer.isValid())
           ++refilling;
         else if (transfer.priority === 6 && transfer.isValid())
           ++pickingup;
-      }
+      } else
+        bee.target = undefined;
     });
 
     let requests = _.map(this.cell.requests, r => r);
@@ -58,15 +59,14 @@ export class ManagerMaster extends Master {
         || (transfer.priority === 2 && this.hive.state === hiveStates.battle && transfer.toAmount < 20)) {
         bee.target = undefined;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
-          let beeRes = bee.store.getUsedCapacity() > 0 && findOptimalResource(bee.store);
-          let beeRequests = _.filter(requests, (r) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess && (!pickingup || r.priority < 6));
+          let beeRequests = _.filter(requests, (r) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess && (r.priority < 6 || !pickingup));
           if (!beeRequests.length)
             return;
           let newTransfer = _.reduce(beeRequests
             , (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {
-                let refPoint = curr.resource === beeRes ? bee.pos : this.cell.storage.pos;
+                let refPoint = bee.store.getUsedCapacity(curr.resource) >= curr.amount ? bee.pos : this.cell.storage.pos;
                 let nonStoragePrev = prev.to.id === this.cell.storage.id ? prev.from : prev.to;
                 let nonStorageCurr = curr.to.id === this.cell.storage.id ? curr.from : curr.to;
                 ans = refPoint.getRangeTo(nonStorageCurr) - refPoint.getRangeTo(nonStoragePrev);
