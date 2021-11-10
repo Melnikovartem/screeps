@@ -2,14 +2,14 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
-import { beeStates, roomStates, prefix } from "../../enums";
+import { beeStates, roomStates, prefix, enemyTypes } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { Order } from "../../order";
 
-const BOOST_LVL = 0;
+const BOOST_LVL = 1;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -79,50 +79,74 @@ export class HordeMaster extends SwarmMaster {
     let beeStats = Apiary.intel.getStats(bee.creep).current;
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
 
-    let healingTarget: Creep | Bee | PowerCreep | undefined | null;
-    if (bee.hits < bee.hitsMax)
-      healingTarget = bee;
-
-    if (beeStats.heal > 0 && !healingTarget)
-      healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
-
     let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
-    let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
-
-    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedAttack(target);
-    else if (rangeToHealingTarget <= 3 && rangeToHealingTarget > 1 && beeStats.heal > 0)
-      action2 = () => bee.rangedHeal(healingTarget);
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy && beeStats.dmgRange > 0) {
-      let tempTarget: Structure | Creep | null = bee.pos.findClosest(bee.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
-      if (!tempTarget)
-        tempTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_STRUCTURES, 3));
-      if (tempTarget)
-        action2 = () => bee.rangedAttack(tempTarget);
+    if (beeStats.dmgRange > 0) {
+      if (rangeToTarget <= 3 && !(target instanceof Structure))
+        action2 = () => bee.rangedAttack(target);
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 3);
+        let tempNoRamp = tempTargets.filter(e => !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length);
+        if (tempNoRamp.length)
+          tempTargets = tempNoRamp;
+        if (tempTargets.length) {
+          let tempTarget = tempTargets.reduce((prev, curr) => {
+            let ans = prev.type - curr.type;
+            if (ans === 0)
+              ans = prev.dangerlvl - curr.dangerlvl;
+            if (ans === 0)
+              ans = bee.pos.getRangeTo(curr.object) - bee.pos.getRangeTo(prev.object);
+            return ans < 0 ? curr : prev;
+          });
+          action2 = () => bee.rangedAttack(tempTarget.object);
+        }
+      }
     }
 
-    if (rangeToHealingTarget <= 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget);
-    else if (beeStats.dism > 0 || beeStats.dmgClose > 0) {
-      if (rangeToTarget === 1)
-        if (beeStats.dism > 0 && target instanceof Structure)
-          action1 = () => bee.dismantle(target);
-        else if (beeStats.dmgClose > 0)
-          action1 = () => bee.attack(target);
-      if (!action1) {
-        let tempTarget: Structure | Creep | undefined;
-        if (beeStats.dism > 0)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
-        if (!tempTarget)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_CREEPS, 1)[0];
-        if (!tempTarget && beeStats.dism === 0)
-          tempTarget = bee.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0];
-        if (tempTarget)
-          if (beeStats.dism > 0 && target instanceof Structure)
-            action1 = () => bee.dismantle(target);
-          else if (beeStats.dmgClose > 0)
-            action1 = () => bee.attack(target);
+    if (beeStats.dism > 0) {
+      if (rangeToTarget <= 1 && target instanceof Structure)
+        action1 = () => bee.dismantle(target);
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
+        if (tempTargets.length) {
+          let tempTarget = tempTargets.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev);
+          action1 = () => bee.dismantle(<Structure>tempTarget.object);
+        }
       }
+    } else if (beeStats.dmgClose > 0) {
+      if (rangeToTarget <= 1)
+        action1 = () => bee.attack(target);
+      else {
+        let tempTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 1);
+        let tempNoRamp = tempTargets.filter(e => !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length);
+        if (tempNoRamp.length)
+          tempTargets = tempNoRamp;
+        if (tempTargets.length) {
+          let tempTarget = tempTargets.reduce((prev, curr) => {
+            let ans = prev.type - curr.type;
+            if (ans === 0)
+              ans = prev.dangerlvl - curr.dangerlvl;
+            if (ans === 0)
+              ans = bee.pos.getRangeTo(curr.object) - bee.pos.getRangeTo(prev.object);
+            return ans < 0 ? curr : prev;
+          });
+          action1 = () => bee.attack(tempTarget.object);
+        }
+      }
+    }
+
+    if (beeStats.heal > 0) {
+      let healingTarget: Creep | Bee | PowerCreep | null = bee.hits < bee.hitsMax ? bee : null;
+      if (!healingTarget)
+        healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
+
+      if (!healingTarget && roomInfo.dangerlvlmax > 3)
+        healingTarget = bee;
+
+      let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
+      if (rangeToHealingTarget <= 1 && (!action1 || beeStats.heal > beeStats.dism + beeStats.dmgClose)) {
+        action1 = () => bee.heal(healingTarget)
+      } else if (beeStats.heal > beeStats.dmgRange && (!action2 || healingTarget && healingTarget.hits < healingTarget.hitsMax))
+        action2 = () => bee.rangedHeal(healingTarget);
     }
 
     if (action1)
@@ -138,7 +162,7 @@ export class HordeMaster extends SwarmMaster {
       let myInfo = Apiary.intel.getComplexMyStats(bee, 5, 3).current;
       let enemyTTK;
       let myTTK;
-      if (beeStats.dmgClose && !myInfo.dmgRange && enemyInfo.dmgRange && rangeToTarget > 1 && target.owner.username !== "Invader")
+      if (beeStats.dmgClose && !myInfo.dmgRange && enemyInfo.dmgRange && rangeToTarget > 1)
         myTTK = Infinity;
       else
         myTTK = enemyInfo.hits / (myInfo.dmgClose + myInfo.dmgRange - enemyInfo.heal);
@@ -155,7 +179,9 @@ export class HordeMaster extends SwarmMaster {
       if (beeStats.dmgClose) {
         attackRange = 2;
       } else if (beeStats.dmgRange) {
-        if (enemyInfo.dmgRange || enemyInfo.dmgClose)
+        if (enemyInfo.dmgClose)
+          attackRange = !loosingBattle && enemyInfo.dmgClose > beeStats.heal ? 5 : 3;
+        else if (enemyInfo.dmgRange)
           attackRange = 4;
         else
           attackRange = 2;
@@ -182,6 +208,22 @@ export class HordeMaster extends SwarmMaster {
         targetedRange = 3;
     } */
 
+    if (!loosingBattle && (bee.hits > bee.hitsMax * 0.3 || !beeStats.heal))
+      targetedRange -= 2;
+
+    if (this.holdPosition || !target)
+      return OK;
+
+    let shouldFlee = rangeToTarget < targetedRange;
+    if (!shouldFlee && loosingBattle) {
+      let enterance = bee.pos.getEnteranceToRoom();
+      shouldFlee = !!enterance && enterance.roomName === target.pos.roomName;
+    }
+
+    if (shouldFlee) {
+      bee.flee(this.order, opts); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
+      return ERR_BUSY;
+    }
     if (loosingBattle && bee.pos.roomName === this.order.pos.roomName) {
       let newEnemy = bee.pos.findClosest(roomInfo.enemies.filter(e => {
         if (!(e.object instanceof Creep))
@@ -191,23 +233,13 @@ export class HordeMaster extends SwarmMaster {
       }).map(e => e.object));
       if (newEnemy) {
         loosingBattle = false;
-        targetedRange = attackRange;
-        bee.memory._trav = false;
+        targetedRange = 1;
+        bee.memory._trav.path = undefined;
         bee.goTo(newEnemy, bee.getFleeOpt(opts));
         return OK;
       }
     }
-
-    if (!loosingBattle && (bee.hits > bee.hitsMax * 0.3 || !beeStats.heal))
-      targetedRange -= 2;
-
-    if (this.holdPosition || !target)
-      return OK;
-
-    if (rangeToTarget < targetedRange) {
-      bee.flee(bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive : this.order, opts);
-      return ERR_BUSY;
-    } else if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.5) {
+    if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
       opts.movingTarget = true;
       bee.goTo(target, opts);
       if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.order.pos.roomName)
@@ -234,14 +266,17 @@ export class HordeMaster extends SwarmMaster {
           if (bee.pos.roomName !== this.order.pos.roomName)
             pos = this.order.pos;
           enemy = Apiary.intel.getEnemy(pos, 10);
-          enemy = Apiary.intel.getEnemy(pos);
-          if (enemy instanceof Creep && enemy.body.length === 1)
-            enemy = undefined;
-          this.beeAct(bee, enemy);
           if (!enemy) {
             bee.goRest(this.order.pos);
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
+          } else {
+            let beeStats = Apiary.intel.getStats(bee.creep).current;
+            if (beeStats.dism)
+              enemy = Apiary.intel.getEnemyStructure(pos);
+            else
+              enemy = Apiary.intel.getEnemy(pos);
+            this.beeAct(bee, enemy);
           }
           break;
         case beeStates.chill:

@@ -300,10 +300,10 @@ export class DefenseCell extends Cell {
     let path = pos.findPathTo(defPos, this.opts);
     let lastStep = path.pop();
     if (!lastStep)
-      return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
+      return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 5000
         && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
     let endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
-    return endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000
+    return endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 5000
       && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
   }
 
@@ -375,6 +375,9 @@ export class DefenseCell extends Cell {
       healTargets = this.hive.builder.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
     if (!healTargets.length && this.hive.cells.excavation.master)
       healTargets = this.hive.cells.excavation.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+    if (!healTargets.length && this.hive.cells.dev)
+      healTargets = this.hive.cells.dev.master.activeBees.filter(b => b.hits < b.hitsMax).map(b => b.creep);
+
     let healTarget: Creep | undefined;
     let toHeal = 0;
     if (healTargets.length) {
