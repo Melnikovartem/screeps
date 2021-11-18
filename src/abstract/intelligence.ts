@@ -308,8 +308,6 @@ export class Intel {
 
     let structures;
     switch (roomInfo.roomState) {
-      case roomStates.reservedByMe:
-      // removing old walls and cores (if only cores then set to 5 around controller)
       case roomStates.ownedByEnemy:
         _.forEach(room.find(FIND_HOSTILE_POWER_CREEPS), pc => {
           roomInfo.enemies.push({
@@ -318,10 +316,13 @@ export class Intel {
             type: enemyTypes.moving,
           });
         });
+      case roomStates.reservedByMe:
+      // removing old walls and cores (if only cores then set to 5 around controller)
       case roomStates.reservedByEnemy:
         structures = room.find(FIND_STRUCTURES);
         break;
       case roomStates.SKfrontier:
+      case roomStates.noOwner:
       case roomStates.reservedByInvader:
         structures = room.find(FIND_HOSTILE_STRUCTURES);
         break;
@@ -364,8 +365,8 @@ export class Intel {
         if (s.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
           if (dangerlvl < 7 && (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.roomState === roomStates.SKfrontier) && s.structureType !== STRUCTURE_ROAD)
             dangerlvl = 9;
-          else if (dangerlvl < 4)
-            dangerlvl = 4;
+          else if (dangerlvl < 3)
+            dangerlvl = 3;
 
         if (dangerlvl > 0 || (roomInfo.roomState === roomStates.ownedByEnemy && s.hits))
           roomInfo.enemies.push({
@@ -415,6 +416,9 @@ export class Intel {
         move: 0,
       }
     }
+
+    if (!creep)
+      return ans;
 
     ans.current.hits = creep.hits;
     ans.max.hits = creep.hitsMax;

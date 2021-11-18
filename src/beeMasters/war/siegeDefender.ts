@@ -41,7 +41,7 @@ export class SiegeMaster extends Master {
         return shouldSpawn;
       });
     this.movePriority = <5>5;
-    if (!shouldSpawn || (this.hive.room.controller!.safeMode && this.hive.room.controller!.safeMode > 100)) {
+    if (!shouldSpawn || (this.hive.controller.safeMode && this.hive.controller.safeMode > 100)) {
       if (this.waitingForBees) {
         delete this.hive.spawOrders[this.ref];
         if (this.hive.bassboost)
@@ -104,26 +104,9 @@ export class SiegeMaster extends Master {
     if (beeStats.heal > 0 && !healingTarget)
       healingTarget = bee.pos.findClosest(_.filter(bee.pos.findInRange(FIND_MY_CREEPS, 3), c => c.hits < c.hitsMax));
 
-    let rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
-    let rangeToHealingTarget = healingTarget ? bee.pos.getRangeTo(healingTarget) : Infinity;
-
-    if (rangeToTarget <= 3 && beeStats.dmgRange > 0)
-      action2 = () => bee.rangedAttack(target, opts);
-    else if (rangeToHealingTarget > 1 && rangeToHealingTarget <= 3 && beeStats.heal > 0)
-      action2 = () => bee.rangedHeal(healingTarget, opts);
-
-    if (rangeToHealingTarget < 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget, opts);
-    else if (rangeToTarget === 1 && beeStats.dmgClose > 0)
-      action1 = () => bee.attack(target, opts);
-    else if (rangeToHealingTarget === 1 && beeStats.heal > 0)
-      action1 = () => bee.heal(healingTarget, opts);
-
-    if (action1)
-      action1();
-
-    if (action2)
-      action2();
+    let rangeToTarget = bee.pos.getRangeTo(target);
+    if (rangeToTarget === 1)
+      bee.attack(target, opts);
 
     let targetedRange = 1;
     let statsAll = Apiary.intel.getComplexStats(target, 4, 2);
@@ -145,7 +128,7 @@ export class SiegeMaster extends Master {
     else
       this.patience[bee.ref] += rangeToTarget <= 4 ? 1 : (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47 ? 7 : 4);
     let attackPower = this.cell.getDmgAtPos(target.pos) + (rangeToTarget > 1 ? beeStats.dmgClose : 0);
-    let provoke = (rangeToTarget <= 3 && stats.hits < statsAll.max.hits || rangeToTarget === 1) && attackPower > stats.resist + stats.heal
+    let provoke = (rangeToTarget <= 3 && stats.hits < statsAll.max.hits || rangeToTarget === 1) && attackPower > Math.min(beeStats.resist, stats.heal * 0.7 / 0.3) + stats.heal
       && (beeStats.hits * 0.85 > (stats.dmgClose + stats.dmgRange) * 1.5
         || onPosition && rangeToTarget === 1 && beeStats.hits * 0.9 > (stats.dmgClose + stats.dmgRange));
     if ((this.cell.isBreached
@@ -224,6 +207,8 @@ export class SiegeMaster extends Master {
                 if (ramps.length)
                   this.patience[bee.ref] = 15;
               }
+              ramps = ramps.filter(r => r.pos.getRangeTo(this.hive.controller) > 1);
+              ramps = ramps.filter(r => !this.activeBees.filter(b => b.ref != bee.ref && b.target === r.pos.to_str).length);
               if (ramps.length)
                 pos = ramps.reduce((prev, curr) => {
                   let ans = curr.pos.getRangeTo(enemy!) - prev.pos.getRangeTo(enemy!);
@@ -242,7 +227,34 @@ export class SiegeMaster extends Master {
             bee.target = pos.to_str;
           }
 
-          let enemy = Apiary.intel.getEnemy(bee.pos);
+          let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
+          let enemy = <Creep | undefined>Apiary.intel.getEnemy(bee.pos);
+          if (enemy)
+            _.forEach(roomInfo.enemies, e => {
+              if (!(e.object instanceof Creep))
+                return;
+              if (!(enemy instanceof Creep)) {
+                enemy = e.object;
+                return;
+              }
+              if (e.object.pos.getRangeTo(bee) > 2)
+                return;
+              if (!e.object.pos.getPositionsInRange(1).filter(s => findRamp(s)).length)
+                return;
+              let ans = (enemy!.hitsMax - enemy!.hits) - (e.object.hitsMax - e.object.hits);
+              if (ans === 0) {
+                ans = e.object.pos.getPositionsInRange(1).filter(s => findRamp(s)).length - enemy.pos.getPositionsInRange(1).filter(s => findRamp(s)).length;
+              }
+              if (ans === 0) {
+                let statsEnemy = Apiary.intel.getStats(enemy).max;
+                let statsNewEnemy = Apiary.intel.getStats(e.object).max;
+                ans = statsEnemy.heal - statsNewEnemy.heal;
+              }
+              if (ans === 0)
+                ans = Math.random() - 0.5;
+              if (ans < 0)
+                enemy = e.object;
+            });
 
           if (this.patience[bee.ref] > 20 && enemy && (pos.getRangeTo(enemy) >= 4 || enemy.pos.getPositionsInRange(3).filter(p => findRamp(p)).length)) {
             if (pos.equal(bee) && enemy && bee.pos.getRangeTo(enemy) > 3)

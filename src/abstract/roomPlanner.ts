@@ -31,7 +31,7 @@ type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends TravelToOptions { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): TravelToOptions {
   return _.defaults(opts, {
-    ignoreStructures: true, ignoreRoads: false, maxRooms: 4, range: 0,
+    ignoreStructures: true, offRoad: true, maxRooms: 4, range: 0, extraTerrainWeight: 1,
     roomCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (!Apiary.planner.activePlanning[roomName])
         return;
@@ -207,8 +207,18 @@ export class RoomPlanner {
     this.addResourceRoads(anchor);
 
     this.addUpgradeSite(anchor);
+    let enterances = this.protectPoint(anchor);
 
-    let enterance = anchor.findClosestByTravel(this.protectPoint(anchor), getPathArgs());
+    let customWalls = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_BROWN);
+    _.forEach(customWalls, f => {
+      enterances.push(f.pos);
+      jobs.push({
+        context: `blocking off ${f.pos}`,
+        func: () => this.exludePoint(anchor, f.pos, undefined, false),
+      });
+    });
+
+    let enterance = anchor.findClosestByTravel(enterances, getPathArgs());
 
     let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
 
@@ -271,7 +281,7 @@ export class RoomPlanner {
     }
   }
 
-  protectPoint(anchor: RoomPosition, minDist = 5) {
+  protectPoint(anchor: RoomPosition) {
     if (!this.activePlanning[anchor.roomName])
       this.toActive(anchor, undefined, [STRUCTURE_WALL, STRUCTURE_RAMPART]);
 
@@ -308,13 +318,13 @@ export class RoomPlanner {
     _.forEach(enterances, e => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
         context: `blocking off ${e}`,
-        func: () => this.exludePoint(anchor, e, minDist),
+        func: () => this.exludePoint(anchor, e),
       });
     });
     return enterances;
   }
 
-  exludePoint(anchor: RoomPosition, pos: RoomPosition, minDist: number) {
+  exludePoint(anchor: RoomPosition, pos: RoomPosition, minDist: number = 5, removeNonUsed = true) {
     // not optimal, but good enough (can first block small gap, and than douple close a big one around)
     let pathArgs = getPathArgs({
       offRoad: true,
@@ -338,19 +348,32 @@ export class RoomPlanner {
       pos: RoomPosition,
       costs: { [key in BlockDirections]: { pos: Pos[], amount: number } }
     }[] = [];
-    let addedWalls: Pos[] = []
+    let addedWalls: Pos[] = [];
+    let min = Infinity;
     while (path.length && path[path.length - 1].equal(pos)) {
-      _.forEach(path, p => {
-        costOfBlocking.push({
+      for (let i = 0; i < path.length; ++i) {
+        let p = path[i];
+        let curr = {
           pos: p,
           costs: {
-            [TOP]: this.toBlock(p, TOP),
-            [RIGHT]: this.toBlock(p, RIGHT),
-            [TOP_RIGHT]: this.toBlock(p, TOP_RIGHT),
-            [TOP_LEFT]: this.toBlock(p, TOP_LEFT),
+            [TOP]: this.toBlock(p, TOP, min),
+            [RIGHT]: this.toBlock(p, RIGHT, min),
+            [TOP_RIGHT]: this.toBlock(p, TOP_RIGHT, min),
+            [TOP_LEFT]: this.toBlock(p, TOP_LEFT, min),
           }
-        });
-      });
+        };
+
+        if (i >= 15)
+          _.forEach(curr.costs, c => {
+            c.amount += 10;
+          });
+
+        let currMin = _.min(curr.costs, c => c.amount).amount;
+        if (min >= currMin) {
+          costOfBlocking.push(curr);
+          min = currMin;
+        }
+      }
 
       // console .log(pos, _.map(costOfBlocking, c => [c.pos, anchor.getRangeTo(c), c.costs[TOP_LEFT].amount]))
 
@@ -385,18 +408,19 @@ export class RoomPlanner {
       costOfBlocking = [];
       path = Traveler.findTravelPath(anchor, pos, pathArgs).path;
     }
-    this.activePlanning[pos.roomName].jobsToDo.push({
-      context: `removing non used walls for ${pos}`,
-      func: () => {
-        this.removeNonUsedWalls(pos, addedWalls);
-        this.removeNonUsedWalls(anchor, addedWalls);
-        /*this.activePlanning[pos.roomName].jobsToDo.push({
-          context: `thick walls for ${pos}`,
-          func: () => this.thickWalls(anchor, addedWalls),
-        });*/
-        return OK;
-      },
-    });
+    if (removeNonUsed)
+      this.activePlanning[pos.roomName].jobsToDo.push({
+        context: `removing non used walls for ${pos}`,
+        func: () => {
+          this.removeNonUsedWalls(pos, addedWalls);
+          this.removeNonUsedWalls(anchor, addedWalls);
+          /*this.activePlanning[pos.roomName].jobsToDo.push({
+            context: `thick walls for ${pos}`,
+            func: () => this.thickWalls(anchor, addedWalls),
+          });*/
+          return OK;
+        },
+      });
     return OK;
   }
 
@@ -428,7 +452,7 @@ export class RoomPlanner {
     return OK;
   }*/
 
-  toBlock(pos: RoomPosition, mode: BlockDirections): { pos: Pos[], amount: number } {
+  toBlock(pos: RoomPosition, mode: BlockDirections, stopAmount = Infinity): { pos: Pos[], amount: number } {
     let plan = this.activePlanning[pos.roomName].plan;
     let terrain = Game.map.getRoomTerrain(pos.roomName);
     let ans: Pos[] = [pos];
@@ -445,6 +469,7 @@ export class RoomPlanner {
     }
     let shouldStop = (x1: number, y1: number) =>
       terrain.get(x1, y1) === TERRAIN_MASK_WALL
+      || ans.length > stopAmount
       || (plan[x1] && plan[x1][y1] && (plan[x1][y1].s === STRUCTURE_WALL || plan[x1][y1].r))
       || nearEnterance(x1, y1);
 
@@ -535,6 +560,9 @@ export class RoomPlanner {
         checkEndOfRoom(x, y);
         break;
     }
+
+    if (ans.length > stopAmount)
+      amount = Infinity;
 
     return { pos: ans, amount: amount || ans.length };
   }
@@ -936,9 +964,6 @@ export class RoomPlanner {
           amount = 0;
         break;
       case STRUCTURE_ROAD:
-        if (controller.level > 0 && controller.level < 4)
-          amount = 0;
-        break;
       case STRUCTURE_CONTAINER:
         if (controller.level > 0 && controller.level < 3)
           amount = 0;
@@ -980,12 +1005,12 @@ export class RoomPlanner {
         if (!structure) {
           let constructionSite = _.filter(pos.lookFor(LOOK_CONSTRUCTION_SITES), s => s.structureType === sType)[0];
           if (!constructionSite) {
-            let place = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_RAMPART)[0];
+            let place = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s.structureType !== STRUCTURE_RAMPART || !(<StructureRampart>s).my)[0];
             if (place && sType !== STRUCTURE_RAMPART) {
               if (hive) {
                 if (sType !== STRUCTURE_SPAWN || Object.keys(hive.cells.spawn).length > 1)
                   place.destroy();
-              } else if (!place.pos.lookFor(LOOK_FLAGS).length)
+              } else if (!place.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
                 place.pos.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
             } else
               toadd.push(pos);

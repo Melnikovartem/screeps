@@ -17,7 +17,7 @@ const MAX_DEVIATION_PRICE = 10;
 const ORDER_PADDING = 0.001;
 
 const REASONABLE_MONEY = 50;
-const MARKET_LAG = 2;
+export const MARKET_LAG = Game.cpu.limit <= 20 ? 4 : 2;
 
 /*const MAX_SPENDING_HIVE = 50000;
 const SPENDING_PERIOD = 250;*/
@@ -43,8 +43,6 @@ export class Broker {
   lastUpdated: number = -1;
 
   update(lag: number = 0) {
-    if (Game.cpu.limit <= 20)
-      lag = 4;
     if (this.lastUpdated + lag >= Game.time)
       return;
 

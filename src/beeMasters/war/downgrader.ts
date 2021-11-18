@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class DowngradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-  maxSpawns = Infinity;
+  maxSpawns = 20;
 
   update() {
     super.update();
@@ -18,10 +18,19 @@ export class DowngradeMaster extends SwarmMaster {
       this.order.delete();
       return;
     }
+
+    if (!this.order.memory.extraInfo) {
+      this.order.memory.extraInfo = 0;
+      let controller = Game.rooms[this.order.pos.roomName] && Game.rooms[this.order.pos.roomName].controller;
+      if (controller)
+        this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
+    }
+
     let room = Game.rooms[this.order.pos.roomName];
     if (room && room.controller && room.controller.upgradeBlocked)
       this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + room.controller.upgradeBlocked;
-    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
+
+    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE - this.order.memory.extraInfo) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
       let setup = setups.claimer.copy();
       setup.patternLimit = Infinity;
       this.wish({
@@ -32,14 +41,12 @@ export class DowngradeMaster extends SwarmMaster {
   }
 
   run() {
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
-
     _.forEach(this.activeBees, bee => {
       if (!bee.pos.isNearTo(this.order.pos))
         bee.goTo(this.order.pos);
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
         let room = Game.rooms[this.order.pos.roomName];
-        if (room && room.controller && roomInfo.currentOwner) {
+        if (room && room.controller) {
           let ans = bee.attackController(room.controller);
           if (ans === OK) {
             bee.creep.signController(room.controller, signText.other);

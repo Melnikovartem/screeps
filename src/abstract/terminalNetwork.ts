@@ -3,6 +3,7 @@ import { hiveStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { HIVE_ENERGY } from "../hive";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
+import { MARKET_LAG } from "./broker";
 
 import type { Hive, ResTarget } from "../hive"
 
@@ -85,7 +86,7 @@ export class Network {
 
   run() {
     let tryToBuyIn = Game.time % BUY_SHORTAGES_CYCLE === 1
-      && Game.cpu.getUsed() + Object.keys(Game.market.getAllOrders()).length * 0.005 < Game.cpu.tickLimit - 100;
+      && (Apiary.broker.lastUpdated + MARKET_LAG >= Game.time || Game.cpu.getUsed() + Object.keys(Game.market.getAllOrders()).length * 0.005 < Game.cpu.tickLimit - 100);
 
     // to be able to save some cpu on buyIns
 
@@ -151,7 +152,7 @@ export class Network {
       }
 
       let stStore = hive.cells.storage.storage.store;
-      if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.85 && hive.cells.storage.storage instanceof StructureStorage) {
+      if (tryToBuyIn && stStore.getUsedCapacity() > stStore.getCapacity() * 0.9 && hive.cells.storage.storage instanceof StructureStorage) {
         let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
         // keys = keys.filter(s => s !== RESOURCE_ENERGY)
         if (!keys.length)

@@ -21,19 +21,12 @@ export class HordeDefenseMaster extends HordeMaster {
     let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
     let shouldSpawn = Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
 
-    if (!this.beesAmount && (!shouldSpawn || this.hive.cells.defense.reposessFlag(this.order.pos, roomInfo.dangerlvlmax) === OK)) {
-      this.order.delete();
-      return;
-    }
-
-    if (shouldSpawn && this.checkBees(this.hive.state !== hiveStates.battle || this.order.pos.roomName === this.hive.roomName)) {
+    if (shouldSpawn) {
       let order = {
-        setup: setups.defender.normal,
+        setup: setups.defender.normal.copy(),
         priority: <1 | 4 | 7 | 8>1,
       }
-
       let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
-
       let enemy = Apiary.intel.getEnemy(this.order.pos);
       if (enemy instanceof Creep) {
         order.setup = setups.defender.normal.copy();
@@ -62,7 +55,7 @@ export class HordeDefenseMaster extends HordeMaster {
         }
 
         if (!noFear) {
-          let body = order.setup.getBody(this.hive.room.energyCapacityAvailable).body;
+          let body = order.setup.getBody(this.hive.bassboost && this.hive.bassboost.room.energyCapacityAvailable || this.hive.room.energyCapacityAvailable).body;
           let myTTK = stats.max.hits / (body.filter(b => b === RANGED_ATTACK).length * RANGED_ATTACK_POWER - stats.max.heal);
           let enemyTTK = body.length * 100 / (stats.max.dmgRange - body.filter(b => b === HEAL).length * HEAL_POWER);
           if (enemyTTK < 0)
@@ -73,20 +66,23 @@ export class HordeDefenseMaster extends HordeMaster {
           if (loosingBattle)
             return;
         }
-
-      } else if (enemy instanceof StructureInvaderCore) {
+      } else if (enemy instanceof Structure) {
         order.priority = 7;
         order.setup = setups.defender.destroyer;
       } else
         return;
-      /* order.priority = 8;
-      order.setup = setups.defender.destroyer.copy();
-      order.setup.patternLimit = 5;
-      order.setup.fixed = [TOUGH]; */
-
+      if (this.hive.cells.defense.reposessFlag(this.order.pos, enemy) === OK) {
+        this.order.delete();
+        return;
+      }
+      if (!this.checkBees(this.hive.state !== hiveStates.battle || this.order.pos.roomName === this.hive.roomName))
+        return;
       if (this.order.pos.roomName !== this.hive.roomName)
         order.priority = <4 | 7>Math.max(4, order.priority);
       this.wish(order);
+      return;
     }
+    if (!this.beesAmount)
+      this.order.delete();
   }
 }

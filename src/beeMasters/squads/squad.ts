@@ -287,7 +287,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     } else if (beeStats.dmgClose > 0) {
       if (rangeToTarget <= 1)
-        action1 = () => bee.attack(target);
+        action1 = () => bee.attack(target!);
       else {
         let tempTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 1);
         let tempNoRamp = tempTargets.filter(e => !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 10000).length);
@@ -325,11 +325,11 @@ export abstract class SquadMaster extends SwarmMaster {
       if (rangeToHealingTarget <= 1 && (!action1 || beeStats.heal > beeStats.dism + beeStats.dmgClose)) {
         action1 = () => {
           healingTarget.heal = Math.max(0.1, healingTarget.heal - beeStats.heal);
-          let ans = bee.heal(healingTarget.bee);
+          let ans = bee.heal(healingTarget.bee!);
           return ans;
         }
-      } else if (beeStats.heal > beeStats.dmgRange)
-        action2 = () => bee.rangedHeal(healingTarget.bee);
+      } else if (rangeToHealingTarget <= 3 && beeStats.heal > beeStats.dmgRange)
+        action2 = () => bee.rangedHeal(healingTarget.bee!);
     }
 
     if (action1)
@@ -485,13 +485,15 @@ export abstract class SquadMaster extends SwarmMaster {
       let stats = Apiary.intel.getComplexStats(desiredPos).current;
       let creepDmg = stats.dmgClose + stats.dmgRange;
       let towerDmg = Apiary.intel.getTowerAttack(desiredPos);
-      let beeStats = Apiary.intel.getStats(bee.creep).current;
+      let beeStats = Apiary.intel.getStats(bee.creep);
       let myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
       let heal = Math.max(myStats.heal, this.stats.current.heal);
       let enemyPower = towerDmg + creepDmg;
-      // + 10% for safety
-      if (enemyPower > heal + Math.min(beeStats.resist, heal * 0.7 / 0.3))
+      // (beeStats.current.hits < beeStats.max.hits ? heal : beeStats.current.heal)
+      if (enemyPower > heal + Math.min(beeStats.current.resist, heal * 0.7 / 0.3)) {
+        console.log(enemyPower, heal, Math.min(beeStats.current.resist, heal * 0.7 / 0.3))
         return true;
+      }
     }
     return false;
   }
@@ -688,92 +690,6 @@ export abstract class SquadMaster extends SwarmMaster {
     return ans;
   }
 
-  /*checkRotation(direction: DirectionConstant) {
-    let ans: -1 | 0 | 1 = 0;
-    // -1 - rotete left (not clockwise)
-    // 1 - rotate right (clockwise)
-    switch (direction) {
-      case TOP:
-        switch (this.formationRotation) {
-          case BOTTOM:
-          case RIGHT:
-          case LEFT:
-            ans = 1;
-            break;
-          case TOP:
-        }
-        break;
-      case TOP_RIGHT:
-        switch (this.formationRotation) {
-          case BOTTOM:
-          case LEFT:
-            ans = 1;
-            break;
-          case RIGHT:
-          case TOP:
-        }
-        break;
-      case RIGHT:
-        switch (this.formationRotation) {
-          case BOTTOM:
-          case LEFT:
-          case TOP:
-            ans = 1;
-            break;
-          case RIGHT:
-        }
-      case BOTTOM_RIGHT:
-        switch (this.formationRotation) {
-          case LEFT:
-          case TOP:
-            ans = 1;
-            break;
-          case RIGHT:
-          case BOTTOM:
-        }
-      case BOTTOM: switch (this.formationRotation) {
-        case LEFT:
-        case RIGHT:
-        case TOP:
-          ans = 1;
-          break;
-        case BOTTOM:
-      }
-        break;
-      case BOTTOM_LEFT:
-        switch (this.formationRotation) {
-          case RIGHT:
-          case TOP:
-            ans = 1;
-            break;
-          case LEFT:
-          case BOTTOM:
-        }
-        break;
-      case LEFT:
-        switch (this.formationRotation) {
-          case BOTTOM:
-          case RIGHT:
-          case TOP:
-            ans = 1;
-            break;
-          case LEFT:
-        }
-        break;
-      case TOP_LEFT:
-        switch (this.formationRotation) {
-          case BOTTOM:
-          case RIGHT:
-            ans = 1;
-            break;
-          case LEFT:
-          case TOP:
-        }
-        break;
-    }
-    return ans;
-  }*/
-
   rotate(direction: -1 | 1) {
     switch (this.formationRotation) {
       case TOP:
@@ -848,54 +764,3 @@ export abstract class SquadMaster extends SwarmMaster {
     return false;
   }
 }
-
-/* @profile
-export abstract class SquareSquadMaster extends SquadMaster {
-  abstract formation: SquareFormationPositions;
-
-  rotate(direction: -1 | 1) { // TODO efficient rotation
-    switch (this.formationRotation) {
-      case TOP:
-        switch (direction) {
-          case -1:
-            this.formationRotation = LEFT;
-            break;
-          case 1:
-            this.formationRotation = RIGHT;
-            break;
-        }
-        break;
-      case BOTTOM:
-        switch (direction) {
-          case -1:
-            this.formationRotation = RIGHT;
-            break;
-          case 1:
-            this.formationRotation = LEFT;
-            break;
-        }
-        break;
-      case LEFT:
-        switch (direction) {
-          case -1:
-            this.formationRotation = TOP;
-            break;
-          case 1:
-            this.formationRotation = BOTTOM;
-            break;
-        }
-        break;
-      case RIGHT:
-        switch (direction) {
-          case -1:
-            this.formationRotation = BOTTOM;
-            break;
-          case 1:
-            this.formationRotation = TOP;
-            break;
-        }
-        break;
-    }
-    return false;
-  }
-}*/
