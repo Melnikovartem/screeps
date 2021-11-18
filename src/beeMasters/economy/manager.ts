@@ -90,7 +90,7 @@ export class ManagerMaster extends Master {
 
     if (this.checkBees(true)) {
       let setup = setups.queen;
-      let lvl = this.hive.room.controller!.level;
+      let lvl = this.hive.controller.level;
       // some cool function i came up with. It works utill lvl 8 though
       setup.patternLimit = Math.ceil(0.03 * Math.pow(lvl, 3) + 14.2);
 

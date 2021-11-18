@@ -179,18 +179,15 @@ export class Bee {
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
-  actionCheck<Obj extends RoomObject | undefined | null>(target: Obj, opt: TravelToOptions = {}, range: number = 1): ScreepsReturnCode {
-    if (!target)
-      return ERR_NOT_FOUND;
-    if (this.creep.pos.inRangeTo(target!, range)) {
-      this.actionPosition = target.pos;
+  actionCheck(pos: RoomPosition, opt: TravelToOptions = {}, range: number = 1): ScreepsReturnCode {
+    if (this.creep.pos.inRangeTo(pos, range)) {
+      this.actionPosition = pos;
       return OK;
     } else {
-      let targetPos = <RoomPosition>(target instanceof RoomObject && target.pos) || (target instanceof RoomPosition && target);
-      if (range > 1 && targetPos.roomName !== this.pos.roomName)
+      if (range > 1 && pos.roomName !== this.pos.roomName)
         range = 1;
       opt.range = range;
-      return this.goTo(targetPos, opt);
+      return this.goTo(pos, opt);
     }
   }
 
@@ -208,15 +205,7 @@ export class Bee {
   }
 
   goTo(target: ProtoPos, opt: TravelToOptions = {}): ScreepsReturnCode {
-    Apiary.intel.getInfo(this.pos.roomName, 50); // collect intel
-    /* Not sure how useful is this
-    if (Game.cpu.bucket < 20 && Game.shard.name === "shard3") {
-      // extreme low on cpu
-      opt.maxOps = 2000;
-      opt.maxRooms = 3;
-      opt.useFindRoute = false;
-      opt.ignoreCreeps = false;
-    } */
+    Apiary.intel.getInfo(this.pos.roomName, 50);
     let ans = this.creep.travelTo(target, opt);
     if (typeof ans === "number") {
       if (ans === OK)
@@ -224,9 +213,6 @@ export class Bee {
       return ans;
     } else
       this.targetPosition = ans;
-    if (target instanceof RoomPosition)
-      target = { pos: target };
-
     return ERR_NOT_IN_RANGE;
   }
 
@@ -238,112 +224,115 @@ export class Bee {
     return this.creep.getBodyParts(partType, undefined, true);
   }
 
-  transfer(t: Structure | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.transfer(t!, resourceType, amount) : ans;
+  transfer(t: Structure, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.transfer(t, resourceType, amount) : ans;
   }
 
-  withdraw(t: Structure | Tombstone | Ruin | undefined | null, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.withdraw(t!, resourceType, amount) : ans;
+  withdraw(t: Structure | Tombstone | Ruin, resourceType: ResourceConstant, amount?: number, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.withdraw(t, resourceType, amount) : ans;
   }
 
-  pickup(t: Resource | undefined | null, opt?: TravelToOptions) {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.pickup(t!) : ans;
+  pickup(t: Resource, opt?: TravelToOptions) {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.pickup(t) : ans;
   }
 
   drop(resourceType: ResourceConstant, amount?: number) {
     return this.creep.drop(resourceType, amount);
   }
 
-  attack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
+  attack(t: Creep | Structure | PowerCreep, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.attack(t!) : ans;
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.attack(t) : ans;
   }
 
-  rangedAttack(t: Creep | Structure | PowerCreep | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
+  rangedAttack(t: Creep | Structure | PowerCreep, opt: TravelToOptions = {}): ScreepsReturnCode {
     opt.movingTarget = true;
-    let ans = this.actionCheck(t, opt, 3);
+    let ans = this.actionCheck(t.pos, opt, 3);
     if (t && this.pos.getRangeTo(t) <= 1 && "owner" in t)
       return this.creep.rangedMassAttack();
-    return ans === OK ? this.creep.rangedAttack(t!) : ans;
+    return ans === OK ? this.creep.rangedAttack(t) : ans;
   }
 
   rangedMassAttack(): ScreepsReturnCode {
     return this.creep.rangedMassAttack();
   }
 
-  heal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
+  heal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
     if (t instanceof Bee)
       t = t.creep;
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.heal(<Creep | PowerCreep>t) : ans;
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.heal(t) : ans;
   }
 
-  rangedHeal(t: Creep | PowerCreep | Bee | undefined | null, opt: TravelToOptions = {}) {
+  rangedHeal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
     if (t instanceof Bee)
       t = t.creep;
-    let ans = this.actionCheck(t, opt, 3);
-    return ans === OK ? this.creep.rangedHeal(<Creep | PowerCreep>t) : ans;
+    let ans = this.actionCheck(t.pos, opt, 3);
+    return ans === OK ? this.creep.rangedHeal(t) : ans;
   }
 
-  dismantle(t: Structure | undefined | null, opt: TravelToOptions = {}): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.dismantle(t!) : ans;
+  dismantle(t: Structure, opt: TravelToOptions = {}): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.dismantle(t) : ans;
   }
 
-  harvest(t: Source | Mineral | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.harvest(t!) : ans;
+  harvest(t: Source | Mineral | Deposit, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.harvest(t) : ans;
   }
 
-
-  build(t: ConstructionSite | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt, 3);
+  build(t: ConstructionSite, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt, 3);
     if (ans === OK && this.pos.getEnteranceToRoom())
-      this.goTo(t!);
-    return ans === OK ? this.creep.build(t!) : ans;
+      this.goTo(t);
+    return ans === OK ? this.creep.build(t) : ans;
   }
 
-  repair(t: Structure | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt, 3);
+  repair(t: Structure, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt, 3);
     if (ans === OK && this.pos.getEnteranceToRoom())
-      this.goTo(t!);
-    return ans === OK ? this.creep.repair(t!) : ans;
+      this.goTo(t);
+    return ans === OK ? this.creep.repair(t) : ans;
   }
 
-  upgradeController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt, 3);
-    return ans === OK ? this.creep.upgradeController(t!) : ans;
+  upgradeController(t: StructureController, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt, 3);
+    return ans === OK ? this.creep.upgradeController(t) : ans;
   }
 
-  reserveController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.reserveController(t!) : ans;
+  reserveController(t: StructureController, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.reserveController(t) : ans;
   }
 
-  claimController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.claimController(t!) : ans;
+  claimController(t: StructureController, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.claimController(t) : ans;
   }
 
-  attackController(t: StructureController | undefined | null, opt?: TravelToOptions): ScreepsReturnCode {
-    let ans = this.actionCheck(t, opt);
-    return ans === OK ? this.creep.attackController(t!) : ans;
+  attackController(t: StructureController, opt?: TravelToOptions): ScreepsReturnCode {
+    let ans = this.actionCheck(t.pos, opt);
+    return ans === OK ? this.creep.attackController(t) : ans;
   }
 
   repairRoadOnMove(ans: ScreepsReturnCode = ERR_NOT_IN_RANGE): ScreepsReturnCode {
-    if (ans === ERR_NOT_IN_RANGE)
-      return this.repair(_.filter(this.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax && s.structureType === STRUCTURE_ROAD)[0]);
+    if (ans === ERR_NOT_IN_RANGE) {
+      let road = _.filter(this.pos.lookFor(LOOK_STRUCTURES), s => s.hits < s.hitsMax && s.structureType === STRUCTURE_ROAD)[0];
+      if (road)
+        return this.repair(road);
+    }
     return ans;
   }
 
   getFleeOpt(opt: TravelToOptions) {
-    opt.maxRooms = 2;
+    if (!opt.maxRooms || opt.maxRooms > 2)
+      opt.maxRooms = 2;
     opt.stuckValue = 1;
     let roomCallback = opt.roomCallback;
     opt.roomCallback = (roomName, matrix) => {
@@ -363,12 +352,14 @@ export class Bee {
           return;
         let rangeToEnemy = this.pos.getRangeTo(c);
         _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
-          if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+          if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000).length)
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
-          let padding = 0x10 * (p.getRangeTo(c) - rangeToEnemy); // we wan't to get as far as we can from enemy
-          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xff, 0x32 * coef * (fleeDist + 1 - p.getRangeTo(c)) - padding)));
+          let posRangeToEnemy = p.getRangeTo(c);
+          let padding = 0x10 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
+          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xf0, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding)));
         });
+        matrix.set(c.pos.x, c.pos.y, 0xff);
       });
       return matrix;
     }
@@ -496,8 +487,8 @@ export class Bee {
               return prev;
           }
           return ans < 0 ? curr : prev
-        };
-        let winner = moveMap[pos.to_str].reduce(red)
+        }
+        let winner = moveMap[pos.to_str].reduce(red);
         bee = winner.bee;
         /* if (bee.pos.to_str !== pos.to_str && winner.priority <= 2) {
           // i know still can softlock, but this can solve most important cases

@@ -20,7 +20,12 @@ export class UpgraderMaster extends Master {
   recalculateTargetBee() {
     this.fastModePossible = !!(this.cell.link && Object.keys(this.cell.sCell.links).length) || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
 
-    if (!(prefix.upgrade + this.hive.roomName in Game.flags)) {
+    let polen: Flag | undefined = Game.flags[prefix.upgrade + this.hive.roomName];
+    if (polen && this.cell.controller.level === 8 && polen.pos.getRangeTo(this.cell.controller) <= 1) {
+      polen.remove()
+      polen = undefined;
+    }
+    if (!polen) {
       this.boosts = undefined;
 
       this.targetBeeCount = this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 6 ? 1 : 0;
@@ -33,13 +38,13 @@ export class UpgraderMaster extends Master {
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
     let desiredRate = Math.min(this.cell.maxRate, Math.ceil(2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) + 3.5 * Math.pow(10, -5) * storeAmount - 1));
 
+    if (this.cell.controller.level < 7 && this.hive.resState[RESOURCE_ENERGY] > 0 && this.hive.room.terminal)
+      desiredRate = this.cell.maxRate; // can always buy / ask for more
+
     // ceil(desiredRate) === 0 @ ~30K
     let targetPrecise = desiredRate / this.cell.ratePerCreepMax;
     this.targetBeeCount = Math.min(Math.ceil(targetPrecise), this.cell.maxBees);
     this.patternPerBee = Math.round(targetPrecise / this.targetBeeCount * this.cell.workPerCreepMax);
-
-    //this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(
-    //  1.7 * Math.pow(10, -18) * Math.pow(storeAmount, 3) + 1.4 * Math.pow(10, -5) * storeAmount - 0.5)); // cool math function
   }
 
 
@@ -65,18 +70,15 @@ export class UpgraderMaster extends Master {
     }
   }
 
-  getSucker(carryPart: number) {
-    let suckerTarget;
-    if (this.cell.link && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME / 2) {
-      if (carryPart === 1 || this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-        suckerTarget = this.cell.link;
-    }
-    if (!suckerTarget && this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
-      suckerTarget = this.cell.sCell.storage;
-    return suckerTarget;
-  }
-
   run() {
+
+    let suckerTarget: StructureStorage | StructureLink | StructureTerminal | undefined;
+    if (this.cell.link && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME / 2) {
+      if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+        suckerTarget = this.cell.link;
+    } else if (this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
+      suckerTarget = this.cell.sCell.storage;
+
     if (this.boosts)
       _.forEach(this.bees, bee => {
         if (bee.state === beeStates.boosting)
@@ -89,7 +91,7 @@ export class UpgraderMaster extends Master {
         return;
 
       let carryPart = bee.getActiveBodyParts(CARRY);
-      let old = bee.ticksToLive <= (bee.boosted ? (this.cell.roadTime * 4 + 5) : (carryPart === 1 ? 2 : this.cell.roadTime + 2));
+      let old = bee.ticksToLive <= (bee.boosted ? (this.cell.roadTime * 3 + 5) : (carryPart === 1 ? 2 : this.cell.roadTime + 2));
       if (old && bee.ticksToLive > (carryPart === 1 ? 2 : this.cell.roadTime + 2))
         old = !!(this.hive.cells.lab && this.hive.cells.lab.getUnboostLab());
 
@@ -98,8 +100,11 @@ export class UpgraderMaster extends Master {
           bee.state = beeStates.fflush;
         else
           bee.state = beeStates.chill;
-      } else if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) < 50 && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME) || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-        bee.withdraw(this.getSucker(carryPart), RESOURCE_ENERGY);
+      } else if ((this.fastModePossible && bee.store.getUsedCapacity(RESOURCE_ENERGY) < 50 && this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME)
+        || bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+        // let pos = target.pos.getOpenPositions(false).filter(p => p.getRangeTo(this.cell) <= 3)[0] || target;
+        if (suckerTarget)
+          bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         bee.state = beeStates.work;
       }
 
@@ -112,7 +117,7 @@ export class UpgraderMaster extends Master {
           let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
           bee.goRest(lab.pos);
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
-            if (bee.transfer(this.getSucker(carryPart), RESOURCE_ENERGY) === ERR_FULL)
+            if (bee.transfer(this.cell.link || this.cell.sCell.storage, RESOURCE_ENERGY) === ERR_FULL)
               bee.drop(RESOURCE_ENERGY);
           break;
         case beeStates.work:
@@ -125,7 +130,7 @@ export class UpgraderMaster extends Master {
             if (!old)
               bee.state = beeStates.work;
             else
-              bee.transfer(this.getSucker(carryPart), RESOURCE_ENERGY);
+              bee.transfer(this.cell.link || this.cell.sCell.storage, RESOURCE_ENERGY);
           else
             bee.goRest(this.cell.pos);
           break;

@@ -160,8 +160,13 @@ export class StorageCell extends Cell {
   }
 
   updateTerminal() {
-    if (!this.terminal || Game.time % 4 !== 0)
+    if (Game.time % 4 !== 0)
       return;
+    if (!this.terminal) {
+      if (this.hive.room.terminal && Apiary.useBucket)
+        Apiary.destroyTime = Game.time;
+      return;
+    }
     if (Game.flags[prefix.terminal + this.hive.roomName]) {
       if (this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < this.resTargetTerminal[RESOURCE_ENERGY])
         this.requestFromStorage([this.terminal], 4, RESOURCE_ENERGY);

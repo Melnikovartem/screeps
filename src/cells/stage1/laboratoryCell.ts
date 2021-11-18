@@ -152,7 +152,7 @@ export class LaboratoryCell extends Cell {
 
 
     let amount = createQue.length && this.newSynthesize(createQue.reduce(
-      (prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev));
+      (prev, curr) => this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev) ? curr : prev), this.synthesizeTarget.amount * 2);
     if (!amount)
       this.patience = 0;
     else
@@ -212,11 +212,11 @@ export class LaboratoryCell extends Cell {
     }
 
     let lab1 = _.map(this.laboratories, l => l).reduce((prev, curr) => comp(prev, curr, res1));
-    let lab2;
+    let lab2: StructureLab | undefined;
     if (lab1)
       lab2 = _.filter(this.laboratories, l => l.id !== lab1.id).reduce((prev, curr) => comp(prev, curr, res2));
 
-    if (lab1 && lab2) {
+    if (lab1 && lab2 && _.filter(this.laboratories, l => l.id !== lab1.id && l.id !== lab2!.id && l.cooldown <= this.synthesizeRes!.cooldown).length) {
       this.prod = { ...this.synthesizeRes, lab1: lab1.id, lab2: lab2.id };
       this.labStates[lab1.id] = "source";
       this.updateLabState(lab1, 1);
@@ -329,7 +329,7 @@ export class LaboratoryCell extends Cell {
       }
 
       if (!lab) {
-        if (rCode === OK)
+        if (rCode === OK && Object.keys(this.laboratories).length)
           rCode = ERR_TIRED;
         continue;
       }
@@ -437,6 +437,8 @@ export class LaboratoryCell extends Cell {
         });
         if (!toBoostMinerals) {
           this.labStates[l.id] = "idle";
+          if (this.boostLabs[state] === l.id)
+            this.boostLabs[state] = undefined;
           this.updateLabState(l, rec + 1);
           return;
         }
@@ -493,7 +495,7 @@ export class LaboratoryCell extends Cell {
   getUnboostLab() {
     let lab: StructureLab | undefined;
     _.some(this.laboratories, l => {
-      if (l.cooldown || this.labStates[l.id] === "production")
+      if (l.cooldown > (this.prod && this.prod.cooldown || 20))
         return false;
       lab = l;
       return true;
@@ -503,12 +505,14 @@ export class LaboratoryCell extends Cell {
 
   run() {
     _.forEach(this.laboratories, l => {
-      if (l.cooldown || this.labStates[l.id] === "production")
+      if (l.cooldown)
         return;
       let creep = l.pos.findInRange(FIND_CREEPS, 1).filter(c => c.ticksToLive && c.ticksToLive < 20 && c.body.filter(b => b.boost).length)[0];
       if (creep) {
         let ans = l.unboostCreep(creep);
         if (ans === OK) {
+          if (this.labStates[l.id] === "production")
+            this.labStates[l.id] = "idle";
           this.checkDropped.push(l.id);
           let bee = Apiary.bees[creep.name];
           if (bee)
@@ -539,6 +543,8 @@ export class LaboratoryCell extends Cell {
           Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5 * cc, this.prod.res1);
           Apiary.logger.addResourceStat(this.hive.roomName, "labs", -5 * cc, this.prod.res2);
         }
+        if (!labs.length && !_.filter(this.laboratories, l => l.id !== lab1.id && l.id !== lab2.id && l.cooldown <= this.prod!.cooldown * 2).length)
+          this.prod = undefined;
       }
     }
   }

@@ -49,10 +49,11 @@ export class ExcavationCell extends Cell {
     _.forEach(this.resourceCells, cell => {
       if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
         let padding;
-        if (cell.resourceType === RESOURCE_ENERGY)
-          padding = cell.restTime * 10 + 50;
-        else
-          padding = cell.restTime * 16 + 50;
+        padding = cell.restTime * cell.ratePT + 100;
+        if (cell.resource instanceof Source)
+          padding = Math.min(cell.resource.energy, padding);
+        if (!cell.master.activeBees.filter(b => b.pos.isNearTo(cell)).length)
+          padding = 0;
         if (cell.container.store.getUsedCapacity() + padding >= this.fullContainer) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)

@@ -36,7 +36,6 @@ export class UpgradeCell extends Cell {
       this.roadTime = 0;
 
     this.master = new UpgraderMaster(this);
-    this.recalculateRate();
   }
 
   get pos() {
@@ -53,6 +52,10 @@ export class UpgradeCell extends Cell {
 
     if (this.link && storageLink) {
       this.maxRate = Math.min(800 / this.link.pos.getRangeTo(storageLink), this.maxRate); // how to get more in?
+      _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+        if (cell.link)
+          this.maxRate += Math.min(800 / this.link!.pos.getRangeTo(cell.link), cell.ratePT);
+      });
       setup = setups.upgrader.fast;
     } else {
       suckerTime = Math.max(this.sCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0);
@@ -78,14 +81,18 @@ export class UpgradeCell extends Cell {
   }
 
   update() {
-
-
     super.update();
-    if (!this.link && Game.time % 30 === 7 && this.controller.level >= 5) {
+    /* if (!this.link && Game.time % 30 === 7 && this.controller.level >= 5 && Object.keys(this.sCell.links).length) {
       this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
       if (this.link)
         this.recalculateRate();
-    }
+    } */
+
+    if (this.hive.phase === 1 && this.controller.level === 8 && Apiary.useBucket)
+      Apiary.destroyTime = Game.time;
+
+    if (Game.time === Apiary.createTime)
+      this.recalculateRate();
 
     if (!this.master.beesAmount)
       return;

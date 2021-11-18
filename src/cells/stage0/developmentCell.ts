@@ -1,9 +1,10 @@
 import { Cell } from "../_Cell";
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
+import { Traveler } from "Traveler/TravelerModified";
 
 import { hiveStates } from "../../enums";
 import { prefix } from "../../enums";
-import { Traveler } from "Traveler/TravelerModified";
+import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -17,12 +18,12 @@ export class DevelopmentCell extends Cell {
   addedRooms: string[] = [];
   constructor(hive: Hive) {
     super(hive, prefix.developmentCell + hive.room.name);
-    this.controller = this.hive.room.controller!;
+    this.controller = this.hive.controller;
     this.master = new BootstrapMaster(this);
   }
 
   get pos() {
-    return this.hive.room.controller ? this.hive.room.controller.pos : this.hive.rest;
+    return this.hive.controller.pos;
   }
 
   addResources() {
@@ -54,14 +55,13 @@ export class DevelopmentCell extends Cell {
       Apiary.destroyTime = Game.time;
 
     let futureResourceCells = _.filter(Game.flags, f => f.memory.hive === this.hive.roomName && f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW);
-    if (this.hive.room.controller!.level < 4 && Game.time % 100 === 0) {
+    if (this.hive.controller.level < 4 && Game.time % 100 === 0) {
       _.forEach(futureResourceCells, f => {
         if (!(f.pos.roomName in Game.rooms))
           return
-        if (this.hive.room.energyCapacityAvailable < 400 && f.pos.roomName !== this.hive.roomName)
-          return;
+        // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hive.roomName)
         let route = Traveler.findTravelPath(f.pos, this.hive, {
-          ignoreRoads: false,
+          offRoad: true, extraTerrainWeight: 1,
           roomCallback: (roomName, matrix) => {
             let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
             if (!roads)
@@ -76,8 +76,11 @@ export class DevelopmentCell extends Cell {
           if (!(r.roomName in Game.rooms))
             return
           let roads = Memory.cache.roomPlanner[r.roomName] && Memory.cache.roomPlanner[r.roomName].road;
-          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length)
-            r.createConstructionSite(STRUCTURE_ROAD);
+          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length && !r.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
+            if (!r.lookFor(LOOK_STRUCTURES).length)
+              r.createConstructionSite(STRUCTURE_ROAD);
+            else if (!r.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
+              r.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
         });
       });
       this.hive.shouldRecalc = 2;

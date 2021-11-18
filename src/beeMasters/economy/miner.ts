@@ -13,7 +13,6 @@ import type { Bee } from "../../bees/bee";
 @profile
 export class MinerMaster extends Master {
   cell: ResourceCell;
-  cooldown: number = 0;
   movePriority = <4>4;
 
   constructor(resourceCell: ResourceCell) {
@@ -130,8 +129,10 @@ export class MinerMaster extends Master {
             bee.transfer(target, this.cell.resourceType);
         } else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 25) {
           let construction = this.construction;
-          bee.build(construction);
-          sourceOff = true;
+          if (construction) {
+            bee.build(construction);
+            sourceOff = true;
+          }
         }
       }
 

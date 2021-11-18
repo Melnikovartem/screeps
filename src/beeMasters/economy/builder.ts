@@ -60,10 +60,13 @@ export class BuilderMaster extends Master {
     this.recalculateTargetBee();
     this.movePriority = emergency ? 2 : 5;
 
+    if (emergency)
+      this.hive.add(this.hive.mastersResTarget, BOOST_MINERAL.build[2], MAX_CREEP_SIZE * LAB_BOOST_MINERAL);
+
     if (this.checkBees(this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000, CREEP_LIFE_TIME - 20)) {
       let order = {
         setup: setups.builder,
-        priority: <2 | 5 | 7>(emergency ? 2 : (this.beesAmount ? 6 : 5)),
+        priority: <2 | 5 | 7>(emergency ? 2 : (this.beesAmount ? 7 : 5)),
       };
       order.setup.patternLimit = this.patternPerBee;
       this.wish(order);
@@ -124,6 +127,7 @@ export class BuilderMaster extends Master {
           let resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
           if (resource)
             bee.pickup(resource);
+          break;
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
@@ -188,7 +192,7 @@ export class BuilderMaster extends Master {
               Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
             // bee.repairRoadOnMove(ans);
           } else
-            bee.goRest(this.hive.rest, this.hive.opts);
+            bee.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opts);
           break;
       }
       if (this.hive.state !== hiveStates.battle) {

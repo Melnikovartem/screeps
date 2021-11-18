@@ -2,7 +2,7 @@ import { Master } from "../_Master";
 
 import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
-import { findOptimalResource } from "../../abstract/utils"
+import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "../../cells/base/excavationCell";
@@ -21,6 +21,7 @@ export class HaulerMaster extends Master {
     super(excavationCell.hive, excavationCell.ref);
     this.cell = excavationCell;
     this.dropOff = storage;
+    this.recalculateTargetBee();
   }
 
   newBee(bee: Bee) {
@@ -58,6 +59,12 @@ export class HaulerMaster extends Master {
     if (this.hive.state === hiveStates.lowenergy)
       rounding = x => Math.max(1, Math.floor(x + 0.15));
     this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
+
+    /*
+    let period = CREEP_LIFE_TIME - this.minRoadTime - 10;
+    let spawnTime = body.length * CREEP_SPAWN_TIME;
+    this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(period * Object.keys(this.hive.cells.spawn.spawns).length / spawnTime * 0.5));
+    */
   }
 
   checkBeesWithRecalc() {
@@ -71,7 +78,7 @@ export class HaulerMaster extends Master {
   update() {
     super.update();
 
-    if (this.dropOff.store.getFreeCapacity() <= 0)
+    if (this.dropOff.store.getFreeCapacity() <= this.dropOff.store.getCapacity() * 0.005)
       return;
 
     _.forEach(this.cell.quitefullCells, cell => {
@@ -146,7 +153,8 @@ export class HaulerMaster extends Master {
           if (target && bee.pos.getRangeTo(target) <= 2) {
             overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2)[0]; //.filter(r => r.resourceType === res)
             // overproduction or energy from SK defenders
-            bee.pickup(overproduction);
+            if (overproduction)
+              bee.pickup(overproduction);
           }
 
           if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, res, undefined, { offRoad: true }) === OK) {
