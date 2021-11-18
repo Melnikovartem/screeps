@@ -57,11 +57,11 @@ export class PortalMaster extends SwarmMaster {
     let shouldSpawn = Game.time >= this.oldestSpawn + this.cycle - 100;
     if (!this.beesAmount && this.res) {
       if (!this.hive.cells.storage) {
-        this.order.delete(true);
+        this.order.delete();
         return;
       }
       if (!this.ref.includes("keep") && !this.hive.cells.storage.getUsedCapacity(this.res)) {
-        this.order.delete(true);
+        this.order.delete();
         return;
       }
 

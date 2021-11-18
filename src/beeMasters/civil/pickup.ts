@@ -15,8 +15,13 @@ export class PickupMaster extends SwarmMaster {
   update() {
     super.update();
     if (this.checkBees(this.hive.state !== hiveStates.battle)) {
+      let setup = setups.pickup;
+      if (this.order.pos.getRoomRangeTo(this.hive) <= 1) {
+        setup = setup.copy();
+        setup.moveMax = 50 / 3;
+      }
       this.wish({
-        setup: setups.pickup,
+        setup: setup,
         priority: 4,
       });
     }
@@ -70,9 +75,9 @@ export class PickupMaster extends SwarmMaster {
   }
 
   run() {
-    let storage = this.hive.cells.storage && this.hive.cells.storage.storage;
-    if (!storage)
+    if (!this.hive.cells.storage)
       return;
+    let storage = this.hive.cells.storage.storage;
 
     let target = this.getTarget().target;
 

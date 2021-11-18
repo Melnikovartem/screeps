@@ -28,18 +28,26 @@ export class SKMaster extends SwarmMaster {
   update() {
     super.update();
 
+    if (!this.order.memory.extraInfo) {
+      this.order.memory.extraInfo = 0;
+      let controller = Game.rooms[this.order.pos.roomName] && Game.rooms[this.order.pos.roomName].controller;
+      if (controller)
+        this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
+    }
+
     if (this.order.pos.roomName in Game.rooms) {
       if (!this.lairs.length) {
         this.lairs = <StructureKeeperLair[]>Game.rooms[this.order.pos.roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } });
         if (!this.lairs.length)
-          this.order.delete(true);
+          this.order.delete();
       }
 
       for (let i = 0; i < this.lairs.length; ++i)
         this.lairs[i] = <StructureKeeperLair>Game.getObjectById(this.lairs[i].id);
     }
 
-    if (this.checkBees(false, CREEP_LIFE_TIME - 150) && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5)) {
+    if (this.checkBees(false, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50)
+      && (!this.hive.bassboost || this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5)) {
       this.wish({
         setup: setups.defender.sk,
         priority: 6,

@@ -69,11 +69,11 @@ export class DupletMaster extends SwarmMaster {
     if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
         setup: setups.healer,
-        priority: 7,
+        priority: 8,
       }, this.ref + "_healer");
       this.wish({
         setup: setups.miner.power,
-        priority: 7,
+        priority: 8,
       }, this.ref + "_miner");
     }
   }
@@ -81,7 +81,7 @@ export class DupletMaster extends SwarmMaster {
   callPickUp(power: number) {
     if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    let name = this.order.pos.createFlag(Math.ceil(power / (setups.pickup.patternLimit * 50)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.order.pos.createFlag(Math.ceil(power / CARRY_CAPACITY) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
     if (typeof name === "string")
       Game.flags[name].memory.hive = this.hive.roomName;
   }

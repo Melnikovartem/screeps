@@ -49,4 +49,8 @@ export abstract class SwarmMaster extends Master {
       this.order.flag.memory.info = 0;
     return this.order.flag.memory.info;
   }
+
+  get pos() {
+    return this.order.pos;
+  }
 }

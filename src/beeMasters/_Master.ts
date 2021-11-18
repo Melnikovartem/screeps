@@ -117,6 +117,15 @@ export abstract class Master {
       roomInfo = Apiary.intel.getInfo(pos.roomName, 0);
     else if (roomInfo.roomState >= roomStates.reservedByEnemy)
       roomInfo = Apiary.intel.getInfo(pos.roomName, 5);
+    if (roomInfo.safePlace)
+      return;
+    if (pos.roomName !== bee.pos.roomName && Game.time - roomInfo.lastUpdated > 0 && Game.time - roomInfo.lastUpdated <= 20) {
+      if (bee.pos.getEnteranceToRoom())
+        bee.flee(fleeTo || this.hive);
+      else
+        bee.targetPosition = undefined;
+      return true;
+    }
     let enemies = <Creep[]>roomInfo.enemies.map(e => e.object).filter(e => {
       if (!(e instanceof Creep))
         return false;
@@ -129,7 +138,7 @@ export abstract class Master {
     let contr = Game.rooms[bee.pos.roomName].controller;
     if (!contr || !contr.my || !contr.safeMode) {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
-      if (enemy.pos.getRangeTo(pos) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
+      if (enemy.pos.getRangeTo(pos) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist && roomInfo.dangerlvlmax > 3)
         bee.targetPosition = bee.pos;
       else if (enemy.pos.getRangeTo(pos) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
         bee.flee(fleeTo || this.hive, opts);

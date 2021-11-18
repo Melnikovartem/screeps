@@ -23,7 +23,7 @@ export class ClaimerMaster extends SwarmMaster {
       }
       this.wish({
         setup: setup,
-        priority: 6,
+        priority: 7,
       });
     }
   }
@@ -48,7 +48,7 @@ export class ClaimerMaster extends SwarmMaster {
                 Apiary.destroyTime = Game.time; // create new hive
               }
             bee.creep.signController(controller, signText.my);
-            this.order.delete(true);
+            this.order.delete();
           }
         } else
           this.order.delete();
