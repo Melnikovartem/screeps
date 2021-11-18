@@ -23,16 +23,19 @@ export class CreepSetup {
   patternLimit: number;
   moveMax: number | "best";
   ignoreCarry?: boolean;
+  ignoreMove?: boolean;
   scheme: 0 | 1 | 2;
 
-  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", scheme: CreepSetup["scheme"] = 1, ignoreCarry?: boolean) {
+  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", scheme: CreepSetup["scheme"] = 1, ignoreCarry?: boolean, ignoreMove?: boolean) {
     this.name = setupName;
 
     this.moveMax = moveMax;
-    this.ignoreCarry = ignoreCarry;
     this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
     this.pattern = bodySetup.pattern;
     this.patternLimit = bodySetup.patternLimit ? bodySetup.patternLimit : Infinity;
+
+    this.ignoreCarry = ignoreCarry;
+    this.ignoreMove = ignoreMove;
     this.scheme = scheme;
   }
 
@@ -55,7 +58,7 @@ export class CreepSetup {
           + Math.max(0, Math.ceil(moveAmount(nonMove + nonMovePattern.length) - ROUNDING_ERROR) - move);
         if (body.length + moveToAdd + nonMovePattern.length > MAX_CREEP_SIZE)
           return;
-        if (moveToAdd + move > moveMax)
+        if (moveToAdd + move > moveMax && !this.ignoreMove)
           return;
         if (bodyCost + segmentCost + moveToAdd * BODYPART_COST[MOVE] > energy)
           return;
@@ -100,7 +103,9 @@ export class CreepSetup {
   }
 
   copy() {
-    return new CreepSetup(this.name, { pattern: this.pattern, fixed: this.fixed, patternLimit: this.patternLimit }, this.moveMax, this.scheme, this.ignoreCarry);
+    return new CreepSetup(this.name
+      , { pattern: this.pattern, fixed: this.fixed, patternLimit: this.patternLimit }
+      , this.moveMax, this.scheme, this.ignoreCarry, this.ignoreMove);
   }
 }
 
@@ -119,7 +124,6 @@ export const setups = {
   }, 50 / 3),
   pickup: new CreepSetup(setupsNames.hauler + " P", {
     pattern: [CARRY],
-    patternLimit: 16,
   }, "best"),
   miner: {
     energy: new CreepSetup(setupsNames.miner, {
@@ -133,7 +137,11 @@ export const setups = {
     power: new CreepSetup(setupsNames.miner + " P", {
       pattern: [ATTACK],
       patternLimit: 20,
-    }, 25)
+    }, 25),
+    deposit: new CreepSetup(setupsNames.miner + " D", {
+      fixed: [CARRY, CARRY],
+      pattern: [WORK],
+    }, 0, undefined, undefined, true),
   },
   upgrader: {
     manual: new CreepSetup(setupsNames.upgrader, {
@@ -157,6 +165,10 @@ export const setups = {
     pattern: [MOVE],
     patternLimit: 1,
   }, 25),
+  puller: new CreepSetup(setupsNames.scout + " P", {
+    pattern: [MOVE],
+    patternLimit: 50,
+  }, 50),
   defender: {
     normal: new CreepSetup(setupsNames.defender, {
       pattern: [RANGED_ATTACK],
@@ -191,7 +203,8 @@ let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
 }
 
 
-printSetup(setups.knight)
+printSetup(setups.miner.deposit)
+
 printSetup(setups.defender.destroyer)
 
 /*

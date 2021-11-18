@@ -9,6 +9,8 @@ import { GangDuo } from "./beeMasters/squads/gangDuo";
 import { GangQuad } from "./beeMasters/squads/quadSquad";
 // import { TestSquad } from "./beeMasters/squads/test";
 
+import { DepositMaster } from "./beeMasters/depositMining/deposit";
+
 import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
 import { PortalMaster } from "./beeMasters/civil/portal";
@@ -27,6 +29,8 @@ import { profile } from "./profiler/decorator";
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
 import type { Hive, HivePositions } from "./Hive";
+
+const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 
 @profile
 export class Order {
@@ -126,7 +130,7 @@ export class Order {
     if (this.ref !== name && this.pos.roomName in Game.rooms) {
       if (!(name in Game.flags))
         this.pos.createFlag(name, this.color, this.secondaryColor);
-      this.delete(true);
+      this.delete();
       return false;
     }
     return true;
@@ -183,7 +187,7 @@ export class Order {
         switch (this.secondaryColor) {
           case COLOR_PURPLE:
             if (this.pos.getRoomRangeTo(this.hive) > 5) {
-              this.delete(true);
+              this.delete();
               break;
             }
 
@@ -216,8 +220,6 @@ export class Order {
             if (!this.master) {
               let roomState = Apiary.intel.getInfo(this.pos.roomName, Infinity).roomState;
               switch (roomState) {
-                case roomStates.ownedByMe:
-                  break;
                 case roomStates.reservedByEnemy:
                 case roomStates.reservedByInvader:
                 case roomStates.noOwner:
@@ -314,10 +316,12 @@ export class Order {
         this.delete();
         break;
       case COLOR_WHITE:
-        if (this.secondaryColor !== COLOR_PURPLE && this.secondaryColor !== COLOR_RED)
-          _.forEach(Game.flags, f => {
-            if (f.color === COLOR_WHITE && f.secondaryColor !== COLOR_PURPLE && f.name !== this.ref && Apiary.orders[f.name])
-              Apiary.orders[f.name].delete();
+        if (!PASSIVE_BUILD_COLORS.includes(this.flag.secondaryColor))
+          _.forEach(Apiary.orders, o => {
+            if (o.color === COLOR_WHITE
+              && (this.secondaryColor !== COLOR_BLUE || !PASSIVE_BUILD_COLORS.includes(o.secondaryColor))
+              && o.ref !== this.ref)
+              o.delete();
           });
 
         switch (this.secondaryColor) {
@@ -332,7 +336,8 @@ export class Order {
             Apiary.planner.generatePlan(this.pos, baseRotation);
             break;
           case COLOR_GREY:
-            Apiary.planner.protectPoint(this.pos);
+            if (!this.ref.includes("upgrade"))
+              Apiary.planner.protectPoint(this.pos);
             Apiary.planner.addUpgradeSite(this.hive.pos);
             break;
           case COLOR_ORANGE:
@@ -427,6 +432,10 @@ export class Order {
         }
         break;
       case COLOR_ORANGE:
+        if (!this.hive.cells.storage) {
+          this.delete();
+          break;
+        }
         if (!this.master)
           switch (this.secondaryColor) {
             case COLOR_GREEN:
@@ -458,6 +467,9 @@ export class Order {
               break;
             case COLOR_YELLOW:
               this.master = new DupletMaster(this);
+              break;
+            case COLOR_BLUE:
+              this.master = new DepositMaster(this);
               break;
           }
         break;
@@ -544,7 +556,7 @@ export class Order {
                   if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
                     Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
                       , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
-                  else if (mode === "buy" && this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192))
+                  else if (mode === "buy" && (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192)))
                     Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
                       , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
                   else if (this.ref.includes("nokeep"))
@@ -602,16 +614,16 @@ export class Order {
   }
 
   // what to do when delete if something neede
-  delete(force = false) {
-    if (!force && this.flag.memory.repeat && this.flag.memory.repeat > 0) {
-      if (!Memory.log.orders)
-        Memory.log.orders = {};
-      if (LOGGING_CYCLE) Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
-        time: Game.time,
-        name: this.flag.name,
-        pos: this.pos,
-        destroyTime: Game.time,
-        master: this.master ? true : false,
+  delete() {
+    if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
+      if (LOGGING_CYCLE && this.master) {
+        if (!Memory.log.orders)
+          Memory.log.orders = {};
+        Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
+          time: Game.time,
+          name: this.flag.name,
+          pos: this.pos,
+        }
       }
       this.flag.memory.repeat -= 1;
       this.flag.memory.info = undefined;
@@ -623,15 +635,13 @@ export class Order {
       return;
     }
 
-    if (LOGGING_CYCLE) {
+    if (LOGGING_CYCLE && this.master) {
       if (!Memory.log.orders)
         Memory.log.orders = {};
       Memory.log.orders[this.ref] = {
         time: Game.time,
         name: this.flag.name,
         pos: this.pos,
-        destroyTime: Game.time,
-        master: this.master ? true : false,
       }
     }
 
@@ -654,8 +664,6 @@ export class Order {
             }
             break;
           case COLOR_PURPLE:
-            if (!force)
-              return;
             let index = this.hive.annexNames.indexOf(this.pos.roomName);
             if (index !== -1)
               this.hive.annexNames.splice(index, 1);
@@ -675,17 +683,17 @@ export class Order {
         break;
       case COLOR_WHITE:
         if (!_.filter(Apiary.orders, o => {
-          if (o.flag.color !== COLOR_WHITE)
+          if (o.color !== COLOR_WHITE)
             return false;
-          if (o.flag.secondaryColor === COLOR_PURPLE) {
-            o.flag.remove();
+          if (PASSIVE_BUILD_COLORS.includes(o.secondaryColor)) {
+            if (this.secondaryColor !== COLOR_BLUE)
+              o.flag.remove();
             return false;
           }
           return o.ref !== this.ref;
-        }).length) {
+        }).length)
           for (let name in Apiary.planner.activePlanning)
             delete Apiary.planner.activePlanning[name];
-        }
         break;
     }
 
