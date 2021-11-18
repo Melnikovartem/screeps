@@ -159,24 +159,24 @@ export class Logger {
           }
       }
 
-      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 100) {
+      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 50) {
         let sortedKeys = Object.keys(Memory.log.orders)
           .sort((a, b) => Memory.log.orders![b].time - Memory.log.orders![a].time);
-        for (let i = sortedKeys.length - 26; i >= 0; --i)
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
           delete Memory.log.orders[sortedKeys[i]];
       }
 
-      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 100) {
+      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 50) {
         let sortedKeys = Object.keys(Memory.log.crashes)
           .sort((a, b) => Memory.log.crashes![b].time - Memory.log.crashes![a].time);
-        for (let i = sortedKeys.length - 26; i >= 0; --i)
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
           delete Memory.log.crashes[sortedKeys[i]];
       }
 
-      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 20) {
+      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
         let sortedKeys = Object.keys(Memory.log.enemies)
           .sort((a, b) => Memory.log.enemies![b].time - Memory.log.enemies![a].time);
-        for (let i = sortedKeys.length - 26; i >= 0; --i)
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
           delete Memory.log.enemies[sortedKeys[i]];
       }
     }

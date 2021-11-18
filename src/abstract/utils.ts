@@ -43,10 +43,19 @@ export function findOptimalResource(store: Store<ResourceConstant, false>, mode:
 export function towerCoef(tower: StructureTower, pos: ProtoPos) {
   if (!(pos instanceof RoomPosition))
     pos = pos.pos;
+  let coef = 1;
+  if (tower.effects) {
+    let powerup = <PowerEffect>tower.effects.filter(e => e.effect === PWR_OPERATE_TOWER)[0];
+    if (powerup)
+      coef += powerup.level * 0.1;
+    let powerdown = <PowerEffect>tower.effects.filter(e => e.effect === PWR_DISRUPT_TOWER)[0];
+    if (powerdown)
+      coef -= powerdown.level * 0.1;
+  }
   let range = pos.getRangeTo(tower.pos);
   if (range >= TOWER_FALLOFF_RANGE)
-    return 1 - TOWER_FALLOFF;
+    return coef * (1 - TOWER_FALLOFF);
   else if (range <= TOWER_OPTIMAL_RANGE)
-    return 1;
-  return (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_FALLOFF_RANGE - TOWER_OPTIMAL_RANGE) * TOWER_FALLOFF;
+    return coef;
+  return coef * (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_FALLOFF_RANGE - TOWER_OPTIMAL_RANGE) * TOWER_FALLOFF;
 }

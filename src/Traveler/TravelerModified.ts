@@ -24,12 +24,9 @@ export class Traveler {
 
   public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): ScreepsReturnCode | RoomPosition {
 
-    // uncomment if you would like to register hostile rooms entered
-    // this.updateRoomStatus(creep.room);
-
-    if (!destination) {
+    /* if (!destination) {
       return ERR_INVALID_ARGS;
-    }
+    } */
 
     if (creep.fatigue > 0) {
       Traveler.circle(creep.pos, "aqua", .3);
@@ -192,7 +189,8 @@ export class Traveler {
    */
 
   public static checkAvoid(roomName: string): boolean {
-    return !!(Memory.cache.avoid[roomName] && Memory.cache.avoid[roomName] > Game.time);
+    let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+    return roomInfo.roomState === roomStates.ownedByEnemy;
   }
 
   /**
@@ -239,22 +237,6 @@ export class Traveler {
       new RoomVisual(pos.roomName).circle(pos, {
         radius: .45, fill: "transparent", stroke: color, strokeWidth: .15, opacity: opacity
       });
-  }
-
-  /**
-   * update memory on whether a room should be avoided based on controller owner
-   * @param room
-   */
-
-  public static updateRoomStatus(room: Room) {
-    if (!room) { return; }
-    if (room.controller) {
-      if (room.controller.owner && !room.controller.my) {
-        Memory.cache.avoid[room.name] = Game.time + 10000;
-      } else {
-        Memory.cache.avoid[room.name] = Game.time;
-      }
-    }
   }
 
   /**
@@ -343,8 +325,8 @@ export class Traveler {
     let ret = PathFinder.search(origin, { pos: destination, range: options.range! }, {
       maxOps: options.maxOps,
       maxRooms: options.maxRooms,
-      plainCost: options.offRoad ? 1 : options.ignoreRoads ? 1 : 2,
-      swampCost: options.offRoad ? 1 : options.ignoreRoads ? 5 : 10,
+      plainCost: (options.offRoad ? 1 : options.ignoreRoads ? 1 : 2) + (options.extraTerrainWeight || 0),
+      swampCost: (options.offRoad ? 1 : options.ignoreRoads ? 5 : 10) + (options.extraTerrainWeight || 0),
       roomCallback: callback,
     });
 
@@ -422,9 +404,9 @@ export class Traveler {
         /*if ([""].includes(roomName))
           return 255;
         if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
-          return 6;*/
-        if (["E45N8"].includes(roomName))
-          return 1;
+          return 6;
+        if ([""].includes(roomName))
+          return 1;*/
 
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
@@ -626,26 +608,6 @@ export class Traveler {
    * convert room avoidance memory from the old pattern to the one currently used
    * @param cleanup
    */
-
-  public static patchMemory(cleanup = false) {
-    if (!Memory.empire) { return; }
-    if (!Memory.empire.hostileRooms) { return; }
-    let count = 0;
-    for (let roomName in Memory.empire.hostileRooms) {
-      if (Memory.empire.hostileRooms[roomName]) {
-        Memory.cache.avoid[roomName] = Game.time + 10000;
-        count++;
-      }
-      if (cleanup) {
-        delete Memory.empire.hostileRooms[roomName];
-      }
-    }
-    if (cleanup) {
-      delete Memory.empire.hostileRooms;
-    }
-
-    console.log(`TRAVELER: room avoidance data patched for ${count} rooms`);
-  }
 
   private static deserializeState(travelData: TravelData, destination: RoomPosition): TravelState {
     let state = {} as TravelState;

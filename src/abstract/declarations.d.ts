@@ -55,7 +55,6 @@ declare global {
     cache: {
       intellegence: any;
       roomPlanner: { [id: string]: RoomSetup }
-      avoid: { [id: string]: number };
       hives: {
         [id: string]: HiveCache
       },
@@ -69,9 +68,6 @@ declare global {
       minBalance: number,
     }
 
-    // for TRAVELER
-    empire?: any;
-
     // my giant log
     log: {
       reset: number,
@@ -84,8 +80,6 @@ declare global {
           time: number,
           pos: RoomPosition,
           name: string,
-          destroyTime: number,
-          master: boolean,
         }
       },
       crashes?: {

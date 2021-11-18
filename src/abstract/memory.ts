@@ -5,7 +5,7 @@ import { Logger } from "../convenience/logger";
 export class Mem {
   static init() {
     if (!Memory.masters) Memory.masters = {};
-    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, hives: {} };
+    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
     if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
     Logger.init();
@@ -14,7 +14,7 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = {};
-    Memory.cache = { intellegence: {}, roomPlanner: {}, avoid: {}, hives: {} };
+    Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
     Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
     Logger.init(true);
@@ -30,7 +30,7 @@ export class Mem {
     for (const name in Memory.flags)
       if (!(name in Game.flags)) {
         delete Memory.flags[name];
-        if (Apiary.orders[name]) Apiary.orders[name].delete(true);
+        if (Apiary.orders[name]) Apiary.orders[name].delete();
       }
 
     if (Apiary.logger)

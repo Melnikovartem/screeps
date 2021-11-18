@@ -395,10 +395,10 @@ export class Visuals {
     }
 
     ans.push(["upgrade",
-      ` ${!hive.room.controller!.progressTotal ? "" : Math.floor(hive.room.controller!.progress / hive.room.controller!.progressTotal * 100) + "%"}`,
+      ` ${!hive.controller.progressTotal ? "" : Math.floor(hive.controller.progress / hive.controller.progressTotal * 100) + "%"}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
-    if (hive.state === hiveStates.battle || hive.cells.defense.master.activeBees.length || hive.cells.defense.master.waitingForBees)
+    if (hive.state === hiveStates.battle || hive.cells.defense.master.beesAmount || hive.cells.defense.master.waitingForBees)
       ans.push(["defense",
         ` ${Apiary.intel.getInfo(hive.roomName).dangerlvlmax}`,
         this.getBeesAmount(hive.cells.defense.master)]);

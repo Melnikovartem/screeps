@@ -142,6 +142,35 @@ export class CustomConsole {
     return `SCHEDULED ${ans} UNITS`;
   }
 
+  recalcResTime(hiveName?: string) {
+    let hives;
+    if (hiveName) {
+      this.lastActionRoomName = hiveName;
+      hives = [Apiary.hives[hiveName]];
+    } else
+      hives = _.map(Apiary.hives, h => h);
+    _.forEach(hives, h => {
+      _.forEach(h.cells.excavation.resourceCells, cell => {
+        cell.roadTime = cell.pos.getTimeForPath(cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos);
+        cell.restTime = cell.pos.getTimeForPath(h.rest);
+      });
+      h.cells.excavation.shouldRecalc = true;
+    });
+    return "OK";
+  }
+
+  spawnDefender(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    let destroyer = setups.defender.destroyer.copy();
+    destroyer.patternLimit = patternLimit;
+    hive.cells.defense.master.wish({ setup: destroyer, priority: 1 }, "force_" + makeId(4));
+    return `DEFENDER SPAWNED @ ${this.formatRoom(hiveName)}`;
+  }
+
   spawnBuilder(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
@@ -152,8 +181,8 @@ export class CustomConsole {
       return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
     let builder = setups.builder.copy();
     builder.patternLimit = patternLimit;
-    hive.builder.wish({ setup: builder, priority: 1 });
-    return `BUILDER SPAWNED @ ${hiveName}`;
+    hive.builder.wish({ setup: builder, priority: 4 }, "force_" + makeId(4));
+    return `BUILDER SPAWNED @ ${this.formatRoom(hiveName)}`;
   }
 
   spawnUpgrader(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
@@ -170,8 +199,8 @@ export class CustomConsole {
     else
       upgrader = setups.upgrader.manual.copy();
     upgrader.patternLimit = patternLimit;
-    hive.cells.upgrade.master.wish({ setup: upgrader, priority: 1 });
-    return `UPGRADER SPAWNED @ ${hiveName}`;
+    hive.cells.upgrade.master.wish({ setup: upgrader, priority: 4 }, "force_" + makeId(4));
+    return `UPGRADER SPAWNED @ ${this.formatRoom(hiveName)}`;
   }
 
   removeConst() {

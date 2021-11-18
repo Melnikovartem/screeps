@@ -37,6 +37,7 @@ interface TravelToOptions {
   route?: { [roomName: string]: boolean };
   ensurePath?: boolean;
   // mine
+  extraTerrainWeight?: number;
 }
 
 interface TravelData {
