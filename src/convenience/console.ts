@@ -100,14 +100,38 @@ export class CustomConsole {
     });
   }
 
+  showBuildMap(hiveName: string = this.lastActionRoomName, keep = false) {
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    let targets = hive.structuresConst;
+    let ans = "";
+    let rooms = targets.map(c => c.pos.roomName)
+    rooms = rooms.filter((r, i) => rooms.indexOf(r) === i);
+    _.forEach(rooms, roomName => {
+      ans += this.showMap(roomName, keep, (x, y, vis) => {
+        // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
+        for (let i = 0; i < targets.length; ++i) {
+          let t = targets[i];
+          if (t.pos.x === x && t.pos.y == y && t.pos.roomName === roomName) {
+            vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: 0.5 });
+            break;
+          }
+        }
+      }) + "\n";
+    });
+    return ans;
+  }
+
   showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let max = Math.max(...hive.cells.defense.coefMap.map(row => Math.max(...row)));
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: Math.pow(hive.cells.defense.coefMap[x][y] / max, 3) });
+      let op = Math.pow(hive.cells.defense.getDmgAtPos(new RoomPosition(x, y, hiveName)) / TOWER_POWER_ATTACK / Object.keys(hive.cells.defense.towers).length * 0.9, 3);
+      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: op });
     });
   }
 
@@ -153,6 +177,12 @@ export class CustomConsole {
       _.forEach(h.cells.excavation.resourceCells, cell => {
         cell.roadTime = cell.pos.getTimeForPath(cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos);
         cell.restTime = cell.pos.getTimeForPath(h.rest);
+        cell.recalcLairFleeTime();
+      });
+      _.forEach(h.annexNames, annexName => {
+        let order = Apiary.orders[prefix.annex + annexName];
+        if (order && order.color === COLOR_PURPLE && order.secondaryColor === COLOR_PURPLE)
+          order.memory.extraInfo = 0; // h.pos.getTimeForPath(order)
       });
       h.cells.excavation.shouldRecalc = true;
     });

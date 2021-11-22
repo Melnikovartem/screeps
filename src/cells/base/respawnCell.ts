@@ -14,7 +14,7 @@ export class RespawnCell extends Cell {
   extensions: { [id: string]: StructureExtension } = {};
   master: undefined;
 
-  roadMap: number[][] = [];
+  priorityMap: { [id: string]: number } = {};
 
 
   constructor(hive: Hive) {
@@ -36,42 +36,30 @@ export class RespawnCell extends Cell {
   getTargets(freeStore = 0) {
     let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
     targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
-    targets.sort((a, b) => this.roadMap[a.pos.x][a.pos.y] - this.roadMap[b.pos.x][b.pos.y]);
+    targets.sort((a, b) => (this.priorityMap[a.id] || Infinity) - (this.priorityMap[b.id] || Infinity));
     return targets;
   }
 
-  bakeMap() {
-    if (this.roadMap.length)
-      return // remove with caching
-    this.roadMap = [];
-    for (let x = 0; x <= 49; ++x) {
-      this.roadMap[x] = [];
-      for (let y = 0; y <= 49; ++y)
-        this.roadMap[x][y] = Infinity;
-    }
-
+  bakePriority() {
     let poss: RoomPosition[] = _.map(this.spawns, s => s.pos).concat(_.map(this.extensions, s => s.pos));
-
     // it won't compute some edge cases with strange trerrain but this is good enough (cause we refill edge extensions last)
-    this.dfs(this.pos, 0, Math.max(..._.map(poss, p => this.pos.getRangeTo(p))));
+    let visited: string[] = [];
+    this.dfs(this.pos, visited, 0, Math.max(..._.map(poss, p => this.pos.getRangeTo(p))));
   }
 
-  dfs(p: RoomPosition, depth: number, maxRange: number) {
-    if (this.roadMap[p.x][p.y] !== Infinity)
-      return depth - 1;
-    if (p.getRangeTo(this.pos) > maxRange)
-      return depth - 1;
-
-    this.roadMap[p.x][p.y] = depth;
+  dfs(p: RoomPosition, visited: string[], depth: number, maxRange: number) {
+    if (p.getRangeTo(this.pos) > maxRange || visited.includes(p.to_str))
+      return;
+    visited.push(p.to_str);
     _.forEach(p.getPositionsInRange(1), pp => {
-      if (this.roadMap[pp.x][pp.y] === Infinity && pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN).length)
-        this.roadMap[pp.x][pp.y] = depth;
+      let ss = pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN)[0];
+      if (ss && this.priorityMap[ss.id] === undefined)
+        this.priorityMap[ss.id] = depth;
     });
     _.forEach(p.getPositionsInRange(1).sort((a, b) => b.getRangeTo(this) - a.getRangeTo(this)), pp => {
-      if (pp.isFree(true) && pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD))
-        depth = this.dfs(pp, depth + 1, maxRange);
+      if (pp.isFree(true) && pp.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
+        this.dfs(pp, visited, depth + 1, maxRange);
     });
-    return depth;
   }
 
   run() {

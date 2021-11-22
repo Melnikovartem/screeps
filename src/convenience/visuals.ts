@@ -72,31 +72,14 @@ export class Visuals {
     this.usedAnchors = {};
   }
 
-  create() {
+  run() {
     if (Memory.settings.framerate < 0)
       return;
 
     if (Game.time % Memory.settings.framerate === 0 || Game.time === Apiary.createTime) {
       if (Apiary.useBucket) {
-        for (const name in Apiary.hives) {
-          let hive = Apiary.hives[name];
-          this.changeAnchor(1, 1, name);
-          this.statsHive(hive);
-          this.statsNetwork(hive);
-          this.statsLab(hive);
-          this.statsNukes(hive);
-
-          _.forEach(hive.annexNames, annex => {
-            if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
-              this.exportAnchor(0, annex);
-          });
-
-          this.nukeInfo(hive);
-          this.spawnInfo(hive);
-
-          if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
-            this.exportAnchor();
-        }
+        for (const name in Apiary.hives)
+          this.createHive(name);
 
         this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY, true);
         this.battleInfo();
@@ -110,6 +93,27 @@ export class Visuals {
     this.visualizePlanner();
 
     this.update();
+  }
+
+  createHive(name: string) {
+    let hive = Apiary.hives[name];
+    this.changeAnchor(1, 1, name);
+    this.statsHive(hive);
+    this.statsNetwork(hive);
+    this.statsLab(hive);
+    this.statsFactory(hive);
+    this.statsNukes(hive);
+
+    _.forEach(hive.annexNames, annex => {
+      if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
+        this.exportAnchor(0, annex);
+    });
+
+    this.nukeInfo(hive);
+    this.spawnInfo(hive);
+
+    if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
+      this.exportAnchor();
   }
 
   global() {
@@ -444,7 +448,9 @@ export class Visuals {
     if (Object.keys(hive.cells.lab.boostRequests).length) {
       let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
       for (const refBee in lab.boostRequests) {
-        let name = refBee.split(" ").map(s => s.slice(0, 5) + (s.length > 5 ? "." : "")).join(" ")
+        let splitName = refBee.split(" ");
+        splitName.pop();
+        let name = splitName.join(" "); // .map(s => s.slice(0, 5) + (s.length > 5 ? "." : ""))
         for (let i = 0; i < lab.boostRequests[refBee].info.length; ++i) {
           let r = lab.boostRequests[refBee].info[i];
           let l = lab.boostLabs[r.res];
@@ -454,6 +460,14 @@ export class Visuals {
 
       this.updateAnchor(this.table(ans, this.anchor, undefined));
     }
+  }
+
+  statsFactory(hive: Hive) {
+    if (!hive.cells.factory)
+      return;
+    let fac = hive.cells.factory;
+    if (fac.commodityTarget)
+      this.updateAnchor(this.label(`⚒️ ${fac.prod ? fac.prod.res + " " + fac.prod.amount : "??"} -> ${fac.commodityTarget.res} ${fac.commodityTarget.amount}`, this.anchor));
   }
 
   statsNukes(hive: Hive) {

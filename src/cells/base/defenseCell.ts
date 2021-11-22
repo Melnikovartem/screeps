@@ -10,9 +10,6 @@ import type { Hive, BuildProject } from "../../Hive";
 import type { Order } from "../../order";
 import type { Bee } from "../../bees/bee";
 
-
-const PADDING_NUKES_RAMPS = 20000;
-
 @profile
 export class DefenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
@@ -20,7 +17,6 @@ export class DefenseCell extends Cell {
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
-  coefMap: number[][] = [];
   isBreached = false;
   master: SiegeMaster;
   dmgAtPos: { [id: string]: number } = {}
@@ -29,25 +25,6 @@ export class DefenseCell extends Cell {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
     this.master = new SiegeMaster(this);
-  }
-
-  bakeMap() {
-    if (!Object.keys(this.towers).length)
-      return;
-    if (this.coefMap.length)
-      return // remove with caching
-    this.coefMap = [];
-    for (let x = 0; x <= 49; ++x) {
-      this.coefMap[x] = [];
-      for (let y = 0; y <= 49; ++y)
-        this.coefMap[x][y] = 0;
-    }
-
-    _.forEach(this.towers, t => {
-      for (let x = 0; x <= 49; ++x)
-        for (let y = 0; y <= 49; ++y)
-          this.coefMap[x][y] += towerCoef(t, new RoomPosition(x, y, t.pos.roomName));
-    });
   }
 
   updateNukes() {
@@ -59,18 +36,12 @@ export class DefenseCell extends Cell {
     });
     if (!this.nukes.length)
       this.timeToLand = Infinity;
-    if (Game.time !== this.time)
-      this.getNukeDefMap();
-    else if (this.nukes.length)
-      this.nukeCoverReady = false;
-    if (Game.flags[prefix.nukes + this.hive.roomName])
-      this.nukeCoverReady = true;
   }
 
   // mini roomPlanner
   getNukeDefMap(oneAtATime = false) {
     this.nukeCoverReady = true;
-    if (!this.nukes.length)
+    if (!this.nukes.length || Game.flags[prefix.nukes + this.hive.roomName])
       return [];
     let map: { [id: number]: { [id: number]: number } } = {};
     let minLandTime = _.min(this.nukes, n => n.timeToLand).timeToLand;
@@ -88,6 +59,9 @@ export class DefenseCell extends Cell {
       });
       map[pp.x][pp.y] += 10000000;
     });
+
+    let maxLandTime = _.max(this.nukes, n => n.timeToLand).timeToLand;
+    let rampPadding = Math.ceil(maxLandTime / RAMPART_DECAY_TIME + 100) * RAMPART_DECAY_AMOUNT;
 
     let ans: BuildProject[] = [];
     let extraCovers: string[] = [];
@@ -133,7 +107,7 @@ export class DefenseCell extends Cell {
         }).length) {
           let rampart = structures.filter(s => s.structureType === STRUCTURE_RAMPART)[0];
           let energy;
-          let heal = map[x][y] + PADDING_NUKES_RAMPS;
+          let heal = map[x][y] + rampPadding;
           if (rampart)
             energy = Math.max(heal - rampart.hits, 0) / 100;
           else {
@@ -148,7 +122,7 @@ export class DefenseCell extends Cell {
               type: "construction",
             });
           }
-          if (energy >= PADDING_NUKES_RAMPS / 100 / 2) {
+          if (energy > 0) {
             ans.push({
               pos: pos,
               sType: STRUCTURE_RAMPART,
@@ -182,8 +156,10 @@ export class DefenseCell extends Cell {
   update() {
     super.update(["towers"]);
     this.dmgAtPos = {};
-    if (Game.time % 500 === 333 || (this.timeToLand--) < 2 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady))
+    if (Game.time % 500 === 333 || (this.timeToLand--) < 2 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady)) {
       this.updateNukes();
+      this.getNukeDefMap();
+    }
 
     // cant't survive a nuke if your controller lvl is below 5
     this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady
@@ -198,7 +174,7 @@ export class DefenseCell extends Cell {
 
     if (this.hive.state === hiveStates.battle) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
-      if (Game.time % 5 === 0 || Game.time === this.time) {
+      if (Game.time % 5 === 0) {
         this.isBreached = false;
         _.some(roomInfo.enemies, enemy => {
           if (this.wasBreached(enemy.object.pos))
@@ -316,12 +292,14 @@ export class DefenseCell extends Cell {
 
   wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
     let path = pos.findPathTo(defPos, this.opts);
+    let firstStep = path.shift();
     let lastStep = path.pop();
-    if (!lastStep)
+    if (!firstStep || !lastStep)
       return pos.isNearTo(defPos) && !pos.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 5000
         && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
     let endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
-    return endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 5000
+    let startOfPath = new RoomPosition(firstStep.x, firstStep.y, pos.roomName);
+    return startOfPath.isNearTo(pos) && endOfPath.isNearTo(defPos) && !endOfPath.lookFor(LOOK_STRUCTURES).filter(s => s.hits > 5000
       && (s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART)).length;
   }
 
@@ -360,10 +338,12 @@ export class DefenseCell extends Cell {
     let str = pos.to_str;
     if (this.dmgAtPos[str])
       return this.dmgAtPos[str];
-    if (this.coefMap[pos.x] === undefined || this.coefMap[pos.x][pos.y] === undefined)
-      return 0;
     let myStats = Apiary.intel.getComplexMyStats(pos); // my stats toward a point
-    this.dmgAtPos[str] = TOWER_POWER_ATTACK * this.coefMap[pos.x][pos.y] + myStats.current.dmgClose;
+    let towerDmg = 0;
+    _.forEach(this.towers, tower => {
+      towerDmg += towerCoef(tower, pos) * TOWER_POWER_ATTACK;
+    });
+    this.dmgAtPos[str] = towerDmg + myStats.current.dmgClose;
     return this.dmgAtPos[str];
   }
 
