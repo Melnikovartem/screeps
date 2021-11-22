@@ -4,6 +4,7 @@ import { DowngradeMaster } from "./beeMasters/war/downgrader";
 import { DismanleBoys } from "./beeMasters/squads/dismatleBoys";
 import { AnnoyOBot } from "./beeMasters/squads/annoyObot";
 import { WaiterMaster } from "./beeMasters/war/waiter";
+import { SKMaster } from "./beeMasters/war/safeSK";
 
 import { GangDuo } from "./beeMasters/squads/gangDuo";
 import { GangQuad } from "./beeMasters/squads/quadSquad";
@@ -17,7 +18,6 @@ import { PortalMaster } from "./beeMasters/civil/portal";
 import { AnnexMaster } from "./beeMasters/civil/annexer";
 import { PickupMaster } from "./beeMasters/civil/pickup";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
-import { SKMaster } from "./beeMasters/civil/safeSK";
 
 import { hiveStates, prefix, roomStates } from "./enums";
 import { makeId, findOptimalResource } from "./abstract/utils";
@@ -170,9 +170,6 @@ export class Order {
             case COLOR_BROWN:
               this.master = new AnnoyOBot(this);
               break;
-            case COLOR_CYAN:
-              this.master = new SKMaster(this);
-              break;
             case COLOR_WHITE:
               this.fixedName(prefix.surrender + this.hive.roomName);
               if (!this.flag.memory.info)
@@ -191,7 +188,7 @@ export class Order {
               break;
             }
 
-            if (this.hive.addAnex(this.pos.roomName) !== OK) {
+            if (!(this.pos.roomName in Game.rooms)) {
               if (this.hive.cells.observe)
                 Apiary.requestSight(this.pos.roomName)
               else if (!this.master && !Game.flags[prefix.puppet + this.pos.roomName]) {
@@ -224,6 +221,7 @@ export class Order {
                 case roomStates.reservedByInvader:
                 case roomStates.noOwner:
                 case roomStates.reservedByMe:
+                  this.hive.addAnex(this.pos.roomName);
                   if (this.hive.room.energyCapacityAvailable < 650) {
                     this.master = new PuppetMaster(this);
                     this.master.maxSpawns = Infinity;
@@ -231,8 +229,10 @@ export class Order {
                     this.master = new AnnexMaster(this);
                   break;
                 case roomStates.SKfrontier:
-                  if (this.hive.room.energyCapacityAvailable >= 5000)
+                  if (this.hive.room.energyCapacityAvailable >= 5500) {
                     this.master = new SKMaster(this);
+                    this.hive.addAnex(this.pos.roomName);
+                  }
                   break;
                 default:
                   this.delete();
@@ -469,7 +469,10 @@ export class Order {
               this.master = new DupletMaster(this);
               break;
             case COLOR_BLUE:
-              this.master = new DepositMaster(this);
+              if (this.hive.puller && this.hive.puller.miningSites.length < 2)
+                this.master = new DepositMaster(this);
+              else
+                this.acted = false;
               break;
           }
         break;

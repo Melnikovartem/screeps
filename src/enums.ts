@@ -46,10 +46,11 @@ export enum prefix {
   haltlab = "haltlab_",
   nukes = "nukes_",
   terminal = "terminal_",
+  power = "power_",
+  deposit = "deposit_",
 
   // deposit master
   miner = "_miner",
-  puller = "_pull",
   pickup = "_pickup",
 
   //cells
@@ -66,6 +67,7 @@ export enum prefix {
   factoryCell = "FactoryCell_",
 
   builder = "BuilderHive_",
+  puller = "PullerDeposit_",
 
   // game constants
   master = "master",

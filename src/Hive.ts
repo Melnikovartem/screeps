@@ -11,9 +11,10 @@ import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
+import { DepositPullerMaster } from "./beeMasters/depositMining/puller";
 
 import { safeWrap, makeId } from "./abstract/utils";
-import { hiveStates, prefix } from "./enums";
+import { hiveStates, prefix, roomStates } from "./enums";
 import { WALL_HEALTH } from "abstract/roomPlanner";
 
 import { profile } from "./profiler/decorator";
@@ -62,16 +63,18 @@ export type ResTarget = { [key in ResourceConstant]?: number };
 
 const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
-type StructureGroups = "essential" | "mining" | "defense" | "hightech" | "trade";
+type StructureGroups = "essential" | "roads" | "mining" | "defense" | "hightech" | "trade";
 const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant[] } = {
   essential: [
     STRUCTURE_TOWER,
     STRUCTURE_SPAWN,
     STRUCTURE_EXTENSION,
   ],
+  roads: [
+    STRUCTURE_ROAD,
+  ],
   mining: [
     STRUCTURE_LINK,
-    STRUCTURE_ROAD,
     STRUCTURE_CONTAINER,
     STRUCTURE_EXTRACTOR,
   ],
@@ -105,6 +108,7 @@ export class Hive {
   spawOrders: { [id: string]: SpawnOrder } = {};
 
   readonly builder?: BuilderMaster;
+  readonly puller?: DepositPullerMaster;
 
   readonly phase: 0 | 1 | 2;
   // 0 up to storage tech
@@ -117,7 +121,7 @@ export class Hive {
   structuresConst: BuildProject[] = [];
   sumCost: number = 0;
 
-  readonly wallsHealthMax = WALL_HEALTH * 100;
+  readonly wallsHealthMax = WALL_HEALTH * 200;
 
   state: hiveStates = hiveStates.economy;
 
@@ -190,6 +194,8 @@ export class Hive {
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
       } else {
         this.phase = 2;
+        this.puller = new DepositPullerMaster(this);
+
         // power mining
         this.resTarget[BOOST_MINERAL.attack[0]] = HIVE_MINERAL;
 
@@ -212,7 +218,7 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
-        this.wallsHealthMax = this.wallsHealthMax * 20; // RAMPART_HITS_MAX[8]
+        this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     } else {
@@ -224,7 +230,7 @@ export class Hive {
     if (this.wallsHealth > this.wallsHealth)
       this.wallsHealthMax = this.wallsHealth;
 
-    this.updateCellData();
+    this.updateCellData(true);
     if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
       this.cells.dev = new DevelopmentCell(this);
 
@@ -235,14 +241,10 @@ export class Hive {
   addAnex(annexName: string) {
     if (!this.annexNames.includes(annexName))
       this.annexNames.push(annexName);
-    if (annexName in Game.rooms) {
-      if (this.cells.dev)
-        this.cells.dev.shouldRecalc = true;
-      if (this.shouldRecalc < 3)
-        this.shouldRecalc = 3;
-      return OK;
-    } else
-      return ERR_NOT_FOUND;
+    if (this.cells.dev)
+      this.cells.dev.shouldRecalc = true;
+    if (this.shouldRecalc < 3)
+      this.shouldRecalc = 3;
   }
 
   stateChange(state: keyof typeof hiveStates, trigger: boolean) {
@@ -312,7 +314,7 @@ export class Hive {
     Memory.cache.hives[this.roomName].powerManager = value;
   }
 
-  private updateCellData() {
+  private updateCellData(bake = false) {
     _.forEach(this.room.find(FIND_MY_STRUCTURES), s => {
       switch (s.structureType) {
         case STRUCTURE_EXTENSION:
@@ -341,14 +343,13 @@ export class Hive {
       }
     });
 
-    if (this.phase > 0)
-      this.cells.spawn.bakeMap();
-    this.cells.defense.bakeMap();
+    if (this.phase > 0 && bake)
+      this.cells.spawn.bakePriority();
   }
 
   getBuildTarget(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignoreRepair" | "ignoreConst") {
     if (!this.structuresConst.length) {
-      if (this.shouldRecalc < 2 && this.wallsHealth < this.wallsHealthMax)
+      if (this.shouldRecalc < 2 && (this.wallsHealth < this.wallsHealthMax || this.state >= hiveStates.nukealert))
         this.shouldRecalc = 2;
       return;
     }
@@ -371,7 +372,6 @@ export class Hive {
       if (proj.length)
         projects = proj;
     }
-
 
     if (this.state === hiveStates.battle) {
       let inDanger = projects.filter(p => p.pos.findInRange(FIND_HOSTILE_CREEPS, 3));
@@ -436,7 +436,6 @@ export class Hive {
     let opts: TravelToOptions = {};
     if (this.state === hiveStates.battle) {
       opts.stuckValue = 1;
-      opts.maxRooms = 1;
       opts.roomCallback = (roomName, matrix) => {
         if (roomName !== this.roomName)
           return;
@@ -481,12 +480,39 @@ export class Hive {
     let checkAnnex = () => {
       if (reCheck || this.shouldRecalc > 1 || Math.round(Game.time / 100) % 8 === 0)
         _.forEach(this.annexNames, annexName => {
-          if (annexName in Game.rooms && Apiary.intel.getInfo(annexName).safePlace)
-            addCC(Apiary.planner.checkBuildings(annexName, this.room.energyCapacityAvailable < 800 ? [STRUCTURE_ROAD] : BUILDABLE_PRIORITY.mining));
+          if (!(annexName in Game.rooms))
+            return;
+          let roomInfo = Apiary.intel.getInfo(annexName, 10);
+          if (!roomInfo.safePlace
+            || this.room.energyCapacityAvailable < 5500 && (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral))
+            return;
+          addCC(Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.roads));
+          if (this.room.energyCapacityAvailable >= 800)
+            addCC(Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.mining));
         });
     }
 
     switch (this.state) {
+      case hiveStates.nukealert:
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, undefined, undefined, true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, undefined, undefined, true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.9, true));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads));
+        if (!this.sumCost) {
+          addCC(this.cells.defense.getNukeDefMap(true));
+          checkAnnex();
+        }
+        break;
+      case hiveStates.nospawn:
+        addCC(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
+        break;
+      case hiveStates.lowenergy:
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads));
+        checkAnnex();
+        break;
       case hiveStates.battle:
         let roomInfo = Apiary.intel.getInfo(this.roomName);
         if (roomInfo.enemies.length) {
@@ -501,24 +527,8 @@ export class Hive {
           }
         } else
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap, 0.99));
-        break;
-      case hiveStates.nukealert:
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, undefined, undefined, true));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, undefined, undefined, true));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, undefined, undefined, true));
-        if (!this.sumCost)
-          addCC(this.cells.defense.getNukeDefMap(true));
-        checkAnnex();
-        break;
-      case hiveStates.nospawn:
-        addCC(Apiary.planner.checkBuildings(this.roomName, [STRUCTURE_SPAWN]));
-        break;
-      case hiveStates.lowenergy:
-        checkAnnex();
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
-        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense));
-        break;
+        if (this.sumCost)
+          break;
       case hiveStates.economy:
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
@@ -532,6 +542,7 @@ export class Hive {
             this.structuresConst = [];
           addCC(defenses);
         }
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads));
         checkAnnex();
         if (!this.sumCost && this.cells.storage && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >= this.resTarget[RESOURCE_ENERGY] / 2)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
@@ -547,6 +558,7 @@ export class Hive {
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, this.wallMap));
+        addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads));
         addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech));
     }
   }
@@ -573,8 +585,8 @@ export class Hive {
 
     if (Game.time % 25 === 5
       || this.shouldRecalc
-      || this.state === hiveStates.battle
-      || (!this.structuresConst.length && this.builder && this.builder.activeBees && this.wallsHealth < this.wallsHealthMax)) {
+      || (this.state === hiveStates.battle && Game.time % 5 === 0)
+      || (!this.structuresConst.length && this.builder && this.builder.activeBees.length && this.wallsHealth < this.wallsHealthMax)) {
       this.updateAnnexes();
       this.updateStructures();
       if (this.shouldRecalc > 2)
