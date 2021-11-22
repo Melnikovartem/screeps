@@ -5,7 +5,6 @@ import { HaulerMaster } from "../../beeMasters/economy/hauler";
 import { safeWrap } from "../../abstract/utils";
 import { prefix } from "../../enums";
 
-import { DEVELOPING } from "../../settings";
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
 
@@ -47,13 +46,17 @@ export class ExcavationCell extends Cell {
     this.quitefullCells = [];
 
     _.forEach(this.resourceCells, cell => {
-      if (cell.container && cell.operational && (!DEVELOPING || cell.pos.roomName in Game.rooms)) {
-        let padding;
-        padding = cell.restTime * cell.ratePT + 100;
-        if (cell.resource instanceof Source)
-          padding = Math.min(cell.resource.energy, padding);
-        if (!cell.master.activeBees.filter(b => b.pos.isNearTo(cell)).length)
-          padding = 0;
+      if (cell.container) {
+        let padding = 0;
+        if (cell.operational && cell.master.activeBees.filter(b => b.pos.isNearTo(cell)).length) {
+          padding = cell.restTime * cell.ratePT + 25;
+          if (cell.resource instanceof Source)
+            padding = Math.min(padding, cell.resource.energy);
+          else
+            padding = Math.min(padding, cell.resource.mineralAmount);
+        }
+        if (cell.lair && (!cell.lair.ticksToSpawn || cell.lair.ticksToSpawn <= cell.restTime))
+          padding += 600; // usual drop of source keeper if killed by my SK defender
         if (cell.container.store.getUsedCapacity() + padding >= this.fullContainer) {
           let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
           if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)

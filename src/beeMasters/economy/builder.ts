@@ -124,9 +124,9 @@ export class BuilderMaster extends Master {
               bee.goTo(target.pos, this.hive.opts);
             break;
           }
-          let resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1).filter(r => r.resourceType === RESOURCE_ENERGY)[0];
+          let resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
           if (resource)
-            bee.pickup(resource);
+            bee.pickup(resource, this.hive.opts);
           break;
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
@@ -153,8 +153,8 @@ export class BuilderMaster extends Master {
               }
             }
 
-            if (!target || (this.hive.state >= hiveStates.nukealert && Game.time % 25 === 0))
-              target = this.hive.getBuildTarget(bee);
+            if (!target || (Game.time % 25 === 0 && (this.hive.state >= hiveStates.nukealert || target.pos.roomName !== this.hive.roomName)))
+              target = this.hive.getBuildTarget(bee) || target;
             if (target) {
               if (bee.pos.getRangeTo(this.sCell.storage) <= 4 && bee.store.getFreeCapacity() > 50 && bee.pos.getRangeTo(target) > 4) {
                 bee.state = beeStates.refill;
@@ -171,7 +171,7 @@ export class BuilderMaster extends Master {
                 bee.repairRoadOnMove(ans);
               let resource;
               if (bee.pos.getRangeTo(target) <= 3) {
-                resource = bee.pos.findClosest(target.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.resourceType === RESOURCE_ENERGY));
+                resource = bee.pos.findClosest(target.pos.findInRange(FIND_DROPPED_RESOURCES, 3));
               } else
                 resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
               if (resource)
@@ -195,7 +195,7 @@ export class BuilderMaster extends Master {
             bee.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opts);
           break;
       }
-      if (this.hive.state !== hiveStates.battle) {
+      if (this.hive.state !== hiveStates.battle || bee.pos.roomName !== this.hive.roomName) {
         this.checkFlee(bee);
       } else {
         let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 25).enemies.map(e => e.object).filter(e => {
@@ -210,7 +210,7 @@ export class BuilderMaster extends Master {
         if (enemy && bee.targetPosition && !findRamp(bee.targetPosition) && !findRamp(bee.pos)) {
           let fleeDist = Apiary.intel.getFleeDist(enemy);
           if (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist
-            || (enemy && this.hive.cells.defense.wasBreached(enemy.pos, bee.targetPosition || bee.pos))) {
+            || (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist + 2 && this.hive.cells.defense.wasBreached(enemy.pos, bee.targetPosition || bee.pos))) {
             if (bee.store.getUsedCapacity() && enemy.pos.getRangeTo(bee) <= 5)
               bee.drop(RESOURCE_ENERGY);
             bee.flee(this.hive);

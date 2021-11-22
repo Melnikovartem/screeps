@@ -10,8 +10,7 @@ import type { StorageCell } from "../stage1/storageCell";
 export class ObserveCell extends Cell {
   obeserver: StructureObserver;
   roomsToCheck: string[] = [];
-  prevRoom: string;
-  powerRooms: string[] = [];
+  prevRoom: string = "";
   doPowerCheck = false;
   master: undefined;
   sCell: StorageCell;
@@ -20,7 +19,20 @@ export class ObserveCell extends Cell {
     super(hive, prefix.observerCell + hive.room.name);
     this.sCell = sCell;
     this.obeserver = obeserver;
+    this.toCache("corridorRooms", []);
+    if (!this.corridorRooms.length)
+      this.updateRoomsToCheck();
+  }
 
+  get corridorRooms(): string[] {
+    return this.fromCache("corridorRooms");
+  }
+
+  set corridorRooms(value) {
+    this.toCache("corridorRooms", value);
+  }
+
+  updateRoomsToCheck() {
     let [x, y, we, ns] = this.hive.pos.getRoomCoorinates();
     if (Math.abs(Math.round(x / 10) - x) <= Math.abs(Math.round(y / 10) - y))
       x = Math.round(x / 10) * 10
@@ -28,8 +40,8 @@ export class ObserveCell extends Cell {
       y = Math.round(y / 10) * 10
     let closest = we + x + ns + y;
 
-    this.dfs(closest, this.powerRooms, this.hive.pos.getRoomRangeTo(closest, true));
-    this.prevRoom = this.powerRooms[Math.floor(Math.random() * this.powerRooms.length)];
+    this.dfs(closest, this.corridorRooms, this.hive.pos.getRoomRangeTo(closest, true));
+    this.prevRoom = this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
   get pos() {
@@ -62,7 +74,7 @@ export class ObserveCell extends Cell {
           break;
         }
     } else
-      this.roomsToCheck = this.powerRooms;
+      this.roomsToCheck = this.corridorRooms;
 
     let room = Game.rooms[this.prevRoom];
     if (!room)
@@ -73,25 +85,39 @@ export class ObserveCell extends Cell {
 
     let roomInfo = Apiary.intel.getInfo(this.prevRoom, 25);
 
-    if (roomInfo.roomState === roomStates.corridor)
+    if (roomInfo.roomState === roomStates.corridor) {
       this.powerCheck(room);
+      this.depositCheck(room);
+    }
+  }
+
+  depositCheck(room: Room) {
+    _.forEach(room.find(FIND_DEPOSITS), deposit => {
+      if (deposit.lastCooldown > CREEP_LIFE_TIME || deposit.ticksToDecay < CREEP_LIFE_TIME * 1.5)
+        return;
+      let flags = deposit.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_BLUE).length;
+      if (!flags) {
+        let name = deposit.pos.createFlag(prefix.deposit + deposit.id, COLOR_ORANGE, COLOR_BLUE);
+        if (typeof name === "string")
+          Game.flags[name].memory.hive = this.hive.roomName;
+      }
+    });
   }
 
   powerCheck(room: Room) {
-    let power = <StructurePowerBank | undefined>room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0];
-    if (!power)
-      return;
-    let open = power.pos.getOpenPositions(true).length;
-    let dmgPerDupl = (CREEP_LIFE_TIME - (power.pos.getRoomRangeTo(this.hive) - 1) * 50) * (30 * 20);
-    let amountNeeded = power.hits / dmgPerDupl;
-    if (Math.floor(amountNeeded / open) * CREEP_LIFE_TIME > power.ticksToDecay)
-      return;
-    let flags = power.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_YELLOW).length;
-    if (!flags) {
-      let name = power.pos.createFlag("power_" + power.id, COLOR_ORANGE, COLOR_YELLOW);
-      if (typeof name === "string")
-        Game.flags[name].memory.hive = this.hive.roomName;
-    }
+    _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
+      let open = power.pos.getOpenPositions(true).length;
+      let dmgPerDupl = (CREEP_LIFE_TIME - (power.pos.getRoomRangeTo(this.hive) - 1) * 50) * (30 * 20);
+      let amountNeeded = power.hits / dmgPerDupl;
+      if (Math.floor(amountNeeded / open) * CREEP_LIFE_TIME > power.ticksToDecay)
+        return;
+      let flags = power.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_YELLOW).length;
+      if (!flags) {
+        let name = power.pos.createFlag(prefix.power + power.id, COLOR_ORANGE, COLOR_YELLOW);
+        if (typeof name === "string")
+          Game.flags[name].memory.hive = this.hive.roomName;
+      }
+    });
   }
 
   run() {

@@ -1,5 +1,6 @@
 import { Cell } from "../_Cell";
 import { MinerMaster } from "../../beeMasters/economy/miner";
+import { Traveler } from "../../Traveler/TravelerModified";
 
 import { prefix, roomStates, hiveStates } from "../../enums";
 
@@ -19,8 +20,6 @@ export class ResourceCell extends Cell {
   master: MinerMaster;
 
   lair?: StructureKeeperLair;
-
-  ratePT: number = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
 
   operational: boolean = false;
 
@@ -59,9 +58,27 @@ export class ResourceCell extends Cell {
     this.toCache("pos", value);
   }
 
+  get fleeLairTime(): number | undefined {
+    return this.fromCache("fleeLairTime");
+  }
+
+  set fleeLairTime(value) {
+    this.toCache("fleeLairTime", value);
+  }
+
   get pos(): RoomPosition {
     let p = this.fromCache("pos");
     return new RoomPosition(p.x, p.y, p.roomName);
+  }
+
+  get ratePT() {
+    if (this.resource instanceof Source)
+      return this.resource.energyCapacity / ENERGY_REGEN_TIME;
+    else if (this.operational) {
+      let timeToChop = Math.max(this.master.activeBees.length ? _.max(this.master.activeBees, b => b.ticksToLive).ticksToLive : CREEP_LIFE_TIME, 201) - 200;
+      return this.resource.mineralAmount / timeToChop;
+    }
+    return 0;
   }
 
 
@@ -79,17 +96,9 @@ export class ResourceCell extends Cell {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
       this.operational = !!(this.extractor && this.container && !this.resource.ticksToRegeneration);
-      this.ratePT = 0
-      if (this.operational) {
-        let timeToChop = Math.max(this.master.activeBees.length ? _.max(this.master.activeBees, b => b.ticksToLive).ticksToLive : CREEP_LIFE_TIME, 201) - 200;
-        this.ratePT = this.resource.mineralAmount / timeToChop;
-      }
     }
 
     let roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, Infinity);
-
-    if (roomInfo.roomState === roomStates.SKfrontier)
-      this.lair = <StructureKeeperLair | undefined>this.pos.findInRange(FIND_STRUCTURES, 5).filter(s => s.structureType === STRUCTURE_KEEPER_LAIR)[0];
 
     if (this.container)
       this.pos = this.container.pos;
@@ -98,6 +107,13 @@ export class ResourceCell extends Cell {
       let pos = this.link.pos.getOpenPositions(true).filter(p => poss.filter(pp => p.equal(pp)).length)[0];
       if (pos)
         this.pos = pos;
+    }
+
+    if (roomInfo.roomState === roomStates.SKfrontier) {
+      this.lair = <StructureKeeperLair | undefined>this.pos.findClosest(
+        this.pos.findInRange(FIND_STRUCTURES, 5).filter(s => s.structureType === STRUCTURE_KEEPER_LAIR));
+      if (!this.fleeLairTime)
+        this.recalcLairFleeTime();
     }
 
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
@@ -112,8 +128,27 @@ export class ResourceCell extends Cell {
     }
   }
 
+  recalcLairFleeTime() {
+    if (!this.lair)
+      return;
+    let path = Traveler.findTravelPath(this.pos, this.hive).path;
+    let i = 0;
+    for (; i < path.length; ++i)
+      if (path[i].getRangeTo(this.lair) > Math.max(4, this.pos.getRangeTo(this.lair)))
+        break;
+    this.fleeLairTime = i + 2;
+  }
+
+  get loggerRef() {
+    return "mining_" + this.resource.id.slice(this.resource.id.length - 4);
+  }
+
+  get loggerUpkeepRef() {
+    return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
+  }
+
   update() {
-    super.update(undefined, false);
+    super.update(undefined, ["resource"]);
 
     /* if (!this.resource)
       if (this.resourceType === RESOURCE_ENERGY)
@@ -127,7 +162,6 @@ export class ResourceCell extends Cell {
     if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
       this.parentCell.shouldRecalc = true;
       this.operational = false;
-      this.ratePT = 0;
     }
   }
 
@@ -143,8 +177,8 @@ export class ResourceCell extends Cell {
           let ans = this.link.transferEnergy(upgradeLink);
           if (ans === OK) {
             if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
-                this.link.store, upgradeLink.store, RESOURCE_ENERGY, 1, 0.03);
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
+                , upgradeLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
             return;
           }
         }
@@ -154,8 +188,8 @@ export class ResourceCell extends Cell {
           let ans = this.link.transferEnergy(storageLink);
           this.hive.cells.storage!.linksState[storageLink.id] = "busy";
           if (Apiary.logger && ans === OK)
-            Apiary.logger.resourceTransfer(this.hive.roomName, "mining_" + this.resource.id.slice(this.resource.id.length - 4),
-              this.link.store, storageLink.store, RESOURCE_ENERGY, 1, 0.03);
+            Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
+              , storageLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
         }
       }
     }

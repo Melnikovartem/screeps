@@ -3,6 +3,7 @@ import { Master } from "../_Master";
 import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
+import { BASE_MINERALS } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "../../cells/base/excavationCell";
@@ -11,7 +12,7 @@ import type { Bee } from "../../bees/bee";
 @profile
 export class HaulerMaster extends Master {
   cell: ExcavationCell;
-  targetMap: { [id: string]: { beeRef: string, resource: ResourceConstant } | undefined } = {};
+  targetMap: { [id: string]: string | undefined } = {};
   roadUpkeepCost: { [id: string]: number } = {};
   accumRoadTime = 0;
   dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
@@ -68,7 +69,7 @@ export class HaulerMaster extends Master {
   }
 
   checkBeesWithRecalc() {
-    let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount, CREEP_LIFE_TIME - this.minRoadTime - 10);
+    let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount || !Object.keys(this.hive.spawOrders).length, CREEP_LIFE_TIME - this.minRoadTime - 10);
     if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
@@ -87,7 +88,7 @@ export class HaulerMaster extends Master {
         return;
 
       let target = this.targetMap[container.id];
-      let oldBee = target && this.bees[target.beeRef];
+      let oldBee = target && this.bees[target];
       if (oldBee && oldBee.target === container.id)
         return;
 
@@ -96,10 +97,7 @@ export class HaulerMaster extends Master {
         bee.state = beeStates.refill;
         bee.target = container.id;
         this.roadUpkeepCost[bee.ref] = 0;
-        this.targetMap[container.id] = {
-          beeRef: bee.ref,
-          resource: findOptimalResource(container.store),
-        };
+        this.targetMap[container.id] = bee.ref;
       }
     });
 
@@ -148,39 +146,65 @@ export class HaulerMaster extends Master {
             break;
           }
 
-          res = this.targetMap[bee.target]!.resource;
-          let overproduction;
-          if (target && bee.pos.getRangeTo(target) <= 2) {
-            overproduction = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 2)[0]; //.filter(r => r.resourceType === res)
-            // overproduction or energy from SK defenders
-            if (overproduction)
-              bee.pickup(overproduction);
+          if (bee.pos.getRangeTo(target) > 3) {
+            let opt = this.hive.opts;
+            opt.offRoad = true;
+            bee.goTo(target, opt);
+            break;
           }
 
-          if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, res, undefined, { offRoad: true }) === OK) {
+          // overproduction or energy from SK defenders
+          let overproduction: Resource | Tombstone | undefined = target.pos.findInRange(FIND_DROPPED_RESOURCES, 3)[0];
+          if (overproduction)
+            bee.pickup(overproduction);
+          else {
+            overproduction = target.pos.findInRange(FIND_TOMBSTONES, 3).filter(t => t.store.getUsedCapacity() > 0)[0];
+            if (overproduction)
+              bee.withdraw(overproduction, findOptimalResource(overproduction.store));
+          }
+
+          if (!bee.store.getFreeCapacity() || !overproduction && bee.withdraw(target, findOptimalResource(target.store)) === OK && Object.keys(target.store).length < 2) {
             this.targetMap[bee.target] = undefined;
             bee.state = beeStates.work;
             let source: Source | Mineral | null = bee.pos.findClosest(target.pos.findInRange(FIND_SOURCES, 1));
             if (!source)
-              source = bee.pos.findClosest(target!.pos.findInRange(FIND_MINERALS, 1));
+              source = bee.pos.findClosest(target.pos.findInRange(FIND_MINERALS, 1));
             bee.target = source ? source.id : undefined;
           }
           break;
-
         case beeStates.work:
           res = findOptimalResource(bee.store);
 
           if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && bee.repairRoadOnMove() === OK)
             this.roadUpkeepCost[bee.ref]++;
+          if (bee.store.getFreeCapacity() > 0) {
+            let resource = bee.pos.lookFor(LOOK_RESOURCES)[0];
+            if (resource)
+              bee.pickup(resource);
+          }
 
           let ans = bee.transfer(this.dropOff, res);
-          if (ans === OK && Apiary.logger && bee.target) {
-            let ref = "mining_" + bee.target.slice(bee.target.length - 4);
-            Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.dropOff.store, res, 1);
-            if (this.roadUpkeepCost[bee.ref] > 0) {
-              Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
-              Apiary.logger.addResourceStat(this.hive.roomName, "build", -this.roadUpkeepCost[bee.ref], RESOURCE_ENERGY);
+          if (ans === OK) {
+            if (Apiary.logger && bee.target) {
+              let ref = "mining_" + bee.target.slice(bee.target.length - 4);
+              if (this.roadUpkeepCost[bee.ref] > 0) {
+                Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref]);
+                Apiary.logger.addResourceStat(this.hive.roomName, "upkeep_" + bee.target.slice(bee.target.length - 4), -this.roadUpkeepCost[bee.ref]);
+                this.roadUpkeepCost[bee.ref] = 0;
+              }
+              if (res !== RESOURCE_ENERGY && !BASE_MINERALS.includes(res))
+                ref = "pickup";
+              Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.dropOff.store, res, 1);
             }
+          } else if (bee.pos.getRangeTo(this.hive) <= 8 && bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+            let ss = (<(StructureSpawn | StructureExtension)[]>bee.pos.findInRange(FIND_MY_STRUCTURES, 1)
+              .filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN))
+              .filter(s => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
+            if (ss && bee.transfer(ss, RESOURCE_ENERGY) === OK)
+              if (Apiary.logger && bee.target) {
+                let ref = "mining_" + bee.target.slice(bee.target.length - 4);
+                Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, ss.store, res, 1);
+              }
           }
 
           if (!bee.store.getUsedCapacity()) {
@@ -192,10 +216,10 @@ export class HaulerMaster extends Master {
         case beeStates.chill:
           bee.goRest(this.cell.pos, { offRoad: true });
       }
-      if (this.checkFlee(bee) && bee.targetPosition) {
+      if (this.checkFlee(bee) && bee.targetPosition && bee.hits < bee.hitsMax) {
         let diff = bee.store.getUsedCapacity() - Math.floor(bee.store.getCapacity() * 0.5 + 50);
         if (diff > 0)
-          bee.drop(findOptimalResource(bee.store));
+          bee.drop(findOptimalResource(bee.store), diff);
       }
     });
   }

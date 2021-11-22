@@ -3,12 +3,10 @@ import { Master } from "../_Master";
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
-// import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { ResourceCell } from "../../cells/base/resourceCell";
 import type { Bee } from "../../bees/bee";
-// import type { Boosts } from "../_Master";
 
 @profile
 export class MinerMaster extends Master {
@@ -18,11 +16,6 @@ export class MinerMaster extends Master {
   constructor(resourceCell: ResourceCell) {
     super(resourceCell.hive, resourceCell.ref);
     this.cell = resourceCell;
-    /* it just mines too fast for me to handle :/
-    if (this.cell.resourceType !== RESOURCE_ENERGY) {
-      this.boosts = <Boosts>[{ type: "harvest", lvl: 2 }]; //, { type: "work", lvl: 1 }, { type: "work", lvl: 0 }];
-      this.hive.resTarget[BOOST_MINERAL["harvest"][2]] = LAB_BOOST_MINERAL * MAX_CREEP_SIZE;
-    }*/
   }
 
   newBee(bee: Bee) {
@@ -39,11 +32,13 @@ export class MinerMaster extends Master {
           work += boost && "harvest" in boost ? boost.harvest : 1;
         }
       });
-      return work * 2;
+      return work;
     });
     let beeRate = Math.max(0, ...beeRates);
-    if (this.cell.resourceType !== RESOURCE_ENERGY)
-      beeRate /= 5
+    if (this.cell.resourceType === RESOURCE_ENERGY)
+      beeRate *= 2;
+    else
+      beeRate /= 5;
     return beeRate;
   }
 
@@ -59,15 +54,17 @@ export class MinerMaster extends Master {
 
     if (shouldSpawn && this.checkBees(this.cell.resourceType === RESOURCE_ENERGY, CREEP_LIFE_TIME - this.cell.roadTime - 10)) {
       let order = {
-        setup: setups.miner.energy,
+        setup: setups.miner.minerals,
         priority: <2 | 5 | 6>2,
       };
 
-      if (this.cell.resourceType !== RESOURCE_ENERGY) {
-        order.setup = setups.miner.minerals;
+      if (this.cell.resourceType === RESOURCE_ENERGY) {
+        if (this.cell.pos.roomName !== this.hive.roomName)
+          order.priority = 5;
+        order.setup = setups.miner.energy.copy();
+        order.setup.patternLimit = Math.round(this.cell.ratePT / 2) + 1;
+      } else
         order.priority = 6;
-      } else if (this.cell.pos.roomName !== this.hive.roomName)
-        order.priority = 5;
 
       this.wish(order);
     }
@@ -77,8 +74,12 @@ export class MinerMaster extends Master {
     if (this.cell.resourceType !== RESOURCE_ENERGY)
       return undefined;
 
+    let construction = this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 3).filter(c => c.structureType === STRUCTURE_ROAD)[0];
+    if (construction)
+      return construction;
+
     if (this.cell.pos.roomName === this.hive.roomName) {
-      let construction = this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 2).filter(c => c.structureType === STRUCTURE_LINK)[0];
+      construction = this.cell.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 2).filter(c => c.structureType === STRUCTURE_LINK)[0];
       if (construction)
         return construction;
     }
@@ -87,28 +88,24 @@ export class MinerMaster extends Master {
 
   run() {
     let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, Infinity);
+    let lairSoonSpawn = this.cell.lair && (!this.cell.lair.ticksToSpawn
+      || this.cell.lair.ticksToSpawn <= (this.cell.fleeLairTime || 5) * (this.cell.resourceType === RESOURCE_ENERGY ? 1 : 2));
     let sourceOff: boolean | undefined = !this.cell.operational;
+
     if (this.cell.pos.roomName in Game.rooms)
       sourceOff = (sourceOff && !this.construction)
         || (this.cell.resource instanceof Source && this.cell.resource.energy === 0)
         || (this.cell.extractor && this.cell.extractor.cooldown > 0)
         || (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
         || (this.cell.container && !this.cell.link && !this.cell.container.store.getFreeCapacity(this.cell.resourceType))
-        || (this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType));
-
-    _.forEach(this.bees, bee => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK) {
-          this.cell.parentCell.shouldRecalc = true;
-          bee.state = beeStates.chill;
-        }
-    });
-
-    let lairSoonSpawn = this.cell.lair && (!this.cell.lair.ticksToSpawn || this.cell.lair.ticksToSpawn <= 5);
+        || (this.cell.container && !this.cell.link && this.cell.container.hits < this.cell.container.hitsMax * 0.2
+          && this.cell.container.store.getUsedCapacity(RESOURCE_ENERGY) > 25 && this.cell.resourceType === RESOURCE_ENERGY)
+        || (this.cell.link && !this.cell.link.store.getFreeCapacity(this.cell.resourceType))
+        || (lairSoonSpawn);
 
     _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.boosting)
-        return;
+      /* if (bee.state === beeStates.boosting)
+        return; */
       if (bee.state === beeStates.work && sourceOff)
         bee.state = beeStates.chill;
 
@@ -130,8 +127,12 @@ export class MinerMaster extends Master {
         } else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 25) {
           let construction = this.construction;
           if (construction) {
-            bee.build(construction);
-            sourceOff = true;
+            if (bee.build(construction) === OK && Apiary.logger) {
+              let spend = Math.min(bee.getBodyParts(WORK) * 5, bee.store.getUsedCapacity(RESOURCE_ENERGY), construction.progressTotal - construction.progress);
+              Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerRef, spend);
+              Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerUpkeepRef, -spend);
+            }
+            bee.state = beeStates.chill;
           }
         }
       }
@@ -149,9 +150,13 @@ export class MinerMaster extends Master {
           if (bee.goRest(this.cell.pos) === OK && this.cell.resourceType === RESOURCE_ENERGY) {
             let target = this.cell.container;
             if (target && target.hits < target.hitsMax) {
-              if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-                bee.repair(target);
-              if (bee.store.getUsedCapacity(RESOURCE_ENERGY) < 24 && target.store.getUsedCapacity(RESOURCE_ENERGY) >= 18)
+              if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+                if (bee.repair(target) === OK && Apiary.logger) {
+                  let spend = Math.min(bee.getBodyParts(WORK), bee.store.getUsedCapacity(RESOURCE_ENERGY), Math.floor((target.hitsMax - target.hits) / 100));
+                  Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerRef, spend);
+                  Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerUpkeepRef, -spend);
+                }
+              } if (bee.store.getUsedCapacity(RESOURCE_ENERGY) < 24 && target.store.getUsedCapacity(RESOURCE_ENERGY) >= 18)
                 bee.withdraw(target, RESOURCE_ENERGY, 18);
             }
           }
@@ -161,12 +166,14 @@ export class MinerMaster extends Master {
       if (this.checkFlee(bee)) {
         if (bee.targetPosition && bee.store.getUsedCapacity() > 0)
           bee.drop(findOptimalResource(bee.store));
-      } else {
-        if (lairSoonSpawn)
-          if (bee.pos.getRangeTo(this.cell.lair!) < 5)
-            bee.goTo(this.hive);
-          else
-            bee.targetPosition = undefined;
+      } else if (lairSoonSpawn) {
+        let diff = bee.pos.getRangeTo(this.cell.lair!) - Math.max(4, this.cell.pos.getRangeTo(this.cell.lair!));
+        if (diff <= 0)
+          bee.goTo(this.hive);
+        else if (diff < 5)
+          bee.targetPosition = undefined;
+        if (bee.store.getUsedCapacity() > 0 && !bee.pos.isNearTo(this.cell))
+          bee.drop(findOptimalResource(bee.store));
       }
     });
   }
