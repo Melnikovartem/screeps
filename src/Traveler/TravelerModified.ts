@@ -530,13 +530,16 @@ export class Traveler {
         matrix.set(structure.pos.x, structure.pos.y, roadCost);
       } else if (structure instanceof StructureContainer) {
         matrix.set(structure.pos.x, structure.pos.y, 5);
-      } else if (structure instanceof StructureKeeperLair) {
-        _.forEach(structure.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y,
-          Math.max(matrix.get(p.x, p.y), 4 * (4 - p.getRangeTo(structure)))));
-        matrix.set(structure.pos.x, structure.pos.y, 0xff);
       } else {
         impassibleStructures.push(structure);
       }
+      /*
+      else if (structure instanceof StructureKeeperLair && structure.ticksToSpawn && structure.ticksToSpawn < 30) {
+        _.forEach(structure.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y,
+          Math.max(matrix.get(p.x, p.y), 4 * (4 - p.getRangeTo(structure)))));
+        matrix.set(structure.pos.x, structure.pos.y, 0xff);
+      }  
+      */
     }
 
     for (let site of room.find(FIND_MY_CONSTRUCTION_SITES)) {

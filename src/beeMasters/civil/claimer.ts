@@ -14,9 +14,9 @@ export class ClaimerMaster extends SwarmMaster {
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
       let setup = setups.claimer.copy();
-      if (this.order.pos.getRoomRangeTo(this.hive, true) >= 4)
+      if (this.pos.getRoomRangeTo(this.hive, true) >= 4)
         setup.fixed = [TOUGH, TOUGH, TOUGH];
-      let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName);
+      let roomInfo = Apiary.intel.getInfo(this.pos.roomName);
       if (roomInfo.roomState >= roomStates.reservedByInvader) {
         setup.patternLimit = 5;
         setup.fixed = [TOUGH, TOUGH, TOUGH];
@@ -30,13 +30,13 @@ export class ClaimerMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.pos.roomName !== this.order.pos.roomName) {
-        bee.goTo(this.order.pos, { useFindRoute: true });
+      if (bee.pos.roomName !== this.pos.roomName) {
+        bee.goTo(this.pos, { useFindRoute: true, ignoreRoads: true });
       } else {
-        let controller = Game.rooms[this.order.pos.roomName].controller;
+        let controller = Game.rooms[this.pos.roomName].controller;
         if (controller) {
           if (!bee.pos.isNearTo(controller))
-            bee.goTo(controller);
+            bee.goTo(controller, { ignoreRoads: true });
           else if (controller.owner && controller.owner.username !== Apiary.username || controller.reservation && controller.reservation.username !== Apiary.username)
             bee.attackController(controller)
           else {
@@ -53,7 +53,7 @@ export class ClaimerMaster extends SwarmMaster {
         } else
           this.order.delete();
       }
-      this.checkFlee(bee, this.order.pos, { useFindRoute: true });
+      this.checkFlee(bee, this.pos, { useFindRoute: true });
     });
   }
 }

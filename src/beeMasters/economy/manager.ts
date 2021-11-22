@@ -122,9 +122,15 @@ export class ManagerMaster extends Master {
           else
             bee.state = beeStates.chill;
 
-      if (transfer)
-        transfer.process(bee);
-      else if (bee.creep.store.getUsedCapacity() > 0)
+      if (transfer) {
+        if (!transfer.process(bee) && !transfer.priority && bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          let ss = (<(StructureSpawn | StructureExtension)[]>bee.pos.findInRange(FIND_MY_STRUCTURES, 1)
+            .filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN))
+            .filter(s => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
+          if (ss)
+            bee.transfer(ss, RESOURCE_ENERGY);
+        }
+      } else if (bee.creep.store.getUsedCapacity() > 0)
         bee.state = beeStates.fflush;
 
       if (bee.state === beeStates.chill) {

@@ -105,8 +105,9 @@ export class TransferRequest {
     }
   }
 
-  process(bee: Bee) {
+  process(bee: Bee): boolean {
     let amountBee = 0;
+    let transfer = false;
     switch (bee.state) {
       case beeStates.refill:
         if (bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(this.resource))
@@ -117,10 +118,10 @@ export class TransferRequest {
           bee.state = beeStates.work;
         else if (!this.fromAmount) {
           if (this.nextup)
-            this.nextup.process(bee);
+            transfer = this.nextup.process(bee);
           else
             bee.state = beeStates.work;
-          return;
+          return transfer;
         }
         break;
 
@@ -142,13 +143,17 @@ export class TransferRequest {
             amountBee = Math.min(amountBee, (<Store<ResourceConstant, false>>this.from.store).getUsedCapacity(res));
           ans = bee.withdraw(this.from, res, amountBee);
         }
-        if (ans === OK && this.resource)
-          bee.goTo(this.to);
+        if (ans === OK) {
+          transfer = true;
+          if (this.resource)
+            bee.goTo(this.to);
+        }
         break;
 
       case beeStates.work:
         amountBee = Math.min(this.amount, bee.store.getUsedCapacity(this.resource), this.toAmount);
         if (bee.transfer(this.to, this.resource || findOptimalResource(bee.store), amountBee) === OK) {
+          transfer = true;
           this.amount -= amountBee;
           this.toAmount -= amountBee;
           if (!this.isValid()) {
@@ -164,5 +169,6 @@ export class TransferRequest {
         }
         break;
     }
+    return transfer;
   }
 }

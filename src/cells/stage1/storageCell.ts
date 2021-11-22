@@ -4,6 +4,7 @@ import { TransferRequest } from "../../bees/transferRequest";
 
 import { prefix, hiveStates } from "../../enums";
 import { BASE_MINERALS } from "./laboratoryCell";
+import { DEPOSIT_COMMODITIES } from "./factoryCell";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -227,6 +228,8 @@ export class StorageCell extends Cell {
         if (toAdd)
           amount += toAdd;
       });
+    if ((resource in COMMODITIES || DEPOSIT_COMMODITIES.includes(resource)) && this.hive.cells.factory)
+      amount += this.hive.cells.factory.factory.store.getUsedCapacity(resource);
     this.usedCapacity[resource] = amount;
     return amount;
   }

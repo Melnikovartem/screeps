@@ -13,24 +13,24 @@ export class AnnexMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
+    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
     let doAnnex = roomInfo.safePlace;
 
     if (!this.order.memory.extraInfo) {
       this.order.memory.extraInfo = 0;
-      let controller = Game.rooms[this.order.pos.roomName] && Game.rooms[this.order.pos.roomName].controller;
+      let controller = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
       if (controller)
         this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
     }
 
     if (doAnnex && this.hive.bassboost)
-      doAnnex = this.order.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
+      doAnnex = this.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
 
     if (doAnnex && this.checkBees(true, CREEP_CLAIM_LIFE_TIME - this.order.memory.extraInfo - 10)) {
       let setup = setups.claimer.copy();
 
-      if (this.order.pos.roomName in Game.rooms) {
-        let controller = Game.rooms[this.order.pos.roomName].controller;
+      if (this.pos.roomName in Game.rooms) {
+        let controller = Game.rooms[this.pos.roomName].controller;
 
         // 4200 - funny number)) + somewhat close to theoretically optimal 5000-600
         if (controller)
@@ -49,16 +49,16 @@ export class AnnexMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.pos.roomName !== this.order.pos.roomName)
-        bee.goTo(this.order.pos);
+      if (bee.pos.roomName !== this.pos.roomName)
+        bee.goTo(this.pos, { ignoreRoads: true });
       else {
-        let controller = Game.rooms[this.order.pos.roomName].controller;
+        let controller = Game.rooms[this.pos.roomName].controller;
         if (controller) {
           if ((controller.reservation && controller.reservation.username !== Apiary.username)
             || (controller.owner && controller.owner.username !== Apiary.username))
-            bee.attackController(controller)
+            bee.attackController(controller, { ignoreRoads: true })
           else
-            bee.reserveController(controller);
+            bee.reserveController(controller, { ignoreRoads: true });
         } else
           this.order.delete();
       }

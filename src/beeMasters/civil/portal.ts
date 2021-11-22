@@ -70,10 +70,10 @@ export class PortalMaster extends SwarmMaster {
       this.targetBeeCount = inStore > 4096 ? 2 : 1;
     }
 
-    if (this.order.pos.roomName in Game.rooms) {
-      let portal = this.order.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+    if (this.pos.roomName in Game.rooms) {
+      let portal = this.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
       if (!portal) {
-        portal = Game.rooms[this.order.pos.roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+        portal = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
         if (portal)
           this.order.flag.setPosition(portal.pos.x, portal.pos.y)
         else
@@ -99,7 +99,7 @@ export class PortalMaster extends SwarmMaster {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting)
         return;
-      let pos = this.order.pos;
+      let pos = this.pos;
 
       switch (bee.state) {
         case beeStates.chill:
@@ -107,8 +107,8 @@ export class PortalMaster extends SwarmMaster {
             bee.withdraw(this.hive.cells.storage.storage, this.res);
             break;
           }
-          if (this.order.pos.roomName in Game.rooms) {
-            let portal = this.order.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+          if (this.pos.roomName in Game.rooms) {
+            let portal = this.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
             if (portal)
               pos = portal.pos;
           }

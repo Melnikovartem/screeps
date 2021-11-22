@@ -229,7 +229,7 @@ export class BootstrapMaster extends Master {
               else {
                 let pos = source.pos.getOpenPositions()[0];
                 if (pos)
-                  bee.goTo(pos, { ignoreRoads: bee.store.getUsedCapacity() === 0, useFindRoute: !!this.hive.bassboost });
+                  bee.goTo(pos, { useFindRoute: !!this.hive.bassboost });
                 else if (bee.pos.getRangeTo(source) > 4)
                   bee.target = undefined;
               }

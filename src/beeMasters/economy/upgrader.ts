@@ -1,7 +1,7 @@
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import { Master } from "../_Master";
 
-import { beeStates, prefix } from "../../enums";
+import { beeStates, prefix, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -25,7 +25,7 @@ export class UpgraderMaster extends Master {
       polen.remove()
       polen = undefined;
     }
-    if (!polen) {
+    if (!polen || this.hive.state >= hiveStates.nukealert) {
       this.boosts = undefined;
 
       this.targetBeeCount = this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 6 ? 1 : 0;
@@ -79,12 +79,11 @@ export class UpgraderMaster extends Master {
     } else if (this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000)
       suckerTarget = this.cell.sCell.storage;
 
-    if (this.boosts)
-      _.forEach(this.bees, bee => {
-        if (bee.state === beeStates.boosting)
-          if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-            bee.state = beeStates.chill;
-      });
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting)
+        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+          bee.state = beeStates.chill;
+    });
 
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.boosting)
@@ -107,7 +106,6 @@ export class UpgraderMaster extends Master {
           bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         bee.state = beeStates.work;
       }
-
       switch (bee.state) {
         case beeStates.fflush:
           if (!this.hive.cells.lab || !bee.boosted) {

@@ -15,9 +15,9 @@ export class DupletMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
   target: StructurePowerBank | undefined;
-  targetBeeCount = this.order.pos.getOpenPositions(true).length * 2;
-  maxSpawns = this.order.pos.getOpenPositions(true).length * 2;
-  roadTime = this.order.pos.getTimeForPath(this.hive);
+  targetBeeCount = this.pos.getOpenPositions(true).length * 2;
+  maxSpawns = this.pos.getOpenPositions(true).length * 2;
+  roadTime = this.pos.getTimeForPath(this.hive);
   dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
   pickupTime = setups.pickup.patternLimit * 4.5 + this.roadTime;
   movePriority = <1>1;
@@ -45,14 +45,14 @@ export class DupletMaster extends SwarmMaster {
       this.duplets.push([knight, healer]);
     }
 
-    if (this.order.pos.roomName in Game.rooms) {
-      this.target = <StructurePowerBank | undefined>this.order.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
+    if (this.pos.roomName in Game.rooms) {
+      this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
       if (!this.target) {
-        let res = this.order.pos.lookFor(LOOK_RESOURCES)[0];
+        let res = this.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
           this.callPickUp(res.amount);
         this.maxSpawns = 0;
-        if (!this.order.pos.isFree())
+        if (!this.pos.isFree())
           this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
       } else {
         this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
@@ -68,7 +68,7 @@ export class DupletMaster extends SwarmMaster {
 
     if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
-        setup: setups.healer,
+        setup: setups.miner.powerhealer,
         priority: 8,
       }, this.ref + "_healer");
       this.wish({
@@ -79,9 +79,9 @@ export class DupletMaster extends SwarmMaster {
   }
 
   callPickUp(power: number) {
-    if (this.order.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
+    if (this.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    let name = this.order.pos.createFlag(Math.ceil(power / CARRY_CAPACITY) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.pos.createFlag(Math.ceil(power / CARRY_CAPACITY) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
     if (typeof name === "string")
       Game.flags[name].memory.hive = this.hive.roomName;
   }
@@ -109,8 +109,8 @@ export class DupletMaster extends SwarmMaster {
         let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
         let knightPos = knight.pos;
         let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
-          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.order.pos.roomName))), e => e.object);
-        if (knight.pos.roomName === this.order.pos.roomName && this.target && !enemies.filter(e => e.pos.getRangeTo(this.order) < 6).length)
+          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.pos.roomName))), e => e.object);
+        if (knight.pos.roomName === this.pos.roomName && this.target && !enemies.filter(e => e.pos.getRangeTo(this.order) < 6).length)
           enemies = enemies.concat(this.target);
 
         let target = knight.pos.findClosest(enemies);
@@ -121,7 +121,7 @@ export class DupletMaster extends SwarmMaster {
           } else
             knight.attack(target);
         } else if (knight.hits === knight.hitsMax)
-          knight.goRest(this.order.pos);
+          knight.goRest(this.pos);
 
         if (healer)
           healer.goTo(knight.pos, { ignoreCreeps: false, movingTarget: true });
@@ -144,7 +144,7 @@ export class DupletMaster extends SwarmMaster {
             else
               healer.rangedHeal(healingTarget);
           } else if (!knight)
-            healer.goTo(this.order.pos);
+            healer.goTo(this.pos);
         }
       }
     }));

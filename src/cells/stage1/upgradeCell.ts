@@ -119,9 +119,12 @@ export class UpgradeCell extends Cell {
     if (this.link && this.storageLink) {
       let freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
       if (freeCap <= this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY) || freeCap >= LINK_CAPACITY / 1.05) {
-        if (!this.storageLink.cooldown && this.storageLink.transferEnergy(this.link,
-          Math.min(freeCap, this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY))) === OK)
+        let amount = Math.min(freeCap, this.storageLink.store.getUsedCapacity(RESOURCE_ENERGY));
+        if (!this.storageLink.cooldown && this.storageLink.transferEnergy(this.link, amount) === OK) {
           this.storageLink = undefined;
+          if (Apiary.logger)
+            Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", amount * 0.03);
+        }
       }
     }
   }

@@ -165,7 +165,7 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   get emergency() {
-    return this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy;
+    return !!this.beesAmount || (this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy);
   }
 
   getDeisredPos(i: number, centerPos: RoomPosition = this.formationCenter) {
@@ -376,7 +376,7 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
-    let moveTarget = this.order.pos;
+    let moveTarget = this.pos;
     let opts = this.getPathArgs(bee.ref);
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
     let fatigue = 0;
@@ -391,7 +391,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
     let busy = false;
     let notNearExit = (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47);
-    if (enemy && bee.pos.roomName === this.order.pos.roomName) {
+    if (enemy && bee.pos.roomName === this.pos.roomName) {
       moveTarget = enemy.pos;
       opts.movingTarget = true;
       // if (this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)

@@ -9,14 +9,14 @@ import type { Boosts } from "../_Master";
 
 @profile
 export class PickupMaster extends SwarmMaster {
-  waitPos = this.order.pos.getOpenPositions(true, 5)[0];
+  waitPos = this.pos.getOpenPositions(true, 5)[0];
   boosts: Boosts | undefined = [{ type: "capacity", lvl: 0 }, { type: "fatigue", lvl: 0 }];
 
   update() {
     super.update();
     if (this.checkBees(this.hive.state !== hiveStates.battle)) {
       let setup = setups.pickup;
-      if (this.order.pos.getRoomRangeTo(this.hive) <= 1) {
+      if (this.pos.getRoomRangeTo(this.hive) <= 1) {
         setup = setup.copy();
         setup.moveMax = 50 / 3;
       }
@@ -30,41 +30,38 @@ export class PickupMaster extends SwarmMaster {
   getTarget() {
     let target: Tombstone | Ruin | Resource | StructureStorage | null | undefined;
     let amount = 0;
-    if (this.order.pos.roomName in Game.rooms) {
-      let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = <StructureStorage[]>this.order.pos.findInRange(FIND_STRUCTURES, 3)
+    if (this.pos.roomName in Game.rooms) {
+      if (this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK).length)
+        return { target: target, amount: amount };
+      let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = <StructureStorage[]>this.pos.findInRange(FIND_STRUCTURES, 3)
         .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0 && (!this.hive.room.storage || s.id !== this.hive.room.storage.id));
       if (!targets.length)
-        targets = this.order.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.amount > 0);
+        targets = this.pos.findInRange(FIND_DROPPED_RESOURCES, 3).filter(r => r.amount > 0);
       if (!targets.length)
-        targets = this.order.pos.findInRange(FIND_RUINS, 3).filter(r => r.store.getUsedCapacity() > 0);
+        targets = this.pos.findInRange(FIND_RUINS, 3).filter(r => r.store.getUsedCapacity() > 0);
       if (!targets.length)
-        targets = this.order.pos.findInRange(FIND_TOMBSTONES, 3).filter(r => r.store.getUsedCapacity() > 0);
+        targets = this.pos.findInRange(FIND_TOMBSTONES, 3).filter(r => r.store.getUsedCapacity() > 0);
 
-      target = this.order.pos.findClosest(targets);
-
+      target = this.pos.findClosest(targets);
       if (target)
         if (target instanceof Resource)
           amount = target.amount;
         else
           amount = target.store.getUsedCapacity()
       else {
-        let room = Game.rooms[this.order.pos.roomName];
-        target = room.find(FIND_DROPPED_RESOURCES)[0];
-        if (!target) {
-          // what a lie this is STRUCTURE_POWER_BANK
-          if (this.order.pos.roomName !== this.hive.roomName) {
-            target = <StructureStorage>room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
-            if (!target)
-              target = <StructureStorage>room.find(FIND_STRUCTURES)
-                .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
-          }
+        let room = Game.rooms[this.pos.roomName];
+        // what a lie this is STRUCTURE_POWER_BANK
+        if (this.pos.roomName !== this.hive.roomName) {
           if (!target)
-            target = room.find(FIND_DROPPED_RESOURCES)[0];
-          if (!target)
-            target = room.find(FIND_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0)[0];
-          if (!target)
-            target = room.find(FIND_RUINS).filter(r => r.store.getUsedCapacity() > 0)[0];
+            target = <StructureStorage>room.find(FIND_STRUCTURES)
+              .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0)[0];
         }
+        if (!target)
+          target = room.find(FIND_DROPPED_RESOURCES)[0];
+        if (!target)
+          target = room.find(FIND_TOMBSTONES).filter(r => r.store.getUsedCapacity() > 0)[0];
+        if (!target)
+          target = room.find(FIND_RUINS).filter(r => r.store.getUsedCapacity() > 0)[0];
         if (target)
           this.order.flag.setPosition(target.pos);
         else
@@ -107,7 +104,7 @@ export class PickupMaster extends SwarmMaster {
               bee.withdraw(target, findOptimalResource(target.store));
             else {
               if (!this.waitPos)
-                this.waitPos = this.order.pos;
+                this.waitPos = this.pos;
               bee.goRest(this.waitPos);
             }
           } else if (bee.store.getUsedCapacity())
