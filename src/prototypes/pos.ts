@@ -175,8 +175,26 @@ RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant
   return new RoomPosition(cc[0], cc[1], we + x + ns + y);
 }
 
-// costly be careful
 RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
+  let path = Traveler.findTravelPath(this, target, { useFindRoute: true });
+  let len = 0;
+  _.forEach(path.path, p => {
+    let terrain = Game.map.getRoomTerrain(p.roomName).get(p.x, p.y);
+    switch (terrain) {
+      case TERRAIN_MASK_SWAMP:
+        if (!(p.roomName in Game.rooms && p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)) {
+          len += 5;
+          break;
+        }
+      default:
+        len += 1;
+    }
+  });
+  return len;
+}
+
+// costly be careful
+/* RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
   let pos: RoomPosition;
   if (target instanceof RoomPosition)
     pos = target;
@@ -221,7 +239,7 @@ RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
   }
 
   return len;
-}
+} */
 
 /* let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
   [FIND_EXIT_TOP]: pos => pos.y,

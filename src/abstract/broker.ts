@@ -1,4 +1,4 @@
-import { COMPRESS_MAP } from "../cells/stage1/factoryCell";
+import { COMPRESS_MAP, COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
 
 import { profile } from "../profiler/decorator";
 
@@ -104,8 +104,8 @@ export class Broker {
       this.bestPriceBuy[<ResourceConstant>res] = bestPriceBuy[<ResourceConstant>res]!
 
     // coef to account for fact that energy is extremly unprofitable to cell cause of costs
-    let energyToSell = this.bestPriceSell[RESOURCE_ENERGY] ? this.bestPriceSell[RESOURCE_ENERGY]! * 0.4353 : Infinity;
-    let energyToBuy = this.bestPriceBuy[RESOURCE_ENERGY] ? this.bestPriceBuy[RESOURCE_ENERGY]! : Infinity;
+    let energyToSell = this.bestPriceSell[RESOURCE_ENERGY] ? this.bestPriceSell[RESOURCE_ENERGY]! * 0.5 : Infinity;
+    let energyToBuy = this.bestPriceBuy[RESOURCE_ENERGY] ? this.bestPriceBuy[RESOURCE_ENERGY]! * 2 : Infinity;
     // later will be used to calc is it even profitable to sell something faraway
     this.energyPrice = Math.min(energyToBuy, energyToSell);
 
@@ -179,7 +179,7 @@ export class Broker {
     if (res === RESOURCE_ENERGY)
       priceToBuyInstant *= 2; // 1.5654; // approx transfer costs
 
-    if ((hurry || priceToBuyInstant <= price * 1.05) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
+    if (hurry || (priceToBuyInstant <= price * 1.05)) {
       let ans: number = ERR_NOT_ENOUGH_RESOURCES;
       if (Math.floor(creditsToUse / priceToBuyInstant))
         ans = this.buyShort(terminal, res, amount, creditsToUse);
@@ -220,13 +220,13 @@ export class Broker {
       orders = this.longOrders(roomName, res, ORDER_SELL);
     this.update(orders && orders.length ? 16 : MARKET_LAG);
     let step = ORDER_PADDING * coef;
-    let price = this.priceLongSell(res, coef);
+    let price = this.priceLongSell(res, step);
     let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
       priceToSellInstant *= 0.5; // 1 / 1.5654; // approx transfer costs
 
-    if ((hurry || priceToSellInstant >= price * 0.95) && terminal.store.getUsedCapacity(RESOURCE_ENERGY)) {
+    if (hurry || priceToSellInstant >= price * 0.95 || COMMODITIES_TO_SELL.includes(<CommodityConstant>res)) {
       let ans = this.sellShort(terminal, res, amount);
       switch (ans) {
         case OK:
@@ -275,7 +275,7 @@ export class Broker {
 
   // i sell as long
   priceLongSell(res: ResourceConstant, step: number) {
-    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.25) - step / 2;
+    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.3) - step / 2;
   }
 
   buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, price: number) {
@@ -355,7 +355,9 @@ export class Broker {
       return ERR_NOT_IN_RANGE;
 
     let roomName = terminal.pos.roomName;
-    let order = orders.reduce((prev, curr) => curr.price > prev.price ? curr : prev);
+    let energyPrice = (o: ProtoOrder) => this.energyPrice * Game.market.calcTransactionCost(10000, roomName, o.roomName) / 10000;
+    let order = orders.reduce((prev, curr) => curr.price - energyPrice(prev) > prev.price - energyPrice(prev) ? curr : prev);
+
     let energyCost = Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;
     let energyCap = Math.floor(terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
     amount = Math.min(amount, energyCap, order.amount, terminal.store.getUsedCapacity(res));

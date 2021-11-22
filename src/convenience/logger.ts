@@ -1,4 +1,6 @@
-import { setupsNames } from "../enums";
+// import { setupsNames } from "../enums";
+import { setups } from "../bees/creepSetups";
+import { roomStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
@@ -46,11 +48,13 @@ export class Logger {
   }
 
   resourceTransfer<R extends ResourceConstant>(hiveName: string, ref: string, storeFrom: Store<R, false>,
-    storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1, loss: number = 0) {
+    storeTo: Store<R, false>, resource: R = <R>RESOURCE_ENERGY, mode: 1 | -1 = -1, loss?: { ref: string, per: number }) {
     if (!Memory.log.hives[hiveName])
       return ERR_NOT_FOUND;
-    let amount = Math.floor(Math.min(+storeFrom.getUsedCapacity(resource), +storeTo.getFreeCapacity(resource)) * mode * (1 - loss));
+    let amount = Math.floor(Math.min(+storeFrom.getUsedCapacity(resource), +storeTo.getFreeCapacity(resource)) * mode); // * (1 - loss)
     this.addResourceStat(hiveName, ref, amount, resource);
+    if (loss)
+      this.addResourceStat(hiveName, loss.ref, - amount * loss.per, resource);
     return OK;
   }
 
@@ -64,8 +68,10 @@ export class Logger {
       orderedBy: masterName,
       priority: priority,
     };
-
-    this.addResourceStat(spawn.pos.roomName, "spawn_" + beeName.substring(0, beeName.length - 5), -cost);
+    let name = beeName.substring(0, beeName.length - 5);
+    if (name === setups.miner.energy.name || name === setups.miner.minerals.name)
+      this.addResourceStat(spawn.pos.roomName, "upkeep_" + masterName.slice(masterName.length - 4), -cost);
+    this.addResourceStat(spawn.pos.roomName, "spawn_" + name, -cost);
     return OK;
   }
 
@@ -187,58 +193,76 @@ export class Logger {
     let stats = Memory.log.hives[hiveName].resourceBalance[RESOURCE_ENERGY]!;
     let ans: { [id: string]: { profit: number, revenue?: number } } = {};
     let getRate = (ref: string): number => stats[ref] ? stats[ref].amount / Math.max(Game.time - stats[ref].time, 1) : 0;
+    let getCreepCostRate = (setup: { name: string }) => getRate("spawn_" + setup.name);
     let excavation = Apiary.hives[hiveName].cells.excavation;
     if (excavation) {
       // well here is also the mineral hauling cost but fuck it
-      let haulerExp = getRate("spawn_" + setupsNames.hauler);
-      let minerExp = getRate("spawn_" + setupsNames.miner);
-      let annexExp = getRate("spawn_" + setupsNames.claimer);
+      let haulerExp = getCreepCostRate(setups.hauler);
+      let minerExp = getCreepCostRate(setups.miner.energy);
+      let annexExp = getCreepCostRate(setups.claimer);
+      let skExp = getCreepCostRate(setups.defender.sk);
+
       if (extra) {
         ans["hauler"] = { profit: haulerExp };
         ans["miner"] = { profit: minerExp };
         ans["annex"] = { profit: annexExp };
+        ans["annexSK"] = { profit: skExp };
       }
 
-      let minerNum = 0;
       let haulerNum = 0;
       _.forEach(hive.cells.excavation!.resourceCells, cell => {
-        if (cell.resourceType === RESOURCE_ENERGY) {
-          minerNum++;
+        if (cell.resourceType === RESOURCE_ENERGY)
           if (!cell.link) haulerNum++;
-        }
       });
       haulerExp /= Math.max(haulerNum, 1);
-      minerExp /= Math.max(minerNum, 1);
-      annexExp /= hive.annexNames.length;
+
+      let annexesSK = hive.annexNames.filter(annexName => {
+        let roomInfo = Apiary.intel.getInfo(annexName, Infinity);
+        return roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral;
+      });
+      annexExp /= hive.annexNames.length - annexesSK.length;
+      skExp /= annexesSK.length;
 
       _.forEach(excavation.resourceCells, cell => {
         if (cell.resourceType === RESOURCE_ENERGY) {
           let ref = "mining_" + cell.ref.slice(cell.ref.length - 4);
+          let upkeep = "upkeep_" + cell.ref.slice(cell.ref.length - 4);
+          let annexExpCell = 0;
+          if (cell.pos.roomName !== hive.roomName && hive.annexNames.includes(cell.pos.roomName))
+            if (annexesSK.includes(cell.pos.roomName))
+              annexExpCell = skExp;
+            else
+              annexExpCell = annexExp;
           ans[ref] = {
-            profit: getRate(ref) + minerExp + (cell.link ? 0 : haulerExp)
-              + (cell.pos.roomName !== hive.roomName && hive.annexNames.includes(cell.pos.roomName)
-                ? annexExp / excavation!.roomResources[cell.pos.roomName] : 0),
-            revenue: getRate(ref) * (cell.link ? 1 / 0.97 : 1),
+            profit: getRate(ref) + getRate(upkeep) + (cell.link ? 0 : haulerExp) + annexExpCell / excavation!.roomResources[cell.pos.roomName],
+            revenue: getRate(ref),
           };
         }
       });
     }
 
-    ans["upgrade"] = { profit: getRate("upgrade") + getRate("spawn_" + setupsNames.upgrader), revenue: getRate("upgrade") };
-    ans["mineral"] = { profit: getRate("spawn_" + setupsNames.miner + " M") };
-    ans["build"] = { profit: getRate("build") + getRate("spawn_" + setupsNames.builder), revenue: getRate("build") };
-    ans["defense_dmg"] = { profit: getRate("defense_dmg") + getRate("spawn_" + setupsNames.defender), revenue: getRate("defense_dmg") };
+    ans["upgrade"] = { profit: getRate("upgrade") + getCreepCostRate(setups.upgrader.fast), revenue: getRate("upgrade") };
+    ans["mineral"] = { profit: getCreepCostRate(setups.miner.minerals) };
+    ans["corridor"] = {
+      profit: getCreepCostRate(setups.miner.deposit)
+        + getCreepCostRate(setups.puller) + getCreepCostRate(setups.pickup)
+        + getCreepCostRate(setups.miner.power) + getCreepCostRate(setups.miner.powerhealer)
+    };
+    ans["build"] = { profit: getRate("build") + getCreepCostRate(setups.miner.deposit), revenue: getRate("build") };
+    ans["defense_dmg"] = {
+      profit: getRate("defense_dmg")
+        + getCreepCostRate(setups.defender.normal)
+        + getCreepCostRate(setups.defender.destroyer),
+      revenue: getRate("defense_dmg")
+    };
     ans["defense_repair"] = { profit: getRate("defense_repair") };
     ans["defense_heal"] = { profit: getRate("defense_heal") };
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };
     ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
-    ans["larva"] = { profit: getRate("larva") + getRate("spawn_" + setupsNames.bootstrap), revenue: getRate("larva") };
-
-    //type civilRoles = "queen" | "manager";
-    //ans["upkeep"] = { profit: _.sum(<civilRoles[]>["queen", "manager"], s => getRate("spawn_" + setupsNames[s])) };
-    ans["upkeep"] = { profit: getRate("spawn_" + setupsNames.queen) };
+    ans["larva"] = { profit: getRate("larva") + + getCreepCostRate(setups.bootstrap), revenue: getRate("larva") };
+    ans["upkeep"] = { profit: + getCreepCostRate(setups.queen) };
 
     return ans;
   }

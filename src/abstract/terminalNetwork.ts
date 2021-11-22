@@ -5,7 +5,7 @@ import { HIVE_ENERGY } from "../hive";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { MARKET_LAG } from "./broker";
 
-import type { Hive, ResTarget } from "../hive"
+import type { Hive, ResTarget } from "../hive";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 
@@ -102,7 +102,7 @@ export class Network {
           let res = <ResourceConstant>r;
           if (ALLOWED_TO_BUYIN.includes(res)) {
             let amount = hive.shortages[res]!;
-            let ans = Apiary.broker.buyIn(terminal, res, amount, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
+            let ans = Apiary.broker.buyIn(terminal, res, amount + PADDING_RESOURCE / 2, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
             if (ans === "short") {
               usedTerminal = true;
               break;
@@ -202,21 +202,27 @@ export class Network {
       return;
 
     let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));
-    if (hive.cells.lab)
-      ress = ress.concat(Object.keys(hive.cells.lab.resTarget));
+
+    if (hive.cells.lab) {
+      for (const res in hive.cells.lab.resTarget) {
+        if (ress.indexOf(res) === -1)
+          ress.push(res);
+        let amount = -hive.cells.lab.resTarget[<ResourceConstant>res]!;
+        hive.add(hive.resState, res, amount);
+      }
+    }
+
+    if (hive.cells.factory) {
+      for (const res in hive.cells.factory.resTarget) {
+        if (ress.indexOf(res) === -1)
+          ress.push(res);
+        let amount = -hive.cells.factory.resTarget[<ResourceConstant>res]!;
+        hive.add(hive.resState, res, amount);
+      }
+    }
 
     for (const i in ress)
-      if (!hive.resState[<ResourceConstant>ress[i]])
-        hive.add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
-
-    if (hive.cells.lab)
-      for (const res in hive.cells.lab.resTarget) {
-        let amount = -hive.cells.lab.resTarget[<ResourceConstant>res]! / 2;
-        // so we dont move when there are still enough minerals
-        hive.add(hive.resState, res, amount);
-        if (hive.resState[<ResourceConstant>res]! < 0)
-          hive.add(hive.resState, res, amount);
-      }
+      hive.add(hive.resState, ress[i], hive.cells.storage.getUsedCapacity(<ResourceConstant>ress[i]));
 
     for (const res in hive.resTarget)
       hive.add(hive.resState, res, -hive.resTarget[<ResourceConstant>res]!);

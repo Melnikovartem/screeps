@@ -20,7 +20,7 @@ const EXTRA_SIDE: Module = { poss: {}, exits: [], freeSpaces: [{ x: 22, y: 24 },
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
-const CONSTRUCTIONS_PER_TYPE = 4;
+const CONSTRUCTIONS_PER_TYPE = 5;
 
 export const WALL_HEALTH = 10000;
 
@@ -81,7 +81,7 @@ console. log(`{${ss}}`);
 function anchorDist(anchor: RoomPosition, x: Pos, roomName: string = anchor.roomName, pathfind = false) {
   if (pathfind)
     return anchor.getTimeForPath(new RoomPosition(x.x, x.y, roomName));
-  return anchor.getRangeTo(new RoomPosition(x.x, x.y, roomName));
+  return anchor.getRangeApprox(new RoomPosition(x.x, x.y, roomName));
 }
 
 @profile
@@ -920,20 +920,19 @@ export class RoomPlanner {
       let poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
       let contr = Game.rooms[roomName] && Game.rooms[roomName].controller;
       let terrain = Game.map.getRoomTerrain(roomName);
-      poss.sort((a, b) => {
-        let ans = anchorDist(anchor, a, roomName) - anchorDist(anchor, b, roomName);
+      let posWeighted = poss.map(pos => { return { pos: pos, dist: anchorDist(anchor, pos, roomName, true) } })
+      posWeighted.sort((a, b) => {
+        let ans = a.dist - a.dist;
         if (sType === STRUCTURE_LINK && contr)
-          if (anchorDist(contr.pos, a, roomName) <= 3)
+          if (a.dist <= 3)
             ans = -1;
-          else if (anchorDist(contr.pos, b, roomName) <= 3)
+          else if (a.dist <= 3)
             ans = 1;
         if (ans === 0)
-          ans = anchorDist(anchor, a, roomName, true) - anchorDist(anchor, b, roomName, true);
-        if (ans === 0)
-          ans = terrain.get(a.x, a.y) - terrain.get(b.x, b.y)
+          ans = terrain.get(a.pos.x, a.pos.y) - terrain.get(b.pos.x, b.pos.y)
         return ans; //* (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
       });
-      Memory.cache.roomPlanner[roomName][sType]!.pos = poss;
+      Memory.cache.roomPlanner[roomName][sType]!.pos = posWeighted.map(p => p.pos);
     }
 
     if (Memory.cache.hives[roomName])

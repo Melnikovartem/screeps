@@ -122,6 +122,6 @@ export class _Apiary {
     if (this.useBucket)
       Apiary.planner.run();
 
-    safeWrap(() => this.visuals.create(), "visuals");
+    safeWrap(() => this.visuals.run(), "visuals");
   }
 }
