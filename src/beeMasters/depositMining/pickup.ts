@@ -13,12 +13,21 @@ export class DepositPickupMaster extends Master {
   parent: DepositMaster;
 
   constructor(parent: DepositMaster) {
-    super(parent.hive, parent.ref + prefix.pickup);
+    super(parent.hive, parent.order.ref + prefix.pickup);
     this.parent = parent;
   }
 
+  get setup() {
+    let setup = setups.pickup.copy();
+    if (this.parent.target)
+      setup.patternLimit = Math.round(10 * Math.max(1, this.parent.roadTime / this.parent.target.lastCooldown * 0.65));
+    else
+      setup.patternLimit = 15;
+    return setup
+  }
+
   recalculateTargetBee() {
-    let body = setups.pickup.getBody(this.hive.room.energyCapacityAvailable).body;
+    let body = this.setup.getBody(this.hive.room.energyCapacityAvailable).body;
     let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
     this.targetBeeCount = Math.max(1, Math.ceil(this.parent.rate * this.parent.roadTime / carry));
   }
@@ -33,31 +42,65 @@ export class DepositPickupMaster extends Master {
 
   update() {
     super.update();
-    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount && this.parent.operational)
+    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount && this.parent.operational) {
       this.wish({
-        setup: setups.pickup,
+        setup: this.setup,
         priority: 6,
       });
+    }
   }
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.ticksToLive < this.parent.roadTime + 10 || bee.store.getFreeCapacity() < this.parent.positions * 48 + 50)
-        bee.state = beeStates.work;
       switch (bee.state) {
         case beeStates.chill:
-          let beeToPickUp = this.parent.miners.activeBees.filter(b => b.store.getUsedCapacity() > 0)[0];
-          if (!beeToPickUp) {
-            bee.goRest(this.parent.rest);
+          if (bee.pos.roomName !== this.parent.pos.roomName) {
+            bee.goTo(this.parent.rest, { offRoad: true });
+            if (bee.ticksToLive < this.parent.roadTime)
+              bee.state = bee.store.getUsedCapacity() ? beeStates.work : beeStates.fflush;
             break;
           }
-          if (bee.pos.isNearTo(beeToPickUp))
-            beeToPickUp.creep.transfer(bee.creep, findOptimalResource(beeToPickUp.store));
-          else
-            bee.goTo(beeToPickUp, { obstacles: this.parent.pos.getOpenPositions(true).map(p => { return { pos: p } }) });
+          if (!bee.store.getFreeCapacity()) {
+            bee.state = beeStates.work;
+            bee.goTo(this.hive.cells.storage!);
+            break;
+          }
+          let overproduction: undefined | Resource;
+          _.some(this.parent.positions, p => {
+            overproduction = p.pos.lookFor(LOOK_RESOURCES)[0];
+            return overproduction;
+          });
+          if (overproduction) {
+            bee.pickup(overproduction);
+            break;
+          }
+          let tomb: undefined | Tombstone;
+          _.some(this.parent.positions, p => {
+            tomb = p.pos.lookFor(LOOK_TOMBSTONES).filter(t => t.store.getUsedCapacity() > 0)[0];
+            return tomb;
+          });
+          if (tomb) {
+            bee.withdraw(tomb, findOptimalResource(tomb.store));
+            break;
+          }
+          let beeToPickUp = this.parent.miners.activeBees.filter(b => b.store.getUsedCapacity() > 0)[0];
+          if (beeToPickUp) {
+            if (bee.pos.isNearTo(beeToPickUp))
+              beeToPickUp.creep.transfer(bee.creep, findOptimalResource(beeToPickUp.store));
+            else
+              bee.goTo(beeToPickUp, { ignoreRoads: true, obstacles: this.parent.pos.getOpenPositions(true).map(p => { return { pos: p } }) });
+            break;
+          }
+          bee.goRest(this.parent.rest, { offRoad: true });
+          if (bee.ticksToLive < this.parent.roadTime + 25
+            || (bee.store.getFreeCapacity() < this.parent.positions.length * this.parent.workAmount))
+            bee.state = bee.store.getUsedCapacity() ? beeStates.work : beeStates.fflush;
           break;
         case beeStates.work:
-          bee.transfer(this.hive.cells.storage!.storage, findOptimalResource(bee.store));
+          if (!bee.store.getUsedCapacity() || (bee.transfer(this.hive.cells.storage!.storage, findOptimalResource(bee.store)) === OK && Object.keys(bee.store).length < 2)) {
+            bee.state = beeStates.chill;
+            bee.goTo(this.parent.rest, { offRoad: true });
+          }
           break;
       }
       this.checkFlee(bee);

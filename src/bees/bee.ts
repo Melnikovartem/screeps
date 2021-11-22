@@ -180,12 +180,12 @@ export class Bee {
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
   actionCheck(pos: RoomPosition, opt: TravelToOptions = {}, range: number = 1): ScreepsReturnCode {
-    if (this.creep.pos.inRangeTo(pos, range)) {
+    if (this.creep.pos.getRangeTo(pos) <= range) {
       this.actionPosition = pos;
       return OK;
     } else {
-      if (range > 1 && pos.roomName !== this.pos.roomName)
-        range = 1;
+      /* if (range > 1 && pos.roomName !== this.pos.roomName)
+        range = 1; */
       opt.range = range;
       return this.goTo(pos, opt);
     }
@@ -241,6 +241,27 @@ export class Bee {
 
   drop(resourceType: ResourceConstant, amount?: number) {
     return this.creep.drop(resourceType, amount);
+  }
+
+  pull(t: Bee, pos: RoomPosition, opt: TravelToOptions): ScreepsReturnCode {
+    if (!this.pos.isNearTo(t)) {
+      let tEnt = t.pos.getEnteranceToRoom();
+      if (!tEnt || tEnt.roomName !== this.pos.roomName) {
+        if (opt.obstacles)
+          opt.obstacles.push({ pos: t.pos })
+        else
+          opt.obstacles = [{ pos: t.pos }]
+        this.goTo(t, opt);
+      }
+      return OK;
+    }
+    this.goTo(this.pos.equal(pos) ? t.pos : pos, opt);
+    if (this.targetPosition && this.targetPosition.roomName !== this.pos.roomName && this.pos.getEnteranceToRoom()) {
+      let anotherExit = this.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom() && p.getRangeTo(this) === 1)[0];
+      if (anotherExit)
+        this.targetPosition = anotherExit;
+    }
+    return this.creep.pull(t.creep) || t.creep.move(this.creep);
   }
 
   attack(t: Creep | Structure | PowerCreep, opt: TravelToOptions = {}): ScreepsReturnCode {
@@ -357,7 +378,9 @@ export class Bee {
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
           let posRangeToEnemy = p.getRangeTo(c);
           let padding = 0x10 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
-          matrix.set(p.x, p.y, Math.max(matrix.get(p.x, p.y), Math.min(0xf0, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding)));
+          let val = Math.min(0xf0, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
+          if (val > matrix.get(p.x, p.y))
+            matrix.set(p.x, p.y, val);
         });
         matrix.set(c.pos.x, c.pos.y, 0xff);
       });

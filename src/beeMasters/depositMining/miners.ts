@@ -14,16 +14,19 @@ export class DepositMinerMaster extends Master {
   movePriority = <1>1;
 
   constructor(parent: DepositMaster) {
-    super(parent.hive, parent.ref + prefix.miner);
+    super(parent.hive, parent.order.ref + prefix.miner);
     this.parent = parent;
-    this.targetBeeCount = this.parent.positions;
+    this.targetBeeCount = this.parent.positions.length;
   }
 
   update() {
     super.update();
 
+    if (!this.hive.puller)
+      return;
+
     if (this.checkBees(false, CREEP_LIFE_TIME - this.parent.roadTime) && this.parent.operational
-      && _.filter(this.parent.puller.bees, b => b.state === beeStates.chill).length && !_.filter(this.bees, b => b.creep.spawning).length)
+      && _.filter(this.hive.puller.bees, b => b.state === beeStates.chill && b.ticksToLive > this.parent.roadTime).length)
       this.wish({
         setup: setups.miner.deposit,
         priority: 8,
@@ -32,13 +35,13 @@ export class DepositMinerMaster extends Master {
 
   run() {
     let target = this.parent.target!;
-    if (!target)
+    if (!target || target.cooldown)
       return;
     _.forEach(this.activeBees, bee => {
       if (target.pos.isNearTo(bee)) {
         bee.state = beeStates.work;
-        if (!target.cooldown)
-          bee.harvest(target);
+        if (bee.store.getFreeCapacity() >= this.parent.workAmount && bee.harvest(target) === OK && Apiary.logger)
+          Apiary.logger.addResourceStat(this.hive.roomName, "deposit", this.parent.workAmount, target.depositType);
       } else
         bee.state = beeStates.chill;
     });
