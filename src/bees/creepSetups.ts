@@ -138,6 +138,9 @@ export const setups = {
       pattern: [ATTACK],
       patternLimit: 20,
     }, 25),
+    powerhealer: new CreepSetup(setupsNames.healer + " P", {
+      pattern: [HEAL],
+    }, 25),
     deposit: new CreepSetup(setupsNames.miner + " D", {
       fixed: [CARRY, CARRY],
       pattern: [WORK],
@@ -175,8 +178,7 @@ export const setups = {
       patternLimit: 2,
     }, 25, 2),
     sk: new CreepSetup(setupsNames.defender + " SK", {
-      fixed: [HEAL, HEAL, HEAL],
-      pattern: [RANGED_ATTACK],
+      pattern: [HEAL, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
     }, 25),
     destroyer: new CreepSetup(setupsNames.defender + " DD", {
       pattern: [ATTACK],
@@ -203,9 +205,7 @@ let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
 }
 
 
-printSetup(setups.miner.deposit)
-
-printSetup(setups.defender.destroyer)
+printSetup(setups.defender.sk)
 
 /*
 printSetup(new CreepSetup("test bee", {

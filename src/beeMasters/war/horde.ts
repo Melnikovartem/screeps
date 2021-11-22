@@ -31,7 +31,7 @@ export class HordeMaster extends SwarmMaster {
   }
 
   init() {
-    this.emergency = this.hive.roomName === this.order.pos.roomName;
+    this.emergency = this.hive.roomName === this.pos.roomName;
     if (this.order.ref.includes("hold"))
       this.holdPosition = true;
     if (!this.order.ref.includes("boost"))
@@ -57,7 +57,7 @@ export class HordeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (this.checkBees(this.emergency) && (Game.time >= roomInfo.safeModeEndTime - 250)) {
       this.wish({
         setup: this.setup,
@@ -71,7 +71,7 @@ export class HordeMaster extends SwarmMaster {
     let action2;
 
     let opts: TravelToOptions = {};
-    if (bee.pos.roomName === this.order.pos.roomName)
+    if (bee.pos.roomName === this.pos.roomName)
       opts.maxRooms = 1;
     let beeStats = Apiary.intel.getStats(bee.creep).current;
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
@@ -165,8 +165,10 @@ export class HordeMaster extends SwarmMaster {
         myTTK = enemyInfo.hits / (myInfo.dmgClose + myInfo.dmgRange - Math.min(enemyInfo.resist, enemyInfo.heal * 0.7 / 0.3) - enemyInfo.heal);
       if (beeStats.dmgRange && !enemyInfo.dmgRange)
         enemyTTK = Infinity;
-      else
-        enemyTTK = myInfo.hits / (enemyInfo.dmgClose + enemyInfo.dmgRange - Math.min(myInfo.resist, myInfo.heal * 0.7 / 0.3) - myInfo.heal);
+      else {
+        let enemyDmg = enemyInfo.dmgRange + (beeStats.dmgRange && !beeStats.dmgClose && rangeToTarget > 1 ? 0 : enemyInfo.dmgClose)
+        enemyTTK = myInfo.hits / (enemyDmg - Math.min(myInfo.resist, myInfo.heal * 0.7 / 0.3) - myInfo.heal);
+      }
       if (enemyTTK < 0)
         enemyTTK = Infinity;
       if (myTTK < 0)
@@ -211,7 +213,7 @@ export class HordeMaster extends SwarmMaster {
       bee.flee(this.order, opts); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
       return ERR_BUSY;
     }
-    if (loosingBattle && bee.pos.roomName === this.order.pos.roomName) {
+    if (loosingBattle && bee.pos.roomName === this.pos.roomName) {
       let newEnemy = bee.pos.findClosest(roomInfo.enemies.filter(e => {
         if (!(e.object instanceof Creep))
           return false;
@@ -229,16 +231,12 @@ export class HordeMaster extends SwarmMaster {
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
       opts.movingTarget = rangeToTarget <= targetedRange + 1;
       bee.goTo(target, opts);
-      if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.order.pos.roomName)
+      if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.pos.roomName)
         bee.targetPosition = bee.pos;
     }
     // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;
-  }
-
-  battleIsLoosing() {
-
   }
 
 
@@ -254,11 +252,11 @@ export class HordeMaster extends SwarmMaster {
       switch (bee.state) {
         case beeStates.work:
           let pos = bee.pos;
-          if (bee.pos.roomName !== this.order.pos.roomName)
-            pos = this.order.pos;
+          if (bee.pos.roomName !== this.pos.roomName)
+            pos = this.pos;
           enemy = Apiary.intel.getEnemy(pos, 10);
           if (!enemy) {
-            bee.goRest(this.order.pos);
+            bee.goRest(this.pos);
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
           } else {
@@ -275,15 +273,18 @@ export class HordeMaster extends SwarmMaster {
           let ans: number = OK;
           if (enemy) {
             enemy = Apiary.intel.getEnemy(bee.pos);
-            if (enemy && bee.pos.getRangeTo(enemy) > 5)
+            if (enemy && bee.pos.getRangeTo(enemy) > 3)
               enemy = undefined;
           }
           ans = this.beeAct(bee, enemy);
-          if (bee.pos.roomName === this.order.pos.roomName)
+          if (bee.pos.roomName === this.pos.roomName)
             bee.state = beeStates.work;
           if (ans === OK) {
-            let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
-            bee.goTo(this.order.pos, roomInfo.roomState >= roomStates.reservedByEnemy ? { useFindRoute: true } : {});
+            let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
+            let opt = this.hive.opts;
+            if (roomInfo.roomState >= roomStates.reservedByEnemy)
+              opt.useFindRoute = true;
+            bee.goTo(this.pos, opt);
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
           }

@@ -129,6 +129,7 @@ export class Intel {
               continue;
             break;
           case "resist":
+          case "hits":
             if ((<RoomPosition>pos).getRangeTo(creep) > 0)
               continue;
             break;
@@ -195,26 +196,26 @@ export class Intel {
     // it is cached after first check
     if (!Apiary.useBucket)
       lag = Math.max(2, lag);
-    if (roomInfo.lastUpdated + lag >= Game.time) {
-      if (roomInfo.lastUpdated > Game.time && roomName in Game.rooms) {
+    let returnLag = roomInfo.lastUpdated + lag >= Game.time;
+
+    if (!returnLag && !(roomName in Game.rooms)) {
+      Apiary.requestSight(roomName);
+      returnLag = true;
+    }
+
+    if (returnLag) {
+      if (roomInfo.lastUpdated < Game.time) {
         roomInfo.enemies = <Enemy[]>_.compact(roomInfo.enemies.map(e => {
-          let copy = e.object && <Enemy["object"] | undefined>Game.getObjectById(e.object.id);
+          let copy = <Enemy["object"] | null | undefined>Game.getObjectById(e.object.id);
           if (!copy || copy.pos.roomName !== roomName)
             return null;
           e.object = copy;
           return e;
         }));
-        roomInfo.towers = _.compact(roomInfo.towers.map(t => Game.getObjectById(t.id)!));
-      }
-      return roomInfo;
-    }
-
-    if (!(roomName in Game.rooms)) {
-      Apiary.requestSight(roomName);
-      roomInfo.enemies = [];
-      if (!roomInfo.safePlace && roomInfo.roomState < roomStates.ownedByEnemy && Game.time - roomInfo.lastUpdated > CREEP_LIFE_TIME) {
-        roomInfo.safePlace = true;
-        roomInfo.dangerlvlmax = 0;
+        if (Game.time > roomInfo.lastUpdated + CREEP_LIFE_TIME && !roomInfo.safePlace && roomInfo.roomState < roomStates.ownedByEnemy) {
+          roomInfo.safePlace = true;
+          roomInfo.dangerlvlmax = 0;
+        }
       }
       return roomInfo;
     }
@@ -287,6 +288,8 @@ export class Intel {
           dangerlvl = 2;
           break;
         case "Invader":
+          if (info.heal && (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral))
+            dangerlvl = 5;
           break;
         default:
           if (Apiary.logger)
@@ -428,7 +431,6 @@ export class Intel {
         case RANGED_ATTACK:
           stat = RANGED_ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost].rangedAttack : 1);
           ans.max.dmgRange += stat;
-          ans.max.dmgClose += stat;
           ans.max.dism += stat;
           if (b.hits)
             ans.current.dmgRange += stat;

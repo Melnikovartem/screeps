@@ -7,43 +7,48 @@ import { setups } from "../../bees/creepsetups";
 import { profile } from "../../profiler/decorator";
 
 // most basic of bitches a horde full of wasps
+
 @profile
 export class HordeDefenseMaster extends HordeMaster {
   boosts = undefined;
+  maxSpawns = 3;
 
   init() {
-    Apiary.defenseSwarms[this.order.pos.roomName] = this.order;
+    Apiary.defenseSwarms[this.pos.roomName] = this.order;
   }
 
   update() {
     SwarmMaster.prototype.update.call(this);
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     let shouldSpawn = Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
 
     if (shouldSpawn) {
+      if (!this.checkBees(this.hive.state !== hiveStates.battle || this.pos.roomName === this.hive.roomName))
+        return;
       let order = {
         setup: setups.defender.normal.copy(),
         priority: <1 | 4 | 7 | 8>1,
       }
-      let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, 25);
-      let enemy = Apiary.intel.getEnemy(this.order.pos);
+      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
+      let enemy = Apiary.intel.getEnemy(this.pos);
       if (enemy instanceof Creep) {
         order.setup = setups.defender.normal.copy();
         order.setup.fixed = [];
         let stats = Apiary.intel.getComplexStats(enemy, undefined, 8);
         let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.75);
         let rangedNeeded = Math.ceil(stats.max.heal / RANGED_ATTACK_POWER + 0.25); // we dont wanna play the 0 sum game
-        let desiredTTK = 40; // desired time to kill
+        let desiredTTK = 20; // desired time to kill
 
         let noFear = enemy.owner.username === "Invader" || roomInfo.dangerlvlmax < 4;
-        if (!noFear)
-          desiredTTK = 20;
+        if (enemy.owner.username === "Invader")
+          desiredTTK = 10;
         if (healNeeded > 5)
           healNeeded = 5;
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), rangedNeeded * 3);
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), Math.max(rangedNeeded * 3, 6));
+
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
@@ -68,16 +73,15 @@ export class HordeDefenseMaster extends HordeMaster {
         }
       } else if (enemy instanceof Structure) {
         order.priority = 7;
-        order.setup = setups.defender.destroyer;
+        order.setup = setups.defender.destroyer.copy();
+        order.setup.patternLimit = 10;
       } else
         return;
-      if (this.hive.cells.defense.reposessFlag(this.order.pos, enemy) === OK) {
+      if (this.hive.cells.defense.reposessFlag(this.pos, enemy) === OK) {
         this.order.delete();
         return;
       }
-      if (!this.checkBees(this.hive.state !== hiveStates.battle || this.order.pos.roomName === this.hive.roomName))
-        return;
-      if (this.order.pos.roomName !== this.hive.roomName)
+      if (this.pos.roomName !== this.hive.roomName)
         order.priority = <4 | 7>Math.max(4, order.priority);
       this.wish(order);
       return;

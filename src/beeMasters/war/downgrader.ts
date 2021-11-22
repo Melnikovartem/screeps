@@ -13,7 +13,7 @@ export class DowngradeMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username) {
       this.order.delete();
       return;
@@ -21,12 +21,12 @@ export class DowngradeMaster extends SwarmMaster {
 
     if (!this.order.memory.extraInfo) {
       this.order.memory.extraInfo = 0;
-      let controller = Game.rooms[this.order.pos.roomName] && Game.rooms[this.order.pos.roomName].controller;
+      let controller = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
       if (controller)
         this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
     }
 
-    let room = Game.rooms[this.order.pos.roomName];
+    let room = Game.rooms[this.pos.roomName];
     if (room && room.controller && room.controller.upgradeBlocked)
       this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + room.controller.upgradeBlocked;
 
@@ -42,10 +42,10 @@ export class DowngradeMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (!bee.pos.isNearTo(this.order.pos))
-        bee.goTo(this.order.pos);
+      if (!bee.pos.isNearTo(this.pos))
+        bee.goTo(this.pos);
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
-        let room = Game.rooms[this.order.pos.roomName];
+        let room = Game.rooms[this.pos.roomName];
         if (room && room.controller) {
           let ans = bee.attackController(room.controller);
           if (ans === OK) {
@@ -54,7 +54,7 @@ export class DowngradeMaster extends SwarmMaster {
           }
         }
       }
-      this.checkFlee(bee, this.order.pos);
+      this.checkFlee(bee, this.pos);
     });
   }
 }

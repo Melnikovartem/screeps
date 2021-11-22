@@ -12,14 +12,14 @@ export class PuppetMaster extends SwarmMaster {
   update() {
     super.update();
     let shouldSpawn = this.maxSpawns !== Infinity || this.oldestSpawn + CREEP_LIFE_TIME <= Game.time;
-    if (shouldSpawn && this.checkBees(hiveStates.battle !== this.hive.state) && !(this.order.pos.roomName in Game.rooms)) {
+    if (shouldSpawn && this.checkBees(hiveStates.battle !== this.hive.state) && !(this.pos.roomName in Game.rooms)) {
       this.wish({
         setup: setups.puppet,
         priority: 2, // well it is mostly cheap -_-
       });
     }
     if (this.maxSpawns === Infinity && this.order.color === COLOR_PURPLE && this.order.secondaryColor === COLOR_PURPLE) {
-      let roomInfo = Apiary.intel.getInfo(this.order.pos.roomName, Infinity);
+      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
       switch (roomInfo.roomState) {
         case roomStates.reservedByEnemy:
         case roomStates.reservedByInvader:
@@ -40,8 +40,8 @@ export class PuppetMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      bee.goRest(this.order.pos);
-      this.checkFlee(bee, this.order.pos);
+      bee.goRest(this.pos, { offRoad: true });
+      this.checkFlee(bee, this.pos);
     });
   }
 }
