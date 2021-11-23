@@ -5,6 +5,7 @@ import { roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
 import type { Hive } from "../hive";
+import type { FlagOrder } from "../order";
 import type { ProtoOrder } from "../abstract/broker";
 
 @profile
@@ -18,18 +19,36 @@ export class Logger {
       Memory.log = {
         reset: -1,
         apiary: -1,
+        time: Game.time,
+        gcl: { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal },
+        gpl: { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal },
+        cpu: { limit: Game.cpu.limit, used: 0, bucket: Game.cpu.bucket },
         hives: {}, orders: {},
-        crashes: {}, enemies: {}
+        enemies: {}, crashes: {}
       };
   }
 
-  initHive(hiveName: string) {
-    if (!Memory.log.hives[hiveName])
-      Memory.log.hives[hiveName] = {
-        loggedStates: {},
-        spawns: {},
-        resourceBalance: { [RESOURCE_ENERGY]: {} },
-      }
+  run() {
+    Memory.log.time = Game.time;
+    Memory.log.gcl = { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal };
+    Memory.log.gpl = { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal };
+    Memory.log.cpu = { limit: Game.cpu.limit, used: Game.cpu.getUsed(), bucket: Game.cpu.bucket };
+
+    _.forEach(Apiary.hives, hive => {
+      this.hiveLog(hive);
+    });
+  }
+
+  hiveLog(hive: Hive) {
+    let mem = Memory.log.hives[hive.roomName];
+    if (!mem)
+      return;
+    mem.annexNames = hive.annexNames;
+    mem.spawOrders = Object.keys(hive.spawOrders).length;
+    mem.structuresConst = hive.structuresConst.length;
+    mem.sumCost = hive.sumCost;
+    if (Game.time % 10 === 0)
+      mem.energyReport = this.reportEnergy(hive.roomName);
   }
 
   addResourceStat(hiveName: string, ref: string, amount: number, resource: ResourceConstant = RESOURCE_ENERGY) {
@@ -58,16 +77,7 @@ export class Logger {
     return OK;
   }
 
-  newSpawn(beeName: string, spawn: StructureSpawn, cost: number, priority: number, masterName: string) {
-    let hiveName = Apiary.masters[masterName] ? Apiary.masters[masterName].hive.roomName : spawn.pos.roomName;
-    if (!Memory.log.hives[hiveName])
-      return ERR_NOT_FOUND;
-    Memory.log.hives[hiveName].spawns[beeName] = {
-      time: Game.time,
-      fromSpawn: spawn.name,
-      orderedBy: masterName,
-      priority: priority,
-    };
+  newSpawn(beeName: string, spawn: StructureSpawn, cost: number, masterName: string) {
     let name = beeName.substring(0, beeName.length - 5);
     if (name === setups.miner.energy.name || name === setups.miner.minerals.name)
       this.addResourceStat(spawn.pos.roomName, "upkeep_" + masterName.slice(masterName.length - 4), -cost);
@@ -107,85 +117,16 @@ export class Logger {
     this.addResourceStat(terminalFrom.pos.roomName, "terminal", -Game.market.calcTransactionCost(amount, terminalFrom.pos.roomName, terminalTo.pos.roomName));
   }
 
-  hiveLog(hive: Hive) {
-    if (!Memory.log.hives[hive.roomName])
-      return ERR_NOT_FOUND;
-    if (Game.time % LOGGING_CYCLE * 10 === 0) {
-      let orderMap: { [id: string]: number } = {};
-
-      for (const ref in hive.spawOrders) {
-        orderMap[ref] = hive.spawOrders[ref].priority;
+  initHive(hiveName: string) {
+    if (!Memory.log.hives[hiveName])
+      Memory.log.hives[hiveName] = {
+        annexNames: [],
+        structuresConst: 0,
+        sumCost: 0,
+        spawOrders: 0,
+        energyReport: {},
+        resourceBalance: { [RESOURCE_ENERGY]: {} },
       }
-
-      Memory.log.hives[hive.roomName].loggedStates[Game.time] = {
-        annexNames: hive.annexNames,
-        structuresConst: hive.structuresConst.length,
-        sumCost: hive.sumCost,
-        spawOrders: orderMap,
-      };
-      return OK;
-    }
-    return ERR_BUSY;
-  }
-
-  reportEnemy(creep: Creep) {
-    if (!Memory.log.enemies)
-      Memory.log.enemies = {};
-
-    Memory.log.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
-      time: Game.time,
-      info: Apiary.intel.getStats(creep),
-      pos: creep.pos,
-      owner: creep.owner.username,
-    }
-  }
-
-  clean() {
-    if (Game.time % LOGGING_CYCLE === 0) {
-      for (let key in Memory.log.hives) {
-        let sortedKeys: string[] = Object.keys(Memory.log.hives[key].loggedStates).sort((a, b) => +b - +a);
-
-        for (let i = sortedKeys.length - 25; i >= 0; --i)
-          delete Memory.log.hives[key].loggedStates[+sortedKeys[i]];
-
-        sortedKeys = Object.keys(Memory.log.hives[key].spawns)
-          .sort((a, b) => Memory.log.hives[key].spawns[b].time - Memory.log.hives[key].spawns[a].time);
-        for (let i = sortedKeys.length - 25; i >= 0; --i)
-          delete Memory.log.hives[key].spawns[sortedKeys[i]];
-
-        for (let res in Memory.log.hives[key].resourceBalance)
-          for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
-            let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
-            if (diff >= LOGGING_CYCLE * 25) {
-              Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
-                time: Game.time - Math.floor(diff / 2),
-                amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
-              }
-            }
-          }
-      }
-
-      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 50) {
-        let sortedKeys = Object.keys(Memory.log.orders)
-          .sort((a, b) => Memory.log.orders![b].time - Memory.log.orders![a].time);
-        for (let i = sortedKeys.length - 20; i >= 0; --i)
-          delete Memory.log.orders[sortedKeys[i]];
-      }
-
-      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 50) {
-        let sortedKeys = Object.keys(Memory.log.crashes)
-          .sort((a, b) => Memory.log.crashes![b].time - Memory.log.crashes![a].time);
-        for (let i = sortedKeys.length - 20; i >= 0; --i)
-          delete Memory.log.crashes[sortedKeys[i]];
-      }
-
-      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
-        let sortedKeys = Object.keys(Memory.log.enemies)
-          .sort((a, b) => Memory.log.enemies![b].time - Memory.log.enemies![a].time);
-        for (let i = sortedKeys.length - 20; i >= 0; --i)
-          delete Memory.log.enemies[sortedKeys[i]];
-      }
-    }
   }
 
   reportEnergy(hiveName: string, extra: boolean = false): { [id: string]: { profit: number, revenue?: number } } {
@@ -265,5 +206,65 @@ export class Logger {
     ans["upkeep"] = { profit: + getCreepCostRate(setups.queen) };
 
     return ans;
+  }
+
+  reportEnemy(creep: Creep) {
+    if (!Memory.log.enemies)
+      Memory.log.enemies = {};
+
+    Memory.log.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
+      time: Game.time,
+      info: Apiary.intel.getStats(creep),
+      pos: creep.pos,
+      owner: creep.owner.username,
+    }
+  }
+
+  reportOrder(order: FlagOrder) {
+    if (!order.master)
+      return;
+    if (!Memory.log.orders)
+      Memory.log.orders = {};
+    let repeat = order.memory.repeat ? "_" + order.memory.repeat : "";
+    Memory.log.orders[order.ref + repeat] = {
+      time: Game.time,
+      pos: order.pos,
+    }
+  }
+
+  clean() {
+    if (Game.time % LOGGING_CYCLE === 0) {
+      for (let key in Memory.log.hives)
+        for (let res in Memory.log.hives[key].resourceBalance)
+          for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
+            let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
+            if (diff >= LOGGING_CYCLE * 5)
+              Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
+                time: Game.time - Math.floor(diff / 2),
+                amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
+              }
+          }
+
+      if (Memory.log.orders && Object.keys(Memory.log.orders).length > 50) {
+        let sortedKeys = Object.keys(Memory.log.orders)
+          .sort((a, b) => Memory.log.orders![b].time - Memory.log.orders![a].time);
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
+          delete Memory.log.orders[sortedKeys[i]];
+      }
+
+      if (Memory.log.crashes && Object.keys(Memory.log.crashes).length > 50) {
+        let sortedKeys = Object.keys(Memory.log.crashes)
+          .sort((a, b) => Memory.log.crashes![b].time - Memory.log.crashes![a].time);
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
+          delete Memory.log.crashes[sortedKeys[i]];
+      }
+
+      if (Memory.log.enemies && Object.keys(Memory.log.enemies).length > 50) {
+        let sortedKeys = Object.keys(Memory.log.enemies)
+          .sort((a, b) => Memory.log.enemies![b].time - Memory.log.enemies![a].time);
+        for (let i = sortedKeys.length - 20; i >= 0; --i)
+          delete Memory.log.enemies[sortedKeys[i]];
+      }
+    }
   }
 }

@@ -137,7 +137,7 @@ export class RespawnCell extends Cell {
 
       if (ans === OK) {
         if (Apiary.logger)
-          Apiary.logger.newSpawn(name, spawn, setup.cost, order.priority, order.master);
+          Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
         energyAvailable -= setup.cost;
         delete this.hive.spawOrders[order.ref];
       }

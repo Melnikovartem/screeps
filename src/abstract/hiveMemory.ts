@@ -8,24 +8,11 @@ export interface HiveCache {
 }
 
 export interface HiveLog {
-  loggedStates: {
-    [id: number]: {
-      annexNames: string[],
-      structuresConst: number
-      sumCost: number,
-      spawOrders: {
-        [id: string]: number,
-      }
-    }
-  },
-  spawns: {
-    [id: string]: {
-      time: number,
-      fromSpawn: string,
-      orderedBy: string,
-      priority: number,
-    }
-  },
+  annexNames: string[],
+  structuresConst: number,
+  sumCost: number,
+  spawOrders: number,
+  energyReport: { [id: string]: { profit: number, revenue?: number } },
   resourceBalance: {
     [key in ResourceConstant]?: {
       [id: string]: {

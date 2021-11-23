@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
 import type { CreepSetup } from "../../bees/creepSetups";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 import type { CreepAllBattleInfo, CreepBattleInfo, Enemy } from "../../abstract/intelligence";
 
 export type FormationPositions = [Pos, CreepSetup][];
@@ -22,7 +22,7 @@ export abstract class SquadMaster extends SwarmMaster {
   abstract formation: FormationPositions;
   formationBees: (Bee | undefined)[] = [];
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order);
     let extraPos = this.order.flag.memory.extraPos;
     if (!extraPos || !("x" in extraPos) || !("y" in extraPos) || !("roomName" in extraPos))

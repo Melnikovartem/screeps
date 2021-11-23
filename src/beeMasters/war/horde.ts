@@ -7,7 +7,7 @@ import { beeStates, roomStates, enemyTypes } from "../../enums";
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { Boosts } from "../_Master";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 
 const BOOST_LVL = 2;
 
@@ -25,7 +25,7 @@ export class HordeMaster extends SwarmMaster {
   setup = setups.knight.copy();
   emergency = false;
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order);
     this.init();
   }

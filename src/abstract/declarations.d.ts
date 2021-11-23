@@ -59,7 +59,7 @@ declare global {
         [id: string]: HiveCache
       },
     },
-    masters: { [id: string]: any };
+    masters: undefined;
 
     // some setting that i wan't to be able to change dynamically
     settings: {
@@ -70,16 +70,21 @@ declare global {
 
     // my giant log
     log: {
+      time: number,
       reset: number,
       apiary: number,
+      gcl: { level: number, progress: number, progressTotal: number },
+      gpl: { level: number, progress: number, progressTotal: number },
+      cpu: { bucket: number, used: number, limit: number },
       hives: {
         [id: string]: HiveLog
       },
+
+
       orders?: {
         [id: string]: {
           time: number,
           pos: RoomPosition,
-          name: string,
         }
       },
       crashes?: {

@@ -7,7 +7,7 @@ import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, BuildProject } from "../../Hive";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 import type { Bee } from "../../bees/bee";
 
 @profile
@@ -202,7 +202,7 @@ export class DefenseCell extends Cell {
   reposessFlag(pos: RoomPosition, enemy?: ProtoPos) {
     if (!enemy)
       return OK;
-    let freeSwarms: Order[] = [];
+    let freeSwarms: FlagOrder[] = [];
     let enemyInfo = Apiary.intel.getComplexStats(enemy).current;
     for (const roomDefName in Apiary.defenseSwarms) {
       let roomInfoDef = Apiary.intel.getInfo(roomDefName, Infinity);

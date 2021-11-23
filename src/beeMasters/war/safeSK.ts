@@ -5,7 +5,7 @@ import { beeStates, hiveStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 
 const ticksToSpawn = (x: StructureKeeperLair) => x.ticksToSpawn ? x.ticksToSpawn : 0;
 
@@ -15,7 +15,7 @@ export class SKMaster extends HordeMaster {
   maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order);
   }
 

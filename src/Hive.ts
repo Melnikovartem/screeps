@@ -595,8 +595,6 @@ export class Hive {
     }
     if (Game.time % 500 === 29 || this.state === hiveStates.nospawn)
       this.updateCellData();
-    if (Apiary.logger)
-      Apiary.logger.hiveLog(this);
   }
 
   run() {

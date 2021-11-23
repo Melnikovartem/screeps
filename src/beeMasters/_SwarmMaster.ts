@@ -6,16 +6,16 @@ import { Master } from "./_Master";
 import { prefix } from "../enums";
 
 import type { Bee } from "../bees/bee";
-import type{ Order } from "../order";
+import type{ FlagOrder } from "../order";
 import { profile } from "../profiler/decorator";
 
 @profile
 export abstract class SwarmMaster extends Master {
 
-  readonly order: Order;
+  readonly order: FlagOrder;
   maxSpawns: number = 1;
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order.hive, prefix.swarm + order.ref);
     this.order = order;
 

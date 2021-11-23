@@ -23,7 +23,6 @@ import { hiveStates, prefix, roomStates } from "./enums";
 import { makeId, findOptimalResource } from "./abstract/utils";
 import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
 
-import { LOGGING_CYCLE } from "./settings";
 import { profile } from "./profiler/decorator";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
@@ -33,7 +32,7 @@ import type { Hive, HivePositions } from "./Hive";
 const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 
 @profile
-export class Order {
+export class FlagOrder {
   flag: Flag;
   master?: SwarmMaster;
   hive: Hive;
@@ -618,35 +617,21 @@ export class Order {
 
   // what to do when delete if something neede
   delete() {
-    if (this.flag.memory.repeat && this.flag.memory.repeat > 0) {
-      if (LOGGING_CYCLE && this.master) {
-        if (!Memory.log.orders)
-          Memory.log.orders = {};
-        Memory.log.orders[this.ref + "_" + this.flag.memory.repeat] = {
-          time: Game.time,
-          name: this.flag.name,
-          pos: this.pos,
-        }
-      }
-      this.flag.memory.repeat -= 1;
-      this.flag.memory.info = undefined;
-      this.flag.memory.extraInfo = undefined;
-      this.flag.memory.extraPos = undefined;
+    if (this.memory.repeat && this.memory.repeat > 0) {
+      if (Apiary.logger)
+        Apiary.logger.reportOrder(this);
+      this.memory.repeat -= 1;
+      this.memory.info = undefined;
+      this.memory.extraInfo = undefined;
+      this.memory.extraPos = undefined;
       if (this.master)
         this.master.delete();
       this.acted = false;
       return;
     }
 
-    if (LOGGING_CYCLE && this.master) {
-      if (!Memory.log.orders)
-        Memory.log.orders = {};
-      Memory.log.orders[this.ref] = {
-        time: Game.time,
-        name: this.flag.name,
-        pos: this.pos,
-      }
-    }
+    if (Apiary.logger)
+      Apiary.logger.reportOrder(this);
 
     switch (this.color) {
       case COLOR_PURPLE:

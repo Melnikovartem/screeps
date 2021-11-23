@@ -4,16 +4,20 @@ import { Logger } from "../convenience/logger";
 @profile
 export class Mem {
   static init() {
-    if (!Memory.masters) Memory.masters = {};
     if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
     if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
+    for (const roomName in Memory.cache.hives) {
+      let room = Game.rooms[roomName];
+      if (!(room && room.controller && room && room.controller.my))
+        delete Memory.flags[roomName];
+    }
     Logger.init();
   }
 
   static wipe() {
     console.log("> > Memory wipe!");
-    Memory.masters = {};
+    Memory.masters = undefined;
     Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
     Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 

@@ -5,7 +5,7 @@ import { setups } from "../../bees/creepsetups";
 import { COMPRESS_MAP } from "../../cells/stage1/factoryCell";
 
 import { profile } from "../../profiler/decorator";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 
 // this will become outdated soon
 
@@ -17,7 +17,7 @@ export class PortalMaster extends SwarmMaster {
   res: ResourceConstant | undefined;
   cycle: number = CREEP_LIFE_TIME;
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order);
     if (this.order.ref.includes(prefix.boost)) {
       this.setup = setups.bootstrap.copy();

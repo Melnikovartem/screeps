@@ -5,7 +5,7 @@ import { DepositMinerMaster } from "./miners";
 import { DepositPickupMaster } from "./pickup";
 
 import { profile } from "../../profiler/decorator";
-import type { Order } from "../../order";
+import type { FlagOrder } from "../../order";
 
 //first tandem btw
 @profile
@@ -22,7 +22,7 @@ export class DepositMaster extends SwarmMaster {
   rest: RoomPosition;
   workAmount: number;
 
-  constructor(order: Order) {
+  constructor(order: FlagOrder) {
     super(order);
     this.order.memory.extraInfo = 0;
     this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });

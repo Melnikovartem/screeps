@@ -1,7 +1,7 @@
 import { Bee } from "./bees/bee";
 import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
-import { Order } from "./order";
+import { FlagOrder } from "./order";
 import { Intel } from "./abstract/intelligence";
 import { Broker } from "./abstract/broker";
 import { Logger } from "./convenience/logger";
@@ -31,9 +31,9 @@ export class _Apiary {
   bees: { [id: string]: Bee };
   hives: { [id: string]: Hive };
   masters: { [id: string]: Master };
-  orders: { [id: string]: Order };
+  orders: { [id: string]: FlagOrder };
 
-  defenseSwarms: { [id: string]: Order } = {};
+  defenseSwarms: { [id: string]: FlagOrder } = {};
   requestRoomSight: string[] = [];
 
   constructor() {
@@ -79,7 +79,7 @@ export class _Apiary {
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
     this.intel.update();
 
-    Order.checkFlags();
+    FlagOrder.checkFlags();
     _.forEach(Apiary.orders, order => {
       if (order)
         safeWrap(() => order.update(), order.print + " update");
@@ -123,5 +123,7 @@ export class _Apiary {
       Apiary.planner.run();
 
     safeWrap(() => this.visuals.run(), "visuals");
+    if (this.logger)
+      this.logger.run();
   }
 }
