@@ -61,7 +61,7 @@ export class DevelopmentCell extends Cell {
           return
         // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hive.roomName)
         let route = Traveler.findTravelPath(f.pos, this.hive, {
-          offRoad: true, extraTerrainWeight: 1,
+          offRoad: true, weightOffRoad: 2,
           roomCallback: (roomName, matrix) => {
             let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
             if (!roads)

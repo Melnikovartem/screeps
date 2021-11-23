@@ -64,7 +64,10 @@ export class _Apiary {
     if (!Object.keys(this.hives).length) {
       // case inter-shard migration
       let roomName = Object.keys(Game.rooms)[0];
-      this.hives[roomName] = new Hive(roomName);
+      let protoHive = new Hive(roomName);
+      protoHive.update = () => { };
+      protoHive.run = () => { };
+      this.hives[roomName] = protoHive;
     }
     this.network = new Network(this.hives);
   }
@@ -122,7 +125,7 @@ export class _Apiary {
     if (this.useBucket)
       Apiary.planner.run();
 
-    safeWrap(() => this.visuals.run(), "visuals");
+    this.visuals.run();
     if (this.logger)
       this.logger.run();
   }

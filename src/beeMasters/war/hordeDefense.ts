@@ -1,16 +1,18 @@
 import { HordeMaster } from "./horde";
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { hiveStates } from "../../enums";
+import { hiveStates, roomStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
+
+import type { Boosts } from "../_Master";
 
 // most basic of bitches a horde full of wasps
 
 @profile
 export class HordeDefenseMaster extends HordeMaster {
-  boosts = undefined;
+  boosts: Boosts | undefined = undefined;
   maxSpawns = 3;
 
   init() {
@@ -22,6 +24,10 @@ export class HordeDefenseMaster extends HordeMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     let shouldSpawn = Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
+
+    if ((roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral) && roomInfo.dangerlvlmax > 4)
+      this.boosts = [{ type: "rangedAttack", lvl: 2 }];
+
 
     if (shouldSpawn) {
       if (!this.checkBees(this.hive.state !== hiveStates.battle || this.pos.roomName === this.hive.roomName))
@@ -47,7 +53,7 @@ export class HordeDefenseMaster extends HordeMaster {
           healNeeded = 5;
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded), Math.max(rangedNeeded * 3, 6));
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded) / (this.boosts ? 4 : 1), 25); // Math.max(rangedNeeded * 3, 6) -> 25
 
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];

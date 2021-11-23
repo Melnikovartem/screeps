@@ -76,6 +76,9 @@ declare global {
       gcl: { level: number, progress: number, progressTotal: number },
       gpl: { level: number, progress: number, progressTotal: number },
       cpu: { bucket: number, used: number, limit: number },
+      pixels: number,
+      credits: number,
+
       hives: {
         [id: string]: HiveLog
       },

@@ -378,7 +378,7 @@ export class Bee {
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
           let posRangeToEnemy = p.getRangeTo(c);
           let padding = 0x10 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
-          let val = Math.min(0xf0, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
+          let val = Math.min(0x80, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
           if (val > matrix.get(p.x, p.y))
             matrix.set(p.x, p.y, val);
         });

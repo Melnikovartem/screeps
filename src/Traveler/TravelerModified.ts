@@ -325,8 +325,8 @@ export class Traveler {
     let ret = PathFinder.search(origin, { pos: destination, range: options.range! }, {
       maxOps: options.maxOps,
       maxRooms: options.maxRooms,
-      plainCost: (options.offRoad ? 1 : options.ignoreRoads ? 1 : 2) + (options.extraTerrainWeight || 0),
-      swampCost: (options.offRoad ? 1 : options.ignoreRoads ? 5 : 10) + (options.extraTerrainWeight || 0),
+      plainCost: (options.offRoad ? (options.weightOffRoad || 1) : options.ignoreRoads ? 1 : 2),
+      swampCost: (options.offRoad ? (options.weightOffRoad || 1) : options.ignoreRoads ? 5 : 10),
       roomCallback: callback,
     });
 
@@ -538,7 +538,7 @@ export class Traveler {
         _.forEach(structure.pos.getOpenPositions(true, 3), p => matrix.set(p.x, p.y,
           Math.max(matrix.get(p.x, p.y), 4 * (4 - p.getRangeTo(structure)))));
         matrix.set(structure.pos.x, structure.pos.y, 0xff);
-      }  
+      }
       */
     }
 

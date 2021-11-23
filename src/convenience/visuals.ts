@@ -244,7 +244,7 @@ export class Visuals {
         vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
         vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
       }
-      this.exportAnchor();
+      this.exportAnchor(1);
     }
   }
 

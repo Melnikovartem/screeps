@@ -31,7 +31,7 @@ type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends TravelToOptions { ignoreTypes?: BuildableStructureConstant[] };
 function getPathArgs(opts: CoustomFindPathOpts = {}): TravelToOptions {
   return _.defaults(opts, {
-    ignoreStructures: true, offRoad: true, maxRooms: 4, range: 0, extraTerrainWeight: 1,
+    ignoreStructures: true, offRoad: true, maxRooms: 4, range: 0, weightOffRoad: 2,
     roomCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (!Apiary.planner.activePlanning[roomName])
         return;
@@ -199,10 +199,10 @@ export class RoomPlanner {
       return ans;
     });
 
-    _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
-
     let customBuildings = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_RED);
     _.forEach(customBuildings, f => (f.name in CONSTRUCTION_COST) && this.addToPlan(f.pos, f.pos.roomName, <BuildableStructureConstant>f.name), true);
+
+    _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
 
     this.addResourceRoads(anchor);
 
@@ -882,7 +882,7 @@ export class RoomPlanner {
   currentToActive(roomName: string, anchor: RoomPosition) {
     this.initPlanning(roomName, anchor);
     _.forEach((<(Structure | ConstructionSite)[]>Game.rooms[roomName].find(FIND_STRUCTURES))
-      .concat(Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES)),
+      .concat(Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES).filter(c => c.my)),
       s => {
         if (!(s.structureType in CONTROLLER_STRUCTURES))
           return;
@@ -973,7 +973,7 @@ export class RoomPlanner {
     return { amount: amount ? amount : 0, heal: hitsMax };
   }
 
-  checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], specials: { [key in StructureConstant]?: number } = {}, coef = 0.7, nukeAlert = false) {
+  checkBuildings(roomName: string, priorityQue: BuildableStructureConstant[], nukeAlert: boolean, specials: { [key in StructureConstant]?: number } = {}, coef = 0.7) {
     if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
       return [];
 

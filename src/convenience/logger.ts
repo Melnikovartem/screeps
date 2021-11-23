@@ -23,20 +23,24 @@ export class Logger {
         gcl: { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal },
         gpl: { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal },
         cpu: { limit: Game.cpu.limit, used: 0, bucket: Game.cpu.bucket },
+        pixels: 0,
+        credits: 0,
         hives: {}, orders: {},
         enemies: {}, crashes: {}
       };
   }
 
   run() {
-    Memory.log.time = Game.time;
-    Memory.log.gcl = { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal };
-    Memory.log.gpl = { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal };
-    Memory.log.cpu = { limit: Game.cpu.limit, used: Game.cpu.getUsed(), bucket: Game.cpu.bucket };
-
     _.forEach(Apiary.hives, hive => {
       this.hiveLog(hive);
     });
+
+    Memory.log.time = Game.time;
+    Memory.log.credits = Game.market.credits;
+    Memory.log.pixels = Game.resources["pixel"];
+    Memory.log.gcl = { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal };
+    Memory.log.gpl = { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal };
+    Memory.log.cpu = { limit: Game.cpu.limit, used: Game.cpu.getUsed(), bucket: Game.cpu.bucket };
   }
 
   hiveLog(hive: Hive) {
@@ -47,8 +51,16 @@ export class Logger {
     mem.spawOrders = Object.keys(hive.spawOrders).length;
     mem.structuresConst = hive.structuresConst.length;
     mem.sumCost = hive.sumCost;
-    if (Game.time % 10 === 0)
-      mem.energyReport = this.reportEnergy(hive.roomName);
+
+    mem.storageEnergy = (hive.room.storage ? hive.room.storage.store.energy : 0);
+    mem.terminalEnergy = (hive.room.terminal ? hive.room.terminal.store.energy : 0);
+    mem.energyAvailable = hive.room.energyAvailable;
+    mem.energyCapacityAvailable = hive.room.energyCapacityAvailable;
+    mem.controllerProgress = hive.controller.progress;
+    mem.controllerProgressTotal = hive.controller.progressTotal;
+    mem.controllerLevel = hive.controller.level;
+
+    mem.energyReport = this.reportEnergy(hive.roomName);
   }
 
   addResourceStat(hiveName: string, ref: string, amount: number, resource: ResourceConstant = RESOURCE_ENERGY) {
@@ -124,6 +136,15 @@ export class Logger {
         structuresConst: 0,
         sumCost: 0,
         spawOrders: 0,
+
+        storageEnergy: 0,
+        terminalEnergy: 0,
+        energyAvailable: 0,
+        energyCapacityAvailable: 0,
+        controllerProgress: 0,
+        controllerProgressTotal: 0,
+        controllerLevel: 0,
+
         energyReport: {},
         resourceBalance: { [RESOURCE_ENERGY]: {} },
       }

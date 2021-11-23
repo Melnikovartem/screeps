@@ -12,6 +12,15 @@ export interface HiveLog {
   structuresConst: number,
   sumCost: number,
   spawOrders: number,
+
+  storageEnergy: number,
+  terminalEnergy: number,
+  energyAvailable: number,
+  energyCapacityAvailable: number,
+  controllerProgress: number,
+  controllerProgressTotal: number,
+  controllerLevel: number,
+
   energyReport: { [id: string]: { profit: number, revenue?: number } },
   resourceBalance: {
     [key in ResourceConstant]?: {
