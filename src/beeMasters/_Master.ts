@@ -1,5 +1,5 @@
 // import { makeId } from "../utils/other";
-import { hiveStates, beeStates, prefix, roomStates } from "../enums";
+import { hiveStates, beeStates, prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
@@ -53,6 +53,13 @@ export abstract class Master {
     this.beesAmount = Object.keys(this.bees).length;
     if (this.beesAmount)
       this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) => curr.creep.memory.born < prev.creep.memory.born ? curr : prev).creep.memory.born;
+  }
+
+  removeBee(bee: Bee) {
+    bee.master = undefined;
+    bee.memory.refMaster = "";
+    bee.state = beeStates.chill;
+    this.deleteBee(bee.ref);
   }
 
   checkBees(spawnExtreme: boolean = false, spawnCycle: number = CREEP_LIFE_TIME - 10): boolean {
@@ -111,11 +118,7 @@ export abstract class Master {
     let pos = bee.pos;
     if (bee.targetPosition)
       pos = (bee.targetPosition.roomName === pos.roomName && bee.targetPosition.getEnteranceToRoom()) || bee.targetPosition;
-    let roomInfo = Apiary.intel.getInfo(pos.roomName, 25);
-    if (!roomInfo.safePlace)
-      roomInfo = Apiary.intel.getInfo(pos.roomName, 0);
-    else if (roomInfo.roomState >= roomStates.reservedByEnemy)
-      roomInfo = Apiary.intel.getInfo(pos.roomName, 5);
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 25);
     if (pos.roomName !== bee.pos.roomName && Game.time - roomInfo.lastUpdated > 0 && Game.time - roomInfo.lastUpdated <= 20 && !roomInfo.safePlace) {
       if (bee.pos.getEnteranceToRoom())
         bee.flee(fleeTo || this.hive);

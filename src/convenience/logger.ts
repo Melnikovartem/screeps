@@ -273,7 +273,7 @@ export class Logger {
 
   clean() {
     if (Game.time % LOGGING_CYCLE === 0) {
-      if (Game.time % LOGGING_CYCLE * 20 === 0)
+      if (Game.time % LOGGING_CYCLE * 4 === 0)
         for (let key in Memory.log.hives)
           for (let res in Memory.log.hives[key].resourceBalance)
             for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {

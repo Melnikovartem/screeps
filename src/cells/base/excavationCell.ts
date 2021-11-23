@@ -58,7 +58,7 @@ export class ExcavationCell extends Cell {
         if (cell.lair && (!cell.lair.ticksToSpawn || cell.lair.ticksToSpawn <= cell.restTime))
           padding += 600; // usual drop of source keeper if killed by my SK defender
         if (cell.container.store.getUsedCapacity() + padding >= this.fullContainer) {
-          let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 10);
+          let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 25);
           if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)
             this.quitefullCells.push(cell);
         }

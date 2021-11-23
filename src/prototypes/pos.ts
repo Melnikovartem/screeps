@@ -1,4 +1,5 @@
 import { Traveler } from "../Traveler/TravelerModified";
+import { getRoomCoorinates } from "../abstract/utils";
 
 Object.defineProperty(RoomPosition.prototype, "to_str", {
   get: function str() {
@@ -6,34 +7,10 @@ Object.defineProperty(RoomPosition.prototype, "to_str", {
   }
 });
 
-function getRoomCoorinates(roomName: string): [number, number] {
-  let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
-  let x = 0;
-  let y = 0;
-  if (parsed) {
-    x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
-    y = (+parsed[4]) * (parsed[3] === "S" ? -1 : 1);
-  }
-  return [x, y];
-}
-
-RoomPosition.prototype.equal = function getRoomCoorinates(pos: ProtoPos) {
+RoomPosition.prototype.equal = function equal(pos: ProtoPos) {
   if (!(pos instanceof RoomPosition))
     pos = pos.pos;
   return this.x === pos.x && this.y === pos.y && this.roomName === pos.roomName;
-}
-
-
-RoomPosition.prototype.getRoomCoorinates = function getRoomCoorinates() {
-  let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(this.roomName);
-  let x = 0;
-  let y = 0;
-  if (parsed) {
-    x = (+parsed[2]) * (parsed[1] === "W" ? -1 : 1);
-    y = (+parsed[4]) * (parsed[3] === "S" ? -1 : 1);
-    return [x, y, parsed[1], parsed[3]];
-  }
-  return [0, 0, "E", "S"];
 }
 
 // i wanted to do in in linear math, but then i remebered: FUCKING exits
@@ -53,8 +30,8 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
       return ans.length;
     return Infinity;
   } else {
-    let c1 = getRoomCoorinates(this.roomName);
-    let c2 = getRoomCoorinates(toRoom);
+    let c1 = getRoomCoorinates(this.roomName, false);
+    let c2 = getRoomCoorinates(toRoom, false);
     return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]);
   }
 }

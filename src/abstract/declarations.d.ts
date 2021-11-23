@@ -13,7 +13,6 @@ declare global {
   type Pos = { x: number, y: number };
 
   interface RoomPosition {
-    getRoomCoorinates(): [number, number, string, string];
     getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
     getPositionsInRange(range: number): RoomPosition[];
     getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];

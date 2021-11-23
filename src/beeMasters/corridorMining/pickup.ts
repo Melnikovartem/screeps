@@ -51,6 +51,7 @@ export class DepositPickupMaster extends Master {
   }
 
   run() {
+    let pickingup = false;
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.chill:
@@ -65,6 +66,11 @@ export class DepositPickupMaster extends Master {
             bee.goTo(this.hive.cells.storage!);
             break;
           }
+          if (pickingup) {
+            bee.goRest(this.parent.rest, { offRoad: true });
+            break;
+          }
+          pickingup = true;
           let overproduction: undefined | Resource;
           _.some(this.parent.positions, p => {
             overproduction = p.pos.lookFor(LOOK_RESOURCES)[0];
@@ -101,6 +107,9 @@ export class DepositPickupMaster extends Master {
             bee.state = beeStates.chill;
             bee.goTo(this.parent.rest, { offRoad: true });
           }
+          break;
+        case beeStates.fflush:
+          this.removeBee(bee);
           break;
       }
       this.checkFlee(bee);

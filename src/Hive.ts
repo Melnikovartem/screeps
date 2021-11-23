@@ -11,7 +11,7 @@ import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
-import { DepositPullerMaster } from "./beeMasters/depositMining/puller";
+import { DepositPullerMaster } from "./beeMasters/corridorMining/puller";
 
 import { safeWrap, makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
@@ -218,7 +218,8 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
-        this.wallsHealthMax = this.wallsHealthMax * 5; // RAMPART_HITS_MAX[8]
+        if (Game.shard.name !== "shard3")
+          this.wallsHealthMax = this.wallsHealthMax * 5; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     } else {
@@ -227,7 +228,7 @@ export class Hive {
       this.cells.dev = new DevelopmentCell(this);
     }
 
-    if (this.wallsHealth > this.wallsHealth)
+    if (this.wallsHealth > this.wallsHealthMax)
       this.wallsHealthMax = this.wallsHealth;
 
     this.updateCellData(true);
@@ -550,9 +551,9 @@ export class Hive {
         if (!this.sumCost && this.builder && this.builder.activeBees)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, false, this.wallMap, 0.99));
         if (!this.sumCost && this.cells.storage
-          && this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >= this.resTarget[RESOURCE_ENERGY]
+          && this.resState[RESOURCE_ENERGY] > 0
           && this.wallsHealth < this.wallsHealthMax)
-          this.wallsHealth += WALL_HEALTH;
+          this.wallsHealth = Math.min(this.wallsHealth + 4 * WALL_HEALTH, this.wallsHealthMax);
         break;
       default:
         // never for now

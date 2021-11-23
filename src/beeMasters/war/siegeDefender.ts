@@ -80,7 +80,7 @@ export class SiegeMaster extends Master {
         if (roomName !== this.hive.roomName)
           return;
         let terrain = Game.map.getRoomTerrain(roomName);
-        let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+        let enemies = Apiary.intel.getInfo(roomName, 25).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
         _.forEach(enemies, c => {
           _.forEach(c.pos.getOpenPositions(true, 3), p => {
             if (findRamp(p))
@@ -196,9 +196,9 @@ export class SiegeMaster extends Master {
             }
           }
 
-          let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
+          let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 25);
           if (!pos || pos.equal(this.cell)) {
-            let enemy = Apiary.intel.getEnemy(bee);
+            let enemy = Apiary.intel.getEnemy(bee, 25);
             if (!enemy)
               return;
 
@@ -234,7 +234,7 @@ export class SiegeMaster extends Master {
             bee.target = pos.to_str;
           }
 
-          let enemy = <Creep | undefined>Apiary.intel.getEnemy(bee.pos);
+          let enemy = <Creep | undefined>Apiary.intel.getEnemy(bee, 25);
           if (enemy)
             _.forEach(roomInfo.enemies, e => {
               if (!(e.object instanceof Creep))

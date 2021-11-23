@@ -37,7 +37,7 @@ export class HordeDefenseMaster extends HordeMaster {
         priority: <1 | 4 | 7 | 8>1,
       }
       let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
-      let enemy = Apiary.intel.getEnemy(this.pos);
+      let enemy = Apiary.intel.getEnemy(this.pos, 25);
       if (enemy instanceof Creep) {
         order.setup = setups.defender.normal.copy();
         order.setup.fixed = [];

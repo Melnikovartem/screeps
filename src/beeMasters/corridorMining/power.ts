@@ -6,10 +6,11 @@ import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
+import type { FlagOrder } from "../../order";
 
 //first tandem btw
 @profile
-export class DupletMaster extends SwarmMaster {
+export class PowerMaster extends SwarmMaster {
   calledOneMore = false;
   duplets: [Bee, Bee][] = [];
   healers: Bee[] = [];
@@ -22,7 +23,13 @@ export class DupletMaster extends SwarmMaster {
   pickupTime = setups.pickup.patternLimit * 4.5 + this.roadTime;
   movePriority = <1>1;
 
-  newBee(bee: Bee) {
+  constructor(order: FlagOrder) {
+    super(order);
+    if (this.hive.puller)
+      this.hive.puller.powerSites.push(this);
+  }
+
+  newBee(bee: Bee, ) {
     super.newBee(bee);
     if (bee.creep.getBodyParts(HEAL))
       this.healers.push(bee);
@@ -106,7 +113,7 @@ export class DupletMaster extends SwarmMaster {
       }
 
       if (knight && knight.state === beeStates.work) {
-        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName);
+        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName, 25);
         let knightPos = knight.pos;
         let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
           && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.pos.roomName))), e => e.object);
@@ -148,5 +155,14 @@ export class DupletMaster extends SwarmMaster {
         }
       }
     }));
+  }
+
+  delete() {
+    super.delete();
+    if (this.hive.puller) {
+      let index = this.hive.puller.powerSites.indexOf(this);
+      if (index !== -1)
+        this.hive.puller.powerSites.splice(index, 1);
+    }
   }
 }

@@ -59,3 +59,15 @@ export function towerCoef(tower: StructureTower, pos: ProtoPos) {
     return coef;
   return coef * (TOWER_OPTIMAL_RANGE - range + TOWER_FALLOFF_RANGE) / (TOWER_FALLOFF_RANGE - TOWER_OPTIMAL_RANGE) * TOWER_FALLOFF;
 }
+
+export function getRoomCoorinates(roomName: string, plane = true): [number, number, string, string] {
+  let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+  let x = 0;
+  let y = 0;
+  if (parsed) {
+    x = (+parsed[2]) * (!plane && parsed[1] === "W" ? -1 : 1);
+    y = (+parsed[4]) * (!plane && parsed[3] === "S" ? -1 : 1);
+    return [x, y, parsed[1], parsed[3]];
+  }
+  return [0, 0, "E", "S"];
+}

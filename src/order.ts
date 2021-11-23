@@ -10,9 +10,9 @@ import { GangDuo } from "./beeMasters/squads/gangDuo";
 import { GangQuad } from "./beeMasters/squads/quadSquad";
 // import { TestSquad } from "./beeMasters/squads/test";
 
-import { DepositMaster } from "./beeMasters/depositMining/deposit";
+import { DepositMaster } from "./beeMasters/corridorMining/deposit";
+import { PowerMaster } from "./beeMasters/corridorMining/power";
 
-import { DupletMaster } from "./beeMasters/civil/miningDuplet";
 import { PuppetMaster } from "./beeMasters/civil/puppet";
 import { PortalMaster } from "./beeMasters/civil/portal";
 import { AnnexMaster } from "./beeMasters/civil/annexer";
@@ -465,10 +465,13 @@ export class FlagOrder {
               }
               break;
             case COLOR_YELLOW:
-              this.master = new DupletMaster(this);
+              if (this.hive.puller && this.hive.puller.depositSites.length < 2)
+                this.master = new PowerMaster(this);
+              else
+                this.acted = false;
               break;
             case COLOR_BLUE:
-              if (this.hive.puller && this.hive.puller.miningSites.length < 2)
+              if (this.hive.puller && this.hive.puller.depositSites.length < 2)
                 this.master = new DepositMaster(this);
               else
                 this.acted = false;

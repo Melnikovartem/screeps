@@ -32,7 +32,7 @@ export class DepositMaster extends SwarmMaster {
     this.rest = new RoomPosition(25, 25, this.pos.roomName).findClosest(this.pos.getOpenPositions(true, 2).filter(p => p.getRangeTo(this) > 1))!;
     this.workAmount = setups.miner.deposit.getBody(this.hive.room.energyCapacityAvailable).body.filter(b => b === WORK).length;
     if (this.hive.puller)
-      this.hive.puller.miningSites.push(this);
+      this.hive.puller.depositSites.push(this);
   }
 
   get roadTime() {
@@ -80,9 +80,9 @@ export class DepositMaster extends SwarmMaster {
     this.miners.delete();
     this.pickup.delete();
     if (this.hive.puller) {
-      let index = this.hive.puller.miningSites.indexOf(this);
+      let index = this.hive.puller.depositSites.indexOf(this);
       if (index !== -1)
-        this.hive.puller.miningSites.splice(index, 1);
+        this.hive.puller.depositSites.splice(index, 1);
     }
   }
 }

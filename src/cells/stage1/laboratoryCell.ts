@@ -201,16 +201,16 @@ export class LaboratoryCell extends Cell {
     let res1 = this.synthesizeRes.res1;
     let res2 = this.synthesizeRes.res2;
 
-    let maxDists: { [id: string]: number } = {}
+    let prodAmount: { [id: string]: number } = {}
     for (let id in this.laboratories)
-      maxDists[id] = Math.max(..._.map(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l)));
+      prodAmount[id] = _.filter(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l) <= 2).length;
     let comp = (prev: StructureLab, curr: StructureLab, res: BaseMineral | ReactionConstant) => {
-      let cond = maxDists[prev.id] - maxDists[curr.id];
+      let cond = prodAmount[prev.id] - prodAmount[curr.id];
       if (cond === 0)
-        cond = curr.store.getUsedCapacity(res) - prev.store.getUsedCapacity(res);
+        cond = prev.store.getUsedCapacity(res) - curr.store.getUsedCapacity(res);
       if (cond === 0)
-        cond = prev.pos.getTimeForPath(this.sCell!) - curr.pos.getTimeForPath(this.sCell!);
-      return cond > 0 ? curr : prev;
+        cond = curr.pos.getTimeForPath(this.sCell!) - prev.pos.getTimeForPath(this.sCell!);
+      return cond < 0 ? curr : prev;
     }
 
     let lab1 = _.map(this.laboratories, l => l).reduce((prev, curr) => comp(prev, curr, res1));

@@ -23,8 +23,7 @@ export abstract class PowerMaster extends Master {
     _.forEach(Game.powerCreeps, pc => {
       if (!Apiary.masters[prefix.master + pc.name]) {
         let validHives = _.filter(Apiary.hives, h => h.cells.power && !h.powerManager);
-        if (validHives.length)
-          console.log(validHives[0], pc.name);
+        console.log(validHives, pc.name);
       }
     });
   }

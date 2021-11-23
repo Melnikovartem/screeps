@@ -147,7 +147,7 @@ export class BuilderMaster extends Master {
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
               }
-              if (target && target.pos.roomName !== this.hive.roomName && !Apiary.intel.getInfo(target.pos.roomName, 10).safePlace) {
+              if (target && target.pos.roomName !== this.hive.roomName && !Apiary.intel.getInfo(bee.pos.roomName, 25).safePlace) {
                 target = undefined;
                 bee.target = undefined;
               }

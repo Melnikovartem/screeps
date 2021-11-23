@@ -45,7 +45,7 @@ export class MinerMaster extends Master {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 10);
+    let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 25);
     let shouldSpawn = (roomInfo.dangerlvlmax < 4 || this.cell.pos.roomName === this.hive.pos.roomName)
       && (roomInfo.currentOwner === Apiary.username || !roomInfo.currentOwner);
 

@@ -253,7 +253,7 @@ export class Bee {
           opt.obstacles = [{ pos: t.pos }]
         this.goTo(t, opt);
       }
-      return OK;
+      return ERR_TIRED;
     }
     this.goTo(this.pos.equal(pos) ? t.pos : pos, opt);
     if (this.targetPosition && this.targetPosition.roomName !== this.pos.roomName && this.pos.getEnteranceToRoom()) {
@@ -377,8 +377,8 @@ export class Bee {
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
           let posRangeToEnemy = p.getRangeTo(c);
-          let padding = 0x10 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
-          let val = Math.min(0x80, 0x32 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
+          let padding = 0x08 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
+          let val = Math.min(0x88, 0x20 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
           if (val > matrix.get(p.x, p.y))
             matrix.set(p.x, p.y, val);
         });

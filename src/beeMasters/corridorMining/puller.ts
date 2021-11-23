@@ -6,6 +6,7 @@ import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { DepositMaster } from "./deposit";
+import type { PowerMaster } from "./power";
 import type { Hive } from "../../Hive";
 import type { Bee } from "../../bees/bee";
 
@@ -13,7 +14,8 @@ import type { Bee } from "../../bees/bee";
 @profile
 export class DepositPullerMaster extends Master {
   movePriority = <4>4;
-  miningSites: DepositMaster[] = [];
+  depositSites: DepositMaster[] = [];
+  powerSites: PowerMaster[] = [];
 
   constructor(hive: Hive) {
     super(hive, prefix.puller + hive.roomName);
@@ -34,7 +36,7 @@ export class DepositPullerMaster extends Master {
 
     let possibleTargets = this.minersToMove.length;
     let maxRoadTime = 0;
-    _.forEach(this.miningSites, m => {
+    _.forEach(this.depositSites, m => {
       maxRoadTime = Math.max(maxRoadTime, m.roadTime);
       if (m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.operational)
         possibleTargets++;
@@ -55,7 +57,7 @@ export class DepositPullerMaster extends Master {
 
   get minersToMove() {
     let minersToMove: Bee[] = [];
-    _.forEach(this.miningSites, m => {
+    _.forEach(this.depositSites, m => {
       let targets = _.filter(m.miners.bees, b => b.state !== beeStates.work
         && !_.filter(this.bees, b1 => b1.target === b.ref && b1.state === beeStates.work && b1.ticksToLive > m.roadTime - 10).length);
       minersToMove = minersToMove.concat(targets);
@@ -64,6 +66,7 @@ export class DepositPullerMaster extends Master {
   }
 
   run() {
+    let pulled: string[] = [];
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.chill:
@@ -71,22 +74,26 @@ export class DepositPullerMaster extends Master {
           break;
         case beeStates.work:
           let beeToPull = <Bee>(bee.target && Apiary.bees[bee.target]);
-          let depMaster = beeToPull && (beeToPull.master instanceof DepositMinerMaster) && beeToPull.master.parent
+          let depMaster = beeToPull && (beeToPull.master instanceof DepositMinerMaster) && beeToPull.master.parent;
           if (!depMaster || beeToPull.pos.isNearTo(depMaster)) {
             bee.target = undefined;
             bee.state = beeStates.chill;
             bee.goRest(this.hive.rest, { offRoad: true });
             break;
           }
-          if (beeToPull.creep.spawning)
+          if (pulled.includes(beeToPull.ref)) {
+            if (bee.pos.getRangeTo(beeToPull) > 3)
+              bee.goRest(beeToPull.pos, { offRoad: true, movingTarget: true });
+          } else if (beeToPull.creep.spawning)
             bee.goRest(beeToPull.pos, { offRoad: true });
           else {
             let pos = depMaster.pos;
             if (bee.pos.roomName === pos.roomName)
-              pos = depMaster.pos.getOpenPositions(false)[0] || depMaster.pos;
-            bee.pull(beeToPull, pos, { range: 0, obstacles: depMaster.positions, offRoad: true });
+              pos = bee.pos.isNearTo(depMaster) ? bee.pos : (depMaster.pos.getOpenPositions(false)[0] || depMaster.pos);
+            bee.pull(beeToPull, pos, { range: 0, obstacles: depMaster.positions.filter(p => !p.pos.equal(pos)), offRoad: true });
+            pulled.push(beeToPull.ref);
           }
-          this.checkFlee(bee, depMaster.pos);
+          this.checkFlee(bee, depMaster.pos, { movingTarget: true });
       }
     });
   }

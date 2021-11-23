@@ -77,21 +77,37 @@ export class Traveler {
       options.ignoreCreeps = false;
       options.freshMatrix = true;
       delete travelData.path;
-      if (state.stuckCount >= options.stuckValue * 2)
+      if (state.stuckCount >= options.stuckValue * 4) {
+        let prevCallback = options.roomCallback;
         options.roomCallback = (roomName, matrix) => {
+          if (prevCallback) {
+            let postCallback = prevCallback(roomName, matrix);
+            if (!postCallback || typeof postCallback === "boolean")
+              return postCallback;
+            matrix = postCallback;
+          }
+          let terrain = Game.map.getRoomTerrain(roomName);
           let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
           _.forEach(enemies, c => {
             let fleeDist = 0;
             if (c instanceof Creep)
               fleeDist = Apiary.intel.getFleeDist(c);
-            _.forEach(c.pos.getOpenPositions(true, fleeDist + 1), p => {
-              if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
+            if (!fleeDist)
+              return;
+            _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
+              if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000).length)
                 return;
-              matrix.set(p.x, p.y, 0xff)
+              let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
+              let posRangeToEnemy = p.getRangeTo(c);
+              let val = Math.min(0x88, 0x20 * coef * (fleeDist + 1 - posRangeToEnemy));
+              if (val > matrix.get(p.x, p.y))
+                matrix.set(p.x, p.y, val);
             });
+            matrix.set(c.pos.x, c.pos.y, 0xff);
           });
           return matrix;
         }
+      }
     }
 
     // TODO:handle case where creep moved by some other function, but destination is still the same

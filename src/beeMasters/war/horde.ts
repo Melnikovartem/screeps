@@ -173,7 +173,7 @@ export class HordeMaster extends SwarmMaster {
         enemyTTK = Infinity;
       if (myTTK < 0)
         myTTK = Infinity;
-      loosingBattle = myTTK === Infinity || enemyTTK < myTTK;
+      loosingBattle = (myTTK === Infinity && enemyTTK !== Infinity) || enemyTTK < myTTK;
 
       if (beeStats.dmgClose) {
         attackRange = 2;
@@ -262,17 +262,15 @@ export class HordeMaster extends SwarmMaster {
           } else {
             let beeStats = Apiary.intel.getStats(bee.creep).current;
             if (beeStats.dism)
-              enemy = Apiary.intel.getEnemyStructure(pos);
-            else
-              enemy = Apiary.intel.getEnemy(pos);
+              enemy = Apiary.intel.getEnemyStructure(pos, 10);
             this.beeAct(bee, enemy);
           }
           break;
         case beeStates.chill:
-          enemy = Apiary.intel.getEnemy(bee.pos, 10);
+          enemy = Apiary.intel.getEnemy(bee.pos, 25);
           let ans: number = OK;
           if (enemy) {
-            enemy = Apiary.intel.getEnemy(bee.pos);
+            enemy = Apiary.intel.getEnemy(bee.pos, 25);
             if (enemy && bee.pos.getRangeTo(enemy) > 3)
               enemy = undefined;
           }

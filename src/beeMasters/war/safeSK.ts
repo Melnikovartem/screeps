@@ -64,9 +64,9 @@ export class SKMaster extends HordeMaster {
     }
 
     if (!enemy) {
-      enemy = Apiary.intel.getEnemyCreep(bee.pos, 10);
+      enemy = Apiary.intel.getEnemy(bee.pos, 10);
       let ans: number = OK;
-      if (enemy && (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3))
+      if (enemy instanceof Creep && (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3))
         ans = this.attackOrFleeSK(bee, enemy);
       if (ans === OK)
         bee.goTo(lair, { range: 2 });
@@ -94,7 +94,7 @@ export class SKMaster extends HordeMaster {
 
       if (bee.pos.roomName !== this.pos.roomName) {
         let ans: number = OK;
-        let enemy = Apiary.intel.getEnemy(bee.pos, 10);
+        let enemy = Apiary.intel.getEnemy(bee.pos, 25);
         if (enemy && enemy.pos.getRangeTo(bee) <= 5)
           ans = this.beeAct(bee, enemy);
         if (ans === OK)
@@ -102,7 +102,7 @@ export class SKMaster extends HordeMaster {
         return;
       }
 
-      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 10);
+      let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 25);
       if (roomInfo.dangerlvlmax >= 4) {
         let defSquad = Apiary.defenseSwarms[this.pos.roomName] && Apiary.defenseSwarms[this.pos.roomName].master;
         let pos = defSquad && defSquad.activeBees.filter(b => b.pos.roomName === this.pos.roomName)[0];

@@ -130,15 +130,13 @@ export class Visuals {
 
   battleInfo() {
     let battleInfo: string[][] = [["bee squads"], ["", "🎯", "☠️❗", "💀", "🐝"]];
-    for (const name in Apiary.hives) {
-      let stats = this.statsOrders(name);
-      if (stats.length > 0) {
-        for (let i in stats)
-          for (let j in stats[i])
-            stats[i][j] = stats[i][j].slice(0, 11);
-        battleInfo.push(["", name]);
-        battleInfo = battleInfo.concat(stats);
-      }
+    let stats = this.statsOrders();
+    for (const hiveName in stats) {
+      for (const i in stats[hiveName])
+        for (const j in stats[hiveName][i])
+          stats[hiveName][i][j] = stats[hiveName][i][j].slice(0, 11);
+      battleInfo.push(["", hiveName]);
+      battleInfo = battleInfo.concat(stats[hiveName]);
     }
     this.updateAnchor(this.table(battleInfo, this.anchor, undefined, undefined, undefined, "center"));
   }
@@ -278,11 +276,11 @@ export class Visuals {
     return;
   }
 
-  statsOrders(hiveName: string): string[][] {
-    let orders = _.filter(Apiary.orders, o => o.hive.roomName === hiveName && !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
+  statsOrders(): { [hiveName: string]: string[][] } {
+    let orders = _.filter(Apiary.orders, o => !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
     let length = orders.length;
     const MAX_STATS = 10;
-    let ans: string[][] = [];
+    let ans: { [hiveName: string]: string[][] } = {};
     if (orders.length > MAX_STATS)
       orders = orders.filter(o => !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
     if (orders.length > MAX_STATS)
@@ -300,10 +298,13 @@ export class Visuals {
         info.push(`: ${order.master.waitingForBees ? "(" : ""}${order.master.beesAmount}${order.master.waitingForBees ?
           "+" + order.master.waitingForBees + ")" : ""}/${order.master.targetBeeCount}`)
       }
-      ans.push(info);
+      let hiveName = order.master!.hive.roomName;
+      if (!ans[hiveName])
+        ans[hiveName] = []
+      ans[hiveName].push(info);
     });
     if (length !== orders.length)
-      ans.push(["+ " + (length - orders.length)])
+      ans["+ "].push(["" + (length - orders.length)])
     return ans;
   }
 

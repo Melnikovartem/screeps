@@ -232,14 +232,10 @@ export abstract class SquadMaster extends SwarmMaster {
         sum += 20;
       else if (terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP
         && !(desiredPos.roomName in Game.rooms && desiredPos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length))
-        sum += 5; //bee.ref === centerRef ? 6 : 3;
+        sum += 5;
       else
         sum += 1;
     }
-    /* let roomState = Apiary.intel.getInfo(pos.roomName).roomState;
-    if (roomState === roomStates.ownedByEnemy || true) {
-      sum += Math.floor(5 - new RoomPosition(25, 25, pos.roomName).getRoomRangeTo(pos) / 10)
-    } */
     return Math.ceil(sum / this.activeBees.length);
   }
 
@@ -378,7 +374,7 @@ export abstract class SquadMaster extends SwarmMaster {
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = this.pos;
     let opts = this.getPathArgs(bee.ref);
-    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName);
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
     let fatigue = 0;
 
     if (roomInfo.roomState === roomStates.ownedByEnemy) {
@@ -500,7 +496,9 @@ export abstract class SquadMaster extends SwarmMaster {
 
   run() {
     let enemy: Enemy["object"] | undefined;
-    let roomInfo = Apiary.intel.getInfo(this.formationCenter.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.formationCenter.roomName, 10);
+    if (roomInfo.roomState === roomStates.ownedByEnemy)
+      roomInfo = Apiary.intel.getInfo(this.formationCenter.roomName, 4);
     if (this.stats.current.dmgClose + this.stats.current.dmgRange > 0) {
       let enemies = roomInfo.enemies.filter(e => e.dangerlvl === roomInfo.dangerlvlmax
         || (e.dangerlvl >= 4 && this.formationCenter.getRangeTo(e.object) <= 5
@@ -513,7 +511,7 @@ export abstract class SquadMaster extends SwarmMaster {
           return ans < 0 ? curr : prev;
         }).object;
     } else if (this.stats.current.dism > 0)
-      enemy = Apiary.intel.getEnemyStructure(this.formationCenter);
+      enemy = Apiary.intel.getEnemyStructure(this.formationCenter, 10);
 
     let healingTargets: { bee: Bee, heal: number }[] = [];
     if (this.stats.current.heal)

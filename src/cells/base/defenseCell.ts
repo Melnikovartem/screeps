@@ -169,21 +169,19 @@ export class DefenseCell extends Cell {
     if (!isWar || Game.time % 10 === 0) {
       let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
       this.hive.stateChange("battle", roomInfo.dangerlvlmax >= 4 && (!this.hive.controller.safeMode || this.hive.controller.safeMode < 600));
-    }
 
-
-    if (this.hive.state === hiveStates.battle) {
-      let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
-      if (Game.time % 5 === 0) {
+      if (this.hive.state === hiveStates.battle) {
+        if (Game.time % 5 === 0) {
+          this.isBreached = false;
+          _.some(roomInfo.enemies, enemy => {
+            if (this.wasBreached(enemy.object.pos))
+              this.isBreached = true;
+            return this.isBreached;
+          });
+        }
+      } else
         this.isBreached = false;
-        _.some(roomInfo.enemies, enemy => {
-          if (this.wasBreached(enemy.object.pos))
-            this.isBreached = true;
-          return this.isBreached;
-        });
-      }
-    } else
-      this.isBreached = false;
+    }
 
     if (isWar && this.hive.state !== hiveStates.battle && this.hive.cells.storage)
       this.hive.cells.storage.pickupResources();
@@ -352,7 +350,7 @@ export class DefenseCell extends Cell {
     if (!enemy)
       return;
 
-    let roomInfo = Apiary.intel.getInfo(this.hive.roomName);
+    let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     _.forEach(roomInfo.enemies, e => {
       let statsE = Apiary.intel.getComplexStats(e.object).current;
       let statsEnemy = Apiary.intel.getComplexStats(enemy).current;

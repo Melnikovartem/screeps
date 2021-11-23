@@ -37,8 +37,7 @@ export class Network {
   }
 
   update() {
-    for (let i = 0; i < this.nodes.length; ++i)
-      this.updateState(this.nodes[i]);
+    _.forEach(Apiary.hives, hive => this.updateState(hive));
 
     if (Game.time % BUY_SHORTAGES_CYCLE === 0 && Game.time !== Apiary.createTime)
       for (let i = 0; i < this.nodes.length; ++i)
@@ -196,12 +195,14 @@ export class Network {
 
   updateState(hive: Hive) {
     hive.resState = { energy: 0 };
-    if (!hive.cells.storage || !hive.cells.storage.terminal
-      || (hive.cells.storage.terminal.effects
+    if (!hive.cells.storage ||
+      (hive.cells.storage.terminal && hive.cells.storage.terminal.effects
         && hive.cells.storage.terminal.effects.filter(e => e.effect === PWR_DISRUPT_TERMINAL)))
       return;
 
-    let ress = Object.keys(hive.cells.storage.storage.store).concat(Object.keys(hive.cells.storage.terminal.store));
+    let ress = Object.keys(hive.cells.storage.storage.store);
+    if (hive.cells.storage.terminal)
+      ress.concat(Object.keys(hive.cells.storage.terminal.store));
 
     if (hive.cells.lab) {
       for (const res in hive.cells.lab.resTarget) {
@@ -229,6 +230,9 @@ export class Network {
 
     for (const res in hive.mastersResTarget)
       hive.add(hive.resState, res, -hive.mastersResTarget[<ResourceConstant>res]!);
+
+    if (!hive.cells.storage.terminal)
+      return;
 
     let fullStorage = Math.min(1, Math.floor(hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) / 1200) / 100 + 0.01);
     if (hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 150000)

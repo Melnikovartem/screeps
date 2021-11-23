@@ -190,14 +190,16 @@ export class Intel {
               roomInfo.roomState = roomStates.SKfrontier;
         }
       }
+      if (lag === Infinity)
+        return roomInfo;
       this.roomInfo[roomName] = roomInfo;
     }
 
     // it is cached after first check
     if (!Apiary.useBucket)
       lag = Math.max(2, lag);
-    let returnLag = roomInfo.lastUpdated + lag >= Game.time;
 
+    let returnLag = roomInfo.lastUpdated + lag >= Game.time;
     if (!returnLag && !(roomName in Game.rooms)) {
       Apiary.requestSight(roomName);
       returnLag = true;

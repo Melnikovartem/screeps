@@ -12,11 +12,9 @@ type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: Possibl
 type BlockDirections = TOP | RIGHT | TOP_RIGHT | TOP_LEFT;
 
 // well i can add more
-const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 }, queen1: { x: 25, y: 25 } }, exits: [], freeSpaces: [{ x: 23, y: 28 }, { x: 23, y: 22 }, { x: 22, y: 27 }, { x: 22, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 20, y: 28 }, { x: 21, y: 28 }, { x: 20, y: 30 }, { x: 21, y: 30 }, { x: 22, y: 29 }, { x: 21, y: 22 }, { x: 20, y: 22 }, { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 21 }, { x: 20, y: 21 }, { x: 20, y: 29 }], setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 23, y: 24 }, { x: 24, y: 23 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 25, y: 22 }, { x: 27, y: 24 }, { x: 26, y: 23 }, { x: 25, y: 28 }, { x: 22, y: 25 }, { x: 23, y: 26 }, { x: 24, y: 27 }, { x: 21, y: 25 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 23 }, { x: 22, y: 22 }, { x: 21, y: 21 }, { x: 23, y: 27 }, { x: 22, y: 28 }, { x: 21, y: 29 }] }, lab: { pos: [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 26 }, { x: 21, y: 26 }, { x: 20, y: 25 }, { x: 20, y: 23 }, { x: 21, y: 23 }, { x: 20, y: 27 }, { x: 21, y: 27 }, { x: 19, y: 23 }, { x: 19, y: 27 }, { x: 19, y: 25 }, { x: 19, y: 26 }, { x: 19, y: 24 }] }, storage: { pos: [{ x: 25, y: 26 }] }, link: { pos: [{ x: 24, y: 25 }] }, terminal: { pos: [{ x: 24, y: 26 }] } } };
+const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 }, queen1: { x: 25, y: 25 } }, exits: [], freeSpaces: [{ x: 30, y: 26 }, { x: 30, y: 24 }, { x: 31, y: 25 }, { x: 28, y: 24 }, { x: 28, y: 23 }, { x: 29, y: 23 }, { x: 28, y: 26 }, { x: 29, y: 27 }, { x: 28, y: 27 }, { x: 27, y: 27 }, { x: 29, y: 22 }, { x: 23, y: 26 }, { x: 22, y: 26 }, { x: 24, y: 27 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 19, y: 25 }, { x: 19, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 26 }, { x: 19, y: 27 }, { x: 18, y: 27 }, { x: 18, y: 23 }, { x: 28, y: 21 }, { x: 27, y: 21 }, { x: 26, y: 22 }, { x: 29, y: 20 }, { x: 28, y: 20 }, { x: 30, y: 21 }, { x: 30, y: 22 }, { x: 30, y: 20 }, { x: 31, y: 23 }, { x: 31, y: 22 }, { x: 32, y: 24 }, { x: 32, y: 23 }, { x: 32, y: 26 }, { x: 32, y: 27 }, { x: 31, y: 27 }, { x: 30, y: 28 }, { x: 31, y: 28 }, { x: 29, y: 28 }, { x: 33, y: 24 }, { x: 33, y: 25 }, { x: 33, y: 26 }, { x: 25, y: 20 }, { x: 24, y: 22 }, { x: 17, y: 25 }, { x: 17, y: 26 }, { x: 17, y: 24 }, { x: 21, y: 27 }, { x: 22, y: 27 }, { x: 23, y: 27 }, { x: 19, y: 22 }, { x: 20, y: 28 }, { x: 19, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 27, y: 28 }, { x: 22, y: 28 }, { x: 23, y: 28 }, { x: 21, y: 29 }, { x: 20, y: 29 }, { x: 24, y: 29 }, { x: 25, y: 29 }, { x: 22, y: 24 }, { x: 25, y: 26 }, { x: 25, y: 21 }, { x: 26, y: 20 }, { x: 24, y: 20 }, { x: 30, y: 25 }, { x: 27, y: 22 }, { x: 20, y: 25 }, { x: 22, y: 30 }, { x: 23, y: 30 }, { x: 24, y: 30 }, { x: 21, y: 30 }, { x: 18, y: 28 }, { x: 19, y: 29 }, { x: 20, y: 30 }, { x: 25, y: 30 }, { x: 26, y: 29 }, { x: 31, y: 21 }, { x: 32, y: 22 }, { x: 33, y: 23 }, { x: 33, y: 27 }, { x: 32, y: 28 }, { x: 28, y: 28 }, { x: 29, y: 29 }, { x: 30, y: 29 }, { x: 31, y: 29 }, { x: 18, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 27 }], setup: { road: { pos: [{ x: 19, y: 24 }, { x: 21, y: 24 }, { x: 20, y: 23 }, { x: 20, y: 13 }, { x: 25, y: 22 }, { x: 21, y: 21 }, { x: 18, y: 25 }, { x: 19, y: 26 }, { x: 21, y: 26 }, { x: 22, y: 22 }, { x: 20, y: 27 }, { x: 27, y: 23 }, { x: 27, y: 24 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 21 }, { x: 29, y: 24 }, { x: 29, y: 26 }, { x: 30, y: 27 }, { x: 30, y: 23 }, { x: 31, y: 26 }, { x: 31, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 26, y: 27 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 25, y: 25 }, { x: 26, y: 24 }, { x: 32, y: 25 }, { x: 28, y: 22 }, { x: 25, y: 27 }, { x: 21, y: 28 }, { x: 22, y: 29 }, { x: 23, y: 29 }, { x: 24, y: 28 }, { x: 26, y: 21 }, { x: 27, y: 20 }, { x: 24, y: 21 }, { x: 23, y: 20 }] }, container: { pos: [] }, spawn: { pos: [{ x: 21, y: 25 }, { x: 29, y: 25 }, { x: 25, y: 23 }] }, storage: { pos: [{ x: 24, y: 24 }] }, terminal: { pos: [{ x: 24, y: 25 }] }, lab: { pos: [{ x: 23, y: 22 }, { x: 23, y: 21 }, { x: 22, y: 21 }, { x: 22, y: 20 }, { x: 21, y: 20 }, { x: 20, y: 21 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 21, y: 23 }, { x: 22, y: 23 }] }, factory: { pos: [{ x: 26, y: 26 }] }, observer: { pos: [] }, powerSpawn: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 25, y: 24 }] }, nuker: { pos: [{ x: 27, y: 25 }] } } };
 
-const EXTRA_OPPOSITE: Module = { poss: { queen2: { x: 27, y: 25 } }, exits: [], freeSpaces: [{ x: 24, y: 25 }, { x: 23, y: 24 }, { x: 24, y: 24 }, { x: 23, y: 23 }, { x: 22, y: 23 }, { x: 26, y: 25 }, { x: 27, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 23 }, { x: 28, y: 23 }, { x: 29, y: 22 }, { x: 30, y: 22 }, { x: 30, y: 23 }, { x: 30, y: 24 }, { x: 29, y: 24 }, { x: 29, y: 25 }, { x: 28, y: 25 }, { x: 28, y: 26 }, { x: 27, y: 26 }, { x: 23, y: 26 }, { x: 22, y: 26 }, { x: 22, y: 25 }, { x: 21, y: 25 }, { x: 21, y: 24 }, { x: 20, y: 24 }, { x: 20, y: 23 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 22, y: 22 }, { x: 24, y: 22 }, { x: 25, y: 22 }, { x: 25, y: 23 }, { x: 26, y: 22 }, { x: 28, y: 22 }], setup: { road: { pos: [{ x: 25, y: 24 }, { x: 23, y: 25 }, { x: 22, y: 24 }, { x: 21, y: 23 }, { x: 27, y: 25 }, { x: 26, y: 23 }, { x: 27, y: 22 }, { x: 23, y: 22 }, { x: 28, y: 24 }, { x: 29, y: 23 }, { x: 24, y: 23 }, { x: 24, y: 26 }, { x: 25, y: 25 }, { x: 26, y: 26 }] }, spawn: { pos: [{ x: 25, y: 26 }] } } };
 
-const EXTRA_SIDE: Module = { poss: {}, exits: [], freeSpaces: [{ x: 22, y: 24 }, { x: 22, y: 26 }, { x: 21, y: 27 }, { x: 21, y: 23 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 23, y: 25 }, { x: 22, y: 27 }, { x: 21, y: 28 }, { x: 21, y: 22 }, { x: 22, y: 23 }, { x: 19, y: 25 }, { x: 20, y: 25 }, { x: 20, y: 28 }, { x: 18, y: 26 }, { x: 20, y: 22 }, { x: 18, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 27 }, { x: 19, y: 29 }, { x: 20, y: 29 }, { x: 18, y: 29 }, { x: 18, y: 28 }, { x: 19, y: 27 }, { x: 19, y: 23 }, { x: 18, y: 22 }, { x: 18, y: 21 }, { x: 19, y: 21 }, { x: 20, y: 21 }], setup: { road: { pos: [{ x: 20, y: 23 }, { x: 22, y: 25 }, { x: 21, y: 26 }, { x: 20, y: 27 }, { x: 21, y: 24 }, { x: 19, y: 26 }, { x: 18, y: 25 }, { x: 19, y: 24 }, { x: 19, y: 28 }, { x: 19, y: 22 }] }, spawn: { pos: [{ x: 21, y: 25 }] } } };
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
@@ -164,31 +162,10 @@ export class RoomPlanner {
       [RIGHT]: 1,
       [LEFT]: 0,
     }
-    const extra_modules: { [key in ExitConstant]: [Module, (a: Pos) => Pos] } = {
-      [TOP]: [EXTRA_SIDE, (a: Pos) => rotate(a, 2)],
-      [BOTTOM]: [EXTRA_SIDE, (a: Pos) => rotate(a, 3)],
-      [RIGHT]: [EXTRA_SIDE, (a: Pos) => rotate(a, 1)],
-      [LEFT]: [EXTRA_SIDE, (a: Pos) => rotate(a, 0)],
-    }
-    switch (rotation) {
-      case TOP:
-        extra_modules[BOTTOM] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 1, 3)];
-        break;
-      case BOTTOM:
-        extra_modules[TOP] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 0, -3)];
-        break;
-      case RIGHT:
-        extra_modules[LEFT] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 3, 0, -3)];
-        break;
-      case LEFT:
-        extra_modules[RIGHT] = [EXTRA_OPPOSITE, (a: Pos) => rotate(a, 2, 0, 3)];
-        break;
-    }
 
     let order: ExitConstant[] = [1, 5, 3, 7];
     order.splice(order.indexOf(rotation), 1);
 
-    _.forEach(order, oo => this.addModule(anchor, extra_modules[oo][0], extra_modules[oo][1]));
     this.addModule(anchor, BASE, a => rotate(a, rotationBase[rotation]));
 
     let customRoads = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_PURPLE);
@@ -207,17 +184,8 @@ export class RoomPlanner {
     this.addResourceRoads(anchor);
 
     this.addUpgradeSite(anchor);
+
     let enterances = this.protectPoint(anchor);
-
-    let customWalls = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_BROWN);
-    _.forEach(customWalls, f => {
-      enterances.push(f.pos);
-      jobs.push({
-        context: `blocking off ${f.pos}`,
-        func: () => this.exludePoint(anchor, f.pos, undefined, false),
-      });
-    });
-
     let enterance = anchor.findClosestByTravel(enterances, getPathArgs());
 
     let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
@@ -324,7 +292,7 @@ export class RoomPlanner {
     return enterances;
   }
 
-  exludePoint(anchor: RoomPosition, pos: RoomPosition, minDist: number = 5, removeNonUsed = true) {
+  exludePoint(anchor: RoomPosition, pos: RoomPosition, minDist: number = 6, removeNonUsed = true) {
     // not optimal, but good enough (can first block small gap, and than douple close a big one around)
     let pathArgs = getPathArgs({
       offRoad: true,
@@ -376,7 +344,8 @@ export class RoomPlanner {
       }
 
       // console .log(pos, _.map(costOfBlocking, c => [c.pos, anchor.getRangeTo(c), c.costs[TOP_LEFT].amount]))
-
+      if (!costOfBlocking.length)
+        break;
       let toBlock = costOfBlocking.reduce((prev, curr) => {
         let ans = 0;
         let prevRange = anchor.getRangeTo(prev);
