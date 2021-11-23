@@ -1,4 +1,5 @@
 import { HordeMaster } from "./horde";
+import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
 import { beeStates, hiveStates } from "../../enums";
@@ -20,7 +21,7 @@ export class SKMaster extends HordeMaster {
   }
 
   update() {
-    super.update();
+    SwarmMaster.prototype.update.call(this);
 
     if (this.pos.roomName in Game.rooms) {
       if (!this.lairs.length) {

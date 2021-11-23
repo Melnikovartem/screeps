@@ -28,7 +28,7 @@ export class UpgraderMaster extends Master {
     if (!polen || this.hive.state >= hiveStates.nukealert) {
       this.boosts = undefined;
 
-      this.targetBeeCount = this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 6 ? 1 : 0;
+      this.targetBeeCount = this.cell.controller.ticksToDowngrade < CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.75 ? 1 : 0;
       this.patternPerBee = 1;
       return;
     }
@@ -36,7 +36,7 @@ export class UpgraderMaster extends Master {
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
-    let desiredRate = Math.min(this.cell.maxRate, Math.ceil(2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) + 3.5 * Math.pow(10, -5) * storeAmount - 1));
+    let desiredRate = Math.min(this.cell.maxPossibleRate, this.cell.maxRate, Math.ceil(2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) + 3.5 * Math.pow(10, -5) * storeAmount - 1));
 
     if (this.cell.controller.level < 7 && this.hive.resState[RESOURCE_ENERGY] > 0 && this.hive.room.terminal)
       desiredRate = this.cell.maxRate; // can always buy / ask for more
@@ -121,7 +121,7 @@ export class UpgraderMaster extends Master {
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY)
             && bee.upgradeController(this.cell.controller) === OK && Apiary.logger)
-            Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -bee.getActiveBodyParts(WORK));
+            Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -Math.min(bee.getActiveBodyParts(WORK), this.cell.maxPossibleRate));
           break;
         case beeStates.chill:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)

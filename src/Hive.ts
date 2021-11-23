@@ -218,7 +218,7 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
-        this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
+        this.wallsHealthMax = this.wallsHealthMax * 5; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     } else {
@@ -471,7 +471,7 @@ export class Hive {
 
   updateStructures() {
     let reCheck = this.sumCost > 0;
-    let nukeAlert = !!this.cells.defense.nukes.length;
+    let nukeAlert = !!Object.keys(this.cells.defense.nukes).length;
     this.structuresConst = [];
     this.sumCost = 0;
     let addCC = (ans: BuildProject[]) => {

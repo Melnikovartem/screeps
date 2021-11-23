@@ -53,14 +53,12 @@ export class HordeDefenseMaster extends HordeMaster {
           healNeeded = 5;
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded) / (this.boosts ? 4 : 1), 25); // Math.max(rangedNeeded * 3, 6) -> 25
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded) / (this.boosts ? 4 : 1), roomInfo.dangerlvlmax >= 4 ? 25 : 10); // Math.max(rangedNeeded * 3, 6) -> 25
 
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let rangedCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
           let toughCost = BODYPART_COST[TOUGH] + BODYPART_COST[MOVE];
-          if (this.hive.room.energyCapacityAvailable < toughCost + healCost * healNeeded + rangedCost * order.setup.patternLimit)
-            healNeeded = 1;
           if (this.hive.room.energyCapacityAvailable >= toughCost + healCost * healNeeded + rangedCost * 2)
             order.setup.fixed = order.setup.fixed.concat(Array(healNeeded).fill(HEAL));
         }

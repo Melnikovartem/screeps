@@ -75,9 +75,10 @@ export class UpgradeCell extends Cell {
     this.maxBees = 10;
     if (this.link)
       this.maxBees = this.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.controller) <= 3).length;
+  }
 
-    if (this.hive.phase === 2)
-      this.maxRate = Math.min(this.maxRate, 15);
+  get maxPossibleRate() {
+    return this.controller.level === 8 ? 15 : Infinity
   }
 
   update() {

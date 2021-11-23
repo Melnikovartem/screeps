@@ -118,6 +118,15 @@ export class HaulerMaster extends Master {
     _.forEach(this.activeBees, bee => {
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
+      /* if (this.hive.cells.defense.timeToLand < 50) {
+        if (bee.pos.roomName === this.hive.roomName || bee.pos.getEnteranceToRoom()) {
+          let exit = Game.map.describeExits(this.hive.roomName)
+          let exitToGo = Object.keys(exit)[0];
+          bee.goRest(new RoomPosition(25, 25, exitToGo));
+        }
+        this.checkFlee(bee);
+        return;
+      } */
       let res: ResourceConstant;
       switch (bee.state) {
         case beeStates.refill:

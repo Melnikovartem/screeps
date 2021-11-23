@@ -60,7 +60,23 @@ export class Logger {
     mem.controllerProgressTotal = hive.controller.progressTotal;
     mem.controllerLevel = hive.controller.level;
 
-    mem.energyReport = this.reportEnergy(hive.roomName);
+    if (Game.time % 5 === 0) {
+      mem.defenseHealth = [];
+      let plan = Memory.cache.roomPlanner[hive.roomName];
+      if (plan)
+        _.forEach([STRUCTURE_WALL, STRUCTURE_RAMPART], defense => {
+          _.forEach((plan[defense] || { pos: [] }).pos, p => {
+            let pos = new RoomPosition(p.x, p.y, hive.roomName);
+            let ss = pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === defense)[0];
+            mem.defenseHealth.push(ss && ss.hits || 0)
+          });
+        });
+      mem.nukes = {};
+      _.forEach(hive.cells.defense.nukes, nuke => {
+        mem.nukes[nuke.id] = { [nuke.launchRoomName]: nuke.timeToLand };
+      });
+      mem.energyReport = this.reportEnergy(hive.roomName);
+    }
   }
 
   addResourceStat(hiveName: string, ref: string, amount: number, resource: ResourceConstant = RESOURCE_ENERGY) {
@@ -145,6 +161,8 @@ export class Logger {
         controllerProgressTotal: 0,
         controllerLevel: 0,
 
+        nukes: {},
+        defenseHealth: [],
         energyReport: {},
         resourceBalance: { [RESOURCE_ENERGY]: {} },
       }
@@ -255,16 +273,14 @@ export class Logger {
 
   clean() {
     if (Game.time % LOGGING_CYCLE === 0) {
-      for (let key in Memory.log.hives)
-        for (let res in Memory.log.hives[key].resourceBalance)
-          for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
-            let diff = Game.time - Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].time;
-            if (diff >= LOGGING_CYCLE * 5)
-              Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref] = {
-                time: Game.time - Math.floor(diff / 2),
-                amount: Math.floor(Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref].amount / 2),
-              }
-          }
+      if (Game.time % LOGGING_CYCLE * 20 === 0)
+        for (let key in Memory.log.hives)
+          for (let res in Memory.log.hives[key].resourceBalance)
+            for (let ref in Memory.log.hives[key].resourceBalance[<ResourceConstant>res]) {
+              let balance = Memory.log.hives[key].resourceBalance[<ResourceConstant>res]![ref];
+              balance.time = (Game.time + balance.time) / 2;
+              balance.amount = balance.amount / 2;
+            }
 
       if (Memory.log.orders && Object.keys(Memory.log.orders).length > 50) {
         let sortedKeys = Object.keys(Memory.log.orders)

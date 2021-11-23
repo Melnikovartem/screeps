@@ -21,6 +21,10 @@ export interface HiveLog {
   controllerProgressTotal: number,
   controllerLevel: number,
 
+  nukes: { [id: string]: { [launchRoomName: string]: number } },
+
+  defenseHealth: number[],
+
   energyReport: { [id: string]: { profit: number, revenue?: number } },
   resourceBalance: {
     [key in ResourceConstant]?: {

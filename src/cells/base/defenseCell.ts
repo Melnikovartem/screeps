@@ -13,7 +13,7 @@ import type { Bee } from "../../bees/bee";
 @profile
 export class DefenseCell extends Cell {
   towers: { [id: string]: StructureTower } = {};
-  nukes: Nuke[] = [];
+  nukes: { [id: string]: Nuke } = {};
   nukesDefenseMap = {};
   timeToLand: number = Infinity;
   nukeCoverReady: boolean = true;
@@ -28,20 +28,20 @@ export class DefenseCell extends Cell {
   }
 
   updateNukes() {
-    this.nukes = [];
+    this.nukes = {};
     _.forEach(this.hive.room.find(FIND_NUKES), n => {
-      this.nukes.push(n);
+      this.nukes[n.id] = n;
       if (this.timeToLand > n.timeToLand)
         this.timeToLand = n.timeToLand;
     });
-    if (!this.nukes.length)
+    if (!Object.keys(this.nukes).length)
       this.timeToLand = Infinity;
   }
 
   // mini roomPlanner
   getNukeDefMap(oneAtATime = false) {
     this.nukeCoverReady = true;
-    if (!this.nukes.length || Game.flags[prefix.nukes + this.hive.roomName])
+    if (!Object.keys(this.nukes).length || Game.flags[prefix.nukes + this.hive.roomName])
       return [];
     let map: { [id: number]: { [id: number]: number } } = {};
     let minLandTime = _.min(this.nukes, n => n.timeToLand).timeToLand;
@@ -55,9 +55,9 @@ export class DefenseCell extends Cell {
           map[p.x] = {};
         if (!map[p.x][p.y])
           map[p.x][p.y] = 0;
-        map[p.x][p.y] += 5000000;
+        map[p.x][p.y] += NUKE_DAMAGE[2];
       });
-      map[pp.x][pp.y] += 10000000;
+      map[pp.x][pp.y] += NUKE_DAMAGE[0] - NUKE_DAMAGE[2];
     });
 
     let maxLandTime = _.max(this.nukes, n => n.timeToLand).timeToLand;
@@ -154,15 +154,15 @@ export class DefenseCell extends Cell {
   }
 
   update() {
-    super.update(["towers"]);
+    super.update(["towers", "nukes"]);
     this.dmgAtPos = {};
-    if (Game.time % 500 === 333 || (this.timeToLand--) < 2 || (this.nukes.length && Game.time % 10 === 6 && this.nukeCoverReady)) {
+    if (Game.time % 500 === 333 || (this.timeToLand--) < 2 || (Object.keys(this.nukes).length && Game.time % 10 === 6 && this.nukeCoverReady)) {
       this.updateNukes();
       this.getNukeDefMap();
     }
 
     // cant't survive a nuke if your controller lvl is below 5
-    this.hive.stateChange("nukealert", !!this.nukes.length && !this.nukeCoverReady
+    this.hive.stateChange("nukealert", !!Object.keys(this.nukes).length && !this.nukeCoverReady
       && (!this.hive.cells.storage || this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > this.hive.resTarget[RESOURCE_ENERGY] / 8));
 
     let isWar = this.hive.state === hiveStates.battle;
@@ -366,18 +366,18 @@ export class DefenseCell extends Cell {
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
 
-    let prepareHeal = (master: { activeBees: Bee[] } | undefined) => {
+    let prepareHeal = (master: { activeBees: Bee[] } | undefined, nonclose = true) => {
       if (healTargets.length || !master)
         return;
-      healTargets = master.activeBees.filter(b => b.hits < b.hitsMax && b.pos.roomName === this.hive.roomName).map(b => b.creep)
+      healTargets = master.activeBees.filter(b => b.hits < b.hitsMax && b.pos.roomName === this.hive.roomName && (nonclose || b.pos.getRangeTo(this) < 10)).map(b => b.creep)
     };
 
     let healTargets: Creep[] = [];
     prepareHeal(this.master);
-    prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master);
-    prepareHeal(this.hive.builder)
-    prepareHeal(this.hive.cells.excavation.master);
-    prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master);
+    prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master, this.hive.state === hiveStates.battle);
+    prepareHeal(this.hive.builder);
+    prepareHeal(this.hive.cells.excavation.master, this.hive.state === hiveStates.battle);
+    prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master, this.hive.state === hiveStates.battle);
 
     let healTarget: Creep | undefined;
     let toHeal = 0;

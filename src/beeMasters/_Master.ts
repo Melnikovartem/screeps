@@ -61,8 +61,7 @@ export abstract class Master {
       return false;
     if (!spawnExtreme && this.hive.state !== hiveStates.economy)
       return false;
-    if (this.hive.bassboost && this.hive.bassboost.cells.defense.timeToLand < CREEP_SPAWN_TIME * MAX_CREEP_SIZE * 2
-      || this.hive.cells.defense.timeToLand < spawnCycle / 2)
+    if ((this.hive.bassboost || this.hive).cells.defense.timeToLand < spawnCycle / 2)
       return false;
     return this.targetBeeCount > this.beesAmount || (this.beesAmount === this.targetBeeCount && Game.time >= this.oldestSpawn + spawnCycle);
   }

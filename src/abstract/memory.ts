@@ -18,7 +18,7 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = undefined;
-    Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
+    Memory.cache = { intellegence: {}, roomPlanner: Memory.cache.roomPlanner || {}, hives: {} };
     Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
 
     Logger.init(true);
