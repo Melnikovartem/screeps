@@ -1,0 +1,34 @@
+version: "2"
+volumes:
+  graphite_data:
+  grafana_data:
+services:
+  node:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    restart: always
+    links:
+     - statsd
+    environment:
+      GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
+    env_file: docker-compose.env
+  statsd:
+    image: ennexa/statsd
+    links:
+     - graphite
+  graphite:
+    image: ennexa/graphite
+    restart: always
+    volumes:
+     - /opt/graphite/conf
+     - graphite_data:/opt/graphite/storage/whisper
+  grafana:
+    image: grafana/grafana
+    restart: always
+    volumes:
+     - grafana_data:/var/lib/grafana
+    links:
+     - graphite
+    ports:
+     - "1337:3000"
