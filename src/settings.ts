@@ -1,4 +1,4 @@
-export const DEVELOPING = Game.shard.name === "shard3";
+export const DEVELOPING = false // Game.shard.name === "shard3";
 export const PROFILER = DEVELOPING;
 
 export const TRAVELER_MESSAGE = true;

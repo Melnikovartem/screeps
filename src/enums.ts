@@ -53,6 +53,8 @@ export enum prefix {
   miner = "_miner",
   pickup = "_pickup",
 
+  // TODO shorten?
+
   //cells
   defenseCell = "DefenseCell_",
   respawnCell = "RespawnCell_",

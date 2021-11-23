@@ -446,26 +446,27 @@ export class Bee {
 
   static beesMove() {
     let moveMap: MoveMap = {};
-    for (const name in Apiary.bees) {
-      let bee = Apiary.bees[name];
-      if (bee.creep.fatigue > 0)
-        continue;
-      let p = bee.targetPosition;
-      let priority = bee.master ? bee.master.movePriority : 6;
-      if (priority === 0 && !p)
-        p = bee.pos; // 0 won't move
-      if (!p)
-        continue;
-      let nodeId = p.to_str;
-      if (!moveMap[nodeId])
-        moveMap[nodeId] = [];
-      moveMap[nodeId].push({ bee: bee, priority: priority });
-    }
-
-    for (const nodeId in moveMap) {
-      let [, roomName, x, y] = /^(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
-      this.beeMove(moveMap, new RoomPosition(+x, +y, roomName));
-    }
+    Apiary.wrap(() => {
+      for (const name in Apiary.bees) {
+        let bee = Apiary.bees[name];
+        if (bee.creep.fatigue > 0)
+          continue;
+        let p = bee.targetPosition;
+        let priority = bee.master && bee.master.movePriority || 6;
+        if (!p)
+          continue;
+        let nodeId = p.to_str;
+        if (!moveMap[nodeId])
+          moveMap[nodeId] = [];
+        moveMap[nodeId].push({ bee: bee, priority: priority });
+      }
+    }, "beesMove_moveMap", "run", Object.keys(Apiary.bees).length, false);
+    Apiary.wrap(() => {
+      for (const nodeId in moveMap) {
+        let [, roomName, x, y] = /^(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
+        this.beeMove(moveMap, new RoomPosition(+x, +y, roomName));
+      }
+    }, "beesMove_beeMove", "run", Object.keys(moveMap).length, false);
   }
 
   private static beeMove(moveMap: MoveMap, pos: RoomPosition): OK | ERR_FULL | ERR_NOT_FOUND {

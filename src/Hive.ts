@@ -13,7 +13,7 @@ import { PowerCell } from "./cells/stage2/powerCell";
 import { BuilderMaster } from "./beeMasters/economy/builder";
 import { DepositPullerMaster } from "./beeMasters/corridorMining/puller";
 
-import { safeWrap, makeId } from "./abstract/utils";
+import { makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
 import { WALL_HEALTH } from "abstract/roomPlanner";
 
@@ -582,7 +582,7 @@ export class Hive {
 
 
     _.forEach(this.cells, cell => {
-      safeWrap(() => cell.update(), cell.print + " update");
+      Apiary.wrap(() => cell.update(), cell.ref, "update");
     });
 
     if (Game.time % 25 === 5
@@ -601,7 +601,7 @@ export class Hive {
 
   run() {
     _.forEach(this.cells, cell => {
-      safeWrap(() => cell.run(), cell.print + " run");
+      Apiary.wrap(() => cell.run(), cell.ref, "run");
     });
   }
 

@@ -79,24 +79,36 @@ export class _Apiary {
       this.requestRoomSight.push(roomName);
   }
 
+  wrap(func: () => void, ref: string, mode: "update" | "run", amount = 1, safe = true) {
+    let cpu = 0;
+    if (Apiary.logger)
+      cpu = Game.cpu.getUsed()
+    if (safe)
+      safeWrap(func, ref + " " + mode);
+    else
+      func();
+    if (Apiary.logger && amount > 0)
+      Apiary.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
+  }
+
   // update phase
   update() {
+    if (this.logger)
+      this.logger.update();
+
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
     this.intel.update();
 
     FlagOrder.checkFlags();
     _.forEach(Apiary.orders, order => {
       if (order)
-        safeWrap(() => order.update(), order.print + " update");
+        this.wrap(() => order.update(), order.ref, "update");
     });
 
-    //if (this.broker.lastUpdated < 0)
-    //  this.broker.update();
-
-    safeWrap(() => this.network.update(), "network update");
+    this.wrap(() => this.network.update(), "network", "update", this.network.nodes.length);
 
     _.forEach(this.hives, hive => {
-      safeWrap(() => hive.update(), hive.print + " update");
+      this.wrap(() => hive.update(), hive.roomName, "update", 0);
     });
 
     Bee.checkBees();
@@ -105,29 +117,29 @@ export class _Apiary {
     });
 
     _.forEach(this.masters, master => {
-      safeWrap(() => master.update(), master.print + " update");
+      this.wrap(() => master.update(), master.ref, "update", master.beesAmount);
     });
   }
 
   // run phase
   run() {
     _.forEach(this.hives, hive => {
-      safeWrap(() => hive.run(), hive.print + " run");
+      this.wrap(() => hive.run(), hive.roomName, "run", 0);
     });
 
     _.forEach(this.masters, master => {
-      safeWrap(() => master.run(), master.print + " run");
+      this.wrap(() => master.run(), master.ref, "run", master.beesAmount);
     });
-    Bee.beesMove();
 
-    safeWrap(() => this.network.run(), "network update");
+    Bee.beesMove();
+    this.wrap(() => this.network.run(), "network", "run", this.network.nodes.length);
 
     this.requestRoomSight = [];
 
     if (this.useBucket)
-      Apiary.planner.run();
+      this.wrap(() => Apiary.planner.run(), "planner", "run", 1, false);
 
-    this.visuals.run();
+    this.wrap(() => this.visuals.run(), "visuals", "run", Object.keys(this.hives).length, false);
     if (this.logger)
       this.logger.run();
   }

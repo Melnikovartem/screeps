@@ -78,6 +78,8 @@ declare global {
       pixels: number,
       credits: number,
 
+      cpuUsage: { update: { [ref: string]: { cpu: number, norm: number } }, run: { [ref: string]: { cpu: number, norm: number } } },
+
       hives: {
         [id: string]: HiveLog
       },

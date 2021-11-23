@@ -23,11 +23,16 @@ export class Logger {
         gcl: { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal },
         gpl: { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal },
         cpu: { limit: Game.cpu.limit, used: 0, bucket: Game.cpu.bucket },
+        cpuUsage: { run: {}, update: {} },
         pixels: 0,
         credits: 0,
         hives: {}, orders: {},
         enemies: {}, crashes: {}
       };
+  }
+
+  update() {
+    Memory.log.cpuUsage = { update: {}, run: {} };
   }
 
   run() {
@@ -41,6 +46,10 @@ export class Logger {
     Memory.log.gcl = { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal };
     Memory.log.gpl = { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal };
     Memory.log.cpu = { limit: Game.cpu.limit, used: Game.cpu.getUsed(), bucket: Game.cpu.bucket };
+  }
+
+  reportCPU(ref: string, mode: "run" | "update", usedCPU: number, amount: number) {
+    Memory.log.cpuUsage[mode][ref] = { cpu: usedCPU, norm: usedCPU / amount };
   }
 
   hiveLog(hive: Hive) {
