@@ -4,7 +4,7 @@ import { beeStates, hiveStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findRamp } from "../war/siegeDefender";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-// import { findOptimalResource } from "../../abstract/utils";
+import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -113,8 +113,8 @@ export class BuilderMaster extends Master {
           } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
             if (bee.store.getUsedCapacity() > bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
               let res = <ResourceConstant | undefined>Object.keys(bee.store).filter(r => r !== RESOURCE_ENERGY)[0];
-              if (res)
-                bee.transfer(this.sCell.storage, res);
+              if (res && bee.transfer(this.sCell.storage, res) === OK && Apiary.logger)
+                Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, this.sCell.storage.store, res, 1);
             }
             bee.state = beeStates.work;
             if (Apiary.logger)
@@ -186,10 +186,11 @@ export class BuilderMaster extends Master {
         case beeStates.chill:
           if (this.hive.structuresConst.length && !chill && !old)
             bee.state = beeStates.refill;
-          else if (bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
-            let ans = bee.transfer(this.sCell.storage, RESOURCE_ENERGY);
+          else if (bee.store.getUsedCapacity()) {
+            let res = findOptimalResource(bee.store);
+            let ans = bee.transfer(this.sCell.storage, res);
             if (ans === OK && Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, "build", bee.store, this.sCell.storage.store, RESOURCE_ENERGY, 1);
+              Apiary.logger.resourceTransfer(this.hive.roomName, res === RESOURCE_ENERGY ? "build" : "pickup", bee.store, this.sCell.storage.store, res, 1);
             // bee.repairRoadOnMove(ans);
           } else
             bee.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opts);

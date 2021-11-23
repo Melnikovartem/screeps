@@ -23,7 +23,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1637636331847,
+  "iteration": 1637710877721,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -86,10 +86,12 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
+          "$$hashKey": "object:522",
           "alias": "Bucket",
           "yaxis": 2
         },
         {
+          "$$hashKey": "object:523",
           "alias": "Limit",
           "color": "#890F02",
           "legend": false,
@@ -143,6 +145,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:548",
           "format": "ms",
           "label": "Usage",
           "logBase": 1,
@@ -151,6 +154,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:549",
           "format": "short",
           "label": "Bucket",
           "logBase": 1,
@@ -193,7 +197,7 @@
                 "value": null
               },
               {
-                "color": "rgba(237, 129, 40, 0.89)",
+                "color": "#ed8128e3",
                 "value": 5000
               },
               {
@@ -343,6 +347,154 @@
         "x": 0,
         "y": 8
       },
+      "id": 192,
+      "panels": [],
+      "title": "CPU insights",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 188,
+      "links": [],
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.cpu, '5min'), $highest), 4))",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "*"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "CPU Apiary",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": ""
+            }
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 193,
+      "links": [],
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.norm, '5min'), $highest), 4))",
+          "textEditor": false
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "CPU Apiary norm",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
       "id": 183,
       "panels": [],
       "title": "intershard economy",
@@ -357,10 +509,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 7,
-        "w": 16,
+        "h": 6,
+        "w": 12,
         "x": 0,
-        "y": 9
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 180,
@@ -491,10 +643,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 9
+        "h": 6,
+        "w": 5,
+        "x": 12,
+        "y": 17
       },
       "id": 181,
       "options": {
@@ -518,98 +670,6 @@
       "timeShift": null,
       "title": "Pixels",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "id": 167,
-      "panels": [],
-      "repeat": "room",
-      "title": "$hive overview",
-      "type": "row"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "rgba(245, 54, 54, 0.9)",
-                "value": null
-              },
-              {
-                "color": "rgba(237, 129, 40, 0.89)",
-                "value": 4.01
-              },
-              {
-                "color": "rgba(50, 172, 45, 0.97)",
-                "value": 7.01
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 0,
-        "y": 17
-      },
-      "id": 8,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "repeatIteration": 1473912580654,
-      "targets": [
-        {
-          "refId": "A",
-          "target": "stats.gauges.hives.$hive.controllerLevel",
-          "textEditor": true
-        }
-      ],
-      "title": "RCL",
-      "type": "stat"
     },
     {
       "cacheTimeout": null,
@@ -650,12 +710,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 4,
-        "x": 4,
+        "x": 17,
         "y": 17
       },
-      "id": 16,
+      "id": 185,
       "interval": null,
       "links": [],
       "maxDataPoints": 100,
@@ -673,24 +733,23 @@
         "text": {}
       },
       "pluginVersion": "8.2.5",
-      "repeatIteration": 1473912580654,
       "targets": [
         {
+          "hide": true,
           "refCount": 0,
           "refId": "A",
-          "target": "divideSeries(stats.gauges.hives.$hive.controllerProgress, #B)",
-          "targetFull": "divideSeries(stats.gauges.hives.$hive.controllerProgress, stats.gauges.hives.$hive.controllerProgressTotal)",
+          "target": "stats.gauges.pixels",
           "textEditor": true
         },
         {
-          "hide": true,
-          "refCount": -1,
+          "datasource": "__expr__",
+          "expression": "($A % 500) / 500",
+          "hide": false,
           "refId": "B",
-          "target": "stats.gauges.hives.$hive.controllerProgressTotal",
-          "textEditor": true
+          "type": "math"
         }
       ],
-      "title": "RCL progress",
+      "title": "Decoration progress",
       "type": "gauge"
     },
     {
@@ -718,10 +777,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
@@ -730,12 +785,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 8,
+        "h": 6,
+        "w": 3,
+        "x": 21,
         "y": 17
       },
-      "id": 31,
+      "id": 184,
       "interval": null,
       "links": [],
       "maxDataPoints": 100,
@@ -755,32 +810,520 @@
         "textMode": "auto"
       },
       "pluginVersion": "8.2.5",
-      "repeatIteration": 1473912580654,
       "targets": [
         {
-          "refCount": 0,
+          "datasource": "__expr__",
+          "expression": "( 500 - ($B % 500)) /  $C",
+          "hide": false,
           "refId": "A",
-          "target": "divideSeries(diffSeries(stats.gauges.hives.$hive.controllerProgressTotal, #B), #C)",
-          "targetFull": "divideSeries(diffSeries(stats.gauges.hives.$hive.controllerProgressTotal, stats.gauges.hives.$hive.controllerProgress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), '1hour'), 1))",
-          "textEditor": true
+          "type": "math"
         },
         {
           "hide": true,
-          "refCount": -1,
+          "refCount": 0,
           "refId": "B",
-          "target": "stats.gauges.hives.$hive.controllerProgress",
-          "textEditor": true
+          "target": "stats.gauges.pixels",
+          "textEditor": false
         },
         {
           "hide": true,
-          "refCount": 1,
+          "refCount": 0,
           "refId": "C",
-          "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), '1hour'), 1)",
+          "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.pixels), '5hour'), 1)",
           "textEditor": true
         }
       ],
-      "title": "Time to Next RCL",
+      "title": "Time to Decoration",
+      "transformations": [],
       "type": "stat"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 167,
+      "panels": [
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": null
+                  },
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 4.01
+                  },
+                  {
+                    "color": "rgba(50, 172, 45, 0.97)",
+                    "value": 7.01
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 0,
+            "y": 11
+          },
+          "id": 8,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "repeatIteration": 1473912580654,
+          "targets": [
+            {
+              "refId": "A",
+              "target": "stats.gauges.hives.$hive.controllerLevel",
+              "textEditor": true
+            }
+          ],
+          "title": "RCL",
+          "type": "stat"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 4,
+            "y": 11
+          },
+          "id": 16,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "repeatIteration": 1473912580654,
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(stats.gauges.hives.$hive.controllerProgress, #B)",
+              "targetFull": "divideSeries(stats.gauges.hives.$hive.controllerProgress, stats.gauges.hives.$hive.controllerProgressTotal)",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.hives.$hive.controllerProgressTotal",
+              "textEditor": true
+            }
+          ],
+          "title": "RCL progress",
+          "type": "gauge"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 8,
+            "y": 11
+          },
+          "id": 31,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "repeatIteration": 1473912580654,
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(diffSeries(stats.gauges.hives.$hive.controllerProgressTotal, #B), #C)",
+              "targetFull": "divideSeries(diffSeries(stats.gauges.hives.$hive.controllerProgressTotal, stats.gauges.hives.$hive.controllerProgress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), '1hour'), 1))",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.hives.$hive.controllerProgress",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "C",
+              "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), '1hour'), 1)",
+              "textEditor": false
+            }
+          ],
+          "title": "Time to Next RCL",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 6,
+            "w": 7,
+            "x": 12,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 53,
+          "isNew": true,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "repeatIteration": 1473912580654,
+          "seriesOverrides": [
+            {
+              "$$hashKey": "object:1328",
+              "alias": "1hr Moving Average",
+              "fill": 0,
+              "steppedLine": false
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": true,
+          "targets": [
+            {
+              "refCount": 1,
+              "refId": "A",
+              "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), #C), 'RCL per tick')",
+              "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), derivative(stats.gauges.time)), 'RCL per tick')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "C",
+              "target": "derivative(stats.gauges.time)",
+              "textEditor": false
+            },
+            {
+              "refCount": 0,
+              "refId": "B",
+              "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), #C), '1hour'), '1hr Moving Average')",
+              "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
+              "textEditor": true
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "RCL Upgrade",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1337",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1338",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-RdYlGr"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": ""
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 5,
+            "x": 19,
+            "y": 11
+          },
+          "id": 186,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "C",
+              "target": "absolute(averageSeries(scaleToSeconds(movingAverage(derivative(#A), '1hour'), 1)))",
+              "targetFull": "absolute(averageSeries(scaleToSeconds(movingAverage(derivative(stats.gauges.hives.$hive.nukes.*.*), '1hour'), 1)))",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "A",
+              "target": "stats.gauges.hives.$hive.nukes.*.*",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "B",
+              "target": "aliasByNode(divideSeries(removeEmptySeries(#A), #C), 6)",
+              "targetFull": "aliasByNode(divideSeries(removeEmptySeries(stats.gauges.hives.$hive.nukes.*.*), absolute(averageSeries(scaleToSeconds(movingAverage(derivative(stats.gauges.hives.$hive.nukes.*.*), '1hour'), 1)))), 6)",
+              "textEditor": false
+            }
+          ],
+          "title": "Nukes",
+          "transformations": [],
+          "type": "bargauge"
+        }
+      ],
+      "repeat": "room",
+      "title": "$hive overview",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 175,
+      "panels": [],
+      "title": "$hive energy economy",
+      "type": "row"
     },
     {
       "aliasColors": {},
@@ -788,74 +1331,64 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "editable": true,
-      "error": false,
+      "description": "",
       "fill": 1,
       "fillGradient": 0,
-      "grid": {},
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 17
+        "h": 13,
+        "w": 8,
+        "x": 0,
+        "y": 25
       },
       "hiddenSeries": false,
-      "id": 53,
-      "isNew": true,
+      "id": 177,
       "legend": {
         "alignAsTable": true,
         "avg": true,
         "current": true,
+        "hideEmpty": true,
+        "hideZero": true,
         "max": true,
         "min": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
       },
       "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
+      "linewidth": 1,
+      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
       "percentage": false,
       "pluginVersion": "8.2.5",
-      "pointradius": 5,
+      "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "repeatIteration": 1473912580654,
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1328",
-          "alias": "1hr Moving Average",
-          "fill": 0,
-          "steppedLine": false
+          "$$hashKey": "object:2068",
+          "alias": "Total",
+          "yaxis": 2
         }
       ],
       "spaceLength": 10,
       "stack": false,
-      "steppedLine": true,
+      "steppedLine": false,
       "targets": [
         {
-          "refCount": 1,
+          "refCount": -1,
           "refId": "A",
-          "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), #C), 'RCL per tick')",
-          "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), derivative(stats.gauges.time)), 'RCL per tick')",
+          "target": "aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)",
           "textEditor": false
         },
         {
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "derivative(stats.gauges.time)",
-          "textEditor": false
-        },
-        {
+          "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), #C), '1hour'), '1hr Moving Average')",
-          "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.hives.$hive.controllerProgress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
+          "target": "alias(sumSeries(#A), 'Total')",
+          "targetFull": "alias(sumSeries(aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)), 'Total')",
           "textEditor": true
         }
       ],
@@ -863,13 +1396,13 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "RCL Upgrade",
+      "title": "Profits $hive",
       "tooltip": {
-        "msResolution": false,
         "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
+        "sort": 2,
+        "value_type": "individual"
       },
+      "transformations": [],
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -880,7 +1413,7 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1337",
+          "$$hashKey": "object:536",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -889,7 +1422,118 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1338",
+          "$$hashKey": "object:537",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 13,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "hiddenSeries": false,
+      "id": 187,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.2.5",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:656",
+          "alias": "Total",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "refCount": -1,
+          "refId": "A",
+          "target": "aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)",
+          "textEditor": true
+        },
+        {
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(sumSeries(#A), 'Total')",
+          "targetFull": "alias(sumSeries(aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)), 'Total')",
+          "textEditor": false
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Losses $hive",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:536",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:537",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -916,9 +1560,9 @@
       "grid": {},
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 17
+        "w": 8,
+        "x": 16,
+        "y": 25
       },
       "hiddenSeries": false,
       "id": 82,
@@ -986,7 +1630,7 @@
           "refId": "D",
           "target": "alias(sumSeries(#A, #B, #C), 'Total')",
           "targetFull": "alias(sumSeries(alias(stats.gauges.hives.$hive.storageEnergy, 'Storage'), alias(stats.gauges.hives.$hive.energyAvailable, 'Spawns and Extensions'), alias(stats.gauges.hives.$hive.terminalEnergy, 'Terminal')), 'Total')",
-          "textEditor": false
+          "textEditor": true
         }
       ],
       "thresholds": [],
@@ -1034,113 +1678,109 @@
       }
     },
     {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 175,
-      "panels": [],
-      "title": "$hive economy",
-      "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": null,
       "description": "",
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 40,
+          "min": -40,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "#ed8128e3",
+                "value": -10
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 26
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 33
       },
-      "hiddenSeries": false,
-      "id": 177,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideEmpty": true,
-        "hideZero": true,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "connected",
+      "id": 200,
       "options": {
-        "alertThreshold": true
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "percentage": false,
       "pluginVersion": "8.2.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
+          "hide": true,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByNode(removeBelowValue(stats.gauges.hives.$hive.energyReport.*.profit, 0.00001), 5)",
-          "textEditor": true
+          "target": "aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 1,
+          "refId": "C",
+          "target": "alias(sumSeries(removeAboveValue(#A, -0.00001)), 'expenditure')",
+          "targetFull": "alias(sumSeries(removeAboveValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), -0.00001)), 'expenditure')",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 1,
+          "refId": "B",
+          "target": "alias(sumSeries(#A), 'Total')",
+          "targetFull": "alias(sumSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)), 'Total')",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 1,
+          "refId": "D",
+          "target": "alias(sumSeries(removeBelowValue(#A, 0.00001)), 'income')",
+          "targetFull": "alias(sumSeries(removeBelowValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), 0.00001)), 'income')",
+          "textEditor": false
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Profits $hive",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
       "transformations": [],
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
       },
-      "yaxes": [
-        {
-          "$$hashKey": "object:536",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:537",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "id": 199,
+      "panels": [],
+      "title": "$hive $resource economy",
+      "type": "row"
     },
     {
       "aliasColors": {},
@@ -1148,22 +1788,25 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 26
+        "x": 0,
+        "y": 39
       },
       "hiddenSeries": false,
-      "id": 178,
+      "id": 195,
       "legend": {
         "avg": false,
         "current": false,
-        "hideEmpty": true,
-        "hideZero": true,
         "max": false,
         "min": false,
         "show": true,
@@ -1172,7 +1815,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -1187,23 +1830,46 @@
       "steppedLine": false,
       "targets": [
         {
+          "hide": true,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByNode(removeAboveValue(stats.gauges.hives.$hive.energyReport.*.profit, -0.00001), 5)",
+          "target": "stats.gauges.time",
           "textEditor": true
+        },
+        {
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+          "textEditor": false
+        },
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "C",
+          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+          "textEditor": false
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Losses $hive",
+      "title": "$resource per tick",
       "tooltip": {
         "shared": true,
-        "sort": 2,
+        "sort": 0,
         "value_type": "individual"
       },
-      "transformations": [],
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1214,7 +1880,7 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:536",
+          "$$hashKey": "object:1256",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1223,7 +1889,7 @@
           "show": true
         },
         {
-          "$$hashKey": "object:537",
+          "$$hashKey": "object:1257",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1238,748 +1904,928 @@
       }
     },
     {
-      "collapsed": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 39
+      },
+      "id": 196,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "right"
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "A",
+          "target": "stats.gauges.time",
+          "textEditor": true
+        },
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "B",
+          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+          "textEditor": false
+        },
+        {
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+          "textEditor": false
+        },
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "D",
+          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 1,
+          "refId": "E",
+          "target": "removeEmptySeries(aliasByNode(removeBelowValue(#D, 0.00001), 0))",
+          "targetFull": "removeEmptySeries(aliasByNode(removeBelowValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), 0.00001), 0))",
+          "textEditor": false
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "$resource income",
+      "type": "piechart"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 39
+      },
+      "id": 201,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "A",
+          "target": "stats.gauges.time",
+          "textEditor": true
+        },
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "B",
+          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+          "textEditor": false
+        },
+        {
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+          "textEditor": false
+        },
+        {
+          "hide": true,
+          "refCount": 1,
+          "refId": "D",
+          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+          "textEditor": false
+        },
+        {
+          "hide": false,
+          "refCount": 1,
+          "refId": "E",
+          "target": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(#D, -0.00001)), 0))",
+          "targetFull": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), -0.00001)), 0))",
+          "textEditor": false
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "$resource expenditure",
+      "type": "piechart"
+    },
+    {
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 47
       },
       "id": 166,
-      "panels": [],
+      "panels": [
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 0,
+            "y": 13
+          },
+          "id": 4,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refId": "A",
+              "target": "stats.gauges.gcl.level",
+              "textEditor": true
+            }
+          ],
+          "title": "GCL",
+          "type": "stat"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 4,
+            "y": 13
+          },
+          "id": 6,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(stats.gauges.gcl.progress, #B)",
+              "targetFull": "divideSeries(stats.gauges.gcl.progress, stats.gauges.gcl.progressTotal)",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.gcl.progressTotal",
+              "textEditor": true
+            }
+          ],
+          "title": "GCL Progress",
+          "type": "gauge"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 8,
+            "y": 13
+          },
+          "id": 7,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(diffSeries(stats.gauges.gcl.progressTotal, #B), #C)",
+              "targetFull": "divideSeries(diffSeries(stats.gauges.gcl.progressTotal, stats.gauges.gcl.progress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gcl.progress), '1hour'), 1))",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.gcl.progress",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "C",
+              "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gcl.progress), '1hour'), 1)",
+              "textEditor": true
+            }
+          ],
+          "title": "Time to Next GCL",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 13
+          },
+          "hiddenSeries": false,
+          "id": 5,
+          "isNew": true,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "1hr Moving Average",
+              "fill": 0,
+              "steppedLine": false
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": true,
+          "targets": [
+            {
+              "refCount": 1,
+              "refId": "A",
+              "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), #B), 'GCL per tick')",
+              "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), derivative(stats.gauges.time)), 'GCL per tick')",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "B",
+              "target": "derivative(stats.gauges.time)",
+              "textEditor": true
+            },
+            {
+              "refCount": 0,
+              "refId": "C",
+              "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), #B), '1hour'), '1hr Moving Average')",
+              "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
+              "textEditor": true
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "GCL Upgrade",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
       "title": "GCL",
       "type": "row"
     },
     {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 0,
-        "y": 35
-      },
-      "id": 4,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refId": "A",
-          "target": "stats.gauges.gcl.level",
-          "textEditor": true
-        }
-      ],
-      "title": "GCL",
-      "type": "stat"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 4,
-        "y": 35
-      },
-      "id": 6,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refCount": 0,
-          "refId": "A",
-          "target": "divideSeries(stats.gauges.gcl.progress, #B)",
-          "targetFull": "divideSeries(stats.gauges.gcl.progress, stats.gauges.gcl.progressTotal)",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": -1,
-          "refId": "B",
-          "target": "stats.gauges.gcl.progressTotal",
-          "textEditor": true
-        }
-      ],
-      "title": "GCL Progress",
-      "type": "gauge"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 8,
-        "y": 35
-      },
-      "id": 7,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refCount": 0,
-          "refId": "A",
-          "target": "divideSeries(diffSeries(stats.gauges.gcl.progressTotal, #B), #C)",
-          "targetFull": "divideSeries(diffSeries(stats.gauges.gcl.progressTotal, stats.gauges.gcl.progress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gcl.progress), '1hour'), 1))",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": -1,
-          "refId": "B",
-          "target": "stats.gauges.gcl.progress",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "C",
-          "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gcl.progress), '1hour'), 1)",
-          "textEditor": true
-        }
-      ],
-      "title": "Time to Next GCL",
-      "type": "stat"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {},
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 35
-      },
-      "hiddenSeries": false,
-      "id": 5,
-      "isNew": true,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.5",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "1hr Moving Average",
-          "fill": 0,
-          "steppedLine": false
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": true,
-      "targets": [
-        {
-          "refCount": 1,
-          "refId": "A",
-          "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), #B), 'GCL per tick')",
-          "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), derivative(stats.gauges.time)), 'GCL per tick')",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "B",
-          "target": "derivative(stats.gauges.time)",
-          "textEditor": true
-        },
-        {
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), #B), '1hour'), '1hr Moving Average')",
-          "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gcl.progress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
-          "textEditor": true
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GCL Upgrade",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": 0,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 48
       },
       "id": 173,
-      "panels": [],
+      "panels": [
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 0,
+            "y": 14
+          },
+          "id": 168,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refId": "A",
+              "target": "stats.gauges.gpl.level",
+              "textEditor": true
+            }
+          ],
+          "title": "GPL",
+          "type": "stat"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 4,
+            "y": 14
+          },
+          "id": 169,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(stats.gauges.gpl.progress, #B)",
+              "targetFull": "divideSeries(stats.gauges.gpl.progress, stats.gauges.gpl.progressTotal)",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.gpl.progressTotal",
+              "textEditor": true
+            }
+          ],
+          "title": "GPL Progress",
+          "type": "gauge"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 8,
+            "y": 14
+          },
+          "id": 170,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refCount": 0,
+              "refId": "A",
+              "target": "divideSeries(diffSeries(stats.gauges.gpl.progressTotal, #B), #C)",
+              "targetFull": "divideSeries(diffSeries(stats.gauges.gpl.progressTotal, stats.gauges.gpl.progress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gpl.progress), '1hour'), 1))",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": -1,
+              "refId": "B",
+              "target": "stats.gauges.gpl.progress",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "C",
+              "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gpl.progress), '1hour'), 1)",
+              "textEditor": true
+            }
+          ],
+          "title": "Time to Next GPL",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "hiddenSeries": false,
+          "id": 171,
+          "isNew": true,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "1hr Moving Average",
+              "fill": 0,
+              "steppedLine": false
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": true,
+          "targets": [
+            {
+              "refCount": 1,
+              "refId": "A",
+              "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), #B), 'GCL per tick')",
+              "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), derivative(stats.gauges.time)), 'GCL per tick')",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "B",
+              "target": "derivative(stats.gauges.time)",
+              "textEditor": true
+            },
+            {
+              "refCount": 0,
+              "refId": "C",
+              "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), #B), '1hour'), '1hr Moving Average')",
+              "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
+              "textEditor": true
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "GPL Upgrade",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
       "title": "GPL",
       "type": "row"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 0,
-        "y": 44
-      },
-      "id": 168,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refId": "A",
-          "target": "stats.gauges.gpl.level",
-          "textEditor": true
-        }
-      ],
-      "title": "GPL",
-      "type": "stat"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 4,
-        "y": 44
-      },
-      "id": 169,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refCount": 0,
-          "refId": "A",
-          "target": "divideSeries(stats.gauges.gpl.progress, #B)",
-          "targetFull": "divideSeries(stats.gauges.gpl.progress, stats.gauges.gpl.progressTotal)",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": -1,
-          "refId": "B",
-          "target": "stats.gauges.gpl.progressTotal",
-          "textEditor": true
-        }
-      ],
-      "title": "GPL Progress",
-      "type": "gauge"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 8,
-        "y": 44
-      },
-      "id": 170,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refCount": 0,
-          "refId": "A",
-          "target": "divideSeries(diffSeries(stats.gauges.gpl.progressTotal, #B), #C)",
-          "targetFull": "divideSeries(diffSeries(stats.gauges.gpl.progressTotal, stats.gauges.gpl.progress), scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gpl.progress), '1hour'), 1))",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": -1,
-          "refId": "B",
-          "target": "stats.gauges.gpl.progress",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "C",
-          "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.gpl.progress), '1hour'), 1)",
-          "textEditor": true
-        }
-      ],
-      "title": "Time to Next GPL",
-      "type": "stat"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {},
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 44
-      },
-      "hiddenSeries": false,
-      "id": 171,
-      "isNew": true,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.5",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "1hr Moving Average",
-          "fill": 0,
-          "steppedLine": false
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": true,
-      "targets": [
-        {
-          "refCount": 1,
-          "refId": "A",
-          "target": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), #B), 'GCL per tick')",
-          "targetFull": "alias(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), derivative(stats.gauges.time)), 'GCL per tick')",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "B",
-          "target": "derivative(stats.gauges.time)",
-          "textEditor": true
-        },
-        {
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), #B), '1hour'), '1hr Moving Average')",
-          "targetFull": "alias(movingAverage(divideSeries(nonNegativeDerivative(stats.gauges.gpl.progress), derivative(stats.gauges.time)), '1hour'), '1hr Moving Average')",
-          "textEditor": true
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPL Upgrade",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": 0,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
     }
   ],
   "refresh": false,
@@ -1994,8 +2840,8 @@
         "allValue": null,
         "current": {
           "selected": false,
-          "text": "",
-          "value": ""
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": null,
         "definition": "stats.gauges.hives.*",
@@ -2008,6 +2854,76 @@
         "name": "hive",
         "options": [],
         "query": "stats.gauges.hives.*",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": null,
+        "definition": "stats.gauges.cpuUsage.*",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": false,
+        "name": "phase",
+        "options": [],
+        "query": "stats.gauges.cpuUsage.*",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "14",
+          "value": "14"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "highest",
+        "options": [
+          {
+            "selected": true,
+            "text": "14",
+            "value": "14"
+          }
+        ],
+        "query": "14",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "energy",
+          "value": "energy"
+        },
+        "datasource": null,
+        "definition": "stats.gauges.hives.$hive.resourceBalance.*",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "resource",
+        "options": [],
+        "query": "stats.gauges.hives.$hive.resourceBalance.*",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2048,5 +2964,5 @@
   "timezone": "browser",
   "title": "Dashboard",
   "uid": "P9g0ZHp7z",
-  "version": 5
+  "version": 13
 }
