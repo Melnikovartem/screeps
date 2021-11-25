@@ -123,6 +123,7 @@ export class LaboratoryCell extends Cell {
   stepToTarget() {
     this.resTarget = {};
     if (!this.synthesizeTarget || this.synthesizeTarget.amount <= 0) {
+      this.synthesizeTarget = undefined;
       if (Game.flags[prefix.haltlab + this.hive.roomName])
         return;
       let targets: { res: ReactionConstant, amount: number }[] = [];
@@ -467,7 +468,7 @@ export class LaboratoryCell extends Cell {
     for (let id in this.laboratories)
       this.updateLabState(this.laboratories[id]);
 
-    if (!this.prod && !this.newProd() && Game.time % 25 === 0) {
+    if (!this.prod && !this.newProd() && Game.time % 20 === 0) {
       this.stepToTarget();
       this.newProd();
     }
@@ -518,7 +519,7 @@ export class LaboratoryCell extends Cell {
           if (this.labStates[l.id] === "production")
             this.labStates[l.id] = "idle";
           this.checkDropped.push(l.id);
-          let bee = Apiary.bees[creep.name];
+          let bee = <Bee>Apiary.bees[creep.name];
           if (bee)
             bee.boosted = false;
         }

@@ -21,11 +21,25 @@ export class RespawnCell extends Cell {
     super(hive, prefix.respawnCell + hive.room.name);
   }
 
+  spawnEval(spawn: StructureSpawn) {
+    if (!spawn.effects)
+      return 0;
+    let powerup = <PowerEffect>spawn.effects.filter(e => e.effect === PWR_OPERATE_SPAWN)[0];
+    if (powerup)
+      return -powerup.level;
+    return 0;
+  }
+
+  spawnDisrupted(spawn: StructureSpawn) {
+    return spawn.effects && spawn.effects.filter(e => e.effect === PWR_DISRUPT_SPAWN).length;
+  }
+
   update() {
     super.update(["extensions", "spawns"]);
 
     // find free spawners
-    this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning);
+    this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning && !this.spawnDisrupted(structure));
+    this.freeSpawns.sort((a, b) => this.spawnEval(a) - this.spawnEval(b));
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
     let storageCell = this.hive.cells.storage;

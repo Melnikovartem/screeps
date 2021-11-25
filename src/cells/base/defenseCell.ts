@@ -244,26 +244,21 @@ export class DefenseCell extends Cell {
     return ERR_NOT_FOUND;
   }
 
-  checkAndDefend(roomName: string) {
-    if (roomName in Game.rooms) {
-      let roomInfo = Apiary.intel.getInfo(roomName, 25);
-      if (roomInfo.dangerlvlmax >= 3 && roomInfo.dangerlvlmax <= 5 && roomInfo.enemies.length && Game.time >= roomInfo.safeModeEndTime - 250) {
-        let enemy = roomInfo.enemies[0].object;
-        if (!this.notDef(roomName))
-          return;
-        let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
-        if (!pos)
-          pos = enemy.pos;
-        // console .log("?", roomName, ":\n", Object.keys(Apiary.defenseSwarms).map(rn => rn + " " + Apiary.intel.getInfo(rn, Infinity).dangerlvlmax + " "
-        // + (Apiary.defenseSwarms[rn].master ? Apiary.defenseSwarms[rn].master!.print : "no master")).join("\n"));
-
-        if (this.reposessFlag(enemy.pos, enemy) !== OK)
-          this.setDefFlag(enemy.pos);
-      }
+  checkAndDefend(roomName: string, lag = 20) {
+    let roomInfo = Apiary.intel.getInfo(roomName, lag);
+    if (roomInfo.dangerlvlmax >= 3 && roomInfo.dangerlvlmax <= 5 && roomInfo.enemies.length && Game.time >= roomInfo.safeModeEndTime - 250) {
+      let enemy = roomInfo.enemies[0].object;
+      if (!this.notDef(roomName))
+        return;
+      let pos = enemy.pos.getOpenPositions(true).filter(p => !p.getEnteranceToRoom())[0];
+      if (!pos)
+        pos = enemy.pos;
+      if (this.reposessFlag(enemy.pos, enemy) !== OK)
+        this.setDefFlag(enemy.pos);
     }
   }
 
-  get opts(): FindPathOpts {
+  get opt(): FindPathOpts {
     return {
       maxRooms: 1,
       ignoreRoads: true,
@@ -289,7 +284,7 @@ export class DefenseCell extends Cell {
   }
 
   wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
-    let path = pos.findPathTo(defPos, this.opts);
+    let path = pos.findPathTo(defPos, this.opt);
     let firstStep = path.shift();
     let lastStep = path.pop();
     if (!firstStep || !lastStep)

@@ -19,6 +19,7 @@ export class ResourceCell extends Cell {
   parentCell: ExcavationCell;
   master: MinerMaster;
 
+  updateTime: number;
   lair?: StructureKeeperLair;
 
   operational: boolean = false;
@@ -35,6 +36,7 @@ export class ResourceCell extends Cell {
       this.resourceType = resource.mineralType;
     this.parentCell = excavationCell;
     this.master = new MinerMaster(this);
+    this.updateTime = this.resourceType === RESOURCE_ENERGY ? 10 : 100;
     this.updateStructure();
   }
 
@@ -156,7 +158,12 @@ export class ResourceCell extends Cell {
       else
         this.resource = this.pos.findInRange(FIND_MINERALS, 1)[0]; */
 
-    if (!this.operational && Game.time % (this.resourceType === RESOURCE_ENERGY ? 10 : 100) === 0)
+
+
+    if (this.operational) {
+      if (!this.container && !this.link)
+        this.operational = false;
+    } else if (Game.time % this.updateTime === 0)
       this.updateStructure();
 
     if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
@@ -171,7 +178,7 @@ export class ResourceCell extends Cell {
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
         let closeToFull = usedCap >= LINK_CAPACITY / 1.1428;
 
-        let upgradeLink = this.hive.state === hiveStates.economy && this.hive.cells.upgrade && this.hive.cells.upgrade.link;
+        let upgradeLink = this.hive.state === hiveStates.economy && this.hive.cells.upgrade && this.hive.cells.upgrade.master.beesAmount && this.hive.cells.upgrade.link;
         if (upgradeLink && (upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= usedCap
           || upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8 && !closeToFull)) {
           let ans = this.link.transferEnergy(upgradeLink);

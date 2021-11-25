@@ -120,7 +120,7 @@ export class ObserveCell extends Cell {
   powerCheck(room: Room) {
     _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
       let open = power.pos.getOpenPositions(true).length;
-      let dmgPerDupl = (CREEP_LIFE_TIME - (power.pos.getRoomRangeTo(this.hive) - 1) * 50) * (30 * 20);
+      let dmgPerDupl = (CREEP_LIFE_TIME - power.pos.getRoomRangeTo(this.hive) * 50) * (ATTACK_POWER * 25);
       let amountNeeded = power.hits / dmgPerDupl;
       if (Math.floor(amountNeeded / open) * CREEP_LIFE_TIME > power.ticksToDecay)
         return;

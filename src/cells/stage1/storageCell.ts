@@ -107,7 +107,7 @@ export class StorageCell extends Cell {
   pickupResources() {
     let resources = this.hive.room.find(FIND_DROPPED_RESOURCES).filter(r => r.resourceType !== RESOURCE_ENERGY || r.amount >= 100);
     let tombstones = this.hive.room.find(FIND_TOMBSTONES).filter(t => t.store.getUsedCapacity() > 0);
-    let enemies = Apiary.intel.getInfo(this.hive.roomName, 25).enemies.map(e => e.object);
+    let enemies = Apiary.intel.getInfo(this.hive.roomName, 10).enemies.map(e => e.object);
     let rrs = (<(Resource | Tombstone)[]>resources).concat(tombstones);
     if (enemies.length)
       rrs = rrs.filter(rr => {

@@ -20,6 +20,8 @@ export const COMPRESS_MAP = {
   [RESOURCE_ENERGY]: RESOURCE_BATTERY,
 }
 
+export const COMMON_COMMODITIES: CommodityConstant[] = [RESOURCE_COMPOSITE, RESOURCE_CRYSTAL, RESOURCE_LIQUID];
+
 /*
 let ss = '"metal", "biomass", "silicon", "mist", ';
 for (const r in COMMODITIES)
@@ -39,12 +41,13 @@ export class FactoryCell extends Cell {
   roomsToCheck: string[] = [];
   master: undefined;
   sCell: StorageCell;
-  lvl: 0 | 1 | 2 | 3 | 4 | 5 = 0;
 
   commodityRes?: CommodityConstant;
   prod?: { res: CommodityConstant, amount: number };
   resTarget: { [key in ResourceConstant]?: number } = {};
   patience: number = 0;
+
+  level: number = 0;
 
   constructor(hive: Hive, factory: StructureFactory, sCell: StorageCell) {
     super(hive, prefix.factoryCell + hive.room.name);
@@ -76,36 +79,53 @@ export class FactoryCell extends Cell {
     this.resTarget = {};
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       this.commodityTarget = undefined;
-      if (Game.time % 25 !== 0)
+      if (Game.time % 20 !== 0)
         return;
       let targets: { res: CommodityConstant, amount: number }[] = [];
       for (const r in COMMODITIES) {
         let res = <CommodityConstant>r; // atually ResourceConstant
         let recipe = COMMODITIES[res];
-        if (recipe.level && recipe.level > this.lvl)
+        if (recipe.level && recipe.level !== this.level)
           continue;
+
         let num = 0;
-        if (res in this.hive.resState) {
+
+        if (recipe.level || COMMODITIES_TO_SELL.includes(res)) {
+          num = 75;
+          if (!COMMON_COMMODITIES.includes(res)) {
+            let componentAmount: number[] = [];
+            _.forEach(recipe.components, (amount, component) => {
+              if (COMMODITIES_TO_SELL.includes(<CommodityConstant>component))
+                componentAmount.push((Apiary.network.resState[<CommodityConstant>component] || 0) / amount);
+            });
+            num = Math.min(num, ...componentAmount);
+          }
+        } else if (res in this.hive.resState) {
           let balance = -this.hive.resState[res]! + (this.resTarget[res] || 0);
           num = balance / recipe.amount;
         }
-        if (Object.keys(recipe.components).length > 2 && num < 1) {
-          let components = _.map(recipe.components, (amount, component) =>
-            COMMODITIES_TO_SELL.includes(<CommodityConstant>component)
-              ? this.sCell.getUsedCapacity(<CommodityConstant>component) / amount : Infinity);
-          num = Math.min(25, ...components);
-        }
+
         if (num > 1)
           targets.push({ res: res, amount: Math.floor(num) * recipe.amount });
       }
+      let nonCommon = targets.filter(t => !COMMON_COMMODITIES.includes(t.res));
+      if (nonCommon.length)
+        targets = nonCommon;
       if (!targets.length)
         return;
       this.patience = 0;
-      targets.sort((a, b) => b.amount - a.amount);
+      targets.sort((a, b) => {
+        let alvl = COMMODITIES[a.res].level;
+        let blvl = COMMODITIES[b.res].level;
+        let ans = (blvl || 5) - (alvl || 5);
+        if (ans === 0)
+          ans = b.amount - a.amount;
+        return ans;
+      });
       this.commodityTarget = targets[0];
     }
 
-    let [createQue, ingredients] = this.getCreateQue(this.commodityTarget.res);
+    let [createQue, ingredients] = this.getCreateQue(this.commodityTarget.res, this.commodityTarget.amount);
 
     _.forEach(ingredients, (amount, component) => {
       this.resTarget[<CommodityIngredient>component] = amount! * (COMMODITIES_TO_SELL.includes(<CommodityConstant>component) ? 1 : 2);
@@ -125,24 +145,28 @@ export class FactoryCell extends Cell {
     }
   }
 
-  getCreateQue(res: CommodityConstant): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
+  getCreateQue(res: CommodityConstant, amount: number, factoryLevel = this.factory.level): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
     // prob should precal for each resource
     let ingredients: { [res in CommodityIngredient]?: number } = {};
     let createQue: CommodityConstant[] = [];
 
-    let dfs = (resource: CommodityIngredient, depth: number) => {
+    let dfs = (resource: CommodityIngredient, depth: number, amount: number) => {
       let recipe = COMMODITIES[<CommodityConstant>resource];
+      if (recipe.level && recipe.level !== factoryLevel) {
+        ingredients[resource] = amount * recipe.amount;
+        return;
+      }
       if (!recipe || (resource in COMPRESS_MAP && depth > 0)) {
-        ingredients[resource] = 0;
+        ingredients[resource] = amount;
         return;
       }
       if (!(res in COMPRESS_MAP) || !depth)
         createQue.push(<CommodityConstant>resource);
       for (const component in recipe.components)
-        dfs(<CommodityIngredient>component, depth + 1);
+        dfs(<CommodityIngredient>component, depth + 1, amount * recipe.components[<CommodityIngredient>component]);
     }
 
-    dfs(res, 0);
+    dfs(res, 0, amount);
 
     createQue = createQue.filter((value, index) => createQue.indexOf(value) === index);
     createQue = createQue.filter(res => {
@@ -156,11 +180,12 @@ export class FactoryCell extends Cell {
     super.update();
     this.roomsToCheck = this.hive.annexNames;
 
-    let powerup = this.factory.effects && <PowerEffect>this.factory.effects.filter(p => p.effect === PWR_OPERATE_FACTORY)[0];
-    if (powerup)
-      this.lvl = <FactoryCell["lvl"]>powerup.level;
-    else
-      this.lvl = 0;
+    this.level = this.factory.level ? -1 : 0;
+    if (this.factory.effects) {
+      let powerup = this.factory.effects.filter(e => e.effect === PWR_OPERATE_FACTORY && e.level === this.factory.level).length;
+      if (powerup)
+        this.level = this.factory.level;
+    }
 
     let balance = this.factory.store.getUsedCapacity(RESOURCE_ENERGY) - FACTORY_ENERGY;
     if (balance < 1000)
@@ -201,13 +226,18 @@ export class FactoryCell extends Cell {
     if (!this.prod || this.factory.cooldown)
       return;
     let recipe = COMMODITIES[this.prod.res];
+    if (recipe.level && this.level !== recipe.level) {
+      this.prod = undefined;
+      return;
+    }
     for (const r in recipe.components) {
       let res = <CommodityConstant>r;
       let balance = recipe.components[res] - this.factory.store.getUsedCapacity(res)
       if (balance > 0)
         return;
     }
-    if (this.factory.produce(this.prod.res) === OK) {
+    let ans = this.factory.produce(this.prod.res);
+    if (ans === OK) {
       this.prod.amount -= recipe.amount;
       if (this.commodityTarget && this.prod.res === this.commodityTarget.res)
         this.commodityTarget.amount -= recipe.amount;

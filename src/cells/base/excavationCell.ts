@@ -48,8 +48,8 @@ export class ExcavationCell extends Cell {
     _.forEach(this.resourceCells, cell => {
       if (cell.container) {
         let padding = 0;
-        if (cell.operational && cell.master.activeBees.filter(b => b.pos.isNearTo(cell)).length) {
-          padding = cell.restTime * cell.ratePT + 25;
+        if (cell.operational) {
+          padding = cell.restTime * cell.master.ratePT + 25;
           if (cell.resource instanceof Source)
             padding = Math.min(padding, cell.resource.energy);
           else
@@ -58,7 +58,7 @@ export class ExcavationCell extends Cell {
         if (cell.lair && (!cell.lair.ticksToSpawn || cell.lair.ticksToSpawn <= cell.restTime))
           padding += 600; // usual drop of source keeper if killed by my SK defender
         if (cell.container.store.getUsedCapacity() + padding >= this.fullContainer) {
-          let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 25);
+          let roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 20);
           if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)
             this.quitefullCells.push(cell);
         }

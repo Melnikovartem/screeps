@@ -11,12 +11,20 @@ export class PowerCell extends Cell {
   powerSpawn: StructurePowerSpawn;
   roomsToCheck: string[] = [];
   master: undefined;
-  sCell: StorageCell
+  sCell: StorageCell;
 
   constructor(hive: Hive, powerSpawn: StructurePowerSpawn, sCell: StorageCell) {
     super(hive, prefix.powerCell + hive.room.name);
     this.sCell = sCell;
     this.powerSpawn = powerSpawn;
+  }
+
+  get powerManager(): string | undefined {
+    return this.fromCache("powerManager");
+  }
+
+  set powerManager(value) {
+    this.toCache("powerManager", value);
   }
 
   update() {
