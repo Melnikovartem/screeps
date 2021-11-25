@@ -23,7 +23,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1637710877721,
+  "iteration": 1637806553956,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -69,6 +69,8 @@
         "min": true,
         "rightSide": false,
         "show": true,
+        "sort": "avg",
+        "sortDesc": false,
         "total": false,
         "values": true
       },
@@ -402,7 +404,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "D",
-          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.cpu, '5min'), $highest), 4))",
+          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.cpu, '5min'), $processes), 3, 4))",
           "textEditor": false
         },
         {
@@ -443,7 +445,131 @@
           },
           "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "masterdeposit_619d638af984469f841182f4_pickup",
+                  "masterdeposit_619ba4536c196d2153b95347_miner",
+                  "beesMove_moveMap",
+                  "annex_E37S24",
+                  "annex_E37S22",
+                  "masterdeposit_619d638af984469f841182f4_miner",
+                  "def_xKx8",
+                  "masterdeposit_619ba4536c196d2153b95347_pickup",
+                  "deposit_619ba4536c196d2153b95347",
+                  "masterdeposit_619adf648e85105205b02e96_miner",
+                  "mine_kR_a387",
+                  "UpgradeCell_E37S23",
+                  "def_XfXR",
+                  "deposit_619d4a26aed9f22788dbd672",
+                  "annex_E36S23",
+                  "mine_J9_a38f",
+                  "planner",
+                  "mine_TP_a38d",
+                  "masterResourceCell_5bbcaf239099fc012e63a38f",
+                  "masterResourceCell_5bbcaf239099fc012e63a389",
+                  "visuals",
+                  "masterResourceCell_5bbcaf129099fc012e63a1c8",
+                  "FactoryCell_E37S23",
+                  "masterResourceCell_5bbcaf129099fc012e63a1c0",
+                  "PowerCell_E37S23",
+                  "masterResourceCell_5bbcaf239099fc012e63a38d",
+                  "masterdeposit_619adf648e85105205b02e96_pickup",
+                  "masterResourceCell_5bbcaf239099fc012e63a38b",
+                  "mine_VQ_a1c0",
+                  "masterResourceCell_5bbcaf129099fc012e63a1c6",
+                  "masterResourceCell_5bbcaf239099fc012e63a387",
+                  "StorageCell_E37S23",
+                  "masterResourceCell_5bbcaf129099fc012e63a1c3",
+                  "masterSwarm_def_XfXR",
+                  "masterResourceCell_5bbcaf129099fc012e63a1bf",
+                  "annex_E36S24",
+                  "mine_Gy_a1c8",
+                  "Flag1",
+                  "masterSwarm_annex_E37S24",
+                  "mine_8G_769f",
+                  "mine_On_a1c3",
+                  "masterSwarm_def_xKx8",
+                  "masterSwarm_annex_E37S22",
+                  "masterSwarm_annex_E36S23",
+                  "mine_7v_a1bf",
+                  "mine_rj_a1c6",
+                  "masterSwarm_def_V6gs",
+                  "def_V6gs",
+                  "mine_In_a38b",
+                  "masterResourceCell_5bbcaf039099fc012e639f7e",
+                  "mine_sm_0bcb",
+                  "masterExcavationCell_E37S23",
+                  "deposit_619d638af984469f841182f4",
+                  "masterSwarm_annex_E35S23",
+                  "masterSwarm_Flag1",
+                  "mine_SP_a389",
+                  "ObserveCell_E37S23",
+                  "masterSwarm_annex_E36S24",
+                  "masterPullerDeposit_E37S23",
+                  "mine_dL_9f7e",
+                  "masterBuilderHive_E37S23",
+                  "annex_E35S23",
+                  "masterStorageCell_E37S23",
+                  "RespawnCell_E37S23",
+                  "DefenseCell_E37S23",
+                  "ExcavationCell_E37S23",
+                  "deposit_619adf648e85105205b02e96",
+                  "beesMove_beeMove",
+                  "network",
+                  "LaboratoryCell_E37S23",
+                  "masterSwarm_def_jRN5",
+                  "masterdeposit_619d4a26aed9f22788dbd672_pickup",
+                  "sell_cell",
+                  "log",
+                  "run.visuals",
+                  "update.network",
+                  "update.LaboratoryCell_E37S23",
+                  "run.masterResourceCell_5bbcaf239099fc012e63a38b",
+                  "update.RespawnCell_E37S23",
+                  "update.ExcavationCell_E37S23",
+                  "run.masterResourceCell_5bbcaf239099fc012e63a389",
+                  "run.masterPullerDeposit_E37S23",
+                  "run.ObserveCell_E37S23",
+                  "run.masterResourceCell_5bbcaf129099fc012e63a1c6",
+                  "run.masterResourceCell_5bbcaf239099fc012e63a387",
+                  "run.masterBuilderHive_E37S23",
+                  "run.masterResourceCell_5bbcaf129099fc012e63a1c8",
+                  "run.masterResourceCell_5bbcaf239099fc012e63a38d",
+                  "run.masterSwarm_annex_E37S22",
+                  "run.masterResourceCell_5bbcaf239099fc012e63a38f",
+                  "run.masterSwarm_annex_E37S24",
+                  "run.masterSwarm_annex_E36S24",
+                  "run.masterSwarm_annex_E35S23",
+                  "run.beesMove_beeMove",
+                  "run.masterResourceCell_5bbcaf129099fc012e63a1c0",
+                  "run.masterResourceCell_5bbcaf039099fc012e639f7e",
+                  "run.masterResourceCell_5bbcaf129099fc012e63a1bf",
+                  "run.masterSwarm_annex_E36S23",
+                  "run.masterResourceCell_5bbcaf129099fc012e63a1c3",
+                  "run.network"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 7,
@@ -477,7 +603,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "D",
-          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.norm, '5min'), $highest), 4))",
+          "target": "removeEmptySeries(aliasByNode(highestAverage(movingAverage(stats.gauges.cpuUsage.$phase.*.norm, '5min'), $processes), 3, 4))",
           "textEditor": false
         }
       ],
@@ -487,7 +613,7 @@
       "type": "piechart"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -496,346 +622,347 @@
         "y": 16
       },
       "id": 183,
-      "panels": [],
-      "title": "intershard economy",
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 0,
+            "y": 10
+          },
+          "hiddenSeries": false,
+          "id": 180,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(stats.gauges.credits, 'credits')"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Credits",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1571",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1572",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 5,
+            "x": 12,
+            "y": 10
+          },
+          "id": 181,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(stats.gauges.pixels, 'pixels')"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Pixels",
+          "type": "timeseries"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 17,
+            "y": 10
+          },
+          "id": 185,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "A",
+              "target": "stats.gauges.pixels",
+              "textEditor": true
+            },
+            {
+              "datasource": "__expr__",
+              "expression": "($A % 500) / 500",
+              "hide": false,
+              "refId": "B",
+              "type": "math"
+            }
+          ],
+          "title": "Decoration progress",
+          "type": "gauge"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null",
+                    "result": {
+                      "text": "N/A"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 21,
+            "y": 10
+          },
+          "id": 184,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "datasource": "__expr__",
+              "expression": "( 500 - ($B % 500)) /  $C",
+              "hide": false,
+              "refId": "A",
+              "type": "math"
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "B",
+              "target": "stats.gauges.pixels",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "C",
+              "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.pixels), '5hour'), 1)",
+              "textEditor": true
+            }
+          ],
+          "title": "Time to Decoration",
+          "transformations": [],
+          "type": "stat"
+        }
+      ],
+      "title": "Intershard economy",
       "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 17
-      },
-      "hiddenSeries": false,
-      "id": 180,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "refId": "A",
-          "target": "alias(stats.gauges.credits, 'credits')"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Credits",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1571",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1572",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 5,
-        "x": 12,
-        "y": 17
-      },
-      "id": 181,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "hidden",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "refId": "A",
-          "target": "alias(stats.gauges.pixels, 'pixels')"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Pixels",
-      "type": "timeseries"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 17,
-        "y": 17
-      },
-      "id": 185,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "A",
-          "target": "stats.gauges.pixels",
-          "textEditor": true
-        },
-        {
-          "datasource": "__expr__",
-          "expression": "($A % 500) / 500",
-          "hide": false,
-          "refId": "B",
-          "type": "math"
-        }
-      ],
-      "title": "Decoration progress",
-      "type": "gauge"
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 3,
-        "x": 21,
-        "y": 17
-      },
-      "id": 184,
-      "interval": null,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "datasource": "__expr__",
-          "expression": "( 500 - ($B % 500)) /  $C",
-          "hide": false,
-          "refId": "A",
-          "type": "math"
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "B",
-          "target": "stats.gauges.pixels",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "scaleToSeconds(movingAverage(nonNegativeDerivative(stats.gauges.pixels), '5hour'), 1)",
-          "textEditor": true
-        }
-      ],
-      "title": "Time to Decoration",
-      "transformations": [],
-      "type": "stat"
     },
     {
       "collapsed": true,
@@ -844,7 +971,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 17
       },
       "id": 167,
       "panels": [
@@ -892,7 +1019,7 @@
             "h": 6,
             "w": 4,
             "x": 0,
-            "y": 11
+            "y": 18
           },
           "id": 8,
           "interval": null,
@@ -967,7 +1094,7 @@
             "h": 6,
             "w": 4,
             "x": 4,
-            "y": 11
+            "y": 18
           },
           "id": 16,
           "interval": null,
@@ -1047,7 +1174,7 @@
             "h": 6,
             "w": 4,
             "x": 8,
-            "y": 11
+            "y": 18
           },
           "id": 31,
           "interval": null,
@@ -1111,7 +1238,7 @@
             "h": 6,
             "w": 7,
             "x": 12,
-            "y": 11
+            "y": 18
           },
           "hiddenSeries": false,
           "id": 53,
@@ -1257,7 +1384,7 @@
             "h": 6,
             "w": 5,
             "x": 19,
-            "y": 11
+            "y": 18
           },
           "id": 186,
           "interval": null,
@@ -1308,7 +1435,7 @@
         }
       ],
       "repeat": "room",
-      "title": "$hive overview",
+      "title": "$hive RLC and Nukes",
       "type": "row"
     },
     {
@@ -1318,11 +1445,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 18
       },
-      "id": 175,
+      "id": 204,
       "panels": [],
-      "title": "$hive energy economy",
+      "title": "$hive economy overview",
       "type": "row"
     },
     {
@@ -1335,23 +1462,24 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 13,
-        "w": 8,
+        "h": 8,
+        "w": 14,
         "x": 0,
-        "y": 25
+        "y": 19
       },
       "hiddenSeries": false,
-      "id": 177,
+      "id": 202,
       "legend": {
         "alignAsTable": true,
         "avg": true,
         "current": true,
         "hideEmpty": true,
         "hideZero": true,
-        "max": true,
+        "max": false,
         "min": true,
-        "rightSide": false,
+        "rightSide": true,
         "show": true,
+        "sideWidth": null,
         "total": false,
         "values": true
       },
@@ -1370,6 +1498,7 @@
         {
           "$$hashKey": "object:2068",
           "alias": "Total",
+          "hiddenSeries": true,
           "yaxis": 2
         }
       ],
@@ -1380,23 +1509,15 @@
         {
           "refCount": -1,
           "refId": "A",
-          "target": "aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)",
+          "target": "aliasByNode(movingAverage(stats.gauges.hives.$hive.resState.*, '10min'), 5)",
           "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(sumSeries(#A), 'Total')",
-          "targetFull": "alias(sumSeries(aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)), 'Total')",
-          "textEditor": true
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Profits $hive",
+      "title": "resource state",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -1428,118 +1549,7 @@
           "logBase": 1,
           "max": null,
           "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 13,
-        "w": 8,
-        "x": 8,
-        "y": 25
-      },
-      "hiddenSeries": false,
-      "id": 187,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": true,
-        "hideZero": true,
-        "max": true,
-        "min": true,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "$$hashKey": "object:656",
-          "alias": "Total",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "refCount": -1,
-          "refId": "A",
-          "target": "aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)",
-          "textEditor": true
-        },
-        {
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(sumSeries(#A), 'Total')",
-          "targetFull": "alias(sumSeries(aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)), 'Total')",
-          "textEditor": false
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Losses $hive",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "transformations": [],
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:536",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:537",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "show": false
         }
       ],
       "yaxis": {
@@ -1560,9 +1570,9 @@
       "grid": {},
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 25
+        "w": 10,
+        "x": 14,
+        "y": 19
       },
       "hiddenSeries": false,
       "id": 82,
@@ -1678,408 +1688,336 @@
       }
     },
     {
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 40,
-          "min": -40,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "semi-dark-red",
-                "value": null
-              },
-              {
-                "color": "#ed8128e3",
-                "value": -10
-              },
-              {
-                "color": "semi-dark-green",
-                "value": 10
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 16,
-        "y": 33
-      },
-      "id": 200,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 1,
-          "refId": "C",
-          "target": "alias(sumSeries(removeAboveValue(#A, -0.00001)), 'expenditure')",
-          "targetFull": "alias(sumSeries(removeAboveValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), -0.00001)), 'expenditure')",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 1,
-          "refId": "B",
-          "target": "alias(sumSeries(#A), 'Total')",
-          "targetFull": "alias(sumSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)), 'Total')",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 1,
-          "refId": "D",
-          "target": "alias(sumSeries(removeBelowValue(#A, 0.00001)), 'income')",
-          "targetFull": "alias(sumSeries(removeBelowValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), 0.00001)), 'income')",
-          "textEditor": false
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Profits $hive",
-      "transformations": [],
-      "type": "gauge"
-    },
-    {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 27
       },
-      "id": 199,
-      "panels": [],
-      "title": "$hive $resource economy",
+      "id": 175,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "description": "",
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 0,
+            "y": 13
+          },
+          "hiddenSeries": false,
+          "id": 177,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "sort": "avg",
+            "sortDesc": false,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "$$hashKey": "object:2068",
+              "alias": "Total",
+              "hiddenSeries": true,
+              "yaxis": 2
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "refCount": -1,
+              "refId": "A",
+              "target": "aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 0,
+              "refId": "B",
+              "target": "alias(sumSeries(#A), 'Total')",
+              "targetFull": "alias(sumSeries(aliasByNode(removeBelowValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 0.00001), 5)), 'Total')",
+              "textEditor": true
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Profits",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transformations": [],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:536",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:537",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "description": "",
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 9,
+            "y": 13
+          },
+          "hiddenSeries": false,
+          "id": 187,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "$$hashKey": "object:656",
+              "alias": "Total",
+              "hiddenSeries": true,
+              "yaxis": 2
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "refCount": -1,
+              "refId": "A",
+              "target": "aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)",
+              "textEditor": true
+            },
+            {
+              "hide": false,
+              "refCount": 0,
+              "refId": "B",
+              "target": "alias(sumSeries(#A), 'Total')",
+              "targetFull": "alias(sumSeries(aliasByNode(removeAboveValue(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), -0.00001), 5)), 'Total')",
+              "textEditor": false
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Losses",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transformations": [],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:536",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:537",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "datasource": null,
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 40,
+              "min": -40,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "semi-dark-red",
+                    "value": null
+                  },
+                  {
+                    "color": "#ed8128e3",
+                    "value": -10
+                  },
+                  {
+                    "color": "semi-dark-green",
+                    "value": 10
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 13
+          },
+          "id": 200,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "A",
+              "target": "aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "C",
+              "target": "alias(sumSeries(removeAboveValue(#A, -0.00001)), 'expenditure')",
+              "targetFull": "alias(sumSeries(removeAboveValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), -0.00001)), 'expenditure')",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "B",
+              "target": "alias(sumSeries(#A), 'Total')",
+              "targetFull": "alias(sumSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5)), 'Total')",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "D",
+              "target": "alias(sumSeries(removeBelowValue(#A, 0.00001)), 'income')",
+              "targetFull": "alias(sumSeries(removeBelowValue(aliasByNode(movingAverage(stats.gauges.hives.$hive.energyReport.*.profit, '10min'), 5), 0.00001)), 'income')",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "State",
+          "transformations": [],
+          "type": "gauge"
+        }
+      ],
+      "title": "$hive energy economy overview",
       "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 39
-      },
-      "hiddenSeries": false,
-      "id": 195,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "A",
-          "target": "stats.gauges.time",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "B",
-          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "C",
-          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
-          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 0,
-          "refId": "D",
-          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
-          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
-          "textEditor": false
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "$resource per tick",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1256",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1257",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 39
-      },
-      "id": 196,
-      "options": {
-        "legend": {
-          "displayMode": "hidden",
-          "placement": "right"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "A",
-          "target": "stats.gauges.time",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "B",
-          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
-          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "D",
-          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
-          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 1,
-          "refId": "E",
-          "target": "removeEmptySeries(aliasByNode(removeBelowValue(#D, 0.00001), 0))",
-          "targetFull": "removeEmptySeries(aliasByNode(removeBelowValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), 0.00001), 0))",
-          "textEditor": false
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "$resource income",
-      "type": "piechart"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 39
-      },
-      "id": 201,
-      "options": {
-        "legend": {
-          "displayMode": "hidden",
-          "placement": "bottom"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.5",
-      "targets": [
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "A",
-          "target": "stats.gauges.time",
-          "textEditor": true
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "B",
-          "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
-          "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
-          "textEditor": false
-        },
-        {
-          "hide": true,
-          "refCount": 1,
-          "refId": "D",
-          "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
-          "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
-          "textEditor": false
-        },
-        {
-          "hide": false,
-          "refCount": 1,
-          "refId": "E",
-          "target": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(#D, -0.00001)), 0))",
-          "targetFull": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), -0.00001)), 0))",
-          "textEditor": false
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "$resource expenditure",
-      "type": "piechart"
     },
     {
       "collapsed": true,
@@ -2088,7 +2026,321 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 28
+      },
+      "id": 199,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 21
+          },
+          "hiddenSeries": false,
+          "id": 195,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "8.2.5",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "A",
+              "target": "stats.gauges.time",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "B",
+              "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "C",
+              "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+              "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 0,
+              "refId": "D",
+              "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+              "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+              "textEditor": false
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "$resource per tick",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1257",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 21
+          },
+          "id": 196,
+          "options": {
+            "legend": {
+              "displayMode": "hidden",
+              "placement": "right"
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "A",
+              "target": "stats.gauges.time",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "B",
+              "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "C",
+              "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+              "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "D",
+              "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+              "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "E",
+              "target": "removeEmptySeries(aliasByNode(removeBelowValue(#D, 0.00001), 0))",
+              "targetFull": "removeEmptySeries(aliasByNode(removeBelowValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), 0.00001), 0))",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "$resource income",
+          "type": "piechart"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 21
+          },
+          "id": 201,
+          "options": {
+            "legend": {
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.2.5",
+          "targets": [
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "A",
+              "target": "stats.gauges.time",
+              "textEditor": true
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "B",
+              "target": "movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 0,
+              "refId": "C",
+              "target": "alias(diffSeries(movingAverage(#A, '30min'), #B), 'time')",
+              "targetFull": "alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')",
+              "textEditor": false
+            },
+            {
+              "hide": true,
+              "refCount": 1,
+              "refId": "D",
+              "target": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), #C), 0)",
+              "targetFull": "aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0)",
+              "textEditor": false
+            },
+            {
+              "hide": false,
+              "refCount": 1,
+              "refId": "E",
+              "target": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(#D, -0.00001)), 0))",
+              "targetFull": "removeEmptySeries(aliasByNode(absolute(removeAboveValue(aliasByNode(divideSeries(aliasByNode(movingAverage(stats.gauges.hives.$hive.resourceBalance.$resource.*.amount, '30min'), 6), alias(diffSeries(movingAverage(stats.gauges.time, '30min'), movingAverage(averageSeries(stats.gauges.hives.$hive.resourceBalance.$resource.*.time), '30min')), 'time')), 0), -0.00001)), 0))",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "$resource expenditure",
+          "type": "piechart"
+        }
+      ],
+      "title": "$hive $resource economy",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
       },
       "id": 166,
       "panels": [
@@ -2132,7 +2384,7 @@
             "h": 7,
             "w": 4,
             "x": 0,
-            "y": 13
+            "y": 15
           },
           "id": 4,
           "interval": null,
@@ -2206,7 +2458,7 @@
             "h": 7,
             "w": 4,
             "x": 4,
-            "y": 13
+            "y": 15
           },
           "id": 6,
           "interval": null,
@@ -2285,7 +2537,7 @@
             "h": 7,
             "w": 4,
             "x": 8,
-            "y": 13
+            "y": 15
           },
           "id": 7,
           "interval": null,
@@ -2348,7 +2600,7 @@
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 13
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 5,
@@ -2461,7 +2713,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 30
       },
       "id": 173,
       "panels": [
@@ -2505,7 +2757,7 @@
             "h": 7,
             "w": 4,
             "x": 0,
-            "y": 14
+            "y": 16
           },
           "id": 168,
           "interval": null,
@@ -2579,7 +2831,7 @@
             "h": 7,
             "w": 4,
             "x": 4,
-            "y": 14
+            "y": 16
           },
           "id": 169,
           "interval": null,
@@ -2658,7 +2910,7 @@
             "h": 7,
             "w": 4,
             "x": 8,
-            "y": 14
+            "y": 16
           },
           "id": 170,
           "interval": null,
@@ -2721,7 +2973,7 @@
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 14
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 171,
@@ -2828,7 +3080,7 @@
       "type": "row"
     }
   ],
-  "refresh": false,
+  "refresh": "5m",
   "schemaVersion": 32,
   "style": "dark",
   "tags": [
@@ -2863,6 +3115,30 @@
       {
         "allValue": null,
         "current": {
+          "selected": true,
+          "text": "biomass",
+          "value": "biomass"
+        },
+        "datasource": null,
+        "definition": "stats.gauges.hives.$hive.resourceBalance.*",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "resource",
+        "options": [],
+        "query": "stats.gauges.hives.$hive.resourceBalance.*",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
@@ -2887,53 +3163,29 @@
       {
         "current": {
           "selected": false,
-          "text": "14",
-          "value": "14"
+          "text": "25",
+          "value": "25"
         },
         "description": null,
         "error": null,
         "hide": 0,
         "label": null,
-        "name": "highest",
+        "name": "processes",
         "options": [
           {
             "selected": true,
-            "text": "14",
-            "value": "14"
+            "text": "25",
+            "value": "25"
           }
         ],
-        "query": "14",
+        "query": "25",
         "skipUrlSync": false,
         "type": "textbox"
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "energy",
-          "value": "energy"
-        },
-        "datasource": null,
-        "definition": "stats.gauges.hives.$hive.resourceBalance.*",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": false,
-        "label": null,
-        "multi": false,
-        "name": "resource",
-        "options": [],
-        "query": "stats.gauges.hives.$hive.resourceBalance.*",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -2964,5 +3216,5 @@
   "timezone": "browser",
   "title": "Dashboard",
   "uid": "P9g0ZHp7z",
-  "version": 13
+  "version": 20
 }
