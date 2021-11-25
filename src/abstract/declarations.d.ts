@@ -24,7 +24,7 @@ declare global {
     equal(pos: ProtoPos): boolean;
     oppositeDirection(pos: RoomPosition): DirectionConstant;
     findClosest<Obj extends ProtoPos>(objects: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
-    findClosestByTravel<Obj extends ProtoPos>(objects: Obj[], opts?: FindPathOpts): Obj | null;
+    findClosestByTravel<Obj extends ProtoPos>(objects: Obj[], opt?: FindPathOpts): Obj | null;
     readonly to_str: string;
   }
 
@@ -37,8 +37,16 @@ declare global {
     //for TRAVELER
     _trav?: any;
     _travel?: any;
-    //for Profiler
-    profiler?: any;
+  }
+
+  interface PowerCreepMemory {
+    born: number;
+    state: beeStates;
+    target?: string;
+
+    //for TRAVELER
+    _trav?: any;
+    _travel?: any;
   }
 
   interface FlagMemory {

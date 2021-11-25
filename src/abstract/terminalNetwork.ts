@@ -26,6 +26,7 @@ switch (Game.shard.name) {
 export class Network {
   nodes: Hive[] = [];
   aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number } } = {} // from -> to
+  resState: ResTarget = {};
 
   constructor(hives?: { [id: string]: Hive }) {
     if (!hives)
@@ -37,11 +38,12 @@ export class Network {
   }
 
   update() {
+    this.resState = {};
     _.forEach(Apiary.hives, hive => this.updateState(hive));
 
     if (Game.time % BUY_SHORTAGES_CYCLE === 0 && Game.time !== Apiary.createTime)
       for (let i = 0; i < this.nodes.length; ++i)
-        this.reactToState(this.nodes[i]);
+        this.askAid(this.nodes[i]);
 
     for (const hiveName in this.aid) {
       let hive = Apiary.hives[hiveName];
@@ -164,7 +166,7 @@ export class Network {
     }
   }
 
-  reactToState(hive: Hive) {
+  askAid(hive: Hive) {
     if (!this.hiveValidForAid(hive))
       return;
     hive.shortages = {};
@@ -244,5 +246,8 @@ export class Network {
       for (const res in marketState)
         hive.add(hive.cells.storage.resTargetTerminal, res, Math.min(marketState[<ResourceConstant>res]!, 5000));
     }
+
+    for (const res in hive.resState)
+      hive.add(this.resState, res, hive.resState[<ResourceConstant>res]!);
   }
 }

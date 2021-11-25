@@ -1,9 +1,8 @@
-import type { HivePositions } from "../Hive";
+import type { HivePositions, ResTarget } from "../Hive";
 
 export interface HiveCache {
   positions: HivePositions,
   wallsHealth: number,
-  powerManager?: string;
   cells: { [id: string]: { [id: string]: any } }
 }
 
@@ -21,6 +20,7 @@ export interface HiveLog {
   controllerProgressTotal: number,
   controllerLevel: number,
 
+  resState: ResTarget,
   nukes: { [id: string]: { [launchRoomName: string]: number } },
 
   defenseHealth: number[],

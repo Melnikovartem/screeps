@@ -27,8 +27,8 @@ const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = []//STRUC
 
 type Job = { func: () => OK | ERR_BUSY | ERR_FULL, context: string };
 interface CoustomFindPathOpts extends TravelToOptions { ignoreTypes?: BuildableStructureConstant[] };
-function getPathArgs(opts: CoustomFindPathOpts = {}): TravelToOptions {
-  return _.defaults(opts, {
+function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
+  return _.defaults(opt, {
     ignoreStructures: true, offRoad: true, maxRooms: 4, range: 0, weightOffRoad: 2,
     roomCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
       if (!Apiary.planner.activePlanning[roomName])
@@ -37,7 +37,7 @@ function getPathArgs(opts: CoustomFindPathOpts = {}): TravelToOptions {
       for (let x in plan)
         for (let y in plan[x]) {
           let sType = plan[x][y].s
-          if (sType && (!opts.ignoreTypes || !opts.ignoreTypes.includes(sType)))
+          if (sType && (!opt.ignoreTypes || !opt.ignoreTypes.includes(sType)))
             if (sType === STRUCTURE_ROAD)
               costMatrix.set(+x, +y, 0x01);
             else if (sType === STRUCTURE_WALL)
@@ -715,27 +715,27 @@ export class RoomPlanner {
     return false;
   }
 
-  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opts: CoustomFindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
+  connectWithRoad(anchor: RoomPosition, pos: RoomPosition, addRoads: boolean, opt: CoustomFindPathOpts = {}): Pos | ERR_BUSY | ERR_FULL {
     let roomName = anchor.roomName;
     let exit: RoomPosition | undefined | null;
     let exits = this.activePlanning[roomName].exits;
     if (roomName !== pos.roomName)
-      opts.maxRooms = 16;
-    opts = getPathArgs(opts);
-    exit = pos.findClosestByTravel(exits, opts);
+      opt.maxRooms = 16;
+    opt = getPathArgs(opt);
+    exit = pos.findClosestByTravel(exits, opt);
     if (!exit)
       exit = pos.findClosest(exits);
     if (!exit)
       return ERR_FULL;
-    let path = Traveler.findTravelPath(exit, pos, getPathArgs(opts)).path;
+    let path = Traveler.findTravelPath(exit, pos, getPathArgs(opt)).path;
     if (!path.length)
-      return exit.getRangeTo(pos) > opts.range! ? exit : ERR_FULL;
+      return exit.getRangeTo(pos) > opt.range! ? exit : ERR_FULL;
 
     _.forEach(path.filter(p => !p.getEnteranceToRoom()), p => this.addToPlan(p, p.roomName, addRoads ? STRUCTURE_ROAD : null));
 
     // console. log(`${anchor} ->   ${exit}-${path.length}->${new RoomPosition(lastPath.x, lastPath.y, exit.roomName)}   -> ${pos}`);
     exit = path[path.length - 1];
-    if (exit.getRangeTo(pos) > opts.range!) {
+    if (exit.getRangeTo(pos) > opt.range!) {
       let ent = exit.getEnteranceToRoom();
       this.activePlanning[roomName].exits.push(ent ? ent : exit);
       return ERR_BUSY;

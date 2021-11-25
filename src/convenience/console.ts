@@ -653,7 +653,7 @@ export class CustomConsole {
   }
 
   printBees(ref?: string, byHives: boolean = false) {
-    let bees = _.filter(Apiary.bees, b => !ref || b.creep.memory.refMaster.includes(ref));
+    let bees = _.filter(Apiary.bees, b => !ref || ("refMaster" in b.creep.memory && b.creep.memory.refMaster.includes(ref)));
     if (byHives) {
       let obj = _.map(bees, b => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
       return this.printByHive(obj);
