@@ -312,17 +312,17 @@ RoomPosition.prototype.findClosest = function <Obj extends ProtoPos>(objects: Ob
   return ans;
 }
 
-RoomPosition.prototype.findClosestByTravel = function <Obj extends ProtoPos>(objects: Obj[], opts?: FindPathOpts): Obj | null {
+RoomPosition.prototype.findClosestByTravel = function <Obj extends ProtoPos>(objects: Obj[], opt?: FindPathOpts): Obj | null {
   if (objects.length === 0)
     return null;
 
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  opts = opts || { maxRooms: 3 }
+  opt = opt || { maxRooms: 3 }
 
   _.forEach(objects, (obj: Obj) => {
-    let newDistance = Traveler.findTravelPath(this, obj, opts).path.length;
+    let newDistance = Traveler.findTravelPath(this, obj, opt).path.length;
     if (newDistance < distance) {
       ans = obj;
       distance = newDistance;

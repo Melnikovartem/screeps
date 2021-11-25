@@ -2,29 +2,62 @@
 // so i can check instanceof SwarmMaster aka my army
 
 import { Master } from "./_Master";
-import { prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
-import type { Hive } from "../Hive";
+import type { PowerCell } from "../cells/stage2/powerCell";
+import type { PowerBee } from "../bees/powerBee";
+
+export const POWER_NAMES: { [id in PowerConstant]: string } = {
+  [PWR_GENERATE_OPS]: "OPS",
+  [PWR_OPERATE_SPAWN]: "SPAWN",
+  [PWR_OPERATE_TOWER]: "TOWER",
+  [PWR_OPERATE_STORAGE]: "STORAGE",
+  [PWR_OPERATE_LAB]: "LAB",
+  [PWR_OPERATE_EXTENSION]: "EXTENSION",
+  [PWR_OPERATE_OBSERVER]: "OBSERVER",
+  [PWR_OPERATE_TERMINAL]: "TERMINAL",
+  [PWR_DISRUPT_SPAWN]: "SPAWN",
+  [PWR_DISRUPT_TOWER]: "TOWER",
+  [PWR_DISRUPT_SOURCE]: "SOURCE",
+  [PWR_SHIELD]: "SHIELD",
+  [PWR_REGEN_SOURCE]: "SOURCE",
+  [PWR_REGEN_MINERAL]: "MINERAL",
+  [PWR_DISRUPT_TERMINAL]: "TERMINAL",
+  [PWR_OPERATE_POWER]: "POWER",
+  [PWR_FORTIFY]: "FORTIFY",
+  [PWR_OPERATE_CONTROLLER]: "CONTROLLER",
+  [PWR_OPERATE_FACTORY]: "FACTORY",
+};
 
 @profile
 export abstract class PowerMaster extends Master {
 
-  readonly powerCreep: PowerCreep;
+  readonly powerCreep: PowerBee;
+  readonly cell: PowerCell;
+  usedPower = false;
 
-  constructor(hive: Hive, powerCreep: PowerCreep) {
-    super(hive, powerCreep.name);
-
+  constructor(cell: PowerCell, powerCreep: PowerBee) {
+    super(cell.hive, powerCreep.ref);
+    this.cell = cell;
     this.powerCreep = powerCreep;
   }
 
+  update() {
+    super.update();
+    if (!this.powerCreep.shard)
+      this.powerCreep.creep.spawn(this.cell.powerSpawn);
+  }
 
-  static checkPowerCreeps() {
-    _.forEach(Game.powerCreeps, pc => {
-      if (!Apiary.masters[prefix.master + pc.name]) {
-        let validHives = _.filter(Apiary.hives, h => h.cells.power && !h.powerManager);
-        console.log(validHives, pc.name);
+  run() {
+    if (!this.usedPower) {
+      let ans = this.powerCreep.usePower(PWR_GENERATE_OPS);
+      if (ans === OK && Apiary.logger) {
+        let pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
+        if (pwrStats)
+          Apiary.logger.addResourceStat(this.hive.roomName, "PowerCreep", POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level], RESOURCE_OPS);
       }
-    });
+    }
+    this.usedPower = false;
+    this.checkFlee(this.powerCreep);
   }
 }

@@ -22,13 +22,13 @@ export class Traveler {
    * @returns {number}
    */
 
-  public static travelTo(creep: Creep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): ScreepsReturnCode | RoomPosition {
+  public static travelTo(creep: Creep | PowerCreep, destination: HasPos | RoomPosition, options: TravelToOptions = {}): ScreepsReturnCode | RoomPosition {
 
     /* if (!destination) {
       return ERR_INVALID_ARGS;
     } */
 
-    if (creep.fatigue > 0) {
+    if ((<Creep>creep).fatigue > 0) {
       Traveler.circle(creep.pos, "aqua", .3);
       return ERR_TIRED;
     }
@@ -131,7 +131,7 @@ export class Traveler {
     let newPath = false;
     if (!travelData.path) {
       newPath = true;
-      if (creep.spawning) { return ERR_BUSY; }
+      if ((<Creep>creep).spawning) { return ERR_BUSY; }
 
       state.destination = destination;
 
@@ -643,12 +643,12 @@ export class Traveler {
     return state;
   }
 
-  private static serializeState(creep: Creep, destination: RoomPosition, state: TravelState, travelData: TravelData) {
+  private static serializeState(creep: Creep | PowerCreep, destination: RoomPosition, state: TravelState, travelData: TravelData) {
     travelData.state = [creep.pos.x, creep.pos.y, state.stuckCount, state.cpu, destination.x, destination.y,
     destination.roomName];
   }
 
-  private static isStuck(creep: Creep, state: TravelState): boolean {
+  private static isStuck(creep: Creep | PowerCreep, state: TravelState): boolean {
     let stuck = false;
     if (state.lastCoord !== undefined) {
       if (this.sameCoord(creep.pos, state.lastCoord)) {
@@ -680,5 +680,10 @@ const STATE_DEST_ROOMNAME = 6;
 
 // assigns a function to Creep.prototype: creep.travelTo(destination)
 Creep.prototype.travelTo = function(destination: RoomPosition | { pos: RoomPosition }, options?: TravelToOptions) {
+  return Traveler.travelTo(this, destination, options);
+};
+
+PowerCreep.prototype.travelTo = function(destination: RoomPosition | { pos: RoomPosition }, options: TravelToOptions = {}) {
+  options.offRoad = true;
   return Traveler.travelTo(this, destination, options);
 };
