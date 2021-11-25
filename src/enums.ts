@@ -74,6 +74,9 @@ export enum prefix {
   // game constants
   master = "master",
   swarm = "Swarm_",
+
+  nkvd = "NKVD'shnik",
+  kgb = "KGB'shnik",
 }
 
 export enum signText {

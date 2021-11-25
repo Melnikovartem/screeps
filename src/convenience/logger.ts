@@ -36,6 +36,7 @@ export class Logger {
   }
 
   run() {
+    let cpu = Game.cpu.getUsed();
     _.forEach(Apiary.hives, hive => {
       this.hiveLog(hive);
     });
@@ -45,6 +46,7 @@ export class Logger {
     Memory.log.pixels = Game.resources["pixel"];
     Memory.log.gcl = { level: Game.gcl.level, progress: Game.gcl.progress, progressTotal: Game.gcl.progressTotal };
     Memory.log.gpl = { level: Game.gpl.level, progress: Game.gpl.progress, progressTotal: Game.gpl.progressTotal };
+    this.reportCPU("log", "run", Game.cpu.getUsed() - cpu, Object.keys(Apiary.hives).length); // possible for norm -> 1
     Memory.log.cpu = { limit: Game.cpu.limit, used: Game.cpu.getUsed(), bucket: Game.cpu.bucket };
   }
 
@@ -85,6 +87,7 @@ export class Logger {
         mem.nukes[nuke.id] = { [nuke.launchRoomName]: nuke.timeToLand };
       });
       mem.energyReport = this.reportEnergy(hive.roomName);
+      mem.resState = hive.resState;
     }
   }
 
@@ -171,6 +174,7 @@ export class Logger {
         controllerLevel: 0,
 
         nukes: {},
+        resState: {},
         defenseHealth: [],
         energyReport: {},
         resourceBalance: { [RESOURCE_ENERGY]: {} },
@@ -200,8 +204,7 @@ export class Logger {
 
       let haulerNum = 0;
       _.forEach(hive.cells.excavation!.resourceCells, cell => {
-        if (cell.resourceType === RESOURCE_ENERGY)
-          if (!cell.link) haulerNum++;
+        if (cell.resourceType === RESOURCE_ENERGY && !cell.link) haulerNum++;
       });
       haulerExp /= Math.max(haulerNum, 1);
 
@@ -232,20 +235,17 @@ export class Logger {
 
     ans["upgrade"] = { profit: getRate("upgrade") + getCreepCostRate(setups.upgrader.fast), revenue: getRate("upgrade") };
     ans["mineral"] = { profit: getCreepCostRate(setups.miner.minerals) };
-    ans["corridor"] = {
-      profit: getCreepCostRate(setups.miner.deposit)
-        + getCreepCostRate(setups.puller) + getCreepCostRate(setups.pickup)
-        + getCreepCostRate(setups.miner.power) + getCreepCostRate(setups.miner.powerhealer)
-    };
+    ans["corridor_deposit"] = { profit: getCreepCostRate(setups.miner.deposit) + getCreepCostRate(setups.puller) };
+    ans["corridor_power"] = { profit: getCreepCostRate(setups.miner.power) + getCreepCostRate(setups.miner.powerhealer) };
+    ans["corridor_pickup"] = { profit: getCreepCostRate(setups.pickup) };
+
     ans["build"] = { profit: getRate("build") + getCreepCostRate(setups.miner.deposit), revenue: getRate("build") };
-    ans["defense_dmg"] = {
-      profit: getRate("defense_dmg")
-        + getCreepCostRate(setups.defender.normal)
-        + getCreepCostRate(setups.defender.destroyer),
-      revenue: getRate("defense_dmg")
-    };
+
+    ans["defense_dmg"] = { profit: getRate("defense_dmg") };
     ans["defense_repair"] = { profit: getRate("defense_repair") };
     ans["defense_heal"] = { profit: getRate("defense_heal") };
+    ans["defense_swarms"] = { profit: getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer) };
+
     ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
     ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
     ans["terminal"] = { profit: getRate("terminal") };

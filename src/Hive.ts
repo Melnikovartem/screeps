@@ -218,8 +218,7 @@ export class Hive {
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
-        if (Game.shard.name !== "shard3")
-          this.wallsHealthMax = this.wallsHealthMax * 5; // RAMPART_HITS_MAX[8]
+        this.wallsHealthMax = this.wallsHealthMax * 10; // RAMPART_HITS_MAX[8]
         // TODO cause i haven' reached yet
       }
     } else {
@@ -303,16 +302,8 @@ export class Hive {
     return this.getPos("rest");
   }
 
-  get powerManager() {
-    return Memory.cache.hives[this.roomName].powerManager;
-  }
-
   get controller() {
     return this.room.controller!;
-  }
-
-  set powerManager(value) {
-    Memory.cache.hives[this.roomName].powerManager = value;
   }
 
   private updateCellData(bake = false) {
@@ -433,11 +424,11 @@ export class Hive {
     Memory.cache.hives[this.roomName].wallsHealth = value;
   }
 
-  get opts() {
-    let opts: TravelToOptions = {};
+  get opt() {
+    let opt: TravelToOptions = {};
     if (this.state === hiveStates.battle) {
-      opts.stuckValue = 1;
-      opts.roomCallback = (roomName, matrix) => {
+      opt.stuckValue = 1;
+      opt.roomCallback = (roomName, matrix) => {
         if (roomName !== this.roomName)
           return;
         let terrain = Game.map.getRoomTerrain(roomName);
@@ -460,7 +451,7 @@ export class Hive {
         return matrix;
       }
     }
-    return opts;
+    return opt;
   }
 
   get wallMap() {

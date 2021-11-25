@@ -558,7 +558,7 @@ export class FlagOrder {
               }
               if (RESOURCES_ALL.includes(res)) {
                 if (hurry || Game.time % 10 === 0)
-                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res))
+                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res) > (fast ? 0 : 1000))
                     Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
                       , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
                   else if (mode === "buy" && (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192)))

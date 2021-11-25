@@ -1,4 +1,6 @@
 import { Bee } from "./bees/bee";
+import { PowerBee } from "./bees/powerBee";
+import { ProtoBee } from "./bees/protoBee";
 import { Master } from "./beeMasters/_Master";
 import { Hive } from "./Hive";
 import { FlagOrder } from "./order";
@@ -28,7 +30,7 @@ export class _Apiary {
   logger: Logger | undefined;
   visuals: Visuals = new Visuals;
 
-  bees: { [id: string]: Bee };
+  bees: { [id: string]: ProtoBee<Creep | PowerCreep> };
   hives: { [id: string]: Hive };
   masters: { [id: string]: Master };
   orders: { [id: string]: FlagOrder };
@@ -112,12 +114,14 @@ export class _Apiary {
     });
 
     Bee.checkBees();
+    PowerBee.checkBees();
     _.forEach(this.bees, bee => {
       bee.update();
     });
 
     _.forEach(this.masters, master => {
-      this.wrap(() => master.update(), master.ref, "update", master.beesAmount);
+      if (master)
+        this.wrap(() => master.update(), master.ref, "update", master.beesAmount);
     });
   }
 
@@ -128,7 +132,8 @@ export class _Apiary {
     });
 
     _.forEach(this.masters, master => {
-      this.wrap(() => master.run(), master.ref, "run", master.beesAmount);
+      if (master)
+        this.wrap(() => master.run(), master.ref, "run", master.beesAmount);
     });
 
     Bee.beesMove();
