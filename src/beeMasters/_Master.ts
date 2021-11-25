@@ -4,6 +4,7 @@ import { hiveStates, beeStates, prefix } from "../enums";
 import { profile } from "../profiler/decorator";
 import type { SpawnOrder, Hive } from "../Hive";
 import type { Bee } from "../bees/bee";
+import type { ProtoBee } from "../bees/protoBee";
 import type { BoostRequest } from "../cells/stage1/laboratoryCell";
 
 export type Boosts = BoostRequest[];
@@ -114,11 +115,11 @@ export abstract class Master {
   // second stage of decision making like where do i need to move
   abstract run(): void;
 
-  checkFlee(bee: Bee, fleeTo?: ProtoPos, opts?: TravelToOptions) {
+  checkFlee(bee: ProtoBee<Creep | PowerCreep>, fleeTo?: ProtoPos, opt?: TravelToOptions) {
     let pos = bee.pos;
     if (bee.targetPosition)
       pos = (bee.targetPosition.roomName === pos.roomName && bee.targetPosition.getEnteranceToRoom()) || bee.targetPosition;
-    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 25);
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
     if (pos.roomName !== bee.pos.roomName && Game.time - roomInfo.lastUpdated > 0 && Game.time - roomInfo.lastUpdated <= 20 && !roomInfo.safePlace) {
       if (bee.pos.getEnteranceToRoom())
         bee.flee(fleeTo || this.hive);
@@ -138,10 +139,10 @@ export abstract class Master {
     let contr = Game.rooms[bee.pos.roomName].controller;
     if (!contr || !contr.my || !contr.safeMode) {
       let fleeDist = Apiary.intel.getFleeDist(enemy);
-      if (enemy.pos.getRangeTo(pos) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist)
+      if (enemy.pos.getRangeTo(pos) === fleeDist + 1 && enemy.pos.getRangeTo(bee.pos) > fleeDist && !bee.pos.getEnteranceToRoom())
         bee.targetPosition = bee.pos;
       else if (enemy.pos.getRangeTo(pos) <= fleeDist || enemy.pos.getRangeTo(bee.pos) <= fleeDist) {
-        bee.flee(fleeTo || this.hive, opts);
+        bee.flee(fleeTo || this.hive, opt);
         return true;
       }
     }

@@ -83,6 +83,8 @@ export class ManagerMaster extends Master {
             requests = _.map(this.cell.requests, r => r);
             non_refill_needed = false;
           }
+          if (newTransfer.priority === 6)
+            ++pickingup;
         }
       }
     });

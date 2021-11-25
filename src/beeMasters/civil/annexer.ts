@@ -13,7 +13,7 @@ export class AnnexMaster extends SwarmMaster {
   update() {
     super.update();
 
-    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
+    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
     let doAnnex = roomInfo.safePlace;
 
     if (!this.order.memory.extraInfo) {

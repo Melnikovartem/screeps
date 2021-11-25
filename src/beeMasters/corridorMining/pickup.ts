@@ -20,7 +20,7 @@ export class DepositPickupMaster extends Master {
   get setup() {
     let setup = setups.pickup.copy();
     if (this.parent.target)
-      setup.patternLimit = Math.round(10 * Math.max(1, this.parent.roadTime / this.parent.target.lastCooldown * 0.65));
+      setup.patternLimit = Math.ceil(10 * Math.max(1, this.parent.rate * this.parent.roadTime / CARRY_CAPACITY / 10));
     else
       setup.patternLimit = 15;
     return setup
@@ -29,7 +29,7 @@ export class DepositPickupMaster extends Master {
   recalculateTargetBee() {
     let body = this.setup.getBody(this.hive.room.energyCapacityAvailable).body;
     let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
-    this.targetBeeCount = Math.max(1, Math.ceil(this.parent.rate * this.parent.roadTime / carry));
+    this.targetBeeCount = Math.max(1, Math.round(this.parent.rate * this.parent.roadTime / carry));
   }
 
   checkBeesWithRecalc() {

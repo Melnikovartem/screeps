@@ -42,7 +42,7 @@ export class HaulerMaster extends Master {
     if (this.hive.cells.storage)
       _.forEach(this.cell.resourceCells, cell => {
         if (cell.operational && cell.roadTime !== Infinity && cell.restTime !== Infinity && cell.container && !cell.link) {
-          let coef = Math.min(cell.master.getBeeRate(), cell.ratePT);
+          let coef = cell.master.ratePT;
           this.accumRoadTime += (cell.roadTime + cell.restTime) * coef;
           if (cell.restTime < this.minRoadTime)
             this.minRoadTime = cell.restTime;
@@ -147,7 +147,7 @@ export class HaulerMaster extends Master {
             break;
           }
 
-          let roomInfo = Apiary.intel.getInfo(target.pos.roomName, 25);
+          let roomInfo = Apiary.intel.getInfo(target.pos.roomName, 20);
           if (!roomInfo.safePlace) {
             this.targetMap[bee.target] = undefined;
             bee.target = undefined;
@@ -156,7 +156,7 @@ export class HaulerMaster extends Master {
           }
 
           if (bee.pos.getRangeTo(target) > 3) {
-            let opt = this.hive.opts;
+            let opt = this.hive.opt;
             opt.offRoad = true;
             bee.goTo(target, opt);
             break;
@@ -195,14 +195,24 @@ export class HaulerMaster extends Master {
           let ans = bee.transfer(this.dropOff, res);
           if (ans === OK) {
             if (Apiary.logger && bee.target) {
-              let ref = "mining_" + bee.target.slice(bee.target.length - 4);
+              let source = Game.getObjectById(bee.target);
+              let sameRes;
+              if (source instanceof Source)
+                sameRes = res === RESOURCE_ENERGY;
+              else if (source instanceof Mineral)
+                sameRes = source.mineralType === res;
+              else
+                sameRes = res === RESOURCE_ENERGY || BASE_MINERALS.includes(res);
+
+              let ref = sameRes ? "mining_" + bee.target.slice(bee.target.length - 4) : "pickup";
+
               if (this.roadUpkeepCost[bee.ref] > 0) {
                 Apiary.logger.addResourceStat(this.hive.roomName, ref, this.roadUpkeepCost[bee.ref]);
-                Apiary.logger.addResourceStat(this.hive.roomName, "upkeep_" + bee.target.slice(bee.target.length - 4), -this.roadUpkeepCost[bee.ref]);
+                Apiary.logger.addResourceStat(this.hive.roomName,
+                  sameRes ? "upkeep_" + bee.target.slice(bee.target.length - 4) : "build",
+                  -this.roadUpkeepCost[bee.ref]);
                 this.roadUpkeepCost[bee.ref] = 0;
               }
-              if (res !== RESOURCE_ENERGY && !BASE_MINERALS.includes(res))
-                ref = "pickup";
               Apiary.logger.resourceTransfer(this.hive.roomName, ref, bee.store, this.dropOff.store, res, 1);
             }
           } else if (bee.pos.getRangeTo(this.hive) <= 8 && bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {

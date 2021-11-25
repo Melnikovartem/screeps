@@ -17,7 +17,7 @@ export class DepositMaster extends SwarmMaster {
   // puller: DepositPullerMaster;
   pickup: DepositPickupMaster;
   positions: { pos: RoomPosition }[];
-  operational: boolean = false;
+  operational: boolean = true;
   rate: number = 0;
   rest: RoomPosition;
   workAmount: number;
@@ -42,28 +42,29 @@ export class DepositMaster extends SwarmMaster {
   update() {
     super.update();
     this.operational = false;
+
     if (!this.hive.cells.storage) {
       this.order.delete()
       return;
     }
+
     if (this.pos.roomName in Game.rooms) {
       this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
       if (!this.roadTime)
         this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
       if (this.target) {
-        this.operational = this.target.lastCooldown <= CREEP_LIFE_TIME / 7.5 || this.target.ticksToDecay < CREEP_LIFE_TIME;
-        this.rate = this.workAmount * this.positions.length / Math.max(30, this.target.lastCooldown);
+        this.operational = (this.target.lastCooldown <= CREEP_LIFE_TIME / 7.5 || this.target.ticksToDecay < CREEP_LIFE_TIME);
+        this.rate = this.miners.activeBees.length * this.positions.length / Math.max(30, this.target.lastCooldown);
       }
       if (!this.operational && (!this.pickup.beesAmount || !this.miners.beesAmount))
         this.order.delete();
       if (this.operational)
         this.hive.cells.defense.checkAndDefend(this.pos.roomName);
-    } else
-      if (this.checkBees())
-        this.wish({
-          setup: setups.puppet,
-          priority: 2,
-        });
+    } else if (this.checkBees())
+      this.wish({
+        setup: setups.puppet,
+        priority: 2,
+      });
   }
 
   run() {

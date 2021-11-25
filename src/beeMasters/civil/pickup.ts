@@ -27,12 +27,24 @@ export class PickupMaster extends SwarmMaster {
     }
   }
 
+  get target(): Tombstone | Ruin | Resource | StructureStorage | null | undefined {
+    if (!this.order.memory.extraInfo)
+      this.order.memory.extraInfo = "";
+    return Game.getObjectById(this.order.memory.extraInfo);
+  }
+
+  set target(value) {
+    if (value)
+      this.order.memory.extraInfo = value.id;
+    else
+      this.order.memory.extraInfo = "";
+  }
+
   getTarget() {
     let target: Tombstone | Ruin | Resource | StructureStorage | null | undefined;
-    let amount = 0;
     if (this.pos.roomName in Game.rooms) {
       if (this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK).length)
-        return { target: target, amount: amount };
+        return target;
       let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = <StructureStorage[]>this.pos.findInRange(FIND_STRUCTURES, 3)
         .filter(s => (<StructureStorage>s).store && (<StructureStorage>s).store.getUsedCapacity() > 0 && (!this.hive.room.storage || s.id !== this.hive.room.storage.id));
       if (!targets.length)
@@ -43,12 +55,7 @@ export class PickupMaster extends SwarmMaster {
         targets = this.pos.findInRange(FIND_TOMBSTONES, 3).filter(r => r.store.getUsedCapacity() > 0);
 
       target = this.pos.findClosest(targets);
-      if (target)
-        if (target instanceof Resource)
-          amount = target.amount;
-        else
-          amount = target.store.getUsedCapacity()
-      else {
+      if (!target) {
         let room = Game.rooms[this.pos.roomName];
         // what a lie this is STRUCTURE_POWER_BANK
         if (this.pos.roomName !== this.hive.roomName) {
@@ -68,7 +75,7 @@ export class PickupMaster extends SwarmMaster {
           this.order.delete();
       }
     }
-    return { target: target, amount: amount };
+    return target;
   }
 
   run() {
@@ -76,7 +83,11 @@ export class PickupMaster extends SwarmMaster {
       return;
     let storage = this.hive.cells.storage.storage;
 
-    let target = this.getTarget().target;
+    let target = this.target;
+    if (!target) {
+      target = this.getTarget();
+      this.target = target;
+    }
 
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.boosting)

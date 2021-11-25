@@ -16,9 +16,19 @@ export class DepositPullerMaster extends Master {
   movePriority = <4>4;
   depositSites: DepositMaster[] = [];
   powerSites: PowerMaster[] = [];
+  freePullers: Bee[] = [];
 
   constructor(hive: Hive) {
     super(hive, prefix.puller + hive.roomName);
+  }
+
+  removeFreePuller(roadTime: number) {
+    let puller = _.filter(this.freePullers, b => b.ticksToLive > roadTime + 150)[0];
+    if (puller) {
+      this.freePullers.splice(this.freePullers.indexOf(puller));
+      return true;
+    }
+    return false;
   }
 
   update() {
@@ -36,10 +46,15 @@ export class DepositPullerMaster extends Master {
 
     let possibleTargets = this.minersToMove.length;
     let maxRoadTime = 0;
+
+    this.freePullers = _.filter(this.bees, b => b.state === beeStates.chill && b.pos.getRoomRangeTo(this.hive) < 3);
+
     _.forEach(this.depositSites, m => {
       maxRoadTime = Math.max(maxRoadTime, m.roadTime);
-      if (m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.operational)
-        possibleTargets++;
+      if (m.miners.waitingForBees || m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.operational)
+        possibleTargets += Math.max(1, m.miners.targetBeeCount - m.beesAmount);
+      if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
+        this.freePullers.pop();
     });
 
     this.targetBeeCount = 1;

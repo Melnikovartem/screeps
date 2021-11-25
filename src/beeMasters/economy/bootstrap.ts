@@ -51,7 +51,7 @@ export class BootstrapMaster extends Master {
       let cycleWithoutEnergy = (cell.roadTime - 2) * 2 + (this.hive.sumCost ? 10 : (this.hive.phase > 0 ? 0 : 50));
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
-      let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 25);
+      let roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 20);
       if (!roomInfo.currentOwner)
         energyPerTick = 5;
       else if (roomInfo.currentOwner !== Apiary.username)

@@ -373,7 +373,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null) {
     let moveTarget = this.pos;
-    let opts = this.getPathArgs(bee.ref);
+    let opt = this.getPathArgs(bee.ref);
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
     let fatigue = 0;
 
@@ -389,9 +389,9 @@ export abstract class SquadMaster extends SwarmMaster {
     let notNearExit = (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47);
     if (enemy && bee.pos.roomName === this.pos.roomName) {
       moveTarget = enemy.pos;
-      opts.movingTarget = true;
+      opt.movingTarget = true;
       // if (this.stats.current.dmgRange > this.stats.current.dmgClose + this.stats.current.dism)
-      //  opts.range = 3;
+      //  opt.range = 3;
       if (notNearExit) {
         let rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
         if (rotate) {
@@ -408,7 +408,7 @@ export abstract class SquadMaster extends SwarmMaster {
     } testing rotation */
 
     if (!busy) {
-      bee.goTo(moveTarget, opts);
+      bee.goTo(moveTarget, opt);
       if (moveTarget.getRangeTo(bee) <= 3 && (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) && this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5) {
         let poss = bee.pos.getOpenPositions(true);
         if (poss.length) {
@@ -419,14 +419,14 @@ export abstract class SquadMaster extends SwarmMaster {
             return ans < 0 ? curr : prev;
           });
           if (!newPos.equal(bee.pos))
-            bee.goTo(newPos, opts);
+            bee.goTo(newPos, opt);
         }
       }
 
       if (!roomInfo.safePlace && (this.canBeOutDmged(bee.pos) || (bee.targetPosition && this.canBeOutDmged(bee.targetPosition)))) {
-        opts = bee.getFleeOpt(opts);
+        opt = bee.getFleeOpt(opt);
         let exit = bee.pos.findClosest(Game.rooms[bee.pos.roomName].find(FIND_EXIT));
-        bee.goTo(exit || this.order, opts);
+        bee.goTo(exit || this.order, opt);
       }
 
       if (roomInfo.roomState === roomStates.ownedByEnemy) {
@@ -486,10 +486,8 @@ export abstract class SquadMaster extends SwarmMaster {
       let heal = Math.max(myStats.heal, this.stats.current.heal);
       let enemyPower = towerDmg + creepDmg;
       // (beeStats.current.hits < beeStats.max.hits ? heal : beeStats.current.heal)
-      if (enemyPower > heal + Math.min(beeStats.current.resist, heal * 0.7 / 0.3)) {
-        console.log(enemyPower, heal, Math.min(beeStats.current.resist, heal * 0.7 / 0.3))
+      if (enemyPower > heal + Math.min(beeStats.current.resist, heal * 0.7 / 0.3))
         return true;
-      }
     }
     return false;
   }

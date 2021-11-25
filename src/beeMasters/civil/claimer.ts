@@ -16,7 +16,7 @@ export class ClaimerMaster extends SwarmMaster {
       let setup = setups.claimer.copy();
       if (this.pos.getRoomRangeTo(this.hive, true) >= 4)
         setup.fixed = [TOUGH, TOUGH, TOUGH];
-      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 25);
+      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
       if (roomInfo.roomState >= roomStates.reservedByInvader) {
         setup.patternLimit = 5;
         setup.fixed = [TOUGH, TOUGH, TOUGH];

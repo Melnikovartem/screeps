@@ -69,9 +69,8 @@ export class PowerMaster extends SwarmMaster {
     }
 
     let damageWillBeMax = 0;
-    for (let i = 0; i < this.duplets.length; ++i) {
-      damageWillBeMax += this.duplets[i][0].ticksToLive * 600;
-    }
+    for (let i = 0; i < this.duplets.length; ++i)
+      damageWillBeMax += this.duplets[i][0].ticksToLive * ATTACK_POWER * MAX_CREEP_SIZE / 2;
 
     if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
       this.wish({
@@ -88,7 +87,7 @@ export class PowerMaster extends SwarmMaster {
   callPickUp(power: number) {
     if (this.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    let name = this.pos.createFlag(Math.ceil(power / CARRY_CAPACITY) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.pos.createFlag(Math.ceil(power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
     if (typeof name === "string")
       Game.flags[name].memory.hive = this.hive.roomName;
   }
@@ -113,7 +112,7 @@ export class PowerMaster extends SwarmMaster {
       }
 
       if (knight && knight.state === beeStates.work) {
-        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName, 25);
+        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName, 20);
         let knightPos = knight.pos;
         let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
           && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.pos.roomName))), e => e.object);

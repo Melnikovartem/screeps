@@ -70,9 +70,9 @@ export class HordeMaster extends SwarmMaster {
     let action1;
     let action2;
 
-    let opts: TravelToOptions = {};
+    let opt: TravelToOptions = {};
     if (bee.pos.roomName === this.pos.roomName)
-      opts.maxRooms = 1;
+      opt.maxRooms = 1;
     let beeStats = Apiary.intel.getStats(bee.creep).current;
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
 
@@ -209,8 +209,8 @@ export class HordeMaster extends SwarmMaster {
     }
 
     if (shouldFlee) {
-      opts.maxRooms = 1;
-      bee.flee(this.order, opts); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
+      opt.maxRooms = 1;
+      bee.flee(this.order, opt); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
       return ERR_BUSY;
     }
     if (loosingBattle && bee.pos.roomName === this.pos.roomName) {
@@ -224,13 +224,13 @@ export class HordeMaster extends SwarmMaster {
         loosingBattle = false;
         targetedRange = 1;
         bee.memory._trav.path = undefined;
-        bee.goTo(newEnemy, bee.getFleeOpt(opts));
+        bee.goTo(newEnemy, bee.getFleeOpt(opt));
         return OK;
       }
     }
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
-      opts.movingTarget = rangeToTarget <= targetedRange + 1;
-      bee.goTo(target, opts);
+      opt.movingTarget = rangeToTarget <= targetedRange + 1;
+      bee.goTo(target, opt);
       if (bee.targetPosition && bee.targetPosition.getEnteranceToRoom() && bee.pos.roomName === this.pos.roomName)
         bee.targetPosition = bee.pos;
     }
@@ -267,10 +267,10 @@ export class HordeMaster extends SwarmMaster {
           }
           break;
         case beeStates.chill:
-          enemy = Apiary.intel.getEnemy(bee.pos, 25);
+          enemy = Apiary.intel.getEnemy(bee.pos, 20);
           let ans: number = OK;
           if (enemy) {
-            enemy = Apiary.intel.getEnemy(bee.pos, 25);
+            enemy = Apiary.intel.getEnemy(bee.pos, 20);
             if (enemy && bee.pos.getRangeTo(enemy) > 3)
               enemy = undefined;
           }
@@ -279,7 +279,7 @@ export class HordeMaster extends SwarmMaster {
             bee.state = beeStates.work;
           if (ans === OK) {
             let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
-            let opt = this.hive.opts;
+            let opt = this.hive.opt;
             if (roomInfo.roomState >= roomStates.reservedByEnemy)
               opt.useFindRoute = true;
             bee.goTo(this.pos, opt);

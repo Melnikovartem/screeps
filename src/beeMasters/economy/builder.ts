@@ -36,7 +36,7 @@ export class BuilderMaster extends Master {
           if (!b.boosted && b.ticksToLive >= 1200)
             b.state = beeStates.boosting;
         });
-      if (this.hive.state === hiveStates.battle && this.hive.sumCost > 30000)
+      if (this.hive.state === hiveStates.battle && this.hive.sumCost > 20000)
         ++target;
     } else if (this.hive.sumCost > 1200 && this.hive.state !== hiveStates.lowenergy) {
       this.patternPerBee = 5;
@@ -106,27 +106,31 @@ export class BuilderMaster extends Master {
           bee.goRest(lab.pos);
           break;
         case beeStates.refill:
+          let otherRes = bee.store.getUsedCapacity() > bee.store.getUsedCapacity(RESOURCE_ENERGY);
+          if (otherRes) {
+            let res = <ResourceConstant | undefined>Object.keys(bee.store).filter(r => r !== RESOURCE_ENERGY)[0];
+            if (res && bee.transfer(this.sCell.storage, res) === OK && Apiary.logger)
+              Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, this.sCell.storage.store, res, 1);
+          }
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === bee.creep.store.getCapacity(RESOURCE_ENERGY)
             || this.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 2500) {
             bee.state = beeStates.work;
             break;
-          } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opts) === OK) {
-            if (bee.store.getUsedCapacity() > bee.store.getUsedCapacity(RESOURCE_ENERGY)) {
-              let res = <ResourceConstant | undefined>Object.keys(bee.store).filter(r => r !== RESOURCE_ENERGY)[0];
-              if (res && bee.transfer(this.sCell.storage, res) === OK && Apiary.logger)
-                Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, this.sCell.storage.store, res, 1);
-            }
+          } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opt) === OK && !otherRes) {
             bee.state = beeStates.work;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense_repair" : "build", this.sCell.storage.store, bee.store);
-            let target = bee.pos.findClosest(this.hive.structuresConst);
-            if (target && target.pos.getRangeTo(bee) > 3)
-              bee.goTo(target.pos, this.hive.opts);
+            let target = this.hive.getBuildTarget(bee);
+            if (target) {
+              bee.target = target.id;
+              if (target.pos.getRangeTo(bee) > 3)
+                bee.goTo(target.pos, this.hive.opt);
+            }
             break;
           }
           let resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
           if (resource)
-            bee.pickup(resource, this.hive.opts);
+            bee.pickup(resource, this.hive.opt);
           break;
         case beeStates.work:
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
@@ -147,7 +151,7 @@ export class BuilderMaster extends Master {
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
               }
-              if (target && target.pos.roomName !== this.hive.roomName && !Apiary.intel.getInfo(bee.pos.roomName, 25).safePlace) {
+              if (target && target.pos.roomName !== this.hive.roomName && !Apiary.intel.getInfo(bee.pos.roomName, 20).safePlace) {
                 target = undefined;
                 bee.target = undefined;
               }
@@ -163,9 +167,9 @@ export class BuilderMaster extends Master {
               }
               let ans: ScreepsReturnCode | undefined;
               if (target instanceof ConstructionSite)
-                ans = bee.build(target, this.hive.opts);
+                ans = bee.build(target, this.hive.opt);
               else if (target instanceof Structure)
-                ans = bee.repair(target, this.hive.opts);
+                ans = bee.repair(target, this.hive.opt);
               bee.target = target.id;
               if (this.hive.state !== hiveStates.battle)
                 bee.repairRoadOnMove(ans);
@@ -175,7 +179,7 @@ export class BuilderMaster extends Master {
               } else
                 resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
               if (resource)
-                bee.pickup(resource, this.hive.opts);
+                bee.pickup(resource, this.hive.opt);
             } else {
               bee.target = undefined;
               bee.state = beeStates.chill;
@@ -193,13 +197,13 @@ export class BuilderMaster extends Master {
               Apiary.logger.resourceTransfer(this.hive.roomName, res === RESOURCE_ENERGY ? "build" : "pickup", bee.store, this.sCell.storage.store, res, 1);
             // bee.repairRoadOnMove(ans);
           } else
-            bee.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opts);
+            bee.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opt);
           break;
       }
       if (this.hive.state !== hiveStates.battle || bee.pos.roomName !== this.hive.roomName) {
         this.checkFlee(bee);
       } else {
-        let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 25).enemies.map(e => e.object).filter(e => {
+        let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 20).enemies.map(e => e.object).filter(e => {
           if (!(e instanceof Creep))
             return false;
           let stats = Apiary.intel.getStats(e).current;
