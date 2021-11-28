@@ -11,6 +11,8 @@ export class Bee extends ProtoBee<Creep> {
   boosted = false;
   lifeTime: number;
 
+  pulledPos: RoomPosition | undefined = undefined;
+
   // for now it will be forever binded
   constructor(creep: Creep) {
     super(creep);
@@ -19,7 +21,10 @@ export class Bee extends ProtoBee<Creep> {
     this.lifeTime = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
-    this.canMove = !!this.getBodyParts(MOVE);
+  }
+
+  get pos() {
+    return this.pulledPos || this.creep.pos;
   }
 
   get body() {
@@ -31,11 +36,12 @@ export class Bee extends ProtoBee<Creep> {
   }
 
   get fatigue() {
-    return this.creep.fatigue;
+    return this.creep.fatigue || (this.creep.getActiveBodyparts(MOVE) ? 0 : Infinity);
   }
 
   update() {
     super.update();
+    this.pulledPos = undefined;
     this.creep = Game.creeps[this.ref];
     if (!this.master) {
       if (!Apiary.masters[this.creep.memory.refMaster])
@@ -149,7 +155,10 @@ export class Bee extends ProtoBee<Creep> {
       if (anotherExit)
         this.targetPosition = anotherExit;
     }
-    return this.creep.pull(t.creep) || t.creep.move(this.creep);
+    let ans = this.creep.pull(t.creep) || t.creep.move(this.creep);
+    if (ans === OK)
+      t.pulledPos = this.creep.pos;
+    return ans;
   }
 
   attack(t: Creep | Structure | PowerCreep, opt: TravelToOptions = {}): ScreepsReturnCode {

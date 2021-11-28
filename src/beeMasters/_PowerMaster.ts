@@ -29,6 +29,8 @@ export const POWER_NAMES: { [id in PowerConstant]: string } = {
   [PWR_OPERATE_FACTORY]: "FACTORY",
 };
 
+export const HIVE_OPS = 5000;
+
 @profile
 export abstract class PowerMaster extends Master {
 
@@ -40,6 +42,8 @@ export abstract class PowerMaster extends Master {
     super(cell.hive, powerCreep.ref);
     this.cell = cell;
     this.powerCreep = powerCreep;
+    if (!this.hive.resTarget[RESOURCE_OPS])
+      this.hive.resTarget[RESOURCE_OPS] = HIVE_OPS;
   }
 
   update() {

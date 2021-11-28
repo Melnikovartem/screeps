@@ -79,7 +79,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
       if (cachedIn.length)
         validCells = cachedIn;
       else
-        validCells = validCells.filter(c => !c.powerManager)
+        validCells = validCells.filter(c => !c.powerManager || !Game.powerCreeps[c.powerManager])
       if (validCells.length)
         return (pb) => new NKVDMaster(validCells[0], pb);
     }

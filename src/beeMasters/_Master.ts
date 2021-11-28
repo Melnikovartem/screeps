@@ -39,6 +39,7 @@ export abstract class Master {
 
   // catch a bee after it has requested a master
   newBee(bee: Bee) {
+    bee.memory.refMaster = this.ref;
     if (bee.state === beeStates.idle)
       bee.state = this.boosts && this.hive.cells.lab && bee.ticksToLive > 1200 ? beeStates.boosting : beeStates.chill;
     this.bees[bee.ref] = bee;

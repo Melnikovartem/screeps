@@ -4,7 +4,6 @@ import { TransferRequest } from "../../bees/transferRequest";
 
 import { prefix, hiveStates } from "../../enums";
 import { BASE_MINERALS } from "./laboratoryCell";
-import { DEPOSIT_COMMODITIES } from "./factoryCell";
 import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
@@ -57,17 +56,17 @@ export class StorageCell extends Cell {
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
       let existing = this.requests[ref];
-      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority <= priority)) {
-        if (existing.resource === res)
-          sum += existing.amount;
+      if (existing && existing.priority <= priority)
         continue;
-      }
       let amountCC = amount;
       if (fitStore)
         amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>objects[i].store).getFreeCapacity(res));
       if (amountCC <= 0)
         continue;
-      this.requests[ref] = new TransferRequest(ref, this.storage, objects[i], priority, res, amountCC);
+      let request = new TransferRequest(ref, this.storage, objects[i], priority, res, amountCC);
+      if (!request.isValid())
+        continue;
+      this.requests[ref] = request;
       if (prev)
         this.requests[ref].nextup = prev;
       prev = this.requests[ref];
@@ -85,17 +84,17 @@ export class StorageCell extends Cell {
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
       let existing = this.requests[ref];
-      if (existing && existing.to.id === objects[i].id && (existing.resource === res || existing.priority <= priority)) {
-        if (existing.resource === res)
-          sum += existing.amount;
+      if (existing && existing.priority <= priority)
         continue;
-      }
       let amountCC = amount;
       if (fitStore && !(objects[i] instanceof Resource))
         amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>(<Exclude<TransferRequest["from"], Resource>>objects[i]).store).getUsedCapacity(res));
       if (amountCC <= 0)
         continue;
-      this.requests[ref] = new TransferRequest(ref, objects[i], this.storage, priority, res, amountCC);
+      let request = new TransferRequest(ref, objects[i], this.storage, priority, res, amountCC);
+      if (!request.isValid())
+        continue;
+      this.requests[ref] = request;
       if (prev)
         this.requests[ref].nextup = prev;
       prev = this.requests[ref];
@@ -182,7 +181,7 @@ export class StorageCell extends Cell {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res]) {
         let used = this.terminal.store.getUsedCapacity(res);
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(used, 3000)) > 0)
+        if ((used > 1000 || !Object.keys(this.requests).length) && this.requestToStorage([this.terminal], 4, res, Math.min(used, 3000)) > 0)
           return;
       }
     }
@@ -193,7 +192,7 @@ export class StorageCell extends Cell {
       if (balance < 0) {
         if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 3000)) > 0)
           return;
-      } else if (balance > 0) {
+      } else if (balance > 1000 || !Object.keys(this.requests).length) {
         if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 3000)) > 0)
           return;
       }
@@ -228,8 +227,14 @@ export class StorageCell extends Cell {
         if (toAdd)
           amount += toAdd;
       });
-    if ((resource in COMMODITIES || DEPOSIT_COMMODITIES.includes(resource)) && this.hive.cells.factory)
+
+    if (this.hive.cells.factory)
       amount += this.hive.cells.factory.factory.store.getUsedCapacity(resource);
+    if (resource === RESOURCE_OPS && this.hive.cells.power) {
+      let powerManager = this.hive.cells.power.powerManagerBee;
+      if (powerManager)
+        amount += powerManager.store.getUsedCapacity(resource);
+    }
     this.usedCapacity[resource] = amount;
     return amount;
   }

@@ -19,9 +19,6 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   targetPosition: RoomPosition | undefined;
   actionPosition: RoomPosition | undefined;
 
-  canMove = true;
-
-
   // for now it will be forever binded
   constructor(creep: ProtoCreep) {
     this.creep = creep;
@@ -225,7 +222,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     Apiary.wrap(() => {
       for (const name in Apiary.bees) {
         let bee = Apiary.bees[name];
-        if (bee.fatigue > 0 || !bee.canMove) {
+        if (bee.fatigue > 0) {
           chillMap[bee.pos.to_str] = bee;
           continue;
         }
@@ -254,7 +251,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     let red = (prev: InfoMove, curr: InfoMove) => curr.priority < prev.priority ? curr : prev;
     let bee;
     if (beeIn) {
-      if (beeIn.fatigue > 0 || !beeIn.canMove)
+      if (beeIn.fatigue > 0)
         return ERR_FULL;
       if (!beeIn.targetPosition) {
         bee = moveMap[pos.to_str].reduce(red).bee;
