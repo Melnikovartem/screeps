@@ -11,25 +11,32 @@ import type { FlagOrder } from "../../order";
 //first tandem btw
 @profile
 export class PowerMaster extends SwarmMaster {
-  calledOneMore = false;
-  duplets: [Bee, Bee][] = [];
+  duplets: [Bee | undefined, Bee | undefined][] = [];
   healers: Bee[] = [];
   knights: Bee[] = [];
   target: StructurePowerBank | undefined;
-  targetBeeCount = this.pos.getOpenPositions(true).length * 2;
-  maxSpawns = this.pos.getOpenPositions(true).length * 2;
-  roadTime = this.pos.getTimeForPath(this.hive);
-  dmgPerDupl = (CREEP_LIFE_TIME - this.roadTime) * (30 * 20);
-  pickupTime = setups.pickup.patternLimit * 4.5 + this.roadTime;
   movePriority = <1>1;
+  positions: { pos: RoomPosition }[];
 
   constructor(order: FlagOrder) {
     super(order);
+    this.order.memory.extraInfo = 0;
     if (this.hive.puller)
       this.hive.puller.powerSites.push(this);
+    this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });
+    this.targetBeeCount = this.positions.length * 2;
+    this.maxSpawns = Infinity;
   }
 
-  newBee(bee: Bee, ) {
+  get roadTime() {
+    return <number>this.order.memory.extraInfo;
+  }
+
+  get pickupTime() {
+    return MAX_CREEP_SIZE * 3 + this.roadTime;
+  }
+
+  newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.getBodyParts(HEAL))
       this.healers.push(bee);
@@ -39,48 +46,70 @@ export class PowerMaster extends SwarmMaster {
 
   update() {
     super.update();
-
-    if (this.knights.length && this.healers.length) {
-      let knight = this.knights.shift()!;
-      let healer = knight.pos.findClosest(this.healers)!;
-
-      for (let i = 0; i < this.healers.length; ++i)
-        if (this.healers[i].ref === healer.ref) {
-          this.healers.splice(i, 1);
-          break;
+    _.forEach(this.knights, knight => {
+      let healer = <Bee | undefined>knight.pos.findClosest(this.healers.filter(h => Math.abs(h.ticksToLive - knight.ticksToLive) < Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3)));
+      if (healer || knight.ticksToLive < this.roadTime) {
+        if (healer) {
+          let healerIndex = this.healers.indexOf(healer);
+          this.healers.splice(healerIndex, 1);
         }
-      this.duplets.push([knight, healer]);
+        let knightIndex = this.knights.indexOf(knight);
+        this.knights.splice(knightIndex, 1);
+        this.duplets.push([knight, healer]);
+      }
+    });
+
+    for (let i = 0; i < this.duplets.length; ++i) {
+      let [knight, healer] = this.duplets[i];
+      if (knight)
+        this.duplets[i][0] = this.bees[knight.ref];
+      if (healer)
+        this.duplets[i][1] = this.bees[healer.ref];
     }
 
+    let shouldSpawn = true;
     if (this.pos.roomName in Game.rooms) {
+      if (!this.roadTime)
+        this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
       this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
+
       if (!this.target) {
         let res = this.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
           this.callPickUp(res.amount);
+        shouldSpawn = false;
         this.maxSpawns = 0;
-        if (!this.pos.isFree())
+        if (!this.pos.isFree(true))
           this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
       } else {
-        this.maxSpawns = Math.ceil(this.target.hits / 600 / this.target.ticksToDecay) * 2;
-        if (this.target.hits / (this.duplets.length * 600) <= this.pickupTime)
+        let dmgCurrent = _.sum(this.duplets, dd => dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0) * ATTACK_POWER * 20;
+        if (this.target.hits / dmgCurrent <= this.pickupTime)
           this.callPickUp(this.target.power);
       }
+    } else if (!this.target && this.hive.cells.observe)
+      Apiary.requestSight(this.pos.roomName);
+
+    if (this.target && shouldSpawn) {
+      let decay = this.target.ticksToDecay;
+      let dmgFuture = ATTACK_POWER * 20 * _.sum(this.duplets, dd => !dd[0] ? 0 :
+        Math.min(decay, dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)));
+      let dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
+      shouldSpawn = this.target.hits - dmgFuture > 0 && decay > this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
+        && this.target.hits / dmgPerSecond <= decay - (this.activeBees.length ? 0 : this.roadTime);
     }
 
-    let damageWillBeMax = 0;
-    for (let i = 0; i < this.duplets.length; ++i)
-      damageWillBeMax += this.duplets[i][0].ticksToLive * ATTACK_POWER * MAX_CREEP_SIZE / 2;
-
-    if (this.checkBees() && (!this.target || (this.target.hits - damageWillBeMax > 0 && this.target.ticksToDecay > this.roadTime))) {
-      this.wish({
-        setup: setups.miner.powerhealer,
-        priority: 8,
-      }, this.ref + "_healer");
-      this.wish({
-        setup: setups.miner.power,
-        priority: 8,
-      }, this.ref + "_miner");
+    if (this.checkBees(false, CREEP_LIFE_TIME - this.roadTime - 30) && shouldSpawn) {
+      let balance = this.healers.filter(b => b.ticksToLive > this.roadTime * 2).length - this.knights.filter(b => b.ticksToLive > this.roadTime * 2).length;
+      if (balance <= 0)
+        this.wish({
+          setup: setups.miner.powerhealer,
+          priority: 7,
+        }, this.ref + "_healer");
+      if (balance >= 0)
+        this.wish({
+          setup: setups.miner.power,
+          priority: 7,
+        }, this.ref + "_miner");
     }
   }
 
@@ -101,57 +130,81 @@ export class PowerMaster extends SwarmMaster {
     _.forEach(this.duplets, (couple => {
       let [knight, healer] = couple;
 
-      if (knight && healer && !knight.creep.spawning && !healer.creep.spawning) {
-        if (knight.pos.isNearTo(healer)) {
+      if (knight && healer && (knight.state !== beeStates.work || healer.state !== beeStates.work)) {
+        if (knight.pos.isNearTo(healer) && !knight.creep.spawning && !healer.creep.spawning) {
           knight.state = beeStates.work;
           healer.state = beeStates.work;
         } else {
-          knight.goTo(healer.pos);
-          healer.goTo(knight.pos);
+          knight.goRest(healer.pos, { movingTarget: true });
+          healer.goRest(knight.pos, { movingTarget: true });
         }
       }
 
       if (knight && knight.state === beeStates.work) {
-        let roomInfo = Apiary.intel.getInfo(knight.pos.roomName, 20);
-        let knightPos = knight.pos;
-        let enemies = _.map(_.filter(roomInfo.enemies, e => (e.dangerlvl > 3
-          && (knightPos.getRangeTo(e.object) < 3 || knightPos.roomName === this.pos.roomName))), e => e.object);
-        if (knight.pos.roomName === this.pos.roomName && this.target && !enemies.filter(e => e.pos.getRangeTo(this.order) < 6).length)
-          enemies = enemies.concat(this.target);
-
-        let target = knight.pos.findClosest(enemies);
+        let target: Creep | PowerCreep | Structure | undefined = this.target;
+        let enemy = Apiary.intel.getEnemy(knight.pos, 20);
+        if (enemy && knight.pos.getRangeTo(enemy) < 3 || !target)
+          target = enemy;
         if (target) {
           if (target instanceof StructurePowerBank) {
-            if (knight.hits > knight.hitsMax * 0.5)
-              knight.attack(target);
+            if (!healer || healer.pos.isNearTo(knight) || knight.pos.x <= 1 || knight.pos.x >= 48 || knight.pos.y <= 1 || knight.pos.y >= 48)
+              if (healer && !knight.pos.isNearTo(this)) {
+                let pos = knight.pos.getRangeTo(this.pos) > 5 ? this.pos
+                  : this.positions.filter(p => !this.activeBees.filter(b => b.pos.equal(p) && b.getActiveBodyParts(ATTACK)).length)[0];
+                if (pos)
+                  knight.goTo(pos, { useFindRoute: true, obstacles: this.positions.filter(p => !p.pos.equal(pos)) });
+                else
+                  knight.goTo(this.pos, { range: 3 });
+              } else if (knight.hits > knight.hitsMax * 0.5)
+                knight.attack(target);
+              else if (!healer && !this.pos.getOpenPositions(false).length)
+                if (knight.getActiveBodyParts(ATTACK))
+                  knight.attack(target);
+                else
+                  knight.creep.suicide();
           } else
             knight.attack(target);
         } else if (knight.hits === knight.hitsMax)
-          knight.goRest(this.pos);
-
-        if (healer)
-          healer.goTo(knight.pos, { ignoreCreeps: false, movingTarget: true });
+          knight.goRest(this.pos, { useFindRoute: true });
       }
 
       if (healer && healer.state === beeStates.work) {
-        if (healer.hits < healer.hitsMax) {
+        if (healer.hits < healer.hitsMax)
           healer.heal(healer);
-        } if (knight && knight.hits < knight.hitsMax) {
-          if (healer.pos.isNearTo(knight))
-            healer.heal(knight);
-          else
-            healer.rangedHeal(knight);
+        if (knight) {
+          if (knight.hits < knight.hitsMax || knight.pos.isNearTo(this))
+            if (healer.pos.isNearTo(knight))
+              healer.heal(knight);
+            else
+              healer.rangedHeal(knight);
         } else {
-          let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, knight ? 3 : 10),
+          let healingTarget = healer.pos.findClosest(_.filter(healer.pos.findInRange(FIND_MY_CREEPS, 3),
             bee => bee.hits < bee.hitsMax));
           if (healingTarget) {
             if (healer.pos.isNearTo(healingTarget))
               healer.heal(healingTarget);
             else
               healer.rangedHeal(healingTarget);
-          } else if (!knight)
-            healer.goTo(this.pos);
+          }
         }
+        if (!healer.targetPosition)
+          if (knight) {
+            if (!healer.pos.isNearTo(knight))
+              healer.goTo(knight.pos, { movingTarget: true });
+            else {
+              if (knight.pos.isNearTo(this)) {
+                let poss;
+                if (healer.pos.isNearTo(this))
+                  poss = knight.pos.getOpenPositions(true);
+                if (poss && poss.length)
+                  healer.goTo(poss.reduce((prev, curr) => curr.getRangeTo(this) > prev.getRangeTo(this) ? curr : prev), { obstacles: this.positions });
+                else
+                  healer.goRest(knight.pos);
+              } else
+                healer.goTo(knight.pos);
+            }
+          } else
+            healer.goRest(this.pos, { range: 3 });
       }
     }));
   }

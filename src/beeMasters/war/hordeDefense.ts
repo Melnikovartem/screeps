@@ -16,7 +16,11 @@ export class HordeDefenseMaster extends HordeMaster {
   maxSpawns = 3;
 
   init() {
-    Apiary.defenseSwarms[this.pos.roomName] = this.order;
+    let defSwarm = Apiary.defenseSwarms[this.pos.roomName];
+    if (defSwarm && defSwarm.ref !== this.order.ref)
+      this.order.delete();
+    else
+      Apiary.defenseSwarms[this.pos.roomName] = this.order;
   }
 
   update() {
@@ -53,7 +57,7 @@ export class HordeDefenseMaster extends HordeMaster {
           healNeeded = 5;
         let killFastRangeNeeded = Math.ceil(stats.max.hits / (RANGED_ATTACK_POWER * desiredTTK));
         order.setup = setups.defender.normal.copy();
-        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded) / (this.boosts ? 4 : 1), roomInfo.dangerlvlmax >= 4 ? 25 : 10); // Math.max(rangedNeeded * 3, 6) -> 25
+        order.setup.patternLimit = Math.min(Math.max(killFastRangeNeeded, rangedNeeded) / (this.boosts ? 4 * 0.5 : 1), roomInfo.dangerlvlmax >= 4 ? 25 : 10); // Math.max(rangedNeeded * 3, 6) -> 25
 
         if (healNeeded) {
           let healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];

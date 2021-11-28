@@ -9,7 +9,7 @@ import type { Boosts } from "../_Master";
 
 @profile
 export class PickupMaster extends SwarmMaster {
-  waitPos = this.pos.getOpenPositions(true, 5)[0];
+  waitPos = this.pos.getOpenPositions(true, 3)[0];
   boosts: Boosts | undefined = [{ type: "capacity", lvl: 0 }, { type: "fatigue", lvl: 0 }];
 
   update() {
@@ -96,44 +96,31 @@ export class PickupMaster extends SwarmMaster {
     });
 
     _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.boosting)
-        return;
-      if (bee.store.getFreeCapacity() === 0)
-        bee.state = beeStates.fflush;
-      else if (bee.store.getUsedCapacity() === 0)
-        bee.state = beeStates.refill;
-
-
       switch (bee.state) {
         case beeStates.chill:
-          bee.state = beeStates.refill;
-        case beeStates.refill:
-          if (target && bee.store.getFreeCapacity()) {
-            if (target instanceof Resource)
-              bee.pickup(target);
-            else if (target.store)
-              bee.withdraw(target, findOptimalResource(target.store));
-            else {
-              if (!this.waitPos)
-                this.waitPos = this.pos;
-              bee.goRest(this.waitPos);
-            }
-          } else if (bee.store.getUsedCapacity())
-            bee.state = beeStates.fflush;
-          break;
-        case beeStates.fflush:
-          if (!bee.target || !(bee.target in RESOURCES_ALL))
-            bee.target = findOptimalResource(bee.store);
-          if (bee.target) {
-            let res = <ResourceConstant>bee.target;
-            let ans = bee.transfer(storage, res);
-            if (ans === OK) {
-              bee.target = undefined;
-              if (Apiary.logger)
-                Apiary.logger.resourceTransfer(this.hive.roomName, "pickup", bee.store, storage!.store, res, 1);
-            }
-          } else
+          if (!bee.store.getFreeCapacity())
+            bee.state = beeStates.work;
+          else if (target instanceof Resource)
+            bee.pickup(target);
+          else if (target && target.store)
+            bee.withdraw(target, findOptimalResource(target.store));
+          else if (bee.store.getUsedCapacity())
+            bee.state = beeStates.work;
+          else
+            bee.goRest(this.waitPos);
+          if (bee.state !== beeStates.work)
+            break;
+        case beeStates.work:
+          if (!bee.store.getUsedCapacity()) {
             bee.state = beeStates.chill;
+            break;
+          }
+          let res = findOptimalResource(bee.store);
+          let ans = bee.transfer(storage, res);
+          if (ans === OK && Apiary.logger)
+            Apiary.logger.resourceTransfer(this.hive.roomName, res === RESOURCE_POWER ? "power mining" : "pickup", bee.store, storage.store, res, 1);
+          break;
+        case beeStates.boosting:
           break;
       }
       this.checkFlee(bee);

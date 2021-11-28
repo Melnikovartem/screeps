@@ -34,10 +34,24 @@ export class DepositPullerMaster extends Master {
   update() {
     super.update();
 
+    let workingPowerSites = this.powerSites.filter(p => p.maxSpawns);
+    if (workingPowerSites.length)
+      _.forEach(this.powerSites, p => {
+        if (!p.maxSpawns)
+          _.forEach(p.bees, b => {
+            let nextMaster = b.pos.findClosest(workingPowerSites.filter(wp => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1));
+            if (nextMaster) {
+              p.removeBee(b);
+              nextMaster.newBee(b);
+            }
+          });
+      });
+
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.chill) {
         let newTarget = this.minersToMove[0];
-        if (newTarget) {
+        if (newTarget && (bee.ticksToLive >= (<DepositMinerMaster>newTarget.master).parent.roadTime
+          || !this.activeBees.filter(b => b.target === newTarget.ref).length)) {
           bee.target = newTarget.ref;
           bee.state = beeStates.work;
         }
@@ -52,21 +66,19 @@ export class DepositPullerMaster extends Master {
     _.forEach(this.depositSites, m => {
       maxRoadTime = Math.max(maxRoadTime, m.roadTime);
       if (m.miners.waitingForBees || m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.operational)
-        possibleTargets += Math.max(1, m.miners.targetBeeCount - m.beesAmount);
+        possibleTargets += Math.max(1, m.miners.targetBeeCount - m.miners.beesAmount);
       if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
         this.freePullers.pop();
     });
 
-    this.targetBeeCount = 1;
-    if (possibleTargets > 1)
-      ++this.targetBeeCount;
+    this.targetBeeCount = Math.min(possibleTargets, 4);
 
     if (possibleTargets &&
       this.checkBees(false, CREEP_LIFE_TIME - maxRoadTime)
       && this.hive.resState[RESOURCE_ENERGY] > 0 && maxRoadTime)
       this.wish({
         setup: setups.puller,
-        priority: 7,
+        priority: 8,
       });
   }
 
@@ -105,8 +117,10 @@ export class DepositPullerMaster extends Master {
             let pos = depMaster.pos;
             if (bee.pos.roomName === pos.roomName)
               pos = bee.pos.isNearTo(depMaster) ? bee.pos : (depMaster.pos.getOpenPositions(false)[0] || depMaster.pos);
-            bee.pull(beeToPull, pos, { range: 0, obstacles: depMaster.positions.filter(p => !p.pos.equal(pos)), offRoad: true });
-            pulled.push(beeToPull.ref);
+            if (pos.getRangeTo(bee) > 3 || !pos.equal(depMaster.pos)) {
+              bee.pull(beeToPull, pos, { range: 0, obstacles: depMaster.positions.filter(p => !p.pos.equal(pos)), useFindRoute: true });
+              pulled.push(beeToPull.ref);
+            }
           }
           this.checkFlee(bee, depMaster.pos, { movingTarget: true });
       }

@@ -20,7 +20,9 @@ export class DepositPickupMaster extends Master {
   get setup() {
     let setup = setups.pickup.copy();
     if (this.parent.target)
-      setup.patternLimit = Math.ceil(10 * Math.max(1, this.parent.rate * this.parent.roadTime / CARRY_CAPACITY / 10));
+      setup.patternLimit = Math.ceil(10 * Math.max(1
+        , this.parent.rate * this.parent.roadTime * 2 / CARRY_CAPACITY / 10
+        , this.parent.positions.length * this.parent.workAmount * 3 / CARRY_CAPACITY / 10));
     else
       setup.patternLimit = 15;
     return setup
@@ -42,7 +44,7 @@ export class DepositPickupMaster extends Master {
 
   update() {
     super.update();
-    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount && this.parent.operational) {
+    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount && (this.parent.operational || _.filter(this.parent.bees, b => b.ticksToLive > CREEP_LIFE_TIME / 2).length)) {
       this.wish({
         setup: this.setup,
         priority: 6,
@@ -99,7 +101,7 @@ export class DepositPickupMaster extends Master {
           }
           bee.goRest(this.parent.rest, { offRoad: true });
           if (bee.ticksToLive < this.parent.roadTime + 25
-            || (bee.store.getFreeCapacity() < this.parent.positions.length * this.parent.workAmount))
+            || bee.store.getFreeCapacity() < this.parent.positions.length * this.parent.workAmount)
             bee.state = bee.store.getUsedCapacity() ? beeStates.work : beeStates.fflush;
           break;
         case beeStates.work:

@@ -53,8 +53,8 @@ export class DepositMaster extends SwarmMaster {
       if (!this.roadTime)
         this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
       if (this.target) {
-        this.operational = (this.target.lastCooldown <= CREEP_LIFE_TIME / 7.5 || this.target.ticksToDecay < CREEP_LIFE_TIME);
-        this.rate = this.miners.activeBees.length * this.positions.length / Math.max(30, this.target.lastCooldown);
+        this.operational = (this.target.lastCooldown <= CREEP_LIFE_TIME / 7.5 && this.target.ticksToDecay > CREEP_LIFE_TIME);
+        this.rate = this.workAmount * this.positions.length / Math.max(30, this.target.lastCooldown);
       }
       if (!this.operational && (!this.pickup.beesAmount || !this.miners.beesAmount))
         this.order.delete();
