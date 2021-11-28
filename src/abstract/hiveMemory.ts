@@ -25,7 +25,7 @@ export interface HiveLog {
 
   defenseHealth: number[],
 
-  energyReport: { [id: string]: { profit: number, revenue?: number } },
+  energyReport: { [id: string]: number },
   resourceBalance: {
     [key in ResourceConstant]?: {
       [id: string]: {

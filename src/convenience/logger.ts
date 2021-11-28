@@ -181,26 +181,18 @@ export class Logger {
       }
   }
 
-  reportEnergy(hiveName: string, extra: boolean = false): { [id: string]: { profit: number, revenue?: number } } {
+  reportEnergy(hiveName: string): { [id: string]: number } {
     let hive = Apiary.hives[hiveName];
     let stats = Memory.log.hives[hiveName].resourceBalance[RESOURCE_ENERGY]!;
-    let ans: { [id: string]: { profit: number, revenue?: number } } = {};
+    let ans: { [id: string]: number } = {};
     let getRate = (ref: string): number => stats[ref] ? stats[ref].amount / Math.max(Game.time - stats[ref].time, 1) : 0;
     let getCreepCostRate = (setup: { name: string }) => getRate("spawn_" + setup.name);
     let excavation = Apiary.hives[hiveName].cells.excavation;
     if (excavation) {
       // well here is also the mineral hauling cost but fuck it
       let haulerExp = getCreepCostRate(setups.hauler);
-      let minerExp = getCreepCostRate(setups.miner.energy);
       let annexExp = getCreepCostRate(setups.claimer);
       let skExp = getCreepCostRate(setups.defender.sk);
-
-      if (extra) {
-        ans["hauler"] = { profit: haulerExp };
-        ans["miner"] = { profit: minerExp };
-        ans["annex"] = { profit: annexExp };
-        ans["annexSK"] = { profit: skExp };
-      }
 
       let haulerNum = 0;
       _.forEach(hive.cells.excavation!.resourceCells, cell => {
@@ -225,33 +217,30 @@ export class Logger {
               annexExpCell = skExp;
             else
               annexExpCell = annexExp;
-          ans[ref] = {
-            profit: getRate(ref) + getRate(upkeep) + (cell.link ? 0 : haulerExp) + annexExpCell / excavation!.roomResources[cell.pos.roomName],
-            revenue: getRate(ref),
-          };
+          ans[ref] = getRate(ref) + getRate(upkeep) + (cell.link ? 0 : haulerExp) + annexExpCell / excavation!.roomResources[cell.pos.roomName];
         }
       });
     }
 
-    ans["upgrade"] = { profit: getRate("upgrade") + getCreepCostRate(setups.upgrader.fast), revenue: getRate("upgrade") };
-    ans["mineral"] = { profit: getCreepCostRate(setups.miner.minerals) };
-    ans["corridor_deposit"] = { profit: getCreepCostRate(setups.miner.deposit) + getCreepCostRate(setups.puller) };
-    ans["corridor_power"] = { profit: getCreepCostRate(setups.miner.power) + getCreepCostRate(setups.miner.powerhealer) };
-    ans["corridor_pickup"] = { profit: getCreepCostRate(setups.pickup) };
+    ans["upgrade"] = getRate("upgrade") + getCreepCostRate(setups.upgrader.fast);
+    ans["mineral"] = getCreepCostRate(setups.miner.minerals);
+    ans["corridor_deposit"] = getCreepCostRate(setups.miner.deposit) + getCreepCostRate(setups.puller);
+    ans["corridor_power"] = getCreepCostRate(setups.miner.power) + getCreepCostRate(setups.miner.powerhealer);
+    ans["corridor_pickup"] = getCreepCostRate(setups.pickup);
 
-    ans["build"] = { profit: getRate("build") + getCreepCostRate(setups.miner.deposit), revenue: getRate("build") };
+    ans["build"] = getRate("build") + getCreepCostRate(setups.miner.deposit);
 
-    ans["defense_dmg"] = { profit: getRate("defense_dmg") };
-    ans["defense_repair"] = { profit: getRate("defense_repair") };
-    ans["defense_heal"] = { profit: getRate("defense_heal") };
-    ans["defense_swarms"] = { profit: getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer) };
+    ans["defense_dmg"] = getRate("defense_dmg");
+    ans["defense_repair"] = getRate("defense_repair");
+    ans["defense_heal"] = getRate("defense_heal");
+    ans["defense_swarms"] = getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer);
 
-    ans["export"] = { profit: getRate("export") + getRate("export local"), revenue: getRate("export") };
-    ans["import"] = { profit: getRate("import") + getRate("import local"), revenue: getRate("import") };
-    ans["terminal"] = { profit: getRate("terminal") };
-    ans["terminal"] = { profit: getRate("boosts") + getRate("lab"), revenue: getRate("boosts") };
-    ans["larva"] = { profit: getRate("larva") + + getCreepCostRate(setups.bootstrap), revenue: getRate("larva") };
-    ans["upkeep"] = { profit: + getCreepCostRate(setups.queen) };
+    ans["export"] = getRate("export") + getRate("export local");
+    ans["import"] = getRate("import") + getRate("import local");
+    ans["terminal"] = getRate("terminal");
+    ans["terminal"] = getRate("boosts") + getRate("lab");
+    ans["larva"] = getRate("larva") + + getCreepCostRate(setups.bootstrap);
+    ans["upkeep"] = + getCreepCostRate(setups.queen);
 
     return ans;
   }

@@ -38,8 +38,8 @@ export class RespawnCell extends Cell {
     super.update(["extensions", "spawns"]);
 
     // find free spawners
-    this.freeSpawns = _.filter(_.map(this.spawns), structure => !structure.spawning && !this.spawnDisrupted(structure));
-    this.freeSpawns.sort((a, b) => this.spawnEval(a) - this.spawnEval(b));
+    this.freeSpawns = _.filter(this.spawns, structure => !structure.spawning && !this.spawnDisrupted(structure));
+    this.freeSpawns.sort((a, b) => this.spawnEval(b) - this.spawnEval(a));
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
     let storageCell = this.hive.cells.storage;

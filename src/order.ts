@@ -708,7 +708,6 @@ export class FlagOrder {
     return this.flag.secondaryColor;
   }
 
-
   update() {
     this.flag = Game.flags[this.ref];
     this.acted = this.acted && this.prevpos === this.pos.to_str;

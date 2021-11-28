@@ -256,17 +256,17 @@ export class Visuals {
 
     ans.push(["  📈income"]);
     for (let ref in report)
-      if (Math.round(report[ref].profit * 100) > 0) {
-        overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      if (Math.round(report[ref] * 100) > 0) {
+        overAll += report[ref];
+        ans.push([ref, prep(report[ref])]);
       }
 
 
     ans.push(["  📉expenditure"]);
     for (let ref in report)
-      if (Math.round(report[ref].profit * 100) < 0) {
-        overAll += report[ref].profit;
-        ans.push([ref, report[ref].revenue !== undefined ? prep(report[ref].revenue!) : "", prep(report[ref].profit)]);
+      if (Math.round(report[ref] * 100) < 0) {
+        overAll += report[ref];
+        ans.push([ref, prep(report[ref])]);
       }
 
     ans.splice(2, 0, ["  💎🙌", "", prep(overAll)]);
@@ -408,6 +408,9 @@ export class Visuals {
         ` ${Apiary.intel.getInfo(hive.roomName).dangerlvlmax}`,
         this.getBeesAmount(hive.cells.defense.master)]);
 
+    if (hive.puller)
+      ans.push(["puller", `${hive.puller.depositSites.length}/${hive.puller.powerSites.length}`, this.getBeesAmount(hive.puller)]);
+
     let minSize = 0;
     let table = this.table(ans, this.anchor, undefined, minSize);
     this.changeAnchor(table.x, table.y);
@@ -467,8 +470,17 @@ export class Visuals {
     if (!hive.cells.factory)
       return;
     let fac = hive.cells.factory;
-    if (fac.commodityTarget)
-      this.updateAnchor(this.label(`⚒️ ${fac.prod ? fac.prod.res + " " + fac.prod.amount : "??"} -> ${fac.commodityTarget.res} ${fac.commodityTarget.amount}`, this.anchor));
+    if (fac.commodityTarget) {
+      let process = (ss: string) => {
+        let splt = ss.split("_");
+        if (splt.length > 1)
+          splt[0] = splt[0].slice(0, 6);
+        return splt.join(" ").slice(0, 15)
+      }
+      let prod = fac.prod ? process(fac.prod.res) + " " + fac.prod.plan : "??";
+      let target = process(fac.commodityTarget.res) + " " + fac.commodityTarget.amount;
+      this.updateAnchor(this.label(`⚒️ ${prod} -> ${target}`, this.anchor));
+    }
   }
 
   statsNukes(hive: Hive) {

@@ -19,12 +19,31 @@ export class DefenseCell extends Cell {
   nukeCoverReady: boolean = true;
   isBreached = false;
   master: SiegeMaster;
-  dmgAtPos: { [id: string]: number } = {}
+  dmgAtPos: { [id: string]: number } = {};
 
   constructor(hive: Hive) {
     super(hive, prefix.defenseCell + hive.room.name);
     this.updateNukes();
     this.master = new SiegeMaster(this);
+  }
+
+  get walls() {
+    let ans: (StructureWall | StructureRampart)[] = [];
+    let planner = Memory.cache.roomPlanner[this.hive.roomName];
+    let walls = (planner.constructedWall && planner.constructedWall.pos || []);
+    let ramps = (planner.rampart && planner.rampart.pos || [])
+    _.forEach(walls, p => {
+      let pos = new RoomPosition(p.x, p.y, this.hive.roomName)
+      let s = pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL)[0];
+      if (s)
+        ans.push(<StructureWall>s);
+    }); _.forEach(ramps, p => {
+      let pos = new RoomPosition(p.x, p.y, this.hive.roomName)
+      let s = pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART)[0];
+      if (s)
+        ans.push(<StructureRampart>s);
+    });
+    return ans;
   }
 
   updateNukes() {
@@ -365,14 +384,18 @@ export class DefenseCell extends Cell {
       healTargets = master.activeBees.filter(b => b.hits < b.hitsMax && b.pos.roomName === this.hive.roomName && (nonclose || b.pos.getRangeTo(this) < 10)).map(b => b.creep)
     };
 
-    let healTargets: Creep[] = [];
-    prepareHeal(this.master);
+    let healTargets: (Creep | PowerCreep)[] = [];
+    if (this.hive.cells.power) {
+      let powerManager = this.hive.cells.power.powerManagerBee;
+      if (powerManager && powerManager.hits < powerManager.hitsMax && powerManager.pos.roomName === this.hive.roomName)
+        healTargets = [powerManager.creep];
+    }
     prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master, this.hive.state === hiveStates.battle);
     prepareHeal(this.hive.builder);
     prepareHeal(this.hive.cells.excavation.master, this.hive.state === hiveStates.battle);
     prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master, this.hive.state === hiveStates.battle);
 
-    let healTarget: Creep | undefined;
+    let healTarget: Creep | PowerCreep | undefined;
     let toHeal = 0;
     if (healTargets.length) {
       healTarget = healTargets.reduce((prev, curr) => (curr.hitsMax - curr.hits > prev.hitsMax - prev.hits ? curr : prev));
@@ -403,14 +426,6 @@ export class DefenseCell extends Cell {
           || stats.hits <= attackPower
           || (!stats.heal && !enemy.pos.getEnteranceToRoom())))
         shouldAttack = true;
-      /*let healer: undefined | Creep;
-       let fisrtTower = _.filter(this.towers, t => t.store.getCapacity(RESOURCE_ENERGY) >= 10)[0];
-      if (shouldAttack && stats.hits + stats.heal - attackPower * 2 > 0 && fisrtTower
-        && stats.heal + stats.resist < attackPower - ATTACK_POWER * towerCoef(fisrtTower, enemy))
-        healer = enemy.pos.findInRange(FIND_HOSTILE_CREEPS, 1).filter(c => {
-          let stats = Apiary.intel.getStats(c).current;
-          return stats.dmgClose + stats.dmgRange < stats.heal;
-        })[0]; */
 
       let workingTower = false;
 
@@ -421,8 +436,7 @@ export class DefenseCell extends Cell {
       }
       if (healTarget) {
         let deadInfo = Apiary.intel.getComplexStats(healTarget).current;
-        let healTargetStats = Apiary.intel.getStats(healTarget).current;
-        if (deadInfo.dmgRange + deadInfo.dmgClose >= healTargetStats.hits) {
+        if (deadInfo.dmgRange + deadInfo.dmgClose >= Math.max(healTarget.hits, HEAL_POWER * Object.keys(this.towers).length)) {
           healTarget = undefined;
           toHeal = 0;
         }

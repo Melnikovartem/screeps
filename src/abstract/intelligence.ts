@@ -196,8 +196,8 @@ export class Intel {
     }
 
     // it is cached after first check
-    if (!Apiary.useBucket)
-      lag = Math.max(2, lag);
+    if (!Apiary.useBucket && lag >= 5)
+      lag *= 2;
 
     let returnLag = roomInfo.lastUpdated + lag >= Game.time;
     if (!returnLag && !(roomName in Game.rooms)) {
