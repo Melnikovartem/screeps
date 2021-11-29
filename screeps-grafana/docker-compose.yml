@@ -13,6 +13,8 @@ services:
     environment:
       GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
     env_file: docker-compose.env
+    logging:
+      driver: none
   statsd:
     image: ennexa/statsd
     links:
@@ -23,6 +25,8 @@ services:
     volumes:
      - /opt/graphite/conf
      - graphite_data:/opt/graphite/storage/whisper
+    logging:
+      driver: none
   grafana:
     image: grafana/grafana
     restart: always
@@ -32,3 +36,5 @@ services:
      - graphite
     ports:
      - "1337:3000"
+    logging:
+      driver: none
