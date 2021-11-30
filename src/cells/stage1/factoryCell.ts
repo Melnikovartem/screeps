@@ -2,7 +2,6 @@ import { Cell } from "../_Cell";
 
 import { prefix } from "../../enums";
 import { findOptimalResource } from "../../abstract/utils";
-import { BASE_MINERALS } from "./laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -22,7 +21,8 @@ export const COMPRESS_MAP = {
   [RESOURCE_ENERGY]: RESOURCE_BATTERY,
 }
 
-export const COMMON_COMMODITIES: CommodityConstant[] = [RESOURCE_COMPOSITE, RESOURCE_CRYSTAL, RESOURCE_LIQUID];
+type FactoryResourceConstant = CommodityConstant | MineralConstant | RESOURCE_GHODIUM | RESOURCE_ENERGY;
+export const COMMON_COMMODITIES: FactoryResourceConstant[] = [RESOURCE_COMPOSITE, RESOURCE_CRYSTAL, RESOURCE_LIQUID];
 
 /*
 let ss = '"metal", "biomass", "silicon", "mist", ';
@@ -32,8 +32,8 @@ for (const r in COMMODITIES)
 console .log(`[ ${ss}]`)
 */
 
-export const DEPOSIT_COMMODITIES: ResourceConstant[] = ["metal", "biomass", "silicon", "mist"];
-export const COMMODITIES_TO_SELL: ResourceConstant[] = DEPOSIT_COMMODITIES.concat(["composite", "crystal", "liquid", "wire", "switch", "transistor", "microchip", "circuit", "device", "cell", "phlegm", "tissue", "muscle", "organoid", "organism", "alloy", "tube", "fixtures", "frame", "hydraulics", "machine", "condensate", "concentrate", "extract", "spirit", "emanation", "essence"]);
+export const DEPOSIT_COMMODITIES: DepositConstant[] = ["metal", "biomass", "silicon", "mist"];
+export const COMMODITIES_TO_SELL = (<(FactoryResourceConstant | DepositConstant)[]>DEPOSIT_COMMODITIES).concat(["composite", "crystal", "liquid", "wire", "switch", "transistor", "microchip", "circuit", "device", "cell", "phlegm", "tissue", "muscle", "organoid", "organism", "alloy", "tube", "fixtures", "frame", "hydraulics", "machine", "condensate", "concentrate", "extract", "spirit", "emanation", "essence"]);
 
 type CommodityIngredient = DepositConstant | CommodityConstant | MineralConstant | RESOURCE_ENERGY | RESOURCE_GHODIUM;
 
@@ -44,8 +44,8 @@ export class FactoryCell extends Cell {
   master: undefined;
   sCell: StorageCell;
 
-  commodityRes?: CommodityConstant;
-  prod?: { res: CommodityConstant, plan: number };
+  commodityRes?: FactoryResourceConstant;
+  prod?: { res: FactoryResourceConstant, plan: number };
   resTarget: { [key in ResourceConstant]?: number } = {};
   patience: number = 0;
   patienceProd: number = 0;
@@ -61,7 +61,7 @@ export class FactoryCell extends Cell {
     // this.setCahe("commodityTarget", undefined);
   }
 
-  get commodityTarget(): undefined | { res: CommodityConstant, amount: number } {
+  get commodityTarget(): undefined | { res: FactoryResourceConstant, amount: number } {
     return this.fromCache("commodityTarget");
   }
 
@@ -69,7 +69,7 @@ export class FactoryCell extends Cell {
     this.toCache("commodityTarget", value);
   }
 
-  newCommodity(res: CommodityConstant, num: number): number {
+  newCommodity(res: FactoryResourceConstant, num: number): number {
     let recipe = COMMODITIES[res];
     num = Math.min(num, ..._.map(recipe.components, (amount, component) => Math.floor(this.sCell.getUsedCapacity(<CommodityIngredient>component) / amount)));
     if (num > 0)
@@ -85,11 +85,15 @@ export class FactoryCell extends Cell {
     this.possibleUncommon = false;
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       this.commodityTarget = undefined;
-      if (Game.time % 10 !== 8)
+      if (Game.time % 10 !== 8 && 2 % 1 === 3)
         return;
-      let targets: { res: CommodityConstant, amount: number }[] = [];
-      for (const r in COMMODITIES) {
-        let res = <CommodityConstant>r; // atually ResourceConstant
+      let targets: { res: FactoryResourceConstant, amount: number }[] = [];
+      let toCheck = Object.keys(COMMODITIES);
+      if (this.hive.resState[RESOURCE_ENERGY] < 0)
+        toCheck = [RESOURCE_ENERGY];
+
+      for (let i = 0; i < toCheck.length; ++i) {
+        let res = <FactoryResourceConstant>toCheck[i]; // atually ResourceConstant
         let recipe = COMMODITIES[res];
         if (recipe.level && recipe.level !== this.factory.level)
           continue;
@@ -116,13 +120,13 @@ export class FactoryCell extends Cell {
             if (amountInUse > 5000)
               num = 0;
           }
-        } else if (res in this.hive.resState) {
-          let balance = -this.hive.resState[res]! + (this.resTarget[res] || 0);
-          num = balance / recipe.amount;
-          if (BASE_MINERALS.includes(res) && num < -100) {
+        } else if (res === RESOURCE_ENERGY) {// (res in this.hive.resState) {
+          let balance = -(this.hive.resState[res] + 100000) + (this.resTarget[res] || 0);
+          num = Math.ceil(balance / recipe.amount);
+          /* if (res in COMPRESS_MAP && num < -100) {
             num = 5;
-            res = COMPRESS_MAP[<"H">res];
-          }
+            res = COMPRESS_MAP[res];
+          } */
         }
         if (num > 1)
           targets.push({ res: res, amount: Math.floor(num) * recipe.amount });
@@ -135,10 +139,10 @@ export class FactoryCell extends Cell {
         return;
       }
       this.patience = 0;
+      let getlvlPriority = (cc: { res: FactoryResourceConstant }) =>
+        COMMON_COMMODITIES.includes(cc.res) ? -2 :
+          (COMMODITIES[cc.res].level || (cc.res in COMPRESS_MAP ? 5 : (0 - _.filter(COMPRESS_MAP, r => r === cc.res).length)));
       this.commodityTarget = targets.reduce((prev, curr) => {
-        let getlvlPriority = (cc: { res: CommodityConstant }) =>
-          COMMON_COMMODITIES.includes(cc.res) ? -2 :
-            (COMMODITIES[cc.res].level || (cc.res in COMPRESS_MAP ? 5 : (0 - _.filter(COMPRESS_MAP, r => r === cc.res).length)));
         let ans = getlvlPriority(prev) - getlvlPriority(curr);
         if (ans === 0)
           ans = curr.amount - prev.amount;
@@ -169,7 +173,7 @@ export class FactoryCell extends Cell {
     }
   }
 
-  getCreateQue(res: CommodityConstant, amount: number, factoryLevel = this.factory.level): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
+  getCreateQue(res: FactoryResourceConstant, amount: number, factoryLevel = this.factory.level): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
     // prob should precal for each resource
     let ingredients: { [res in CommodityIngredient]?: number } = {};
     let createQue: CommodityConstant[] = [];
@@ -257,7 +261,7 @@ export class FactoryCell extends Cell {
         this.patienceProd = 0;
       }
     }
-    if (this.prod.plan < recipe.amount || !this.commodityTarget)
+    if (this.prod.plan < recipe.amount || !this.commodityTarget || this.hive.resState[RESOURCE_ENERGY] < 0 && this.prod.res !== RESOURCE_ENERGY)
       this.prod = undefined;
   }
 
@@ -280,14 +284,16 @@ export class FactoryCell extends Cell {
       this.prod.plan -= recipe.amount;
       if (this.commodityTarget && this.prod.res === this.commodityTarget.res)
         this.commodityTarget.amount -= recipe.amount;
-      if (Apiary.logger) {
-        for (const r in recipe.components) {
-          let res = <CommodityConstant>r;
-          let amount = recipe.components[res];
+      for (const r in recipe.components) {
+        let res = <FactoryResourceConstant>r;
+        let amount = recipe.components[res];
+        if (res in this.resTarget)
+          this.resTarget[res]! -= amount;
+        if (Apiary.logger)
           Apiary.logger.addResourceStat(this.hive.roomName, "factory", -amount, res);
-        }
-        Apiary.logger.addResourceStat(this.hive.roomName, "factory", COMMODITIES[this.prod.res].amount, this.prod.res);
       }
+      if (Apiary.logger)
+        Apiary.logger.addResourceStat(this.hive.roomName, "factory", COMMODITIES[this.prod.res].amount, this.prod.res);
     }
   }
 }

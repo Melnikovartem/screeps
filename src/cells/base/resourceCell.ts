@@ -121,6 +121,8 @@ export class ResourceCell extends Cell {
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
     if (this.roadTime === Infinity || this.roadTime === null)
       this.roadTime = this.pos.getTimeForPath(storagePos);
+    if (this.roadTime > 200)
+      this.operational = false
     if (this.restTime === Infinity || this.restTime === null)
       this.restTime = this.pos.getTimeForPath(this.hive.rest);
     if (this.operational) {

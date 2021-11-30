@@ -7,7 +7,6 @@ import type { Bee } from "../../bees/bee";
 import type { Hive } from "../../Hive";
 import type { StorageCell } from "./storageCell";
 
-export type BaseMineral = "H" | "O" | "Z" | "L" | "K" | "U" | "X";
 export type ReactionConstant = "G" | "OH" | "ZK" | "UL" | "LH" | "ZH" | "GH" | "KH" | "UH" | "LO" | "ZO" | "KO" | "UO" | "GO" | "LH2O" | "KH2O" | "ZH2O" | "UH2O" | "GH2O" | "LHO2" | "UHO2" | "KHO2" | "ZHO2" | "GHO2" | "XUH2O" | "XUHO2" | "XKH2O" | "XKHO2" | "XLH2O" | "XLHO2" | "XZH2O" | "XZHO2" | "XGH2O" | "XGHO2";
 export type BoostType = "harvest" | "build" | "dismantle" | "upgrade" | "attack" | "rangedAttack" | "heal" | "capacity" | "fatigue" | "damage";
 
@@ -15,12 +14,12 @@ export const BOOST_MINERAL: { [key in BoostType]: [ReactionConstant, ReactionCon
 export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = { "harvest": WORK, "build": WORK, "dismantle": WORK, "upgrade": WORK, "attack": ATTACK, "rangedAttack": RANGED_ATTACK, "heal": HEAL, "capacity": CARRY, "fatigue": MOVE, "damage": TOUGH };
 
 export const BASE_MINERALS: ResourceConstant[] = ["H", "K", "L", "U", "X", "O", "Z"];
-export const REACTION_MAP: { [key in ReactionConstant | BaseMineral]?: { res1: ReactionConstant | BaseMineral, res2: ReactionConstant | BaseMineral } } = {};
+export const REACTION_MAP: { [key in ReactionConstant | MineralConstant]?: { res1: ReactionConstant | MineralConstant, res2: ReactionConstant | MineralConstant } } = {};
 for (const res1 in REACTIONS) {
   for (const res2 in REACTIONS[res1])
-    REACTION_MAP[<ReactionConstant | BaseMineral>REACTIONS[res1][res2]] = {
-      res1: <ReactionConstant | BaseMineral>res1,
-      res2: <ReactionConstant | BaseMineral>res2,
+    REACTION_MAP[<ReactionConstant | MineralConstant>REACTIONS[res1][res2]] = {
+      res1: <ReactionConstant | MineralConstant>res1,
+      res2: <ReactionConstant | MineralConstant>res2,
     };
 }
 
@@ -29,14 +28,14 @@ for (const res1 in REACTIONS) {
 interface SynthesizeRequest {
   plan: number,
   res: ReactionConstant,
-  res1: ReactionConstant | BaseMineral,
-  res2: ReactionConstant | BaseMineral,
+  res1: ReactionConstant | MineralConstant,
+  res2: ReactionConstant | MineralConstant,
   cooldown: number,
 };
 
 export type BoostRequest = { type: BoostType, amount?: number, lvl: 0 | 1 | 2 }
 export type BoostInfo = { type: BoostType, res: ReactionConstant, amount: number, lvl: 0 | 1 | 2 };
-type LabState = "idle" | "production" | "source" | ReactionConstant;
+type LabState = "idle" | "production" | "source" | "unboosted" | ReactionConstant;
 @profile
 export class LaboratoryCell extends Cell {
   laboratories: { [id: string]: StructureLab } = {};
@@ -50,7 +49,7 @@ export class LaboratoryCell extends Cell {
   patience: number = 0;
   patienceProd: number = 0;
 
-  checkDropped: string[] = [];
+  positions: RoomPosition[] = [];
 
   constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + hive.room.name);
@@ -60,6 +59,16 @@ export class LaboratoryCell extends Cell {
     this.setCahe("boostLabs", {});
     this.setCahe("boostRequests", {});
     // this.setCahe("synthesizeTarget", undefined);
+  }
+
+  bakeMap() {
+    this.positions = [];
+    _.forEach(this.laboratories, l => {
+      _.forEach(l.pos.getOpenPositions(true), p => {
+        if (!this.positions.filter(pp => pp.x === p.x && pp.y === p.y))
+          this.positions.push(p);
+      });
+    });
   }
 
   get labStates(): { [id: string]: LabState } {
@@ -163,15 +172,15 @@ export class LaboratoryCell extends Cell {
     }
   }
 
-  getCreateQue(res: ResourceConstant): [ReactionConstant[], BaseMineral[]] {
+  getCreateQue(res: ResourceConstant): [ReactionConstant[], MineralConstant[]] {
     // prob should precal for each resource
-    let ingredients: BaseMineral[] = [];
+    let ingredients: MineralConstant[] = [];
     let createQue: ReactionConstant[] = [];
 
     let dfs = (res: ResourceConstant) => {
       let recipe = REACTION_MAP[<ReactionConstant>res];
       if (!recipe) {
-        ingredients.push(<BaseMineral>res);
+        ingredients.push(<MineralConstant>res);
         return;
       }
       createQue.push(<ReactionConstant>res);
@@ -202,7 +211,7 @@ export class LaboratoryCell extends Cell {
     let prodAmount: { [id: string]: number } = {}
     for (let id in this.laboratories)
       prodAmount[id] = _.filter(this.laboratories, l => this.laboratories[id].pos.getRangeTo(l) <= 2).length;
-    let comp = (prev: StructureLab, curr: StructureLab, res: BaseMineral | ReactionConstant) => {
+    let comp = (prev: StructureLab, curr: StructureLab, res: MineralConstant | ReactionConstant) => {
       let cond = prodAmount[prev.id] - prodAmount[curr.id];
       if (cond === 0)
         cond = prev.store.getUsedCapacity(res) - curr.store.getUsedCapacity(res);
@@ -320,6 +329,8 @@ export class LaboratoryCell extends Cell {
         if (!lab)
           lab = getLab("idle", false);
         if (!lab)
+          lab = getLab("unboosted", false);
+        if (!lab)
           lab = getLab("source", false);
         if (lab) {
           this.boostLabs[r.res!] = lab.id;
@@ -383,6 +394,11 @@ export class LaboratoryCell extends Cell {
     }
     let state = this.labStates[l.id];
     switch (state) {
+      case "unboosted":
+        let resources = l.pos.findInRange(FIND_DROPPED_RESOURCES, 1);
+        this.sCell.requestToStorage(resources, 2, undefined);
+        if (Apiary.logger)
+          _.forEach(resources, r => Apiary.logger!.addResourceStat(this.hive.roomName, "unboost", r.amount, r.resourceType));
       case undefined:
         this.labStates[l.id] = "idle";
       case "idle":
@@ -405,7 +421,7 @@ export class LaboratoryCell extends Cell {
           this.updateLabState(l, rec + 1);
           break;
         }
-        let r: ReactionConstant | BaseMineral;
+        let r: ReactionConstant | MineralConstant;
         if (l.id === this.prod.lab1) {
           r = this.prod.res1;
         } else if (l.id === this.prod.lab2) {
@@ -499,20 +515,12 @@ export class LaboratoryCell extends Cell {
     for (const ref in this.boostRequests)
       if (this.boostRequests[ref].lastUpdated + 10 > Game.time)
         delete this.boostRequests[ref];
-
-    for (let i = 0; i < this.checkDropped.length; ++i) {
-      let lab = <StructureLab | undefined>Game.getObjectById(this.checkDropped[i]);
-      if (!lab)
-        continue;
-      _.forEach(lab.pos.getOpenPositions(true), p => this.sCell.requestToStorage(p.lookFor(LOOK_RESOURCES), 2, undefined));
-    }
-    this.checkDropped = [];
   }
 
-  getUnboostLab() {
+  getUnboostLab(ticksToLive: number) {
     let lab: StructureLab | undefined;
     _.some(this.laboratories, l => {
-      if (l.cooldown > (this.prod && this.prod.cooldown || 20))
+      if (l.cooldown > ticksToLive)
         return false;
       lab = l;
       return true;
@@ -521,23 +529,20 @@ export class LaboratoryCell extends Cell {
   }
 
   run() {
-    let unboosted: string[] = [];
-    _.forEach(this.laboratories, l => {
-      if (l.cooldown)
-        return;
-      let creep = l.pos.findInRange(FIND_CREEPS, 1).filter(c => c.ticksToLive && c.ticksToLive < 20
-        && c.body.filter(b => b.boost).length && !unboosted.includes(c.name))[0];
-      if (creep) {
-        let ans = l.unboostCreep(creep);
-        if (ans === OK) {
-          unboosted.push(creep.name);
-          if (this.labStates[l.id] === "production")
-            this.labStates[l.id] = "idle";
-          this.checkDropped.push(l.id);
-          let bee = <Bee>Apiary.bees[creep.name];
-          if (bee)
-            bee.boosted = false;
-        }
+    let creepsToUnboost: Creep[] = [];
+    _.forEach(this.positions, p => {
+      let creep = p.lookFor(LOOK_CREEPS).filter(c => c.ticksToLive && c.ticksToLive < 20
+        && c.body.filter(b => b.boost).length)[0];
+      if (creep)
+        creepsToUnboost.push(creep);
+    });
+    _.forEach(creepsToUnboost, creep => {
+      let lab = _.filter(this.laboratories, l => !l.cooldown && l.pos.getRangeTo(creep) <= 1 && this.labStates[l.id] !== "unboosted")[0];
+      if (lab && lab.unboostCreep(creep) === OK) {
+        this.labStates[lab.id] = "unboosted";
+        let bee = <Bee>Apiary.bees[creep.name];
+        if (bee)
+          bee.boosted = false;
       }
     });
 

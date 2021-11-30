@@ -378,22 +378,24 @@ export class DefenseCell extends Cell {
   run() {
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
 
-    let prepareHeal = (master: { activeBees: Bee[] } | undefined, nonclose = true) => {
+    let prepareHeal = (master: { activeBees: Bee[] } | undefined, nonclose = this.hive.state === hiveStates.battle) => {
       if (healTargets.length || !master)
         return;
       healTargets = master.activeBees.filter(b => b.hits < b.hitsMax && b.pos.roomName === this.hive.roomName && (nonclose || b.pos.getRangeTo(this) < 10)).map(b => b.creep)
     };
 
     let healTargets: (Creep | PowerCreep)[] = [];
-    if (this.hive.cells.power) {
+    prepareHeal(this.master);
+    if (this.hive.cells.power && !healTargets.length) {
       let powerManager = this.hive.cells.power.powerManagerBee;
       if (powerManager && powerManager.hits < powerManager.hitsMax && powerManager.pos.roomName === this.hive.roomName)
         healTargets = [powerManager.creep];
     }
-    prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master, this.hive.state === hiveStates.battle);
-    prepareHeal(this.hive.builder);
-    prepareHeal(this.hive.cells.excavation.master, this.hive.state === hiveStates.battle);
-    prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master, this.hive.state === hiveStates.battle);
+    prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master);
+    prepareHeal(this.hive.builder, true);
+    prepareHeal(this.hive.cells.excavation.master);
+    prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master);
+    prepareHeal(this.hive.puller);
 
     let healTarget: Creep | PowerCreep | undefined;
     let toHeal = 0;

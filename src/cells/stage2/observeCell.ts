@@ -20,12 +20,10 @@ export class ObserveCell extends Cell {
     super(hive, prefix.observerCell + hive.room.name);
     this.sCell = sCell;
     this.obeserver = obeserver;
-    if (!this.corridorRooms || !this.corridorRooms.length) {
-      this.toCache("corridorRooms", []);
-      this.updateRoomsToCheck();
-    }
-    if (!this.prevRoom)
-      this.toCache("prevRoom", "");
+
+    this.setCahe("corridorRooms", []);
+    this.setCahe("prevRoom", "");
+
     if (!this.corridorRooms.length)
       this.updateRoomsToCheck();
   }
@@ -115,8 +113,8 @@ export class ObserveCell extends Cell {
   powerCheck(room: Room) {
     _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
       let open = power.pos.getOpenPositions(true).length;
-      let dmgPerSecond = (ATTACK_POWER * 20) * open;
-      if (power.hits / dmgPerSecond >= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive) * 50)
+      let dmgPerSecond = ATTACK_POWER * 20 * open;
+      if (power.hits / dmgPerSecond <= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive) * 50)
         return;
       this.createOrder(power.pos, prefix.power + power.id, COLOR_YELLOW);
     });

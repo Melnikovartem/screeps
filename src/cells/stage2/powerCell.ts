@@ -40,17 +40,29 @@ export class PowerCell extends Cell {
       return;
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > POWER_SPAWN_POWER_CAPACITY / 2)
-      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER, undefined, true);
+      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_POWER);
+    else {
+      let req = this.sCell.requests[this.powerSpawn.id]
+      if (req && req.resource === RESOURCE_POWER)
+        delete this.sCell.requests[this.powerSpawn.id];
+    }
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_CAPACITY / 2)
-      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_ENERGY, undefined, true);
+      this.sCell.requestFromStorage([this.powerSpawn], 5, RESOURCE_ENERGY);
+    else {
+      let req = this.sCell.requests[this.powerSpawn.id]
+      if (req && req.resource === RESOURCE_ENERGY)
+        delete this.sCell.requests[this.powerSpawn.id];
+    }
   }
 
   run() {
-    if (this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) > 0 && this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_RATIO)
+    if (this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) > 0
+      && this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > POWER_SPAWN_ENERGY_RATIO
+      && this.hive.resState[RESOURCE_ENERGY] > 0)
       if (this.powerSpawn.processPower() == OK && Apiary.logger) {
-        Apiary.logger.addResourceStat(this.hive.roomName, "power_upgrade", 1, RESOURCE_POWER)
-        Apiary.logger.addResourceStat(this.hive.roomName, "power_upgrade", 1 * POWER_SPAWN_ENERGY_RATIO, RESOURCE_POWER)
+        Apiary.logger.addResourceStat(this.hive.roomName, "power_upgrade", -1, RESOURCE_POWER)
+        Apiary.logger.addResourceStat(this.hive.roomName, "power_upgrade", -1 * POWER_SPAWN_ENERGY_RATIO, RESOURCE_ENERGY)
       }
   }
 }
