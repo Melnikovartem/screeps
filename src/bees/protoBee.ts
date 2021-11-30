@@ -135,8 +135,8 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   }
 
   getFleeOpt(opt: TravelToOptions) {
-    if (!opt.maxRooms || opt.maxRooms > 2)
-      opt.maxRooms = 2;
+    if (!opt.maxRooms || opt.maxRooms > 4)
+      opt.maxRooms = 4;
     opt.stuckValue = 1;
     let roomCallback = opt.roomCallback;
     opt.roomCallback = (roomName, matrix) => {

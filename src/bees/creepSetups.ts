@@ -26,7 +26,8 @@ export class CreepSetup {
   ignoreMove?: boolean;
   scheme: 0 | 1 | 2;
 
-  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best", scheme: CreepSetup["scheme"] = 1, ignoreCarry?: boolean, ignoreMove?: boolean) {
+  constructor(setupName: string, bodySetup: BodySetup, moveMax: number | "best"
+    , scheme: CreepSetup["scheme"] = 1, ignoreCarry?: boolean, ignoreMove?: boolean) {
     this.name = setupName;
 
     this.moveMax = moveMax;

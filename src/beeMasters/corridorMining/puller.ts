@@ -1,22 +1,25 @@
 import { Master } from "../_Master";
 import { DepositMinerMaster } from "./miners";
+import { PowerMaster } from "./power";
 
 import { beeStates, prefix } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import type { DepositMaster } from "./deposit";
-import type { PowerMaster } from "./power";
 import type { Hive } from "../../Hive";
 import type { Bee } from "../../bees/bee";
 
 
 @profile
-export class DepositPullerMaster extends Master {
+export class PullerMaster extends Master {
   movePriority = <4>4;
+  maxRoadTime: number = 0;
   depositSites: DepositMaster[] = [];
   powerSites: PowerMaster[] = [];
   freePullers: Bee[] = [];
+
+  sitesON: (DepositMaster | PowerMaster)[] = [];
 
   constructor(hive: Hive) {
     super(hive, prefix.puller + hive.roomName);
@@ -35,6 +38,7 @@ export class DepositPullerMaster extends Master {
     super.update();
 
     let workingPowerSites = this.powerSites.filter(p => p.maxSpawns);
+    this.sitesON = workingPowerSites.filter(p => p.operational).slice(0, 1);
     if (workingPowerSites.length)
       _.forEach(this.powerSites, p => {
         if (!p.maxSpawns)
@@ -47,6 +51,12 @@ export class DepositPullerMaster extends Master {
           });
       });
 
+
+    let workingDeposits = this.depositSites.filter(d => d.operational);
+    if (workingDeposits.length > 1)
+      workingDeposits = workingDeposits.slice(0, 1);
+    this.sitesON = this.sitesON.concat(workingDeposits);
+
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.chill) {
         let newTarget = this.minersToMove[0];
@@ -58,14 +68,19 @@ export class DepositPullerMaster extends Master {
       }
     });
 
+    if (this.hive.resState[RESOURCE_ENERGY] < 50000)
+      this.sitesON = this.sitesON.filter(m => m instanceof PowerMaster && m.beesAmount);
+
     let possibleTargets = this.minersToMove.length;
-    let maxRoadTime = 0;
+    this.maxRoadTime = 0;
 
     this.freePullers = _.filter(this.bees, b => b.state === beeStates.chill && b.pos.getRoomRangeTo(this.hive) < 3);
 
     _.forEach(this.depositSites, m => {
-      maxRoadTime = Math.max(maxRoadTime, m.roadTime);
-      if (m.miners.waitingForBees || m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.operational)
+      if (!m.operational)
+        return;
+      this.maxRoadTime = Math.max(this.maxRoadTime, m.roadTime);
+      if (m.miners.waitingForBees || m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.shouldSpawn)
         possibleTargets += Math.max(1, m.miners.targetBeeCount - m.miners.beesAmount);
       if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
         this.freePullers.pop();
@@ -73,13 +88,15 @@ export class DepositPullerMaster extends Master {
 
     this.targetBeeCount = Math.min(possibleTargets, 4);
 
-    if (possibleTargets &&
-      this.checkBees(false, CREEP_LIFE_TIME - maxRoadTime)
-      && this.hive.resState[RESOURCE_ENERGY] > 0 && maxRoadTime)
+    if (this.checkBees())
       this.wish({
         setup: setups.puller,
         priority: 8,
       });
+  }
+
+  checkBees(): boolean {
+    return super.checkBees(false, CREEP_LIFE_TIME - this.maxRoadTime) && !!this.maxRoadTime;
   }
 
   get minersToMove() {

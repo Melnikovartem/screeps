@@ -26,12 +26,14 @@ export class DepositMinerMaster extends Master {
       return;
 
     if (this.checkBees(false, CREEP_LIFE_TIME - this.parent.roadTime)
-      && this.parent.operational
+      && this.parent.shouldSpawn
       && this.hive.puller.removeFreePuller(this.parent.roadTime))
       this.wish({
         setup: setups.miner.deposit,
         priority: 8,
       });
+    else if (this.waitingForBees)
+      this.hive.puller.removeFreePuller(this.parent.roadTime);
   }
 
   run() {

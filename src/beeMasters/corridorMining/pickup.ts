@@ -44,7 +44,8 @@ export class DepositPickupMaster extends Master {
 
   update() {
     super.update();
-    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount && (this.parent.operational || _.filter(this.parent.bees, b => b.ticksToLive > CREEP_LIFE_TIME / 2).length)) {
+    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount
+      && (this.parent.shouldSpawn || _.filter(this.parent.miners.bees, b => b.ticksToLive > CREEP_LIFE_TIME / 2).length)) {
       this.wish({
         setup: this.setup,
         priority: 6,
@@ -75,7 +76,7 @@ export class DepositPickupMaster extends Master {
           pickingup = true;
           let overproduction: undefined | Resource;
           _.some(this.parent.positions, p => {
-            overproduction = p.pos.lookFor(LOOK_RESOURCES)[0];
+            overproduction = p.pos.lookFor(LOOK_RESOURCES).filter(r => r.resourceType !== RESOURCE_ENERGY)[0];
             return overproduction;
           });
           if (overproduction) {
@@ -84,11 +85,11 @@ export class DepositPickupMaster extends Master {
           }
           let tomb: undefined | Tombstone;
           _.some(this.parent.positions, p => {
-            tomb = p.pos.lookFor(LOOK_TOMBSTONES).filter(t => t.store.getUsedCapacity() > 0)[0];
+            tomb = p.pos.lookFor(LOOK_TOMBSTONES).filter(t => t.store.getUsedCapacity() > t.store.getUsedCapacity(RESOURCE_ENERGY))[0];
             return tomb;
           });
           if (tomb) {
-            bee.withdraw(tomb, findOptimalResource(tomb.store));
+            bee.withdraw(tomb, <ResourceConstant>Object.keys(tomb.store).filter(r => r !== RESOURCE_ENERGY)[0]);
             break;
           }
           let beeToPickUp = this.parent.miners.activeBees.filter(b => b.store.getUsedCapacity() > 0)[0];

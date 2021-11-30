@@ -6,6 +6,7 @@ import { DepositPickupMaster } from "./pickup";
 
 import { profile } from "../../profiler/decorator";
 import type { FlagOrder } from "../../order";
+import type { PullerMaster } from "./puller";
 
 //first tandem btw
 @profile
@@ -22,8 +23,11 @@ export class DepositMaster extends SwarmMaster {
   rest: RoomPosition;
   workAmount: number;
 
-  constructor(order: FlagOrder) {
+  parent: PullerMaster;
+
+  constructor(order: FlagOrder, parent: PullerMaster) {
     super(order);
+    this.parent = parent;
     this.order.memory.extraInfo = 0;
     this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });
     this.miners = new DepositMinerMaster(this);
@@ -37,6 +41,11 @@ export class DepositMaster extends SwarmMaster {
 
   get roadTime() {
     return <number>this.order.memory.extraInfo;
+  }
+
+  get shouldSpawn() {
+
+    return this.operational && this.parent.sitesON.includes(this);
   }
 
   update() {

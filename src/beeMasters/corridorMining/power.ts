@@ -7,6 +7,7 @@ import { makeId } from "../../abstract/utils";
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { FlagOrder } from "../../order";
+import type { PullerMaster } from "./puller";
 
 //first tandem btw
 @profile
@@ -17,12 +18,17 @@ export class PowerMaster extends SwarmMaster {
   target: StructurePowerBank | undefined;
   movePriority = <1>1;
   positions: { pos: RoomPosition }[];
+  operational: boolean = false;
 
-  constructor(order: FlagOrder) {
+  parent: PullerMaster;
+
+  constructor(order: FlagOrder, parent: PullerMaster) {
     super(order);
     this.order.memory.extraInfo = 0;
-    if (this.hive.puller)
-      this.hive.puller.powerSites.push(this);
+
+    parent.powerSites.push(this);
+    this.parent = parent;
+
     this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });
     this.targetBeeCount = this.positions.length * 2;
     this.maxSpawns = Infinity;
@@ -33,7 +39,11 @@ export class PowerMaster extends SwarmMaster {
   }
 
   get pickupTime() {
-    return MAX_CREEP_SIZE * 3 + this.roadTime;
+    return MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
+  }
+
+  get shouldSpawn() {
+    return this.operational && this.parent.sitesON.includes(this);
   }
 
   newBee(bee: Bee) {
@@ -46,10 +56,23 @@ export class PowerMaster extends SwarmMaster {
 
   update() {
     super.update();
+
+    if (!this.roadTime)
+      this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
+
     _.forEach(this.knights, knight => {
-      let healer = <Bee | undefined>knight.pos.findClosest(this.healers.filter(h => Math.abs(h.ticksToLive - knight.ticksToLive) < Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3)));
-      if (healer || knight.ticksToLive < this.roadTime) {
+      let goodHealers;
+      if (knight.target)
+        goodHealers = [this.bees[knight.target]];
+      else
+        goodHealers = this.healers.filter(h => Math.abs(h.ticksToLive - knight.ticksToLive) < Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3)
+          && (!h.target || !this.bees[h.target]));
+      let healer = <Bee | undefined>knight.pos.findClosest(goodHealers);
+      if (healer || knight.ticksToLive < this.roadTime || knight.target) {
+        knight.target = "None";
         if (healer) {
+          healer.target = knight.ref;
+          knight.target = healer.ref;
           let healerIndex = this.healers.indexOf(healer);
           this.healers.splice(healerIndex, 1);
         }
@@ -67,17 +90,14 @@ export class PowerMaster extends SwarmMaster {
         this.duplets[i][1] = this.bees[healer.ref];
     }
 
-    let shouldSpawn = true;
+    this.operational = true;
     if (this.pos.roomName in Game.rooms) {
-      if (!this.roadTime)
-        this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
       this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
-
       if (!this.target) {
         let res = this.pos.lookFor(LOOK_RESOURCES)[0];
         if (res)
           this.callPickUp(res.amount);
-        shouldSpawn = false;
+        this.operational = false;
         this.maxSpawns = 0;
         if (!this.pos.isFree(true))
           this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
@@ -86,20 +106,24 @@ export class PowerMaster extends SwarmMaster {
         if (this.target.hits / dmgCurrent <= this.pickupTime)
           this.callPickUp(this.target.power);
       }
-    } else if (!this.target && this.hive.cells.observe)
+    } else if (!this.target && this.hive.cells.observe) {
       Apiary.requestSight(this.pos.roomName);
+      this.operational = false;
+    }
 
-    if (this.target && shouldSpawn) {
+    if (this.target && this.operational) {
       let decay = this.target.ticksToDecay;
       let dmgFuture = ATTACK_POWER * 20 * _.sum(this.duplets, dd => !dd[0] ? 0 :
         Math.min(decay, dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)));
       let dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
-      shouldSpawn = this.target.hits - dmgFuture > 0 && decay > this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
+      this.operational = this.target.hits - dmgFuture > 0 && decay > this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
         && this.target.hits / dmgPerSecond <= decay - (this.activeBees.length ? 0 : this.roadTime);
     }
 
-    if (this.checkBees(false, CREEP_LIFE_TIME - this.roadTime - 30) && shouldSpawn) {
+    if (this.checkBees(false, CREEP_LIFE_TIME - this.roadTime - 30) && this.shouldSpawn) {
       let balance = this.healers.filter(b => b.ticksToLive > this.roadTime * 2).length - this.knights.filter(b => b.ticksToLive > this.roadTime * 2).length;
+      // if (balance === 0 && this.hive.resState[RESOURCE_ENERGY] < 100000)
+      //  return;
       if (balance <= 0)
         this.wish({
           setup: setups.miner.powerhealer,
@@ -123,8 +147,12 @@ export class PowerMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.chill)
-        bee.goRest(this.hive.rest);
+      switch (bee.state) {
+        case beeStates.chill:
+          if (!bee.target)
+            bee.goRest(this.hive.rest);
+          break;
+      }
     });
 
     _.forEach(this.duplets, (couple => {
@@ -135,15 +163,19 @@ export class PowerMaster extends SwarmMaster {
           knight.state = beeStates.work;
           healer.state = beeStates.work;
         } else {
-          knight.goRest(healer.pos, { movingTarget: true });
-          healer.goRest(knight.pos, { movingTarget: true });
+          knight.goTo(healer.pos, { range: 1 });
+          healer.goTo(knight.pos, { range: 1 });
+          return;
         }
       }
 
+      let chill = false;
       if (knight && knight.state === beeStates.work) {
-        let target: Creep | PowerCreep | Structure | undefined = this.target;
+        let target: Creep | PowerCreep | Structure | undefined;
+        if (knight.pos.roomName === this.pos.roomName)
+          target = this.target;
         let enemy = Apiary.intel.getEnemy(knight.pos, 20);
-        if (enemy && knight.pos.getRangeTo(enemy) < 3 || !target)
+        if (enemy && knight.pos.getRangeTo(enemy) < 3 || (knight.pos.roomName === this.pos.roomName && !target))
           target = enemy;
         if (target) {
           if (target instanceof StructurePowerBank) {
@@ -153,8 +185,10 @@ export class PowerMaster extends SwarmMaster {
                   : this.positions.filter(p => !this.activeBees.filter(b => b.pos.equal(p) && b.getActiveBodyParts(ATTACK)).length)[0];
                 if (pos)
                   knight.goTo(pos, { useFindRoute: true, obstacles: this.positions.filter(p => !p.pos.equal(pos)) });
-                else
+                else {
                   knight.goTo(this.pos, { range: 3 });
+                  chill = true;
+                }
               } else if (knight.hits > knight.hitsMax * 0.5)
                 knight.attack(target);
               else if (!healer && !this.pos.getOpenPositions(false).length)
@@ -191,18 +225,16 @@ export class PowerMaster extends SwarmMaster {
           if (knight) {
             if (!healer.pos.isNearTo(knight))
               healer.goTo(knight.pos, { movingTarget: true });
-            else {
-              if (knight.pos.isNearTo(this)) {
-                let poss;
-                if (healer.pos.isNearTo(this))
-                  poss = knight.pos.getOpenPositions(true);
-                if (poss && poss.length)
-                  healer.goTo(poss.reduce((prev, curr) => curr.getRangeTo(this) > prev.getRangeTo(this) ? curr : prev), { obstacles: this.positions });
-                else
-                  healer.goRest(knight.pos);
-              } else
-                healer.goTo(knight.pos);
-            }
+            else if (knight.pos.isNearTo(this)) {
+              let poss;
+              if (healer.pos.isNearTo(this))
+                poss = knight.pos.getOpenPositions(true);
+              if (poss && poss.length)
+                healer.goTo(poss.reduce((prev, curr) => curr.getRangeTo(this) > prev.getRangeTo(this) ? curr : prev), { obstacles: this.positions });
+              else
+                healer.goRest(knight.pos);
+            } else if (!chill)
+              healer.goTo(knight.pos);
           } else
             healer.goRest(this.pos, { range: 3 });
       }

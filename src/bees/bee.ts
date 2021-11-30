@@ -11,6 +11,8 @@ export class Bee extends ProtoBee<Creep> {
   boosted = false;
   lifeTime: number;
 
+  workMax: number;
+
   pulledPos: RoomPosition | undefined = undefined;
 
   // for now it will be forever binded
@@ -19,6 +21,7 @@ export class Bee extends ProtoBee<Creep> {
     this.creep = creep;
     this.boosted = !!this.body.filter(b => b.boost).length;
     this.lifeTime = this.getBodyParts(CLAIM) ? CREEP_CLAIM_LIFE_TIME : CREEP_LIFE_TIME;
+    this.workMax = this.getBodyParts(WORK);
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
   }
