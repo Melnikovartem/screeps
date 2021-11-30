@@ -4,8 +4,8 @@ import { Logger } from "../convenience/logger";
 @profile
 export class Mem {
   static init() {
-    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {} };
-    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
+    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {}, war: { siedgeInfo: {} } };
+    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20 };
 
     for (const roomName in Memory.cache.hives) {
       let room = Game.rooms[roomName];
@@ -18,8 +18,8 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = undefined;
-    Memory.cache = { intellegence: {}, roomPlanner: Memory.cache.roomPlanner || {}, hives: {} };
-    Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0 };
+    Memory.cache = { intellegence: {}, roomPlanner: Memory.cache.roomPlanner || {}, hives: {}, war: { siedgeInfo: {} } };
+    Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20 };
 
     Logger.init(true);
   }

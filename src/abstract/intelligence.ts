@@ -338,9 +338,12 @@ export class Intel {
         let dangerlvl: DangerLvl = 0;
         switch (s.structureType) {
           case STRUCTURE_INVADER_CORE:
-            if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral)
-              dangerlvl = 9;
-            else
+            if (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral) {
+              if (s.effects && s.effects.filter(e => e.effect === EFFECT_INVULNERABILITY)[0])
+                dangerlvl = 0;
+              else
+                dangerlvl = 9;
+            } else
               dangerlvl = 3;
             break;
           case STRUCTURE_TOWER:

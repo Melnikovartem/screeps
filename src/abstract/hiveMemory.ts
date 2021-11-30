@@ -28,10 +28,7 @@ export interface HiveLog {
   energyReport: { [id: string]: number },
   resourceBalance: {
     [key in ResourceConstant]?: {
-      [id: string]: {
-        amount: number,
-        time: number,
-      }
+      [id: string]: number,
     }
   }
 }

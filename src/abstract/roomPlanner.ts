@@ -1,4 +1,4 @@
-import { makeId } from "./utils";
+import { makeId, getEnterances } from "./utils";
 import { roomStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
@@ -253,36 +253,7 @@ export class RoomPlanner {
     if (!this.activePlanning[anchor.roomName])
       this.toActive(anchor, undefined, [STRUCTURE_WALL, STRUCTURE_RAMPART]);
 
-    let terrain = Game.map.getRoomTerrain(anchor.roomName);
-    let enterances = [];
-    for (let y in { 0: 1, 49: 1 }) {
-      let start = -1;
-      let end = -1;
-      for (let x = 0; x <= 49; ++x)
-        if (terrain.get(x, +y) !== TERRAIN_MASK_WALL) {
-          if (start === -1)
-            start = x;
-          end = x;
-        } else if (start !== -1) {
-          let pos = new RoomPosition(start + Math.round((end - start) / 2), +y, anchor.roomName);
-          enterances.push(pos);
-          start = -1;
-        }
-    }
-    for (let x in { 0: 1, 49: 1 }) {
-      let start = -1;
-      let end = -1;
-      for (let y = 0; y <= 49; ++y)
-        if (terrain.get(+x, y) !== TERRAIN_MASK_WALL) {
-          if (start === -1)
-            start = y;
-          end = y;
-        } else if (start !== -1) {
-          let pos = new RoomPosition(+x, start + Math.round((end - start) / 2), anchor.roomName);
-          enterances.push(pos);
-          start = -1;
-        }
-    }
+    let enterances = getEnterances(anchor.roomName)
     _.forEach(enterances, e => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
         context: `blocking off ${e}`,
