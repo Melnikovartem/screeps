@@ -118,7 +118,7 @@ export class PickupMaster extends SwarmMaster {
           let res = findOptimalResource(bee.store);
           let ans = bee.transfer(storage, res);
           if (ans === OK && Apiary.logger)
-            Apiary.logger.resourceTransfer(this.hive.roomName, res === RESOURCE_POWER ? "power mining" : "pickup", bee.store, storage.store, res, 1);
+            Apiary.logger.resourceTransfer(this.hive.roomName, res === RESOURCE_POWER ? "power_mining" : "pickup", bee.store, storage.store, res, 1);
           break;
         case beeStates.boosting:
           break;

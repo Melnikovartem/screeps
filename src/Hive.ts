@@ -11,7 +11,7 @@ import { ObserveCell } from "./cells/stage2/observeCell";
 import { PowerCell } from "./cells/stage2/powerCell";
 
 import { BuilderMaster } from "./beeMasters/economy/builder";
-import { DepositPullerMaster } from "./beeMasters/corridorMining/puller";
+import { PullerMaster } from "./beeMasters/corridorMining/puller";
 
 import { makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
@@ -108,7 +108,7 @@ export class Hive {
   spawOrders: { [id: string]: SpawnOrder } = {};
 
   readonly builder?: BuilderMaster;
-  readonly puller?: DepositPullerMaster;
+  readonly puller?: PullerMaster;
 
   readonly phase: 0 | 1 | 2;
   // 0 up to storage tech
@@ -128,7 +128,7 @@ export class Hive {
   resTarget: { "energy": number } & ResTarget = {
     // energy
     [RESOURCE_ENERGY]: HIVE_ENERGY,
-
+    [BOOST_MINERAL.harvest[0]]: HIVE_MINERAL * 2, // effective by CPU mining
     [BOOST_MINERAL.build[2]]: HIVE_MINERAL,
     // cheap but good
     // [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL / 2,
@@ -194,17 +194,20 @@ export class Hive {
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
       } else {
         this.phase = 2;
-        this.puller = new DepositPullerMaster(this);
+        this.puller = new PullerMaster(this);
 
         // power mining
-        this.resTarget[BOOST_MINERAL.attack[0]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.attack[0]] = HIVE_MINERAL * 2;
 
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
 
         this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.rangedAttack[2]] = HIVE_MINERAL;
+        this.resTarget[BOOST_MINERAL.damage[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.fatigue[2]] = HIVE_MINERAL;
+
+        this.resTarget[RESOURCE_BATTERY] = 5000;
 
         let obeserver: StructureObserver | undefined;
         let powerSpawn: StructurePowerSpawn | undefined;
@@ -335,8 +338,11 @@ export class Hive {
       }
     });
 
-    if (this.phase > 0 && bake)
+    if (this.phase > 0 && bake) {
       this.cells.spawn.bakePriority();
+      if (this.cells.lab)
+        this.cells.lab.bakeMap();
+    }
   }
 
   getBuildTarget(pos: RoomPosition | { pos: RoomPosition }, ignore?: "ignoreRepair" | "ignoreConst") {
@@ -542,7 +548,7 @@ export class Hive {
         if (!this.sumCost && this.builder && this.builder.activeBees)
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, false, this.wallMap, 0.99));
         if (!this.sumCost && this.cells.storage
-          && this.resState[RESOURCE_ENERGY] > 0
+          && this.resState[RESOURCE_ENERGY] > 20000
           && this.wallsHealth < this.wallsHealthMax)
           this.wallsHealth = Math.min(this.wallsHealth + 4 * WALL_HEALTH, this.wallsHealthMax);
         break;

@@ -52,7 +52,7 @@ export class SiegeMaster extends Master {
     }
     this.movePriority = <1>1;
     this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
-    if (this.checkBees(true, CREEP_LIFE_TIME - 50)) {
+    if (this.checkBees(true, CREEP_LIFE_TIME - 75)) {
       let defender = setups.defender.destroyer.copy();
       /* if (roomInfo.dangerlvlmax >= 8)
         defender.fixed = Array(5).fill(TOUGH); */
@@ -163,8 +163,8 @@ export class SiegeMaster extends Master {
     });
 
     _.forEach(this.activeBees, bee => {
-      let old = bee.ticksToLive <= 25
-      if (old && bee.boosted && this.hive.cells.lab && this.hive.cells.lab.getUnboostLab())
+      let old = bee.ticksToLive <= 50
+      if (old && bee.boosted && this.hive.cells.lab && this.hive.cells.lab.getUnboostLab(bee.ticksToLive))
         bee.state = beeStates.fflush;
       switch (bee.state) {
         case beeStates.fflush:
@@ -172,7 +172,7 @@ export class SiegeMaster extends Master {
             bee.state = beeStates.work;
             break;
           }
-          let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
+          let lab = this.hive.cells.lab.getUnboostLab(bee.ticksToLive) || this.hive.cells.lab;
           bee.goRest(lab.pos);
           break;
         case beeStates.chill:

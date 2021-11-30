@@ -8,7 +8,7 @@ import "./prototypes/pos";
 
 import { _Apiary } from "./Apiary";
 
-import { GENERATE_PIXEL, LOGGING_CYCLE, PROFILER } from "./settings";
+import { LOGGING_CYCLE, PROFILER } from "./settings";
 import profiler from 'screeps-profiler';
 
 // if (Game.shard.name === "shard3")
@@ -44,7 +44,7 @@ function main() {
   Apiary.run();
 
   // now it checks itself!! i am genius
-  if (GENERATE_PIXEL && Game.cpu.bucket === 10000 && Game.cpu.generatePixel && Apiary.destroyTime - Game.time >= 20)
+  if (Memory.settings.generatePixel && Game.cpu.bucket === 10000 && Game.cpu.generatePixel && Apiary.destroyTime - Game.time >= 20)
     Game.cpu.generatePixel();
 }
 

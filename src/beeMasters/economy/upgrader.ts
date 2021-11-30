@@ -50,7 +50,7 @@ export class UpgraderMaster extends Master {
 
   checkBeesWithRecalc() {
     this.recalculateTargetBee();
-    return this.checkBees(this.cell.controller.ticksToDowngrade < CREEP_LIFE_TIME * 2)
+    return this.checkBees(this.cell.controller.ticksToDowngrade < CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.5)
   }
 
   update() {
@@ -92,7 +92,7 @@ export class UpgraderMaster extends Master {
       let carryPart = bee.getActiveBodyParts(CARRY);
       let old = bee.ticksToLive <= (bee.boosted ? (this.cell.roadTime * 3 + 5) : (carryPart === 1 ? 2 : this.cell.roadTime + 2));
       if (old && bee.ticksToLive > (carryPart === 1 ? 2 : this.cell.roadTime + 2))
-        old = !!(this.hive.cells.lab && this.hive.cells.lab.getUnboostLab());
+        old = !!(this.hive.cells.lab && this.hive.cells.lab.getUnboostLab(bee.ticksToLive));
 
       if (old) {
         if (bee.boosted && this.hive.cells.lab)
@@ -112,7 +112,7 @@ export class UpgraderMaster extends Master {
             bee.state = beeStates.chill;
             break;
           }
-          let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
+          let lab = this.hive.cells.lab.getUnboostLab(bee.ticksToLive) || this.hive.cells.lab;
           bee.goRest(lab.pos);
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
             if (bee.transfer(this.cell.link || this.cell.sCell.storage, RESOURCE_ENERGY) === ERR_FULL)

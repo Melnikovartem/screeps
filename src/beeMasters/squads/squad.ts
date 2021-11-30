@@ -377,7 +377,7 @@ export abstract class SquadMaster extends SwarmMaster {
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
     let fatigue = 0;
 
-    if (roomInfo.roomState === roomStates.ownedByEnemy) {
+    if (roomInfo.roomState === roomStates.ownedByEnemy || roomInfo.dangerlvlmax >= 8) {
       _.forEach(this.activeBees, b => {
         fatigue += b.creep.fatigue;
       });

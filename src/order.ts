@@ -465,16 +465,12 @@ export class FlagOrder {
               }
               break;
             case COLOR_YELLOW:
-              if (this.hive.puller && this.hive.puller.depositSites.length < 2)
-                this.master = new PowerMaster(this);
-              else
-                this.acted = false;
+              if (this.hive.puller)
+                this.master = new PowerMaster(this, this.hive.puller);
               break;
             case COLOR_BLUE:
-              if (this.hive.puller && this.hive.puller.depositSites.length < 2)
-                this.master = new DepositMaster(this);
-              else
-                this.acted = false;
+              if (this.hive.puller)
+                this.master = new DepositMaster(this, this.hive.puller);
               break;
           }
         break;
@@ -572,10 +568,12 @@ export class FlagOrder {
               this.delete();
             break;
           case COLOR_RED:
-            if (this.ref.includes("keep"))
-              break;
+            if (!this.memory.extraInfo)
+              this.memory.extraInfo = Game.time;
             this.acted = false;
-            if (this.pos.roomName in Game.rooms && this.pos.lookFor(LOOK_STRUCTURES).length === 0)
+            if (Game.time % 25 !== 0)
+              break;
+            if (this.pos.roomName in Game.rooms && !this.pos.lookFor(LOOK_STRUCTURES).length || this.memory.extraInfo + 5000 < Game.time)
               this.delete();
             break;
           case COLOR_PURPLE:

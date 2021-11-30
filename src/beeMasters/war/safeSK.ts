@@ -47,7 +47,8 @@ export class SKMaster extends HordeMaster {
     if (this.hive.bassboost && this.pos.getRoomRangeTo(this.hive.bassboost, true) > 5)
       return;
 
-    if (this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50))
+    if (this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50)
+      && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8)
       this.wish({
         setup: setups.defender.sk,
         priority: 4,

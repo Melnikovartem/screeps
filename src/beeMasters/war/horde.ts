@@ -209,7 +209,7 @@ export class HordeMaster extends SwarmMaster {
     }
 
     if (shouldFlee) {
-      opt.maxRooms = 1;
+      opt.maxRooms = 4;
       bee.flee(this.order, opt); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
       return ERR_BUSY;
     }
@@ -241,11 +241,10 @@ export class HordeMaster extends SwarmMaster {
 
 
   run() {
-    if (this.boosts)
-      _.forEach(this.bees, bee => {
-        if (bee.state === beeStates.boosting && (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK))
-          bee.state = beeStates.chill;
-      });
+    _.forEach(this.bees, bee => {
+      if (bee.state === beeStates.boosting && (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK))
+        bee.state = beeStates.chill;
+    });
 
     _.forEach(this.activeBees, bee => {
       let enemy;

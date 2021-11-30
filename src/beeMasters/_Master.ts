@@ -120,20 +120,20 @@ export abstract class Master {
     let pos = bee.pos;
     if (bee.targetPosition)
       pos = (bee.targetPosition.roomName === pos.roomName && bee.targetPosition.getEnteranceToRoom()) || bee.targetPosition;
-    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
+    let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
     if (pos.roomName !== bee.pos.roomName && Game.time - roomInfo.lastUpdated > 0 && Game.time - roomInfo.lastUpdated <= 20 && !roomInfo.safePlace) {
       if (bee.pos.getEnteranceToRoom())
         bee.flee(fleeTo || this.hive);
       else
-        bee.targetPosition = undefined;
+        bee.targetPosition = bee.pos;
       return true;
     }
-    let enemies = <Creep[]>roomInfo.enemies.map(e => e.object).filter(e => {
-      if (!(e instanceof Creep))
+    let enemies = <Creep[]>roomInfo.enemies.filter(e => {
+      if (!(e.object instanceof Creep))
         return false;
-      let stats = Apiary.intel.getStats(e).current;
+      let stats = Apiary.intel.getStats(e.object).current;
       return !!(stats.dmgClose + stats.dmgRange);
-    });
+    }).map(e => e.object);
     let enemy = bee.pos.findClosest(enemies);
     if (!enemy)
       return false;

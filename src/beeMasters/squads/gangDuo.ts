@@ -5,7 +5,7 @@ import type { Boosts } from "../_Master";
 
 const GANG = setups.knight.copy();
 
-const TOWER_NUM = 2; // 6;
+const TOWER_NUM = 3; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
 const HEAL_AMOUNT = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal) / 2);
 const TOUGHT_AMOUNT = Math.ceil((TOWER_DMG * 2 - HEAL_AMOUNT * HEAL_POWER * BOOSTS.heal.XLHO2.heal) / 100);

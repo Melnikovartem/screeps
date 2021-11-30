@@ -319,7 +319,7 @@ RoomPosition.prototype.findClosestByTravel = function <Obj extends ProtoPos>(obj
   let ans: Obj = objects[0];
   let distance = Infinity;
 
-  opt = opt || { maxRooms: 3 }
+  // opt = opt || { maxRooms: 3 }
 
   _.forEach(objects, (obj: Obj) => {
     let newDistance = Traveler.findTravelPath(this, obj, opt).path.length;

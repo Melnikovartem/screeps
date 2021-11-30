@@ -5,6 +5,7 @@ import { hiveStates, roomStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
+import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import type { Boosts } from "../_Master";
 
@@ -29,8 +30,9 @@ export class HordeDefenseMaster extends HordeMaster {
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     let shouldSpawn = Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
 
-    if ((roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral) && roomInfo.dangerlvlmax > 4)
-      this.boosts = [{ type: "rangedAttack", lvl: 2 }];
+    let isSKraid = (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral) && roomInfo.dangerlvlmax === 5;
+    if (isSKraid)
+      this.boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "damage", lvl: 2 }];
 
 
     if (shouldSpawn) {
@@ -42,8 +44,17 @@ export class HordeDefenseMaster extends HordeMaster {
       }
       let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
       let enemy = Apiary.intel.getEnemy(this.pos, 20);
-      if (enemy instanceof Creep) {
-        order.setup = setups.defender.normal.copy();
+      if (isSKraid) {
+        let getUsed = this.hive.cells.storage && this.hive.cells.storage.getUsedCapacity;
+        order.setup.scheme = 1;
+        if (getUsed && getUsed(BOOST_MINERAL.damage[2]) >= LAB_BOOST_MINERAL * 2 && getUsed(BOOST_MINERAL.rangedAttack[2]) >= LAB_BOOST_MINERAL * 10) {
+          order.setup.patternLimit = 10;
+          order.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL];
+        } else {
+          order.setup.patternLimit = Infinity;
+          order.setup.fixed = Array(10).fill(HEAL);
+        }
+      } else if (enemy instanceof Creep) {
         order.setup.fixed = [];
         let stats = Apiary.intel.getComplexStats(enemy, undefined, 8);
         let healNeeded = Math.ceil(stats.max.dmgRange / HEAL_POWER * 0.75);

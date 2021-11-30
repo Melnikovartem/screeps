@@ -91,7 +91,7 @@ export class BuilderMaster extends Master {
         bee.state = beeStates.chill;
       let old = bee.ticksToLive <= 25;
       if (old)
-        if (bee.boosted && this.hive.cells.lab)
+        if (bee.boosted && this.hive.cells.lab && this.hive.cells.lab.getUnboostLab(bee.ticksToLive))
           bee.state = beeStates.fflush;
         else
           bee.state = beeStates.chill;
@@ -102,7 +102,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.chill;
             break;
           }
-          let lab = this.hive.cells.lab.getUnboostLab() || this.hive.cells.lab;
+          let lab = this.hive.cells.lab.getUnboostLab(bee.ticksToLive) || this.hive.cells.lab;
           bee.goRest(lab.pos);
           break;
         case beeStates.refill:
@@ -119,7 +119,7 @@ export class BuilderMaster extends Master {
           } else if (bee.withdraw(this.sCell.storage, RESOURCE_ENERGY, undefined, this.hive.opt) === OK && !otherRes) {
             bee.state = beeStates.work;
             if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state === hiveStates.battle ? "defense_repair" : "build", this.sCell.storage.store, bee.store);
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.hive.state >= hiveStates.nukealert ? "defense_build" : "build", this.sCell.storage.store, bee.store);
             let target = this.hive.getBuildTarget(bee);
             if (target) {
               bee.target = target.id;
