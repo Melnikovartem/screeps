@@ -9,6 +9,7 @@ import { Broker } from "./abstract/broker";
 import { Logger } from "./convenience/logger";
 import { RoomPlanner } from "./abstract/RoomPlanner";
 import { Network } from "./abstract/terminalNetwork";
+import { WarcrimesModule } from "./abstract/warModule";
 import { Visuals } from "./convenience/visuals";
 
 import { safeWrap } from "./abstract/utils";
@@ -27,6 +28,7 @@ export class _Apiary {
   broker: Broker;
   planner: RoomPlanner;
   network: Network;
+  warcrimes: WarcrimesModule;
   logger: Logger | undefined;
   visuals: Visuals = new Visuals;
 
@@ -45,6 +47,7 @@ export class _Apiary {
     this.broker = new Broker();
     this.planner = new RoomPlanner();
     this.network = new Network({});
+    this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE)
       this.logger = new Logger();
 
@@ -108,6 +111,7 @@ export class _Apiary {
     });
 
     this.wrap(() => this.network.update(), "network", "update", this.network.nodes.length);
+    this.wrap(() => this.warcrimes.update(), "warcrimes", "update", 1);
 
     _.forEach(this.hives, hive => {
       this.wrap(() => hive.update(), hive.roomName, "update", 0);
@@ -138,6 +142,7 @@ export class _Apiary {
 
     Bee.beesMove();
     this.wrap(() => this.network.run(), "network", "run", this.network.nodes.length);
+    this.wrap(() => this.warcrimes.run(), "warcrimes", "run", 1);
 
     this.requestRoomSight = [];
 

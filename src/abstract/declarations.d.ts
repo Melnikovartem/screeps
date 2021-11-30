@@ -65,6 +65,17 @@ declare global {
       hives: {
         [id: string]: HiveCache
       },
+      war: {
+        siedgeInfo: {
+          [id: string]: {
+            matrix: { [id: number]: { [id: number]: number } },
+            lastUpdated: number,
+            breakIn: { x: number, y: number }[],
+            freeTargets: { x: number, y: number }[],
+            towerDmgBreach: number,
+          }
+        };
+      }
     },
     masters: undefined;
 
@@ -73,26 +84,10 @@ declare global {
       framerate: number,
       forceBucket: number,
       minBalance: number,
+      generatePixel: boolean,
     }
 
-    // my giant log
-    log: {
-      time: number,
-      reset: number,
-      apiary: number,
-      gcl: { level: number, progress: number, progressTotal: number },
-      gpl: { level: number, progress: number, progressTotal: number },
-      cpu: { bucket: number, used: number, limit: number },
-      pixels: number,
-      credits: number,
-
-      cpuUsage: { update: { [ref: string]: { cpu: number, norm: number } }, run: { [ref: string]: { cpu: number, norm: number } } },
-
-      hives: {
-        [id: string]: HiveLog
-      },
-
-
+    report: {
       orders?: {
         [id: string]: {
           time: number,
@@ -108,13 +103,31 @@ declare global {
         }
       },
       enemies?: {
-        [id: string]: {
+        [id: string]: CreepAllBattleInfo["max"] & {
           time: number,
-          info: CreepAllBattleInfo,
-          pos: RoomPosition,
           owner: string,
         },
       }
+    },
+
+    // my giant log
+    log: {
+      time: number,
+      reset: number,
+      apiary: number,
+      gcl: { level: number, progress: number, progressTotal: number },
+      gpl: { level: number, progress: number, progressTotal: number },
+      cpu: { bucket: number, used: number, limit: number },
+      pixels: number,
+      credits: number,
+
+      lastRebalance: number,
+
+      cpuUsage: { update: { [ref: string]: { cpu: number, norm: number } }, run: { [ref: string]: { cpu: number, norm: number } } },
+
+      hives: {
+        [id: string]: HiveLog
+      },
     },
   }
 }

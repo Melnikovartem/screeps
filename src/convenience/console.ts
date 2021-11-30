@@ -17,17 +17,23 @@ export class CustomConsole {
   }
 
   vis(framerate?: number, force: number = 0) {
-    if (Apiary.visuals)
-      for (let name in Apiary.visuals.caching) {
-        if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc - Game.time > 5)
-          framerate = Memory.settings.framerate; // updating some sticky state
-        Apiary.visuals.caching[name].lastRecalc = Game.time;
-      }
+    for (let name in Apiary.visuals.caching) {
+      if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc - Game.time > 5)
+        framerate = Memory.settings.framerate; // updating some sticky state
+      Apiary.visuals.caching[name].lastRecalc = Game.time;
+    }
 
     Memory.settings.framerate = framerate !== undefined ? framerate : (Memory.settings.framerate !== 1 ? 1 : 0);
     Memory.settings.forceBucket = force;
 
     return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
+  }
+
+  pixel(state?: boolean) {
+
+    Memory.settings.generatePixel = state ? state : !Memory.settings.generatePixel;
+
+    return `pixel generation is ${Memory.settings.generatePixel ? "on" : "off"}`;
   }
 
   h(hiveName: string = this.lastActionRoomName) {
@@ -81,6 +87,24 @@ export class CustomConsole {
     });
   }
 
+  showSiedge(roomName: string, keep = false) {
+    let siedge = Apiary.warcrimes.siedge[roomName];
+    return this.showMap(roomName, keep, (x, y, vis) => {
+      if (siedge.breakIn.filter(p => p.x === x && p.y === y).length)
+        vis.circle(x, y, { radius: 0.4, opacity: 0.7, fill: "#1C6F21" });
+
+      if (siedge.freeTargets.filter(p => p.x === x && p.y === y).length)
+        vis.circle(x, y, { radius: 0.4, opacity: 0.3, fill: "#EBF737" });
+
+      let value = siedge.matrix[x] && siedge.matrix[x][y];
+      if (value === 0xff)
+        vis.circle(x, y, { radius: 0.2, opacity: 0.5, fill: "#E75050" });
+      else
+        vis.text("" + value, x, y + 0.15,
+          Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" }));
+    });
+  }
+
   showSpawnMap(hiveName: string = this.lastActionRoomName, keep = false) {
     let hive = Apiary.hives[hiveName];
     if (!hive)
@@ -92,7 +116,7 @@ export class CustomConsole {
       for (let i = 0; i < targets.length; ++i) {
         let t = targets[i];
         if (t.pos.x === x && t.pos.y == y) {
-          vis.text("" + i, x, y + 0.14,
+          vis.text("" + i, x, y + 0.15,
             Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" }));
           break;
         }
