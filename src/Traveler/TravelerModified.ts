@@ -668,15 +668,15 @@ export class Traveler {
 // need to repath to often or they aren't finding valid paths, it can sometimes point to problems elsewhere in your code
 const REPORT_CPU_THRESHOLD = 1000;
 
-const DEFAULT_MAXOPS = 20000;
-const DEFAULT_STUCK_VALUE = 2;
-const STATE_PREV_X = 0;
-const STATE_PREV_Y = 1;
-const STATE_STUCK = 2;
-const STATE_CPU = 3;
-const STATE_DEST_X = 4;
-const STATE_DEST_Y = 5;
-const STATE_DEST_ROOMNAME = 6;
+export const DEFAULT_MAXOPS = 20000;
+export const DEFAULT_STUCK_VALUE = 2;
+export const STATE_PREV_X = 0;
+export const STATE_PREV_Y = 1;
+export const STATE_STUCK = 2;
+export const STATE_CPU = 3;
+export const STATE_DEST_X = 4;
+export const STATE_DEST_Y = 5;
+export const STATE_DEST_ROOMNAME = 6;
 
 // assigns a function to Creep.prototype: creep.travelTo(destination)
 Creep.prototype.travelTo = function(destination: RoomPosition | { pos: RoomPosition }, options?: TravelToOptions) {

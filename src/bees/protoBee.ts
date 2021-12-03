@@ -1,5 +1,6 @@
 import { beeStates } from "../enums";
 import { profile } from "../profiler/decorator";
+import { STATE_STUCK } from "../Traveler/TravelerModified";
 import type { Master } from "../beeMasters/_Master";
 
 type InfoMove = { bee: ProtoBee<Creep | PowerCreep>, priority: number };
@@ -132,6 +133,12 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
 
   drop(resourceType: ResourceConstant, amount?: number) {
     return this.creep.drop(resourceType, amount);
+  }
+
+  stop() {
+    this.targetPosition = undefined;
+    if (this.memory._trav)
+      this.memory._trav.state[STATE_STUCK] = 0
   }
 
   getFleeOpt(opt: TravelToOptions) {

@@ -4,6 +4,11 @@ export interface HiveCache {
   positions: HivePositions,
   wallsHealth: number,
   cells: { [id: string]: { [id: string]: any } }
+  do: {
+    power: boolean,
+    deposit: boolean,
+    war: boolean,
+  }
 }
 
 export interface HiveLog {

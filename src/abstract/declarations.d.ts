@@ -4,6 +4,7 @@ import type { CustomConsole } from "../convenience/console";
 import type { RoomSetup } from "./roomPlanner";
 import type { CreepAllBattleInfo } from "./intelligence";
 import type { HiveLog, HiveCache } from "./hiveMemory";
+import type { CreepSetup } from "../bees/creepSetups";
 
 declare global {
   var Apiary: _Apiary;
@@ -73,8 +74,21 @@ declare global {
             breakIn: { x: number, y: number }[],
             freeTargets: { x: number, y: number }[],
             towerDmgBreach: number,
+            target: { x: number, y: number },
+            attackTime: number | null,
           }
-        };
+        },
+        squadsInfo: {
+          [id: string]: {
+            center: { x: number, y: number, roomName: string },
+            target: { x: number, y: number, roomName: string },
+            spawned: number,
+            rotation: TOP | BOTTOM | LEFT | RIGHT,
+            formation: [Pos, CreepSetup][],
+            hive: string,
+            ref: string,
+          }
+        }
       }
     },
     masters: undefined;

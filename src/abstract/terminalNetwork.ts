@@ -29,10 +29,8 @@ export class Network {
   aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number } } = {} // from -> to
   resState: ResTarget = {};
 
-  constructor(hives?: { [id: string]: Hive }) {
-    if (!hives)
-      return;
-    this.nodes = _.filter(hives, h => h.cells.storage && h.cells.storage.terminal);
+  init() {
+    this.nodes = _.filter(Apiary.hives, h => h.cells.storage && h.cells.storage.terminal);
     _.forEach(this.nodes, node => {
       Apiary.broker.shortOrdersSell[node.roomName] = { orders: {}, lastUpdated: Game.time };
     });

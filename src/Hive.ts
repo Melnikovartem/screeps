@@ -155,6 +155,7 @@ export class Hive {
       Memory.cache.hives[this.roomName] = {
         positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos },
         wallsHealth: WALL_HEALTH, cells: {},
+        do: { power: true, deposit: true, war: true }
       }
     }
 
@@ -239,6 +240,10 @@ export class Hive {
 
     if (Apiary.logger)
       Apiary.logger.initHive(this.roomName);
+  }
+
+  shouldDo(action: "power" | "deposit" | "war") {
+    return Memory.cache.hives[this.roomName].do[action];
   }
 
   addAnex(annexName: string) {

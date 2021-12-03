@@ -82,7 +82,7 @@ export class Intel {
     let roomInfo = this.getInfo(pos.roomName, lag);
     let ans = 0;
     _.forEach(roomInfo.towers, t => {
-      if (t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10)
+      if ((t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10) || t.owner.username === "Invader")
         ans += towerCoef(t, pos) * TOWER_POWER_ATTACK;
     });
     return ans;
