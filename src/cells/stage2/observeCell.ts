@@ -84,8 +84,10 @@ export class ObserveCell extends Cell {
           Apiary.requestRoomSight.splice(i, 1);
           break;
         }
-    } else
+    } else if (this.hive.shouldDo("power") || this.hive.shouldDo("deposit"))
       this.roomsToCheck = this.corridorRooms;
+    else
+      this.roomsToCheck = [];
 
     let room = Game.rooms[this.prevRoom];
     if (!room)
@@ -97,8 +99,10 @@ export class ObserveCell extends Cell {
     let roomInfo = Apiary.intel.getInfo(this.prevRoom, 50);
 
     if (roomInfo.roomState === roomStates.corridor) {
-      this.powerCheck(room);
-      this.depositCheck(room);
+      if (this.hive.shouldDo("power"))
+        this.powerCheck(room);
+      if (this.hive.shouldDo("deposit"))
+        this.depositCheck(room);
     }
   }
 

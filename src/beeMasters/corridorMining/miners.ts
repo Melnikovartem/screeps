@@ -32,8 +32,6 @@ export class DepositMinerMaster extends Master {
         setup: setups.miner.deposit,
         priority: 8,
       });
-    else if (this.waitingForBees)
-      this.hive.puller.removeFreePuller(this.parent.roadTime);
   }
 
   run() {

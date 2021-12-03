@@ -16,6 +16,9 @@ export class PowerMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
   target: StructurePowerBank | undefined;
+  hits: number = 0;
+  decay: number = 0;
+  power: number = 0;
   movePriority = <1>1;
   positions: { pos: RoomPosition }[];
   operational: boolean = false;
@@ -39,7 +42,7 @@ export class PowerMaster extends SwarmMaster {
   }
 
   get pickupTime() {
-    return MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
+    return Math.ceil(this.power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)) * MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
   }
 
   get shouldSpawn() {
@@ -95,29 +98,36 @@ export class PowerMaster extends SwarmMaster {
       this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
       if (!this.target) {
         let res = this.pos.lookFor(LOOK_RESOURCES)[0];
-        if (res)
-          this.callPickUp(res.amount);
+        if (res) {
+          this.power = res.amount;
+          this.callPickUp();
+        }
         this.operational = false;
         this.maxSpawns = 0;
+        this.hits = -1;
         if (!this.pos.isFree(true))
           this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
       } else {
+        this.hits = this.target.hits;
+        this.decay = this.target.ticksToDecay;
+        this.power = this.target.power;
+
         let dmgCurrent = _.sum(this.duplets, dd => dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0) * ATTACK_POWER * 20;
-        if (this.target.hits / dmgCurrent <= this.pickupTime)
-          this.callPickUp(this.target.power);
+        if (this.hits / dmgCurrent <= this.pickupTime + 300)
+          this.callPickUp();
       }
-    } else if (!this.target && this.hive.cells.observe) {
-      Apiary.requestSight(this.pos.roomName);
-      this.operational = false;
+    } else {
+      --this.decay;
+      if (!this.hits && this.hive.cells.observe)
+        Apiary.requestSight(this.pos.roomName);
     }
 
-    if (this.target && this.operational) {
-      let decay = this.target.ticksToDecay;
+    if (this.operational) {
       let dmgFuture = ATTACK_POWER * 20 * _.sum(this.duplets, dd => !dd[0] ? 0 :
-        Math.min(decay, dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)));
+        Math.min(this.decay, dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)));
       let dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
-      this.operational = this.target.hits - dmgFuture > 0 && decay > this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
-        && this.target.hits / dmgPerSecond <= decay - (this.activeBees.length ? 0 : this.roadTime);
+      this.operational = this.hits - dmgFuture > 0 && this.decay > this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
+        && this.hits / dmgPerSecond <= this.decay - (this.activeBees.length ? 0 : this.roadTime);
     }
 
     if (this.checkBees(false, CREEP_LIFE_TIME - this.roadTime - 30) && this.shouldSpawn) {
@@ -137,10 +147,10 @@ export class PowerMaster extends SwarmMaster {
     }
   }
 
-  callPickUp(power: number) {
+  callPickUp() {
     if (this.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN).length)
       return;
-    let name = this.pos.createFlag(Math.ceil(power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
+    let name = this.pos.createFlag(Math.ceil(this.power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)) + "_pickup_" + makeId(4), COLOR_ORANGE, COLOR_GREEN);
     if (typeof name === "string")
       Game.flags[name].memory.hive = this.hive.roomName;
   }

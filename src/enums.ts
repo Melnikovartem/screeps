@@ -48,6 +48,7 @@ export enum prefix {
   terminal = "terminal_",
   power = "power_",
   deposit = "deposit_",
+  downgrade = "downgrade_",
 
   // deposit master
   miner = "_miner",

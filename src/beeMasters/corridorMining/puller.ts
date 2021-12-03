@@ -26,7 +26,7 @@ export class PullerMaster extends Master {
   }
 
   removeFreePuller(roadTime: number) {
-    let puller = _.filter(this.freePullers, b => b.ticksToLive > roadTime + 150)[0];
+    let puller = _.filter(this.freePullers, b => b.ticksToLive >= roadTime + b.pos.getRoomRangeTo(this.hive) * 50)[0];
     if (puller) {
       this.freePullers.splice(this.freePullers.indexOf(puller));
       return true;
@@ -37,13 +37,14 @@ export class PullerMaster extends Master {
   update() {
     super.update();
 
-    let workingPowerSites = this.powerSites.filter(p => p.maxSpawns);
-    this.sitesON = workingPowerSites.filter(p => p.operational).slice(0, 1);
+    let workingPowerSites = this.powerSites.filter(p => p.operational);
+    this.sitesON = workingPowerSites.filter(p => workingPowerSites.indexOf(p) <= 2 || p.beesAmount);
     if (workingPowerSites.length)
       _.forEach(this.powerSites, p => {
         if (!p.maxSpawns)
           _.forEach(p.bees, b => {
-            let nextMaster = b.pos.findClosest(workingPowerSites.filter(wp => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1));
+            let inNeed = workingPowerSites.filter(wp => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1);
+            let nextMaster = b.pos.findClosest(inNeed.length ? inNeed : workingPowerSites);
             if (nextMaster) {
               p.removeBee(b);
               nextMaster.newBee(b);
@@ -52,9 +53,7 @@ export class PullerMaster extends Master {
       });
 
 
-    let workingDeposits = this.depositSites.filter(d => d.operational);
-    if (workingDeposits.length > 1)
-      workingDeposits = workingDeposits.slice(0, 1);
+    let workingDeposits = this.depositSites.filter(d => d.operational).slice(0, 2);
     this.sitesON = this.sitesON.concat(workingDeposits);
 
     _.forEach(this.bees, bee => {
@@ -74,7 +73,7 @@ export class PullerMaster extends Master {
     let possibleTargets = this.minersToMove.length;
     this.maxRoadTime = 0;
 
-    this.freePullers = _.filter(this.bees, b => b.state === beeStates.chill && b.pos.getRoomRangeTo(this.hive) < 3);
+    this.freePullers = _.filter(this.bees, b => b.state === beeStates.chill);
 
     _.forEach(this.depositSites, m => {
       if (!m.operational)

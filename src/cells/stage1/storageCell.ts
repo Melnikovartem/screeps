@@ -221,7 +221,7 @@ export class StorageCell extends Cell {
       amount += bee.store.getUsedCapacity(resource);
     });
 
-    if ((BASE_MINERALS.includes(resource) || resource in REACTION_TIME) && this.hive.cells.lab)
+    if ((resource in REACTION_TIME || BASE_MINERALS.includes(resource)) && this.hive.cells.lab)
       _.forEach(this.hive.cells.lab.laboratories, lab => {
         let toAdd = lab.store.getUsedCapacity(resource);
         if (toAdd)
@@ -230,11 +230,17 @@ export class StorageCell extends Cell {
 
     if (this.hive.cells.factory)
       amount += this.hive.cells.factory.factory.store.getUsedCapacity(resource);
-    if (resource === RESOURCE_OPS && this.hive.cells.power) {
-      let powerManager = this.hive.cells.power.powerManagerBee;
-      if (powerManager)
-        amount += powerManager.store.getUsedCapacity(resource);
-    }
+    if (this.hive.cells.power)
+      switch (resource) {
+        case RESOURCE_OPS:
+          let powerManager = this.hive.cells.power.powerManagerBee;
+          if (powerManager)
+            amount += powerManager.store.getUsedCapacity(resource);
+          break;
+        case RESOURCE_POWER:
+          amount += this.hive.cells.power.powerSpawn.store.getUsedCapacity(resource);
+          break;
+      }
     this.usedCapacity[resource] = amount;
     return amount;
   }

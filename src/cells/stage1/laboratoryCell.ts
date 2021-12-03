@@ -508,7 +508,7 @@ export class LaboratoryCell extends Cell {
           this.patienceProd = 0;
         }
       }
-      if (this.prod.plan <= 0 || !this.synthesizeTarget)
+      if (this.prod.plan <= 0 || !this.synthesizeTarget || this.synthesizeTarget.amount <= 0)
         this.prod = undefined;
     }
 

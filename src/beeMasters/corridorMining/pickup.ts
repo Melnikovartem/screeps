@@ -101,7 +101,7 @@ export class DepositPickupMaster extends Master {
             break;
           }
           bee.goRest(this.parent.rest, { offRoad: true });
-          if (bee.ticksToLive < this.parent.roadTime + 25
+          if (bee.ticksToLive < this.parent.roadTime + 50
             || bee.store.getFreeCapacity() < this.parent.positions.length * this.parent.workAmount)
             bee.state = bee.store.getUsedCapacity() ? beeStates.work : beeStates.fflush;
           break;

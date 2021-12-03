@@ -528,13 +528,16 @@ export class FlagOrder {
       case COLOR_GREY:
         switch (this.secondaryColor) {
           case COLOR_BROWN:
-            let parsed = /(sell|buy)_(.*)$/.exec(this.ref);
+            let parsed = /(sell|buy)_([A-Za-z0-9]*)(_\d*)?$/.exec(this.ref);
             let res = parsed && <ResourceConstant>parsed[2];
             let mode = parsed && parsed[1];
             this.acted = false;
+            if (!Apiary.useBucket)
+              break;
             if (res && mode && this.hive.roomName === this.pos.roomName && this.hive.cells.storage && this.hive.cells.storage.terminal) {
               let hurry = this.ref.includes("hurry");
               let fast = this.ref.includes("fast");
+              let priceFix = parsed![3] && parsed![3].length > 1 && +parsed![3].slice(1);
               if ("all" === parsed![2]) {
                 if (mode === "sell") {
                   // if (hurry || Game.time % 10 === 0)
@@ -546,7 +549,7 @@ export class FlagOrder {
                       return;
                     // get rid of shit in this hive
                     Apiary.broker.sellOff(this.hive.cells.storage!.terminal!, res, Math.min(5000, getAmount(res))
-                      , this.hive.cells.defense.isBreached, Infinity, hurry ? 10 : 100);
+                      , this.hive.cells.defense.isBreached, Infinity, hurry ? 10 : 100, priceFix || undefined);
                   });
                 } else
                   this.delete();
@@ -556,10 +559,10 @@ export class FlagOrder {
                 if (hurry || Game.time % 10 === 0)
                   if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res) > (fast ? 0 : 1000))
                     Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
-                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
+                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
                   else if (mode === "buy" && (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192)))
                     Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
-                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50);
+                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
                   else if (this.ref.includes("nokeep"))
                     this.delete();
               } else
