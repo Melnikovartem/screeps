@@ -126,7 +126,8 @@ export class NKVDMaster extends PowerMaster {
             && (_.filter(this.hive.spawOrders, b => b.priority === 1).length > 0) // spawnBattle screeps
             || Object.keys(this.hive.spawOrders).length >= 3
             && !_.filter(spawn.spawns, s => !s.spawning || s.spawning.remainingTime <= 13 * 3).length) // push some traffic
-            _.forEach(spawn.spawns, (s) => andNextup(s));
+            _.forEach(_.map(spawn.spawns, s => s).sort((a, b) =>
+              (a.spawning ? a.spawning.remainingTime : 0) - (b.spawning ? b.spawning.remainingTime : 0)), (s) => andNextup(s));
           break;
         case PWR_OPERATE_FACTORY:
           let factory = (<FactoryCell>targets).factory;

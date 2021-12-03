@@ -46,7 +46,7 @@ export class Visuals {
   }
 
   exportAnchor(offset = 0, ref = this.anchor.ref) {
-    this.caching[ref] = { data: this.anchor.vis.export(), lastRecalc: Game.time + offset };
+    this.caching[ref] = { data: this.anchor.vis.export() || "", lastRecalc: Game.time + offset };
   }
 
   update() {
@@ -83,6 +83,7 @@ export class Visuals {
 
         this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY, true);
         this.battleInfo();
+        this.miningInfo();
         this.exportAnchor();
       }
 
@@ -121,24 +122,40 @@ export class Visuals {
     if (!Apiary.useBucket)
       this.updateAnchor(this.label("LOW CPU", this.anchor, { align: "right" }, minLen));
     this.updateAnchor(this.progressbar(Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU", this.anchor, Game.cpu.getUsed() / Game.cpu.limit, { align: "right" }, minLen));
-    this.updateAnchor(this.progressbar(Math.round(Game.cpu.bucket) + " : BUCKET", this.anchor, Game.cpu.bucket / 10000, { align: "right" }, minLen)); // PIXEL_CPU_COST but not everywhere exists
+    this.updateAnchor(this.progressbar((Game.cpu.bucket === 10000 ? "10K" : Math.round(Game.cpu.bucket)) + " : BUCKET", this.anchor, Game.cpu.bucket / 10000, { align: "right" }, minLen)); // PIXEL_CPU_COST but not everywhere exists
     this.updateAnchor(this.progressbar(Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL", this.anchor, Game.gcl.progress / Game.gcl.progressTotal, { align: "right" }, minLen));
     let heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
     if (heapStat)
       this.updateAnchor(this.progressbar("HEAP", this.anchor, heapStat.used_heap_size / heapStat.total_available_size, { align: "right" }, minLen));
   }
 
-  battleInfo() {
-    let battleInfo: string[][] = [["bee squads"], ["", "🎯", "☠️❗", "💀", "🐝"]];
-    let stats = this.statsOrders();
-    for (const hiveName in stats) {
-      for (const i in stats[hiveName])
-        for (const j in stats[hiveName][i])
-          stats[hiveName][i][j] = stats[hiveName][i][j].slice(0, 11);
-      battleInfo.push(["", hiveName]);
-      battleInfo = battleInfo.concat(stats[hiveName]);
+  miningInfo() {
+    let miningInfo: string[][] = [["mining sites"], ["", "🎯", "❓", "🐝"]];
+    for (const hiveName in Apiary.hives) {
+      let puller = Apiary.hives[hiveName].puller;
+      if (puller) {
+        if (puller.powerSites.length || puller.depositSites.length)
+          miningInfo.push(["", hiveName, "", this.getBeesAmount(puller)]);
+        _.forEach(puller.depositSites, m => miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
+          : m.order.ref).slice(0, 6), " " + m.pos.roomName, " ⛏️", this.getBeesAmount(m.miners) + " " + this.getBeesAmount(m.pickup)]));
+        _.forEach(puller.powerSites, m => miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
+          : m.order.ref).slice(0, 6), " " + m.pos.roomName, " 🔴", this.getBeesAmount(m)]));
+      }
     }
-    this.updateAnchor(this.table(battleInfo, this.anchor, undefined, undefined, undefined, "center"));
+    if (miningInfo.length > 2)
+      this.updateAnchor(this.table(miningInfo, this.anchor, undefined, 10, 15, "center"));
+  }
+
+  battleInfo() {
+    let battleInfo: string[][] = [["siedge squads"], ["", "🎯", " ☠️❗", "💀", "🐝"]];
+    _.forEach(Apiary.warcrimes.squads, squad => {
+      let roomInfo = Apiary.intel.getInfo(squad.pos.roomName, 500);
+      let siedge = Apiary.warcrimes.siedge[squad.pos.roomName];
+      battleInfo.push([squad.info.ref.slice(0, 4) + " ", " " + squad.pos.roomName, siedge ? "" + siedge.towerDmgBreach : "NaN",
+      " " + roomInfo.enemies.length, this.getBeesAmount(squad)]);
+    });
+    if (battleInfo.length > 2)
+      this.updateAnchor(this.table(battleInfo, this.anchor, undefined, 10, 15, "center"));
   }
 
   visualizePlanner() {
@@ -277,6 +294,7 @@ export class Visuals {
   }
 
   statsOrders(): { [hiveName: string]: string[][] } {
+    // not in use
     let orders = _.filter(Apiary.orders, o => !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
     let length = orders.length;
     const MAX_STATS = 10;
@@ -405,11 +423,8 @@ export class Visuals {
 
     if (hive.state === hiveStates.battle || hive.cells.defense.master.beesAmount || hive.cells.defense.master.waitingForBees)
       ans.push(["defense",
-        ` ${Apiary.intel.getInfo(hive.roomName).dangerlvlmax}`,
+        ` ${Apiary.intel.getInfo(hive.roomName, 20).dangerlvlmax}`,
         this.getBeesAmount(hive.cells.defense.master)]);
-
-    if (hive.puller)
-      ans.push(["puller", `${hive.puller.depositSites.length}/${hive.puller.powerSites.length}`, this.getBeesAmount(hive.puller)]);
 
     let minSize = 0;
     let table = this.table(ans, this.anchor, undefined, minSize);
@@ -543,7 +558,8 @@ export class Visuals {
 
 
   getTextLength(str: string) {
-    let coefsum = 0;
+    return TEXT_SIZE * str.length * 0.52;
+    /* let coefsum = 0;
     for (let i = 0; i < str.length; ++i) {
       let coef = 0.5;
       let code = str.charCodeAt(i);
@@ -557,7 +573,7 @@ export class Visuals {
 
       coefsum += coef;
     }
-    return TEXT_SIZE * coefsum;
+    return TEXT_SIZE * coefsum; */
   }
 
   label(label: string, info: VisInfo, style: TextStyle = {}, minSize: number = 1, maxSize: number = 15) {

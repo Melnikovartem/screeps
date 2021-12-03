@@ -148,7 +148,7 @@ export class SiegeMaster extends Master {
         || stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.2 && bee.targetPosition.getRangeTo(posToStay) > 1 && this.cell.wasBreached(target.pos, bee.targetPosition))
         // || (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.3 && !(bee.targetPosition.getOpenPositions(true).filter(p => findRamp(p))).length))
         if (findRamp(bee.pos))
-          bee.targetPosition = undefined;
+          bee.stop()
         else
           bee.flee(this.cell.pos, opt);
     }

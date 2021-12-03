@@ -133,7 +133,7 @@ export class MinerMaster extends Master {
         if (diff <= 0)
           bee.goTo(this.hive);
         else if (diff < 5)
-          bee.targetPosition = undefined;
+          bee.stop()
         mode = 2;
       } else if (this.cell.link) {
         if (bee.creep.store.getFreeCapacity(this.cell.resourceType) < bee.workMax * (bee.boosted ? BOOSTS.work.UO.harvest : 1) * 2 * 2

@@ -45,6 +45,44 @@ export class CustomConsole {
     return `active hive is ${this.lastActionRoomName}`;
   }
 
+  mode(hiveName: string = this.lastActionRoomName, mode = "default") {
+    hiveName = this.format(hiveName);
+    let hive = Apiary.hives[hiveName];
+    if (!hive)
+      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    let dd = Memory.cache.hives[hiveName].do;
+    switch (mode) {
+      case "war":
+        dd.war = true;
+        dd.deposit = false;
+        dd.power = false;
+        break;
+      case "power":
+        dd.war = false;
+        dd.deposit = false;
+        dd.power = true;
+        break;
+      case "deposit":
+        dd.war = false;
+        dd.deposit = true;
+        dd.power = false;
+        break;
+      case "none":
+        dd.war = false;
+        dd.deposit = false;
+        dd.power = false;
+        break;
+      default:
+        dd.war = true;
+        dd.deposit = true;
+        dd.power = true;
+        break;
+    }
+
+    return `@ ${hive.print} \nWAR: ${hive.shouldDo("war") ? "ON" : "OFF"}\nPOWER: ${hive.shouldDo("power") ? "ON" : "OFF"}\nDEPOSIT: ${hive.shouldDo("deposit") ? "ON" : "OFF"}`
+  }
+
   balance(min: number | "fit" = Game.market.credits * 0.8) {
     if (typeof min !== "number")
       min = Game.market.credits;
@@ -89,6 +127,8 @@ export class CustomConsole {
 
   showSiedge(roomName: string, keep = false) {
     let siedge = Apiary.warcrimes.siedge[roomName];
+    if (!siedge)
+      return "ERROR: NO SIEDGE INFO @ " + this.formatRoom(roomName);
     return this.showMap(roomName, keep, (x, y, vis) => {
       if (siedge.breakIn.filter(p => p.x === x && p.y === y).length)
         vis.circle(x, y, { radius: 0.4, opacity: 0.7, fill: "#1C6F21" });

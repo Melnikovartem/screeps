@@ -46,7 +46,7 @@ export class _Apiary {
     this.intel = new Intel();
     this.broker = new Broker();
     this.planner = new RoomPlanner();
-    this.network = new Network({});
+    this.network = new Network();
     this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE)
       this.logger = new Logger();
@@ -76,7 +76,8 @@ export class _Apiary {
       this.logger = undefined;
       Memory.settings.framerate = -1;
     }
-    this.network = new Network(this.hives);
+    this.network.init();
+    this.warcrimes.init()
   }
 
   requestSight(roomName: string) {

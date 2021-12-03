@@ -229,8 +229,8 @@ export class Logger {
     ans["build"] = getRate("build") + getRate("defense_build") + getCreepCostRate(setups.builder);
 
     ans["defense_tower"] = getRate("defense_heal") + getRate("defense_dmg") + getRate("defense_repair");
-
     ans["defense_swarms"] = getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer);
+    ans["attack_rooms"] = getCreepCostRate(setups.knight);
 
     ans["export"] = getRate("export") + getRate("export local");
     ans["import"] = getRate("import") + getRate("import local");
