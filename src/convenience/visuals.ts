@@ -190,7 +190,7 @@ export class Visuals {
               style.opacity = 1;
               break;
             case STRUCTURE_EXTENSION:
-              style.fill = "#ffdd80";
+              style.fill = "#FFC288";
               break;
             case STRUCTURE_LAB:
               style.fill = "#91EFD8";

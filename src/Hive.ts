@@ -135,12 +135,11 @@ export class Hive {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
 
-    if (!Memory.cache.hives[this.roomName]) {
+    if (!this.cache)
       Memory.cache.hives[this.roomName] = {
         wallsHealth: WALL_HEALTH, cells: {},
         do: { power: true, deposit: true, war: true }
       }
-    }
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -226,7 +225,7 @@ export class Hive {
   }
 
   shouldDo(action: "power" | "deposit" | "war") {
-    return Memory.cache.hives[this.roomName].do[action];
+    return this.cache.do[action];
   }
 
   addAnex(annexName: string) {
@@ -405,12 +404,16 @@ export class Hive {
     return target;
   }
 
+  get cache() {
+    return Memory.cache.hives[this.roomName];
+  }
+
   get wallsHealth() {
-    return Memory.cache.hives[this.roomName].wallsHealth;
+    return this.cache.wallsHealth;
   }
 
   set wallsHealth(value) {
-    Memory.cache.hives[this.roomName].wallsHealth = value;
+    this.cache.wallsHealth = value;
   }
 
   get opt() {

@@ -93,7 +93,7 @@ export class ResourceCell extends Cell {
     if (this.resource instanceof Source) {
       this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
         s => s.structureType === STRUCTURE_LINK && s.isActive())[0];
-      this.operational = this.container || (this.link && this.hive.cells.storage && Object.keys(this.hive.cells.storage.links).length) ? true : false;
+      this.operational = !!(this.container || (this.link && this.hive.cells.storage && this.hive.cells.storage.link));
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
@@ -154,14 +154,6 @@ export class ResourceCell extends Cell {
   update() {
     super.update(undefined, ["resource"]);
 
-    /* if (!this.resource)
-      if (this.resourceType === RESOURCE_ENERGY)
-        this.resource = this.pos.findInRange(FIND_SOURCES, 1)[0];
-      else
-        this.resource = this.pos.findInRange(FIND_MINERALS, 1)[0]; */
-
-
-
     if (this.operational) {
       if (!this.container && !this.link)
         this.operational = false;
@@ -178,7 +170,7 @@ export class ResourceCell extends Cell {
     if (this.link && !this.link.cooldown) {
       let usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY)
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
-        let closeToFull = usedCap >= LINK_CAPACITY / 1.1428;
+        let closeToFull = usedCap >= LINK_CAPACITY * 0.85;
 
         let upgradeLink = this.hive.state === hiveStates.economy && this.hive.cells.upgrade && this.hive.cells.upgrade.master.beesAmount && this.hive.cells.upgrade.link;
         if (upgradeLink && (upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= usedCap
@@ -192,10 +184,20 @@ export class ResourceCell extends Cell {
           }
         }
 
-        let storageLink = this.hive.cells.storage && this.hive.cells.storage.getFreeLink(true);
+        let fastRefLink = this.hive.cells.spawn.fastRef && this.hive.cells.spawn.fastRef.link;
+        if (fastRefLink && fastRefLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 4) {
+          let ans = this.link.transferEnergy(fastRefLink);
+          if (ans === OK) {
+            if (Apiary.logger)
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
+                , fastRefLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
+            return;
+          }
+        }
+
+        let storageLink = this.hive.cells.storage && this.hive.cells.storage.link;
         if (storageLink && (usedCap <= storageLink.store.getFreeCapacity(RESOURCE_ENERGY) || closeToFull)) {
           let ans = this.link.transferEnergy(storageLink);
-          this.hive.cells.storage!.linksState[storageLink.id] = "busy";
           if (Apiary.logger && ans === OK)
             Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
               , storageLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });

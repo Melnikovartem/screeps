@@ -1,4 +1,5 @@
 import { Cell } from "../_Cell";
+import { FastRefillCell } from "../stage1/fastRefill";
 
 import { beeStates } from "../../enums";
 import { makeId } from "../../abstract/utils";
@@ -13,6 +14,8 @@ export class RespawnCell extends Cell {
   freeSpawns: StructureSpawn[] = [];
   extensions: { [id: string]: StructureExtension } = {};
   master: undefined;
+
+  fastRef: FastRefillCell | undefined;
 
   priorityMap: { [id: string]: number } = {};
 
@@ -37,6 +40,14 @@ export class RespawnCell extends Cell {
   update() {
     super.update(["extensions", "spawns"]);
 
+    if (!this.fastRef && this.hive.phase >= 1 && this.hive.cells.storage && this.hive.cache.cells[prefix.fastRefillCell]) {
+      let poss = this.hive.cache.cells[prefix.fastRefillCell].poss;
+      let pos = new RoomPosition(poss.x, poss.y, this.hive.roomName);
+      let link = <StructureLink | undefined>pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_LINK)[0];
+      if (link)
+        this.fastRef = new FastRefillCell(this, link, this.hive.cells.storage)
+    }
+
     // find free spawners
     this.freeSpawns = _.filter(this.spawns, structure => !structure.spawning && !this.spawnDisrupted(structure));
     this.freeSpawns.sort((a, b) => this.spawnEval(b) - this.spawnEval(a));
@@ -45,11 +56,25 @@ export class RespawnCell extends Cell {
     let storageCell = this.hive.cells.storage;
     if (storageCell)
       storageCell.requestFromStorage(this.getTargets(), 0, RESOURCE_ENERGY);
-  };
+    if (this.fastRef)
+      this.fastRef.update();
+  }
 
   getTargets(freeStore = 0) {
     let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
-    targets = _.filter(targets.concat(_.map(this.extensions)), s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
+    if (this.fastRef)
+      this.fastRef.refillTargets = [];
+    targets = _.filter(targets.concat(_.map(this.extensions)), s => {
+      if (s.store.getFreeCapacity(RESOURCE_ENERGY) <= freeStore)
+        return false;
+      let ans = true;
+      if (this.fastRef && this.fastRef.pos.getRangeTo(s) <= 2)
+        if (_.some(this.fastRef.masters, m => m.pos.getRangeTo(s) <= 1 && m.beesAmount)) {
+          this.fastRef.refillTargets.push(s);
+          return false;
+        }
+      return ans;
+    });
     targets.sort((a, b) => (this.priorityMap[a.id] || Infinity) - (this.priorityMap[b.id] || Infinity));
     return targets;
   }
@@ -166,5 +191,7 @@ export class RespawnCell extends Cell {
         if (creep && creep.ticksToLive && CREEP_LIFE_TIME - creep.ticksToLive >= 200)
           s.renewCreep(creep);
       });
+    if (this.fastRef)
+      this.fastRef.run();
   }
 }

@@ -65,6 +65,8 @@ export class DefenseCell extends Cell {
     });
     if (!Object.keys(this.nukes).length)
       this.timeToLand = Infinity;
+    else
+      this.getNukeDefMap();
   }
 
   // mini roomPlanner
@@ -103,20 +105,22 @@ export class DefenseCell extends Cell {
     }
 
     let coef = 1;
-    let storage = this.hive.cells.storage;
-    if (storage) {
-      let checkMineralLvl = (lvl: 0 | 1 | 2) => storage!.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
-      if (checkMineralLvl(2))
-        coef = 2;
-      else if (checkMineralLvl(1))
-        coef = 1.8;
-      else if (checkMineralLvl(0))
-        coef = 1.5;
-    }
+    if (this.hive.cells) {
+      let storage = this.hive.cells.storage;
+      if (storage) {
+        let checkMineralLvl = (lvl: 0 | 1 | 2) => storage!.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
+        if (checkMineralLvl(2))
+          coef = 2;
+        else if (checkMineralLvl(1))
+          coef = 1.8;
+        else if (checkMineralLvl(0))
+          coef = 1.5;
+      }
 
-    leaveOne(this.hive.cells.spawn.spawns);
-    if (this.hive.cells.lab)
-      leaveOne(this.hive.cells.lab.laboratories);
+      leaveOne(this.hive.cells.spawn.spawns);
+      if (this.hive.cells.lab)
+        leaveOne(this.hive.cells.lab.laboratories);
+    }
 
     for (let x in map)
       for (let y in map[x]) {
@@ -163,6 +167,7 @@ export class DefenseCell extends Cell {
           }
         }
       }
+
     if (oneAtATime && ans.length) {
       let findType = (prev: { pos: RoomPosition }, curr: { pos: RoomPosition }, type: StructureConstant) =>
         prev.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === type).length -

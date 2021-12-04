@@ -7,7 +7,7 @@ import { Traveler } from "../Traveler/TravelerModified";
 import type { BuildProject } from "../Hive";
 
 export type RoomSetup = { [key in BuildableStructureConstant | "null"]?: { pos: { x: number, y: number }[] } };
-type CellCache = { poss: Pos, positions?: Pos[] };
+type CellCache = { poss: Pos };
 
 type Module = { cellsCache: { [id: string]: CellCache }, setup: RoomSetup, freeSpaces: Pos[] };
 type BlockDirections = TOP | RIGHT | TOP_RIGHT | TOP_LEFT;
@@ -18,7 +18,7 @@ type BlockDirections = TOP | RIGHT | TOP_RIGHT | TOP_LEFT;
 
 const LABS: Module = { cellsCache: { [prefix.laboratoryCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 24, y: 24 }, { x: 25, y: 25 }, { x: 26, y: 26 }, { x: 27, y: 27 }] }, lab: { pos: [{ x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 27, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 25 }, { x: 24, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 27 }, { x: 26, y: 27 }] } }, freeSpaces: [] };
 
-const FAST_REFILL: Module = { cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 }, positions: [{ x: 24, y: 24 }, { x: 24, y: 26 }, { x: 26, y: 26 }, { x: 26, y: 24 }] } }, setup: { null: { pos: [{ "x": 26, "y": 26 }, { "x": 24, "y": 26 }, { "x": 24, "y": 24 }, { "x": 26, "y": 24 }] }, link: { pos: [{ x: 25, y: 25 }] }, spawn: { pos: [{ x: 23, y: 24 }, { x: 27, y: 24 }, { x: 25, y: 27 }] }, container: { pos: [{ x: 27, y: 25 }, { x: 23, y: 25 }] }, extension: { pos: [{ x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 23, y: 23 }, { x: 24, y: 23 }, { x: 24, y: 25 }, { x: 25, y: 23 }, { x: 26, y: 23 }, { x: 27, y: 23 }, { x: 26, y: 25 }, { x: 27, y: 27 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 24 }] } }, freeSpaces: [] };
+const FAST_REFILL: Module = { cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 } } }, setup: { null: { pos: [{ "x": 26, "y": 26 }, { "x": 24, "y": 26 }, { "x": 24, "y": 24 }, { "x": 26, "y": 24 }] }, link: { pos: [{ x: 25, y: 25 }] }, spawn: { pos: [{ x: 23, y: 24 }, { x: 27, y: 24 }, { x: 25, y: 27 }] }, container: { pos: [{ x: 27, y: 25 }, { x: 23, y: 25 }] }, extension: { pos: [{ x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 23, y: 23 }, { x: 24, y: 23 }, { x: 24, y: 25 }, { x: 25, y: 23 }, { x: 26, y: 23 }, { x: 27, y: 23 }, { x: 26, y: 25 }, { x: 27, y: 27 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 24 }] } }, freeSpaces: [] };
 
 const FREE_CELL: Module = { cellsCache: {}, setup: { road: { pos: [{ x: 25, y: 23 }, { x: 25, y: 27 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 25 }, { x: 26, y: 26 }] } }, freeSpaces: [{ x: 25, y: 24 }, { x: 25, y: 25 }, { x: 25, y: 26 }, { x: 26, y: 25 }, { x: 24, y: 25 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }] };
 
@@ -38,9 +38,9 @@ interface CoustomFindPathOpts extends TravelToOptions { ignoreTypes?: BuildableS
 function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
   return _.defaults(opt, {
     ignoreStructures: true, offRoad: true, maxRooms: 4, range: 0, weightOffRoad: 2,
-    roomCallback: function(roomName: string, costMatrix: CostMatrix): CostMatrix | void {
+    roomCallback: function(roomName: string, costMatrix: CostMatrix) {
       if (!Apiary.planner.activePlanning[roomName])
-        return;
+        return false;
       let plan = Apiary.planner.activePlanning[roomName].plan;
       for (let x in plan)
         for (let y in plan[x]) {
@@ -763,6 +763,11 @@ export class RoomPlanner {
         if (!this.activePlanning[f.pos.roomName])
           this.toActive(f.pos, undefined, [STRUCTURE_CONTAINER]);
       });
+    else
+      _.forEach(futureResourceCells, f => {
+        if (!this.activePlanning[f.pos.roomName])
+          this.initPlanning(f.pos.roomName, anchor);
+      });
 
     _.forEach(futureResourceCells, f => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
@@ -990,11 +995,6 @@ export class RoomPlanner {
     for (let cellType in configuration.cellsCache) {
       let cache = configuration.cellsCache[cellType];
       let transformedCache: CellCache = { poss: transformPos(cache.poss) };
-      if (cache.positions) {
-        transformedCache.positions = []
-        for (let i = 0; i < cache.positions.length; ++i)
-          transformedCache.positions.push(transformPos(cache.positions[i]));
-      }
       this.activePlanning[roomName].cellsCache[cellType] = transformedCache;
     }
 

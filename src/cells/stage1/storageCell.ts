@@ -15,8 +15,7 @@ export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 export class StorageCell extends Cell {
 
   storage: StructureStorage | StructureTerminal;
-  links: { [id: string]: StructureLink } = {};
-  linksState: { [id: string]: "idle" | "busy" } = {};
+  link: StructureLink | undefined;
   terminal: StructureTerminal | undefined;
   master: ManagerMaster;
 
@@ -28,24 +27,13 @@ export class StorageCell extends Cell {
   usedCapacity: ResTarget = {}
 
   constructor(hive: Hive, storage: StructureStorage | StructureTerminal) {
-    super(hive, prefix.storageCell+ "_" + hive.room.name);
+    super(hive, prefix.storageCell + "_" + hive.room.name);
 
     this.storage = storage;
     this.terminal = this.hive.room.terminal;
-
-    let links = <StructureLink[]>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      structure => structure.structureType === STRUCTURE_LINK);
-
-    _.forEach(links, l => {
-      this.links[l.id] = l;
-      this.linksState[l.id] = "idle";
-    });
-
+    this.link = <StructureLink | undefined>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 1),
+      structure => structure.structureType === STRUCTURE_LINK)[0];
     this.master = new ManagerMaster(this);
-  }
-
-  get pos() {
-    return this.storage.pos
   }
 
   requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
@@ -119,20 +107,9 @@ export class StorageCell extends Cell {
     return this.requestToStorage(rrs, 6, undefined, 1200, true);
   }
 
-  getFreeLink(sendIn: boolean = false): StructureLink | undefined {
-    let links = _.filter(this.links, l => !sendIn || this.linksState[l.id] === "idle").sort(
-      (a, b) => (b.store.getUsedCapacity(RESOURCE_ENERGY) - a.store.getUsedCapacity(RESOURCE_ENERGY)) * (sendIn ? -1 : 1));
-    if (sendIn || !links.length)
-      return links[0];
-    else
-      return links.reduce((prev, curr) => curr.cooldown < prev.cooldown ? curr : prev);
-  }
-
   update() {
-    super.update(["links"]);
-
+    super.update();
     this.usedCapacity = {};
-
     if (!this.storage && Apiary.useBucket) {
       Apiary.destroyTime = Game.time;
       return;
@@ -141,12 +118,8 @@ export class StorageCell extends Cell {
     for (let k in this.requests)
       this.requests[k].update();
 
-    for (let id in this.links) {
-      let link = this.links[id];
-      this.linksState[id] = "idle";
-      if (link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
-        this.requestToStorage([link], this.hive.state === hiveStates.battle ? 1 : 3, RESOURCE_ENERGY);
-    }
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
+      this.requestToStorage([this.link], this.hive.state === hiveStates.battle ? 1 : 4, RESOURCE_ENERGY);
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && !this.hive.cells.dev && Apiary.useBucket)

@@ -116,6 +116,10 @@ export const setups = {
     pattern: [CLAIM],
     patternLimit: 1,
   }, 25),
+  downgrader: new CreepSetup(setupsNames.claimer + "D", {
+    pattern: [CLAIM],
+    patternLimit: Infinity,
+  }, 25),
   queen: new CreepSetup(setupsNames.queen, {
     pattern: [CARRY],
   }, 50 / 3),

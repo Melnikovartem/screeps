@@ -18,7 +18,7 @@ export class UpgraderMaster extends Master {
   }
 
   recalculateTargetBee() {
-    this.fastModePossible = !!(this.cell.link && Object.keys(this.cell.sCell.links).length) || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
+    this.fastModePossible = !!(this.cell.link && this.cell.sCell.link) || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
 
     let polen: Flag | undefined = Game.flags[prefix.upgrade + this.hive.roomName];
     if (polen && this.cell.controller.level === 8 && polen.pos.getRangeTo(this.cell.controller) <= 1) {

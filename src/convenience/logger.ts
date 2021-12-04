@@ -230,7 +230,7 @@ export class Logger {
 
     ans["defense_tower"] = getRate("defense_heal") + getRate("defense_dmg") + getRate("defense_repair");
     ans["defense_swarms"] = getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer);
-    ans["attack_rooms"] = getCreepCostRate(setups.knight);
+    ans["attack_rooms"] = getCreepCostRate(setups.knight) + getCreepCostRate(setups.downgrader);
 
     ans["export"] = getRate("export") + getRate("export local");
     ans["import"] = getRate("import") + getRate("import local");
@@ -238,7 +238,7 @@ export class Logger {
     ans["lab"] = getRate("boosts") + getRate("lab");
     ans["production"] = getRate("factory") + getRate("power_upgrade");
     ans["larva"] = getRate("larva") + + getCreepCostRate(setups.bootstrap);
-    ans["upkeep"] = getCreepCostRate(setups.queen);
+    ans["upkeep"] = getCreepCostRate(setups.queen) + getRate("upkeep");
 
     return ans;
   }

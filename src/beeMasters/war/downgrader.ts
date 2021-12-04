@@ -37,14 +37,11 @@ export class DowngradeMaster extends SwarmMaster {
       }
     }
 
-    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length) {
-      let setup = setups.claimer.copy();
-      setup.patternLimit = Infinity;
+    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)
       this.wish({
-        setup: setup,
+        setup: setups.downgrader,
         priority: 9,
       });
-    }
   }
 
   run() {
