@@ -87,6 +87,7 @@ export class RoomPlanner {
       correct: "ok" | "fail" | "work";
       anchor: RoomPosition,
       cellsCache: { [id: string]: CellCache },
+      protected: { [id: number]: { [id: number]: 0 | 1 } },
     }
   } = {};
 
@@ -119,7 +120,7 @@ export class RoomPlanner {
   }
 
   initPlanning(roomName: string, anchor: RoomPosition) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: "ok", cellsCache: {}, anchor: anchor };
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: "ok", cellsCache: {}, anchor: anchor, protected: {} };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
@@ -174,14 +175,9 @@ export class RoomPlanner {
 
     let customBuildings = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_RED);
     _.forEach(customBuildings, f => (f.name in CONSTRUCTION_COST) && this.addToPlan(f.pos, f.pos.roomName, <BuildableStructureConstant>f.name), true);
-
     _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
 
-    this.addResourceRoads(anchor);
-    this.addUpgradeSite(anchor);
-
     let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_OBSERVER];
-
     let net: RoomPosition[] = [];
 
     jobs.push({
@@ -371,6 +367,108 @@ export class RoomPlanner {
         }
       });
     }
+
+    this.addWalls(anchor.roomName);
+
+    this.addResourceRoads(anchor);
+    this.addUpgradeSite(anchor);
+  }
+
+  addWalls(roomName: string, padding = 3) {
+    this.activePlanning[roomName].jobsToDo.push({
+      context: `addingWalls`,
+      func: () => {
+        // this is A bad code but i don't use if often, so i won't rewrite
+        let plan = this.activePlanning[roomName].plan;
+        let prot = this.activePlanning[roomName].protected;
+        for (let x = 1; x <= 48; ++x) {
+          prot[x] = {};
+          for (let y = 1; y <= 48; ++y)
+            prot[x][y] = 0;
+        }
+        for (const x in plan)
+          for (const y in plan[x])
+            for (let dx = -padding; dx <= padding; ++dx)
+              for (let dy = -padding; dy <= padding; ++dy)
+                if (prot[+x + dx] && prot[+x + dx][+y + dy] !== undefined)
+                  prot[+x + dx][+y + dy] = 1;
+        let max = -1;
+        let max2 = -1;
+        let min = Infinity;
+        let min2 = Infinity;
+        let prevMax = 0;
+        let prevMin = 0;
+        let toFix: [number, number][] = [];
+        let reset = () => {
+          prevMax = max;
+          prevMin = min;
+          max = -1;
+          max2 = -1;
+          min = Infinity;
+          min2 = Infinity;
+        }
+        let compare = (param: number) => {
+          if (param > max) {
+            max2 = max;
+            max = param;
+          }
+          if (param < min)
+            min = param;
+          else if (param < min2)
+            min2 = param;
+        }
+        let addToFix = (c: number, p: Pos) => {
+          let b = - p.x * c + p.y;
+          let ff = toFix.filter(v => v[0] === c);
+          if (!ff.filter(v => v[1] === b).length)
+            toFix.push([c, b]);
+          if (!ff.filter(v => v[1] === b - 1).length)
+            toFix.push([c, b - 1]);
+          if (!ff.filter(v => v[1] === b + 1).length)
+            toFix.push([c, b + 1]);
+        }
+        let addDef = (p: Pos, addRamp: boolean, force: number) => {
+          if (addRamp || !(plan[p.x] && plan[p.x][p.y]))
+            this.addToPlan(p, roomName, addRamp || !force ? STRUCTURE_RAMPART : STRUCTURE_WALL);
+        }
+        let use = (f: (a: number) => Pos, b: number, coef: -1 | 0 | 1) => {
+          addDef(f(max), b === 0, coef);
+          addDef(f(max2), b === 1, coef);
+          addDef(f(min), b === 0, coef);
+          addDef(f(min2), b === 1, coef);
+          if (max !== prevMax && coef)
+            addToFix(coef * (prevMax > max ? -1 : 1), f(prevMax));
+          if (max !== prevMin && coef)
+            addToFix(coef * (prevMin > min ? -1 : 1), f(prevMax));
+        }
+        for (let x = 1; x <= 48; ++x) {
+          reset();
+          for (let y = 1; y <= 48; ++y)
+            if (prot[x][y] === 1)
+              compare(y);
+          use((a) => { return { x: x, y: a } }, x % 2, 1);
+        }
+        for (let y = 1; y <= 48; ++y) {
+          reset();
+          for (let x = 1; x <= 48; ++x)
+            if (prot[x][y] === 1)
+              compare(x);
+          use((a) => { return { x: a, y: y } }, y % 2, -1);
+        }
+        for (let i = 0; i < toFix.length; ++i) {
+          let f = (x: number) => toFix[i][0] * x + toFix[i][1];
+          reset();
+          for (let x = 1; x <= 48; ++x) {
+            let y = f(x);
+            if (y >= 1 && y <= 49)
+              if (prot[x][y] === 1)
+                compare(x);
+          }
+          use((a) => { return { x: a, y: f(a) } }, 3, 0);
+        }
+        return OK;
+      },
+    });
   }
 
   protectPoint(anchor: RoomPosition) {
@@ -806,6 +904,8 @@ export class RoomPlanner {
   }
 
   addToPlan(pos: Pos, roomName: string, sType: BuildableStructureConstant | null | undefined, force: boolean = false, check: boolean = false) {
+    if (pos.x <= 0 || pos.y <= 0 || pos.x >= 49 || pos.y >= 49)
+      return ERR_NO_PATH;
     if (!this.activePlanning[roomName])
       this.initPlanning(roomName, new RoomPosition(pos.x, pos.y, roomName));
     if (Game.map.getRoomTerrain(roomName).get(pos.x, pos.y) === TERRAIN_MASK_WALL && sType !== STRUCTURE_EXTRACTOR)
@@ -819,34 +919,37 @@ export class RoomPlanner {
       plan[pos.x] = {};
     if (!plan[pos.x][pos.y])
       plan[pos.x][pos.y] = { s: undefined, r: false };
-    let oldState = { s: plan[pos.x][pos.y].s, r: plan[pos.x][pos.y].r };
-    if (sType === STRUCTURE_RAMPART)
-      plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
-    else if (sType === undefined && force) {
-      if (plan[pos.x][pos.y].s)
-        placed[plan[pos.x][pos.y].s!]!--;
-      plan[pos.x][pos.y] = { s: undefined, r: false };
-    } else if (plan[pos.x][pos.y].s === undefined) {
+    let info = { s: plan[pos.x][pos.y].s, r: plan[pos.x][pos.y].r };
+    if (sType === STRUCTURE_RAMPART) {
+      if (info.s === STRUCTURE_WALL)
+        info.s = undefined;
+      info.r = true;
+    } else if (sType === undefined && force) {
+      if (info.s && !check)
+        placed[info.s]!--;
+      info = { s: undefined, r: false };
+    } else if (info.s === undefined && !(info.r && sType === STRUCTURE_WALL)) {
       if (sType) {
         if (placed[sType]! >= CONTROLLER_STRUCTURES[sType][8])
           return ERR_FULL;
-        placed[sType]!++;
+        if (!check)
+          placed[sType]!++;
       }
-      plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
-    } else if (plan[pos.x][pos.y].s === STRUCTURE_WALL && sType !== STRUCTURE_WALL)
-      plan[pos.x][pos.y] = { s: sType, r: true };
-    else if (sType === STRUCTURE_WALL && plan[pos.x][pos.y].s !== STRUCTURE_WALL)
-      plan[pos.x][pos.y] = { s: plan[pos.x][pos.y].s, r: true };
+      info.s = sType;
+    } else if (info.s === STRUCTURE_WALL && sType !== STRUCTURE_WALL)
+      info = { s: sType, r: true };
+    else if (sType === STRUCTURE_WALL && info.s !== STRUCTURE_WALL)
+      info.r = true;
     else if (force) {
-      if (plan[pos.x][pos.y].s)
-        placed[plan[pos.x][pos.y].s!]!--;
-      plan[pos.x][pos.y] = { s: sType, r: plan[pos.x][pos.y].r };
-      if (sType)
+      if (info.s && !check)
+        placed[info.s]!--;
+      if (sType && !check)
         placed[sType]!++;
+      info.s = sType;
     } else
       return ERR_NO_PATH;
-    if (check)
-      plan[pos.x][pos.y] = oldState;
+    if (!check)
+      plan[pos.x][pos.y] = info;
     return OK;
   }
 
@@ -873,7 +976,6 @@ export class RoomPlanner {
     this.addModule(anchor.roomName, FREE_CELL, a => this.rotate(pos, a, 0));
     for (let i = 0; i < net.length; ++i)
       if (net[i].getRangeApprox(pos) <= 2) {
-        console.log(pos, net[i], net[i].getRangeApprox(pos));
         net.splice(i, 1);
         --i;
       }
