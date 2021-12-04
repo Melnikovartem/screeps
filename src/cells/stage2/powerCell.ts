@@ -15,9 +15,19 @@ export class PowerCell extends Cell {
   sCell: StorageCell;
 
   constructor(hive: Hive, powerSpawn: StructurePowerSpawn, sCell: StorageCell) {
-    super(hive, prefix.powerCell + hive.room.name);
+    super(hive, prefix.powerCell + "_" + hive.room.name);
     this.sCell = sCell;
     this.powerSpawn = powerSpawn;
+    this.setCahe("poss", { x: 25, y: 25 });
+  }
+
+  get poss(): { x: number, y: number } {
+    return this.fromCache("poss");
+  }
+
+  get pos(): RoomPosition {
+    let pos = this.fromCache("poss");
+    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
   get powerManager(): string | undefined {

@@ -17,7 +17,7 @@ export class DevelopmentCell extends Cell {
   handAddedResources: RoomPosition[] = [];
   addedRooms: string[] = [];
   constructor(hive: Hive) {
-    super(hive, prefix.developmentCell + hive.room.name);
+    super(hive, prefix.developmentCell + "_" + hive.room.name);
     this.controller = this.hive.controller;
     this.master = new BootstrapMaster(this);
   }

@@ -18,11 +18,17 @@ export class ExcavationCell extends Cell {
   fullContainer = CONTAINER_CAPACITY * 0.9;
 
   constructor(hive: Hive) {
-    super(hive, prefix.excavationCell + hive.room.name);
+    super(hive, prefix.excavationCell + "_" + hive.room.name);
+    this.setCahe("poss", { x: 25, y: 25 });
   }
 
-  get pos() {
-    return this.hive.rest;
+  get poss(): { x: number, y: number } {
+    return this.fromCache("poss");
+  }
+
+  get pos(): RoomPosition {
+    let pos = this.fromCache("poss");
+    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
   addResource(resource: Source | Mineral) {

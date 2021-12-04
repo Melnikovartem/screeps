@@ -42,7 +42,7 @@ export class PowerMaster extends SwarmMaster {
   }
 
   get pickupTime() {
-    return Math.ceil(this.power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)) * MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
+    return Math.ceil(this.power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2) * 0.5) * MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
   }
 
   get shouldSpawn() {

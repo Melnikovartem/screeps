@@ -27,7 +27,7 @@ import { profile } from "./profiler/decorator";
 
 import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
-import type { Hive, HivePositions } from "./Hive";
+import type { Hive } from "./Hive";
 
 const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 
@@ -281,35 +281,27 @@ export class FlagOrder {
       case COLOR_CYAN:
         this.uniqueFlag();
         if (this.hive.roomName === this.pos.roomName) {
-          let type: keyof HivePositions | undefined;
           switch (this.secondaryColor) {
             case COLOR_BROWN:
-              type = "rest";
+              this.hive.cells.excavation.toCache("poss", { x: this.pos.x, y: this.pos.y });
               _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-                cell.restTime = Infinity;
+                cell.restTime = cell.pos.getTimeForPath(this.hive.rest);
               });
-              break;
-            case COLOR_GREEN:
-              type = "queen1";
-              break;
-            case COLOR_YELLOW:
-              type = "queen2";
               break;
             case COLOR_CYAN:
-              type = "lab";
+              if (this.hive.cells.lab)
+                this.hive.cells.lab.toCache("poss", { x: this.pos.x, y: this.pos.y });
               break;
             case COLOR_WHITE:
-              type = "center";
+              this.hive.cells.defense.toCache("poss", { x: this.pos.x, y: this.pos.y });
               _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-                cell.roadTime = Infinity;
+                cell.roadTime = cell.pos.getTimeForPath(this.hive.pos);
               });
               break;
-          }
-          if (type) {
-            Memory.cache.hives[this.hive.roomName].positions[type] = { x: this.pos.x, y: this.pos.y };
-            let active = Apiary.planner.activePlanning[this.hive.roomName];
-            if (active)
-              active.poss[type] = { x: this.pos.x, y: this.pos.y }
+            case COLOR_RED:
+              if (this.hive.cells.power)
+                this.hive.cells.power.toCache("poss", { x: this.pos.x, y: this.pos.y });
+              break
           }
         }
         this.delete();

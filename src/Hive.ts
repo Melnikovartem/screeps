@@ -28,14 +28,6 @@ export interface SpawnOrder {
   createTime: number,
 }
 
-export interface HivePositions {
-  rest: Pos,
-  queen1: Pos,
-  queen2: Pos,
-  lab: Pos,
-  center: Pos,
-}
-
 export interface BuildProject {
   pos: RoomPosition,
   sType: StructureConstant,
@@ -43,8 +35,6 @@ export interface BuildProject {
   energyCost: number,
   type: "repair" | "construction",
 }
-
-export type PossiblePositions = { [id in keyof HivePositions]?: Pos };
 
 interface HiveCells {
   storage?: StorageCell,
@@ -146,14 +136,7 @@ export class Hive {
     this.room = Game.rooms[roomName];
 
     if (!Memory.cache.hives[this.roomName]) {
-      let pos = { x: 25, y: 25 };
-      if (this.room.controller)
-        pos = { x: this.controller.pos.x, y: this.controller.pos.y };
-      let spawn = this.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_SPAWN)[0];
-      if (spawn)
-        pos = spawn.pos;
       Memory.cache.hives[this.roomName] = {
-        positions: { center: pos, rest: pos, queen1: pos, queen2: pos, lab: pos },
         wallsHealth: WALL_HEALTH, cells: {},
         do: { power: true, deposit: true, war: true }
       }
@@ -297,17 +280,12 @@ export class Hive {
     });
   }
 
-  getPos(type: keyof HivePositions) {
-    let pos = Memory.cache.hives[this.roomName].positions[type];
-    return new RoomPosition(pos.x, pos.y, this.roomName);
-  }
-
   get pos() {
-    return this.getPos("center");
+    return this.cells.defense.pos;
   }
 
   get rest() {
-    return this.getPos("rest");
+    return this.cells.excavation.pos;
   }
 
   get controller() {

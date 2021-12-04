@@ -55,7 +55,7 @@ export class FactoryCell extends Cell {
   possibleUncommon: boolean = false;
 
   constructor(hive: Hive, factory: StructureFactory, sCell: StorageCell) {
-    super(hive, prefix.factoryCell + hive.room.name);
+    super(hive, prefix.factoryCell + "_" + hive.room.name);
     this.sCell = sCell;
     this.factory = factory;
     // this.setCahe("commodityTarget", undefined);

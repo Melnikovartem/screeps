@@ -28,7 +28,7 @@ export class StorageCell extends Cell {
   usedCapacity: ResTarget = {}
 
   constructor(hive: Hive, storage: StructureStorage | StructureTerminal) {
-    super(hive, prefix.storageCell + hive.room.name);
+    super(hive, prefix.storageCell+ "_" + hive.room.name);
 
     this.storage = storage;
     this.terminal = this.hive.room.terminal;

@@ -4,7 +4,7 @@ import { profile } from "../profiler/decorator";
 import { HIVE_ENERGY } from "../hive";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { MARKET_LAG } from "./broker";
-import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; // COMMODITIES_TO_SELL
+//  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 
 import type { Hive, ResTarget } from "../hive";
 
@@ -100,7 +100,7 @@ export class Network {
       if (tryToBuyIn) {
         for (const r in hive.shortages) {
           let res = <ResourceConstant>r;
-          if (ALLOWED_TO_BUYIN.includes(res) && !(COMPRESS_MAP[<"H">res] && this.resState[COMPRESS_MAP[<"H">res]]! >= 100)) {
+          if (ALLOWED_TO_BUYIN.includes(res)) {
             let amount = hive.shortages[res]!;
             let ans = Apiary.broker.buyIn(terminal, res, amount + PADDING_RESOURCE / 2, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
             if (ans === "short") {

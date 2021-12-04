@@ -1,20 +1,28 @@
 import { makeId, getEnterances } from "./utils";
-import { roomStates } from "../enums";
+import { roomStates, prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { Traveler } from "../Traveler/TravelerModified";
 
-import type { PossiblePositions, BuildProject } from "../Hive";
+import type { BuildProject } from "../Hive";
 
 export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: number, y: number }[] } };
+type CellCache = { poss: Pos, positions?: Pos[] };
 
-type Module = { setup: RoomSetup, freeSpaces: Pos[], exits: Pos[], poss: PossiblePositions };
+type Module = { cellsCache: { [id: string]: CellCache }, setup: RoomSetup, freeSpaces: Pos[] };
 type BlockDirections = TOP | RIGHT | TOP_RIGHT | TOP_LEFT;
 
 // well i can add more
-const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 }, queen1: { x: 25, y: 25 } }, exits: [], freeSpaces: [{ x: 30, y: 26 }, { x: 30, y: 24 }, { x: 31, y: 25 }, { x: 28, y: 24 }, { x: 28, y: 23 }, { x: 29, y: 23 }, { x: 28, y: 26 }, { x: 29, y: 27 }, { x: 28, y: 27 }, { x: 27, y: 27 }, { x: 29, y: 22 }, { x: 23, y: 26 }, { x: 22, y: 26 }, { x: 24, y: 27 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 19, y: 25 }, { x: 19, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 26 }, { x: 19, y: 27 }, { x: 18, y: 27 }, { x: 18, y: 23 }, { x: 28, y: 21 }, { x: 27, y: 21 }, { x: 26, y: 22 }, { x: 29, y: 20 }, { x: 28, y: 20 }, { x: 30, y: 21 }, { x: 30, y: 22 }, { x: 30, y: 20 }, { x: 31, y: 23 }, { x: 31, y: 22 }, { x: 32, y: 24 }, { x: 32, y: 23 }, { x: 32, y: 26 }, { x: 32, y: 27 }, { x: 31, y: 27 }, { x: 30, y: 28 }, { x: 31, y: 28 }, { x: 29, y: 28 }, { x: 33, y: 24 }, { x: 33, y: 25 }, { x: 33, y: 26 }, { x: 25, y: 20 }, { x: 24, y: 22 }, { x: 17, y: 25 }, { x: 17, y: 26 }, { x: 17, y: 24 }, { x: 21, y: 27 }, { x: 22, y: 27 }, { x: 23, y: 27 }, { x: 19, y: 22 }, { x: 20, y: 28 }, { x: 19, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 27, y: 28 }, { x: 22, y: 28 }, { x: 23, y: 28 }, { x: 21, y: 29 }, { x: 20, y: 29 }, { x: 24, y: 29 }, { x: 25, y: 29 }, { x: 22, y: 24 }, { x: 25, y: 26 }, { x: 25, y: 21 }, { x: 26, y: 20 }, { x: 24, y: 20 }, { x: 30, y: 25 }, { x: 27, y: 22 }, { x: 20, y: 25 }, { x: 22, y: 30 }, { x: 23, y: 30 }, { x: 24, y: 30 }, { x: 21, y: 30 }, { x: 18, y: 28 }, { x: 19, y: 29 }, { x: 20, y: 30 }, { x: 25, y: 30 }, { x: 26, y: 29 }, { x: 31, y: 21 }, { x: 32, y: 22 }, { x: 33, y: 23 }, { x: 33, y: 27 }, { x: 32, y: 28 }, { x: 28, y: 28 }, { x: 29, y: 29 }, { x: 30, y: 29 }, { x: 31, y: 29 }, { x: 18, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 27 }], setup: { road: { pos: [{ x: 19, y: 24 }, { x: 21, y: 24 }, { x: 20, y: 23 }, { x: 20, y: 13 }, { x: 25, y: 22 }, { x: 21, y: 21 }, { x: 18, y: 25 }, { x: 19, y: 26 }, { x: 21, y: 26 }, { x: 22, y: 22 }, { x: 20, y: 27 }, { x: 27, y: 23 }, { x: 27, y: 24 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 21 }, { x: 29, y: 24 }, { x: 29, y: 26 }, { x: 30, y: 27 }, { x: 30, y: 23 }, { x: 31, y: 26 }, { x: 31, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 26, y: 27 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 25, y: 25 }, { x: 26, y: 24 }, { x: 32, y: 25 }, { x: 28, y: 22 }, { x: 25, y: 27 }, { x: 21, y: 28 }, { x: 22, y: 29 }, { x: 23, y: 29 }, { x: 24, y: 28 }, { x: 26, y: 21 }, { x: 27, y: 20 }, { x: 24, y: 21 }, { x: 23, y: 20 }] }, container: { pos: [] }, spawn: { pos: [{ x: 21, y: 25 }, { x: 29, y: 25 }, { x: 25, y: 23 }] }, storage: { pos: [{ x: 24, y: 24 }] }, terminal: { pos: [{ x: 24, y: 25 }] }, lab: { pos: [{ x: 23, y: 22 }, { x: 23, y: 21 }, { x: 22, y: 21 }, { x: 22, y: 20 }, { x: 21, y: 20 }, { x: 20, y: 21 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 21, y: 23 }, { x: 22, y: 23 }] }, factory: { pos: [{ x: 26, y: 26 }] }, observer: { pos: [] }, powerSpawn: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 25, y: 24 }] }, nuker: { pos: [{ x: 27, y: 25 }] } } };
+/* const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 }, queen1: { x: 25, y: 25 } }, exits: [], freeSpaces: [{ x: 30, y: 26 }, { x: 30, y: 24 }, { x: 31, y: 25 }, { x: 28, y: 24 }, { x: 28, y: 23 }, { x: 29, y: 23 }, { x: 28, y: 26 }, { x: 29, y: 27 }, { x: 28, y: 27 }, { x: 27, y: 27 }, { x: 29, y: 22 }, { x: 23, y: 26 }, { x: 22, y: 26 }, { x: 24, y: 27 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 19, y: 25 }, { x: 19, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 26 }, { x: 19, y: 27 }, { x: 18, y: 27 }, { x: 18, y: 23 }, { x: 28, y: 21 }, { x: 27, y: 21 }, { x: 26, y: 22 }, { x: 29, y: 20 }, { x: 28, y: 20 }, { x: 30, y: 21 }, { x: 30, y: 22 }, { x: 30, y: 20 }, { x: 31, y: 23 }, { x: 31, y: 22 }, { x: 32, y: 24 }, { x: 32, y: 23 }, { x: 32, y: 26 }, { x: 32, y: 27 }, { x: 31, y: 27 }, { x: 30, y: 28 }, { x: 31, y: 28 }, { x: 29, y: 28 }, { x: 33, y: 24 }, { x: 33, y: 25 }, { x: 33, y: 26 }, { x: 25, y: 20 }, { x: 24, y: 22 }, { x: 17, y: 25 }, { x: 17, y: 26 }, { x: 17, y: 24 }, { x: 21, y: 27 }, { x: 22, y: 27 }, { x: 23, y: 27 }, { x: 19, y: 22 }, { x: 20, y: 28 }, { x: 19, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 27, y: 28 }, { x: 22, y: 28 }, { x: 23, y: 28 }, { x: 21, y: 29 }, { x: 20, y: 29 }, { x: 24, y: 29 }, { x: 25, y: 29 }, { x: 22, y: 24 }, { x: 25, y: 26 }, { x: 25, y: 21 }, { x: 26, y: 20 }, { x: 24, y: 20 }, { x: 30, y: 25 }, { x: 27, y: 22 }, { x: 20, y: 25 }, { x: 22, y: 30 }, { x: 23, y: 30 }, { x: 24, y: 30 }, { x: 21, y: 30 }, { x: 18, y: 28 }, { x: 19, y: 29 }, { x: 20, y: 30 }, { x: 25, y: 30 }, { x: 26, y: 29 }, { x: 31, y: 21 }, { x: 32, y: 22 }, { x: 33, y: 23 }, { x: 33, y: 27 }, { x: 32, y: 28 }, { x: 28, y: 28 }, { x: 29, y: 29 }, { x: 30, y: 29 }, { x: 31, y: 29 }, { x: 18, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 27 }], setup: { road: { pos: [{ x: 19, y: 24 }, { x: 21, y: 24 }, { x: 20, y: 23 }, { x: 20, y: 13 }, { x: 25, y: 22 }, { x: 21, y: 21 }, { x: 18, y: 25 }, { x: 19, y: 26 }, { x: 21, y: 26 }, { x: 22, y: 22 }, { x: 20, y: 27 }, { x: 27, y: 23 }, { x: 27, y: 24 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 21 }, { x: 29, y: 24 }, { x: 29, y: 26 }, { x: 30, y: 27 }, { x: 30, y: 23 }, { x: 31, y: 26 }, { x: 31, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 26, y: 27 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 25, y: 25 }, { x: 26, y: 24 }, { x: 32, y: 25 }, { x: 28, y: 22 }, { x: 25, y: 27 }, { x: 21, y: 28 }, { x: 22, y: 29 }, { x: 23, y: 29 }, { x: 24, y: 28 }, { x: 26, y: 21 }, { x: 27, y: 20 }, { x: 24, y: 21 }, { x: 23, y: 20 }] }, container: { pos: [] }, spawn: { pos: [{ x: 21, y: 25 }, { x: 29, y: 25 }, { x: 25, y: 23 }] }, storage: { pos: [{ x: 24, y: 24 }] }, terminal: { pos: [{ x: 24, y: 25 }] }, lab: { pos: [{ x: 23, y: 22 }, { x: 23, y: 21 }, { x: 22, y: 21 }, { x: 22, y: 20 }, { x: 21, y: 20 }, { x: 20, y: 21 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 21, y: 23 }, { x: 22, y: 23 }] }, factory: { pos: [{ x: 26, y: 26 }] }, observer: { pos: [] }, powerSpawn: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 25, y: 24 }] }, nuker: { pos: [{ x: 27, y: 25 }] } } }; */
 
 
+const LABS: Module = { cellsCache: { [prefix.laboratoryCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 27, y: 27 }] }, lab: { pos: [{ x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 27, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 25 }, { x: 24, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 27 }, { x: 26, y: 27 }] } }, freeSpaces: [] };
+
+const FAST_REFILL: Module = { cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 }, positions: [{ x: 24, y: 24 }, { x: 24, y: 26 }, { x: 26, y: 26 }, { x: 26, y: 24 }] } }, setup: { link: { pos: [{ x: 25, y: 25 }] }, spawn: { pos: [{ x: 23, y: 23 }, { x: 27, y: 23 }, { x: 25, y: 27 }] }, container: { pos: [{ x: 23, y: 25 }, { x: 27, y: 25 }] }, extension: { pos: [{ x: 23, y: 24 }, { x: 24, y: 23 }, { x: 25, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 23 }, { x: 27, y: 24 }, { x: 26, y: 25 }, { x: 24, y: 25 }, { x: 25, y: 26 }, { x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }] } }, freeSpaces: [] };
+
+const FREE_CELL: Module = { cellsCache: {}, setup: { road: { pos: [{ x: 25, y: 23 }, { x: 25, y: 27 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 25 }, { x: 26, y: 26 }] } }, freeSpaces: [{ x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 24, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 28, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 26, y: 23 }, { x: 26, y: 22 }, { x: 25, y: 22 }, { x: 24, y: 22 }, { x: 24, y: 23 }, { x: 23, y: 23 }, { x: 23, y: 24 }, { x: 22, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 25 }, { x: 22, y: 26 }, { x: 25, y: 26 }, { x: 26, y: 25 }, { x: 25, y: 25 }, { x: 25, y: 24 }] };
+
+const CORE: Module = { cellsCache: { [prefix.defenseCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 24, y: 24 }] }, storage: { pos: [{ x: 24, y: 25 }] }, factory: { pos: [{ x: 25, y: 24 }] }, terminal: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 26, y: 24 }] }, nuker: { pos: [{ x: 24, y: 26 }] }, powerSpawn: { pos: [{ x: 25, y: 26 }] }, extension: { pos: [{ x: 26, y: 26 }] } }, freeSpaces: [] };
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
@@ -62,20 +70,6 @@ function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
   });
 }
 
-/*
-let ss = "";
-for (let t in [STRUCTURE_ROAD, STRUCTURE_WALL, STRUCTURE_RAMPART]) {
-  let sss = ""
-  let type = [STRUCTURE_ROAD, STRUCTURE_WALL, STRUCTURE_RAMPART][t];
-  for (let lvl in CONTROLLER_STRUCTURES[type])
-    sss += `${lvl}: {amount: ${CONTROLLER_STRUCTURES[type][lvl]}, heal: ${type.toUpperCase()}_HITS},`
-  sss = sss.substring(0, sss.length - 1);
-  ss += `STRUCTURE_${type.toUpperCase()}: {${sss}},`;
-}
-ss = ss.substring(0, ss.length - 1);
-console. log(`{${ss}}`);
-*/
-
 function anchorDist(anchor: RoomPosition, x: Pos, roomName: string = anchor.roomName, pathfind = false) {
   if (pathfind)
     return anchor.getTimeForPath(new RoomPosition(x.x, x.y, roomName));
@@ -92,7 +86,7 @@ export class RoomPlanner {
       jobsToDo: Job[]; // ERR_BUSY - repeat job, ERR_FULL - failed
       correct: "ok" | "fail" | "work";
       anchor: RoomPosition,
-      poss: PossiblePositions,
+      cellsCache: { [id: string]: CellCache },
     }
   } = {};
 
@@ -125,7 +119,7 @@ export class RoomPlanner {
   }
 
   initPlanning(roomName: string, anchor: RoomPosition) {
-    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: "ok", poss: {}, anchor: anchor };
+    this.activePlanning[roomName] = { plan: [], placed: {}, freeSpaces: [], exits: [], jobsToDo: [], correct: "ok", cellsCache: {}, anchor: anchor };
     for (let t in CONSTRUCTION_COST)
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
@@ -166,7 +160,7 @@ export class RoomPlanner {
     let order: ExitConstant[] = [1, 5, 3, 7];
     order.splice(order.indexOf(rotation), 1);
 
-    this.addModule(anchor, BASE, a => rotate(a, rotationBase[rotation]));
+    this.addModule(anchor, CORE, a => rotate(a, rotationBase[rotation]));
 
     let customRoads = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_PURPLE);
     customRoads.sort((a, b) => {
@@ -182,11 +176,7 @@ export class RoomPlanner {
     _.forEach(customRoads, f => this.addCustomRoad(anchor, f.pos));
 
     this.addResourceRoads(anchor);
-
     this.addUpgradeSite(anchor);
-
-    let enterances = this.protectPoint(anchor);
-    let enterance = anchor.findClosestByTravel(enterances, getPathArgs());
 
     let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
 
@@ -198,8 +188,6 @@ export class RoomPlanner {
           let free = this.activePlanning[anchor.roomName].freeSpaces;
           if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
             let anchorrr = anchor;
-            if (sType === STRUCTURE_TOWER && enterance)
-              anchorrr = enterance;
             let red = ((a: Pos, b: Pos) => {
               if (sType === STRUCTURE_EXTENSION && anchorDist(anchorrr, b) <= 1)
                 return a;
@@ -354,43 +342,11 @@ export class RoomPlanner {
         func: () => {
           this.removeNonUsedWalls(pos, addedWalls);
           this.removeNonUsedWalls(anchor, addedWalls);
-          /*this.activePlanning[pos.roomName].jobsToDo.push({
-            context: `thick walls for ${pos}`,
-            func: () => this.thickWalls(anchor, addedWalls),
-          });*/
           return OK;
         },
       });
     return OK;
   }
-
-  /* i don't see a usecase for thickwalls (mostly)
-  thickWalls(anchor: RoomPosition, poss: Pos[]): OK {
-    _.forEach(poss, p => {
-      let plan = this.activePlanning[anchor.roomName].plan;
-      let type = plan[p.x] && plan[p.x][p.y];
-      if (type && (type.r || type.s === STRUCTURE_WALL)) {
-        let y = p.y;
-        for (let x = p.x - 1; x < p.x + 1; x += 1)
-          if (x > 1 && x < 48 && y > 1 && y < 48) {
-            let type = plan[x] && plan[x][y];
-            if (!type || !(type.r || type.s === STRUCTURE_WALL)) {
-              this.addToPlan({ x: x, y: y }, anchor.roomName, STRUCTURE_RAMPART);
-            }
-          }
-        let x = p.x;
-        for (let y = p.y - 1; y < p.y + 1; y += 1)
-          if (x > 1 && x < 48 && y > 1 && y < 48) {
-            let type = plan[x] && plan[x][y];
-            if (!type || !(type.r || type.s === STRUCTURE_WALL)) {
-              this.addToPlan({ x: x, y: y }, anchor.roomName, STRUCTURE_RAMPART);
-            }
-          }
-      }
-    });
-
-    return OK;
-  }*/
 
   toBlock(pos: RoomPosition, mode: BlockDirections, stopAmount = Infinity): { pos: Pos[], amount: number } {
     let plan = this.activePlanning[pos.roomName].plan;
@@ -569,7 +525,6 @@ export class RoomPlanner {
     });
 
     if (fromMem)
-      //this.toActive(anchor, undefined, [STRUCTURE_CONTAINER]);
       _.forEach(futureResourceCells, f => {
         if (!this.activePlanning[f.pos.roomName])
           this.toActive(f.pos, undefined, [STRUCTURE_CONTAINER]);
@@ -766,16 +721,15 @@ export class RoomPlanner {
         this.activePlanning[anchor.roomName].freeSpaces = this.activePlanning[anchor.roomName].freeSpaces
           .concat(configuration.freeSpaces.map(p => transformPos(p)).filter(p => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
 
-        this.activePlanning[anchor.roomName].exits = this.activePlanning[anchor.roomName].exits
-          .concat(configuration.exits.map(p => {
-            let ans = transformPos(p);
-            return new RoomPosition(ans.x, ans.y, anchor.roomName);
-          }).filter(p => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
-
-        for (let type in configuration.poss) {
-          let p = transformPos(configuration.poss[<keyof PossiblePositions>type]!)
-          if (Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL)
-            this.activePlanning[anchor.roomName].poss[<keyof PossiblePositions>type] = p;
+        for (let cellType in configuration.cellsCache) {
+          let cache = configuration.cellsCache[cellType];
+          let transformedCache: CellCache = { poss: transformPos(cache.poss) };
+          if (cache.positions) {
+            transformedCache.positions = []
+            for (let i = 0; i < cache.positions.length; ++i)
+              transformedCache.positions.push(transformPos(cache.positions[i]));
+          }
+          this.activePlanning[anchor.roomName].cellsCache[cellType] = transformedCache;
         }
 
         for (let t in configuration.setup) {
@@ -807,9 +761,11 @@ export class RoomPlanner {
     }
 
     if (Memory.cache.hives[roomName])
-      for (let type in Memory.cache.hives[roomName].positions)
-        this.activePlanning[roomName].poss[<keyof PossiblePositions>type] = Memory.cache.hives[roomName].positions[<keyof PossiblePositions>type]!;
-
+      for (const cellType in Memory.cache.hives[roomName].cells) {
+        let cellCache = Memory.cache.hives[roomName].cells[cellType];
+        if ("poss" in cellCache)
+          this.activePlanning[roomName].cellsCache[cellType.split("_")[0]] = { poss: cellCache.poss };
+      }
   }
 
   resetPlanner(roomName: string, anchor: RoomPosition) {
@@ -875,9 +831,17 @@ export class RoomPlanner {
       Memory.cache.roomPlanner[roomName][sType]!.pos = posWeighted.map(p => p.pos);
     }
 
-    if (Memory.cache.hives[roomName])
-      for (let type in this.activePlanning[roomName].poss)
-        Memory.cache.hives[roomName].positions[<keyof PossiblePositions>type] = this.activePlanning[roomName].poss[<keyof PossiblePositions>type]!;
+    if (!Memory.cache.hives[roomName])
+      Memory.cache.hives[roomName] = {
+        wallsHealth: WALL_HEALTH, cells: {},
+        do: { power: true, deposit: true, war: true }
+      }
+
+    for (let cellType in this.activePlanning[roomName].cellsCache) {
+      let cellCache = this.activePlanning[roomName].cellsCache[cellType];
+      for (let key in cellCache)
+        Memory.cache.hives[roomName].cells[cellType.split("_")[0]][key] = cellCache[<keyof CellCache>key];
+    }
   }
 
   addToCache(pos: Pos, roomName: string, sType: BuildableStructureConstant) {

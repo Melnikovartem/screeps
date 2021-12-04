@@ -17,7 +17,7 @@ export class ObserveCell extends Cell {
   sCell: StorageCell;
 
   constructor(hive: Hive, obeserver: StructureObserver, sCell: StorageCell) {
-    super(hive, prefix.observerCell + hive.room.name);
+    super(hive, prefix.observerCell + "_" + hive.room.name);
     this.sCell = sCell;
     this.obeserver = obeserver;
 
@@ -93,12 +93,9 @@ export class ObserveCell extends Cell {
     if (!room)
       return;
 
-    if (this.hive.resState[RESOURCE_ENERGY] < 0)
-      return;
+    let roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
 
-    let roomInfo = Apiary.intel.getInfo(this.prevRoom, 50);
-
-    if (roomInfo.roomState === roomStates.corridor) {
+    if (roomInfo.roomState === roomStates.corridor && this.hive.resState[RESOURCE_ENERGY] > 0) {
       if (this.hive.shouldDo("power"))
         this.powerCheck(room);
       if (this.hive.shouldDo("deposit"))

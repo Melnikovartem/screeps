@@ -10,7 +10,7 @@ import { profile } from "../profiler/decorator";
 import type { Enemy } from "./intelligence";
 import type { FormationPositions } from "../beeMasters/squads/squadWarcrimes";
 
-const HEAL_COEF = 1.5; // HEAL/TOUGH setup for my bees
+const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 
 @profile
 export class WarcrimesModule {
@@ -83,7 +83,7 @@ export class WarcrimesModule {
       }
 
       if (roomInfo.safeModeEndTime > 0)
-        siedge.attackTime = roomInfo.safeModeEndTime - 100;
+        siedge.attackTime = Math.max(roomInfo.safeModeEndTime - 100, siedge.attackTime || 0);
       else if (siedge.attackTime === null)
         siedge.attackTime = Game.time - CREEP_LIFE_TIME;
 

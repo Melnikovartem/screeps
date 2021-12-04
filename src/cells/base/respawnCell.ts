@@ -18,7 +18,7 @@ export class RespawnCell extends Cell {
 
 
   constructor(hive: Hive) {
-    super(hive, prefix.respawnCell + hive.room.name);
+    super(hive, prefix.respawnCell + "_" + hive.room.name);
   }
 
   spawnEval(spawn: StructureSpawn) {

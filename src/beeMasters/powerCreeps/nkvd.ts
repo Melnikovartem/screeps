@@ -195,7 +195,7 @@ export class NKVDMaster extends PowerMaster {
     else if (this.powerCreep.store.getUsedCapacity(RESOURCE_OPS) > Math.max(200, this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9)) {
       this.powerCreep.transfer(this.cell.sCell.storage, RESOURCE_OPS, this.powerCreep.store.getUsedCapacity(RESOURCE_OPS) - 200, this.hive.opt)
     } else
-      this.powerCreep.goRest(this.hive.state === hiveStates.battle ? this.hive.pos : this.hive.rest, this.hive.opt);
+      this.powerCreep.goRest(this.cell.pos, this.hive.opt);
   }
 
   run() {

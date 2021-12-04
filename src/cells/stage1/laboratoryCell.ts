@@ -52,13 +52,22 @@ export class LaboratoryCell extends Cell {
   positions: RoomPosition[] = [];
 
   constructor(hive: Hive, sCell: StorageCell) {
-    super(hive, prefix.laboratoryCell + hive.room.name);
+    super(hive, prefix.laboratoryCell + "_" + hive.room.name);
     this.sCell = sCell;
 
     this.setCahe("labStates", {});
     this.setCahe("boostLabs", {});
     this.setCahe("boostRequests", {});
-    // this.setCahe("synthesizeTarget", undefined);
+    this.setCahe("poss", { x: 25, y: 25 });
+  }
+
+  get poss(): { x: number, y: number } {
+    return this.fromCache("poss");
+  }
+
+  get pos(): RoomPosition {
+    let pos = this.fromCache("poss");
+    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
   bakeMap() {
@@ -101,10 +110,6 @@ export class LaboratoryCell extends Cell {
 
   set synthesizeTarget(value) {
     this.toCache("synthesizeTarget", value);
-  }
-
-  get pos() {
-    return this.hive.getPos("lab")
   }
 
   newSynthesize(resource: ReactionConstant, amount: number = Infinity): number {

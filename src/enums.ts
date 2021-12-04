@@ -57,24 +57,25 @@ export enum prefix {
   // TODO shorten?
 
   //cells
-  defenseCell = "DefenseCell_",
-  respawnCell = "RespawnCell_",
-  developmentCell = "DevelopmentCell_",
-  excavationCell = "ExcavationCell_",
-  laboratoryCell = "LaboratoryCell_",
-  resourceCells = "ResourceCell_",
-  storageCell = "StorageCell_",
-  upgradeCell = "UpgradeCell_",
-  observerCell = "ObserveCell_",
-  powerCell = "PowerCell_",
-  factoryCell = "FactoryCell_",
+  defenseCell = "def",
+  respawnCell = "spawn",
+  developmentCell = "dev",
+  excavationCell = "excav",
+  fastRefillCell = "fastRef",
+  laboratoryCell = "lab",
+  resourceCells = "res",
+  storageCell = "storage",
+  upgradeCell = "upgrade",
+  observerCell = "observe",
+  powerCell = "power",
+  factoryCell = "factory",
 
-  builder = "BuilderHive_",
-  puller = "PullerDeposit_",
+  builder = "builder_",
+  puller = "puller_",
 
   // game constants
-  master = "master",
-  swarm = "Swarm_",
+  master = "master_",
+  swarm = "swarm_",
 
   nkvd = "NKVD'shnik",
   kgb = "KGB'shnik",

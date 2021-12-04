@@ -1,7 +1,6 @@
-import type { HivePositions, ResTarget } from "../Hive";
+import type { ResTarget } from "../Hive";
 
 export interface HiveCache {
-  positions: HivePositions,
   wallsHealth: number,
   cells: { [id: string]: { [id: string]: any } }
   do: {

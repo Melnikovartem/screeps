@@ -3,7 +3,7 @@ import { makeId } from "../abstract/utils";
 
 import { profile } from "../profiler/decorator";
 import { AnnexMaster } from "../beeMasters/civil/annexer";
-import type { PossiblePositions, Hive } from "../hive";
+import type { Hive } from "../hive";
 
 const TEXT_SIZE = 0.8;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
@@ -232,30 +232,24 @@ export class Visuals {
             vis.circle(+x, +y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
         }
 
-      for (let t in Apiary.planner.activePlanning[roomName].poss) {
-        let type = <keyof PossiblePositions>t
-        let pos = Apiary.planner.activePlanning[roomName].poss[type]!;
+      for (let cellType in Apiary.planner.activePlanning[roomName].cellsCache) {
+        let cellCache = Apiary.planner.activePlanning[roomName].cellsCache[cellType];
         let style: LineStyle = {
           opacity: 0.8,
         };
-        switch (type) {
-          case "lab":
+        switch (cellType) {
+          case prefix.laboratoryCell:
             style.color = "#91EFD8";
             break;
-          case "rest":
+          case prefix.excavationCell:
             style.color = "#000000";
             break;
-          case "center":
+          case prefix.defenseCell:
             style.color = "#ffdd80";
-            break;
-          case "queen1":
-            style.color = "#CAFABE";
-            break;
-          case "queen2":
-            style.color = "#FAE4BE";
             break;
         };
         const SIZE = 0.3;
+        let pos = cellCache.poss;
         vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
         vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
       }

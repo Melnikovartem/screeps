@@ -24,7 +24,7 @@ export class UpgradeCell extends Cell {
   roadTime: number;
 
   constructor(hive: Hive, controller: StructureController, sCell: StorageCell) {
-    super(hive, prefix.upgradeCell + hive.room.name);
+    super(hive, prefix.upgradeCell+ "_" + hive.room.name);
     this.sCell = sCell;
 
     this.controller = controller;

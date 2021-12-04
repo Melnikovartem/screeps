@@ -16,15 +16,19 @@ export abstract class Cell {
     this.hive = hive;
     this.ref = cellName;
 
-    if (!(this.ref in Memory.cache.hives[this.hive.roomName].cells))
-      Memory.cache.hives[this.hive.roomName].cells[this.ref] = {};
+    if (!(this.refCache in Memory.cache.hives[this.hive.roomName].cells))
+      Memory.cache.hives[this.hive.roomName].cells[this.refCache] = {};
 
     if (Apiary.masters[prefix.master + this.ref])
       this.master = Apiary.masters[prefix.master + this.ref];
   }
 
-  get pos() {
-    return this.hive.getPos("center");
+  get refCache() {
+    return this.ref.split("_")[0];
+  }
+
+  get pos(): RoomPosition {
+    return this.hive.pos;
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters
@@ -55,25 +59,17 @@ export abstract class Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   abstract run(): void;
 
-  /* toCache<K extends keyof this>(keys: K[]) {
-    Memory.cache.hives[this.hive.roomName].cells[this.ref] = {}
-    let cellData = Memory.cache.hives[this.hive.roomName].cells[this.ref];
-    _.forEach(keys, k => {
-      (<{ [id: string]: any }>cellData)[<string>k] = this[k];
-    });
-  }*/
-
   setCahe<K extends keyof this, T extends this[K]>(key: K, baseValue: T) {
-    if (!(<string>key in Memory.cache.hives[this.hive.roomName].cells[this.ref]))
-      Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key] = baseValue;
+    if (!(<string>key in Memory.cache.hives[this.hive.roomName].cells[this.refCache]))
+      Memory.cache.hives[this.hive.roomName].cells[this.refCache][<string>key] = baseValue;
   }
 
   toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
-    Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key] = value;
+    Memory.cache.hives[this.hive.roomName].cells[this.refCache][<string>key] = value;
   }
 
   fromCache<K extends keyof this, T extends this[K]>(key: K) {
-    return <T>Memory.cache.hives[this.hive.roomName].cells[this.ref][<string>key];
+    return <T>Memory.cache.hives[this.hive.roomName].cells[this.refCache][<string>key];
   }
 
   get print(): string {

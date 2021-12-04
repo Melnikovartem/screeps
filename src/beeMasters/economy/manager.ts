@@ -135,19 +135,8 @@ export class ManagerMaster extends Master {
       } else if (bee.creep.store.getUsedCapacity() > 0)
         bee.state = beeStates.fflush;
 
-      if (bee.state === beeStates.chill) {
-        let poss = [this.hive.getPos("queen1"), this.hive.getPos("queen2")];
-        let shouldMove = true
-        _.forEach(poss, p => {
-          if (p.equal(bee))
-            shouldMove = false;
-        });
-        if (shouldMove) {
-          let pos = poss.filter(p => p.isFree())[0];
-          if (pos)
-            bee.goRest(pos);
-        }
-      }
+      if (bee.state === beeStates.chill)
+        bee.goRest(this.cell.pos);
       this.checkFlee(bee);
     });
   }
