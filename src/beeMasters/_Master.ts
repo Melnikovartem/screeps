@@ -116,11 +116,11 @@ export abstract class Master {
   // second stage of decision making like where do i need to move
   abstract run(): void;
 
-  checkFlee(bee: ProtoBee<Creep | PowerCreep>, fleeTo?: ProtoPos, opt?: TravelToOptions) {
+  checkFlee(bee: ProtoBee<Creep | PowerCreep>, fleeTo?: ProtoPos, opt?: TravelToOptions, lag = 30) {
     let pos = bee.pos;
     if (bee.targetPosition)
       pos = (bee.targetPosition.roomName === pos.roomName && bee.targetPosition.getEnteranceToRoom()) || bee.targetPosition;
-    let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
+    let roomInfo = Apiary.intel.getInfo(pos.roomName, lag);
     if (pos.roomName !== bee.pos.roomName && Game.time - roomInfo.lastUpdated > 0 && Game.time - roomInfo.lastUpdated <= 20 && !roomInfo.safePlace) {
       if (bee.pos.getEnteranceToRoom())
         bee.flee(fleeTo || this.hive);

@@ -87,7 +87,7 @@ export class Traveler {
             matrix = postCallback;
           }
           let terrain = Game.map.getRoomTerrain(roomName);
-          let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+          let enemies = Apiary.intel.getInfo(roomName, 50).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
           _.forEach(enemies, c => {
             let fleeDist = 0;
             if (c instanceof Creep)

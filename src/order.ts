@@ -320,7 +320,7 @@ export class FlagOrder {
             let baseRotation: ExitConstant = BOTTOM;
             if (this.ref.includes("right"))
               baseRotation = RIGHT;
-            else if (this.ref.includes("up"))
+            else if (this.ref.includes("top"))
               baseRotation = TOP;
             else if (this.ref.includes("left"))
               baseRotation = LEFT;

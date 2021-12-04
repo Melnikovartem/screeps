@@ -8,7 +8,16 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class DowngradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-  maxSpawns = 20;
+  maxSpawns = 1000;
+
+  get oldestSpawn() {
+    return this.order.memory.extraInfo;
+  }
+
+  set oldestSpawn(value) {
+    if (this.order)
+      this.order.memory.extraInfo = value;
+  }
 
   update() {
     super.update();
@@ -19,18 +28,16 @@ export class DowngradeMaster extends SwarmMaster {
       return;
     }
 
-    if (!this.order.memory.extraInfo) {
-      this.order.memory.extraInfo = 0;
-      let controller = Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
-      if (controller)
-        this.order.memory.extraInfo = controller.pos.getTimeForPath(this.hive);
+    let room = Game.rooms[this.pos.roomName];
+    if (room && room.controller) {
+      this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + (room.controller.upgradeBlocked || 0);
+      if (!room.controller.owner) {
+        this.order.delete();
+        return;
+      }
     }
 
-    let room = Game.rooms[this.pos.roomName];
-    if (room && room.controller && room.controller.upgradeBlocked)
-      this.lastAttacked = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE + room.controller.upgradeBlocked;
-
-    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE - this.order.memory.extraInfo) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime) {
+    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length) {
       let setup = setups.claimer.copy();
       setup.patternLimit = Infinity;
       this.wish({

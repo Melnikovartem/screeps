@@ -97,25 +97,24 @@ export class PortalMaster extends SwarmMaster {
     });
 
     _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.boosting)
-        return;
-      let pos = this.pos;
-
       switch (bee.state) {
+        case beeStates.boosting:
+          return;
         case beeStates.chill:
           if (this.res && bee.store.getFreeCapacity(this.res) && this.hive.cells.storage && this.hive.cells.storage.storage.store.getUsedCapacity(this.res)) {
             bee.withdraw(this.hive.cells.storage.storage, this.res);
             break;
           }
+          let pos = this.pos;
           if (this.pos.roomName in Game.rooms) {
             let portal = this.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
             if (portal)
               pos = portal.pos;
           }
           bee.goTo(pos);
+          this.checkFlee(bee, this, undefined, 200);
           break;
       }
-      this.checkFlee(bee);
     });
   }
 }

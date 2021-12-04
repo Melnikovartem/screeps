@@ -93,10 +93,13 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
 
   goRest(pos: RoomPosition, opt?: TravelToOptions): ScreepsReturnCode {
     this.actionPosition = pos;
-    if (!pos.equal(this) && (!this.pos.isNearTo(pos) || pos.isFree(false)))
-      this.goTo(pos, opt);
-    else
+    if (pos.equal(this))
       return OK;
+    this.goTo(pos, opt);
+    if (this.targetPosition && !this.targetPosition.isFree(false) && pos.getRangeTo(this) <= 2) {
+      this.stop();
+      return OK;
+    }
     return ERR_NOT_IN_RANGE;
   }
 

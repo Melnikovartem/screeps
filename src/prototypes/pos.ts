@@ -70,13 +70,6 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
   return ans;
 }
 
-const oppositeExit = {
-  [FIND_EXIT_TOP]: FIND_EXIT_BOTTOM,
-  [FIND_EXIT_RIGHT]: FIND_EXIT_LEFT,
-  [FIND_EXIT_BOTTOM]: FIND_EXIT_TOP,
-  [FIND_EXIT_LEFT]: FIND_EXIT_RIGHT,
-}
-
 RoomPosition.prototype.getEnteranceToRoom = function(): RoomPosition | null {
   let exits = Game.map.describeExits(this.roomName);
   if (this.y === 0 && exits[FIND_EXIT_TOP])
@@ -170,64 +163,9 @@ RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
   return len;
 }
 
-// costly be careful
-/* RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
-  let pos: RoomPosition;
-  if (target instanceof RoomPosition)
-    pos = target;
-  else
-    pos = target.pos;
-
-  // ignore terrain cost cause it depends on creep
-  let len = 0;
-  let route = Game.map.findRoute(this.roomName, pos.roomName);
-  let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
-  let currentRoom = this.roomName;
-
-  if (route !== -2)
-    for (let i in route) {
-      let room = Game.rooms[currentRoom];
-      let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
-      if (room) {
-        if (!(enterance instanceof RoomPosition))
-          enterance = room.find(enterance)[0];
-        // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
-        let exit: RoomPosition | null = (<RoomPosition>enterance).findClosestByTravel(room.find(route[i].exit));
-
-        if (exit) {
-          len += enterance.findPathTo(exit, { ignoreCreeps: true }).length;
-          newEnterance = exit.getEnteranceToRoom();
-        }
-      } else
-        len += 50;
-
-
-      if (!newEnterance)
-        newEnterance = oppositeExit[route[i].exit];
-      enterance = newEnterance;
-      currentRoom = route[i].room;
-    }
-
-  // last currentRoom === pos.roomName
-  if (pos.roomName in Game.rooms) {
-    if (!(enterance instanceof RoomPosition))
-      enterance = Game.rooms[pos.roomName].find(enterance)[0];
-    len += enterance.findPathTo(pos, { ignoreCreeps: true }).length;
-  }
-
-  return len;
-} */
-
-/* let getRangeToWall: { [id: number]: (a: RoomPosition) => number } = {
-  [FIND_EXIT_TOP]: pos => pos.y,
-  [FIND_EXIT_BOTTOM]: pos => 49 - pos.y,
-  [FIND_EXIT_LEFT]: pos => pos.x,
-  [FIND_EXIT_RIGHT]: pos => 49 - pos.x,
-}*/
-
 //cheap (in terms of CPU) est of dist
 RoomPosition.prototype.getRangeApprox = function(obj: ProtoPos, calcType?: "linear") {
-  let calc = (p: RoomPosition, obj: ProtoPos) => p.getRangeTo(obj)
+  let calc = (p: RoomPosition, obj: ProtoPos) => p.getRangeTo(obj);
   if (calcType === "linear")
     calc = (pos: RoomPosition, a: ProtoPos) => {
       let posA = "pos" in a ? (<{ pos: RoomPosition }>a).pos : <RoomPosition>a;
@@ -237,55 +175,34 @@ RoomPosition.prototype.getRangeApprox = function(obj: ProtoPos, calcType?: "line
   let pos = "pos" in obj ? (<{ pos: RoomPosition }>obj).pos : <RoomPosition>obj;
   let newDistance = 0;
   let route = Game.map.findRoute(this.roomName, pos.roomName);
-  let enterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT = this;
+  let enterance: RoomPosition = this;
   let currentRoom = this.roomName;
 
   if (route === -2)
     newDistance = Infinity;
   else
     for (let i in route) {
-      let room = Game.rooms[currentRoom];
-      let newEnterance: RoomPosition | FIND_EXIT_TOP | FIND_EXIT_RIGHT | FIND_EXIT_BOTTOM | FIND_EXIT_LEFT | null = null;
-      if (room) {
-        if (!(enterance instanceof RoomPosition)) {
-          let entrss = <RoomPosition[]>room.find(enterance);
-          enterance = entrss[Math.round(entrss.length / 2)];
-        }
-        // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
-
-        if (enterance) {
-          let exit: RoomPosition = new RoomPosition(Math.min(Math.max(enterance.x, 5), 44), Math.min(Math.max(enterance.y, 5), 44), room.name);
-          switch (route[i].exit) {
-            case TOP:
-              exit.y = 0;
-              break;
-            case BOTTOM:
-              exit.y = 49;
-              break;
-            case LEFT:
-              exit.x = 0;
-              break;
-            case RIGHT:
-              exit.x = 49;
-              break;
-          }
-          newDistance += calc(enterance, exit);
-          newEnterance = exit.getEnteranceToRoom();
-        }
-      } else
-        newDistance += 25;
-
-      if (!newEnterance)
-        newEnterance = oppositeExit[route[i].exit];
-      enterance = newEnterance;
+      // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
+      let exit: RoomPosition = new RoomPosition(Math.min(Math.max(enterance.x, 5), 44), Math.min(Math.max(enterance.y, 5), 44), currentRoom);
+      switch (route[i].exit) {
+        case TOP:
+          exit.y = 0;
+          break;
+        case BOTTOM:
+          exit.y = 49;
+          break;
+        case LEFT:
+          exit.x = 0;
+          break;
+        case RIGHT:
+          exit.x = 49;
+          break;
+      }
+      newDistance += calc(enterance, exit);
+      enterance = exit.getEnteranceToRoom()!;
       currentRoom = route[i].room;
     }
-
-  if (pos.roomName in Game.rooms) {
-    if (!(enterance instanceof RoomPosition))
-      enterance = Game.rooms[pos.roomName].find(enterance)[0];
-    newDistance += enterance.getRangeTo(pos); // aka Math.max(abs(pos1.x-pos2.x), abs(pos.y-pos2.y))
-  }
+  newDistance += calc(enterance, pos);
   return newDistance;
 }
 
@@ -318,8 +235,6 @@ RoomPosition.prototype.findClosestByTravel = function <Obj extends ProtoPos>(obj
 
   let ans: Obj = objects[0];
   let distance = Infinity;
-
-  // opt = opt || { maxRooms: 3 }
 
   _.forEach(objects, (obj: Obj) => {
     let newDistance = Traveler.findTravelPath(this, obj, opt).path.length;

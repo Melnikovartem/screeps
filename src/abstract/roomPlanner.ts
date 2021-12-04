@@ -6,7 +6,7 @@ import { Traveler } from "../Traveler/TravelerModified";
 
 import type { BuildProject } from "../Hive";
 
-export type RoomSetup = { [key in BuildableStructureConstant]?: { pos: { x: number, y: number }[] } };
+export type RoomSetup = { [key in BuildableStructureConstant | "null"]?: { pos: { x: number, y: number }[] } };
 type CellCache = { poss: Pos, positions?: Pos[] };
 
 type Module = { cellsCache: { [id: string]: CellCache }, setup: RoomSetup, freeSpaces: Pos[] };
@@ -16,13 +16,13 @@ type BlockDirections = TOP | RIGHT | TOP_RIGHT | TOP_LEFT;
 /* const BASE: Module = { poss: { center: { x: 25, y: 25 }, lab: { x: 20, y: 26 }, queen1: { x: 25, y: 25 } }, exits: [], freeSpaces: [{ x: 30, y: 26 }, { x: 30, y: 24 }, { x: 31, y: 25 }, { x: 28, y: 24 }, { x: 28, y: 23 }, { x: 29, y: 23 }, { x: 28, y: 26 }, { x: 29, y: 27 }, { x: 28, y: 27 }, { x: 27, y: 27 }, { x: 29, y: 22 }, { x: 23, y: 26 }, { x: 22, y: 26 }, { x: 24, y: 27 }, { x: 20, y: 24 }, { x: 20, y: 26 }, { x: 19, y: 25 }, { x: 19, y: 23 }, { x: 18, y: 24 }, { x: 18, y: 26 }, { x: 19, y: 27 }, { x: 18, y: 27 }, { x: 18, y: 23 }, { x: 28, y: 21 }, { x: 27, y: 21 }, { x: 26, y: 22 }, { x: 29, y: 20 }, { x: 28, y: 20 }, { x: 30, y: 21 }, { x: 30, y: 22 }, { x: 30, y: 20 }, { x: 31, y: 23 }, { x: 31, y: 22 }, { x: 32, y: 24 }, { x: 32, y: 23 }, { x: 32, y: 26 }, { x: 32, y: 27 }, { x: 31, y: 27 }, { x: 30, y: 28 }, { x: 31, y: 28 }, { x: 29, y: 28 }, { x: 33, y: 24 }, { x: 33, y: 25 }, { x: 33, y: 26 }, { x: 25, y: 20 }, { x: 24, y: 22 }, { x: 17, y: 25 }, { x: 17, y: 26 }, { x: 17, y: 24 }, { x: 21, y: 27 }, { x: 22, y: 27 }, { x: 23, y: 27 }, { x: 19, y: 22 }, { x: 20, y: 28 }, { x: 19, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 27, y: 28 }, { x: 22, y: 28 }, { x: 23, y: 28 }, { x: 21, y: 29 }, { x: 20, y: 29 }, { x: 24, y: 29 }, { x: 25, y: 29 }, { x: 22, y: 24 }, { x: 25, y: 26 }, { x: 25, y: 21 }, { x: 26, y: 20 }, { x: 24, y: 20 }, { x: 30, y: 25 }, { x: 27, y: 22 }, { x: 20, y: 25 }, { x: 22, y: 30 }, { x: 23, y: 30 }, { x: 24, y: 30 }, { x: 21, y: 30 }, { x: 18, y: 28 }, { x: 19, y: 29 }, { x: 20, y: 30 }, { x: 25, y: 30 }, { x: 26, y: 29 }, { x: 31, y: 21 }, { x: 32, y: 22 }, { x: 33, y: 23 }, { x: 33, y: 27 }, { x: 32, y: 28 }, { x: 28, y: 28 }, { x: 29, y: 29 }, { x: 30, y: 29 }, { x: 31, y: 29 }, { x: 18, y: 22 }, { x: 17, y: 23 }, { x: 17, y: 27 }], setup: { road: { pos: [{ x: 19, y: 24 }, { x: 21, y: 24 }, { x: 20, y: 23 }, { x: 20, y: 13 }, { x: 25, y: 22 }, { x: 21, y: 21 }, { x: 18, y: 25 }, { x: 19, y: 26 }, { x: 21, y: 26 }, { x: 22, y: 22 }, { x: 20, y: 27 }, { x: 27, y: 23 }, { x: 27, y: 24 }, { x: 27, y: 26 }, { x: 28, y: 25 }, { x: 29, y: 21 }, { x: 29, y: 24 }, { x: 29, y: 26 }, { x: 30, y: 27 }, { x: 30, y: 23 }, { x: 31, y: 26 }, { x: 31, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 26, y: 27 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 23 }, { x: 25, y: 25 }, { x: 26, y: 24 }, { x: 32, y: 25 }, { x: 28, y: 22 }, { x: 25, y: 27 }, { x: 21, y: 28 }, { x: 22, y: 29 }, { x: 23, y: 29 }, { x: 24, y: 28 }, { x: 26, y: 21 }, { x: 27, y: 20 }, { x: 24, y: 21 }, { x: 23, y: 20 }] }, container: { pos: [] }, spawn: { pos: [{ x: 21, y: 25 }, { x: 29, y: 25 }, { x: 25, y: 23 }] }, storage: { pos: [{ x: 24, y: 24 }] }, terminal: { pos: [{ x: 24, y: 25 }] }, lab: { pos: [{ x: 23, y: 22 }, { x: 23, y: 21 }, { x: 22, y: 21 }, { x: 22, y: 20 }, { x: 21, y: 20 }, { x: 20, y: 21 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 21, y: 23 }, { x: 22, y: 23 }] }, factory: { pos: [{ x: 26, y: 26 }] }, observer: { pos: [] }, powerSpawn: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 25, y: 24 }] }, nuker: { pos: [{ x: 27, y: 25 }] } } }; */
 
 
-const LABS: Module = { cellsCache: { [prefix.laboratoryCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 25, y: 25 }, { x: 26, y: 26 }, { x: 24, y: 24 }, { x: 27, y: 27 }] }, lab: { pos: [{ x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 27, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 25 }, { x: 24, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 27 }, { x: 26, y: 27 }] } }, freeSpaces: [] };
+const LABS: Module = { cellsCache: { [prefix.laboratoryCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 24, y: 24 }, { x: 25, y: 25 }, { x: 26, y: 26 }, { x: 27, y: 27 }] }, lab: { pos: [{ x: 25, y: 24 }, { x: 26, y: 24 }, { x: 26, y: 25 }, { x: 27, y: 25 }, { x: 27, y: 26 }, { x: 24, y: 25 }, { x: 24, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 27 }, { x: 26, y: 27 }] } }, freeSpaces: [] };
 
-const FAST_REFILL: Module = { cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 }, positions: [{ x: 24, y: 24 }, { x: 24, y: 26 }, { x: 26, y: 26 }, { x: 26, y: 24 }] } }, setup: { link: { pos: [{ x: 25, y: 25 }] }, spawn: { pos: [{ x: 23, y: 23 }, { x: 27, y: 23 }, { x: 25, y: 27 }] }, container: { pos: [{ x: 23, y: 25 }, { x: 27, y: 25 }] }, extension: { pos: [{ x: 23, y: 24 }, { x: 24, y: 23 }, { x: 25, y: 23 }, { x: 25, y: 24 }, { x: 26, y: 23 }, { x: 27, y: 24 }, { x: 26, y: 25 }, { x: 24, y: 25 }, { x: 25, y: 26 }, { x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }] } }, freeSpaces: [] };
+const FAST_REFILL: Module = { cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 }, positions: [{ x: 24, y: 24 }, { x: 24, y: 26 }, { x: 26, y: 26 }, { x: 26, y: 24 }] } }, setup: { null: { pos: [{ "x": 26, "y": 26 }, { "x": 24, "y": 26 }, { "x": 24, "y": 24 }, { "x": 26, "y": 24 }] }, link: { pos: [{ x: 25, y: 25 }] }, spawn: { pos: [{ x: 23, y: 24 }, { x: 27, y: 24 }, { x: 25, y: 27 }] }, container: { pos: [{ x: 27, y: 25 }, { x: 23, y: 25 }] }, extension: { pos: [{ x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 23, y: 23 }, { x: 24, y: 23 }, { x: 24, y: 25 }, { x: 25, y: 23 }, { x: 26, y: 23 }, { x: 27, y: 23 }, { x: 26, y: 25 }, { x: 27, y: 27 }, { x: 26, y: 27 }, { x: 27, y: 26 }, { x: 25, y: 26 }, { x: 25, y: 24 }] } }, freeSpaces: [] };
 
-const FREE_CELL: Module = { cellsCache: {}, setup: { road: { pos: [{ x: 25, y: 23 }, { x: 25, y: 27 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 25 }, { x: 26, y: 26 }] } }, freeSpaces: [{ x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }, { x: 24, y: 28 }, { x: 25, y: 28 }, { x: 26, y: 28 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }, { x: 28, y: 26 }, { x: 28, y: 25 }, { x: 28, y: 24 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 26, y: 23 }, { x: 26, y: 22 }, { x: 25, y: 22 }, { x: 24, y: 22 }, { x: 24, y: 23 }, { x: 23, y: 23 }, { x: 23, y: 24 }, { x: 22, y: 24 }, { x: 22, y: 25 }, { x: 24, y: 25 }, { x: 22, y: 26 }, { x: 25, y: 26 }, { x: 26, y: 25 }, { x: 25, y: 25 }, { x: 25, y: 24 }] };
+const FREE_CELL: Module = { cellsCache: {}, setup: { road: { pos: [{ x: 25, y: 23 }, { x: 25, y: 27 }, { x: 24, y: 26 }, { x: 23, y: 25 }, { x: 24, y: 24 }, { x: 26, y: 24 }, { x: 27, y: 25 }, { x: 26, y: 26 }] } }, freeSpaces: [{ x: 25, y: 24 }, { x: 25, y: 25 }, { x: 25, y: 26 }, { x: 26, y: 25 }, { x: 24, y: 25 }, { x: 26, y: 27 }, { x: 27, y: 27 }, { x: 27, y: 26 }, { x: 27, y: 24 }, { x: 27, y: 23 }, { x: 26, y: 23 }, { x: 24, y: 23 }, { x: 23, y: 23 }, { x: 23, y: 24 }, { x: 23, y: 26 }, { x: 23, y: 27 }, { x: 24, y: 27 }] };
 
-const CORE: Module = { cellsCache: { [prefix.defenseCell]: { poss: { x: 25, y: 25 } } }, setup: { road: { pos: [{ x: 24, y: 24 }] }, storage: { pos: [{ x: 24, y: 25 }] }, factory: { pos: [{ x: 25, y: 24 }] }, terminal: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 26, y: 24 }] }, nuker: { pos: [{ x: 24, y: 26 }] }, powerSpawn: { pos: [{ x: 25, y: 26 }] }, extension: { pos: [{ x: 26, y: 26 }] } }, freeSpaces: [] };
+const CORE: Module = { cellsCache: { [prefix.defenseCell]: { poss: { x: 25, y: 25 } }, [prefix.powerCell]: { poss: { x: 24, y: 24 } } }, setup: { road: { pos: [{ x: 24, y: 24 }] }, storage: { pos: [{ x: 24, y: 25 }] }, factory: { pos: [{ x: 25, y: 26 }] }, terminal: { pos: [{ x: 26, y: 25 }] }, link: { pos: [{ x: 26, y: 24 }] }, nuker: { pos: [{ x: 24, y: 26 }] }, powerSpawn: { pos: [{ x: 25, y: 24 }] }, extension: { pos: [{ x: 26, y: 26 }] } }, freeSpaces: [] };
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
@@ -124,31 +124,33 @@ export class RoomPlanner {
       this.activePlanning[roomName].placed[<BuildableStructureConstant>t] = 0;
   }
 
+  rotate(anchor: RoomPosition, pos: Pos, direction: 0 | 1 | 2 | 3, shiftY: number = 0, shiftX: number = 0) {
+    let x = pos.x - 25;
+    let y = pos.y - 25;
+    let temp;
+    switch (direction) {
+      case 1: // reverse
+        x = -x;
+        y = -y;
+        break;
+      case 2: // left
+        temp = x;
+        x = -y;
+        y = temp;
+        break;
+      case 3: // right (clockwise)
+        temp = x;
+        x = y;
+        y = -temp;
+        break;
+    }
+    return { x: x + (anchor.x + shiftX), y: y + (anchor.y + shiftY) };
+  }
+
   generatePlan(anchor: RoomPosition, rotation: ExitConstant) {
     this.initPlanning(anchor.roomName, anchor);
     let jobs = this.activePlanning[anchor.roomName].jobsToDo;
-    let rotate = (pos: Pos, direction: 0 | 1 | 2 | 3, shiftY: number = 0, shiftX: number = 0) => {
-      let x = pos.x - 25;
-      let y = pos.y - 25;
-      let temp;
-      switch (direction) {
-        case 1: // reverse
-          x = -x;
-          y = -y;
-          break;
-        case 2: // left
-          temp = x;
-          x = -y;
-          y = temp;
-          break;
-        case 3: // right (clockwise)
-          temp = x;
-          x = y;
-          y = -temp;
-          break;
-      }
-      return { x: x + (anchor.x + shiftX), y: y + (anchor.y + shiftY) };
-    }
+    this.activePlanning[anchor.roomName].exits.push(anchor);
 
     let rotationBase: { [id in ExitConstant]: 0 | 1 | 2 | 3 } = {
       [TOP]: 2,
@@ -160,7 +162,7 @@ export class RoomPlanner {
     let order: ExitConstant[] = [1, 5, 3, 7];
     order.splice(order.indexOf(rotation), 1);
 
-    this.addModule(anchor, CORE, a => rotate(a, rotationBase[rotation]));
+    this.addModule(anchor.roomName, CORE, a => this.rotate(anchor, a, rotationBase[rotation]));
 
     let customRoads = _.filter(Game.flags, f => f.color === COLOR_WHITE && f.secondaryColor === COLOR_PURPLE);
     customRoads.sort((a, b) => {
@@ -178,7 +180,134 @@ export class RoomPlanner {
     this.addResourceRoads(anchor);
     this.addUpgradeSite(anchor);
 
-    let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_POWER_SPAWN, STRUCTURE_FACTORY, STRUCTURE_OBSERVER];
+    let fillTypes = [STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_OBSERVER];
+
+    let net: RoomPosition[] = [];
+
+    jobs.push({
+      context: `creating net`,
+      func: () => {
+        for (let x = 3; x <= 46; ++x)
+          for (let y = 3; y <= 46; ++y)
+            if (anchor.x % 2 === x % 2 && anchor.y % 2 === y % 2) {
+              let pos = new RoomPosition(x, y, anchor.roomName);
+              if (pos.getRangeTo(anchor) > 2)
+                net.push(pos);
+            }
+        let terrain = Game.map.getRoomTerrain(anchor.roomName);
+        let plan = this.activePlanning[anchor.roomName].plan;
+
+        net = net.filter(pos => {
+          let positions = pos.getPositionsInRange(1);
+          for (let i = 0; i < positions.length; ++i) {
+            let p = positions[i];
+            if (pos.getRangeApprox(p, "linear") > 1)
+              continue;
+            if (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL || (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s))
+              return false;
+          }
+          return true;
+        });
+        return OK;
+      }
+    });
+
+    jobs.push({
+      context: "adding fast refill cell",
+      func: () => {
+        // some cells for starters
+        let terrain = Game.map.getRoomTerrain(anchor.roomName);
+        let refillNet = net.filter(pos => {
+          if (anchor.getRangeApprox(pos, "linear") <= 20)
+            return false;
+          return !pos.getPositionsInRange(3).filter(p => terrain.get(p.x, p.y) === TERRAIN_MASK_WALL && p.getRangeApprox(pos, "linear") <= 10).length;
+        });
+
+        let closest = anchor.findClosest(refillNet);
+        if (!closest)
+          return ERR_FULL;
+        let pos = this.filterNet(anchor, closest, refillNet, 0);
+        let rotation: 0 | 1 | 2 | 3;
+        switch (pos.getDirectionTo(anchor)) {
+          case TOP_LEFT:
+          case TOP_RIGHT:
+          case BOTTOM:
+            rotation = 1;
+            break;
+          case RIGHT:
+            rotation = 3;
+            break;
+          case LEFT:
+            rotation = 2;
+            break;
+          default:
+            rotation = 0;
+        }
+        let transformPos = (a: Pos) => this.rotate(pos, a, rotation);
+        this.addModule(anchor.roomName, FAST_REFILL, transformPos);
+        let spawns = FAST_REFILL.setup.spawn!.pos;
+        for (let i = 0; i < spawns.length; ++i) {
+          let pp = transformPos(spawns[i]);
+          let spawnPos = new RoomPosition(pp.x, pp.y, anchor.roomName);
+          let ans = this.connectWithRoad(anchor, spawnPos, true, { range: 1 });
+          if (typeof ans === "number")
+            return ERR_FULL;
+        }
+        for (let i = 0; i < net.length; ++i)
+          if (net[i].getRangeTo(pos) <= 2) {
+            net.splice(i, 1);
+            --i;
+          }
+        return OK;
+      }
+    });
+
+    jobs.push({
+      context: "adding lab cell",
+      func: () => {
+        // some cells for starters
+        let terrain = Game.map.getRoomTerrain(anchor.roomName);
+        let plan = this.activePlanning[anchor.roomName].plan;
+        let labNet = net.filter(pos => {
+          if (anchor.getRangeApprox(pos, "linear") <= 20)
+            return false;
+          return !pos.getPositionsInRange(3).filter(p => terrain.get(p.x, p.y) === TERRAIN_MASK_WALL && p.getRangeApprox(pos, "linear") <= 10
+            || (plan[p.x] && plan[p.x][p.y] && plan[p.x][p.y].s !== STRUCTURE_ROAD)).length;
+        });
+        let closest = anchor.findClosest(labNet);
+        if (!closest)
+          return ERR_FULL;
+        let pos = this.filterNet(anchor, closest, labNet, 0);
+        let rotation: 0 | 1 | 2 | 3 = 0;
+        switch (pos.getDirectionTo(anchor)) {
+          case TOP_LEFT:
+          case TOP_RIGHT:
+          case BOTTOM:
+            rotation = 1;
+            break;
+          case RIGHT:
+            rotation = 3;
+            break;
+          case LEFT:
+            rotation = 2;
+            break;
+          default:
+            rotation = 0;
+        }
+        let transformPos = (a: Pos) => this.rotate(pos, a, rotation);
+        this.addModule(anchor.roomName, LABS, transformPos);
+        let ans = this.connectWithRoad(anchor, pos, true, { range: 1 });
+        if (typeof ans === "number")
+          return ERR_FULL;
+        let extraNode = transformPos(LABS.setup.road!.pos[0]);
+        for (let i = 0; i < net.length; ++i)
+          if (net[i].getRangeApprox(pos) <= 2 || (net[i].x === extraNode.x && net[i].y === extraNode.y)) {
+            net.splice(i, 1);
+            --i;
+          }
+        return OK;
+      }
+    });
 
     for (let i in fillTypes) {
       let sType = fillTypes[i];
@@ -189,8 +318,6 @@ export class RoomPlanner {
           if (this.activePlanning[anchor.roomName].placed[sType]!! < CONTROLLER_STRUCTURES[sType][8]) {
             let anchorrr = anchor;
             let red = ((a: Pos, b: Pos) => {
-              if (sType === STRUCTURE_EXTENSION && anchorDist(anchorrr, b) <= 1)
-                return a;
               let ans = 0;
               let pathA = Traveler.findTravelPath(new RoomPosition(a.x, a.y, anchorrr.roomName), anchorrr, getPathArgs()).path;
               if (!pathA.length || !pathA[pathA.length - 1].equal(anchorrr))
@@ -200,7 +327,7 @@ export class RoomPlanner {
                 ans = -1;
               if (ans === 0)
                 ans = pathA.length - pathB.length;
-              ans *= sType === STRUCTURE_OBSERVER ? -1 : 1;
+              // ans *= sType === STRUCTURE_OBSERVER ? -1 : 1;
               if (ans === 0)
                 ans = (a.y - b.y) * (rotation === TOP ? -1 : 1);
               if (ans === 0)
@@ -208,9 +335,12 @@ export class RoomPlanner {
               return ans < 0 ? a : b;
             });
             let pos;
+            if (!free.length) {
+              this.addFreeCell(anchor, net);
+              free = this.activePlanning[anchor.roomName].freeSpaces;
+            }
             if (free.length)
               pos = free.reduce(red);
-
             let br = false;
             while (pos) {
               if ((sType === STRUCTURE_OBSERVER || this.roadNearBy(pos, anchor.roomName)) && this.addToPlan(pos, anchor.roomName, sType) === ERR_FULL)
@@ -222,6 +352,12 @@ export class RoomPlanner {
                     break;
                   }
                 pos = undefined;
+                if (!free.length) {
+                  this.addFreeCell(anchor, net);
+                  free = this.activePlanning[anchor.roomName].freeSpaces;
+                  if (Game.cpu.getUsed() > Game.cpu.limit)
+                    return ERR_BUSY;
+                }
                 if (free.length)
                   pos = free.reduce(red);
               }
@@ -714,36 +850,61 @@ export class RoomPlanner {
     return OK;
   }
 
-  addModule(anchor: { x: number, y: number, roomName: string }, configuration: Module, transformPos: (a: Pos) => Pos) {
-    this.activePlanning[anchor.roomName].jobsToDo.push({
-      context: "adding module",
-      func: () => {
-        this.activePlanning[anchor.roomName].freeSpaces = this.activePlanning[anchor.roomName].freeSpaces
-          .concat(configuration.freeSpaces.map(p => transformPos(p)).filter(p => Game.map.getRoomTerrain(anchor.roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
-
-        for (let cellType in configuration.cellsCache) {
-          let cache = configuration.cellsCache[cellType];
-          let transformedCache: CellCache = { poss: transformPos(cache.poss) };
-          if (cache.positions) {
-            transformedCache.positions = []
-            for (let i = 0; i < cache.positions.length; ++i)
-              transformedCache.positions.push(transformPos(cache.positions[i]));
-          }
-          this.activePlanning[anchor.roomName].cellsCache[cellType] = transformedCache;
-        }
-
-        for (let t in configuration.setup) {
-          let sType = <BuildableStructureConstant>t;
-          let poss = configuration.setup[sType]!.pos;
-          for (let i = 0; i < poss.length; ++i) {
-            let ans = transformPos(poss[i]);
-            if (this.addToPlan(ans, anchor.roomName, sType) === ERR_FULL && sType !== STRUCTURE_LAB)
-              this.activePlanning[anchor.roomName].freeSpaces.push(ans);
-          }
-        }
-        return OK;
+  filterNet(anchor: RoomPosition, closest: RoomPosition, net: RoomPosition[], padding = 5) {
+    let potentialCells = net.filter(n => n.getRangeTo(anchor) <= anchor.getRangeTo(closest) + padding);
+    let pos = potentialCells[0];
+    let dist = Traveler.findTravelPath(anchor, pos, getPathArgs({ weightOffRoad: 1 })).path.length;
+    for (let i = 1; i < potentialCells.length; ++i) {
+      let newPos = potentialCells[i];
+      let newDist = Traveler.findTravelPath(anchor, newPos, getPathArgs({ weightOffRoad: 1 })).path.length;
+      if (dist > newDist) {
+        dist = newDist;
+        pos = newPos;
       }
-    });
+    }
+    return pos;
+  }
+
+  addFreeCell(anchor: RoomPosition, net: RoomPosition[]) {
+    let closest = anchor.findClosest(net);
+    if (!closest)
+      return;
+    let pos = this.filterNet(anchor, closest, net);
+    this.addModule(anchor.roomName, FREE_CELL, a => this.rotate(pos, a, 0));
+    for (let i = 0; i < net.length; ++i)
+      if (net[i].getRangeApprox(pos) <= 2) {
+        console.log(pos, net[i], net[i].getRangeApprox(pos));
+        net.splice(i, 1);
+        --i;
+      }
+    this.connectWithRoad(anchor, pos, true, { range: 1 });
+    return;
+  }
+
+  addModule(roomName: string, configuration: Module, transformPos: (a: Pos) => Pos) {
+    this.activePlanning[roomName].freeSpaces = this.activePlanning[roomName].freeSpaces
+      .concat(configuration.freeSpaces.map(p => transformPos(p)).filter(p => Game.map.getRoomTerrain(roomName).get(p.x, p.y) !== TERRAIN_MASK_WALL));
+
+    for (let cellType in configuration.cellsCache) {
+      let cache = configuration.cellsCache[cellType];
+      let transformedCache: CellCache = { poss: transformPos(cache.poss) };
+      if (cache.positions) {
+        transformedCache.positions = []
+        for (let i = 0; i < cache.positions.length; ++i)
+          transformedCache.positions.push(transformPos(cache.positions[i]));
+      }
+      this.activePlanning[roomName].cellsCache[cellType] = transformedCache;
+    }
+
+    for (let t in configuration.setup) {
+      let sType = <keyof Module["setup"]>t;
+      let poss = configuration.setup[sType]!.pos;
+      for (let i = 0; i < poss.length; ++i) {
+        let ans = transformPos(poss[i]);
+        if (this.addToPlan(ans, roomName, sType === "null" ? null : sType, sType !== STRUCTURE_ROAD) === ERR_FULL && sType !== STRUCTURE_LAB)
+          this.activePlanning[roomName].freeSpaces.push(ans);
+      }
+    }
   }
 
   toActive(anchor: RoomPosition, roomName: string = anchor.roomName, ignore: BuildableStructureConstant[] = []) {

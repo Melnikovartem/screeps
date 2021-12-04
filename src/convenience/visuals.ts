@@ -98,6 +98,8 @@ export class Visuals {
 
   createHive(name: string) {
     let hive = Apiary.hives[name];
+    if (!hive.controller)
+      return;
     this.changeAnchor(1, 1, name);
     this.statsHive(hive);
     this.statsNetwork(hive);
@@ -204,7 +206,10 @@ export class Visuals {
               style.fill = "#D88E54"
               break;
             case STRUCTURE_POWER_SPAWN:
-              style.fill = "#9E2413";
+              style.fill = "#EE4610";
+              break;
+            case STRUCTURE_NUKER:
+              style.fill = "#B4F51F";
               break;
             case STRUCTURE_TOWER:
               style.fill = "#F988AE";
@@ -242,10 +247,13 @@ export class Visuals {
             style.color = "#91EFD8";
             break;
           case prefix.excavationCell:
-            style.color = "#000000";
+            style.color = "#22493D";
             break;
           case prefix.defenseCell:
-            style.color = "#ffdd80";
+            style.color = "#F0D042";
+            break;
+          case prefix.powerCell:
+            style.color = "#EE4610";
             break;
         };
         const SIZE = 0.3;

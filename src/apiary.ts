@@ -74,7 +74,6 @@ export class _Apiary {
       protoHive.run = () => { };
       this.hives[roomName] = protoHive;
       this.logger = undefined;
-      Memory.settings.framerate = -1;
     }
     this.network.init();
     this.warcrimes.init()

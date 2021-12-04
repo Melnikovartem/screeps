@@ -117,16 +117,14 @@ export class FactoryCell extends Cell {
               this.possibleUncommon = true;
           } else {
             let amountInUse = Apiary.network.resState[<CommodityConstant>res] || 0;
-            if (amountInUse > 5000)
+            if (amountInUse >= 5000)
               num = 0;
+            else
+              this.possibleUncommon = true;
           }
-        } else if (res === RESOURCE_ENERGY) {// (res in this.hive.resState) {
+        } else if (res === RESOURCE_ENERGY) {
           let balance = -(this.hive.resState[res] + 100000) + (this.resTarget[res] || 0);
           num = Math.ceil(balance / recipe.amount);
-          /* if (res in COMPRESS_MAP && num < -100) {
-            num = 5;
-            res = COMPRESS_MAP[res];
-          } */
         }
         if (num > 1)
           targets.push({ res: res, amount: Math.floor(num) * recipe.amount });
@@ -134,10 +132,8 @@ export class FactoryCell extends Cell {
       let nonCommon = targets.filter(t => !COMMON_COMMODITIES.includes(t.res));
       if (nonCommon.length)
         targets = nonCommon;
-      if (!targets.length) {
-        this.possibleUncommon = true;
+      if (!targets.length)
         return;
-      }
       this.patience = 0;
       let getlvlPriority = (cc: { res: FactoryResourceConstant }) =>
         COMMON_COMMODITIES.includes(cc.res) ? -2 :

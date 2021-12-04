@@ -123,7 +123,7 @@ export class WarcrimesModule {
         if (room.controller && room.controller.owner) {
           targets = [room.controller];
           if (!room.controller.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_RED && f.secondaryColor === COLOR_PURPLE).length)
-            room.controller.pos.createFlag(prefix.downgrade + room.name, COLOR_RED, COLOR_PURPLE)
+            room.controller.pos.createFlag(prefix.downgrade + room.name, COLOR_RED, COLOR_PURPLE);
         } else
           return; // not sure when this will be case but ok
 
@@ -143,6 +143,9 @@ export class WarcrimesModule {
         siedge.breakIn = siedge.breakIn.concat(obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length).map(p => { return { x: p.pos.x, y: p.pos.y } }));
         obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
       });
+
+      if (target instanceof StructureController && siedge.breakIn.length === 1)
+        siedge.attackTime = null;
 
       let powerCreepCoef = 1;
       _.forEach(roomInfo.enemies, e => {
