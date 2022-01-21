@@ -51,7 +51,7 @@ export class PowerCell extends Cell {
 
     this.roomsToCheck = this.hive.annexNames;
 
-    if (this.hive.state !== hiveStates.economy || this.hive.resState[RESOURCE_ENERGY] < 0)
+    if (this.hive.state !== hiveStates.economy || this.hive.resState[RESOURCE_ENERGY] < 0 || !this.hive.shouldDo("powerRefining"))
       return;
 
     if (this.powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > POWER_SPAWN_POWER_CAPACITY / 2)

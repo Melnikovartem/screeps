@@ -18,9 +18,11 @@ import { Traveler } from "./Traveler/TravelerModified";
 import { makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
 import { WALL_HEALTH } from "abstract/roomPlanner";
+import { BASE_MODE_HIVE } from "./abstract/hiveMemory";
 
 import { profile } from "./profiler/decorator";
 import type { CreepSetup } from "./bees/creepSetups";
+import type { HiveCache } from "./abstract/hiveMemory";
 
 export interface SpawnOrder {
   setup: CreepSetup,
@@ -56,6 +58,7 @@ export type ResTarget = { [key in ResourceConstant]?: number };
 const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
 type StructureGroups = "essential" | "roads" | "mining" | "defense" | "hightech" | "trade";
+
 const BUILDABLE_PRIORITY: { [key in StructureGroups]: BuildableStructureConstant[] } = {
   essential: [
     STRUCTURE_TOWER,
@@ -139,10 +142,7 @@ export class Hive {
     this.room = Game.rooms[roomName];
 
     if (!this.cache)
-      Memory.cache.hives[this.roomName] = {
-        wallsHealth: WALL_HEALTH, cells: {},
-        do: { power: 1, deposit: 1, war: 1, unboost: 0, saveCpu: 0 },
-      };
+      Memory.cache.hives[this.roomName] = { wallsHealth: WALL_HEALTH, cells: {}, do: { ...BASE_MODE_HIVE } };
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -229,7 +229,7 @@ export class Hive {
       Apiary.logger.initHive(this.roomName);
   }
 
-  shouldDo(action: "power" | "deposit" | "war" | "unboost" | "saveCpu") {
+  shouldDo(action: keyof HiveCache["do"]) {
     return this.cache.do[action];
   }
 

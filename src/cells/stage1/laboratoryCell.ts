@@ -134,6 +134,9 @@ export class LaboratoryCell extends Cell {
   stepToTarget() {
     this.resTarget = {};
     if (!this.synthesizeTarget) {
+      let mode = this.hive.shouldDo("lab");
+      if (!mode)
+        return;
       let targets: { res: ReactionConstant, amount: number }[] = [];
       for (const r in this.hive.resState) {
         let res = <ReactionConstant>r; // atually ResourceConstant
@@ -148,6 +151,8 @@ export class LaboratoryCell extends Cell {
       if (canCreate.length)
         targets = canCreate;
       if (!targets.length) {
+        if (mode === 1)
+          return;
         let usefulM: ReactionConstant[] = ["XGH2O", "XGHO2", "XLH2O", "XLHO2", "XZHO2", "XKHO2", "XUH2O", "XZH2O"];
         let usefulR = usefulM.reduce((prev, curr) => (Apiary.network.resState[curr] || 0) < (Apiary.network.resState[prev] || 0) ? curr : prev);
         targets = [{ res: usefulR, amount: 2048 }];

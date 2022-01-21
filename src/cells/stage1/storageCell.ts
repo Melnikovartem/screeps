@@ -16,6 +16,7 @@ export class StorageCell extends Cell {
 
   storage: StructureStorage | StructureTerminal;
   link: StructureLink | undefined;
+  linkState: 0 | 1 = 0;
   terminal: StructureTerminal | undefined;
   master: ManagerMaster;
 
@@ -125,11 +126,9 @@ export class StorageCell extends Cell {
     for (let k in this.requests)
       this.requests[k].update();
 
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5) {
-      let existing = this.requests[this.link.id];
-      if (!existing || !existing.isValid())
-        this.requestToStorage([this.link], this.hive.state >= hiveStates.battle ? 1 : 4, RESOURCE_ENERGY);
-    }
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5 && !this.linkState)
+      this.requestToStorage([this.link], this.hive.state >= hiveStates.battle ? 1 : 4, RESOURCE_ENERGY);
+    this.linkState = 0;
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && !this.hive.cells.dev && Apiary.useBucket)

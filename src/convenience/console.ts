@@ -2,12 +2,14 @@ import { signText, prefix, roomStates } from "../enums";
 
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
+import { BASE_MODE_HIVE } from "../abstract/hiveMemory";
 import { makeId } from "../abstract/utils";
 import { setups } from "../bees/creepSetups";
 
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
 import type { TransferRequest } from "../bees/transferRequest";
+import type { HiveCache } from "../abstract/hiveMemory";
 
 export class CustomConsole {
   lastActionRoomName: string;
@@ -72,57 +74,42 @@ export class CustomConsole {
     return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
   }
 
-  mode(mode = "default", hiveName?: string) {
+  mode(mode = "", hiveName?: string) {
     let ans = "";
     _.forEach(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
       let dd = Memory.cache.hives[h.roomName].do;
       switch (mode) {
         case "power":
-          dd.deposit = 0;
-          dd.power = 1;
+          dd.powerMining = dd.powerMining ? 0 : 1;
+          if (dd.powerMining)
+            dd.powerRefining = 1;
           break;
         case "deposit":
-          dd.deposit = 1;
-          dd.power = 0;
+          dd.depositMining = dd.depositMining ? 0 : 1;
+          if (dd.depositMining)
+            dd.depositRefining = 1;
           break;
         case "war":
-          dd.war = 1;
-          dd.deposit = 0;
-          dd.power = 0;
-          dd.unboost = 1;
-          dd.saveCpu = 0;
+          dd.war = dd.war ? 0 : 1;
           break;
+        case "hib":
         case "hibernate":
-          dd.war = 0;
-          dd.deposit = 0;
-          dd.power = 0;
-          dd.unboost = 1;
-          dd.saveCpu = 1;
+          let on: 0 | 1 = dd.unboost && dd.saveCpu ? 0 : 1;
+          dd.unboost = on;
+          dd.saveCpu = on;
           break;
-        case "all":
-          dd.war = 1;
-          dd.deposit = 1;
-          dd.power = 1;
-          dd.unboost = 1;
-          dd.saveCpu = 1;
-          break;
-        case "none":
-          dd.war = 0;
-          dd.deposit = 0;
-          dd.power = 0;
-          dd.unboost = 0;
-          dd.saveCpu = 0;
-          break;
+        case "def":
         case "default":
-          dd.war = 1;
-          dd.deposit = 1;
-          dd.power = 1;
-          dd.unboost = 0;
-          dd.saveCpu = 0;
+          dd = BASE_MODE_HIVE;
           break;
       }
-      let addString = (name: "war" | "deposit" | "power" | "saveCpu" | "unboost", ref: string = name) => `${ref.toUpperCase()}: ${h.shouldDo(name) ? "ON" : "OFF"} `
-      ans += `@ ${h.print}:\n${addString("war") + addString("deposit") + addString("power")}\n${addString("saveCpu", "cpu") + addString("unboost")}`;
+      let addString = (name: keyof HiveCache["do"], ref: string = name) => `${ref.toUpperCase()}: ${!h.shouldDo(name) ? "OFF" : ("ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : ""))} `
+      ans += `@ ${h.print
+        }:\n${addString("depositRefining", "refining") + addString("depositMining", "deposit")
+        }\n${addString("powerRefining", "refining") + addString("powerMining", "power")
+        }\n${addString("war") + addString("lab")
+        }\n${addString("buyIn")
+        }\n${addString("saveCpu", "cpu") + addString("unboost")}\n`;
     });
     return ans;
   }

@@ -56,8 +56,10 @@ export class FastRefillCell extends Cell {
     if (!this.needEnergy)
       return;
     if (this.sCell.link) {
-      if (this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY * 0.75)
+      if (this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY * 0.75) {
         this.sCell.requestFromStorage([this.sCell.link], 1, RESOURCE_ENERGY);
+        this.sCell.linkState = 1;
+      }
     } else
       this.sCell.requestFromStorage(emptyContainers, 1, RESOURCE_ENERGY); // maybe 0 but for now 1
   }

@@ -2,22 +2,12 @@ import { hiveStates } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
+import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
 //  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 
 import type { Hive, ResTarget } from "../hive";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
-
-let ALLOWED_TO_BUYIN: ResourceConstant[] = ["H", "K", "L", "U", "X", "O", "Z"];
-
-switch (Game.shard.name) {
-  case "shard2":
-    ALLOWED_TO_BUYIN = ALLOWED_TO_BUYIN;
-    break;
-  case "shard3":
-    ALLOWED_TO_BUYIN = ["H", "K", "L", "U", "X", "O", "Z"];
-    break;
-}
 
 @profile
 export class Network {
@@ -64,7 +54,8 @@ export class Network {
     let fromState = Apiary.hives[from].resState[res];
     let inProcess = this.aid[from] && this.aid[from].to === to && this.aid[from].res === res ? this.aid[from].amount : 0;
     let padding = 0;
-    if (res === RESOURCE_ENERGY || ALLOWED_TO_BUYIN.includes(res))
+
+    if (res === RESOURCE_ENERGY)
       padding = PADDING_RESOURCE;
 
     if (fromState === undefined)
@@ -93,7 +84,20 @@ export class Network {
 
       for (const r in hive.shortages) {
         let res = <ResourceConstant>r;
-        if (ALLOWED_TO_BUYIN.includes(res)) {
+        let canBuyIn = 0;
+        switch (hive.shouldDo("buyIn")) {
+          case 3:
+            canBuyIn = 1;
+            break;
+          case 2:
+            if (res === RESOURCE_ENERGY || res === RESOURCE_OPS)
+              canBuyIn = 1;
+          case 1:
+            if (BASE_MINERALS.includes(res))
+              canBuyIn = 1;
+          case 0:
+        }
+        if (canBuyIn) {
           let amount = hive.shortages[res]!;
           let ans = Apiary.broker.buyIn(terminal, res, amount + PADDING_RESOURCE, hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2);
           if (ans === "short") {

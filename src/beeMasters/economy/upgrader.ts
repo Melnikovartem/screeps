@@ -1,7 +1,7 @@
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import { Master } from "../_Master";
 
-import { beeStates, prefix, hiveStates } from "../../enums";
+import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -20,18 +20,15 @@ export class UpgraderMaster extends Master {
   recalculateTargetBee() {
     this.fastModePossible = !!(this.cell.link && this.cell.sCell.link) || this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
 
-    let polen: Flag | undefined = Game.flags[prefix.upgrade + this.hive.roomName];
-    if (polen && this.cell.controller.level === 8 && polen.pos.getRangeTo(this.cell.controller) <= 1) {
-      polen.remove();
-      polen = undefined;
-    }
-    if (!polen || this.hive.state >= hiveStates.nukealert) {
+    let polen = this.hive.shouldDo("upgrade");
+    if (!polen || (polen === 1 && this.cell.controller.level === 8) || this.hive.state >= hiveStates.nukealert) {
       this.boosts = undefined;
 
       this.targetBeeCount = this.cell.controller.ticksToDowngrade < CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.75 ? 1 : 0;
       this.patternPerBee = 1;
       return;
     }
+
     this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);

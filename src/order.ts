@@ -540,32 +540,6 @@ export class FlagOrder {
             } else
               this.delete();
             break;
-          case COLOR_YELLOW:
-            if (this.fixedName(prefix.upgrade + this.hive.roomName) && this.hive.cells.upgrade) {
-              this.hive.cells.upgrade.master.waitingForBees = 0;
-              for (const key in this.hive.spawOrders)
-                if (key.includes(this.hive.cells.upgrade.master.ref))
-                  delete this.hive.spawOrders[key];
-            }
-            break;
-          /* case COLOR_GREY:
-            if (this.hive.cells.lab && this.fixedName(prefix.haltlab + this.hive.roomName)) {
-              this.hive.cells.lab.synthesizeTarget = undefined;
-              this.hive.cells.lab.synthesizeRes = undefined;
-              this.hive.cells.lab.prod = undefined;
-            }
-            break;
-          case COLOR_WHITE:
-            this.fixedName(prefix.build + this.hive.roomName);
-            break;
-          case COLOR_RED:
-            this.fixedName(prefix.nukes + this.hive.roomName);
-            if (this.ref === prefix.nukes + this.hive.roomName)
-              this.hive.cells.defense.updateNukes();
-            break;
-          case COLOR_ORANGE:
-            this.fixedName(prefix.terminal + this.hive.roomName);
-            break; */
         }
         break;
       case COLOR_GREY:

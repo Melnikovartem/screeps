@@ -3,6 +3,7 @@ import { roomStates, prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { Traveler } from "../Traveler/TravelerModified";
+import { BASE_MODE_HIVE } from "./hiveMemory";
 
 import type { BuildProject } from "../Hive";
 
@@ -894,10 +895,7 @@ export class RoomPlanner {
     let cellsCache = this.activePlanning[roomName].cellsCache;
     if (Object.keys(cellsCache).length) {
       if (!Memory.cache.hives[roomName])
-        Memory.cache.hives[roomName] = {
-          wallsHealth: WALL_HEALTH, cells: {},
-          do: { power: 1, deposit: 1, war: 1, unboost: 1, saveCpu: 0 },
-        };
+        Memory.cache.hives[roomName] = { wallsHealth: WALL_HEALTH, cells: {}, do: { ...BASE_MODE_HIVE } };
       for (let cellType in cellsCache) {
         let cellCache = cellsCache[cellType];
         if (!Memory.cache.hives[roomName].cells[cellType.split("_")[0]])

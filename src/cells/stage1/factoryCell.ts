@@ -85,7 +85,8 @@ export class FactoryCell extends Cell {
     this.resTarget = {};
     this.uncommon = false;
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
-      if (!this.commodityTarget && Game.time % 25 !== 8)
+      if (!this.hive.shouldDo("depositRefining")
+        || !this.commodityTarget && Game.time % 25 !== 8)
         return;
       this.commodityTarget = undefined;
       let targets: { res: FactoryResourceConstant, amount: number }[] = [];

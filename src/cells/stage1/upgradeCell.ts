@@ -102,6 +102,7 @@ export class UpgradeCell extends Cell {
         if (!this.sCell.master.activeBees.length || this.hive.state === hiveStates.lowenergy)
           return;
         this.sCell.requestFromStorage([this.sCell.link], freeCap >= LINK_CAPACITY - 100 ? 3 : 1, RESOURCE_ENERGY);
+        this.sCell.linkState = 1;
       }
     }
   }

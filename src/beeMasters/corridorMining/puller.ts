@@ -39,7 +39,7 @@ export class PullerMaster extends Master {
 
     let workingPowerSites = this.powerSites.filter(p => p.operational);
     let inProgress = workingPowerSites.filter(p => p.beesAmount);
-    if (!inProgress.length && this.hive.shouldDo("power") && workingPowerSites.length)
+    if (!inProgress.length && this.hive.shouldDo("powerMining") && workingPowerSites.length)
       inProgress = [workingPowerSites.pop()!];
     this.sitesON = inProgress;
 
@@ -56,10 +56,8 @@ export class PullerMaster extends Master {
           });
       });
 
-    let depositsOn = this.hive.shouldDo("deposit");
     let workingDeposits: DepositMaster[] = [];
-
-    if (depositsOn) {
+    if (this.hive.shouldDo("depositMining")) {
       workingDeposits = this.depositSites.filter(d => d.operational);
       if (workingDeposits.length > 1) {
         let depositsWithBees = workingDeposits.filter(d => d.miners.beesAmount || d.pickup.beesAmount);
@@ -162,7 +160,7 @@ export class PullerMaster extends Master {
             }
           }
       }
-      // this.checkFlee(bee, undefined, { movingTarget: true });
+      this.checkFlee(bee, undefined, { movingTarget: true });
     });
   }
 }
