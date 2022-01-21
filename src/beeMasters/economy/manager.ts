@@ -56,7 +56,7 @@ export class ManagerMaster extends Master {
     _.forEach(this.activeBees, bee => {
       let transfer = bee.target && this.cell.requests[bee.target];
       if (!transfer || !transfer.isValid() || (non_refill_needed && transfer.priority === 0)
-        || (transfer.priority === 2 && this.hive.state === hiveStates.battle && transfer.toAmount < 20)) {
+        || (transfer.priority === 2 && this.hive.state >= hiveStates.battle && transfer.toAmount < 20)) {
         bee.target = undefined;
         if (Object.keys(requests).length && bee.ticksToLive > 20) {
           let beeRequests = _.filter(requests, (r) => r.isValid(bee.store.getUsedCapacity(r.resource)) && !r.beeProcess && (r.priority < 6 || !pickingup));
@@ -70,6 +70,8 @@ export class ManagerMaster extends Master {
                 let nonStoragePrev = prev.to.id === this.cell.storage.id ? prev.from : prev.to;
                 let nonStorageCurr = curr.to.id === this.cell.storage.id ? curr.from : curr.to;
                 ans = refPoint.getRangeTo(nonStorageCurr) - refPoint.getRangeTo(nonStoragePrev);
+                if (Math.abs(ans) < 3)
+                  ans = (prev.nextup ? 1 : 0) - (curr.nextup ? 1 : 0);
               }
               if (!ans)
                 ans = curr.amount - prev.amount;
@@ -94,7 +96,8 @@ export class ManagerMaster extends Master {
       let setup = setups.queen;
       let lvl = this.hive.controller.level;
       // some cool function i came up with. It works utill lvl 8 though
-      setup.patternLimit = Math.ceil(0.02 * Math.pow(lvl, 3) + 0.4 * lvl + 12);
+
+      setup.patternLimit = Math.round(-0.004 * Math.pow(lvl, 3) + 1.8 * lvl + 8);
 
       if (this.hive.state === hiveStates.lowenergy)
         setup.patternLimit = Math.ceil(setup.patternLimit / 2);
@@ -108,6 +111,11 @@ export class ManagerMaster extends Master {
 
   run() {
     _.forEach(this.activeBees, bee => {
+      if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
+        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        return;
+      }
+
       if (bee.pos.roomName !== this.cell.pos.roomName)
         bee.state = beeStates.chill;
       if (bee.ticksToLive < 10)
@@ -137,7 +145,7 @@ export class ManagerMaster extends Master {
 
       if (bee.state === beeStates.chill)
         bee.goRest(this.cell.pos);
-      this.checkFlee(bee);
+      this.checkFlee(bee, this.hive, undefined, false);
     });
   }
 }

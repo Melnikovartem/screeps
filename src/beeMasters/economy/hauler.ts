@@ -43,7 +43,10 @@ export class HaulerMaster extends Master {
       _.forEach(this.cell.resourceCells, cell => {
         if (cell.operational && cell.roadTime !== Infinity && cell.restTime !== Infinity && cell.container && !cell.link) {
           let coef = cell.master.ratePT;
-          this.accumRoadTime += (cell.roadTime + cell.restTime) * coef;
+          // min to prevent the longest mining any extra cost
+          if (cell.lair)
+            coef += 600 / ENERGY_REGEN_TIME; // usual drop of source keeper if killed by my SK defender
+          this.accumRoadTime += (cell.roadTime + Math.max(cell.restTime, cell.roadTime)) * coef;
           if (cell.restTime < this.minRoadTime)
             this.minRoadTime = cell.restTime;
         }
@@ -56,22 +59,17 @@ export class HaulerMaster extends Master {
   recalculateTargetBee() {
     let body = setups.hauler.getBody(this.hive.room.energyCapacityAvailable).body;
     this.cell.fullContainer = Math.min(CONTAINER_CAPACITY, body.filter(b => b === CARRY).length * CARRY_CAPACITY);
-    let rounding = (x: number) => Math.max(1, Math.ceil(x - 0.15));
+    let rounding = (x: number) => Math.ceil(x - 0.15);
     if (this.hive.state === hiveStates.lowenergy)
-      rounding = x => Math.max(1, Math.floor(x + 0.15));
+      rounding = x => Math.floor(x + 0.15);
     this.targetBeeCount = rounding(this.accumRoadTime / this.cell.fullContainer);
-
-    /*
-    let period = CREEP_LIFE_TIME - this.minRoadTime - 10;
-    let spawnTime = body.length * CREEP_SPAWN_TIME;
-    this.targetBeeCount = Math.min(this.targetBeeCount, Math.ceil(period * Object.keys(this.hive.cells.spawn.spawns).length / spawnTime * 0.5));
-    */
   }
 
   checkBeesWithRecalc() {
     let check = () => this.checkBees(hiveStates.battle !== this.hive.state || !this.beesAmount || !Object.keys(this.hive.spawOrders).length, CREEP_LIFE_TIME - this.minRoadTime - 10);
     if (this.targetBeeCount && !check())
       return false;
+    this.recalculateRoadTime();
     this.recalculateTargetBee();
     return check();
   }
@@ -79,8 +77,30 @@ export class HaulerMaster extends Master {
   update() {
     super.update();
 
+    if (!this.accumRoadTime) {
+      this.targetBeeCount = 0;
+      if (Game.time % 50 === 0 || this.cell.shouldRecalc) {
+        this.recalculateRoadTime();
+        if (!this.accumRoadTime)
+          return;
+        this.recalculateTargetBee();
+      } else
+        return;
+    }
+
     if (this.dropOff.store.getFreeCapacity() <= this.dropOff.store.getCapacity() * 0.005)
       return;
+
+    if (this.cell.shouldRecalc) {
+      this.recalculateRoadTime();
+      this.recalculateTargetBee();
+    }
+
+    if (this.checkBeesWithRecalc())
+      this.wish({
+        setup: setups.hauler,
+        priority: this.beesAmount ? 5 : 3,
+      });
 
     _.forEach(this.cell.quitefullCells, cell => {
       let container = cell.container;
@@ -100,33 +120,17 @@ export class HaulerMaster extends Master {
         this.targetMap[container.id] = bee.ref;
       }
     });
-
-    if (this.cell.shouldRecalc) {
-      this.recalculateRoadTime();
-      this.recalculateTargetBee();
-    }
-
-    if (this.checkBeesWithRecalc()) {
-      this.wish({
-        setup: setups.hauler,
-        priority: this.beesAmount ? 5 : 3,
-      });
-    }
   }
 
   run() {
     _.forEach(this.activeBees, bee => {
+      if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
+        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        return;
+      }
+
       if (bee.state === beeStates.chill && bee.store.getUsedCapacity() > 0)
         bee.state = beeStates.work;
-      /* if (this.hive.cells.defense.timeToLand < 50) {
-        if (bee.pos.roomName === this.hive.roomName || bee.pos.getEnteranceToRoom()) {
-          let exit = Game.map.describeExits(this.hive.roomName)
-          let exitToGo = Object.keys(exit)[0];
-          bee.goRest(new RoomPosition(25, 25, exitToGo));
-        }
-        this.checkFlee(bee);
-        return;
-      } */
       let res: ResourceConstant;
       switch (bee.state) {
         case beeStates.refill:

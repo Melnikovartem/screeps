@@ -131,7 +131,7 @@ export class NKVDMaster extends PowerMaster {
           break;
         case PWR_OPERATE_FACTORY:
           let factory = (<FactoryCell>targets).factory;
-          if (factory.level === powerStats.level && (<FactoryCell>targets).possibleUncommon || !factory.level)
+          if (factory.level === powerStats.level && (<FactoryCell>targets).uncommon || !factory.level)
             andNextup(factory, 20);
           break;
         case PWR_OPERATE_LAB:
@@ -157,11 +157,11 @@ export class NKVDMaster extends PowerMaster {
             _.forEach((<StorageCell>targets).terminal!, (s) => andNextup(s));
           break;
         case PWR_FORTIFY:
-          if (this.hive.state === hiveStates.battle)
+          if (this.hive.state >= hiveStates.battle)
             _.forEach((<DefenseCell>targets).walls, (s) => andNextup(s, 0));
           break;
         case PWR_OPERATE_TOWER:
-          if (this.hive.state === hiveStates.battle)
+          if (this.hive.state >= hiveStates.battle)
             _.forEach((<DefenseCell>targets).towers, (s) => andNextup(s, 5));
           break;
         case PWR_OPERATE_CONTROLLER:
@@ -199,7 +199,9 @@ export class NKVDMaster extends PowerMaster {
   }
 
   run() {
-    if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
+    if (this.hive.cells.defense.timeToLand < 50)
+      this.powerCreep.fleeRoom(this.hive.roomName, this.hive.opt);
+    else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
       this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
       this.powerCreep.enableRoom(this.hive.controller, this.hive.opt);

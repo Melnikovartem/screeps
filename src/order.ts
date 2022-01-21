@@ -17,6 +17,9 @@ import { PuppetMaster } from "./beeMasters/civil/puppet";
 import { PortalMaster } from "./beeMasters/civil/portal";
 import { AnnexMaster } from "./beeMasters/civil/annexer";
 import { PickupMaster } from "./beeMasters/civil/pickup";
+import { HelpUpgradeMaster } from "./beeMasters/civil/helpUpgrade";
+import { HelpTransferMaster } from "./beeMasters/civil/helpTransfer";
+import { SignerMaster } from "./beeMasters/civil/randomSigner";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
 
 import { hiveStates, prefix, roomStates } from "./enums";
@@ -48,10 +51,13 @@ export class FlagOrder {
 
     if (this.memory.hive) {
       this.hive = Apiary.hives[this.memory.hive];
-      if (!this.hive)
+      if (!this.hive) {
+        this.flag.remove();
         return;
+      }
     } else {
-      let filter: (h: Hive) => boolean = h => h.phase >= 2;;
+      let filter: (h: Hive) => boolean = h => h.phase >= 2;
+      let parsed: RegExpExecArray | null;
       switch (this.color) {
         case COLOR_CYAN:
           filter = h => h.roomName === this.pos.roomName && h.phase >= 1;
@@ -61,11 +67,16 @@ export class FlagOrder {
             filter = h => h.roomName !== this.pos.roomName && h.state === hiveStates.economy && h.phase > 0;
           if (this.secondaryColor !== COLOR_PURPLE)
             break;
+          parsed = /_room_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
+          if (parsed) {
+            filter = h => h.roomName === parsed![1];
+            break;
+          }
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY: case COLOR_BLUE:
           filter = _ => true;
           break;
         case COLOR_RED:
-          let parsed = /_room\_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
+          parsed = /_room_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
           if (parsed)
             filter = h => h.roomName === parsed![1];
           break;
@@ -80,6 +91,7 @@ export class FlagOrder {
       extraInfo: this.memory.extraInfo,
     };
     this.flag.memory = newMemory;
+    Apiary.orders[this.ref] = this;
   }
 
   get memory() {
@@ -99,7 +111,7 @@ export class FlagOrder {
     // well time to look for faraway boys
     let validHives = _.filter(Apiary.hives, filter);
     if (!validHives.length)
-      validHives = _.map(Apiary.hives);
+      validHives = _.map(Apiary.hives, h => h);
 
     let bestHive = validHives.pop()!; // if i don't have a single hive wtf am i doing
     let dist = this.pos.getRoomRangeTo(bestHive);
@@ -127,8 +139,11 @@ export class FlagOrder {
 
   fixedName(name: string) {
     if (this.ref !== name && this.pos.roomName in Game.rooms) {
-      if (!(name in Game.flags))
-        this.pos.createFlag(name, this.color, this.secondaryColor);
+      if (!(name in Game.flags)) {
+        let ans = this.pos.createFlag(name, this.color, this.secondaryColor);
+        if (typeof ans === "string")
+          Game.flags[ans].memory = this.memory;
+      }
       this.delete();
       return false;
     }
@@ -182,7 +197,7 @@ export class FlagOrder {
       case COLOR_PURPLE:
         switch (this.secondaryColor) {
           case COLOR_PURPLE:
-            if (this.pos.getRoomRangeTo(this.hive) > 5) {
+            if (this.pos.getRoomRangeTo(this.hive, true) >= 6) {
               this.delete();
               break;
             }
@@ -216,6 +231,12 @@ export class FlagOrder {
             if (!this.master) {
               let roomState = Apiary.intel.getInfo(this.pos.roomName, Infinity).roomState;
               switch (roomState) {
+                case roomStates.ownedByMe:
+                  if (Apiary.hives[this.pos.roomName] && Apiary.hives[this.pos.roomName].phase > 0)
+                    this.delete();
+                  else
+                    this.hive.addAnex(this.pos.roomName);
+                  break;
                 case roomStates.reservedByEnemy:
                 case roomStates.reservedByInvader:
                 case roomStates.noOwner:
@@ -232,6 +253,12 @@ export class FlagOrder {
                     this.master = new SKMaster(this);
                     this.hive.addAnex(this.pos.roomName);
                   }
+                  break;
+                case roomStates.SKcentral:
+                  if (this.hive.room.energyCapacityAvailable >= 5500)
+                    this.hive.addAnex(this.pos.roomName);
+                  this.master = new PuppetMaster(this);
+                  this.master.maxSpawns = Infinity;
                   break;
                 default:
                   this.delete();
@@ -269,9 +296,9 @@ export class FlagOrder {
 
             hiveToBoos.bassboost = this.hive;
             hiveToBoos.spawOrders = {};
-            _.forEach(this.hive.cells, c => {
-              if (c.master)
-                c.master.waitingForBees = 0;
+            _.forEach(Apiary.masters, c => {
+              if (c.hive.roomName === this.pos.roomName)
+                c.waitingForBees = 0;
             });
             if (hiveToBoos.cells.dev && hiveToBoos.cells.dev.master)
               hiveToBoos.cells.dev.master.recalculateTargetBee();
@@ -281,27 +308,38 @@ export class FlagOrder {
       case COLOR_CYAN:
         this.uniqueFlag();
         if (this.hive.roomName === this.pos.roomName) {
+          let cellType = "";
+          let action = () => { };
           switch (this.secondaryColor) {
             case COLOR_BROWN:
-              this.hive.cells.excavation.toCache("poss", { x: this.pos.x, y: this.pos.y });
-              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-                cell.restTime = cell.pos.getTimeForPath(this.hive.rest);
-              });
+              cellType = prefix.excavationCell;;
+              action = () => _.forEach(this.hive.cells.excavation.resourceCells, cell => cell.restTime = cell.pos.getTimeForPath(this.hive.rest));
               break;
             case COLOR_CYAN:
-              if (this.hive.cells.lab)
-                this.hive.cells.lab.toCache("poss", { x: this.pos.x, y: this.pos.y });
+              cellType = prefix.laboratoryCell;
               break;
             case COLOR_WHITE:
-              this.hive.cells.defense.toCache("poss", { x: this.pos.x, y: this.pos.y });
-              _.forEach(this.hive.cells.excavation.resourceCells, cell => {
-                cell.roadTime = cell.pos.getTimeForPath(this.hive.pos);
-              });
+              cellType = prefix.defenseCell;
+              action = () => _.forEach(this.hive.cells.excavation.resourceCells, cell => cell.roadTime = cell.pos.getTimeForPath(this.hive.pos));
               break;
             case COLOR_RED:
-              if (this.hive.cells.power)
-                this.hive.cells.power.toCache("poss", { x: this.pos.x, y: this.pos.y });
-              break
+              cellType = prefix.powerCell;
+              break;
+            case COLOR_GREEN:
+              cellType = prefix.fastRefillCell;
+              break;
+          }
+          if (cellType) {
+            if (!Memory.cache.hives[this.hive.roomName].cells[cellType])
+              Memory.cache.hives[this.hive.roomName].cells[cellType] = {};
+            Memory.cache.hives[this.hive.roomName].cells[cellType].poss = { x: this.pos.x, y: this.pos.y };
+            action();
+            if (Apiary.planner.activePlanning[this.hive.roomName]) {
+              if (!Apiary.planner.activePlanning[this.hive.roomName].cellsCache[cellType])
+                Apiary.planner.activePlanning[this.hive.roomName].cellsCache[cellType] = { poss: { x: this.pos.x, y: this.pos.y } };
+              else
+                Apiary.planner.activePlanning[this.hive.roomName].cellsCache[cellType].poss = { x: this.pos.x, y: this.pos.y };
+            }
           }
         }
         this.delete();
@@ -327,8 +365,6 @@ export class FlagOrder {
             Apiary.planner.generatePlan(this.pos, baseRotation);
             break;
           case COLOR_GREY:
-            if (!this.ref.includes("upgrade"))
-              Apiary.planner.protectPoint(this.pos);
             Apiary.planner.addUpgradeSite(this.hive.pos);
             break;
           case COLOR_ORANGE:
@@ -456,6 +492,18 @@ export class FlagOrder {
                 this.master.targetBeeCount = this.master.maxSpawns;
               }
               break;
+            case COLOR_WHITE:
+              if (Apiary.hives[this.pos.roomName])
+                this.master = new HelpUpgradeMaster(this);
+              else
+                this.delete();
+              break;
+            case COLOR_GREY:
+              if (Apiary.hives[this.pos.roomName])
+                this.master = new HelpTransferMaster(this);
+              else
+                this.delete();
+              break;
             case COLOR_YELLOW:
               if (this.hive.puller)
                 this.master = new PowerMaster(this, this.hive.puller);
@@ -472,6 +520,9 @@ export class FlagOrder {
           break;
         }
         switch (this.secondaryColor) {
+          case COLOR_PURPLE:
+            this.master = new SignerMaster(this);
+            break;
           case COLOR_CYAN:
             if (!this.hive.cells.lab) {
               this.delete();
@@ -497,7 +548,7 @@ export class FlagOrder {
                   delete this.hive.spawOrders[key];
             }
             break;
-          case COLOR_GREY:
+          /* case COLOR_GREY:
             if (this.hive.cells.lab && this.fixedName(prefix.haltlab + this.hive.roomName)) {
               this.hive.cells.lab.synthesizeTarget = undefined;
               this.hive.cells.lab.synthesizeRes = undefined;
@@ -514,7 +565,7 @@ export class FlagOrder {
             break;
           case COLOR_ORANGE:
             this.fixedName(prefix.terminal + this.hive.roomName);
-            break;
+            break; */
         }
         break;
       case COLOR_GREY:
@@ -548,15 +599,26 @@ export class FlagOrder {
                 return;
               }
               if (RESOURCES_ALL.includes(res)) {
-                if (hurry || Game.time % 10 === 0)
-                  if (mode === "sell" && this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res) > (fast ? 0 : 1000))
-                    Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
-                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
-                  else if (mode === "buy" && (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 600000 : 8192)))
-                    Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
-                      , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
-                  else if (this.ref.includes("nokeep"))
+                if (hurry || Game.time % 10 === 0) {
+                  switch (mode) {
+                    case "sell":
+                      if (this.hive.cells.storage.getUsedCapacity(res) + this.hive.cells.storage.terminal.store.getUsedCapacity(res) > 0) {
+                        Apiary.broker.sellOff(this.hive.cells.storage.terminal, res, 500, hurry
+                          , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined)
+                        return;
+                      }
+                      break;
+                    case "buy":
+                      if (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 500000 : 10000)) {
+                        Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
+                          , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
+                        return;
+                      }
+                      break;
+                  }
+                  if (this.ref.includes("nokeep"))
                     this.delete();
+                }
               } else
                 this.delete();
             } else
@@ -582,7 +644,7 @@ export class FlagOrder {
         }
         break;
       case COLOR_YELLOW:
-        if (this.pos.getRoomRangeTo(this.hive) >= 5) {
+        if (this.pos.getRoomRangeTo(this.hive) >= 6) {
           this.delete();
           break;
         }
@@ -599,10 +661,12 @@ export class FlagOrder {
             case COLOR_CYAN:
               resource = this.pos.lookFor(LOOK_MINERALS)[0];
               if (resource) {
-                if (this.hive.cells.excavation)
-                  this.hive.cells.excavation.addResource(resource);
+                this.hive.cells.excavation.addResource(resource);
               } else
                 this.delete();
+              break;
+            case COLOR_RED:
+              // do not mine the resource
               break;
           }
         } else
@@ -638,12 +702,11 @@ export class FlagOrder {
               hiveBoosted.bassboost = null;
               if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
                 hiveBoosted.cells.dev.master.recalculateTargetBee();
-
               let pos = hiveBoosted.room.controller && hiveBoosted.room.controller.pos;
               if (pos) {
                 let newPos = [new RoomPosition(pos.x, pos.y + 1, pos.roomName), new RoomPosition(pos.x, pos.y - 1, pos.roomName)]
                   .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
-                newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_GREY, COLOR_YELLOW);
+                newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_BLUE, COLOR_YELLOW);
               }
             }
             break;
@@ -651,7 +714,8 @@ export class FlagOrder {
             let index = this.hive.annexNames.indexOf(this.pos.roomName);
             if (index !== -1)
               this.hive.annexNames.splice(index, 1);
-            _.forEach(_.filter(Game.flags, f => f.color === COLOR_YELLOW && f.pos.roomName === this.pos.roomName), f => f.remove());
+            if (!Apiary.hives[this.pos.roomName])
+              _.forEach(_.filter(Game.flags, f => f.color === COLOR_YELLOW && f.pos.roomName === this.pos.roomName), f => f.remove());
             for (const ref in this.hive.cells.excavation.resourceCells)
               if (this.hive.cells.excavation.resourceCells[ref].pos.roomName === this.pos.roomName) {
                 this.hive.cells.excavation.resourceCells[ref].master.delete();
@@ -661,9 +725,6 @@ export class FlagOrder {
         }
         break;
       case COLOR_RED:
-        for (const key in Apiary.defenseSwarms)
-          if (Apiary.defenseSwarms[key].ref === this.ref)
-            delete Apiary.defenseSwarms[key];
         break;
       case COLOR_WHITE:
         if (!_.filter(Apiary.orders, o => {
@@ -711,13 +772,8 @@ export class FlagOrder {
 
   static checkFlags() {
     for (const name in Game.flags)
-      if (!Apiary.orders[name]) {
-        let order = new this(Game.flags[name]);
-        if (order.hive)
-          Apiary.orders[name] = order;
-        else
-          Game.flags[name].remove();
-      }
+      if (!Apiary.orders[name])
+        new this(Game.flags[name]);
   }
 
   get print(): string {

@@ -1,6 +1,7 @@
 import { Master } from "../_Master";
 
 import { beeStates, hiveStates, roomStates } from "../../enums";
+import { findRamp } from "../war/siegeDefender";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -74,7 +75,7 @@ export class BootstrapMaster extends Master {
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
-    if (this.hive.phase > 0)
+    if (this.hive.phase > 0 || this.hive.shouldDo("saveCpu"))
       this.targetBeeCount = Math.min(this.targetBeeCount, 2);
     if (this.minRoadTime === Infinity)
       this.minRoadTime = 0;
@@ -107,7 +108,7 @@ export class BootstrapMaster extends Master {
     if (this.checkBeesWithRecalc()) {
       this.wish({
         setup: setups.bootstrap,
-        priority: <0 | 5 | 8>(this.beesAmount < Math.min(3, this.targetBeeCount * 0.35) ? 0 : (this.beesAmount > 10 ? 8 : 5)),
+        priority: <0 | 5 | 8>(this.beesAmount < Math.min(3, this.targetBeeCount * 0.35) ? 0 : (this.beesAmount > Math.max(8, this.targetBeeCount * 0.35) ? 8 : 5)),
       });
     }
   }
@@ -157,7 +158,7 @@ export class BootstrapMaster extends Master {
             && (!this.hive.room.storage || s.id !== this.hive.room.storage.id || this.hive.state === hiveStates.nospawn))[0];
       }
 
-      if (target) {
+      if (target && (this.hive.state !== hiveStates.battle || "structureType" in target)) {
         if (!amount && !(target instanceof Resource))
           amount = target.store.getUsedCapacity(RESOURCE_ENERGY);
         containerTargetingCur[target.id] = { current: 0, max: Math.ceil(amount / (this.patternCount * CARRY_CAPACITY)) };
@@ -171,6 +172,8 @@ export class BootstrapMaster extends Master {
     let refillTargets: (StructureSpawn | StructureExtension)[] = _.map(this.hive.cells.spawn.spawns);
     refillTargets = _.filter(refillTargets.concat(_.map(this.hive.cells.spawn.extensions)),
       structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+
+    let opt = this.hive.opt;
 
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
@@ -205,9 +208,10 @@ export class BootstrapMaster extends Master {
             source = Game.getObjectById(bee.target);
             if (source instanceof Source) {
               let roomInfo = Apiary.intel.getInfo(source.pos.roomName, Infinity);
-              if (roomInfo.currentOwner !== Apiary.username)
+              if (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username)
                 source = undefined;
-            }
+            } else if (this.hive.state === hiveStates.battle && source && !("structureType" in source))
+              source = undefined;
           }
 
           if (!source || source instanceof Source) {
@@ -228,9 +232,10 @@ export class BootstrapMaster extends Master {
                 bee.harvest(source);
               else {
                 let pos = source.pos.getOpenPositions()[0];
-                if (pos)
-                  bee.goTo(pos, { useFindRoute: !!this.hive.bassboost });
-                else if (bee.pos.getRangeTo(source) > 4)
+                if (pos) {
+                  opt.range = 0;
+                  bee.goTo(pos, opt);
+                } else if (bee.pos.getRangeTo(source) > 2)
                   bee.target = undefined;
               }
             }
@@ -247,9 +252,9 @@ export class BootstrapMaster extends Master {
               if (containerTargetingCur[source.id])
                 containerTargetingCur[source.id].current += 1;
               if (source instanceof Resource)
-                bee.pickup(source, { useFindRoute: !!this.hive.bassboost });
+                bee.pickup(source, opt);
               else
-                bee.withdraw(source, RESOURCE_ENERGY, undefined, { useFindRoute: !!this.hive.bassboost });
+                bee.withdraw(source, RESOURCE_ENERGY, undefined, opt);
             }
             ++countCurrent.picking;
             break;
@@ -262,12 +267,38 @@ export class BootstrapMaster extends Master {
           }
         case beeStates.chill:
           ++countCurrent.chilling;
-          bee.goRest(this.hive.rest);
+          bee.goRest(this.hive.rest, opt);
           break;
         case beeStates.work:
           let target: Structure | ConstructionSite | undefined | null;
           let workType: workTypes = "chilling";
           let oldTarget: workTypes = "chilling";
+
+
+          if (this.hive.state !== hiveStates.battle || bee.pos.roomName !== this.hive.roomName) {
+            if (this.checkFlee(bee, this.hive))
+              return;
+          } else {
+            let enemies = <Creep[]>Apiary.intel.getInfo(bee.pos.roomName, 20).enemies.map(e => e.object).filter(e => {
+              if (!(e instanceof Creep))
+                return false;
+              let stats = Apiary.intel.getStats(e).current;
+              return !!(stats.dmgClose + stats.dmgRange);
+            });
+            let enemy = bee.pos.findClosest(enemies);
+            if (!enemy)
+              return;
+            let fleeDist = Apiary.intel.getFleeDist(enemy);
+            if (!bee.targetPosition && enemy.pos.getRangeTo(bee) <= fleeDist)
+              bee.targetPosition = bee.pos;
+            if ((bee.targetPosition && !findRamp(bee.targetPosition)) || !findRamp(bee.pos)) {
+              if (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist
+                || (enemy.pos.getRangeTo(bee.targetPosition || bee.pos) < fleeDist + 2 && this.hive.cells.defense.wasBreached(enemy.pos, bee.targetPosition || bee.pos))) {
+                bee.flee(this.hive.pos);
+                return;
+              }
+            }
+          }
 
           if (bee.target) {
             target = Game.getObjectById(bee.target);
@@ -277,7 +308,8 @@ export class BootstrapMaster extends Master {
             } else if (target instanceof Structure) {
               if (target.structureType === STRUCTURE_CONTROLLER) {
                 oldTarget = "upgrade";
-                workType = "upgrade";
+                if (!(<StructureController>target).upgradeBlocked)
+                  workType = "upgrade";
               } else if ((target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION
                 || target.structureType === STRUCTURE_STORAGE || target.structureType === STRUCTURE_TOWER)) {
                 oldTarget = "refill";
@@ -285,7 +317,14 @@ export class BootstrapMaster extends Master {
                   workType = "refill"; // also can be different types of <Store>, so just storage for easy check
               } else {
                 oldTarget = "repair";
-                if (target.hits < Apiary.planner.getCase(target).heal)
+                let healTarget;
+                if (target.structureType === STRUCTURE_WALL || target.structureType === STRUCTURE_RAMPART) {
+                  healTarget = this.hive.wallsHealth;
+                  if (this.hive.state >= hiveStates.battle)
+                    healTarget *= 2;
+                } else
+                  healTarget = Apiary.planner.getCase(target).heal;
+                if (target.hits < Math.min(healTarget, target.hitsMax))
                   workType = "repair";
               }
             }
@@ -300,12 +339,12 @@ export class BootstrapMaster extends Master {
 
           if (!target) {
             let tt: (StructureTower)[] = _.filter(this.hive.cells.defense.towers,
-              structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+              structure => structure.store.getFreeCapacity(RESOURCE_ENERGY) > 50);
             target = bee.pos.findClosest(tt);
             workType = "refill";
           }
 
-          if (!target && this.cell.controller.ticksToDowngrade <= 6000 && this.count.upgrade === 0 && !this.cell.controller.upgradeBlocked) {
+          if (!target && !this.cell.controller.upgradeBlocked && this.cell.controller.ticksToDowngrade <= CONTROLLER_DOWNGRADE[this.cell.controller.level] / 2 && this.count.upgrade === 0 && !this.cell.controller.upgradeBlocked) {
             target = this.cell.controller;
             workType = "upgrade";
           }
@@ -330,7 +369,13 @@ export class BootstrapMaster extends Master {
             workType = "refill";
           }
 
-          if (!target && ((this.count.repair + this.count.build) * CARRY_CAPACITY * 2 < this.hive.sumCost || this.hive.state === hiveStates.battle)) {
+          let storage = this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn && this.hive.room.storage;
+          if (storage && storage.isActive() && (!target || bee.pos.getRangeTo(storage) + 5 < bee.pos.getRangeTo(target))) {
+            target = this.hive.room.storage;
+            workType = "refill";
+          }
+
+          if (!target && ((this.count.repair + this.count.build) * CARRY_CAPACITY * 2 < this.hive.sumCost || this.hive.state >= hiveStates.battle)) {
             target = this.hive.getBuildTarget(bee);
             if (target && target.pos.roomName !== this.hive.roomName && bee.pos.getRoomRangeTo(target, true) > 1)
               target = null;
@@ -340,12 +385,6 @@ export class BootstrapMaster extends Master {
               workType = "build";
           }
 
-          let storage = this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.nospawn && this.hive.room.storage;
-          if (storage && storage.isActive() && (!target || bee.pos.getRangeTo(storage) + 5 < bee.pos.getRangeTo(target))) {
-            target = this.hive.room.storage;
-            workType = "refill";
-          }
-
           if (!target) {
             target = this.cell.controller;
             workType = "upgrade";
@@ -353,17 +392,17 @@ export class BootstrapMaster extends Master {
 
           let ans: ScreepsReturnCode | undefined;
           if (workType === "repair") {
-            ans = bee.repair(<Structure>target);
+            ans = bee.repair(<Structure>target, opt);
             if (ans === OK && Apiary.logger)
               Apiary.logger.addResourceStat(this.hive.roomName, "build", -1);
           } else if (workType === "build") {
-            ans = bee.build(<ConstructionSite>target);
+            ans = bee.build(<ConstructionSite>target, opt);
             if (ans === OK && Apiary.logger)
               Apiary.logger.addResourceStat(this.hive.roomName, "build", -1);
           } else if (workType === "refill")
-            ans = bee.transfer(<Structure>target, RESOURCE_ENERGY);
+            ans = bee.transfer(<Structure>target, RESOURCE_ENERGY, undefined, opt);
           else if (workType === "upgrade") {
-            ans = bee.upgradeController(<StructureController>target);
+            ans = bee.upgradeController(<StructureController>target, opt);
             if (ans === OK && Apiary.logger)
               Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -bee.getActiveBodyParts(WORK));
           }
@@ -377,8 +416,6 @@ export class BootstrapMaster extends Master {
           bee.target = target.id;
           break;
       }
-      if (this.checkFlee(bee))
-        bee.drop(RESOURCE_ENERGY);
     });
     this.count = countCurrent;
     this.containerTargeting = containerTargetingCur;

@@ -22,23 +22,35 @@ export class FastRefillMaster extends Master {
   update() {
     super.update();
     this.container = <StructureContainer>Game.getObjectById(this.container.id);
+    if (!this.container) {
+      this.delete();
+      return;
+    }
     if (this.checkBees(true)) {
-      let setup = setups.queen;
+      let setup = setups.queen.copy();
       setup.patternLimit = 6;
+      setup.moveMax = 1;
       this.wish({
         setup: setup,
-        priority: 0,
+        priority: 1,
       });
     }
+  }
+
+  delete() {
+    super.delete();
+    let index = this.cell.masters.indexOf(this);
+    if (index !== -1)
+      this.cell.masters.splice(index);
   }
 
   run() {
     let lowContainer = this.container.store.getUsedCapacity(RESOURCE_ENERGY) <= CONTAINER_CAPACITY * 0.7;
     _.forEach(this.activeBees, bee => {
-      if (!this.pos.equal(bee.pos))
+      if (!this.pos.equal(bee.pos) && this.pos.isFree(false))
         bee.goTo(this.pos, { range: 0 });
       else if (bee.ticksToLive < 3) {
-        bee.transfer(this.container, RESOURCE_ENERGY);
+        bee.transfer(this.container.store.getFreeCapacity(RESOURCE_ENERGY) ? this.container : this.cell.link, RESOURCE_ENERGY);
       } else {
         let target = this.cell.refillTargets.filter(s => this.pos.getRangeTo(s) <= 1)[0];
         if (!bee.store.getUsedCapacity(RESOURCE_ENERGY)) {

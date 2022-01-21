@@ -22,7 +22,7 @@ export class UpgraderMaster extends Master {
 
     let polen: Flag | undefined = Game.flags[prefix.upgrade + this.hive.roomName];
     if (polen && this.cell.controller.level === 8 && polen.pos.getRangeTo(this.cell.controller) <= 1) {
-      polen.remove()
+      polen.remove();
       polen = undefined;
     }
     if (!polen || this.hive.state >= hiveStates.nukealert) {
@@ -113,7 +113,7 @@ export class UpgraderMaster extends Master {
             break;
           }
           let lab = this.hive.cells.lab.getUnboostLab(bee.ticksToLive) || this.hive.cells.lab;
-          bee.goRest(lab.pos);
+          bee.goTo(lab.pos, { range: 1 });
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
             if (bee.transfer(this.cell.link || this.cell.sCell.storage, RESOURCE_ENERGY) === ERR_FULL)
               bee.drop(RESOURCE_ENERGY);
@@ -133,6 +133,7 @@ export class UpgraderMaster extends Master {
             bee.goRest(this.cell.pos);
           break;
       }
+      this.checkFlee(bee, this.hive);
     });
   }
 }
