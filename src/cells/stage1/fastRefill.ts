@@ -41,13 +41,25 @@ export class FastRefillCell extends Cell {
     return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
+  delete() {
+    super.delete();
+    _.forEach(this.masters, m => m.delete());
+    this.parentCell.fastRef = undefined;
+  }
+
   update() {
     super.update();
-    this.needEnergy = !!this.masters.filter(m => m.container.store.getUsedCapacity(RESOURCE_ENERGY) < CONTAINER_CAPACITY * 0.1).length;
+    if (!this.link)
+      this.delete();
+    let emptyContainers = <StructureContainer[]>this.masters.filter(m => m.container && m.container.store.getUsedCapacity(RESOURCE_ENERGY) < CONTAINER_CAPACITY * 0.1).map(m => m.container);
+    this.needEnergy = !!emptyContainers.length;
     if (!this.needEnergy)
       return;
-    if (this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY * 0.75 && this.sCell.link)
-      this.sCell.requestFromStorage([this.sCell.link], 3, RESOURCE_ENERGY);
+    if (this.sCell.link) {
+      if (this.link.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY * 0.75)
+        this.sCell.requestFromStorage([this.sCell.link], 1, RESOURCE_ENERGY);
+    } else
+      this.sCell.requestFromStorage(emptyContainers, 1, RESOURCE_ENERGY); // maybe 0 but for now 1
   }
 
   run() {

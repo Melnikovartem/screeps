@@ -1,7 +1,7 @@
 import { Cell } from "../_Cell";
 import { FastRefillCell } from "../stage1/fastRefill";
 
-import { beeStates } from "../../enums";
+import { beeStates, setupsNames } from "../../enums";
 import { makeId } from "../../abstract/utils";
 import { prefix } from "../../enums";
 
@@ -37,13 +37,19 @@ export class RespawnCell extends Cell {
     return spawn.effects && spawn.effects.filter(e => e.effect === PWR_DISRUPT_SPAWN).length;
   }
 
+  get fastRefPos() {
+    if (this.hive.cache.cells[prefix.fastRefillCell]) {
+      let poss = this.hive.cache.cells[prefix.fastRefillCell].poss;
+      return new RoomPosition(poss.x, poss.y, this.hive.roomName);
+    }
+    return undefined;
+  }
+
   update() {
     super.update(["extensions", "spawns"]);
 
-    if (!this.fastRef && this.hive.phase >= 1 && this.hive.cells.storage && this.hive.cache.cells[prefix.fastRefillCell]) {
-      let poss = this.hive.cache.cells[prefix.fastRefillCell].poss;
-      let pos = new RoomPosition(poss.x, poss.y, this.hive.roomName);
-      let link = <StructureLink | undefined>pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_LINK)[0];
+    if (!this.fastRef && this.hive.phase >= 1 && this.hive.cells.storage && this.fastRefPos) {
+      let link = <StructureLink | undefined>this.fastRefPos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_LINK)[0];
       if (link)
         this.fastRef = new FastRefillCell(this, link, this.hive.cells.storage)
     }
@@ -60,23 +66,27 @@ export class RespawnCell extends Cell {
       this.fastRef.update();
   }
 
-  getTargets(freeStore = 0) {
-    let targets: (StructureSpawn | StructureExtension)[] = _.filter(this.spawns, s => s.store.getFreeCapacity(RESOURCE_ENERGY) > freeStore);
+  getTargets() {
     if (this.fastRef)
       this.fastRef.refillTargets = [];
-    targets = _.filter(targets.concat(_.map(this.extensions)), s => {
-      if (s.store.getFreeCapacity(RESOURCE_ENERGY) <= freeStore)
-        return false;
-      let ans = true;
-      if (this.fastRef && this.fastRef.pos.getRangeTo(s) <= 2)
-        if (_.some(this.fastRef.masters, m => m.pos.getRangeTo(s) <= 1 && m.beesAmount)) {
+    let targets = _.filter((<(StructureSpawn | StructureExtension)[]>
+      Object.values(this.spawns)).concat(Object.values(this.extensions)), s => this.checkTarget(s));
+    targets.sort((a, b) => (this.priorityMap[a.id] || Infinity) - (this.priorityMap[b.id] || Infinity));
+    return targets;
+  }
+
+  checkTarget(s: StructureSpawn | StructureExtension) {
+    if (s.store.getFreeCapacity(RESOURCE_ENERGY) <= 0 || (this.hive.cells.storage && this.hive.cells.storage.requests[s.id]))
+      return false;
+    if (this.fastRef && this.fastRef.pos.getRangeTo(s) <= 2)
+      for (let i = 0; i < this.fastRef.masters.length; ++i) {
+        let m = this.fastRef.masters[i];
+        if (m.pos.getRangeTo(s) <= 1 && m.beesAmount) {
           this.fastRef.refillTargets.push(s);
           return false;
         }
-      return ans;
-    });
-    targets.sort((a, b) => (this.priorityMap[a.id] || Infinity) - (this.priorityMap[b.id] || Infinity));
-    return targets;
+      }
+    return true;
   }
 
   bakePriority() {
@@ -105,11 +115,12 @@ export class RespawnCell extends Cell {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
     let orders = _.map(this.hive.spawOrders, o => o);
+
     for (let key = 0; key < orders.length && this.freeSpawns.length; ++key) {
       let order = orders.reduce((prev, curr) => {
         let ans = curr.priority - prev.priority;
         if (ans === 0)
-          ans = prev.createTime - curr.createTime;
+          ans = curr.createTime - prev.createTime;
         if (ans === 0)
           ans = Math.random() - 0.5;
         return ans < 0 ? curr : prev;
@@ -187,7 +198,8 @@ export class RespawnCell extends Cell {
     }
     if (this.hive.phase === 0) // renewing Boost creeps if they are better than we can spawn
       _.forEach(this.freeSpawns, s => {
-        let creep = s.pos.findInRange(FIND_MY_CREEPS, 1).filter(c => c.body.length > Math.floor(this.hive.room.energyCapacityAvailable / 200) * 3)[0];
+        let creep = s.pos.findInRange(FIND_MY_CREEPS, 1).filter(c => c.name.includes(setupsNames.bootstrap)
+          && c.body.length > Math.floor(this.hive.room.energyCapacityAvailable / 200) * 3)[0];
         if (creep && creep.ticksToLive && CREEP_LIFE_TIME - creep.ticksToLive >= 200)
           s.renewCreep(creep);
       });

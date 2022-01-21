@@ -46,11 +46,13 @@ export class ObserveCell extends Cell {
 
   updateRoomsToCheck() {
     let [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
-    if (Math.abs(Math.round(x / 10) - x) <= Math.abs(Math.round(y / 10) - y))
-      x = Math.round(x / 10) * 10
-    else
-      y = Math.round(y / 10) * 10
     let closest = we + x + ns + y;
+    let roundx = we + Math.round(x / 10) * 10 + ns + y;
+    let roundy = we + x + ns + Math.round(y / 10) * 10;
+    if (this.pos.getRoomRangeTo(roundx, true) < this.pos.getRoomRangeTo(roundy, true))
+      closest = roundx;
+    else
+      closest = roundy;
     this.dfs(closest, this.corridorRooms, this.hive.pos.getRoomRangeTo(closest, true));
     this.prevRoom = this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
@@ -76,38 +78,54 @@ export class ObserveCell extends Cell {
 
   update() {
     super.update();
-    let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName) <= OBSERVER_RANGE)[0];
-    if (roomName) {
-      this.roomsToCheck = [roomName];
-      for (let i = 0; i < Apiary.requestRoomSight.length; ++i)
-        if (Apiary.requestRoomSight[i] === roomName) {
-          Apiary.requestRoomSight.splice(i, 1);
+    if (!this.obeserver) {
+      this.delete()
+      return;
+    }
+    this.roomsToCheck = [];
+
+    if (this.hive.cells.defense.timeToLand < 75) {
+      let exits = Game.map.describeExits(this.hive.roomName);
+      let roomNames = <string[]>Object.values(exits);;
+      for (let i = 0; i < roomNames.length; ++i) {
+        let roomInfo = Apiary.intel.getInfo(roomNames[i], 25);
+        if (Game.time - roomInfo.lastUpdated > 25) {
+          this.roomsToCheck = [roomNames[i]];
           break;
         }
-    } else if (this.hive.shouldDo("power") || this.hive.shouldDo("deposit"))
-      this.roomsToCheck = this.corridorRooms;
-    else
-      this.roomsToCheck = [];
+      }
+    }
+
+    if (!this.roomsToCheck.length) {
+      let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName) <= OBSERVER_RANGE)[0];
+      if (roomName) {
+        this.roomsToCheck = [roomName];
+        let index = Apiary.requestRoomSight.indexOf(roomName);
+        if (index !== -1)
+          Apiary.requestRoomSight.splice(index, 1);
+      } else if (this.hive.shouldDo("power") || this.hive.shouldDo("deposit"))
+        this.roomsToCheck = this.corridorRooms;
+    }
 
     let room = Game.rooms[this.prevRoom];
     if (!room)
       return;
 
     let roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
-
-    if (roomInfo.roomState === roomStates.corridor && this.hive.resState[RESOURCE_ENERGY] > 0) {
+    if (roomInfo.roomState === roomStates.corridor) {
       if (this.hive.shouldDo("power"))
         this.powerCheck(room);
       if (this.hive.shouldDo("deposit"))
         this.depositCheck(room);
-    }
+    } else
+      Apiary.intel.getInfo(this.prevRoom, 50);
   }
 
   depositCheck(room: Room) {
     _.forEach(room.find(FIND_DEPOSITS), deposit => {
       if (deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 || deposit.ticksToDecay <= CREEP_LIFE_TIME)
         return;
-      this.createOrder(deposit.pos, prefix.deposit + deposit.id, COLOR_BLUE);
+      this.createOrder(deposit.pos, prefix.depositMining + deposit.id, COLOR_BLUE);
     });
   }
 
@@ -115,9 +133,9 @@ export class ObserveCell extends Cell {
     _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
       let open = power.pos.getOpenPositions(true).length;
       let dmgPerSecond = ATTACK_POWER * 20 * open;
-      if (power.hits / dmgPerSecond <= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive) * 50)
+      if (power.hits / dmgPerSecond >= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive) * 50)
         return;
-      this.createOrder(power.pos, prefix.power + power.id, COLOR_YELLOW);
+      this.createOrder(power.pos, prefix.powerMining + power.id, COLOR_YELLOW);
     });
   }
 
@@ -129,7 +147,6 @@ export class ObserveCell extends Cell {
     if (typeof name === "string") {
       Game.flags[name].memory.hive = this.hive.roomName;
       let order = new FlagOrder(Game.flags[name]);
-      Apiary.orders[name] = order;
       order.update();
     }
   }

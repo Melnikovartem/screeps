@@ -4,6 +4,8 @@ import { Master } from "../beeMasters/_Master";
 import { prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
+import type { HiveCells } from "../Hive";
+
 
 @profile
 export abstract class Cell {
@@ -29,6 +31,14 @@ export abstract class Cell {
 
   get pos(): RoomPosition {
     return this.hive.pos;
+  }
+
+  delete() {
+    for (let cellType in this.hive.cells)
+      if (this.hive.cells[<keyof HiveCells>cellType]!.ref === this.ref)
+        delete this.hive.cells[<keyof HiveCells>cellType];
+    if (this.master)
+      this.master.delete();
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters

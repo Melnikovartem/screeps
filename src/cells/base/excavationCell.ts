@@ -52,6 +52,8 @@ export class ExcavationCell extends Cell {
     this.quitefullCells = [];
 
     _.forEach(this.resourceCells, cell => {
+      if (this.hive.annexInDanger.includes(cell.pos.roomName))
+        return;
       if (cell.container) {
         let padding = 0;
         if (cell.operational) {

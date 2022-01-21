@@ -91,9 +91,14 @@ export class ResourceCell extends Cell {
     this.container = <StructureContainer>_.filter(this.resource.pos.findInRange(FIND_STRUCTURES, 1),
       s => s.structureType === STRUCTURE_CONTAINER)[0];
     if (this.resource instanceof Source) {
-      this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
-        s => s.structureType === STRUCTURE_LINK && s.isActive())[0];
-      this.operational = !!(this.container || (this.link && this.hive.cells.storage && this.hive.cells.storage.link));
+      if (this.pos.roomName === this.hive.roomName) {
+        this.link = <StructureLink>_.filter(this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
+          s => s.structureType === STRUCTURE_LINK && s.isActive()
+            && (!this.hive.cells.upgrade || !this.hive.cells.upgrade.link || this.hive.cells.upgrade.link.id !== s.id))[0];
+        if (!(this.hive.cells.storage && this.hive.cells.storage.link))
+          this.link = undefined;
+      }
+      this.operational = !!(this.container || this.link);
     } else if (this.resource instanceof Mineral) {
       this.extractor = <StructureExtractor>_.filter(this.resource.pos.lookFor(LOOK_STRUCTURES),
         s => s.structureType === STRUCTURE_EXTRACTOR && s.isActive())[0];
@@ -121,8 +126,8 @@ export class ResourceCell extends Cell {
     let storagePos = this.parentCell.master ? this.parentCell.master.dropOff.pos : this.hive.pos;
     if (this.roadTime === Infinity || this.roadTime === null)
       this.roadTime = this.pos.getTimeForPath(storagePos);
-    if (this.roadTime > 200)
-      this.operational = false
+    if (this.roadTime > 350)
+      this.operational = false;
     if (this.restTime === Infinity || this.restTime === null)
       this.restTime = this.pos.getTimeForPath(this.hive.rest);
     if (this.operational) {
@@ -157,13 +162,12 @@ export class ResourceCell extends Cell {
     if (this.operational) {
       if (!this.container && !this.link)
         this.operational = false;
+      else if (this.resourceType !== RESOURCE_ENERGY && this.resource.ticksToRegeneration) {
+        this.parentCell.shouldRecalc = true;
+        this.operational = false;
+      }
     } else if (Game.time % this.updateTime === 0)
       this.updateStructure();
-
-    if (this.resourceType !== RESOURCE_ENERGY && this.operational && this.resource.ticksToRegeneration) {
-      this.parentCell.shouldRecalc = true;
-      this.operational = false;
-    }
   }
 
   run() {
@@ -171,6 +175,17 @@ export class ResourceCell extends Cell {
       let usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY)
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {
         let closeToFull = usedCap >= LINK_CAPACITY * 0.85;
+
+        let fastRefLink = this.hive.cells.spawn.fastRef && this.hive.cells.spawn.fastRef.link;
+        if (fastRefLink && fastRefLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 8) {
+          let ans = this.link.transferEnergy(fastRefLink);
+          if (ans === OK) {
+            if (Apiary.logger)
+              Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
+                , fastRefLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
+            return;
+          }
+        }
 
         let upgradeLink = this.hive.state === hiveStates.economy && this.hive.cells.upgrade && this.hive.cells.upgrade.master.beesAmount && this.hive.cells.upgrade.link;
         if (upgradeLink && (upgradeLink.store.getFreeCapacity(RESOURCE_ENERGY) >= usedCap
@@ -180,17 +195,6 @@ export class ResourceCell extends Cell {
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
                 , upgradeLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
-            return;
-          }
-        }
-
-        let fastRefLink = this.hive.cells.spawn.fastRef && this.hive.cells.spawn.fastRef.link;
-        if (fastRefLink && fastRefLink.store.getFreeCapacity(RESOURCE_ENERGY) >= LINK_CAPACITY / 4) {
-          let ans = this.link.transferEnergy(fastRefLink);
-          if (ans === OK) {
-            if (Apiary.logger)
-              Apiary.logger.resourceTransfer(this.hive.roomName, this.loggerRef, this.link.store
-                , fastRefLink.store, RESOURCE_ENERGY, 1, { ref: this.loggerUpkeepRef, per: 0.03 });
             return;
           }
         }

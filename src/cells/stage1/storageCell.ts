@@ -4,7 +4,7 @@ import { TransferRequest } from "../../bees/transferRequest";
 
 import { prefix, hiveStates } from "../../enums";
 import { BASE_MINERALS } from "./laboratoryCell";
-import { findOptimalResource } from "../../abstract/utils";
+// import { findOptimalResource } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive, ResTarget } from "../../Hive";
@@ -28,27 +28,27 @@ export class StorageCell extends Cell {
 
   constructor(hive: Hive, storage: StructureStorage | StructureTerminal) {
     super(hive, prefix.storageCell + "_" + hive.room.name);
-
     this.storage = storage;
     this.terminal = this.hive.room.terminal;
-    this.link = <StructureLink | undefined>_.filter(this.storage.pos.findInRange(FIND_MY_STRUCTURES, 1),
-      structure => structure.structureType === STRUCTURE_LINK)[0];
     this.master = new ManagerMaster(this);
+    this.findLink();
   }
 
   requestFromStorage(objects: TransferRequest["to"][], priority: TransferRequest["priority"]
     , res: TransferRequest["resource"], amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
-    amount = Math.min(amount, this.storage.store.getUsedCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
       let existing = this.requests[ref];
-      if (existing && existing.priority <= priority)
-        continue;
       let amountCC = amount;
       if (fitStore)
         amountCC = Math.min(amountCC, (<Store<ResourceConstant, false>>objects[i].store).getFreeCapacity(res));
+      if (existing && existing.priority <= priority) {
+        if (existing.resource === res && existing.to.id === ref)
+          existing.amount = amountCC;
+        continue;
+      }
       if (amountCC <= 0)
         continue;
       let request = new TransferRequest(ref, this.storage, objects[i], priority, res, amountCC);
@@ -67,7 +67,6 @@ export class StorageCell extends Cell {
     , res: TransferRequest["resource"], amount: number = Infinity, fitStore = false): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
-
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
     for (let i = 0; i < objects.length; ++i) {
       let ref = objects[i].id;
@@ -107,6 +106,11 @@ export class StorageCell extends Cell {
     return this.requestToStorage(rrs, 6, undefined, 1200, true);
   }
 
+  findLink() {
+    this.link = <StructureLink | undefined>_.filter(this.pos.findInRange(FIND_MY_STRUCTURES, 2),
+      structure => structure.structureType === STRUCTURE_LINK)[0];
+  }
+
   update() {
     super.update();
     this.usedCapacity = {};
@@ -115,11 +119,17 @@ export class StorageCell extends Cell {
       return;
     }
 
+    if (!this.link && this.hive.controller.level >= 5)
+      this.findLink();
+
     for (let k in this.requests)
       this.requests[k].update();
 
-    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5)
-      this.requestToStorage([this.link], this.hive.state === hiveStates.battle ? 1 : 4, RESOURCE_ENERGY);
+    if (this.link && this.link.store.getUsedCapacity(RESOURCE_ENERGY) > LINK_CAPACITY * 0.5) {
+      let existing = this.requests[this.link.id];
+      if (!existing || !existing.isValid())
+        this.requestToStorage([this.link], this.hive.state >= hiveStates.battle ? 1 : 4, RESOURCE_ENERGY);
+    }
 
     this.hive.stateChange("lowenergy", this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000);
     if (this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 && !this.hive.cells.dev && Apiary.useBucket)
@@ -140,7 +150,8 @@ export class StorageCell extends Cell {
         Apiary.destroyTime = Game.time;
       return;
     }
-    if (Game.flags[prefix.terminal + this.hive.roomName]) {
+
+    /* if (Game.flags[prefix.terminal + this.hive.roomName]) {
       if (this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < this.resTargetTerminal[RESOURCE_ENERGY])
         this.requestFromStorage([this.terminal], 4, RESOURCE_ENERGY);
       else {
@@ -148,13 +159,14 @@ export class StorageCell extends Cell {
         this.requestFromStorage([this.terminal], 4, res);
       }
       return;
-    }
+    } */
 
     for (let r in this.terminal.store) {
       let res = <ResourceConstant>r;
       if (!this.resTargetTerminal[res]) {
         let used = this.terminal.store.getUsedCapacity(res);
-        if ((used > 1000 || !Object.keys(this.requests).length) && this.requestToStorage([this.terminal], 4, res, Math.min(used, 3000)) > 0)
+        if ((used > 1000 || !Object.keys(this.requests).length)
+          && this.requestToStorage([this.terminal], res === RESOURCE_ENERGY && this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000 ? 4 : 2, res, Math.min(used, 3000)) > 0)
           return;
       }
     }
@@ -166,7 +178,7 @@ export class StorageCell extends Cell {
         if (this.requestFromStorage([this.terminal], 4, res, Math.min(-balance, 3000)) > 0)
           return;
       } else if (balance > 1000 || !Object.keys(this.requests).length) {
-        if (this.requestToStorage([this.terminal], 4, res, Math.min(balance, 3000)) > 0)
+        if (this.requestToStorage([this.terminal], res === RESOURCE_ENERGY && this.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000 ? 4 : 2, res, Math.min(balance, 3000)) > 0)
           return;
       }
     }

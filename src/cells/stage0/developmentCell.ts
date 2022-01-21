@@ -55,13 +55,12 @@ export class DevelopmentCell extends Cell {
       Apiary.destroyTime = Game.time;
 
     let futureResourceCells = _.filter(Game.flags, f => f.memory.hive === this.hive.roomName && f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW);
-    if (this.hive.controller.level < 4 && Game.time % 100 === 0) {
-      _.forEach(futureResourceCells, f => {
-        if (!(f.pos.roomName in Game.rooms))
-          return
+    if (Game.time % 100 === 0 && this.hive.controller.level > 1 && this.hive.state === 0
+      && this.hive.state === hiveStates.economy && this.master.beesAmount) {
+      let addRouteTo = (pos: RoomPosition) => {
         // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hive.roomName)
-        let route = Traveler.findTravelPath(f.pos, this.hive, {
-          offRoad: true, weightOffRoad: 2,
+        let route = Traveler.findTravelPath(pos, this.hive.cells.spawn.fastRefPos || this.hive, {
+          offRoad: true, weightOffRoad: 5,
           roomCallback: (roomName, matrix) => {
             let roads = Memory.cache.roomPlanner[roomName] && Memory.cache.roomPlanner[roomName].road;
             if (!roads)
@@ -72,17 +71,25 @@ export class DevelopmentCell extends Cell {
             return matrix;
           }
         }).path;
-        _.forEach(route, r => {
+        let placed = 0;
+        _.some(route, r => {
           if (!(r.roomName in Game.rooms))
-            return
+            return false;
           let roads = Memory.cache.roomPlanner[r.roomName] && Memory.cache.roomPlanner[r.roomName].road;
-          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length && !r.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
-            if (!r.lookFor(LOOK_STRUCTURES).length)
+          if (roads && roads.pos.filter(p => p.x === r.x && p.y == r.y).length) {
+            if (r.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_ROAD).length)
+              ++placed;
+            else if (!r.lookFor(LOOK_STRUCTURES).length) {
               r.createConstructionSite(STRUCTURE_ROAD);
-            else if (!r.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
+              ++placed;
+            } else if (!r.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_RED).length)
               r.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
+          }
+          return placed > 5;
         });
-      });
+      }
+      _.forEach(futureResourceCells, f => addRouteTo(f.pos));
+      addRouteTo(this.hive.controller.pos);
       this.hive.shouldRecalc = 2;
     }
   }
