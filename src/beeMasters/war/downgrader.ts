@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class DowngradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-  maxSpawns = 1000;
+  maxSpawns = 10; // around 100K in creeps
 
   get oldestSpawn() {
     return this.order.memory.extraInfo;
@@ -37,7 +37,7 @@ export class DowngradeMaster extends SwarmMaster {
       }
     }
 
-    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)
+    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.hive.resState[RESOURCE_ENERGY] > 0 && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)
       this.wish({
         setup: setups.downgrader,
         priority: 9,
@@ -58,7 +58,7 @@ export class DowngradeMaster extends SwarmMaster {
           }
         }
       }
-      this.checkFlee(bee, this.pos);
+      this.checkFlee(bee);
     });
   }
 }

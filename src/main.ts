@@ -31,6 +31,11 @@ function onGlobalReset(): void {
 }
 
 function main() {
+  if (!Memory.settings.generatePixel && Game.cpu.bucket < 250) {
+    console.log(`CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`);
+    return;
+  }
+
   if (!Apiary || Game.time >= Apiary.destroyTime) {
     delete global.Apiary;
     global.Apiary = new _Apiary();

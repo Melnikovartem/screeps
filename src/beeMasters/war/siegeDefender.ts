@@ -2,10 +2,10 @@ import { Master } from "../_Master";
 
 import { setups } from "../../bees/creepsetups";
 import { beeStates, hiveStates, roomStates } from "../../enums";
+import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
-import type { Boosts } from "../_Master";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 
 const rampFilter = (ss: Structure[]) => ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000)
@@ -14,9 +14,6 @@ export const findRamp = (pos: RoomPosition) => !!rampFilter(pos.lookFor(LOOK_STR
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
-  boosts: Boosts | undefined = [{ type: "fatigue", lvl: 2 }, { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
-  { type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
-  { type: "damage", lvl: 2 }, { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
   cell: DefenseCell;
   patience: { [id: string]: number } = {};
 
@@ -27,16 +24,21 @@ export class SiegeMaster extends Master {
 
   update() {
     super.update();
+    this.boosts = undefined;
     if (this.hive.phase < 1)
       return;
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
-    let shouldSpawn = roomInfo.dangerlvlmax > 5;
+    let shouldSpawn = roomInfo.dangerlvlmax >= 6;
     if (!shouldSpawn)
       _.some(Game.map.describeExits(this.hive.roomName), exit => {
         if (!exit)
           return;
         let roomInfoExit = Apiary.intel.getInfo(exit, 50);
-        if (roomInfoExit.dangerlvlmax >= 8 && roomInfoExit.roomState !== roomStates.SKfrontier)
+        if (roomInfoExit.dangerlvlmax >= 8 && roomInfoExit.enemies.length > 2
+          && roomInfoExit.roomState !== roomStates.SKfrontier
+          && roomInfoExit.roomState !== roomStates.corridor
+          && roomInfoExit.roomState !== roomStates.ownedByEnemy
+          && roomInfoExit.roomState !== roomStates.ownedByMe)
           shouldSpawn = true;
         return shouldSpawn;
       });
@@ -50,8 +52,24 @@ export class SiegeMaster extends Master {
       }
       return;
     }
+    let enemy = Apiary.intel.getEnemy(this.hive.pos, 20);
+    if (enemy)
+      this.cell.reposessFlag(this.hive.pos, enemy);
+    let defSquad = Apiary.defenseSwarms[this.hive.roomName];
+    if (defSquad && enemy && defSquad.loosingBattle(Apiary.intel.getComplexStats(enemy).current) > 0)
+      return;
+    this.boosts = [{ type: "fatigue", lvl: 2 }, { type: "fatigue", lvl: 1 }, { type: "fatigue", lvl: 0 },
+    { type: "attack", lvl: 2 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 1 }, { type: "attack", lvl: 0 },
+    { type: "damage", lvl: 2 }, { type: "damage", lvl: 1 }, { type: "damage", lvl: 0 }];
+    if (this.hive.cells.lab && this.hive.cells.storage && this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL.attack[2]) >= LAB_BOOST_MINERAL)
+      _.forEach(this.bees, b => {
+        if (!b.boosted && b.ticksToLive >= 600)
+          b.state = beeStates.boosting;
+      });
     this.movePriority = <1>1;
     this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
+    this.hive.add(this.hive.mastersResTarget, BOOST_MINERAL.attack[2], 2000);
+
     if (this.checkBees(true, CREEP_LIFE_TIME - 75)) {
       let defender = setups.defender.destroyer.copy();
       /* if (roomInfo.dangerlvlmax >= 8)
@@ -75,7 +93,7 @@ export class SiegeMaster extends Master {
     let opt: TravelToOptions = { maxRooms: 1 };
     let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
     if (roomInfo.dangerlvlmax >= 5) {
-      opt.stuckValue = 20;
+      opt.stuckValue = 10;
       opt.roomCallback = (roomName, matrix) => {
         if (roomName !== this.hive.roomName)
           return;
@@ -133,7 +151,7 @@ export class SiegeMaster extends Master {
         || onPosition && rangeToTarget === 1 && beeStats.hits * 0.9 > (stats.dmgClose + stats.dmgRange));
     if ((this.cell.isBreached
       || (provoke && beeStats.hits >= allBeeStats.max.hits * 0.85 && findRamp(bee.pos))
-      || !(stats.dmgClose + stats.dmgRange)) && posToStay.getRangeTo(bee) <= 3) {
+      || stats.dmgClose + stats.dmgRange < 500)) {
       bee.goTo(target, opt);
       this.patience[bee.ref] = 0;
     } else if (!(posToStay.isNearTo(bee) && this.patience[bee.ref] <= 1 && beeStats.hits === allBeeStats.max.hits) &&
@@ -173,7 +191,7 @@ export class SiegeMaster extends Master {
             break;
           }
           let lab = this.hive.cells.lab.getUnboostLab(bee.ticksToLive) || this.hive.cells.lab;
-          bee.goRest(lab.pos);
+          bee.goTo(lab.pos, { range: 1 });
           break;
         case beeStates.chill:
           if (this.hive.state !== hiveStates.battle) {

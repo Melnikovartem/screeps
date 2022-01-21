@@ -15,6 +15,7 @@ import { Visuals } from "./convenience/visuals";
 import { safeWrap } from "./abstract/utils";
 import { profile } from "./profiler/decorator";
 import { LOGGING_CYCLE } from "./settings";
+import type { HordeMaster } from "./beeMasters/war/horde";
 
 const STARVE_HIM_OUT_CLAIMS = [""];
 
@@ -37,8 +38,9 @@ export class _Apiary {
   masters: { [id: string]: Master };
   orders: { [id: string]: FlagOrder };
 
-  defenseSwarms: { [id: string]: FlagOrder } = {};
+  defenseSwarms: { [id: string]: HordeMaster } = {};
   requestRoomSight: string[] = [];
+  requestRoomSightNextTick: string[] = [];
 
   constructor() {
     this.createTime = Game.time;
@@ -80,8 +82,15 @@ export class _Apiary {
   }
 
   requestSight(roomName: string) {
-    if (!this.requestRoomSight.includes(roomName))
-      this.requestRoomSight.push(roomName);
+    if (!this.requestRoomSightNextTick.includes(roomName))
+      this.requestRoomSightNextTick.push(roomName);
+  }
+
+  unsignedRoom(roomName: string) {
+    if (Memory.cache.roomsToSign.includes(roomName))
+      return;
+    if (_.filter(this.hives, h => h.pos.getRoomRangeTo(roomName) <= 10).length)
+      Memory.cache.roomsToSign.push(roomName);
   }
 
   wrap(func: () => void, ref: string, mode: "update" | "run", amount = 1, safe = true) {
@@ -96,13 +105,22 @@ export class _Apiary {
       Apiary.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 
+  // cpuPrev = { real: 0, acc: 0 };
+
   // update phase
   update() {
+    // this.cpuPrev = { real: Game.cpu.getUsed(), acc: 0 };
     if (this.logger)
       this.logger.update();
-
+    /* if (Game.time % 10 == 0) {
+      let cpuNew = { real: Game.cpu.getUsed(), acc: _.sum(Memory.log.cpuUsage.update, c => c.cpu) + _.sum(Memory.log.cpuUsage.run, c => c.cpu) };
+      console .log("1", cpuNew.real - this.cpuPrev.real, cpuNew.acc - this.cpuPrev.acc, (cpuNew.real - this.cpuPrev.real) - (cpuNew.acc - this.cpuPrev.acc));
+      this.cpuPrev = cpuNew;
+    } */
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
     this.intel.update();
+
+    this.wrap(() => this.broker.update(), "broker update", "update");
 
     FlagOrder.checkFlags();
     _.forEach(Apiary.orders, order => {
@@ -144,7 +162,8 @@ export class _Apiary {
     this.wrap(() => this.network.run(), "network", "run", this.network.nodes.length);
     this.wrap(() => this.warcrimes.run(), "warcrimes", "run", 1);
 
-    this.requestRoomSight = [];
+    this.requestRoomSight = this.requestRoomSightNextTick;
+    this.requestRoomSightNextTick = [];
 
     if (this.useBucket)
       this.wrap(() => Apiary.planner.run(), "planner", "run", 1, false);

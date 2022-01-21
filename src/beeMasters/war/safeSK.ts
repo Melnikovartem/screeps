@@ -47,7 +47,8 @@ export class SKMaster extends HordeMaster {
     if (this.hive.bassboost && this.pos.getRoomRangeTo(this.hive.bassboost, true) > 5)
       return;
 
-    if (this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50)
+    if (!this.hive.annexInDanger.includes(this.pos.roomName) &&
+      this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50)
       && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8)
       this.wish({
         setup: setups.defender.sk,
@@ -56,28 +57,31 @@ export class SKMaster extends HordeMaster {
   }
 
   useLair(bee: Bee, lair: StructureKeeperLair) {
-    let enemy;
-
     if (ticksToSpawn(lair) < 1) {
-      enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(e => e.owner.username === "Source Keeper"));
-      if (enemy)
+      let enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(e => e.owner.username === "Source Keeper"));
+      if (enemy) {
+        Apiary.intel.getInfo(bee.pos.roomName);
         this.attackOrFleeSK(bee, enemy);
+        return;
+      }
     }
+    let enemy = Apiary.intel.getEnemy(bee.pos, 10);
+    let ans: number = OK;
+    if (enemy instanceof Creep && (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3)) {
+      ans = this.attackOrFleeSK(bee, enemy);
+      Apiary.intel.getInfo(bee.pos.roomName);
+    }
+    if (ans === OK)
+      bee.goTo(lair, { range: 2 });
+    bee.target = lair.id;
 
-    if (!enemy) {
-      enemy = Apiary.intel.getEnemy(bee.pos, 10);
-      let ans: number = OK;
-      if (enemy instanceof Creep && (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3))
-        ans = this.attackOrFleeSK(bee, enemy);
-      if (ans === OK)
-        bee.goTo(lair, { range: 2 });
-      bee.target = lair.id;
-    }
   }
 
-  attackOrFleeSK(bee: Bee, target: Creep | Structure) {
+  attackOrFleeSK(bee: Bee, target: Creep) {
     // worse version of beeAct
     bee.target = target.id;
+    if (bee.pos.getRangeTo(target) <= 4 || bee.hits < bee.hitsMax)
+      bee.heal(bee);
     let shouldFlee = (bee.pos.getRangeTo(target) < 3)
       || (bee.pos.getRangeTo(target) <= 4 && bee.hits <= bee.hitsMax * 0.65);
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
@@ -93,19 +97,20 @@ export class SKMaster extends HordeMaster {
       if (bee.state === beeStates.boosting)
         return;
 
-      if (bee.pos.roomName !== this.pos.roomName) {
+      if (bee.pos.roomName !== this.pos.roomName && !bee.target) {
         let ans: number = OK;
         let enemy = Apiary.intel.getEnemy(bee.pos, 20);
-        if (enemy && enemy.pos.getRangeTo(bee) <= 5)
+        if (enemy && enemy.pos.getRangeTo(bee) <= 3)
           ans = this.beeAct(bee, enemy);
         if (ans === OK)
           bee.goTo(this.pos);
         return;
       }
 
+      let target = <Creep | Structure | undefined>(bee.target && Game.getObjectById(bee.target));
       let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
       if (roomInfo.dangerlvlmax >= 4) {
-        let defSquad = Apiary.defenseSwarms[this.pos.roomName] && Apiary.defenseSwarms[this.pos.roomName].master;
+        let defSquad = Apiary.defenseSwarms[this.pos.roomName];
         let pos = defSquad && defSquad.activeBees.filter(b => b.pos.roomName === this.pos.roomName)[0];
         let enemy = Apiary.intel.getEnemy(pos && pos.pos || bee.pos);
         if (enemy) {
@@ -115,7 +120,13 @@ export class SKMaster extends HordeMaster {
         }
       }
 
-      // attackOrFlee doesn't heal so we heal here
+
+      if (target instanceof Creep) {
+        // update the enemies
+        this.attackOrFleeSK(bee, target);
+        return;
+      }
+
       if (bee.hits < bee.hitsMax)
         bee.heal(bee);
       else if (bee.pos.roomName === this.pos.roomName) {
@@ -127,18 +138,11 @@ export class SKMaster extends HordeMaster {
             bee.rangedHeal(healingTarget);
       }
 
-      if (bee.target) {
-        let target = <Creep | Structure>Game.getObjectById(bee.target);
-        if (target instanceof Creep) {
-          // update the enemies
-          this.attackOrFleeSK(bee, target);
-          return;
-        } else if (target instanceof StructureKeeperLair) {
-          this.useLair(bee, target);
-          return;
-        } else
-          bee.target = undefined;
-      }
+      if (target instanceof StructureKeeperLair) {
+        this.useLair(bee, target);
+        return;
+      } else
+        bee.target = undefined;
 
       if (!this.lairs.length)
         return;
