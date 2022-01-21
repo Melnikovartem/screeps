@@ -30,10 +30,20 @@ export class CustomConsole {
   }
 
   pixel(state?: boolean) {
-
+    if (Memory.settings.generatePixel && Game.cpu.bucket < 500 && state === undefined)
+      return `bucket is too low ${Game.cpu.bucket} wait untill it will be atleast 1000`;
     Memory.settings.generatePixel = state ? state : !Memory.settings.generatePixel;
-
     return `pixel generation is ${Memory.settings.generatePixel ? "on" : "off"}`;
+  }
+
+  siedge(roomName: string) {
+    Apiary.warcrimes.updateRoom(roomName, null);
+    this.showSiedge(roomName);
+  }
+
+  attack(roomName: string) {
+    Apiary.warcrimes.updateRoom(roomName, Game.time);
+    this.showSiedge(roomName);
   }
 
   h(hiveName: string = this.lastActionRoomName) {
@@ -45,42 +55,76 @@ export class CustomConsole {
     return `active hive is ${this.lastActionRoomName}`;
   }
 
-  mode(hiveName: string = this.lastActionRoomName, mode = "default") {
-    hiveName = this.format(hiveName);
+  addPowerManager(hiveName: string) {
+    if (Game.gpl.level)
+      hiveName = this.format(hiveName);
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let dd = Memory.cache.hives[hiveName].do;
-    switch (mode) {
-      case "war":
-        dd.war = true;
-        dd.deposit = false;
-        dd.power = false;
-        break;
-      case "power":
-        dd.war = false;
-        dd.deposit = false;
-        dd.power = true;
-        break;
-      case "deposit":
-        dd.war = false;
-        dd.deposit = true;
-        dd.power = false;
-        break;
-      case "none":
-        dd.war = false;
-        dd.deposit = false;
-        dd.power = false;
-        break;
-      default:
-        dd.war = true;
-        dd.deposit = true;
-        dd.power = true;
-        break;
-    }
+    if (!hive.cells.power)
+      return `ERROR: NO POWER CELL @ ${this.formatRoom(hiveName)}`;
+    let name = prefix.nkvd + " " + makeId(4);
+    let ans = PowerCreep.create(name, "operator");
+    if (ans !== OK)
+      return `ERROR: ${ans}`;
+    hive.cells.power.powerManager = name;
+    return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
+  }
 
-    return `@ ${hive.print} \nWAR: ${hive.shouldDo("war") ? "ON" : "OFF"}\nPOWER: ${hive.shouldDo("power") ? "ON" : "OFF"}\nDEPOSIT: ${hive.shouldDo("deposit") ? "ON" : "OFF"}`
+  mode(mode = "default", hiveName?: string) {
+    let ans = "";
+    _.forEach(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
+      let dd = Memory.cache.hives[h.roomName].do;
+      switch (mode) {
+        case "power":
+          dd.deposit = 0;
+          dd.power = 1;
+          break;
+        case "deposit":
+          dd.deposit = 1;
+          dd.power = 0;
+          break;
+        case "war":
+          dd.war = 1;
+          dd.deposit = 0;
+          dd.power = 0;
+          dd.unboost = 1;
+          dd.saveCpu = 0;
+          break;
+        case "hibernate":
+          dd.war = 0;
+          dd.deposit = 0;
+          dd.power = 0;
+          dd.unboost = 1;
+          dd.saveCpu = 1;
+          break;
+        case "all":
+          dd.war = 1;
+          dd.deposit = 1;
+          dd.power = 1;
+          dd.unboost = 1;
+          dd.saveCpu = 1;
+          break;
+        case "none":
+          dd.war = 0;
+          dd.deposit = 0;
+          dd.power = 0;
+          dd.unboost = 0;
+          dd.saveCpu = 0;
+          break;
+        case "default":
+          dd.war = 1;
+          dd.deposit = 1;
+          dd.power = 1;
+          dd.unboost = 0;
+          dd.saveCpu = 0;
+          break;
+      }
+      let addString = (name: "war" | "deposit" | "power" | "saveCpu" | "unboost", ref: string = name) => `${ref.toUpperCase()}: ${h.shouldDo(name) ? "ON" : "OFF"} `
+      ans += `@ ${h.print}:\n${addString("war") + addString("deposit") + addString("power")}\n${addString("saveCpu", "cpu") + addString("unboost")}`;
+    });
+    return ans;
   }
 
   balance(min: number | "fit" = Game.market.credits * 0.8) {
@@ -129,19 +173,53 @@ export class CustomConsole {
     let siedge = Apiary.warcrimes.siedge[roomName];
     if (!siedge)
       return "ERROR: NO SIEDGE INFO @ " + this.formatRoom(roomName);
+    let minslot = _.min(siedge.squadSlots, s => s.lastSpawned);
+    let exits = Game.map.describeExits(roomName);
     return this.showMap(roomName, keep, (x, y, vis) => {
-      if (siedge.breakIn.filter(p => p.x === x && p.y === y).length)
-        vis.circle(x, y, { radius: 0.4, opacity: 0.7, fill: "#1C6F21" });
 
       if (siedge.freeTargets.filter(p => p.x === x && p.y === y).length)
         vis.circle(x, y, { radius: 0.4, opacity: 0.3, fill: "#EBF737" });
 
-      let value = siedge.matrix[x] && siedge.matrix[x][y];
+      let breakIn = siedge.breakIn.filter(p => p.x === x && p.y === y)[0];
+      if (breakIn) {
+        vis.circle(x, y, { radius: 0.4, opacity: 0.7, fill: "#1C6F21" });
+        let direction: TOP | BOTTOM | RIGHT | LEFT | undefined;
+        for (const ex in exits)
+          if (exits[<ExitKey>ex] === breakIn.ent) {
+            direction = <TOP | BOTTOM | RIGHT | LEFT>+ex;
+            break;
+          }
+        let dx = 0, dy = 0;
+        switch (direction) {
+          case TOP:
+            dy = -2;
+            break;
+          case BOTTOM:
+            dy = 2;
+            break;
+          case RIGHT:
+            dx = 2;
+            break;
+          case LEFT:
+            dx = -2;
+            break;
+        }
+        vis.line(x, y, x + dx, y + dy, { opacity: 0.7, color: "#1C6F21", width: 0.3 });
+        vis.text(breakIn.state + "", x - 0.2, y + 0.23, Apiary.visuals.textStyle({ color: "#FF7D54" }));
+      }
+
+      let slot = _.filter(siedge.squadSlots, p => p.breakIn.x === x && p.breakIn.y === y)[0];
+      if (slot) {
+        let txt = (slot.type === "dism" ? "⚒️" : "🗡️") + ": " + (slot.lastSpawned + CREEP_LIFE_TIME < Game.time ? "❗" : slot.lastSpawned + CREEP_LIFE_TIME - Game.time) + (slot === minslot ? " 🔥" : "")
+        vis.text(txt, x - 0.15, y + 1.2, Apiary.visuals.textStyle());
+      }
+
+      /* let value = siedge.matrix[x] && siedge.matrix[x][y];
       if (value === 0xff)
         vis.circle(x, y, { radius: 0.2, opacity: 0.5, fill: "#E75050" });
       else
         vis.text("" + value, x, y + 0.15,
-          Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" }));
+          Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" })); */
     });
   }
 
@@ -150,7 +228,10 @@ export class CustomConsole {
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let targets = hive.cells.spawn.getTargets(-1);
+
+    let targets: (StructureSpawn | StructureExtension)[] = Object.values(hive.cells.spawn.spawns);
+    targets = targets.concat(Object.values(hive.cells.spawn.extensions))
+    targets.sort((a, b) => (hive.cells.spawn.priorityMap[a.id] || Infinity) - (hive.cells.spawn.priorityMap[b.id] || Infinity));
     return this.showMap(hiveName, keep, (x, y, vis) => {
       // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
       for (let i = 0; i < targets.length; ++i) {
@@ -179,7 +260,7 @@ export class CustomConsole {
         for (let i = 0; i < targets.length; ++i) {
           let t = targets[i];
           if (t.pos.x === x && t.pos.y == y && t.pos.roomName === roomName) {
-            vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: 0.5 });
+            vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
             break;
           }
         }
@@ -206,8 +287,8 @@ export class CustomConsole {
     this.lastActionRoomName = hive.roomName;
     let defMap = hive.cells.defense.getNukeDefMap()
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      if (_.filter(defMap, p => p.pos.x === x && p.pos.y === y).length)
-        vis.circle(x, y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
+      if (_.filter(defMap[0], p => p.pos.x === x && p.pos.y === y).length)
+        vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
     });
   }
 
@@ -505,7 +586,7 @@ export class CustomConsole {
       return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
     let state = hive.mastersResTarget;
     let ans = `OK @ ${this.format(hiveName)}`;
-    let skip = false;
+    let skip = !hive.room.terminal || !!hive.room.terminal.cooldown;
     _.forEach(state, (amount, r) => {
       if (!amount || !r || r === RESOURCE_ENERGY)
         return;
@@ -586,7 +667,7 @@ export class CustomConsole {
     if (typeof terminal === "string")
       return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.sellLong(terminal, resource, Infinity, 5000 * sets
+    return this.marketReturn(Apiary.broker.sellLong(terminal, resource, 5000 * sets, Infinity
       , price || Apiary.broker.priceLongSell(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
   }
 
@@ -730,7 +811,7 @@ export class CustomConsole {
     return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`
   }
 
-  printSpawnOrders(hiveName: string = this.lastActionRoomName) {
+  printSpawnOrders(hiveName?: string) {
     return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
       _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
         (a, b) => a.order.priority - b.order.priority),
@@ -744,7 +825,7 @@ export class CustomConsole {
         return "";
       return `${h.print}: \n${
         _.map((<TransferRequest[]>_.map(h.cells.storage.requests)).sort((a, b) => a.priority - b.priority),
-          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from instanceof Structure ? o.from.structureType : o.from} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}`).join('\n')
+          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from instanceof Structure ? o.from.structureType : o.from} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}${o.nextup ? " -> " + o.nextup.ref : ""}`).join('\n')
         } \n`
     }).join('\n');
   }

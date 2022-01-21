@@ -107,9 +107,9 @@ export class Visuals {
     this.statsFactory(hive);
     this.statsNukes(hive);
 
-    _.forEach(hive.annexNames, annex => {
-      if (!this.caching[annex] || Game.time > this.caching[annex].lastRecalc)
-        this.exportAnchor(0, annex);
+    _.forEach(hive.annexNames, annexName => {
+      if ((!this.caching[annexName] || Game.time > this.caching[annexName].lastRecalc) && !Apiary.hives[annexName])
+        this.exportAnchor(0, annexName);
     });
 
     this.nukeInfo(hive);
@@ -138,10 +138,32 @@ export class Visuals {
       if (puller) {
         if (puller.powerSites.length || puller.depositSites.length)
           miningInfo.push(["", hiveName, "", this.getBeesAmount(puller)]);
-        _.forEach(puller.depositSites, m => miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
-          : m.order.ref).slice(0, 6), " " + m.pos.roomName, " ⛏️", this.getBeesAmount(m.miners) + " " + this.getBeesAmount(m.pickup)]));
-        _.forEach(puller.powerSites, m => miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
-          : m.order.ref).slice(0, 6), " " + m.pos.roomName, " 🔴", this.getBeesAmount(m)]));
+        let extraDeposits = 0
+        _.forEach(puller.depositSites, m => {
+          if (!m.miners.beesAmount && !m.pickup.beesAmount && !m.shouldSpawn) {
+            ++extraDeposits;
+            return;
+          }
+          miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
+            : m.order.ref).slice(0, 6), " " + m.pos.roomName, " ⛏️", this.getBeesAmount(m.miners) + " " + this.getBeesAmount(m.pickup)]);
+        });
+        let extraPower = 0;
+        _.forEach(puller.powerSites, m => {
+          if (!m.beesAmount && !m.shouldSpawn) {
+            ++extraPower;
+            return;
+          }
+          miningInfo.push([(m.order.ref.indexOf("_") !== -1 ? m.order.ref.split("_")[1]
+            : m.order.ref).slice(0, 6), " " + m.pos.roomName, " 🔴", this.getBeesAmount(m)])
+        });
+        if (extraDeposits || extraPower) {
+          let s = " + "
+          if (extraDeposits)
+            s += extraDeposits + "⛏️";
+          if (extraPower)
+            s += (s.length ? " " : "") + extraPower + "🔴";
+          miningInfo.push([s])
+        }
       }
     }
     if (miningInfo.length > 2)
@@ -169,7 +191,7 @@ export class Visuals {
       let hive = Apiary.hives[roomName];
       if (hive) {
         this.nukeInfo(hive);
-        _.forEach(hive.cells.defense.getNukeDefMap(), (p) => {
+        _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) => {
           vis.circle(p.pos.x, p.pos.y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5, });
         });
       }
@@ -190,7 +212,9 @@ export class Visuals {
               style.opacity = 1;
               break;
             case STRUCTURE_EXTENSION:
-              style.fill = "#FFC288";
+              style.fill = "#F8C03F";
+              style.radius = 0.4;
+              style.opacity = 0.8;
               break;
             case STRUCTURE_LAB:
               style.fill = "#91EFD8";
@@ -247,13 +271,16 @@ export class Visuals {
             style.color = "#91EFD8";
             break;
           case prefix.excavationCell:
-            style.color = "#22493D";
+            style.color = "#FAD439";
             break;
           case prefix.defenseCell:
-            style.color = "#F0D042";
+            style.color = "#FBF7E9";
             break;
           case prefix.powerCell:
             style.color = "#EE4610";
+            break;
+          case prefix.fastRefillCell:
+            style.color = "#6FDA44";
             break;
         };
         const SIZE = 0.3;
@@ -293,39 +320,6 @@ export class Visuals {
     this.anchor.y = this.table(ans, this.anchor,
       undefined, undefined, undefined, align, snap).y;
     return;
-  }
-
-  statsOrders(): { [hiveName: string]: string[][] } {
-    // not in use
-    let orders = _.filter(Apiary.orders, o => !(o.flag.color === COLOR_PURPLE && o.ref.includes(prefix.annex)) && o.master);
-    let length = orders.length;
-    const MAX_STATS = 10;
-    let ans: { [hiveName: string]: string[][] } = {};
-    if (orders.length > MAX_STATS)
-      orders = orders.filter(o => !o.ref.includes(prefix.annex) && !o.ref.includes(prefix.puppet));
-    if (orders.length > MAX_STATS)
-      orders = orders.filter(o => !o.ref.includes(prefix.def));
-    if (orders.length > MAX_STATS)
-      orders = orders.filter(o => Apiary.intel.getInfo(o.pos.roomName, 25).dangerlvlmax > 0);
-    if (orders.length > MAX_STATS)
-      orders = orders.filter(o => o.master!.activeBees.length || o.master!.waitingForBees);
-    if (orders.length > MAX_STATS)
-      orders = orders.slice(0, MAX_STATS);
-    _.forEach(orders, order => {
-      let roomInfo = Apiary.intel.getInfo(order.pos.roomName);
-      let info = [order.ref, " " + order.pos.roomName, " " + roomInfo.dangerlvlmax, " " + roomInfo.enemies.length];
-      if (order.master) {
-        info.push(`: ${order.master.waitingForBees ? "(" : ""}${order.master.beesAmount}${order.master.waitingForBees ?
-          "+" + order.master.waitingForBees + ")" : ""}/${order.master.targetBeeCount}`)
-      }
-      let hiveName = order.master!.hive.roomName;
-      if (!ans[hiveName])
-        ans[hiveName] = []
-      ans[hiveName].push(info);
-    });
-    if (length !== orders.length)
-      ans["+ "].push(["" + (length - orders.length)])
-    return ans;
   }
 
   statsHive(hive: Hive) {
@@ -423,7 +417,7 @@ export class Visuals {
       ` ${!hive.controller.progressTotal ? "" : Math.floor(hive.controller.progress / hive.controller.progressTotal * 100) + "%"}`,
       this.getBeesAmount(hive.cells.upgrade && hive.cells.upgrade.master)]);
 
-    if (hive.state === hiveStates.battle || hive.cells.defense.master.beesAmount || hive.cells.defense.master.waitingForBees)
+    if (hive.state >= hiveStates.battle || hive.cells.defense.master.beesAmount || hive.cells.defense.master.waitingForBees)
       ans.push(["defense",
         ` ${Apiary.intel.getInfo(hive.roomName, 20).dangerlvlmax}`,
         this.getBeesAmount(hive.cells.defense.master)]);
@@ -469,9 +463,9 @@ export class Visuals {
     if (Object.keys(hive.cells.lab.boostRequests).length) {
       let ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
       for (const refBee in lab.boostRequests) {
-        let splitName = refBee.split(" ");
-        splitName.pop();
-        let name = splitName.join(" "); // .map(s => s.slice(0, 5) + (s.length > 5 ? "." : ""))
+        // let splitName = refBee.split(" ");
+        // splitName.pop();
+        let name = refBee; // .map(s => s.slice(0, 5) + (s.length > 5 ? "." : ""))
         for (let i = 0; i < lab.boostRequests[refBee].info.length; ++i) {
           let r = lab.boostRequests[refBee].info[i];
           let l = lab.boostLabs[r.res];
@@ -503,7 +497,7 @@ export class Visuals {
   statsNukes(hive: Hive) {
     _.forEach(hive.cells.defense.nukes, nuke => {
       let percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
-      this.updateAnchor(this.progressbar(`☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${Math.round(percent * 1000) / 10}%`, this.anchor, percent));
+      this.updateAnchor(this.progressbar(`☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${Math.round(percent * 1000) / 10}%`, this.anchor, percent, undefined, 9.65));
     });
   }
 
