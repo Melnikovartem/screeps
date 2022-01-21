@@ -5,7 +5,7 @@ import { findOptimalResource } from "../abstract/utils";
 import type { Bee } from "./bee";
 
 type TransferTarget = StructureLink | StructureTerminal | StructureStorage | StructureTower
-  | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn | StructureFactory;
+  | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn | StructureFactory | StructureContainer;
 
 export class TransferRequest {
   ref: string;
@@ -75,7 +75,7 @@ export class TransferRequest {
       return false;
     if (this.amount <= 0)
       return false;
-    if (!this.toAmount)
+    if (this.toAmount <= 0)
       return false;
     if (!this.stillExists)
       return false
@@ -145,7 +145,10 @@ export class TransferRequest {
         }
         if (ans === OK) {
           transfer = true;
-          if (this.resource)
+          if (this.nextup && this.to instanceof StructureStorage && this.fromAmount < bee.store.getFreeCapacity(this.resource)) {
+            bee.goTo(this.nextup.from);
+            bee.target = this.nextup.ref;
+          } else
             bee.goTo(this.to);
         }
         break;

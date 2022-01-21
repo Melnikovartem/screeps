@@ -1,6 +1,6 @@
 import { beeStates } from "../enums";
 import { profile } from "../profiler/decorator";
-import { STATE_STUCK } from "../Traveler/TravelerModified";
+import { STATE_STUCK, STATE_DEST_X, STATE_DEST_Y, STATE_DEST_ROOMNAME } from "../Traveler/TravelerModified";
 import type { Master } from "../beeMasters/_Master";
 
 type InfoMove = { bee: ProtoBee<Creep | PowerCreep>, priority: number };
@@ -65,6 +65,23 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return this.creep.pos;
   }
 
+  get movePosition() {
+    if (!this.memory._trav || !this.memory._trav.state)
+      return undefined;
+    let x = this.memory._trav.state[STATE_DEST_X];
+    let y = this.memory._trav.state[STATE_DEST_Y];
+    let roomName = this.memory._trav.state[STATE_DEST_ROOMNAME];
+    return new RoomPosition(x, y, roomName);
+  }
+
+  set movePosition(pos) {
+    if (!pos || !this.memory._trav || !this.memory._trav.state)
+      return;
+    this.memory._trav.state[STATE_DEST_X] = pos.x;
+    this.memory._trav.state[STATE_DEST_Y] = pos.y;
+    this.memory._trav.state[STATE_DEST_ROOMNAME] = pos.roomName;
+  }
+
   get ticksToLive() {
     if (this.creep.ticksToLive)
       return this.creep.ticksToLive;
@@ -91,16 +108,42 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     }
   }
 
-  goRest(pos: RoomPosition, opt?: TravelToOptions): ScreepsReturnCode {
+  goRest(pos: RoomPosition, opt: TravelToOptions = {}): ScreepsReturnCode {
     this.actionPosition = pos;
     if (pos.equal(this))
       return OK;
+    opt.range = opt.range || 2;
     this.goTo(pos, opt);
     if (this.targetPosition && !this.targetPosition.isFree(false) && pos.getRangeTo(this) <= 2) {
       this.stop();
+      if (this.pos.enteranceToRoom) {
+        let notEnt = this.pos.getOpenPositions(false).filter(p => !p.enteranceToRoom);
+        if (notEnt.length)
+          this.targetPosition = notEnt.reduce((prev, curr) => curr.getRangeTo(pos) < prev.getRangeTo(pos) ? curr : prev);
+      }
       return OK;
     }
     return ERR_NOT_IN_RANGE;
+  }
+
+  fleeRoom(roomName: string, opt?: TravelToOptions) {
+    let roomToRest = this.pos.roomName;
+    if (roomToRest === roomName) {
+      let exits = Game.map.describeExits(roomName);
+      let roomNames = <string[]>Object.values(exits);;
+      roomToRest = roomNames[0];
+      let roomInfo = Apiary.intel.getInfo(roomToRest, 50);
+      for (let i = 1; i < roomNames.length; ++i) {
+        let newRoomInfo = Apiary.intel.getInfo(roomNames[i], 50);
+        if (newRoomInfo.dangerlvlmax < roomInfo.dangerlvlmax || (newRoomInfo.dangerlvlmax === roomInfo.dangerlvlmax && newRoomInfo.roomState < roomInfo.roomState)) {
+          roomInfo = newRoomInfo;
+          roomToRest = roomNames[i];
+        }
+      }
+      if (roomToRest === undefined)
+        return ERR_NOT_FOUND;
+    }
+    return this.goRest(new RoomPosition(25, 25, roomToRest), opt);
   }
 
   goToRoom(roomName: string, opt?: TravelToOptions): ScreepsReturnCode {
@@ -141,23 +184,25 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   stop() {
     this.targetPosition = undefined;
     if (this.memory._trav)
-      this.memory._trav.state[STATE_STUCK] = 0
+      this.memory._trav.state[STATE_STUCK] = 0;
   }
 
   getFleeOpt(opt: TravelToOptions) {
     if (!opt.maxRooms || opt.maxRooms > 4)
-      opt.maxRooms = 4;
+      opt.maxRooms = 3;
     opt.stuckValue = 1;
+    opt.restrictDistance = 10;
     let roomCallback = opt.roomCallback;
     opt.roomCallback = (roomName, matrix) => {
       if (roomCallback) {
         let postCallback = roomCallback(roomName, matrix);
-        if (!postCallback || typeof postCallback === "boolean")
+        if (typeof postCallback === "boolean")
           return postCallback;
-        matrix = postCallback;
+        else if (postCallback)
+          matrix = postCallback;
       }
       let terrain = Game.map.getRoomTerrain(roomName);
-      let enemies = Apiary.intel.getInfo(roomName).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+      let enemies = Apiary.intel.getInfo(roomName, 10).enemies.map(e => e.object);
       _.forEach(enemies, c => {
         let fleeDist = 0;
         if (c instanceof Creep)
@@ -170,59 +215,36 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
             return;
           let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
           let posRangeToEnemy = p.getRangeTo(c);
-          let padding = 0x08 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
-          let val = Math.min(0x88, 0x20 * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
+          let padding = 0x01 * Math.sign(posRangeToEnemy - rangeToEnemy); // we wan't to get as far as we can from enemy
+          let val = Math.min(0x20, 0x0A * coef * (fleeDist + 1 - posRangeToEnemy) - padding);
+          if (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL)
+            val = 0xff; // idk why but sometimes the matrix is not with all walls...
           if (val > matrix.get(p.x, p.y))
             matrix.set(p.x, p.y, val);
         });
-        matrix.set(c.pos.x, c.pos.y, 0xff);
       });
       return matrix;
     }
     return opt;
   }
 
-  flee(posToFlee: ProtoPos, opt: TravelToOptions = {}) {
+  flee(posToFlee: RoomPosition | null, opt: TravelToOptions = {}, doExit: boolean = false) {
     let poss = this.pos.getOpenPositions(true);
     if (!poss.length)
       return ERR_NOT_FOUND;
 
-    if (this.pos.isNearTo(posToFlee)) {
-      let exit = this.pos.findClosest(Game.rooms[this.pos.roomName].find(FIND_EXIT));
-      if (exit)
-        posToFlee = exit;
+    if (!posToFlee || this.pos.roomName === posToFlee.roomName && doExit) {
+      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 10);
+      if (!posToFlee || roomInfo.enemies.filter(e => e.object instanceof Creep
+        && Apiary.intel.getFleeDist(e.object) + 1 >= this.pos.getRangeTo(e.object)).length) {
+        let exit = this.pos.findClosest(Game.rooms[this.pos.roomName].find(FIND_EXIT));
+        if (exit)
+          posToFlee = exit;
+      }
     }
-
     opt = this.getFleeOpt(opt);
-    /* let getTerrain = (pos: RoomPosition) => {
-      let terrain: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(pos.roomName).get(pos.x, pos.y);
-      let ss = pos.lookFor(LOOK_STRUCTURES);
-      if (ss.filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my).length)
-        terrain = -2;
-      else if (ss.filter(s => s.structureType === STRUCTURE_ROAD).length)
-        terrain = -1;
-      return terrain;
-    }
-
-    let terrain_prev: -2 | -1 | 0 | 1 | 2 = Game.map.getRoomTerrain(poss[0].roomName).get(poss[0].x, poss[0].y)
-    let open = poss.reduce((prev, curr) => {
-      let ans = prev.getRangeTo(enemy) - curr.getRangeTo(enemy);
-      let terrain_curr: -2 | -1 | 0 | 1 | 2 | undefined
-      if (ans === 0) {
-        terrain_curr = getTerrain(curr);
-        ans = terrain_curr - terrain_prev;
-      }
-      if (ans === 0)
-        ans = curr.getRangeTo(posToFlee) - prev.getRangeTo(posToFlee);
-      if (ans < 0) {
-        terrain_prev = terrain_curr || getTerrain(curr);
-        return curr;
-      }
-      return prev;
-    }); */
     this.memory._trav.path = undefined;
-    let ans = this.goTo(posToFlee, opt);
-    this.memory._trav.path = undefined;
+    let ans = this.goTo(posToFlee || new RoomPosition(25, 25, this.pos.roomName), opt);
     return ans;
   }
 
@@ -232,16 +254,13 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     Apiary.wrap(() => {
       for (const name in Apiary.bees) {
         let bee = Apiary.bees[name];
-        if (bee.fatigue > 0) {
-          chillMap[bee.pos.to_str] = bee;
+        chillMap[bee.pos.to_str] = bee;
+        if (bee.fatigue > 0)
           continue;
-        }
         let p = bee.targetPosition;
         let priority = bee.master && bee.master.movePriority || 6;
-        if (!p) {
-          chillMap[bee.pos.to_str] = bee;
+        if (!p)
           continue;
-        }
         let nodeId = p.to_str;
         if (!moveMap[nodeId])
           moveMap[nodeId] = [];
@@ -272,9 +291,11 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
         if (!open.length)
           return ERR_NOT_FOUND;
         let pp = open.reduce((prev, curr) => {
-          let ans = curr.getRangeTo(target) - prev.getRangeTo(target);
+          let ans = (moveMap[curr.to_str] ? 1 : 0) - (moveMap[prev.to_str] ? 1 : 0);
           if (ans === 0)
             ans = (chillMap[curr.to_str] ? 1 : 0) - (chillMap[prev.to_str] ? 1 : 0);
+          if (ans === 0)
+            ans = curr.getRangeTo(target) - prev.getRangeTo(target);
           if (ans === 0)
             ans = Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y) - Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y);
           return ans < 0 ? curr : prev;
@@ -298,6 +319,10 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
         }
         let winner = moveMap[pos.to_str].reduce(red);
         bee = winner.bee;
+        if (outPos.equal(bee.pos)) {
+          beeIn.creep.move(beeIn.pos.getDirectionTo(bee.pos));
+          moveMap[bee.pos.to_str] = [{ bee: beeIn, priority: beeIn.master ? beeIn.master.movePriority : 6 }];
+        }
       }
     } else
       bee = moveMap[pos.to_str].reduce(red).bee;

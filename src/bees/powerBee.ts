@@ -75,11 +75,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   static makeMaster(ref: string): ((pb: PowerBee) => Master) | undefined {
     let validCells = _.compact(_.map(Apiary.hives, h => h.cells.power!));
     if (ref.includes(prefix.nkvd)) {
-      let cachedIn = validCells.filter(c => c.powerManager === ref);
-      if (cachedIn.length)
-        validCells = cachedIn;
-      else
-        validCells = validCells.filter(c => !c.powerManager || !Game.powerCreeps[c.powerManager])
+      validCells = validCells.filter(c => c.powerManager === ref && !c.powerManagerBee);
       if (validCells.length)
         return (pb) => new NKVDMaster(validCells[0], pb);
     }
@@ -89,7 +85,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   static checkBees() {
     for (const name in Game.powerCreeps) {
       let pc = Game.powerCreeps[name];
-      if (!pc.shard || pc.shard === Game.shard.name) {
+      if ((!pc.shard || pc.shard === Game.shard.name) && !pc.spawnCooldownTime) {
         if (!Apiary.bees[name] && !Apiary.masters[prefix.master + name]) {
           let futureMaster = this.makeMaster(pc.name);
           if (futureMaster) {

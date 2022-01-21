@@ -48,7 +48,7 @@ export class Bee extends ProtoBee<Creep> {
     this.creep = Game.creeps[this.ref];
     if (!this.master) {
       if (!Apiary.masters[this.creep.memory.refMaster])
-        this.creep.memory.refMaster = this.findMaster();
+        this.findMaster();
       if (Apiary.masters[this.creep.memory.refMaster]) {
         this.master = Apiary.masters[this.creep.memory.refMaster];
         this.master.newBee(this);
@@ -58,69 +58,44 @@ export class Bee extends ProtoBee<Creep> {
 
   findMaster() {
     if (this.ref.includes(setupsNames.hauler)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.excavationCell))); // && m.beesAmount <= m.targetBeeCount + 2));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.excavationCell))))
+        return;
     } else if (this.ref.includes(setupsNames.bootstrap)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.developmentCell)));
-      if (refMaster)
-        return refMaster;
-      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder)));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.developmentCell))))
+        return;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder))))
+        return;
     } else if (this.ref.includes(setupsNames.claimer)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.claim)));
-      if (refMaster)
-        return refMaster;
-      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.annex)));
-      if (refMaster)
-        return refMaster;
-      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade")));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.claim))))
+        return;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.annex) && "reservationTime" in m)))
+        return;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("downgrade"))))
+        return;
     } else if (this.ref.includes(setupsNames.defender)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.def)));
-      if (refMaster)
-        return refMaster;
-      /* refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.defenseCell)));
-      if (refMaster)
-        return refMaster;*/
+      if (this.findClosestByHive(_.filter(Apiary.defenseSwarms, m => !m.boosts || m.spawned === m.maxSpawns)))
+        return;
     } else if (this.ref.includes(setupsNames.knight)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.activeBees.length < 1 && m.ref.includes("harass")));
-      if (refMaster)
-        return refMaster;
-      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass")));
-      if (refMaster)
-        return refMaster;
-      refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.def)));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("harass"))))
+        return;
+      if (this.findClosestByHive(_.filter(Apiary.defenseSwarms, m => !m.boosts || m.spawned === m.maxSpawns)))
+        return;
     } else if (this.ref.includes(setupsNames.builder)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder)));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.builder))))
+        return;
     } else if (this.ref.includes(setupsNames.healer) || this.ref.includes(setupsNames.dismantler)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("dismantle")));
-      if (refMaster)
-        return refMaster;
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("dismantle"))))
+        return;
+    } if (this.ref.includes(setupsNames.upgrader)) {
+      if (this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes(prefix.upgradeCell))))
+        return;
     }
-    /* else if (this.ref.includes(setupsNames.miner)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.beesAmount < 1 && m.ref.includes(prefix.resourceCells)));
-      if (refMaster)
-        return refMaster;
-    } */
-    /* else if (this.ref.includes(setupsNames.healer) || this.ref.includes(setupsNames.dismantler)) {
-      let refMaster = this.findClosestByHive(_.filter(Apiary.masters, m => m.ref.includes("dismantle")));
-      if (refMaster)
-        return refMaster;
-    }
-    }*/
-    return this.creep.memory.refMaster === undefined ? "" : this.creep.memory.refMaster;
+    return "";
   }
 
   findClosestByHive(masters: Master[]) {
     if (!masters.length)
-      return null;
+      return false;
     let ans = masters.reduce((prev, curr) => {
       let ans = curr.hive.pos.getRoomRangeTo(this) - prev.hive.pos.getRoomRangeTo(this);
       if (ans === 0)
@@ -128,8 +103,9 @@ export class Bee extends ProtoBee<Creep> {
       return ans < 0 ? curr : prev
     });
     if (ans.hive.pos.getRoomRangeTo(this) * 25 > this.ticksToLive)
-      return null;
-    return ans.ref;
+      return false;
+    this.memory.refMaster = ans.ref;
+    return true;
   }
 
   getBodyParts(partType: BodyPartConstant, boosted: 1 | 0 | -1 = 0): number {
@@ -142,7 +118,7 @@ export class Bee extends ProtoBee<Creep> {
 
   pull(t: Bee, pos: RoomPosition, opt: TravelToOptions): ScreepsReturnCode {
     if (!this.pos.isNearTo(t)) {
-      let tEnt = t.pos.getEnteranceToRoom();
+      let tEnt = t.pos.enteranceToRoom;
       if (!tEnt || tEnt.roomName !== this.pos.roomName) {
         if (opt.obstacles)
           opt.obstacles.push({ pos: t.pos })
@@ -153,8 +129,8 @@ export class Bee extends ProtoBee<Creep> {
       return ERR_TIRED;
     }
     this.goTo(this.pos.equal(pos) ? t.pos : pos, opt);
-    if (this.targetPosition && this.targetPosition.roomName !== this.pos.roomName && this.pos.getEnteranceToRoom()) {
-      let anotherExit = this.pos.getOpenPositions(true).filter(p => p.getEnteranceToRoom() && p.getRangeTo(this) === 1)[0];
+    if (this.targetPosition && this.targetPosition.roomName !== this.pos.roomName && this.pos.enteranceToRoom) {
+      let anotherExit = this.pos.getOpenPositions(true).filter(p => p.enteranceToRoom && p.getRangeTo(this) === 1)[0];
       if (anotherExit)
         this.targetPosition = anotherExit;
     }
@@ -210,14 +186,14 @@ export class Bee extends ProtoBee<Creep> {
 
   build(t: ConstructionSite, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t.pos, opt, 3);
-    if (ans === OK && this.pos.getEnteranceToRoom())
+    if (ans === OK && this.pos.enteranceToRoom)
       this.goTo(t);
     return ans === OK ? this.creep.build(t) : ans;
   }
 
   repair(t: Structure, opt?: TravelToOptions): ScreepsReturnCode {
     let ans = this.actionCheck(t.pos, opt, 3);
-    if (ans === OK && this.pos.getEnteranceToRoom())
+    if (ans === OK && this.pos.enteranceToRoom)
       this.goTo(t);
     return ans === OK ? this.creep.repair(t) : ans;
   }

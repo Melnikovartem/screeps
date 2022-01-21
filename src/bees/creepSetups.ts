@@ -9,7 +9,7 @@ interface BodySetup {
   patternLimit?: number;
 }
 const partScheme = {
-  normal: [TOUGH, WORK, CARRY, CLAIM, MOVE, RANGED_ATTACK, ATTACK, HEAL],
+  normal: [TOUGH, WORK, CARRY, MOVE, CLAIM, RANGED_ATTACK, ATTACK, HEAL],
   maxMove: [TOUGH, WORK, CARRY, CLAIM, RANGED_ATTACK, ATTACK, HEAL, MOVE]
 }
 
@@ -116,7 +116,7 @@ export const setups = {
     pattern: [CLAIM],
     patternLimit: 1,
   }, 25),
-  downgrader: new CreepSetup(setupsNames.claimer + "D", {
+  downgrader: new CreepSetup(setupsNames.claimer + " D", {
     pattern: [CLAIM],
     patternLimit: Infinity,
   }, 25),
@@ -181,8 +181,8 @@ export const setups = {
     normal: new CreepSetup(setupsNames.defender, {
       pattern: [RANGED_ATTACK],
       patternLimit: 2,
-    }, 25, 2),
-    sk: new CreepSetup(setupsNames.defender + " SK", {
+    }, "best", 2),
+    sk: new CreepSetup(setupsNames.skdefender, {
       pattern: [HEAL, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
     }, 25),
     destroyer: new CreepSetup(setupsNames.defender + " DD", {
@@ -190,7 +190,7 @@ export const setups = {
     }, "best", 2),
   },
   knight: new CreepSetup(setupsNames.knight, {
-    fixed: [TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL],
+    fixed: [HEAL, HEAL, HEAL, HEAL, HEAL, TOUGH],
     pattern: [RANGED_ATTACK],
   }, "best"),
   dismantler: new CreepSetup(setupsNames.dismantler, {
@@ -205,7 +205,7 @@ export const setups = {
 let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
   let setup = s.getBody(energy, moveMax);
   let nonMoveLen = setup.body.filter(s => s != MOVE).length;
-  console.log(`${s.name}: ${nonMoveLen}/${setup.body.length} aka ${Math.round(nonMoveLen / setup.body.length * 1000) / 10}% cost: ${setup.cost}/${energy}`);
+  console .log(`${s.name}: ${nonMoveLen}/${setup.body.length} aka ${Math.round(nonMoveLen / setup.body.length * 1000) / 10}% cost: ${setup.cost}/${energy}`);
   return setup.body;
 }
 
