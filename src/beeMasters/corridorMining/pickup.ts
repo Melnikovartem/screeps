@@ -19,7 +19,7 @@ export class DepositPickupMaster extends Master {
 
   get setup() {
     let setup = setups.pickup.copy();
-    if (this.parent.target)
+    if (this.parent.decay)
       setup.patternLimit = Math.ceil(10 * Math.max(1
         , this.parent.rate * this.parent.roadTime * 2 / CARRY_CAPACITY / 10
         , this.parent.positions.length * this.parent.workAmount * 3 / CARRY_CAPACITY / 10));
@@ -34,23 +34,21 @@ export class DepositPickupMaster extends Master {
     this.targetBeeCount = Math.max(1, Math.round(this.parent.rate * this.parent.roadTime / carry));
   }
 
-  checkBeesWithRecalc() {
-    let check = () => this.checkBees(false, CREEP_LIFE_TIME - this.parent.roadTime * 2);
+  checkBees() {
+    let check = () => super.checkBees(true, CREEP_LIFE_TIME - this.parent.roadTime * 2);
     if (this.targetBeeCount && !check())
       return false;
     this.recalculateTargetBee();
-    return check();
+    return check() && !!this.parent.miners.beesAmount && (this.parent.shouldSpawn || !!_.filter(this.parent.miners.bees, b => b.ticksToLive > CREEP_LIFE_TIME / 2).length);
   }
 
   update() {
     super.update();
-    if (this.checkBeesWithRecalc() && this.parent.miners.beesAmount
-      && (this.parent.shouldSpawn || _.filter(this.parent.miners.bees, b => b.ticksToLive > CREEP_LIFE_TIME / 2).length)) {
+    if (this.checkBees())
       this.wish({
         setup: this.setup,
         priority: 6,
       });
-    }
   }
 
   run() {
@@ -70,7 +68,7 @@ export class DepositPickupMaster extends Master {
             break;
           }
           if (pickingup) {
-            bee.goRest(this.parent.rest, { offRoad: true });
+            bee.goTo(this.parent.rest, { offRoad: true, obstacles: this.parent.positions });
             break;
           }
           pickingup = true;
@@ -97,25 +95,29 @@ export class DepositPickupMaster extends Master {
             if (bee.pos.isNearTo(beeToPickUp))
               beeToPickUp.creep.transfer(bee.creep, findOptimalResource(beeToPickUp.store));
             else
-              bee.goTo(beeToPickUp, { ignoreRoads: true, obstacles: this.parent.pos.getOpenPositions(true).map(p => { return { pos: p } }) });
+              bee.goTo(beeToPickUp, { ignoreRoads: true, obstacles: this.parent.positions });
             break;
           }
-          bee.goRest(this.parent.rest, { offRoad: true });
+          bee.goTo(this.parent.rest, { offRoad: true, obstacles: this.parent.positions });
           if (bee.ticksToLive < this.parent.roadTime + 50
             || bee.store.getFreeCapacity() < this.parent.positions.length * this.parent.workAmount)
             bee.state = bee.store.getUsedCapacity() ? beeStates.work : beeStates.fflush;
           break;
         case beeStates.work:
+          if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50 && bee.pos.getRoomRangeTo(this.hive) === 1) {
+            bee.fleeRoom(this.hive.roomName);
+            break;
+          }
           if (!bee.store.getUsedCapacity() || (bee.transfer(this.hive.cells.storage!.storage, findOptimalResource(bee.store)) === OK && Object.keys(bee.store).length < 2)) {
             bee.state = beeStates.chill;
-            bee.goTo(this.parent.rest, { offRoad: true });
+            bee.goTo(this.parent.rest, { offRoad: true, obstacles: this.parent.positions });
           }
           break;
         case beeStates.fflush:
           this.removeBee(bee);
           break;
       }
-      this.checkFlee(bee);
+      this.checkFlee(bee, undefined, undefined, false);
     });
   }
 }

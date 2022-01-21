@@ -2,7 +2,7 @@ import { Master } from "../_Master";
 import { DepositMinerMaster } from "./miners";
 import { PowerMaster } from "./power";
 
-import { beeStates, prefix } from "../../enums";
+import { beeStates, prefix, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -38,7 +38,11 @@ export class PullerMaster extends Master {
     super.update();
 
     let workingPowerSites = this.powerSites.filter(p => p.operational);
-    this.sitesON = workingPowerSites.filter(p => workingPowerSites.indexOf(p) <= 2 || p.beesAmount);
+    let inProgress = workingPowerSites.filter(p => p.beesAmount);
+    if (!inProgress.length && this.hive.shouldDo("power") && workingPowerSites.length)
+      inProgress = [workingPowerSites.pop()!];
+    this.sitesON = inProgress;
+
     if (workingPowerSites.length)
       _.forEach(this.powerSites, p => {
         if (!p.maxSpawns)
@@ -52,9 +56,25 @@ export class PullerMaster extends Master {
           });
       });
 
+    let depositsOn = this.hive.shouldDo("deposit");
+    let workingDeposits: DepositMaster[] = [];
 
-    let workingDeposits = this.depositSites.filter(d => d.operational).slice(0, 2);
-    this.sitesON = this.sitesON.concat(workingDeposits);
+    if (depositsOn) {
+      workingDeposits = this.depositSites.filter(d => d.operational);
+      if (workingDeposits.length > 1) {
+        let depositsWithBees = workingDeposits.filter(d => d.miners.beesAmount || d.pickup.beesAmount);
+        if (depositsWithBees.length)
+          workingDeposits = depositsWithBees;
+        else
+          workingDeposits = [workingDeposits.reduce((prev, curr) => {
+            let ans = curr.roadTime - prev.roadTime;
+            if (Math.abs(ans) < 65)
+              ans = curr.lastCooldown - prev.lastCooldown;
+            return ans < 0 ? curr : prev
+          })];
+      }
+      this.sitesON = this.sitesON.concat(workingDeposits);
+    }
 
     _.forEach(this.bees, bee => {
       if (bee.state === beeStates.chill) {
@@ -67,7 +87,7 @@ export class PullerMaster extends Master {
       }
     });
 
-    if (this.hive.resState[RESOURCE_ENERGY] < 50000)
+    if (this.hive.resState[RESOURCE_ENERGY] < 0 || this.hive.state >= hiveStates.battle)
       this.sitesON = this.sitesON.filter(m => m instanceof PowerMaster && m.beesAmount);
 
     let possibleTargets = this.minersToMove.length;
@@ -75,11 +95,9 @@ export class PullerMaster extends Master {
 
     this.freePullers = _.filter(this.bees, b => b.state === beeStates.chill);
 
-    _.forEach(this.depositSites, m => {
-      if (!m.operational)
-        return;
+    _.forEach(workingDeposits, m => {
       this.maxRoadTime = Math.max(this.maxRoadTime, m.roadTime);
-      if (m.miners.waitingForBees || m.miners.checkBees(false, CREEP_LIFE_TIME - m.roadTime) && m.shouldSpawn)
+      if (m.miners.waitingForBees || m.miners.checkBees())
         possibleTargets += Math.max(1, m.miners.targetBeeCount - m.miners.beesAmount);
       if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
         this.freePullers.pop();
@@ -95,7 +113,7 @@ export class PullerMaster extends Master {
   }
 
   checkBees(): boolean {
-    return super.checkBees(false, CREEP_LIFE_TIME - this.maxRoadTime) && !!this.maxRoadTime;
+    return super.checkBees(true, CREEP_LIFE_TIME - this.maxRoadTime) && !!this.maxRoadTime;
   }
 
   get minersToMove() {
@@ -113,7 +131,11 @@ export class PullerMaster extends Master {
     _.forEach(this.activeBees, bee => {
       switch (bee.state) {
         case beeStates.chill:
-          bee.goRest(this.hive.rest, { offRoad: true });
+          if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50 && bee.pos.getRoomRangeTo(this.hive) <= 1) {
+            bee.fleeRoom(this.hive.roomName);
+            return;
+          }
+          bee.goRest(this.hive.rest, { offRoad: true, useFindRoute: true });
           break;
         case beeStates.work:
           let beeToPull = <Bee>(bee.target && Apiary.bees[bee.target]);
@@ -133,13 +155,14 @@ export class PullerMaster extends Master {
             let pos = depMaster.pos;
             if (bee.pos.roomName === pos.roomName)
               pos = bee.pos.isNearTo(depMaster) ? bee.pos : (depMaster.pos.getOpenPositions(false)[0] || depMaster.pos);
-            if (pos.getRangeTo(bee) > 3 || !pos.equal(depMaster.pos)) {
-              bee.pull(beeToPull, pos, { range: 0, obstacles: depMaster.positions.filter(p => !p.pos.equal(pos)), useFindRoute: true });
+            let range = pos.equal(depMaster.pos) ? 1 : 0
+            if (pos.getRangeTo(bee) > 3 || !range) {
+              bee.pull(beeToPull, pos, { range: range, obstacles: depMaster.positions.filter(p => !p.pos.equal(pos)), useFindRoute: true });
               pulled.push(beeToPull.ref);
             }
           }
-          this.checkFlee(bee, depMaster.pos, { movingTarget: true });
       }
+      // this.checkFlee(bee, undefined, { movingTarget: true });
     });
   }
 }

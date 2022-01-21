@@ -16,9 +16,6 @@ export class PowerMaster extends SwarmMaster {
   healers: Bee[] = [];
   knights: Bee[] = [];
   target: StructurePowerBank | undefined;
-  hits: number = 0;
-  decay: number = 0;
-  power: number = 0;
   movePriority = <1>1;
   positions: { pos: RoomPosition }[];
   operational: boolean = false;
@@ -35,13 +32,53 @@ export class PowerMaster extends SwarmMaster {
     this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });
     this.targetBeeCount = this.positions.length * 2;
     this.maxSpawns = Infinity;
+
+    if (!this.order.memory.extraInfo)
+      this.order.memory.extraInfo = {
+        roadTime: this.pos.getTimeForPath(this.hive),
+        hits: 0,
+        decay: 0,
+        power: 0,
+      };
+
+    if (this.pos.roomName in Game.rooms)
+      this.updateTarget();
   }
 
   get roadTime() {
-    return <number>this.order.memory.extraInfo;
+    return <number>this.order.memory.extraInfo.roadTime;
+  }
+
+  set roadTime(value) {
+    this.order.memory.extraInfo.roadTime = value;
+  }
+
+  get power() {
+    return <number>this.order.memory.extraInfo.power;
+  }
+
+  set power(value) {
+    this.order.memory.extraInfo.power = value;
+  }
+
+  get hits() {
+    return <number>this.order.memory.extraInfo.hits;
+  }
+
+  set hits(value) {
+    this.order.memory.extraInfo.hits = value;
+  }
+
+  get decay() {
+    return <number>this.order.memory.extraInfo.decay;
+  }
+
+  set decay(value) {
+    this.order.memory.extraInfo.decay = value;
   }
 
   get pickupTime() {
+    // spawn time (halfed + roadTime)
     return Math.ceil(this.power / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2) * 0.5) * MAX_CREEP_SIZE * CREEP_SPAWN_TIME + this.roadTime;
   }
 
@@ -57,33 +94,76 @@ export class PowerMaster extends SwarmMaster {
       this.knights.push(bee);
   }
 
+  deleteBee(ref: string) {
+    for (let i = 0; i < this.healers.length; ++i)
+      if (this.healers[i].ref === ref) {
+        this.healers.splice(i, 1);
+        --i;
+      }
+    for (let i = 0; i < this.knights.length; ++i)
+      if (this.knights[i].ref === ref) {
+        this.knights.splice(i, 1);
+        --i;
+      }
+  }
+
+  updateTarget() {
+    this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
+    if (this.target) {
+      this.hits = this.target.hits;
+      this.decay = this.target.ticksToDecay;
+      this.power = this.target.power;
+
+      let dmgCurrent = _.sum(this.duplets, dd => dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0) * ATTACK_POWER * 20;
+      if (this.hits / dmgCurrent <= this.pickupTime)
+        this.callPickUp();
+    } else {
+      let res = this.pos.lookFor(LOOK_RESOURCES)[0];
+      if (res) {
+        this.power = res.amount;
+        this.callPickUp();
+      }
+      this.maxSpawns = 0;
+      this.hits = -1;
+      if (!this.pos.isFree(true))
+        this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
+    }
+  }
+
+  checkBees() {
+    return this.shouldSpawn && super.checkBees(true, CREEP_LIFE_TIME - this.roadTime - 30);
+  }
+
+  createDuplet(knight: Bee) {
+    let goodHealers;
+    if (knight.target)
+      goodHealers = [this.bees[knight.target]];
+    else
+      goodHealers = this.healers.filter(h => Math.abs(h.ticksToLive - knight.ticksToLive) < Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3)
+        && (!h.target || !this.bees[h.target]));
+    let healer = <Bee | undefined>knight.pos.findClosest(goodHealers);
+    if (healer || knight.ticksToLive < this.roadTime || knight.target) {
+      knight.target = "None";
+      if (healer) {
+        healer.target = knight.ref;
+        knight.target = healer.ref;
+        let healerIndex = this.healers.indexOf(healer);
+        this.healers.splice(healerIndex, 1);
+      }
+      let knightIndex = this.knights.indexOf(knight);
+      this.knights.splice(knightIndex, 1);
+      this.duplets.push([knight, healer]);
+      return true;
+    }
+    return false
+  }
+
   update() {
     super.update();
 
-    if (!this.roadTime)
-      this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
-
-    _.forEach(this.knights, knight => {
-      let goodHealers;
-      if (knight.target)
-        goodHealers = [this.bees[knight.target]];
-      else
-        goodHealers = this.healers.filter(h => Math.abs(h.ticksToLive - knight.ticksToLive) < Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3)
-          && (!h.target || !this.bees[h.target]));
-      let healer = <Bee | undefined>knight.pos.findClosest(goodHealers);
-      if (healer || knight.ticksToLive < this.roadTime || knight.target) {
-        knight.target = "None";
-        if (healer) {
-          healer.target = knight.ref;
-          knight.target = healer.ref;
-          let healerIndex = this.healers.indexOf(healer);
-          this.healers.splice(healerIndex, 1);
-        }
-        let knightIndex = this.knights.indexOf(knight);
-        this.knights.splice(knightIndex, 1);
-        this.duplets.push([knight, healer]);
-      }
-    });
+    for (let i = 0; i < this.knights.length; ++i)
+      if (this.createDuplet(this.knights[i]))
+        --i;
 
     for (let i = 0; i < this.duplets.length; ++i) {
       let [knight, healer] = this.duplets[i];
@@ -93,35 +173,21 @@ export class PowerMaster extends SwarmMaster {
         this.duplets[i][1] = this.bees[healer.ref];
     }
 
-    this.operational = true;
-    if (this.pos.roomName in Game.rooms) {
-      this.target = <StructurePowerBank | undefined>this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_POWER_BANK)[0];
-      if (!this.target) {
-        let res = this.pos.lookFor(LOOK_RESOURCES)[0];
-        if (res) {
-          this.power = res.amount;
-          this.callPickUp();
-        }
-        this.operational = false;
-        this.maxSpawns = 0;
-        this.hits = -1;
-        if (!this.pos.isFree(true))
-          this.order.flag.setPosition(Math.floor(Math.random() * 50), Math.floor(Math.random() * 50));
-      } else {
-        this.hits = this.target.hits;
-        this.decay = this.target.ticksToDecay;
-        this.power = this.target.power;
-
-        let dmgCurrent = _.sum(this.duplets, dd => dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0) * ATTACK_POWER * 20;
-        if (this.hits / dmgCurrent <= this.pickupTime + 300)
-          this.callPickUp();
-      }
-    } else {
+    if (this.pos.roomName in Game.rooms)
+      this.updateTarget();
+    else {
       --this.decay;
+      this.target = undefined;
       if (!this.hits && this.hive.cells.observe)
         Apiary.requestSight(this.pos.roomName);
     }
 
+    if (this.decay < -100) {
+      this.order.delete();
+      return;
+    }
+
+    this.operational = this.hits > 0;
     if (this.operational) {
       let dmgFuture = ATTACK_POWER * 20 * _.sum(this.duplets, dd => !dd[0] ? 0 :
         Math.min(this.decay, dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)));
@@ -130,10 +196,8 @@ export class PowerMaster extends SwarmMaster {
         && this.hits / dmgPerSecond <= this.decay - (this.activeBees.length ? 0 : this.roadTime);
     }
 
-    if (this.checkBees(false, CREEP_LIFE_TIME - this.roadTime - 30) && this.shouldSpawn) {
+    if (this.checkBees()) {
       let balance = this.healers.filter(b => b.ticksToLive > this.roadTime * 2).length - this.knights.filter(b => b.ticksToLive > this.roadTime * 2).length;
-      // if (balance === 0 && this.hive.resState[RESOURCE_ENERGY] < 100000)
-      //  return;
       if (balance <= 0)
         this.wish({
           setup: setups.miner.powerhealer,

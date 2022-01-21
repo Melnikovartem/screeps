@@ -18,7 +18,7 @@ export class DepositMaster extends SwarmMaster {
   // puller: DepositPullerMaster;
   pickup: DepositPickupMaster;
   positions: { pos: RoomPosition }[];
-  operational: boolean = true;
+  operational: boolean = false;
   rate: number = 0;
   rest: RoomPosition;
   workAmount: number;
@@ -28,7 +28,6 @@ export class DepositMaster extends SwarmMaster {
   constructor(order: FlagOrder, parent: PullerMaster) {
     super(order);
     this.parent = parent;
-    this.order.memory.extraInfo = 0;
     this.positions = this.pos.getOpenPositions(true).map(p => { return { pos: p } });
     this.miners = new DepositMinerMaster(this);
     // this.puller = new DepositPullerMaster(this);
@@ -37,53 +36,76 @@ export class DepositMaster extends SwarmMaster {
     this.workAmount = setups.miner.deposit.getBody(this.hive.room.energyCapacityAvailable).body.filter(b => b === WORK).length;
     if (this.hive.puller)
       this.hive.puller.depositSites.push(this);
+    if (!this.order.memory.extraInfo)
+      this.order.memory.extraInfo = {
+        roadTime: this.pos.getTimeForPath(this.hive),
+        decay: 0,
+        lastCooldown: 1,
+      };
+    if (this.pos.roomName in Game.rooms)
+      this.updateTarget();
+  }
+
+
+  get decay() {
+    return <number>this.order.memory.extraInfo.decay;
+  }
+
+  set decay(value) {
+    this.order.memory.extraInfo.decay = value;
+  }
+
+  get lastCooldown() {
+    return <number>this.order.memory.extraInfo.lastCooldown;
+  }
+
+  set lastCooldown(value) {
+    this.order.memory.extraInfo.lastCooldown = value;
   }
 
   get roadTime() {
-    return <number>this.order.memory.extraInfo;
+    return <number>this.order.memory.extraInfo.roadTime;
   }
 
   get shouldSpawn() {
-
     return this.operational && this.parent.sitesON.includes(this);
+  }
+
+  updateTarget() {
+    this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
+    if (this.target) {
+      this.lastCooldown = this.target.lastCooldown;
+      this.decay = this.target.ticksToDecay;
+    } else
+      this.decay = -1;
   }
 
   update() {
     super.update();
-    this.operational = false;
 
     if (!this.hive.cells.storage) {
       this.order.delete()
       return;
     }
+    if (this.pos.roomName in Game.rooms)
+      this.updateTarget();
+    else {
+      --this.decay;
+      this.target = undefined;
+      if (!this.decay && this.hive.cells.observe)
+        Apiary.requestSight(this.pos.roomName);
+    }
 
-    if (this.pos.roomName in Game.rooms) {
-      this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
-      if (!this.roadTime)
-        this.order.memory.extraInfo = this.pos.getTimeForPath(this.hive);
-      if (this.target) {
-        this.operational = (this.target.lastCooldown <= CREEP_LIFE_TIME / 7.5 && this.target.ticksToDecay > CREEP_LIFE_TIME);
-        this.rate = this.workAmount * this.positions.length / Math.max(30, this.target.lastCooldown);
-      }
-      if (!this.operational && (!this.pickup.beesAmount || !this.miners.beesAmount))
-        this.order.delete();
-      if (this.operational)
-        this.hive.cells.defense.checkAndDefend(this.pos.roomName);
-    } else if (this.checkBees())
-      this.wish({
-        setup: setups.puppet,
-        priority: 2,
-      });
+    this.operational = this.lastCooldown <= CREEP_LIFE_TIME / 7.5 && this.decay > CREEP_LIFE_TIME;
+    this.rate = this.workAmount * this.positions.length / Math.max(30, this.lastCooldown);
+
+    if (!this.operational && (!this.pickup.beesAmount || !this.miners.beesAmount))
+      this.order.delete();
+    if (this.shouldSpawn && Game.shard.name !== "shard3")
+      this.hive.cells.defense.checkAndDefend(this.pos.roomName);
   }
 
-  run() {
-    _.forEach(this.activeBees, bee => {
-      if (this.pos.roomName in Game.rooms && !bee.pos.getEnteranceToRoom())
-        return;
-      bee.goTo(this.pos);
-      this.checkFlee(bee, this.pos);
-    });
-  }
+  run() { }
 
   delete() {
     super.delete();
