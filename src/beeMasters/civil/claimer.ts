@@ -1,29 +1,27 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { prefix, signText, roomStates } from "../../enums";
+import { signText, roomStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class ClaimerMaster extends SwarmMaster {
-  maxSpawns = 8;
+  maxSpawns = 5;
   movePriority = <3>3;
   update() {
     super.update();
 
-    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
+    if (this.checkBees(this.hive.state !== hiveStates.battle, CREEP_CLAIM_LIFE_TIME)) {
       let setup = setups.claimer.copy();
       if (this.pos.getRoomRangeTo(this.hive, true) >= 4)
-        setup.fixed = [TOUGH, TOUGH, TOUGH];
+        setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
       let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
-      if (roomInfo.roomState >= roomStates.reservedByInvader) {
+      if (roomInfo.roomState >= roomStates.reservedByInvader)
         setup.patternLimit = 5;
-        setup.fixed = [TOUGH, TOUGH, TOUGH];
-      }
       this.wish({
         setup: setup,
-        priority: 7,
+        priority: 8,
       });
     }
   }
@@ -43,17 +41,17 @@ export class ClaimerMaster extends SwarmMaster {
             if (!controller.owner)
               if (bee.claimController(controller) !== OK)
                 return;
-              else {
-                bee.pos.createFlag(prefix.boost + bee.pos.roomName, COLOR_PURPLE, COLOR_WHITE);
+              else
                 Apiary.destroyTime = Game.time; // create new hive
-              }
             bee.creep.signController(controller, signText.my);
             this.order.delete();
           }
         } else
           this.order.delete();
+        if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
+          bee.heal(bee);
       }
-      this.checkFlee(bee, this.pos, { useFindRoute: true });
+      this.checkFlee(bee, undefined, { useFindRoute: true }, false);
     });
   }
 }

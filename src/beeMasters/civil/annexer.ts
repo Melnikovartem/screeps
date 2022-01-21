@@ -1,7 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { setups } from "../../bees/creepsetups";
-import { roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 
@@ -31,8 +30,7 @@ export class AnnexMaster extends SwarmMaster {
     if (this.reservationTime > 2000)
       return;
 
-    let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
-    let doAnnex = roomInfo.safePlace;
+    let doAnnex = !this.hive.annexInDanger.includes(this.pos.roomName);
 
     if (doAnnex && this.hive.bassboost)
       doAnnex = this.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
@@ -42,7 +40,7 @@ export class AnnexMaster extends SwarmMaster {
       setup.patternLimit = Math.floor((CONTROLLER_RESERVE_MAX - this.reservationTime) / 600) + 1;
       this.wish({
         setup: setup,
-        priority: roomInfo.roomState === roomStates.reservedByEnemy ? 6 : 5, // first we secure our safe locations
+        priority: 6, // first we secure our safe locations
       });
     }
   }
@@ -62,7 +60,7 @@ export class AnnexMaster extends SwarmMaster {
         } else
           this.order.delete();
       }
-      this.checkFlee(bee);
+      this.checkFlee(bee, this.hive);
     });
   }
 }

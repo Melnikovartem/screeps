@@ -2,7 +2,6 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { prefix, beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
-import { COMPRESS_MAP } from "../../cells/stage1/factoryCell";
 
 import { profile } from "../../profiler/decorator";
 import type { FlagOrder } from "../../order";
@@ -35,16 +34,14 @@ export class PortalMaster extends SwarmMaster {
       this.setup.fixed = [HEAL, ATTACK];
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("transfer")) {
-      this.setup = setups.pickup.copy();
-      this.setup.patternLimit = Infinity;
+      this.setup = setups.hauler.copy();
       let parsed = /transfer_(.*)/.exec(this.order.ref);
       if (parsed)
         this.res = <ResourceConstant>parsed[1];
-      if (this.res && _.filter(COMPRESS_MAP, r => r === this.res).length) {
+      if (this.res && this.res.length > 1) {
         this.setup.fixed = [TOUGH];
-        this.boosts = [{ type: "fatigue", lvl: 0 }, { type: "capacity", lvl: 0 }];
-      } else
-        this.setup.patternLimit = 50 / 3;
+        this.setup.moveMax = "best";
+      }
     } else {
       this.setup = setups.puppet;
       this.priority = 2; // well it IS cheap -_-
@@ -112,7 +109,7 @@ export class PortalMaster extends SwarmMaster {
               pos = portal.pos;
           }
           bee.goTo(pos);
-          this.checkFlee(bee, this, undefined, 200);
+          this.checkFlee(bee, undefined, undefined, false, 200);
           break;
       }
     });

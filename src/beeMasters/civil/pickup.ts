@@ -19,6 +19,7 @@ export class PickupMaster extends SwarmMaster {
       if (this.pos.getRoomRangeTo(this.hive) <= 1) {
         setup = setup.copy();
         setup.moveMax = 50 / 3;
+        this.boosts = undefined;
       }
       this.wish({
         setup: setup,
@@ -84,7 +85,7 @@ export class PickupMaster extends SwarmMaster {
     let storage = this.hive.cells.storage.storage;
 
     let target = this.target;
-    if (!target) {
+    if (!target || ("store" in target && !target.store.getUsedCapacity())) {
       target = this.getTarget();
       this.target = target;
     }
@@ -103,7 +104,7 @@ export class PickupMaster extends SwarmMaster {
           else if (target instanceof Resource)
             bee.pickup(target);
           else if (target && target.store)
-            bee.withdraw(target, findOptimalResource(target.store));
+            bee.withdraw(target, findOptimalResource(target.store, -1));
           else if (bee.store.getUsedCapacity())
             bee.state = beeStates.work;
           else
@@ -113,6 +114,10 @@ export class PickupMaster extends SwarmMaster {
         case beeStates.work:
           if (!bee.store.getUsedCapacity()) {
             bee.state = beeStates.chill;
+            break;
+          }
+          if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50 && bee.pos.getRoomRangeTo(this.hive) === 1) {
+            bee.fleeRoom(this.hive.roomName);
             break;
           }
           let res = findOptimalResource(bee.store);
