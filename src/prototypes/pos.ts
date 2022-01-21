@@ -7,6 +7,21 @@ Object.defineProperty(RoomPosition.prototype, "to_str", {
   }
 });
 
+Object.defineProperty(RoomPosition.prototype, "enteranceToRoom", {
+  get: function str() {
+    let exits = Game.map.describeExits(this.roomName);
+    if (this.y === 0 && exits[FIND_EXIT_TOP])
+      return new RoomPosition(this.x, 49, exits[FIND_EXIT_TOP]!);
+    else if (this.y === 49 && exits[FIND_EXIT_BOTTOM])
+      return new RoomPosition(this.x, 0, exits[FIND_EXIT_BOTTOM]!);
+    else if (this.x === 0 && exits[FIND_EXIT_LEFT])
+      return new RoomPosition(49, this.y, exits[FIND_EXIT_LEFT]!);
+    else if (this.x === 49 && exits[FIND_EXIT_RIGHT])
+      return new RoomPosition(0, this.y, exits[FIND_EXIT_RIGHT]!);
+    return null;
+  }
+});
+
 RoomPosition.prototype.equal = function equal(pos: ProtoPos) {
   if (!(pos instanceof RoomPosition))
     pos = pos.pos;
@@ -25,14 +40,14 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
   else
     toRoom = pos.pos.roomName;
   if (pathfind) {
-    let ans = Game.map.findRoute(this.roomName, toRoom);
-    if (ans !== -2)
-      return ans.length;
+    let ans = Traveler.findRoute(this.roomName, toRoom, { ignoreCurrent: true });
+    if (ans)
+      return Object.keys(ans).length - 1;
     return Infinity;
   } else {
     let c1 = getRoomCoorinates(this.roomName, false);
     let c2 = getRoomCoorinates(toRoom, false);
-    return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]);
+    return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]); // manhattan distance
   }
 }
 
@@ -68,19 +83,6 @@ RoomPosition.prototype.isFree = function(ignoreCreeps?: boolean): boolean {
   }
 
   return ans;
-}
-
-RoomPosition.prototype.getEnteranceToRoom = function(): RoomPosition | null {
-  let exits = Game.map.describeExits(this.roomName);
-  if (this.y === 0 && exits[FIND_EXIT_TOP])
-    return new RoomPosition(this.x, 49, exits[FIND_EXIT_TOP]!);
-  else if (this.y === 49 && exits[FIND_EXIT_BOTTOM])
-    return new RoomPosition(this.x, 0, exits[FIND_EXIT_BOTTOM]!);
-  else if (this.x === 0 && exits[FIND_EXIT_LEFT])
-    return new RoomPosition(49, this.y, exits[FIND_EXIT_LEFT]!);
-  else if (this.x === 49 && exits[FIND_EXIT_RIGHT])
-    return new RoomPosition(0, this.y, exits[FIND_EXIT_RIGHT]!);
-  return null;
 }
 
 RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant): RoomPosition {
@@ -146,7 +148,7 @@ RoomPosition.prototype.getPosInDirection = function(direction: DirectionConstant
 }
 
 RoomPosition.prototype.getTimeForPath = function(target: ProtoPos): number {
-  let path = Traveler.findTravelPath(this, target, { useFindRoute: true });
+  let path = Traveler.findTravelPath(this, target, { useFindRoute: true, ignoreCurrent: true });
   let len = 0;
   _.forEach(path.path, p => {
     let terrain = Game.map.getRoomTerrain(p.roomName).get(p.x, p.y);
@@ -199,7 +201,7 @@ RoomPosition.prototype.getRangeApprox = function(obj: ProtoPos, calcType?: "line
           break;
       }
       newDistance += calc(enterance, exit);
-      enterance = exit.getEnteranceToRoom()!;
+      enterance = exit.enteranceToRoom!;
       currentRoom = route[i].room;
     }
   newDistance += calc(enterance, pos);

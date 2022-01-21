@@ -53,7 +53,9 @@ export class Logger {
   }
 
   reportCPU(ref: string, mode: "run" | "update", usedCPU: number, amount: number) {
-    Memory.log.cpuUsage[mode][ref] = { cpu: usedCPU, norm: usedCPU / amount };
+    if (usedCPU < 0.01)
+      return;
+    Memory.log.cpuUsage[mode][ref] = { cpu: usedCPU, norm: usedCPU / (amount || 1) };
   }
 
   hiveLog(hive: Hive) {
@@ -230,7 +232,7 @@ export class Logger {
 
     ans["defense_tower"] = getRate("defense_heal") + getRate("defense_dmg") + getRate("defense_repair");
     ans["defense_swarms"] = getCreepCostRate(setups.defender.normal) + getCreepCostRate(setups.defender.destroyer);
-    ans["attack_rooms"] = getCreepCostRate(setups.knight) + getCreepCostRate(setups.downgrader);
+    ans["attack_rooms"] = getCreepCostRate(setups.knight) + getCreepCostRate(setups.downgrader) + getCreepCostRate(setups.dismantler) + getCreepCostRate(setups.healer);
 
     ans["export"] = getRate("export") + getRate("export local");
     ans["import"] = getRate("import") + getRate("import local");

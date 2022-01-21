@@ -38,16 +38,16 @@ export enum prefix {
   build = "wax",
   surrender = "FFF",
   boost = "boost_",
-  def = "def_",
+  defSwarm = "def_",
   puppet = "pup_",
   annex = "annex_",
   claim = "claim",
   mine = "mine_",
-  haltlab = "haltlab_",
-  nukes = "nukes_",
-  terminal = "terminal_",
-  power = "power_",
-  deposit = "deposit_",
+  // haltlab = "haltlab_",
+  // nukes = "nukes_",
+  // terminal = "terminal_",
+  powerMining = "power_",
+  depositMining = "deposit_",
   downgrade = "downgrade_",
 
   // deposit master
@@ -104,4 +104,5 @@ export enum setupsNames {
   dismantler = 'Dolichovespula arenaria',
   healer = 'Bald-faced hornet',
   defender = 'Vespa affinis',
+  skdefender = 'Polybia occidentalis',
 }
