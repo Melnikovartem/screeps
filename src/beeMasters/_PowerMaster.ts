@@ -50,6 +50,8 @@ export abstract class PowerMaster extends Master {
     super.update();
     if (!this.powerCreep.shard)
       this.powerCreep.creep.spawn(this.cell.powerSpawn);
+    if (this.powerCreep.creep.spawnCooldownTime)
+      this.delete();
   }
 
   run() {
@@ -63,5 +65,10 @@ export abstract class PowerMaster extends Master {
     }
     this.usedPower = false;
     this.checkFlee(this.powerCreep);
+  }
+
+  delete() {
+    super.delete();
+    delete Apiary.bees[this.powerCreep.ref];
   }
 }

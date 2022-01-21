@@ -16,10 +16,7 @@ interface TravelToOptions {
   ignoreRoads?: boolean;
   ignoreCreeps?: boolean;
   ignoreStructures?: boolean;
-  preferHighway?: boolean;
-  highwayBias?: number;
   allowHostile?: boolean;
-  allowSK?: boolean;
   range?: number;
   obstacles?: { pos: RoomPosition }[];
   roomCallback?: (roomName: string, matrix: CostMatrix) => CostMatrix | boolean | undefined;
@@ -38,6 +35,7 @@ interface TravelToOptions {
   ensurePath?: boolean;
   // mine
   weightOffRoad?: number;
+  ignoreCurrent?: boolean;
 }
 
 interface TravelData {

@@ -74,40 +74,33 @@ export class Traveler {
     // handle case where creep is stuck
     if (!options.stuckValue) { options.stuckValue = DEFAULT_STUCK_VALUE; }
     if (state.stuckCount >= options.stuckValue && Math.random() > .5) {
+      // console.log(`<a href=#!/room/${Game.shard.name}/${creep.pos.roomName}>["${creep.name}"]</a>`, state.stuckCount);
       options.ignoreCreeps = false;
       options.freshMatrix = true;
       delete travelData.path;
-      if (state.stuckCount >= options.stuckValue * 4) {
-        let prevCallback = options.roomCallback;
+      if (state.stuckCount >= options.stuckValue * 4 && !options.roomCallback)
         options.roomCallback = (roomName, matrix) => {
-          if (prevCallback) {
-            let postCallback = prevCallback(roomName, matrix);
-            if (!postCallback || typeof postCallback === "boolean")
-              return postCallback;
-            matrix = postCallback;
-          }
           let terrain = Game.map.getRoomTerrain(roomName);
-          let enemies = Apiary.intel.getInfo(roomName, 50).enemies.filter(e => e.dangerlvl >= 4).map(e => e.object);
+          let enemies = Apiary.intel.getInfo(roomName, 50).enemies.filter(e => e.dangerlvl >= 4);
           _.forEach(enemies, c => {
             let fleeDist = 0;
-            if (c instanceof Creep)
-              fleeDist = Apiary.intel.getFleeDist(c);
+            if (c.object instanceof Creep)
+              fleeDist = Apiary.intel.getFleeDist(c.object);
             if (!fleeDist)
               return;
-            _.forEach(c.pos.getPositionsInRange(fleeDist), p => {
+            _.forEach(c.object.pos.getPositionsInRange(fleeDist), p => {
               if (p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && (<StructureRampart>s).my && s.hits > 10000).length)
                 return;
               let coef = terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP ? 5 : 1;
-              let posRangeToEnemy = p.getRangeTo(c);
+              let posRangeToEnemy = p.getRangeTo(c.object);
               let val = Math.min(0x88, 0x20 * coef * (fleeDist + 1 - posRangeToEnemy));
               if (val > matrix.get(p.x, p.y))
                 matrix.set(p.x, p.y, val);
             });
-            matrix.set(c.pos.x, c.pos.y, 0xff);
+            matrix.set(c.object.pos.x, c.object.pos.y, 0xff);
           });
           return matrix;
         }
-      }
     }
 
     // TODO:handle case where creep moved by some other function, but destination is still the same
@@ -416,52 +409,29 @@ export class Traveler {
           return Number.POSITIVE_INFINITY;
         }
 
-        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
-        /*if ([""].includes(roomName))
-          return 255;
-        if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
-          return 6;
-        if ([""].includes(roomName))
+        if (["E33S24", "E36S23"].includes(roomName) && roomName !== destination && roomName !== origin)
+          return Number.POSITIVE_INFINITY;
+
+        /* if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
+          return 6; */
+        /* if ([""].includes(roomName))
           return 1;*/
 
+        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:
-            return 1;
+            return roomInfo.dangerlvlmax >= 6 && !options.ignoreCurrent ? 4 : 1;
           case roomStates.corridor:
           case roomStates.reservedByMe:
           case roomStates.noOwner:
           default:
-            return 2;
+            return roomInfo.dangerlvlmax >= 6 && !options.ignoreCurrent ? 8 : 1;
           case roomStates.SKfrontier:
           case roomStates.reservedByEnemy:
-            return 4;
+            return roomInfo.dangerlvlmax >= 4 && !options.ignoreCurrent ? 8 : 4;
           case roomStates.ownedByEnemy:
-            return 255;
+            return 255; // here never because of checkAvoid
         }
-
-        /*
-        let parsed;
-        if (options.preferHighway) {
-          parsed = /^[WE]([0-9]+)[NS]([0-9]+)$/.exec(roomName) as any;
-          let isHighway = (parsed[1] % 10 === 0) || (parsed[2] % 10 === 0);
-          if (isHighway) {
-            return 1;
-          }
-        }
-        // SK rooms are avoided when there is no vision in the room, harvested-from SK rooms are allowed
-        if (!options.allowSK && !Game.rooms[roomName]) {
-          if (!parsed) { parsed = /^[WE]([0-9]+)[NS]([0-9]+)$/.exec(roomName) as any; }
-          let fMod = parsed[1] % 10;
-          let sMod = parsed[2] % 10;
-          let isSK = !(fMod === 5 && sMod === 5) &&
-            ((fMod >= 4) && (fMod <= 6)) &&
-            ((sMod >= 4) && (sMod <= 6));
-          if (isSK) {
-            return 10 * highwayBias;
-          }
-        }
-        return highwayBias;
-        */
       },
     });
 
@@ -485,14 +455,12 @@ export class Traveler {
 
   public static routeDistance(origin: string, destination: string): number | void {
     let linearDistance = Game.map.getRoomLinearDistance(origin, destination);
-    if (linearDistance >= 32) {
+    if (linearDistance >= 32)
       return linearDistance;
-    }
 
     let allowedRooms = this.findRoute(origin, destination);
-    if (allowedRooms) {
+    if (allowedRooms)
       return Object.keys(allowedRooms).length;
-    }
   }
 
   /**
@@ -669,7 +637,7 @@ export class Traveler {
 const REPORT_CPU_THRESHOLD = 1000;
 
 export const DEFAULT_MAXOPS = 20000;
-export const DEFAULT_STUCK_VALUE = 2;
+export const DEFAULT_STUCK_VALUE = 3;
 export const STATE_PREV_X = 0;
 export const STATE_PREV_Y = 1;
 export const STATE_STUCK = 2;

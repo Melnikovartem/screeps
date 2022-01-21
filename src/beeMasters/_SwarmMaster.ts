@@ -53,4 +53,12 @@ export abstract class SwarmMaster extends Master {
   get pos() {
     return this.order.pos;
   }
+
+  get print() {
+    /* let firstBee = this.bees[Object.keys(this.bees)[0]];
+    let roomName = this.pos.roomName;
+    if (firstBee && firstBee.pos)
+      roomName = firstBee.pos.roomName; */
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
+  }
 }
