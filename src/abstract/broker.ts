@@ -1,4 +1,4 @@
-import { COMPRESS_MAP, COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
+import { COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
 
 import { profile } from "../profiler/decorator";
 
@@ -16,11 +16,13 @@ const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_PADDING = 0.001;
 
+const CREDIT_THRESHOLD_SLOW = 50000000;
+
 const REASONABLE_MONEY = 50;
-export const MARKET_LAG = Game.cpu.limit <= 20 ? 4 : 2;
+export const MARKET_LAG = Game.cpu.limit <= 20 ? 8 : 2;
 
 /*const MAX_SPENDING_HIVE = 50000;
-const SPENDING_PERIOD = 250;*/
+const SPENDING_PERIOD = 250; */
 
 type PriceStat = { [key in ResourceConstant]?: number };
 
@@ -28,97 +30,89 @@ type PriceStat = { [key in ResourceConstant]?: number };
 export class Broker {
   // if it will become to heavy will switch to storing orderId
 
-  // buy - i buy in resource
-  goodBuy: { [key in ResourceConstant]?: ProtoOrder[] } = {};
-  // sell - i sell resource
-  goodSell: { [key in ResourceConstant]?: ProtoOrder[] } = {};
-
-  bestPriceBuy: PriceStat = {};
-  bestPriceSell: PriceStat = {};
+  info: { [key in ResourceConstant]?: {
+    // buy - i buy in resource
+    goodBuy: ProtoOrder[],
+    // sell - i sell resource
+    goodSell: ProtoOrder[],
+    bestPriceBuy?: number,
+    bestPriceSell?: number,
+    lastUpdated: number,
+  } } = {}
 
   shortOrdersSell: { [roomName: string]: { orders: PriceStat, lastUpdated: number } } = {};
-
   energyPrice: number = Infinity;
 
-  lastUpdated: number = -1;
-
-  update(lag: number = 0) {
-    if (this.lastUpdated + lag >= Game.time)
-      return;
+  updateRes(res: ResourceConstant, lag: number = 0) {
+    let info = this.info[res]!;
+    if (info && info.lastUpdated + lag >= Game.time)
+      return info;
 
     // on shard2 during 10.2021 it took about 10.5CPU to calc all this
     // let cpu = Game.cpu.getUsed();
-    this.lastUpdated = Game.time;
-    this.goodBuy = {};
-    this.goodSell = {};
+    if (!info) {
+      this.info[res] = {
+        goodBuy: [],
+        goodSell: [],
+        lastUpdated: Game.time,
+      }
+      info = this.info[res]!;
+    }
+    info.lastUpdated = Game.time;
+    info.goodBuy = [];
+    info.goodSell = [];
 
-    let bestPriceBuy: PriceStat = {};
-    let bestPriceSell: PriceStat = {};
+    info.bestPriceBuy = undefined;
+    info.bestPriceSell = undefined;
 
-    let orders = Game.market.getAllOrders();
+    let orders = Game.market.getAllOrders({ resourceType: res });
 
     _.forEach(orders, order => {
       if (!order.roomName || !order.amount || order.id in Game.market.orders)
         return;
-      let res = <ResourceConstant>order.resourceType;
-
       if (order.type === ORDER_BUY) {
         // they buy i sell
-        if (!bestPriceSell[res] || bestPriceSell[res]! < order.price)
-          bestPriceSell[res] = order.price;
+        if (info.bestPriceSell === undefined || info.bestPriceSell < order.price)
+          info.bestPriceSell = order.price;
       } else { // order.type === ORDER_SELL
         // they sell i buy
-        if (!bestPriceBuy[res] || bestPriceBuy[res]! > order.price)
-          bestPriceBuy[res] = order.price;
+        if (info.bestPriceBuy === undefined || info.bestPriceBuy > order.price)
+          info.bestPriceBuy = order.price;
       }
     });
 
     _.forEach(orders, order => {
       if (!order.roomName || !order.amount || order.id in Game.market.orders)
         return;
-      let res = <ResourceConstant>order.resourceType;
-
       if (order.type === ORDER_BUY) {
         // they buy i sell
-        let deviation = Math.min(MAX_DEVIATION_PRICE, bestPriceSell[res]! * MAX_DEVIATION_PERCENT);
-        if (order.price >= bestPriceSell[res]! - deviation) {
-          if (!this.goodSell[res])
-            this.goodSell[res] = [];
-          this.goodSell[res]!.push(<ProtoOrder>order);
+        if (info.bestPriceSell !== undefined) {
+          let deviation = Math.min(MAX_DEVIATION_PRICE, info.bestPriceSell * MAX_DEVIATION_PERCENT);
+          if (order.price >= info.bestPriceSell - deviation)
+            info.goodSell.push(<ProtoOrder>order);
         }
       } else {
         // they sell i buy
-        let deviation = Math.min(MAX_DEVIATION_PRICE, bestPriceBuy[res]! * MAX_DEVIATION_PERCENT);
-        if (order.price <= bestPriceBuy[res]! + deviation) {
-          if (!this.goodBuy[res])
-            this.goodBuy[res] = [];
-          this.goodBuy[res]!.push(<ProtoOrder>order);
+        if (info.bestPriceBuy) {
+          let deviation = Math.min(MAX_DEVIATION_PRICE, info.bestPriceBuy * MAX_DEVIATION_PERCENT);
+          if (order.price <= info.bestPriceBuy + deviation)
+            info.goodBuy.push(<ProtoOrder>order);
         }
       }
     });
 
-    for (let res in bestPriceSell)
-      this.bestPriceSell[<ResourceConstant>res] = bestPriceSell[<ResourceConstant>res]!
-
-    for (let res in bestPriceBuy)
-      this.bestPriceBuy[<ResourceConstant>res] = bestPriceBuy[<ResourceConstant>res]!
-
     // coef to account for fact that energy is extremly unprofitable to cell cause of costs
-    let energyToSell = this.bestPriceSell[RESOURCE_ENERGY] ? this.bestPriceSell[RESOURCE_ENERGY]! * 0.5 : Infinity;
-    let energyToBuy = this.bestPriceBuy[RESOURCE_ENERGY] ? this.bestPriceBuy[RESOURCE_ENERGY]! * 2 : Infinity;
-    // later will be used to calc is it even profitable to sell something faraway
-    this.energyPrice = Math.min(energyToBuy, energyToSell);
-
-    /*
-    for (let res in this.bestPriceBuy) {
-      let r = <ResourceConstant>res;
-      let amountBuy = this.goodBuy[r] ? this.goodBuy[r]!.length : 0;
-      let amountSell = this.goodSell[r] ? this.goodSell[r]!.length : 0;
-      console .log(`${res} buy: ${this.bestPriceBuy[r]} @ ${amountBuy} sell: ${this.bestPriceSell[r]} @ ${amountSell}`)
+    if (res === RESOURCE_ENERGY) {
+      let energyToSell = info.bestPriceSell ? info.bestPriceSell * 0.5 : Infinity;
+      let energyToBuy = info.bestPriceBuy ? info.bestPriceBuy * 2 : Infinity;
+      this.energyPrice = Math.min(energyToBuy, energyToSell);
     }
-    console .log("order update\ncpu used: " + (Game.cpu.getUsed() - cpu));
-    console .log(`transfer energy buyLimit ${energyToBuy} sellLimit ${energyToSell}`);
-    */
+    // later will be used to calc is it even profitable to sell something faraway
+    return info;
+  }
+
+  update() {
+    this.updateRes(RESOURCE_ENERGY, MARKET_LAG * 100);
 
     for (const id in Game.market.orders)
       if (!Game.market.orders[id].remainingAmount)
@@ -171,10 +165,10 @@ export class Broker {
     let orders;
     if (!hurry)
       orders = this.longOrders(roomName, res, ORDER_BUY);
-    this.update(orders && orders.length ? 16 : MARKET_LAG);
+    let info = this.updateRes(res, orders && orders.length ? 16 : MARKET_LAG);
     let step = ORDER_PADDING * coef;
     let price = this.priceLongBuy(res, step);
-    let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
+    let priceToBuyInstant = info.bestPriceBuy || Infinity;
 
     if (res === RESOURCE_ENERGY)
       priceToBuyInstant *= 2; // 1.5654; // approx transfer costs
@@ -203,7 +197,11 @@ export class Broker {
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
-      let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0;
+      let priceToSellInstant = info.bestPriceSell || 0;
+      if (priceToSellInstant + step >= o.price + step * 10000)
+        newPrice = o.price + step * 10000;
+      if (priceToSellInstant + step >= o.price + step * 1000)
+        newPrice = o.price + step * 1000;
       if (priceToSellInstant + step >= o.price + step * 100)
         newPrice = o.price + step * 100;
       else if (priceToSellInstant >= o.price)
@@ -220,14 +218,14 @@ export class Broker {
       creditsToUse = this.creditsToUse(roomName);
     if (creditsToUse < REASONABLE_MONEY)
       return "no money";
-
     let orders;
     if (!hurry)
       orders = this.longOrders(roomName, res, ORDER_SELL);
-    this.update(orders && orders.length ? 16 : MARKET_LAG);
+    let info = this.updateRes(res, orders && orders.length ? 16 : MARKET_LAG);
+    let priceToSellInstant = info.bestPriceSell ? info.bestPriceSell : Infinity;
+
     let step = ORDER_PADDING * coef;
     let price = this.priceLongSell(res, step);
-    let priceToSellInstant = this.bestPriceSell[res] ? this.bestPriceSell[res]! : Infinity;
 
     if (res === RESOURCE_ENERGY)
       priceToSellInstant *= 0.5; // 1 / 1.5654; // approx transfer costs
@@ -251,6 +249,9 @@ export class Broker {
       }
     }
 
+    if (price === Infinity)
+      return "long";
+
     if (!orders) // prob never
       orders = this.longOrders(roomName, res, ORDER_SELL);;
 
@@ -259,8 +260,13 @@ export class Broker {
     else {
       let o = orders.sort((a, b) => a.created - b.created)[0];
       let newPrice;
-      let priceToBuyInstant = this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : Infinity;
-      if (priceToBuyInstant - step <= o.price - step * 100)
+      let priceToBuyInstant = info.bestPriceBuy || Infinity;
+      // to prevent money drain by instant price rise
+      if (priceToBuyInstant - step <= o.price - step * 10000)
+        newPrice = o.price - step * 10000;
+      else if (priceToBuyInstant - step <= o.price - step * 1000)
+        newPrice = o.price - step * 1000;
+      else if (priceToBuyInstant - step <= o.price - step * 100)
         newPrice = o.price - step * 100;
       else if (priceToBuyInstant <= o.price)
         newPrice = o.price - step;
@@ -276,16 +282,18 @@ export class Broker {
 
   // i buy as long
   priceLongBuy(res: ResourceConstant, step: number) {
-    return (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 0) + step / 2;
+    let info = this.updateRes(res, MARKET_LAG * 100);
+    return info.bestPriceSell || 0 + step / 2;
   }
 
   // i sell as long
   priceLongSell(res: ResourceConstant, step: number) {
-    return (this.bestPriceBuy[res] ? this.bestPriceBuy[res]! : (this.bestPriceSell[res] ? this.bestPriceSell[res]! : 100) * 1.3) - step / 2;
+    let info = this.updateRes(res, MARKET_LAG * 100);
+    return (info.bestPriceBuy || ((info.bestPriceSell || Infinity) * 1.3)) - step / 2;
   }
 
   buyLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, price: number) {
-    this.update(MARKET_LAG);
+    this.updateRes(res, MARKET_LAG);
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 1.05));
     amount = Math.min(amount, priceCap);
@@ -301,8 +309,8 @@ export class Broker {
     return ans;
   }
 
-  sellLong(terminal: StructureTerminal, res: ResourceConstant, creditsToUse: number, amount: number, price: number) {
-    this.update(MARKET_LAG);
+  sellLong(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, price: number) {
+    this.updateRes(res, MARKET_LAG);
     let roomName = terminal.pos.roomName;
     let priceCap = Math.floor(creditsToUse / (price * 0.05));
     amount = Math.min(amount, priceCap);
@@ -321,14 +329,14 @@ export class Broker {
   buyShort(terminal: StructureTerminal, res: ResourceConstant, amount: number, creditsToUse: number, maxPrice = Infinity) {
     if (terminal.cooldown)
       return ERR_TIRED;
-    this.update(MARKET_LAG);
-    let orders = this.goodBuy[res];
+    let info = this.updateRes(res, MARKET_LAG);
+    let orders = info.goodBuy;
     if (!orders)
       return ERR_NOT_FOUND;
-    if (creditsToUse !== Infinity && !_.filter(COMPRESS_MAP, r => r === res).length)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+    if (creditsToUse < CREDIT_THRESHOLD_SLOW)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
     if (res === RESOURCE_ENERGY)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
     if (!orders.length)
       return ERR_NOT_IN_RANGE;
 
@@ -357,12 +365,12 @@ export class Broker {
   sellShort(terminal: StructureTerminal, res: ResourceConstant, amount: number, minPrice = 0) {
     if (terminal.cooldown)
       return ERR_TIRED;
-    this.update(MARKET_LAG);
-    let orders = this.goodSell[res];
+    let info = this.updateRes(res, MARKET_LAG);
+    let orders = info.goodSell;
     if (!orders)
       return ERR_NOT_FOUND;
     // if (!_.filter(COMPRESS_MAP, r => r === res).length)
-    // orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 30)
+    // orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
     if (!orders.length)
       return ERR_NOT_IN_RANGE;
 

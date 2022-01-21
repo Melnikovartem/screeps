@@ -5,6 +5,7 @@ import type { RoomSetup } from "./roomPlanner";
 import type { CreepAllBattleInfo } from "./intelligence";
 import type { HiveLog, HiveCache } from "./hiveMemory";
 import type { CreepSetup } from "../bees/creepSetups";
+// import type { Boosts } from "../beeMasters/_Master";
 
 declare global {
   var Apiary: _Apiary;
@@ -18,7 +19,6 @@ declare global {
     getPositionsInRange(range: number): RoomPosition[];
     getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
     isFree(ignoreCreeps?: boolean): boolean;
-    getEnteranceToRoom(): RoomPosition | null;
     getPosInDirection(direction: DirectionConstant): RoomPosition;
     getTimeForPath(pos: ProtoPos): number;
     getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
@@ -27,6 +27,7 @@ declare global {
     findClosest<Obj extends ProtoPos>(objects: Obj[], calc?: (p: RoomPosition, obj: ProtoPos) => number): Obj | null;
     findClosestByTravel<Obj extends ProtoPos>(objects: Obj[], opt?: FindPathOpts): Obj | null;
     readonly to_str: string;
+    readonly enteranceToRoom: RoomPosition | null;
   }
 
   interface CreepMemory {
@@ -62,6 +63,7 @@ declare global {
   interface Memory {
     cache: {
       intellegence: any;
+      roomsToSign: string[],
       roomPlanner: { [id: string]: RoomSetup }
       hives: {
         [id: string]: HiveCache
@@ -69,24 +71,36 @@ declare global {
       war: {
         siedgeInfo: {
           [id: string]: {
-            matrix: { [id: number]: { [id: number]: number } },
             lastUpdated: number,
-            breakIn: { x: number, y: number }[],
+            breakIn: { x: number, y: number, ent: string, state: number }[],
             freeTargets: { x: number, y: number }[],
             towerDmgBreach: number,
-            target: { x: number, y: number },
             attackTime: number | null,
+            threatLvl: 0 | 1 | 2,
+            squadSlots: {
+              [id: string]: {
+                lastSpawned: number,
+                type: "range" | "dism" | "duo",
+                breakIn: { x: number, y: number, ent: string, state: number },
+              }
+            }
           }
         },
         squadsInfo: {
           [id: string]: {
+            seidgeStuck: number,
             center: { x: number, y: number, roomName: string },
             target: { x: number, y: number, roomName: string },
             spawned: number,
             rotation: TOP | BOTTOM | LEFT | RIGHT,
-            formation: [Pos, CreepSetup][],
+            setup: CreepSetup[],
+            poss: Pos[],
+            poss_ent: Pos[],
             hive: string,
             ref: string,
+            targetid: string,
+            lastUpdatedTarget: number,
+            ent: string,
           }
         }
       }
@@ -99,6 +113,7 @@ declare global {
       forceBucket: number,
       minBalance: number,
       generatePixel: boolean,
+      wallsHealth: number,
     }
 
     report: {

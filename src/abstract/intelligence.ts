@@ -8,8 +8,8 @@ import { profile } from "../profiler/decorator";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "KillerBee"];
-export const NON_AGRESSION_PACKS: string[] = [];
+export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "6g3y", "Lapitz", "YoRHa", "buger", "Bestia"];
+export const NON_AGRESSION_PACKS: string[] = ["TgDgNU"];
 
 export interface Enemy {
   object: Creep | PowerCreep | Structure,
@@ -89,6 +89,7 @@ export class Intel {
   }
 
   getComplexStats(pos: ProtoPos, range = 1, closePadding = 0, mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS) {
+    // i could filter enemies for creeps, but i belive that it would mean more iterations in case of seidge (but i guess in rest of cases it would mean better results...)
     if (!(pos instanceof RoomPosition))
       pos = pos.pos;
 
@@ -181,7 +182,7 @@ export class Intel {
         let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
         if (parsed) {
           let [x, y] = [+parsed[2] % 10, +parsed[4] % 10];
-          if (x === 0 && y == 0)
+          if (x === 0 || y == 0)
             roomInfo.roomState = roomStates.corridor;
           else if (4 <= x && x <= 6 && 4 <= y && y <= 6)
             if (x === 5 && y === 5)
@@ -200,7 +201,8 @@ export class Intel {
       lag *= 2;
 
     let returnLag = roomInfo.lastUpdated + lag >= Game.time;
-    if (!returnLag && !(roomName in Game.rooms)) {
+    let visibleRoom = roomName in Game.rooms;
+    if (!returnLag && !visibleRoom) {
       Apiary.requestSight(roomName);
       returnLag = true;
     }
@@ -218,6 +220,8 @@ export class Intel {
           roomInfo.safePlace = true;
           roomInfo.dangerlvlmax = 0;
         }
+        if (visibleRoom && roomInfo.enemies.length)
+          this.updateDangerLvl(roomInfo);
       }
       return roomInfo;
     }
@@ -244,6 +248,8 @@ export class Intel {
         else
           roomInfo.roomState = roomStates.reservedByEnemy;
       }
+      if (!owner && (!room.controller.sign || room.controller.sign.username !== Apiary.username))
+        Apiary.unsignedRoom(roomName);
       roomInfo.currentOwner = owner;
     }
 
@@ -290,8 +296,10 @@ export class Intel {
           dangerlvl = 2;
           break;
         case "Invader":
-          if (info.heal && (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral))
+          if (info.heal > 100 && (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral))
             dangerlvl = 5;
+          else if (dangerlvl > 4)
+            dangerlvl = 4;
           break;
         default:
           if (Apiary.logger)
@@ -383,20 +391,22 @@ export class Intel {
             type: enemyTypes.static,
           });
       });
+    this.updateDangerLvl(roomInfo);
+  }
 
+  updateDangerLvl(roomInfo: RoomInfo) {
     if (roomInfo.enemies.length)
       roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev).dangerlvl;
     else
       roomInfo.dangerlvlmax = 0;
-
-    roomInfo.safePlace = roomInfo.dangerlvlmax < 4;
+    roomInfo.safePlace = roomInfo.dangerlvlmax < 4 || (roomInfo.safeModeEndTime > Game.time && roomInfo.roomState === roomStates.ownedByMe);
   }
 
-  getFleeDist(creep: Creep) {
+  getFleeDist(creep: Creep, padding = 0) {
     let info = this.getStats(creep).current;
-    if (info.dmgRange > 0)
+    if (info.dmgRange > padding)
       return 4;
-    else if (info.dmgClose > 0)
+    else if (info.dmgClose > padding)
       return 2;
     else
       return 0;
@@ -436,7 +446,6 @@ export class Intel {
         case RANGED_ATTACK:
           stat = RANGED_ATTACK_POWER * (b.boost ? BOOSTS.ranged_attack[b.boost].rangedAttack : 1);
           ans.max.dmgRange += stat;
-          ans.max.dism += stat;
           if (b.hits)
             ans.current.dmgRange += stat;
           break;
@@ -474,6 +483,8 @@ export class Intel {
 
     ans.current.resist = rounding(ans.current.resist);
     ans.max.resist = rounding(ans.max.resist);
+
+
 
     ans.current.hits += ans.current.resist;
     ans.max.hits += ans.max.resist;

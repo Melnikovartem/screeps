@@ -4,9 +4,11 @@ export interface HiveCache {
   wallsHealth: number,
   cells: { [id: string]: { [id: string]: any } }
   do: {
-    power: boolean,
-    deposit: boolean,
-    war: boolean,
+    power: 0 | 1,
+    deposit: 0 | 1,
+    war: 0 | 1,
+    unboost: 0 | 1,
+    saveCpu: 0 | 1,
   }
 }
 

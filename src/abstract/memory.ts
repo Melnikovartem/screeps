@@ -4,8 +4,8 @@ import { Logger } from "../convenience/logger";
 @profile
 export class Mem {
   static init() {
-    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {}, war: { siedgeInfo: {}, squadsInfo: {} } };
-    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20 };
+    if (!Memory.cache) Memory.cache = { intellegence: {}, roomPlanner: {}, hives: {}, war: { siedgeInfo: {}, squadsInfo: {} }, roomsToSign: [] };
+    if (!Memory.settings) Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20, wallsHealth: 20000000 };
 
     for (const roomName in Memory.cache.hives) {
       let room = Game.rooms[roomName];
@@ -18,8 +18,8 @@ export class Mem {
   static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = undefined;
-    Memory.cache = { intellegence: {}, roomPlanner: Memory.cache.roomPlanner || {}, hives: {}, war: { siedgeInfo: {}, squadsInfo: {} } };
-    Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20 };
+    Memory.cache = { intellegence: {}, roomPlanner: Memory.cache.roomPlanner || {}, hives: {}, war: { siedgeInfo: {}, squadsInfo: {} }, roomsToSign: [] };
+    Memory.settings = { framerate: 10, forceBucket: 0, minBalance: 0, generatePixel: Game.cpu.limit > 20, wallsHealth: 20000000 };
 
     Logger.init(true);
   }
