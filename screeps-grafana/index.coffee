@@ -13,3 +13,11 @@ For full copyright and license information, please see the LICENSE file
 # Application's initialisation and startup script
 ScreepsStatsd = require './src/ScreepsStatsd'
 (new ScreepsStatsd).run()
+
+
+docker run -d \
+  -p 3000:3000 \
+  --name=grafana \
+  --mount type=bind,source="$(pwd)"/target,target=/app \
+  -e "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,frser-sqlite-datasource" \
+  grafana/grafana-enterprise
