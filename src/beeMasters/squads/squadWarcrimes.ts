@@ -374,15 +374,14 @@ export class SquadWarCrimesMaster extends Master {
       if (rangeToTarget <= 3 && !(target instanceof Structure))
         action2 = () => bee.rangedAttack(target!);
       else {
-        let tempNoRamp = tempTargets.filter(e => e.object.pos.getRangeTo(bee) <= 3);
-        if (tempNoRamp.length)
-          tempTargets = tempNoRamp;
-        else if (rangeToTarget <= 3) {
-          tempTargets = [];
-          action2 = () => bee.rangedAttack(target!);
-        }
-        if (tempTargets.length) {
-          let tempTarget = tempTargets.reduce((prev, curr) => {
+        let tempRangeTargets = tempTargets.filter(e => e.object.pos.getRangeTo(bee) <= 3);
+        if (!tempRangeTargets.length)
+          if (rangeToTarget <= 3)
+            action2 = () => bee.rangedAttack(target!);
+          else
+            tempRangeTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 3);
+        if (tempRangeTargets.length) {
+          let tempTarget = tempRangeTargets.reduce((prev, curr) => {
             let ans = prev.type - curr.type;
             if (ans === 0)
               ans = prev.dangerlvl - curr.dangerlvl;
@@ -399,11 +398,11 @@ export class SquadWarCrimesMaster extends Master {
       if (rangeToTarget <= 1 && target instanceof Structure)
         action1 = () => bee.dismantle(target);
       else {
-        let tempNoRamp = tempTargets.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
-        if (!tempNoRamp.length)
-          tempNoRamp = roomInfo.enemies.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
-        if (tempNoRamp.length) {
-          let tempTarget = tempNoRamp.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev);
+        let tempDismTargets = tempTargets.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
+        if (!tempDismTargets.length)
+          tempDismTargets = roomInfo.enemies.filter(e => e.type === enemyTypes.static && e.object.pos.getRangeTo(bee) <= 1);
+        if (tempDismTargets.length) {
+          let tempTarget = tempDismTargets.reduce((prev, curr) => prev.dangerlvl < curr.dangerlvl ? curr : prev);
           action1 = () => bee.dismantle(<Structure>tempTarget.object);
         }
       }
@@ -411,11 +410,11 @@ export class SquadWarCrimesMaster extends Master {
       if (rangeToTarget <= 1)
         action1 = () => bee.attack(target!);
       else {
-        let tempNoRamp = tempTargets.filter(e => e.object.pos.getRangeTo(bee) <= 1);
-        if (!tempNoRamp.length)
-          tempNoRamp = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 1);
-        if (tempNoRamp.length) {
-          let tempTarget = tempNoRamp.reduce((prev, curr) => {
+        let tempCloseTargets = tempTargets.filter(e => e.object.pos.getRangeTo(bee) <= 1);
+        if (!tempCloseTargets.length)
+          tempCloseTargets = roomInfo.enemies.filter(e => e.object.pos.getRangeTo(bee) <= 1);
+        if (tempCloseTargets.length) {
+          let tempTarget = tempCloseTargets.reduce((prev, curr) => {
             let ans = prev.type - curr.type;
             if (ans === 0)
               ans = prev.dangerlvl - curr.dangerlvl;
@@ -479,8 +478,8 @@ export class SquadWarCrimesMaster extends Master {
     return {
       useFindRoute: true,
       maxOps: 5000,
-      maxRooms: 4,
       ensurePath: checkFlee ? true : false,
+      // allowHostile: true,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms))
           return undefined;
@@ -489,14 +488,14 @@ export class SquadWarCrimesMaster extends Master {
           for (let y = 1; y <= 48; ++y) {
             let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), centerBeeRef);
             if (moveMent > 5 && roomInfo.roomState === roomStates.ownedByEnemy)
-              matrix.set(x, y, Math.min(moveMent * 2, 255));
+              matrix.set(x, y, Math.min(moveMent * 2 * (checkFlee ? 2 : 1), 255));
             else {
               matrix.set(x, y, moveMent);
               if (checkFlee) {
                 let centerBee = this.bees[centerBeeRef];
                 let pos = new RoomPosition(x, y, roomName);
                 if (centerBee && centerBee.pos.getRangeTo(pos) === 1 && this.canBeOutDmged(pos, -1))
-                  matrix.set(x, y, 0xff);
+                  matrix.set(x, y, Math.min(matrix.get(x, y) * 2, 255));
               }
             }
           }
@@ -506,9 +505,11 @@ export class SquadWarCrimesMaster extends Master {
   }
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null, tempTarget: Enemy[]) {
+    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
+    if (roomInfo.safeModeEndTime >= Game.time && this.pos.roomName !== this.hive.roomName)
+      this.pos = this.hive.rest;
     let moveTarget = this.formationCenter.getRoomRangeTo(this.pos) <= 1 ? this.pos : new RoomPosition(25, 25, this.info.ent);
     let opt = this.getPathArgs(bee.ref);
-    let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
     let fatigue = 0;
     let padding = 1;
 
@@ -528,7 +529,7 @@ export class SquadWarCrimesMaster extends Master {
       }
       bee.stop();
       if (enemy) {
-        let newEnemy = (this.stats.max.dism || this.stats.max.dmgClose) && this.parent.getEasyEnemy(bee.pos);
+        let newEnemy = (this.stats.current.dism || this.stats.current.dmgClose || this.stuckSiedge > 40) && this.parent.getEasyEnemy(bee.pos);
         if (newEnemy) {
           enemy = newEnemy;
           if (enemy.pos.isNearTo(bee))
@@ -537,7 +538,7 @@ export class SquadWarCrimesMaster extends Master {
           this.stuckSiedge++;
         else
           this.stuckSiedge = 12;
-        if (this.stuckSiedge > 30)
+        if (this.stuckSiedge > 50)
           this.stuckSiedge = 0;
       }
     }
@@ -617,26 +618,36 @@ export class SquadWarCrimesMaster extends Master {
         }
       }
 
-      if (!roomInfo.safePlace && this.stats.current.heal)
-        if (this.canBeOutDmged(bee.pos, padding)) {
+      if (!roomInfo.safePlace && this.stats.current.heal) {
+        let rightRoom = bee.pos.roomName === this.pos.roomName || this.stuckSiedge < 25;
+        if (this.canBeOutDmged(bee.pos, padding) && rightRoom) {
           opt = this.getPathArgs(bee.ref, true);
           let exit = bee.pos.findClosest(Game.rooms[bee.pos.roomName].find(FIND_EXIT));
-          console.log("flee", bee.pos, this.stuckSiedge);
+          // console.log("flee", bee.pos, this.stuckSiedge);
           this.stuckSiedge++;
           bee.goTo(exit || this.pos, opt);
         } else if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition, padding)) {
           this.stuckSiedge++;
-          console.log("stop", bee.targetPosition, this.stuckSiedge);
-          bee.stop();
-        } else if (roomInfo.roomState === roomStates.ownedByEnemy && notNearExit && !this.stuckSiedge) {
+          // console.log("stop", bee.targetPosition, this.stuckSiedge);
+          if (rightRoom)
+            bee.stop();
+        } else if (roomInfo.roomState === roomStates.ownedByEnemy && notNearExit) {
           let formationBreak = bee.targetPosition && this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
           if (formationBreak) {
-            console.log("break", this.getSquadMoveMentValue(bee.targetPosition!, bee.ref, false), this.stuckSiedge);
-            bee.stop();
+            // console.log("break", this.getSquadMoveMentValue(bee.targetPosition!, bee.ref, false), this.stuckSiedge);
+            let range = 2;
+            if (this.stats.current.dism)
+              range = 1;
+            if (this.activeBees.filter(b => this.pos.getRangeTo(b) <= range).length)
+              bee.stop();
           }
         }
+      }
 
-      this.formationCenter = (bee.targetPosition && bee.targetPosition.isFree(true) ? bee.targetPosition : bee.pos);
+      let newCenter = (bee.targetPosition && bee.targetPosition.isFree(true) ? bee.targetPosition : bee.pos);
+      if (bee.pos.roomName === newCenter.roomName && newCenter.enteranceToRoom && bee.pos.enteranceToRoom)
+        newCenter = bee.pos.getOpenPositions(true).filter(p => !p.enteranceToRoom).sort((a, b) => bee.pos.getRangeTo(a) - bee.pos.getRangeTo(b))[0] || newCenter;
+      this.formationCenter = newCenter;
     } else
       bee.goTo(this.formationCenter);
   }
@@ -675,9 +686,9 @@ export class SquadWarCrimesMaster extends Master {
 
   run() {
 
-    if (this.formationCenter.roomName === this.pos.roomName && (!this.enemy || this.info.lastUpdatedTarget + 100 > Game.time)) {
+    if (this.formationCenter.roomName === this.pos.roomName && (!this.enemy || this.info.lastUpdatedTarget + 100 < Game.time)) {
       if (this.stats.current.dmgClose + this.stats.current.dmgRange + this.stats.current.dism > 0) {
-        let enemy = this.parent.getEnemy(this.formationCenter, this.stats.current.dism > 0);
+        let enemy = this.parent.getEnemy(this.info.lastUpdatedTarget === -1 ? this.pos : this.formationCenter, this.stats.current.dism > 0);
         if (enemy) {
           this.enemy = enemy;
           this.info.lastUpdatedTarget = Game.time;
@@ -690,7 +701,7 @@ export class SquadWarCrimesMaster extends Master {
       healingTargets = this.activeBees.filter(b => b.hits < b.hitsMax).map(b => { return { bee: b, heal: b.hitsMax - b.hits } });
 
     let tempTargets = Apiary.intel.getInfo(this.formationCenter.roomName, 20).enemies.filter(e => e.object.pos.getRangeTo(this.formationCenter) <= 5
-      && !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && s.hits > 10000));
+      && !e.object.pos.lookFor(LOOK_STRUCTURES).filter(s => (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits > 10000).length);
     _.forEach(this.activeBees, bee => this.beeAct(bee, this.enemy, healingTargets, tempTargets));
 
     let readyToGo = this.spawned >= this.maxSpawns;

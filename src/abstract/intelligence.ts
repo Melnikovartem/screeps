@@ -8,7 +8,7 @@ import { profile } from "../profiler/decorator";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "6g3y", "Lapitz", "YoRHa", "buger", "Bestia"];
+export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "6g3y", "Lapitz", "YoRHa", "Bestia"]; // "buger"
 export const NON_AGRESSION_PACKS: string[] = ["TgDgNU"];
 
 export interface Enemy {
@@ -82,7 +82,8 @@ export class Intel {
     let roomInfo = this.getInfo(pos.roomName, lag);
     let ans = 0;
     _.forEach(roomInfo.towers, t => {
-      if ((t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 10) || t.owner.username === "Invader")
+      // 20 cause 1 shot (10) doesn't do shit
+      if ((t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 20) || t.owner.username === "Invader")
         ans += towerCoef(t, pos) * TOWER_POWER_ATTACK;
     });
     return ans;

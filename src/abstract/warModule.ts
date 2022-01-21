@@ -28,7 +28,7 @@ export class WarcrimesModule {
     });
   }
 
-  getOpt(obstacles: { pos: RoomPosition, perc: number }[], ): TravelToOptions {
+  getOpt(obstacles: { pos: RoomPosition, perc: number }[], existingPoints: { x: number, y: number }[]): TravelToOptions {
     return {
       maxRooms: 1,
       offRoad: true,
@@ -44,7 +44,9 @@ export class WarcrimesModule {
             if (terrain.get(x, y) === TERRAIN_MASK_WALL)
               matrix.set(x, y, 0xff);
         _.forEach(obstacles, o => matrix.set(o.pos.x, o.pos.y,
-          Math.floor((o.pos.x <= 2 || o.pos.x >= 47 || o.pos.y <= 1 || o.pos.y >= 47 ? 0xba : 0xa4) * o.perc)));
+          Math.floor((o.pos.x <= 2 || o.pos.x >= 47 || o.pos.y <= 1 || o.pos.y >= 47 ? 0xba : 0xa4) * o.perc
+            * (existingPoints.filter(e => o.pos.getRangeTo(new RoomPosition(e.x, e.y, roomName)) <= 4).length ? 2 : 1))));
+        _.forEach(existingPoints, e => matrix.set(e.x, e.y, existingPoints.length < 5 ? 0xba : 0x2C));
         return matrix;
       }
     }
@@ -82,8 +84,10 @@ export class WarcrimesModule {
         return;
       }
 
-
       let enterances = getEnterances(roomName).filter(ent => (ent.enteranceToRoom && Apiary.intel.getInfo(ent.enteranceToRoom.roomName, Infinity).roomState !== roomStates.ownedByEnemy));
+      let closesHive = Object.values(Apiary.hives).reduce((prev, curr) => curr.pos.getRoomRangeTo(roomName) < prev.pos.getRoomRangeTo(roomName) ? curr : prev);
+      enterances = enterances.sort((a, b) => closesHive.pos.getRoomRangeTo(a.enteranceToRoom!) - closesHive.pos.getRoomRangeTo(b.enteranceToRoom!));
+
       let matrix: { [id: number]: { [id: number]: number } } = {};
       for (let x = 0; x <= 49; ++x) {
         matrix[x] = {};
@@ -145,8 +149,9 @@ export class WarcrimesModule {
       _.forEach(enterances, ent => {
         if (!obstacles.length)
           return;
-        let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }))).path;
-        let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
+        let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }), siedge.breakIn)).path;
+        let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length
+          && !siedge.breakIn.filter(b => o.pos.getRangeTo(new RoomPosition(b.x, b.y, roomName)) < 4).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
         _.forEach(addBreak, b =>
           siedge.breakIn.push({
             x: b.x,
@@ -165,20 +170,23 @@ export class WarcrimesModule {
       let extraSquads: number[] = [];
       for (const br in siedge.squadSlots) {
         let parsed = /(\d*)_(\d*)/.exec(br);
-        if (!parsed || !siedge.breakIn.filter(b => b.x === +parsed![0] && b.y === +parsed![1]).length) {
+        if (!siedge.breakIn.filter(b => b.x === +parsed![0] && b.y === +parsed![1]).length) {
           extraSquads.push(siedge.squadSlots[br].lastSpawned)
           delete siedge.squadSlots[br];
-        }
+        } else
+          siedge.squadSlots[br].type = Math.random() <= 0.5 ? "dism" : "range";
       }
+
       _.forEach(siedge.breakIn, b => {
         if (!siedge.squadSlots[b.x + "_" + b.y] && b.state <= 2)
           siedge.squadSlots[b.x + "_" + b.y] = {
             lastSpawned: extraSquads.pop() || -1,
-            type: "range",
+            type: Math.random() <= 0.2 ? "dism" : "range",
             breakIn: b,
           }
       });
-      if (!siedge.squadSlots.length)
+
+      /* if (!siedge.squadSlots.length && siedge.attackTime)
         siedge.squadSlots[target.pos.x + "_" + target.pos.y] = {
           lastSpawned: extraSquads.pop() || -1,
           type: "duo",
@@ -188,7 +196,7 @@ export class WarcrimesModule {
             ent: roomName,
             state: 2,
           },
-        }
+        } */
 
       if (attackTime)
         for (const br in siedge.squadSlots)
@@ -262,6 +270,7 @@ export class WarcrimesModule {
     if (!enemiesPos.length)
       return;
     let enemy = enemiesPos.reduce((prev, curr) => {
+
       let currS = Apiary.intel.getComplexStats(curr, 4, 2).current;
       let prevS = Apiary.intel.getComplexStats(prev, 4, 2).current;
       let ans = currS.dmgClose + currS.dmgRange - prevS.dmgClose + prevS.dmgRange;
@@ -274,13 +283,13 @@ export class WarcrimesModule {
     });
     let siedge = this.siedge[pos.roomName];
     if (siedge) {
-      if (!siedge.breakIn.filter(b => b.x === enemy.pos.x && b.y === enemy.pos.y).length)
+      /* if (!siedge.breakIn.filter(b => b.x === enemy.pos.x && b.y === enemy.pos.y).length)
         siedge.breakIn.push({
           x: enemy.pos.x,
           y: enemy.pos.y,
           ent: pos.roomName,
           state: 255,
-        });
+        }); */
     }
     return enemy;
   }

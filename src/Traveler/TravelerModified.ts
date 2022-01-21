@@ -428,7 +428,7 @@ export class Traveler {
             return roomInfo.dangerlvlmax >= 6 && !options.ignoreCurrent ? 8 : 1;
           case roomStates.SKfrontier:
           case roomStates.reservedByEnemy:
-            return roomInfo.dangerlvlmax >= 4 && !options.ignoreCurrent ? 8 : 4;
+            return roomInfo.dangerlvlmax >= 4 && !options.ignoreCurrent ? 8 : 2;
           case roomStates.ownedByEnemy:
             return 255; // here never because of checkAvoid
         }

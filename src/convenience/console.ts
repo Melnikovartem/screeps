@@ -38,14 +38,8 @@ export class CustomConsole {
     return `pixel generation is ${Memory.settings.generatePixel ? "on" : "off"}`;
   }
 
-  siedge(roomName: string) {
-    Apiary.warcrimes.updateRoom(roomName, null);
-    this.showSiedge(roomName);
-  }
-
-  attack(roomName: string) {
-    Apiary.warcrimes.updateRoom(roomName, Game.time);
-    this.showSiedge(roomName);
+  siedge(roomName: string, attack = 0) {
+    Apiary.warcrimes.updateRoom(roomName, attack ? Game.time : null);
   }
 
   h(hiveName: string = this.lastActionRoomName) {

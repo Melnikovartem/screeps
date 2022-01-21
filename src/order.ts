@@ -583,7 +583,7 @@ export class FlagOrder {
                       }
                       break;
                     case "buy":
-                      if (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 500000 : 10000)) {
+                      if (this.hive.cells.storage.getUsedCapacity(res) < (res === RESOURCE_ENERGY ? 500000 : 10000) * (fast ? 3 : 1)) {
                         Apiary.broker.buyIn(this.hive.cells.storage.terminal, res, (res === RESOURCE_ENERGY ? 16384 : 2048), hurry
                           , this.ref.includes("noinf") ? undefined : Infinity, fast ? 2 : 50, priceFix || undefined);
                         return;

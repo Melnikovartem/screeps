@@ -112,7 +112,7 @@ export abstract class Master {
         this.hive.spawOrders[ref] = order;
         this.waitingForBees += 1;
       } else if (this.hive.bassboost.state === hiveStates.economy) {
-        order.priority = 9;
+        order.priority = order.priority ? 9 : 5;
         this.hive.bassboost.spawOrders[ref] = order;
         this.waitingForBees += 1;
       }

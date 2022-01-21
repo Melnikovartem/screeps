@@ -21,7 +21,7 @@ export class ClaimerMaster extends SwarmMaster {
         setup.patternLimit = 5;
       this.wish({
         setup: setup,
-        priority: 8,
+        priority: 2,
       });
     }
   }

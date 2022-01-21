@@ -51,7 +51,8 @@ export class FastRefillCell extends Cell {
     super.update();
     if (!this.link)
       this.delete();
-    let emptyContainers = <StructureContainer[]>this.masters.filter(m => m.container && m.container.store.getUsedCapacity(RESOURCE_ENERGY) < CONTAINER_CAPACITY * 0.1).map(m => m.container);
+    let emptyContainers = <StructureContainer[]>this.masters
+      .filter(m => m.container && m.container.store.getUsedCapacity(RESOURCE_ENERGY) < CONTAINER_CAPACITY * 0.5).map(m => m.container);
     this.needEnergy = !!emptyContainers.length;
     if (!this.needEnergy)
       return;
@@ -69,7 +70,7 @@ export class FastRefillCell extends Cell {
       return;
     if (this.link && this.sCell.link) {
       let freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-      if (freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) || freeCap >= LINK_CAPACITY * 0.5) {
+      if (freeCap >= LINK_CAPACITY * 0.75 && (freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) || freeCap >= LINK_CAPACITY * 0.9)) {
         let amount = Math.min(freeCap, this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY));
         if (!this.sCell.link.cooldown && this.sCell.link.transferEnergy(this.link, amount) === OK)
           if (Apiary.logger)

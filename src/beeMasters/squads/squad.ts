@@ -395,7 +395,7 @@ export abstract class SquadMaster extends SwarmMaster {
     let busy = false;
     let notNearExit = (bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47);
     if (enemy && bee.pos.roomName === this.pos.roomName) {
-      moveTarget = enemy.pos;
+      moveTarget = this.stats.current.dism && this.pos.getRangeTo(this.formationCenter) > 3 ? moveTarget : enemy.pos;
       opt.movingTarget = true;
       if (notNearExit && bee.pos.getRangeTo(enemy) < 10) {
         let rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
@@ -491,7 +491,7 @@ export abstract class SquadMaster extends SwarmMaster {
       let beeStats = Apiary.intel.getStats(bee.creep);
       let myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
       let heal = Math.max(myStats.heal * 0.75, this.stats.current.heal); // 0.75 cause won't heal somtimes in a brawl
-      if (towerDmg + creepDmg > heal + Math.min(beeStats.current.resist, heal * 0.7 / 0.3))
+      if (towerDmg * 0.5 + creepDmg > heal + Math.min(beeStats.current.resist, heal * 0.7 / 0.3))
         return true;
     }
     return false;
