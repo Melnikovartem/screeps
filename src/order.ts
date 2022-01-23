@@ -658,8 +658,10 @@ export class FlagOrder {
       this.memory.info = undefined;
       this.memory.extraInfo = undefined;
       this.memory.extraPos = undefined;
-      if (this.master)
+      if (this.master) {
         this.master.delete();
+        this.master = undefined;
+      }
       this.acted = false;
       return;
     }

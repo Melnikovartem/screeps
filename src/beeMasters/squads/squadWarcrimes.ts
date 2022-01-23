@@ -506,8 +506,6 @@ export class SquadWarCrimesMaster extends Master {
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null, tempTarget: Enemy[]) {
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
-    if (roomInfo.safeModeEndTime >= Game.time && this.pos.roomName !== this.hive.roomName)
-      this.pos = this.hive.rest;
     let moveTarget = this.formationCenter.getRoomRangeTo(this.pos) <= 1 ? this.pos : new RoomPosition(25, 25, this.info.ent);
     let opt = this.getPathArgs(bee.ref);
     let fatigue = 0;
@@ -518,8 +516,9 @@ export class SquadWarCrimesMaster extends Master {
     if (safeMode > bee.ticksToLive) { // || !siedge || siedge.towerDmgBreach * 0.3 > this.stats.max.heal
       enemy = undefined;
       let unboost = bee.ticksToLive < 50 && this.hive.cells.lab && this.hive.cells.lab.getUnboostLab(bee.ticksToLive)
-      moveTarget = (unboost && unboost.pos) || this.hive.rest
-    }
+      moveTarget = (unboost && unboost.pos) || this.hive.rest;
+    } else if (safeMode > 0)
+      moveTarget = new RoomPosition(25, 25, this.info.ent);
 
     if (this.stuckSiedge > 10) {
       padding = this.stuckSiedge > 15 ? -1 : 0;

@@ -73,6 +73,7 @@ export class WarcrimesModule {
     if (siedge.lastUpdated + CREEP_LIFE_TIME < Game.time || attackTime !== undefined) {
       let room = Game.rooms[roomName];
       if (!room) {
+        siedge.lastUpdated = -1;
         Apiary.requestSight(roomName);
         return;
       }
@@ -94,6 +95,7 @@ export class WarcrimesModule {
         for (let y = 0; y <= 49; ++y)
           matrix[x][y] = 0xff;
       }
+
       _.forEach(enterances, ent => this.dfs(ent, matrix));
 
       // find breach points
@@ -146,25 +148,35 @@ export class WarcrimesModule {
       siedge.breakIn = [];
       siedge.freeTargets = [];
 
-      _.forEach(enterances, ent => {
-        if (!obstacles.length)
-          return;
-        let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }), siedge.breakIn)).path;
-        let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length
-          && !siedge.breakIn.filter(b => o.pos.getRangeTo(new RoomPosition(b.x, b.y, roomName)) < 4).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
-        _.forEach(addBreak, b =>
-          siedge.breakIn.push({
-            x: b.x,
-            y: b.y,
-            ent: (ent.enteranceToRoom || ent).roomName,
-            state: matrix[b.x] && matrix[b.x][b.y] || 255,
-          }));
-        obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
-      });
+      if (matrix[target.pos.x][target.pos.y] <= 2) {
+        siedge.breakIn = [{
+          x: target.pos.x,
+          y: target.pos.y,
+          ent: roomName,
+          state: 1,
+        }];
+      } else
+        _.forEach(enterances, ent => {
+          if (!obstacles.length)
+            return;
+          let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }), siedge.breakIn)).path;
+          let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length
+            && !siedge.breakIn.filter(b => o.pos.getRangeTo(new RoomPosition(b.x, b.y, roomName)) < 4).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
+          _.forEach(addBreak, b =>
+            siedge.breakIn.push({
+              x: b.x,
+              y: b.y,
+              ent: (ent.enteranceToRoom || ent).roomName,
+              state: matrix[b.x] && matrix[b.x][b.y] || 255,
+            }));
+          obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
+        });
 
       if (roomInfo.safeModeEndTime > 0)
         siedge.attackTime = Math.max(roomInfo.safeModeEndTime - 100, siedge.attackTime || 0);
-      if (target instanceof StructureController && !siedge.breakIn.length)
+      if (target instanceof StructureController
+        && target.pos.getOpenPositions(true).filter(p => matrix[p.x][p.y] <= 1
+          && !p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType !== STRUCTURE_ROAD).length).length)
         siedge.attackTime = null;
 
       let extraSquads: number[] = [];
