@@ -60,8 +60,8 @@ function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
       if (roomInfo.roomState === roomStates.SKfrontier && room) {
         for (let structure of room.find<Structure>(FIND_STRUCTURES))
           if (structure instanceof StructureKeeperLair) {
-            _.forEach(structure.pos.getOpenPositions(true, 3), p => costMatrix.set(p.x, p.y,
-              Math.max(costMatrix.get(p.x, p.y), 0x03 * (4 - p.getTimeForPath(structure)))));
+            _.forEach(structure.pos.getOpenPositions(true, 1), p => costMatrix.set(p.x, p.y,
+              Math.max(costMatrix.get(p.x, p.y), 0x03 * (2 - p.getTimeForPath(structure)))));
             costMatrix.set(structure.pos.x, structure.pos.y, 0xff);
           }
       }

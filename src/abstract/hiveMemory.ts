@@ -11,6 +11,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   upgrade: 1,
   lab: 2,
   buyIn: 1,
+  sellOff: 1,
 }
 
 export interface HiveCache {
@@ -24,9 +25,10 @@ export interface HiveCache {
     war: 0 | 1,
     unboost: 0 | 1,
     saveCpu: 0 | 1,
-    upgrade: 0 | 1 | 2, // do not, up to lvl 8, 15 after lvl 8
+    upgrade: 0 | 1 | 2 | 3, // do not, up to lvl 8, 15 after lvl 8, boosted after lvl 8
     lab: 0 | 1 | 2, // do not, if any is needed, just produce
     buyIn: 0 | 1 | 2 | 3, // nothing, minerals, minerals + energy + ops, anything
+    sellOff: 0 | 1, // drop / sellOff for balance
   }
 }
 

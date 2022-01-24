@@ -68,7 +68,7 @@ export class CustomConsole {
     return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
   }
 
-  mode(mode = "", hiveName?: string) {
+  mode(mode = "", hiveName?: string, value: number = 1) {
     let ans = "";
     _.forEach(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
       let dd = Memory.cache.hives[h.roomName].do;
@@ -92,6 +92,18 @@ export class CustomConsole {
           dd.unboost = on;
           dd.saveCpu = on;
           break;
+        case "upd":
+        case "upgrade":
+          if (value === 0 || value === 1 || value === 2 || value === 3)
+            dd.upgrade = value;
+          break;
+        case "sellOff":
+          if (value === 0 || value === 1)
+            dd.sellOff = value;
+          break;
+        case "buyIn":
+          if (value === 0 || value === 1)
+            dd.buyIn = value;
         case "def":
         case "default":
           dd = BASE_MODE_HIVE;
@@ -102,8 +114,9 @@ export class CustomConsole {
         }:\n${addString("depositRefining", "refining") + addString("depositMining", "deposit")
         }\n${addString("powerRefining", "refining") + addString("powerMining", "power")
         }\n${addString("war") + addString("lab")
-        }\n${addString("buyIn")
-        }\n${addString("saveCpu", "cpu") + addString("unboost")}\n`;
+        }\n${addString("sellOff") + addString("buyIn")
+        }\n${addString("saveCpu", "cpu") + addString("unboost")
+        }\n${addString("upgrade")}\n`;
     });
     return ans;
   }

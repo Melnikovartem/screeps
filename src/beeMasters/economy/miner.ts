@@ -147,14 +147,15 @@ export class MinerMaster extends Master {
           bee.transfer(this.cell.link, this.cell.resourceType);
       } else if (!this.cell.container && bee.store.getUsedCapacity(RESOURCE_ENERGY) >= Math.min(bee.workMax * 5, bee.store.getCapacity(RESOURCE_ENERGY))) {
         let construction = this.construction;
+        mode = 2;
         if (construction) {
           if (bee.build(construction) === OK && Apiary.logger) {
             let spend = Math.min(bee.workMax * 5, bee.store.getUsedCapacity(RESOURCE_ENERGY), construction.progressTotal - construction.progress);
             Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerRef, spend);
             Apiary.logger.addResourceStat(this.hive.roomName, this.cell.loggerUpkeepRef, -spend);
           }
-        }
-        mode = 2;
+        } else if (this.cell.lair)
+          mode = 0;
       }
 
       if (!lairSoonSpawn)

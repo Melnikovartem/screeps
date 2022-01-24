@@ -124,7 +124,6 @@ export class Hive {
   resTarget: { "energy": number } & ResTarget = {
     // energy
     [RESOURCE_ENERGY]: HIVE_ENERGY,
-    [BOOST_MINERAL.harvest[0]]: HIVE_MINERAL, // effective by CPU mining
     [BOOST_MINERAL.build[2]]: HIVE_MINERAL * 2,
     // cheap but good
     // [BOOST_MINERAL.fatigue[0]]: HIVE_MINERAL / 2,
@@ -185,6 +184,9 @@ export class Hive {
 
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL * 2;
+
+        if (this.shouldDo("saveCpu"))
+          this.resTarget[BOOST_MINERAL.harvest[0]] = HIVE_MINERAL;
 
         // protect expansions with boost creeps + more attack
         this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;

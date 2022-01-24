@@ -29,7 +29,8 @@ export class UpgraderMaster extends Master {
       return;
     }
 
-    this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
+    if (polen != 2 || this.cell.controller.level < 8)
+      this.boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
 
     let storeAmount = this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
     // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere

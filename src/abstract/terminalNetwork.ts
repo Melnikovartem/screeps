@@ -8,11 +8,12 @@ import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
 import type { Hive, ResTarget } from "../hive";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
+const FREE_CAPACITY = STORAGE_CAPACITY * 0.1
 
 @profile
 export class Network {
   nodes: Hive[] = [];
-  aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number } } = {} // from -> to
+  aid: { [hiveNameFrom: string]: { to: string, res: ResourceConstant, amount: number, excess?: number } } = {} // from -> to
   resState: ResTarget = {};
 
   init() {
@@ -36,7 +37,8 @@ export class Network {
       if (!sCell)
         continue;
       let aid = this.aid[hiveName];
-      aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
+      if (!aid.excess)
+        aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
       if (!this.hiveValidForAid(Apiary.hives[aid.to]) || aid.amount <= 0 || hive.state !== hiveStates.economy) {
         delete this.aid[hiveName];
         continue;
@@ -123,9 +125,13 @@ export class Network {
             amount = Math.floor(amount * (1 - energyCost));
 
           if (amount > 0) {
-            terminal.send(aid.res, amount, aid.to);
-            if (Apiary.logger)
-              Apiary.logger.newTerminalTransfer(terminal, terminalTo, amount, aid.res);
+            let ans = terminal.send(aid.res, amount, aid.to);
+            if (ans === OK) {
+              if (Apiary.logger)
+                Apiary.logger.newTerminalTransfer(terminal, terminalTo, amount, aid.res);
+              if (aid.excess)
+                aid.amount -= amount;
+            }
             continue;
           }
         }
@@ -146,15 +152,15 @@ export class Network {
         continue;
 
       let stStore = hive.cells.storage.storage.store;
-      if (stStore.getUsedCapacity() > stStore.getCapacity() * 0.9 && hive.cells.storage.storage instanceof StructureStorage) {
+      if (stStore.getFreeCapacity() < FREE_CAPACITY * 0.5 && hive.cells.storage.storage instanceof StructureStorage) {
         let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
-        // keys = keys.filter(s => s !== RESOURCE_ENERGY)
         if (!keys.length)
           continue;
         let res = keys.reduce((prev, curr) => hive.resState[curr]! > hive.resState[prev]! ? curr : prev);
         if (hive.resState[res]! < 0)
           continue;
-        Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
+        if (hive.shouldDo("sellOff"))
+          Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
       }
     }
   }
@@ -184,6 +190,24 @@ export class Network {
           break;
         } else
           hive.shortages[res] = -hive.resState[res]!;
+      }
+    }
+
+    if (hive.cells.storage && hive.cells.storage.storage.store.getFreeCapacity() < FREE_CAPACITY && !this.aid[hive.roomName]) {
+      let emptyHive = _.filter(this.nodes, h => h.roomName !== hive.roomName && h.cells.storage
+        && h.cells.storage.storage.store.getFreeCapacity() > FREE_CAPACITY * 1.5)[0];
+      if (emptyHive) {
+        let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
+        if (keys.length) {
+          let res = keys.reduce((prev, curr) => hive.resState[curr]! > hive.resState[prev]! ? curr : prev);
+          if (hive.resState[res]! > 0)
+            this.aid[hive.roomName] = {
+              to: emptyHive.roomName,
+              res: res,
+              amount: FREE_CAPACITY * 0.1,
+              excess: 1,
+            }
+        }
       }
     }
   }

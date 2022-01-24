@@ -103,7 +103,8 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
       this.actionPosition = pos;
       return OK;
     } else {
-      opt.range = range;
+      opt.range = range > 1 && this.pos.roomName !== pos.roomName
+        && (pos.x <= range || pos.x >= 49 - range || pos.y <= range || pos.y >= 49 - range) ? 1 : range;
       return this.goTo(pos, opt);
     }
   }
