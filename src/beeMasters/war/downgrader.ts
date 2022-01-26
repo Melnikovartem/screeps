@@ -58,7 +58,7 @@ export class DowngradeMaster extends SwarmMaster {
           }
         }
       }
-      this.checkFlee(bee);
+      this.checkFlee(bee, { pos: this.pos }, undefined, false);
     });
   }
 }

@@ -6,34 +6,13 @@ import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-
-import type { Boosts } from "../_Master";
-
 // most basic of bitches a horde full of wasps
 
 @profile
 export class HordeDefenseMaster extends HordeMaster {
 
-  get boosts() {
-    return <Boosts | undefined>(this.order && this.order.memory.extraInfo && this.order.memory.extraInfo.boosts);
-  }
-
-  set boosts(value) {
-    if (this.order && this.order.memory.extraInfo)
-      this.order.memory.extraInfo.boosts = value;
-  }
-
   get maxSpawns() {
     return this.targetBeeCount;
-  }
-
-  get targetBeeCount(): number {
-    return this.order && this.order.memory.extraInfo && this.order.memory.extraInfo.targetBeeCount;
-  }
-
-  set targetBeeCount(value) {
-    if (this.order && this.order.memory.extraInfo)
-      this.order.memory.extraInfo.targetBeeCount = value;
   }
 
   set maxSpawns(_) { }
@@ -44,8 +23,6 @@ export class HordeDefenseMaster extends HordeMaster {
       this.order.delete();
     else
       Apiary.defenseSwarms[this.pos.roomName] = this;
-    if (!this.order.memory.extraInfo)
-      this.order.memory.extraInfo = { targetBeeCount: 1 };
   }
 
   update() {

@@ -506,9 +506,8 @@ export class DefenseCell extends Cell {
             Apiary.logger.addResourceStat(this.hive.roomName, "defense_repair", -10);
         }
       });
-      if (!workingTower) {
-        console.log(this.hive.print, this.checkAndDefend(this.pos.roomName));
-      }
+      if (!workingTower)
+        this.checkAndDefend(this.pos.roomName);
     } else if (healTarget) {
       _.forEach(this.towers, tower => {
         if (tower.store.getUsedCapacity(RESOURCE_ENERGY) < tower.store.getCapacity(RESOURCE_ENERGY) * 0.7)

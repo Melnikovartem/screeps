@@ -261,8 +261,7 @@ export class Logger {
       return;
     if (!Memory.report.orders)
       Memory.report.orders = {};
-    let repeat = order.memory.repeat ? "_" + order.memory.repeat : "";
-    Memory.report.orders[order.ref + repeat] = {
+    Memory.report.orders[order.ref] = {
       time: Game.time,
       pos: order.pos,
     }

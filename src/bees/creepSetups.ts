@@ -190,7 +190,7 @@ export const setups = {
     }, "best", 2),
   },
   knight: new CreepSetup(setupsNames.knight, {
-    fixed: [HEAL, HEAL, HEAL, HEAL, HEAL, TOUGH],
+    fixed: [HEAL, HEAL, HEAL, HEAL, HEAL],
     pattern: [RANGED_ATTACK],
   }, "best"),
   dismantler: new CreepSetup(setupsNames.dismantler, {

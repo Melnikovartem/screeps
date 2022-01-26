@@ -86,7 +86,6 @@ export class FlagOrder {
     let newMemory: FlagMemory = {
       hive: this.hive.roomName,
       info: this.memory.info,
-      repeat: this.memory.repeat,
       extraPos: this.memory.extraPos,
       extraInfo: this.memory.extraInfo,
     };
@@ -154,7 +153,6 @@ export class FlagOrder {
     this.acted = true;
     switch (this.color) {
       case COLOR_RED:
-        this.flag.memory.repeat = this.flag.memory.repeat ? this.flag.memory.repeat : 0;
         if (!this.master)
           switch (this.secondaryColor) {
             case COLOR_BLUE:
@@ -354,6 +352,14 @@ export class FlagOrder {
           });
 
         switch (this.secondaryColor) {
+          case COLOR_BROWN:
+            let room = Game.rooms[this.pos.roomName];
+            if (room && room.controller && room.controller.my) {
+              _.forEach(room.find(FIND_HOSTILE_STRUCTURES), s => s.destroy());
+              _.forEach(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), c => c.remove());
+            }
+            this.delete();
+            break;
           case COLOR_BLUE:
             let baseRotation: ExitConstant = BOTTOM;
             if (this.ref.includes("right"))
@@ -651,20 +657,6 @@ export class FlagOrder {
 
   // what to do when delete if something neede
   delete() {
-    if (this.memory.repeat && this.memory.repeat > 0) {
-      if (Apiary.logger)
-        Apiary.logger.reportOrder(this);
-      this.memory.repeat -= 1;
-      this.memory.info = undefined;
-      this.memory.extraInfo = undefined;
-      this.memory.extraPos = undefined;
-      if (this.master) {
-        this.master.delete();
-        this.master = undefined;
-      }
-      this.acted = false;
-      return;
-    }
 
     if (Apiary.logger)
       Apiary.logger.reportOrder(this);
@@ -678,12 +670,6 @@ export class FlagOrder {
               hiveBoosted.bassboost = null;
               if (hiveBoosted.cells.dev && hiveBoosted.cells.dev.master)
                 hiveBoosted.cells.dev.master.recalculateTargetBee();
-              let pos = hiveBoosted.room.controller && hiveBoosted.room.controller.pos;
-              if (pos) {
-                let newPos = [new RoomPosition(pos.x, pos.y + 1, pos.roomName), new RoomPosition(pos.x, pos.y - 1, pos.roomName)]
-                  .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0] || new RoomPosition(pos.x, pos.y, pos.roomName);
-                newPos.createFlag(prefix.upgrade + hiveBoosted.roomName, COLOR_BLUE, COLOR_YELLOW);
-              }
             }
             break;
           case COLOR_PURPLE:

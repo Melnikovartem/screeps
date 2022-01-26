@@ -53,7 +53,6 @@ declare global {
 
   interface FlagMemory {
     hive: string;
-    repeat?: number;
     info?: number; // for different tasks
 
     extraPos?: RoomPosition

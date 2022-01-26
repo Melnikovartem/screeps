@@ -13,12 +13,14 @@ const ticksToSpawn = (x: StructureKeeperLair) => x.ticksToSpawn ? x.ticksToSpawn
 @profile
 export class SKMaster extends HordeMaster {
   // failsafe
-  maxSpawns: number = Infinity;
   lairs: StructureKeeperLair[] = [];
 
   constructor(order: FlagOrder) {
     super(order);
+    this.maxSpawns = Infinity;
   }
+
+  init() { }
 
   update() {
     SwarmMaster.prototype.update.call(this);
@@ -30,14 +32,14 @@ export class SKMaster extends HordeMaster {
           this.order.delete();
       }
 
-      if (!this.order.memory.extraInfo && this.lairs.length) {
+      if (!this.maxPath && this.lairs.length) {
         let max = 0;
         _.forEach(this.lairs, lair => {
           let time = this.hive.pos.getTimeForPath(lair);
           if (max < time)
             max = time;
         });
-        this.order.memory.extraInfo = max;
+        this.maxPath = max;
       }
 
       for (let i = 0; i < this.lairs.length; ++i)
@@ -48,7 +50,7 @@ export class SKMaster extends HordeMaster {
       return;
 
     if (!this.hive.annexInDanger.includes(this.pos.roomName) &&
-      this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.order.memory.extraInfo - 50)
+      this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.maxPath - 50)
       && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8)
       this.wish({
         setup: setups.defender.sk,

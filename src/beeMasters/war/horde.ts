@@ -8,6 +8,7 @@ import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
 import type { FlagOrder } from "../../order";
 import type { CreepBattleInfo } from "../../abstract/intelligence";
+import type { Boosts } from "../_Master";
 
 const BOOST_LVL = 2;
 
@@ -15,41 +16,73 @@ const BOOST_LVL = 2;
 @profile
 export class HordeMaster extends SwarmMaster {
   // failsafe
-  maxSpawns: number = 1;
   movePriority = <3 | 4>4;
-  holdPosition = false;
   setup = setups.knight.copy();
   notify = false;
 
   constructor(order: FlagOrder) {
     super(order);
+    if (!this.order.memory.extraInfo)
+      this.order.memory.extraInfo = { targetBeeCount: 1, maxSpawns: 1 };
     this.init();
   }
 
+  get targetBeeCount(): number {
+    return this.order && this.order.memory.extraInfo && this.order.memory.extraInfo.targetBeeCount;
+  }
+
+  set targetBeeCount(value) {
+    if (this.order && this.order.memory.extraInfo)
+      this.order.memory.extraInfo.targetBeeCount = value;
+  }
+
+  get maxSpawns(): number {
+    let maxSpawns = this.order && this.order.memory.extraInfo && this.order.memory.extraInfo.maxSpawns;
+    return maxSpawns === null ? Infinity : maxSpawns;
+  }
+
+  set maxSpawns(value) {
+    if (this.order && this.order.memory.extraInfo)
+      this.order.memory.extraInfo.maxSpawns = value;
+  }
+
+  get boosts() {
+    return <Boosts | undefined>(this.order && this.order.memory.extraInfo && this.order.memory.extraInfo.boosts);
+  }
+
+  set boosts(value) {
+    if (this.order && this.order.memory.extraInfo)
+      this.order.memory.extraInfo.boosts = value;
+  }
+
+  get maxPath(): number {
+    return this.order.memory.extraInfo && this.order.memory.extraInfo.maxPath || 0;
+  }
+
+  set maxPath(value) {
+    if (this.order && this.order.memory.extraInfo)
+      this.order.memory.extraInfo.maxPath = value;
+  }
+
   init() {
-    if (this.order.ref.includes("hold"))
-      this.holdPosition = true;
     if (this.order.ref.includes("boost"))
       this.boosts = [{ type: "rangedAttack", lvl: BOOST_LVL }, { type: "attack", lvl: BOOST_LVL }
         , { type: "heal", lvl: BOOST_LVL }, { type: "fatigue", lvl: BOOST_LVL }, { type: "damage", lvl: BOOST_LVL },
       { type: "dismantle", lvl: 2 }, { type: "dismantle", lvl: 1 }, { type: "dismantle", lvl: 0 }];
-
     if (this.order.ref.includes("harass")) {
-      this.maxSpawns = 8; // ~ 10H of non stop harass max ~ 10K energy
+      this.maxSpawns = 8; // ~ 10H of non stop low lvl harass max ~ 10K energy
       this.setup.fixed = [HEAL, ATTACK];
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
-    else if (this.order.ref.includes("destroyer")) {
-      this.movePriority = 3;
-      this.setup = setups.defender.destroyer.copy();
-      this.setup.fixed = [TOUGH, TOUGH, TOUGH];
-    } else if (this.boosts && !this.order.ref.includes("full")) {
+    else if (this.boosts && !this.order.ref.includes("full")) {
       this.setup.patternLimit = 5;
       this.setup.fixed = [TOUGH, HEAL, HEAL];
     }
     if (this.order.ref.includes("keep"))
-      this.maxSpawns = Infinity;
+      this.maxSpawns = 30;
+    if (!this.maxPath)
+      this.maxPath = this.hive.pos.getTimeForPath(this);
   }
 
   get emergency() {
@@ -60,7 +93,7 @@ export class HordeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
-    if (this.checkBees(this.emergency) && (Game.time >= roomInfo.safeModeEndTime - 250)) {
+    if (this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10) && (Game.time >= roomInfo.safeModeEndTime - 250)) {
       this.wish({
         setup: this.setup,
         priority: 4,
@@ -205,7 +238,7 @@ export class HordeMaster extends SwarmMaster {
     else if (loosingBattle < 0)
       targetedRange = Infinity;
 
-    if (this.holdPosition || !target)
+    if (!target)
       return OK;
 
     let shouldFlee = rangeToTarget < targetedRange;
@@ -291,7 +324,7 @@ export class HordeMaster extends SwarmMaster {
             if (!enemy)
               enemy = Apiary.intel.getEnemyStructure(pos, 50);
           } else
-            enemy = Apiary.intel.getEnemy(pos, bee.pos.enteranceToRoom ? 0 : 10);
+            enemy = Apiary.intel.getEnemy(pos, bee.pos.x <= 3 || bee.pos.x >= 47 || bee.pos.y <= 3 || bee.pos.y >= 47 ? 0 : 10);
 
           if (!enemy) {
             let healingTarget = this.activeBees.filter(b => b.hits < b.hitsMax && b.pos.getRangeTo(bee) <= 2)[0];

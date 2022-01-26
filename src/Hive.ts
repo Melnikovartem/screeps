@@ -608,7 +608,7 @@ export class Hive {
     if ((this.state === hiveStates.nospawn
       || (this.state === hiveStates.lowenergy && (!this.cells.storage || this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 5000)))
       && !Apiary.orders[prefix.boost + this.roomName]) {
-      let validHives = _.filter(Apiary.hives, h => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRoomRangeTo(h) < 5 && h.phase > 0)
+      let validHives = _.filter(Apiary.hives, h => h.roomName !== this.roomName && h.state === hiveStates.economy && this.pos.getRoomRangeTo(h) <= 10 && h.phase > 0);
       if (validHives.length)
         this.pos.createFlag(prefix.boost + this.roomName, COLOR_PURPLE, COLOR_WHITE);
     }

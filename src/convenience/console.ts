@@ -104,6 +104,7 @@ export class CustomConsole {
         case "buyIn":
           if (value === 0 || value === 1)
             dd.buyIn = value;
+          break;
         case "def":
         case "default":
           dd = BASE_MODE_HIVE;
