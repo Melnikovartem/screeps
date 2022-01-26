@@ -46,7 +46,12 @@ export class DowngradeMaster extends SwarmMaster {
 
   run() {
     _.forEach(this.activeBees, bee => {
-      if (!bee.pos.isNearTo(this.pos))
+      if (this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE > bee.ticksToLive && bee.pos.roomName === this.pos.roomName) {
+        let room = Game.rooms[bee.pos.roomName];
+        let cc = bee.pos.findClosest(room.find(FIND_HOSTILE_CONSTRUCTION_SITES).filter(c => c.progress));
+        if (cc)
+          bee.goTo(cc);
+      } else if (!bee.pos.isNearTo(this.pos))
         bee.goTo(this.pos);
       else if (Game.time >= this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE) {
         let room = Game.rooms[this.pos.roomName];
