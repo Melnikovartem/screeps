@@ -79,8 +79,17 @@ export class WarcrimesModule {
       }
       siedge.lastUpdated = Game.time;
       let roomInfo = Apiary.intel.getInfo(roomName);
+      let invaderRaid = roomInfo.roomState === roomStates.SKfrontier;
       if (roomInfo.roomState !== roomStates.ownedByEnemy
         && !(roomInfo.dangerlvlmax >= 8 && roomInfo.roomState === roomStates.SKfrontier)) {
+        if (invaderRaid) {
+          let containers = <StructureContainer[]>room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTAINER);
+          let resourcesAmount = _.sum(containers, s => s.store.getUsedCapacity());
+          if (resourcesAmount > 0) {
+            let haulers = Math.min(Math.ceil(resourcesAmount / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)), 2);
+            containers[0].pos.createFlag(haulers + prefix.steal + roomName, COLOR_ORANGE, COLOR_GREEN);
+          }
+        }
         delete Memory.cache.war.siedgeInfo[roomName];
         return;
       }
@@ -148,7 +157,8 @@ export class WarcrimesModule {
       siedge.breakIn = [];
       siedge.freeTargets = [];
 
-      if (matrix[target.pos.x][target.pos.y] <= 2) {
+      let brokeIn = matrix[target.pos.x][target.pos.y] <= 2;
+      if (brokeIn) {
         siedge.breakIn = [{
           x: target.pos.x,
           y: target.pos.y,
@@ -179,21 +189,38 @@ export class WarcrimesModule {
           && !p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType !== STRUCTURE_ROAD).length).length)
         siedge.attackTime = null;
 
+      let store = brokeIn && (room.storage || room.terminal)
+      if (store && !Apiary.intel.getTowerAttack(store.pos)
+        && !store.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN)) {
+        let resourcesAmount = store.store.getUsedCapacity();
+        if (resourcesAmount > 0) {
+          let haulers = Math.min(Math.ceil(resourcesAmount / (MAX_CREEP_SIZE * CARRY_CAPACITY / 2)), 4);
+          store.pos.createFlag(haulers + prefix.steal + roomName, COLOR_ORANGE, COLOR_GREEN);
+        }
+      }
+
       let extraSquads: number[] = [];
+      let getType = (prob: number) => {
+        if (invaderRaid)
+          return "range";
+        if (brokeIn)
+          return "duo";
+        return Math.random() <= prob ? "dism" : "range";
+      }
       for (const br in siedge.squadSlots) {
         let parsed = /(\d*)_(\d*)/.exec(br);
         if (!siedge.breakIn.filter(b => b.x === +parsed![0] && b.y === +parsed![1]).length) {
           extraSquads.push(siedge.squadSlots[br].lastSpawned)
           delete siedge.squadSlots[br];
         } else
-          siedge.squadSlots[br].type = Math.random() <= 0.5 ? "dism" : "range";
+          siedge.squadSlots[br].type = getType(0.5);
       }
 
       _.forEach(siedge.breakIn, b => {
         if (!siedge.squadSlots[b.x + "_" + b.y] && b.state <= 2)
           siedge.squadSlots[b.x + "_" + b.y] = {
             lastSpawned: extraSquads.pop() || -1,
-            type: Math.random() <= 0.2 ? "dism" : "range",
+            type: getType(0.2),
             breakIn: b,
           }
       });
@@ -365,7 +392,9 @@ export class WarcrimesModule {
     let healNeeded = dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal * HEAL_COEF;
 
     let healPerBee = Math.ceil(healNeeded / 4);
-    let toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
+    let toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
+    if (toughPerBee > 15)
+      toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
 
     if (!dmgAfterTough) {
       healPerBee = 5;
@@ -391,7 +420,9 @@ export class WarcrimesModule {
     let healNeeded = dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal * HEAL_COEF;
 
     let healPerBee = Math.ceil(healNeeded / 2);
-    let toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
+    let toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
+    if (toughPerBee > 15)
+      toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
 
     if (!dmgAfterTough) {
       healPerBee = 5;

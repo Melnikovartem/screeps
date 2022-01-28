@@ -25,11 +25,9 @@ import { ClaimerMaster } from "./beeMasters/civil/claimer";
 
 import { hiveStates, prefix, roomStates } from "./enums";
 import { makeId, findOptimalResource } from "./abstract/utils";
-import { REACTION_MAP } from "./cells/stage1/laboratoryCell";
 
 import { profile } from "./profiler/decorator";
 
-import type { ReactionConstant } from "./cells/stage1/laboratoryCell";
 import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
 import type { Hive } from "./Hive";
 
@@ -269,7 +267,7 @@ export class FlagOrder {
               if (!this.master)
                 this.master = new ClaimerMaster(this);
             } else
-              this.delete();
+              this.acted = false;
             break;
           case COLOR_WHITE:
             this.acted = false;
@@ -522,29 +520,16 @@ export class FlagOrder {
           }
         break;
       case COLOR_BLUE:
+        if (this.hive.roomName !== this.pos.roomName && this.secondaryColor !== COLOR_YELLOW) {
+          this.delete();
+          break;
+        }
         switch (this.secondaryColor) {
           case COLOR_YELLOW:
             this.master = new ContainerBuilderMaster(this);
             break;
           case COLOR_PURPLE:
             this.master = new SignerMaster(this);
-            break;
-          case COLOR_CYAN:
-            if (!this.hive.cells.lab) {
-              this.delete();
-              break;
-            }
-            this.hive.cells.lab.synthesizeRes = undefined;
-            this.hive.cells.lab.prod = undefined;
-            if (this.ref.includes("produce")) {
-              let final = <ReactionConstant>this.flag.name.split("_")[1];
-              if (!final || !REACTION_MAP[final]) {
-                this.delete();
-                break;
-              }
-              this.hive.cells.lab.synthesizeTarget = { res: final, amount: Infinity };
-            } else
-              this.delete();
             break;
         }
         break;

@@ -622,18 +622,18 @@ export class SquadWarCrimesMaster extends Master {
         if (this.canBeOutDmged(bee.pos, padding) && rightRoom) {
           opt = this.getPathArgs(bee.ref, true);
           let exit = bee.pos.findClosest(Game.rooms[bee.pos.roomName].find(FIND_EXIT));
-          // console.log("flee", bee.pos, this.stuckSiedge);
+          // console .log("flee", bee.pos, this.stuckSiedge);
           this.stuckSiedge++;
           bee.goTo(exit || this.pos, opt);
         } else if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition, padding)) {
           this.stuckSiedge++;
-          // console.log("stop", bee.targetPosition, this.stuckSiedge);
+          // console .log("stop", bee.targetPosition, this.stuckSiedge);
           if (rightRoom)
             bee.stop();
         } else if (roomInfo.roomState === roomStates.ownedByEnemy && notNearExit) {
           let formationBreak = bee.targetPosition && this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
           if (formationBreak) {
-            // console.log("break", this.getSquadMoveMentValue(bee.targetPosition!, bee.ref, false), this.stuckSiedge);
+            // console .log("break", this.getSquadMoveMentValue(bee.targetPosition!, bee.ref, false), this.stuckSiedge);
             let range = 2;
             if (this.stats.current.dism)
               range = 1;

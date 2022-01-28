@@ -10,6 +10,7 @@ import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
 import type { TransferRequest } from "../bees/transferRequest";
 import type { HiveCache } from "../abstract/hiveMemory";
+import type { ReactionConstant } from "../cells/stage1/laboratoryCell";
 
 export class CustomConsole {
   lastActionRoomName: string;
@@ -680,9 +681,9 @@ export class CustomConsole {
     return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
   }
 
-  produce(resource: string, hiveName: string = this.lastActionRoomName) {
+  produce(resource: ReactionConstant, hiveName: string = this.lastActionRoomName, amount = 10000) {
     hiveName = hiveName.toUpperCase();
-    resource = resource.toUpperCase();
+    resource = <ReactionConstant>resource.toUpperCase();
 
     let hive = Apiary.hives[hiveName];
     if (!hive)
@@ -690,17 +691,14 @@ export class CustomConsole {
     this.lastActionRoomName = hive.roomName;
     if (!hive.cells.lab)
       return `ERROR: LAB NOT FOUND @ ${hive.print}`;
-    let pos = hive.cells.lab.pos;
+    if (!REACTION_MAP[resource])
+      return `ERROR: NOT A VALID COMPOUND ${resource}`;
 
-    let productionFlag = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_GREY && f.secondaryColor === COLOR_CYAN).pop();
-    let ref = hiveName + "_" + resource;
-    if (!productionFlag || ref !== productionFlag.name) {
-      if (productionFlag)
-        productionFlag.remove();
-      pos.createFlag(ref, COLOR_GREY, COLOR_CYAN);
-    } else
-      return `ALREADY EXISTS @ ${hive.print}`;
-    return `OK @ ${hive.print}`;
+    hive.cells.lab.synthesizeRes = undefined;
+    hive.cells.lab.prod = undefined;
+    hive.cells.lab.synthesizeTarget = { res: resource, amount: amount };
+
+    return `OK @ ${hive.print}: ${resource} ${amount}`;
   }
 
   update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {

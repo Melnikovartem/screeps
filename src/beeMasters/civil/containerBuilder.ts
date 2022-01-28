@@ -29,9 +29,11 @@ export class ContainerBuilderMaster extends SwarmMaster {
   }
 
   run() {
-    let target = Game.rooms[this.pos.roomName] && this.pos.lookFor(LOOK_CONSTRUCTION_SITES).filter(c => c.structureType === STRUCTURE_CONTAINER).pop() || { pos: this.pos };
-    if (!target)
+    let target: { pos: RoomPosition } = Game.rooms[this.pos.roomName] && this.pos.lookFor(LOOK_CONSTRUCTION_SITES).filter(c => c.structureType === STRUCTURE_CONTAINER)[0];
+    if (!target) {
       this.pos.createConstructionSite(STRUCTURE_CONTAINER);
+      target = { pos: this.pos };
+    }
     let sCell = this.hive.cells.storage!;
     if (!sCell)
       return;

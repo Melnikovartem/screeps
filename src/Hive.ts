@@ -494,10 +494,16 @@ export class Hive {
           return;
         addCC(Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.roads, false));
         if (this.room.energyCapacityAvailable >= 650) { // 800
-          addCC(Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.mining, false));
-          let annexHive = Apiary.hives[annexName];
+          let annexMining = Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.mining, false);
+          addCC(annexMining);
+          if (roomInfo.roomState === roomStates.SKfrontier && this.resState[RESOURCE_ENERGY] >= 0) {
+            let mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction" && b.pos.findInRange(FIND_MINERALS, 1).length)[0];
+            if (mineralsContainer && !mineralsContainer.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_BLUE && f.secondaryColor === COLOR_YELLOW).length)
+              mineralsContainer.pos.createFlag("containerBuilder_" + annexName, COLOR_BLUE, COLOR_YELLOW);
+          }
+          /* let annexHive = Apiary.hives[annexName]; old code when i needed to swarm build hives
           if (annexHive)
-            addCC([annexHive.structuresConst, annexHive.sumCost]);
+            addCC([annexHive.structuresConst, annexHive.sumCost]); */
         }
       });
     }

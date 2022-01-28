@@ -102,7 +102,8 @@ export class UpgradeCell extends Cell {
         if (!this.sCell.master.activeBees.length || this.hive.state === hiveStates.lowenergy)
           return;
         this.sCell.requestFromStorage([this.sCell.link], freeCap >= LINK_CAPACITY - 100 ? 3 : 1, RESOURCE_ENERGY);
-        this.sCell.linkState = 1;
+        if (!this.sCell.linkState || this.sCell.linkState.priority >= 1)
+          this.sCell.linkState = { using: this.ref, priority: 1, lastUpdated: Game.time };
       }
     }
   }
@@ -110,7 +111,7 @@ export class UpgradeCell extends Cell {
   run() {
     if (!this.master.beesAmount)
       return;
-    if (this.link && this.sCell.link) {
+    if (this.link && this.sCell.link && this.sCell.linkState && this.sCell.linkState.using === this.ref) {
       let freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
       if (freeCap < LINK_CAPACITY / 2)
         return;

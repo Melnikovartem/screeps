@@ -35,6 +35,7 @@ export enum beeStates {
 export enum prefix {
   // orders
   // upgrade = "polen",
+  steal = "_borrow_",
   build = "wax",
   surrender = "FFF",
   boost = "boost_",
