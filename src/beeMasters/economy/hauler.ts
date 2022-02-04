@@ -4,6 +4,7 @@ import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
 import { BASE_MINERALS } from "../../cells/stage1/laboratoryCell";
+import { FREE_CAPACITY } from "../../abstract/terminalNetwork";
 
 import { profile } from "../../profiler/decorator";
 import type { ExcavationCell } from "../../cells/base/excavationCell";
@@ -88,7 +89,7 @@ export class HaulerMaster extends Master {
         return;
     }
 
-    if (this.dropOff.store.getFreeCapacity() <= this.dropOff.store.getCapacity() * 0.005)
+    if (this.dropOff.store.getFreeCapacity() <= Math.min(this.dropOff.store.getCapacity() * 0.01, FREE_CAPACITY * 0.1))
       return;
 
     if (this.cell.shouldRecalc) {
@@ -167,7 +168,7 @@ export class HaulerMaster extends Master {
           }
 
           // overproduction or energy from SK defenders
-          let overproduction: Resource | Tombstone | undefined = target.pos.findInRange(FIND_DROPPED_RESOURCES, 3)[0];
+          let overproduction: Resource | Tombstone | undefined = target.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]; // , 3)[0];
           if (overproduction)
             bee.pickup(overproduction);
           else {

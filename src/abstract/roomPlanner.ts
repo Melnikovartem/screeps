@@ -28,8 +28,6 @@ const CORE: Module = { cellsCache: { [prefix.defenseCell]: { poss: { x: 25, y: 2
 
 const CONSTRUCTIONS_PER_TYPE = 5;
 
-export const WALL_HEALTH = 10000;
-
 // oh no i need to def
 const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = []//STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
 
@@ -895,7 +893,7 @@ export class RoomPlanner {
     let cellsCache = this.activePlanning[roomName].cellsCache;
     if (Object.keys(cellsCache).length) {
       if (!Memory.cache.hives[roomName])
-        Memory.cache.hives[roomName] = { wallsHealth: WALL_HEALTH, cells: {}, do: { ...BASE_MODE_HIVE } };
+        Memory.cache.hives[roomName] = { wallsHealth: Memory.settings.wallsHealth * 0.0005, cells: {}, do: { ...BASE_MODE_HIVE } };
       for (let cellType in cellsCache) {
         let cellCache = cellsCache[cellType];
         if (!Memory.cache.hives[roomName].cells[cellType.split("_")[0]])
@@ -924,7 +922,7 @@ export class RoomPlanner {
     switch (structure.structureType) {
       case STRUCTURE_RAMPART:
       case STRUCTURE_WALL:
-        hitsMax = WALL_HEALTH;
+        hitsMax = Memory.settings.wallsHealth * 0.0005;
         if (controller.level < 4)
           amount = 0;
         break;

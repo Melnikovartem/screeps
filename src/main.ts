@@ -48,6 +48,12 @@ function main() {
   Apiary.update();
   Apiary.run();
 
+  if (Game.time % 10000 === 0) {
+    // for the time beeing. Change from A to another class
+    A.sign()
+    A.recalcResTime()
+  }
+
   // now it checks itself!! i am genius
   if (Memory.settings.generatePixel && Game.cpu.bucket === 10000 && Game.cpu.generatePixel && Apiary.destroyTime - Game.time >= 20)
     Game.cpu.generatePixel();

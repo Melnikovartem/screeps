@@ -8,7 +8,7 @@ import { profile } from "../../profiler/decorator";
 @profile
 export class DowngradeMaster extends SwarmMaster {
   lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
-  maxSpawns = 10; // around 100K in creeps
+  maxSpawns = 100; // around 1M in creeps
 
   get oldestSpawn() {
     return this.order.memory.extraInfo;
@@ -35,6 +35,8 @@ export class DowngradeMaster extends SwarmMaster {
         this.order.delete();
         return;
       }
+      if (Game.time % 25 === 0)
+        this.hive.cells.defense.checkAndDefend(this.pos.roomName)
     }
 
     if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.hive.resState[RESOURCE_ENERGY] > 0 && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)

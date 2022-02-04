@@ -17,7 +17,6 @@ import { Traveler } from "./Traveler/TravelerModified";
 
 import { makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
-import { WALL_HEALTH } from "abstract/roomPlanner";
 import { BASE_MODE_HIVE } from "./abstract/hiveMemory";
 
 import { profile } from "./profiler/decorator";
@@ -141,7 +140,7 @@ export class Hive {
     this.room = Game.rooms[roomName];
 
     if (!this.cache)
-      Memory.cache.hives[this.roomName] = { wallsHealth: WALL_HEALTH, cells: {}, do: { ...BASE_MODE_HIVE } };
+      Memory.cache.hives[this.roomName] = { wallsHealth: Math.max(Memory.settings.wallsHealth * 0.0025, 10000), cells: {}, do: { ...BASE_MODE_HIVE } };
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -173,11 +172,11 @@ export class Hive {
       });
       if (factory)
         this.cells.factory = new FactoryCell(this, factory, sCell);
-      this.wallsHealth = Math.max(WALL_HEALTH * 5, this.wallsHealth);
+      this.wallsHealth = Math.max(Memory.settings.wallsHealth * 0.0005, this.wallsHealth);
       if (this.controller.level < 8) {
         // try to develop the hive
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
-        this.wallsHealthMax = Math.min(Memory.settings.wallsHealth * 0.1, WALL_HEALTH * 200);
+        this.wallsHealthMax = Math.min(Memory.settings.wallsHealth * 0.1, 2000000);
       } else {
         this.phase = 2;
         this.puller = new PullerMaster(this);
@@ -215,8 +214,8 @@ export class Hive {
         // TODO cause i haven' reached yet
       }
     } else {
-      this.wallsHealth = WALL_HEALTH;
-      this.wallsHealthMax = WALL_HEALTH * 10;
+      this.wallsHealth = Memory.settings.wallsHealth * 0.0005, this.wallsHealth;
+      this.wallsHealthMax = this.wallsHealth * 10;
       this.cells.dev = new DevelopmentCell(this);
     }
 
@@ -498,8 +497,11 @@ export class Hive {
           addCC(annexMining);
           if (roomInfo.roomState === roomStates.SKfrontier && this.resState[RESOURCE_ENERGY] >= 0) {
             let mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction" && b.pos.findInRange(FIND_MINERALS, 1).length)[0];
-            if (mineralsContainer && !mineralsContainer.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_BLUE && f.secondaryColor === COLOR_YELLOW).length)
-              mineralsContainer.pos.createFlag("containerBuilder_" + annexName, COLOR_BLUE, COLOR_YELLOW);
+            // if (!mineralsContainer) mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction")[0];
+            if (mineralsContainer
+              && !annexMining[0].filter(b => b.sType === STRUCTURE_ROAD && b.type === "construction").length
+              && !Game.flags["containerBuilder_" + this.roomName]) // one per hive at a time
+              mineralsContainer.pos.createFlag("containerBuilder_" + this.roomName, COLOR_BLUE, COLOR_YELLOW);
           }
           /* let annexHive = Apiary.hives[annexName]; old code when i needed to swarm build hives
           if (annexHive)
@@ -573,8 +575,9 @@ export class Hive {
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, nukeAlert, this.wallMap, 0.99));
         if (!this.structuresConst.length
           && this.wallsHealth < this.wallsHealthMax
-          && (this.cells.storage && this.resState[RESOURCE_ENERGY] > 0 || this.wallsHealth < WALL_HEALTH * 10 && this.controller.level >= 4)) {
-          this.wallsHealth = Math.min(this.wallsHealth + 4 * WALL_HEALTH, this.wallsHealthMax);
+          && ((this.cells.storage && this.resState[RESOURCE_ENERGY] > 0)
+            || (this.wallsHealth < this.wallsHealthMax && this.controller.level >= 4))) {
+          this.wallsHealth = Math.min(this.wallsHealth + 4 * Memory.settings.wallsHealth * 0.0005, this.wallsHealthMax);
           addCC(Apiary.planner.checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, nukeAlert, this.wallMap, 0.99));
         }
         break;

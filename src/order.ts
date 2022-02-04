@@ -460,6 +460,7 @@ export class FlagOrder {
             break;
           case COLOR_YELLOW:
             Apiary.planner.addResourceRoads(this.hive.pos, true);
+            Apiary.planner.addUpgradeSite(this.hive.pos);
             break;
         }
         break;

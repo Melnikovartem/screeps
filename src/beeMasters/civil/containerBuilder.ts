@@ -2,29 +2,36 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
+import { makeId } from "../../abstract/utils";
 
 import { profile } from "../../profiler/decorator";
 
 @profile
 export class ContainerBuilderMaster extends SwarmMaster {
 
-  targetBeeCount = 2;
-  maxSpawns = 2;
+  targetBeeCount = 3;
+  maxSpawns = 3;
 
   update() {
     super.update();
-    if (this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTAINER).length) {
-      this.order.delete();
+    let room = Game.rooms[this.pos.roomName];
+    if (room && this.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTAINER).length) {
+      let anotherContainer = room.find(FIND_MY_CONSTRUCTION_SITES).filter(c => c.structureType === STRUCTURE_CONTAINER)[0];
+      if (anotherContainer)
+        this.order.flag.setPosition(anotherContainer.pos);
+      else
+        this.order.delete();
       return;
     }
     if (this.checkBees() && Apiary.intel.getInfo(this.pos.roomName).safePlace && this.hive.cells.storage) {
       let setup = setups.builder.copy();
       setup.pattern = [WORK, CARRY, CARRY];
       setup.moveMax = 50 / 3;
-      this.wish({
-        setup: setup,
-        priority: 5,
-      });
+      for (let i = 0; i < this.targetBeeCount - this.spawned; ++i)
+        this.wish({
+          setup: setup,
+          priority: 5,
+        }, this.ref + "_" + makeId(4));
     }
   }
 

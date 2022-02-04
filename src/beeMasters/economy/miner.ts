@@ -3,6 +3,7 @@ import { Master } from "../_Master";
 import { beeStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 import { findOptimalResource } from "../../abstract/utils";
+import { FREE_CAPACITY } from "../../abstract/terminalNetwork";
 
 import { profile } from "../../profiler/decorator";
 import type { ResourceCell } from "../../cells/base/resourceCell";
@@ -55,6 +56,7 @@ export class MinerMaster extends Master {
     if (shouldSpawn)
       shouldSpawn = this.cell.operational || (this.cell.resourceType === RESOURCE_ENERGY && this.cell.pos.roomName in Game.rooms && !!this.construction);
 
+
     if (shouldSpawn && this.checkBees(this.cell.resourceType === RESOURCE_ENERGY, CREEP_LIFE_TIME - this.cell.roadTime - 10)) {
       let order = {
         setup: setups.miner.minerals,
@@ -68,8 +70,11 @@ export class MinerMaster extends Master {
         order.setup.patternLimit = Math.round(this.cell.ratePT / 2) + 1;
         if (this.cell.link) // && this.hive.cells.storage && this.hive.cells.storage.getUsedCapacity(RESOURCE_UTRIUM_OXIDE) >= LAB_BOOST_MINERAL * order.setup.patternLimit
           order.setup.fixed = [CARRY, CARRY, CARRY, CARRY];
-      } else
+      } else {
+        if (!this.hive.cells.storage || this.hive.cells.storage.storage.store.getFreeCapacity() <= FREE_CAPACITY * 0.25)
+          return;
         order.priority = 6;
+      }
 
       this.wish(order);
     }

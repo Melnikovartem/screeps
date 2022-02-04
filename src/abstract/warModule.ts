@@ -70,7 +70,7 @@ export class WarcrimesModule {
     let siedge = this.siedge[roomName];
     if (attackTime !== undefined)
       siedge.attackTime = attackTime;
-    if (siedge.lastUpdated + CREEP_LIFE_TIME < Game.time || attackTime !== undefined) {
+    if (siedge.lastUpdated + (siedge.attackTime ? CREEP_LIFE_TIME / 4 : CREEP_LIFE_TIME) < Game.time || attackTime !== undefined) {
       let room = Game.rooms[roomName];
       if (!room) {
         siedge.lastUpdated = -1;
@@ -114,11 +114,12 @@ export class WarcrimesModule {
       let labs = 0;
       let targets = room.find(FIND_STRUCTURES).filter(s => {
         switch (s.structureType) {
-          case STRUCTURE_SPAWN:
-          case STRUCTURE_STORAGE:
-          case STRUCTURE_STORAGE:
-          case STRUCTURE_SPAWN:
           case STRUCTURE_INVADER_CORE:
+            labs += 1;
+          case STRUCTURE_SPAWN:
+          case STRUCTURE_STORAGE:
+          case STRUCTURE_STORAGE:
+          case STRUCTURE_SPAWN:
           case STRUCTURE_TOWER:
             return true;
           case STRUCTURE_LAB:
@@ -138,6 +139,10 @@ export class WarcrimesModule {
         siedge.threatLvl = 2;
       } else if (roomInfo.towers.length)
         siedge.threatLvl = labs ? 2 : 1;
+      if (siedge.threatLvl > 1
+        && ((room.storage && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) <= 20000)
+          || (!room.storage && roomInfo.roomState === roomStates.ownedByEnemy)))
+        siedge.threatLvl = 1;
 
       if (!targets.length)
         if (room.controller && room.controller.owner) {
@@ -158,29 +163,32 @@ export class WarcrimesModule {
       siedge.freeTargets = [];
 
       let brokeIn = matrix[target.pos.x][target.pos.y] <= 2;
-      if (brokeIn) {
-        siedge.breakIn = [{
-          x: target.pos.x,
-          y: target.pos.y,
-          ent: roomName,
-          state: 1,
-        }];
-      } else
-        _.forEach(enterances, ent => {
-          if (!obstacles.length)
-            return;
-          let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }), siedge.breakIn)).path;
-          let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length
-            && !siedge.breakIn.filter(b => o.pos.getRangeTo(new RoomPosition(b.x, b.y, roomName)) < 4).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
-          _.forEach(addBreak, b =>
-            siedge.breakIn.push({
-              x: b.x,
-              y: b.y,
-              ent: (ent.enteranceToRoom || ent).roomName,
-              state: matrix[b.x] && matrix[b.x][b.y] || 255,
-            }));
-          obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
-        });
+      let addedTarget = brokeIn ? false : true;
+      _.forEach(enterances, ent => {
+        if (!obstacles.length)
+          return;
+        let path = Traveler.findTravelPath(ent, target, this.getOpt(obstacles.map(s => { return { pos: s.pos, perc: s.hits / wallsHealthMax } }), brokeIn ? [] : siedge.breakIn)).path;
+        let addBreak = obstacles.filter(o => path.filter(p => o.pos.getRangeTo(p) < 1).length
+          && !siedge.breakIn.filter(b => o.pos.getRangeTo(new RoomPosition(b.x, b.y, roomName)) < 4).length).map(p => { return { x: p.pos.x, y: p.pos.y } });
+        _.forEach(addBreak, b =>
+          siedge.breakIn.push({
+            x: b.x,
+            y: b.y,
+            ent: (ent.enteranceToRoom || ent).roomName,
+            state: matrix[b.x] && matrix[b.x][b.y] || 255,
+          }));
+        let last = !addedTarget && path.pop();
+        if (last && last.getRangeTo(target) <= 1 && !path.filter(b => matrix[b.x] && matrix[b.x][b.y] > 1).length) {
+          siedge.breakIn = [{
+            x: target.pos.x,
+            y: target.pos.y,
+            ent: (ent.enteranceToRoom || ent).roomName,
+            state: 1,
+          }];
+          addedTarget = true;
+        }
+        obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
+      });
 
       if (roomInfo.safeModeEndTime > 0)
         siedge.attackTime = Math.max(roomInfo.safeModeEndTime - 100, siedge.attackTime || 0);
@@ -190,7 +198,7 @@ export class WarcrimesModule {
         siedge.attackTime = null;
 
       let store = brokeIn && (room.storage || room.terminal)
-      if (store && !Apiary.intel.getTowerAttack(store.pos)
+      if (store && !store.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && s.hits > 25000).length && !Apiary.intel.getTowerAttack(store.pos)
         && !store.pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN)) {
         let resourcesAmount = store.store.getUsedCapacity();
         if (resourcesAmount > 0) {
@@ -199,11 +207,15 @@ export class WarcrimesModule {
         }
       }
 
+
+      if (brokeIn && !Apiary.intel.getTowerAttack(target.pos) && !Game.flags["dismantle_" + roomName])
+        target.pos.createFlag("dismantle_" + roomName, COLOR_RED, COLOR_RED);
+
       let extraSquads: number[] = [];
       let getType = (prob: number) => {
         if (invaderRaid)
           return "range";
-        if (brokeIn)
+        if (brokeIn && !target.pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_RAMPART && s.hits > 25000).length)
           return "duo";
         return Math.random() <= prob ? "dism" : "range";
       }
@@ -213,7 +225,7 @@ export class WarcrimesModule {
           extraSquads.push(siedge.squadSlots[br].lastSpawned)
           delete siedge.squadSlots[br];
         } else
-          siedge.squadSlots[br].type = getType(0.5);
+          siedge.squadSlots[br].type = getType(brokeIn ? 0.9 : 0.5);
       }
 
       _.forEach(siedge.breakIn, b => {
@@ -348,7 +360,8 @@ export class WarcrimesModule {
       if (roomInfo.safeModeEndTime > 0)
         siedge.attackTime = Math.max(roomInfo.safeModeEndTime - 100, siedge.attackTime || 0);
       for (let i = 0; i < siedge.freeTargets.length; ++i) {
-        let enemy = new RoomPosition(siedge.freeTargets[i].x, siedge.freeTargets[i].y, pos.roomName).lookFor(LOOK_STRUCTURES)[0];
+        let roomEnemies = new RoomPosition(siedge.freeTargets[i].x, siedge.freeTargets[i].y, pos.roomName).lookFor(LOOK_STRUCTURES);
+        let enemy = roomEnemies.length ? roomEnemies.reduce((prev, curr) => "owner" in curr ? curr : prev) : undefined;
         if (enemy)
           enemies.push({
             object: enemy,
@@ -361,7 +374,8 @@ export class WarcrimesModule {
         }
       }
       for (let i = 0; i < siedge.breakIn.length; ++i) {
-        let enemy = new RoomPosition(siedge.breakIn[i].x, siedge.breakIn[i].y, pos.roomName).lookFor(LOOK_STRUCTURES)[0];
+        let roomEnemies = new RoomPosition(siedge.breakIn[i].x, siedge.breakIn[i].y, pos.roomName).lookFor(LOOK_STRUCTURES);
+        let enemy = roomEnemies.length ? roomEnemies.reduce((prev, curr) => "owner" in curr ? curr : prev) : undefined;
         if (enemy)
           enemies.push({
             object: enemy,
@@ -392,9 +406,8 @@ export class WarcrimesModule {
     let healNeeded = dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal * HEAL_COEF;
 
     let healPerBee = Math.ceil(healNeeded / 4);
-    let toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
-    if (toughPerBee > 15)
-      toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
+    let toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
+    // toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
 
     if (!dmgAfterTough) {
       healPerBee = 5;
@@ -420,14 +433,13 @@ export class WarcrimesModule {
     let healNeeded = dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal * HEAL_COEF;
 
     let healPerBee = Math.ceil(healNeeded / 2);
-    let toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
-    if (toughPerBee > 15)
-      toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
+    let toughPerBee = Math.ceil((dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2 / 100);
 
     if (!dmgAfterTough) {
       healPerBee = 5;
       toughPerBee = 5;
-    }
+    } else if (!toughPerBee)
+      toughPerBee = 5;
 
     formationBee.fixed = Array(healPerBee).fill(HEAL).concat(Array(toughPerBee).fill(TOUGH));
     formationBee.patternLimit = 50;
@@ -483,16 +495,20 @@ export class WarcrimesModule {
 
     let formation;
 
+    let dmg = siedge.towerDmgBreach;
+    if (siedge.threatLvl > 1)
+      dmg += 680;
+
     switch (slot.type) {
       case "dism":
-        formation = this.getBrigadeFormation(siedge.towerDmgBreach);
+        formation = this.getBrigadeFormation(dmg);
         break;
       case "range":
-        formation = this.getLegionFormation(siedge.towerDmgBreach);
+        formation = this.getLegionFormation(dmg);
         break;
       case "duo":
       default:
-        formation = this.getDuoFormation(siedge.towerDmgBreach);
+        formation = this.getDuoFormation(dmg);
     }
 
     this.squads[ref] = new SquadWarCrimesMaster(this, {

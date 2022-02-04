@@ -1,6 +1,6 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
-import { hiveStates, roomStates } from "../../enums";
+import { hiveStates } from "../../enums";
 import { setups } from "../../bees/creepsetups";
 
 import { profile } from "../../profiler/decorator";
@@ -18,26 +18,6 @@ export class PuppetMaster extends SwarmMaster {
         setup: setups.puppet,
         priority: 2, // well it is mostly cheap -_-
       });
-    }
-    if (this.maxSpawns === Infinity && this.order.color === COLOR_PURPLE && this.order.secondaryColor === COLOR_PURPLE) {
-      let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
-      switch (roomInfo.roomState) {
-        case roomStates.reservedByEnemy:
-        case roomStates.reservedByInvader:
-        case roomStates.noOwner:
-        case roomStates.reservedByMe:
-          if (this.hive.room.energyCapacityAvailable >= 650)
-            this.order.acted = false;
-          break;
-        case roomStates.SKfrontier:
-          if (this.hive.room.energyCapacityAvailable >= 5000)
-            this.order.acted = false;
-          break;
-        case roomStates.SKcentral:
-          break;
-        default:
-          this.order.delete();
-      }
     }
   }
 

@@ -8,7 +8,7 @@ import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
 import type { Hive, ResTarget } from "../hive";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
-const FREE_CAPACITY = STORAGE_CAPACITY * 0.1
+export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1
 
 @profile
 export class Network {
@@ -195,7 +195,7 @@ export class Network {
 
     if (hive.cells.storage && hive.cells.storage.storage.store.getFreeCapacity() < FREE_CAPACITY && !this.aid[hive.roomName]) {
       let emptyHive = _.filter(this.nodes, h => h.roomName !== hive.roomName && h.cells.storage
-        && h.cells.storage.storage.store.getFreeCapacity() > FREE_CAPACITY * 1.5)[0];
+        && h.cells.storage.storage.store.getFreeCapacity() > FREE_CAPACITY * 1.5 && h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5)[0];
       if (emptyHive) {
         let keys = <(keyof ResTarget)[]>Object.keys(hive.resState);
         if (keys.length) {

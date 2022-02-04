@@ -28,8 +28,8 @@ export class SKMaster extends HordeMaster {
     if (this.pos.roomName in Game.rooms) {
       if (!this.lairs.length) {
         this.lairs = <StructureKeeperLair[]>Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } });
-        if (!this.lairs.length)
-          this.order.delete();
+        /* if (!this.lairs.length)
+          this.order.delete(); */
       }
 
       if (!this.maxPath && this.lairs.length) {

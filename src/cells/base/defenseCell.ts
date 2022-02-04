@@ -369,7 +369,8 @@ export class DefenseCell extends Cell {
     } else
       ans = pos.createFlag(prefix.defSwarm + makeId(4), COLOR_RED, COLOR_BLUE);
     if (typeof ans === "string") {
-      // Game.flags[ans].memory = { hive: (this.hive.bassboost || this.hive).roomName };
+      if (this.hive.phase)
+        Game.flags[ans].memory = { hive: (this.hive.bassboost || this.hive).roomName };
       let order = new FlagOrder(Game.flags[ans]);
       order.update();
     }
@@ -439,8 +440,8 @@ export class DefenseCell extends Cell {
     }
 
     if (roomInfo.enemies.length && Game.time > roomInfo.safeModeEndTime) {
-      if (this.isBreached && (this.hive.controller.level >= 6
-        || (Object.keys(this.hive.cells.spawn).length && _.filter(Apiary.hives, h => Object.keys(h.cells.spawn.spawns).length).length <= 1))) {
+      if (this.isBreached && Object.keys(this.hive.cells.spawn).length) {
+        // (this.hive.controller.level >= 6   || (Object.keys(this.hive.cells.spawn).length && _.filter(Apiary.hives, h => Object.keys(h.cells.spawn.spawns).length).length <= 1))
         let contr = this.hive.controller;
         if (contr.safeModeAvailable && !contr.safeModeCooldown && !contr.safeMode)
           contr.activateSafeMode(); // red button
