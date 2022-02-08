@@ -26,8 +26,16 @@ export class BuilderMaster extends Master {
 
     this.boosts = undefined;
 
+    let realBattle = this.hive.state === hiveStates.battle;
+    if (realBattle) {
+      let roomInfo = Apiary.intel.getInfo(this.hive.roomName, 20);
+      if (!roomInfo.enemies.filter(e => e.object instanceof Creep && e.object.owner.username !== "Invader").length)
+        realBattle = false;
+      else if (roomInfo.dangerlvlmax <= 6 && this.hive.sumCost < 500)
+        realBattle = false;
+    }
     if (this.hive.state === hiveStates.nukealert
-      || (this.hive.state === hiveStates.battle && (this.hive.sumCost > 500 || Apiary.intel.getInfo(this.hive.roomName, 10).dangerlvlmax > 6))
+      || realBattle
       || (this.hive.wallsHealth < this.hive.wallsHealthMax && this.hive.resState[RESOURCE_ENERGY] > 0)
       || this.hive.sumCost > 40000) {
       this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];

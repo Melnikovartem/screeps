@@ -586,7 +586,7 @@ export class RoomPlanner {
   addResourceRoads(anchor: RoomPosition, fromMem = false) {
     let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName);
     futureResourceCells.sort((a, b) => {
-      let ans = anchor.getRoomRangeTo(a, true) - anchor.getRoomRangeTo(b, true);
+      let ans = anchor.getRoomRangeTo(a, "path") - anchor.getRoomRangeTo(b, "path");
       if (ans === 0)
         return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;

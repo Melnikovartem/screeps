@@ -334,9 +334,9 @@ export class Broker {
     if (!orders)
       return ERR_NOT_FOUND;
     if (creditsToUse < CREDIT_THRESHOLD_SLOW)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName, "lin") <= 30)
     if (res === RESOURCE_ENERGY)
-      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
+      orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName, "lin") <= 30)
     if (!orders.length)
       return ERR_NOT_IN_RANGE;
 

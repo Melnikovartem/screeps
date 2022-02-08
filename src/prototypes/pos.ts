@@ -29,7 +29,7 @@ RoomPosition.prototype.equal = function equal(pos: ProtoPos) {
 }
 
 // i wanted to do in in linear math, but then i remebered: FUCKING exits
-RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition } | string, pathfind: boolean = false): number {
+RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { pos: RoomPosition } | string, mode: "path" | "manh" | "lin" = "manh"): number {
   let toRoom: string;
   if (pos instanceof Room)
     toRoom = pos.name;
@@ -39,15 +39,18 @@ RoomPosition.prototype.getRoomRangeTo = function(pos: RoomPosition | Room | { po
     toRoom = pos;
   else
     toRoom = pos.pos.roomName;
-  if (pathfind) {
-    let ans = Traveler.findRoute(this.roomName, toRoom, { ignoreCurrent: true });
-    if (ans)
-      return Object.keys(ans).length - 1;
-    return Infinity;
-  } else {
-    let c1 = getRoomCoorinates(this.roomName, false);
-    let c2 = getRoomCoorinates(toRoom, false);
-    return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]); // manhattan distance
+  switch (mode) {
+    case "path":
+      let ans = Traveler.findRoute(this.roomName, toRoom, { ignoreCurrent: true });
+      if (ans)
+        return Object.keys(ans).length - 1;
+      return Infinity;
+    case "manh":
+      let c1 = getRoomCoorinates(this.roomName, false);
+      let c2 = getRoomCoorinates(toRoom, false);
+      return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]); // manhattan distance
+    case "lin":
+      return Game.map.getRoomLinearDistance(this.roomName, toRoom)  // nathive linear
   }
 }
 

@@ -33,7 +33,7 @@ export class AnnexMaster extends SwarmMaster {
     let doAnnex = !this.hive.annexInDanger.includes(this.pos.roomName);
 
     if (doAnnex && this.hive.bassboost)
-      doAnnex = this.pos.getRoomRangeTo(this.hive.bassboost, true) < 5;
+      doAnnex = this.pos.getRoomRangeTo(this.hive.bassboost, "path") < 5;
 
     if (doAnnex && this.checkBees(true, CREEP_CLAIM_LIFE_TIME - 10)) {
       let setup = setups.claimer.copy();

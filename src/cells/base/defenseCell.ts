@@ -271,7 +271,7 @@ export class DefenseCell extends Cell {
     if (freeSwarms.length) {
       let swarm = freeSwarms.reduce((prev, curr) => pos.getRoomRangeTo(curr) < pos.getRoomRangeTo(prev) ? curr : prev);
       let ans;
-      if (swarm.pos.getRoomRangeTo(pos.roomName, true) <= 5)
+      if (swarm.pos.getRoomRangeTo(pos.roomName, "path") <= 5)
         ans = this.setDefFlag(pos, swarm.order.flag);
       else
         canWin = false;

@@ -15,7 +15,7 @@ declare global {
   type Pos = { x: number, y: number };
 
   interface RoomPosition {
-    getRoomRangeTo(pos: ProtoPos | Room | string, pathfind?: boolean): number;
+    getRoomRangeTo(pos: ProtoPos | Room | string, mode?: "path" | "manh" | "lin"): number;
     getPositionsInRange(range: number): RoomPosition[];
     getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
     isFree(ignoreCreeps?: boolean): boolean;

@@ -73,6 +73,8 @@ export class MinerMaster extends Master {
       } else {
         if (!this.hive.cells.storage || this.hive.cells.storage.storage.store.getFreeCapacity() <= FREE_CAPACITY * 0.25)
           return;
+        if (this.hive.resState[RESOURCE_ENERGY] < 0)
+          return;
         order.priority = 6;
       }
 

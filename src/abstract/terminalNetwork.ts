@@ -178,7 +178,7 @@ export class Network {
         if (res === RESOURCE_ENERGY)
           validHives = validHives.filter(h => sendCost(h) < 0.31); // 11 or less roomDist
         if (validHives.length) {
-          let validHive = validHives.reduce((prev, curr) => hive.pos.getRoomRangeTo(curr) < hive.pos.getRoomRangeTo(prev) ? curr : prev);
+          let validHive = validHives.reduce((prev, curr) => hive.pos.getRoomRangeTo(curr, "lin") < hive.pos.getRoomRangeTo(prev, "lin") ? curr : prev);
           let amount = this.calcAmount(validHive, hive.roomName, res);
           if (this.aid[validHive] && this.aid[validHive].amount > amount)
             continue;

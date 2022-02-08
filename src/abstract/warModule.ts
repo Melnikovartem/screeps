@@ -163,7 +163,6 @@ export class WarcrimesModule {
       siedge.freeTargets = [];
 
       let brokeIn = matrix[target.pos.x][target.pos.y] <= 2;
-      let addedTarget = brokeIn ? false : true;
       _.forEach(enterances, ent => {
         if (!obstacles.length)
           return;
@@ -177,7 +176,7 @@ export class WarcrimesModule {
             ent: (ent.enteranceToRoom || ent).roomName,
             state: matrix[b.x] && matrix[b.x][b.y] || 255,
           }));
-        let last = !addedTarget && path.pop();
+        let last = brokeIn && path.pop();
         if (last && last.getRangeTo(target) <= 1 && !path.filter(b => matrix[b.x] && matrix[b.x][b.y] > 1).length) {
           siedge.breakIn = [{
             x: target.pos.x,
@@ -185,7 +184,7 @@ export class WarcrimesModule {
             ent: (ent.enteranceToRoom || ent).roomName,
             state: 1,
           }];
-          addedTarget = true;
+          return;
         }
         obstacles = obstacles.filter(o => !siedge.breakIn.filter(p => o.pos.x === p.x && o.pos.y === p.y).length);
       });
@@ -232,7 +231,7 @@ export class WarcrimesModule {
         if (!siedge.squadSlots[b.x + "_" + b.y] && b.state <= 2)
           siedge.squadSlots[b.x + "_" + b.y] = {
             lastSpawned: extraSquads.pop() || -1,
-            type: getType(0.2),
+            type: getType(brokeIn ? 0.9 : 0.2),
             breakIn: b,
           }
       });

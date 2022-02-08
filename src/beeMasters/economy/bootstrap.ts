@@ -377,7 +377,7 @@ export class BootstrapMaster extends Master {
 
           if (!target && ((this.count.repair + this.count.build) * CARRY_CAPACITY * 2 < this.hive.sumCost || this.hive.state >= hiveStates.battle)) {
             target = this.hive.getBuildTarget(bee);
-            if (target && target.pos.roomName !== this.hive.roomName && bee.pos.getRoomRangeTo(target, true) > 1)
+            if (target && target.pos.roomName !== this.hive.roomName && bee.pos.getRoomRangeTo(target) > 1)
               target = null;
             if (target instanceof Structure)
               workType = "repair";

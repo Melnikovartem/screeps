@@ -14,7 +14,7 @@ export class ClaimerMaster extends SwarmMaster {
 
     if (this.checkBees(this.hive.state !== hiveStates.battle, CREEP_CLAIM_LIFE_TIME)) {
       let setup = setups.claimer.copy();
-      if (this.pos.getRoomRangeTo(this.hive, true) >= 4)
+      if (this.pos.getRoomRangeTo(this.hive, "path") >= 4)
         setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
       let roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
       if (roomInfo.roomState >= roomStates.reservedByInvader)

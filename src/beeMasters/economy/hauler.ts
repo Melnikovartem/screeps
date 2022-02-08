@@ -172,7 +172,7 @@ export class HaulerMaster extends Master {
           if (overproduction)
             bee.pickup(overproduction);
           else {
-            overproduction = target.pos.findInRange(FIND_TOMBSTONES, 3).filter(t => t.store.getUsedCapacity() > 0)[0];
+            overproduction = target.pos.findInRange(FIND_TOMBSTONES, 1).filter(t => t.store.getUsedCapacity() > 0)[0];
             if (overproduction)
               bee.withdraw(overproduction, findOptimalResource(overproduction.store));
           }

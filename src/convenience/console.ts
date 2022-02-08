@@ -71,6 +71,7 @@ export class CustomConsole {
 
   mode(mode = "", hiveName?: string, value: number = 1) {
     let ans = "";
+    mode = mode.toLowerCase();
     _.forEach(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
       let dd = Memory.cache.hives[h.roomName].do;
       switch (mode) {
@@ -79,11 +80,17 @@ export class CustomConsole {
           if (dd.powerMining)
             dd.powerRefining = 1;
           break;
+        case "powermining":
+          if (value === 0 || value === 1)
+            dd.powerMining = value;
         case "deposit":
           dd.depositMining = dd.depositMining ? 0 : 1;
           if (dd.depositMining)
             dd.depositRefining = 1;
           break;
+        case "depositrefining":
+          if (value === 0 || value === 1)
+            dd.depositRefining = value;
         case "war":
           dd.war = dd.war ? 0 : 1;
           break;
@@ -98,11 +105,11 @@ export class CustomConsole {
           if (value === 0 || value === 1 || value === 2 || value === 3)
             dd.upgrade = value;
           break;
-        case "sellOff":
+        case "selloff":
           if (value === 0 || value === 1)
             dd.sellOff = value;
           break;
-        case "buyIn":
+        case "buyin":
           if (value === 0 || value === 1)
             dd.buyIn = value;
           break;
@@ -681,24 +688,30 @@ export class CustomConsole {
     return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
   }
 
-  produce(resource: ReactionConstant, hiveName: string = this.lastActionRoomName, amount = 10000) {
+  produce(resource: ReactionConstant | CommodityConstant, hiveName: string = this.lastActionRoomName, amount = 10000) {
     hiveName = hiveName.toUpperCase();
-    resource = <ReactionConstant>resource.toUpperCase();
 
     let hive = Apiary.hives[hiveName];
     if (!hive)
       return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    if (!hive.cells.lab)
-      return `ERROR: LAB NOT FOUND @ ${hive.print}`;
-    if (!REACTION_MAP[resource])
-      return `ERROR: NOT A VALID COMPOUND ${resource}`;
+    if (REACTION_MAP[<ReactionConstant>resource]) {
+      if (!hive.cells.lab)
+        return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+      hive.cells.lab.synthesizeTarget = { res: <ReactionConstant>resource, amount: amount };
+      hive.cells.lab.prod = undefined;
+      hive.cells.lab.synthesizeRes = undefined;
+      return `OK LAB @ ${hive.print}: ${resource} ${amount}`;
+    } else if (COMMODITIES[<CommodityConstant>resource]) {
+      if (!hive.cells.factory)
+        return `ERROR: FACTORY NOT FOUND @ ${hive.print}`;
+      hive.cells.factory.commodityTarget = { res: <CommodityConstant>resource, amount: amount };
+      hive.cells.factory.prod = undefined;
+      hive.cells.factory.commodityRes = undefined;
+      return `OK FACTORY @ ${hive.print}: ${resource} ${amount}`;
+    }
+    return `ERROR: NOT A VALID COMPOUND ${resource}`;
 
-    hive.cells.lab.synthesizeRes = undefined;
-    hive.cells.lab.prod = undefined;
-    hive.cells.lab.synthesizeTarget = { res: resource, amount: amount };
-
-    return `OK @ ${hive.print}: ${resource} ${amount}`;
   }
 
   update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {

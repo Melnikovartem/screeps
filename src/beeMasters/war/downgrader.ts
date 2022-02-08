@@ -36,10 +36,10 @@ export class DowngradeMaster extends SwarmMaster {
         return;
       }
       if (Game.time % 25 === 0)
-        this.hive.cells.defense.checkAndDefend(this.pos.roomName)
+        this.hive.cells.defense.checkAndDefend(this.pos.roomName);
     }
 
-    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE) && this.hive.resState[RESOURCE_ENERGY] > 0 && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)
+    if (this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE - 50) && this.hive.resState[RESOURCE_ENERGY] > 0 && Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime && !roomInfo.towers.length)
       this.wish({
         setup: setups.downgrader,
         priority: 9,

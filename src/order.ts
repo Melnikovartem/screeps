@@ -194,7 +194,7 @@ export class FlagOrder {
       case COLOR_PURPLE:
         switch (this.secondaryColor) {
           case COLOR_PURPLE:
-            if (this.pos.getRoomRangeTo(this.hive, true) >= 6) {
+            if (this.pos.getRoomRangeTo(this.hive, "path") >= 6) {
               this.delete();
               break;
             }
@@ -204,7 +204,7 @@ export class FlagOrder {
                 Apiary.requestSight(this.pos.roomName)
               else if (!this.master && !Game.flags[prefix.puppet + this.pos.roomName]) {
                 this.master = new PuppetMaster(this);
-                this.master.maxSpawns = this.master.spawned + 1;
+                this.master.maxSpawns = Infinity; // this.master.spawned + 1;
               }
               this.acted = false;
               break;
@@ -246,13 +246,13 @@ export class FlagOrder {
                     this.master = new AnnexMaster(this);
                   break;
                 case roomStates.SKfrontier:
-                  if (this.hive.room.energyCapacityAvailable >= 5500) {
+                  if (this.hive.room.energyCapacityAvailable >= 5500 && !this.hive.bassboost) {
                     this.master = new SKMaster(this);
                     this.hive.addAnex(this.pos.roomName);
                   }
                   break;
                 case roomStates.SKcentral:
-                  if (this.hive.room.energyCapacityAvailable >= 5500)
+                  if (this.hive.room.energyCapacityAvailable >= 5500 && !this.hive.bassboost)
                     this.hive.addAnex(this.pos.roomName);
                   this.master = new PuppetMaster(this);
                   this.master.maxSpawns = Infinity;

@@ -506,7 +506,10 @@ export class SquadWarCrimesMaster extends Master {
 
   moveCenter(bee: Bee, enemy: Creep | Structure | PowerCreep | undefined | null, tempTarget: Enemy[]) {
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
-    let moveTarget = this.formationCenter.getRoomRangeTo(this.pos) <= 1 ? this.pos : new RoomPosition(25, 25, this.info.ent);
+    let moveTarget = this.formationCenter.getRoomRangeTo(this.pos) <= 1
+      && (this.pos.roomName === this.formationCenter.roomName
+        || _.filter(Game.map.describeExits(this.formationCenter.roomName), e => e === this.pos.roomName).length)
+      ? this.pos : new RoomPosition(25, 25, this.info.ent);
     let opt = this.getPathArgs(bee.ref);
     let fatigue = 0;
     let padding = 1;

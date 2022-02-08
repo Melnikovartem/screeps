@@ -93,7 +93,8 @@ export class HordeMaster extends SwarmMaster {
     super.update();
 
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
-    if (this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10) && (Game.time >= roomInfo.safeModeEndTime - 250)) {
+    if (this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10)
+      && (Game.time >= roomInfo.safeModeEndTime - 200 + this.hive.pos.getRoomRangeTo(this.pos) * 35)) {
       this.wish({
         setup: this.setup,
         priority: 4,

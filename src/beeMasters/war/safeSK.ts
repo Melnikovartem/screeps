@@ -17,10 +17,17 @@ export class SKMaster extends HordeMaster {
 
   constructor(order: FlagOrder) {
     super(order);
-    this.maxSpawns = Infinity;
   }
 
   init() { }
+
+  get targetBeeCount() { return 1; }
+
+  set targetBeeCount(_) { }
+
+  get maxSpawns() { return Infinity; }
+
+  set maxSpawns(_) { }
 
   update() {
     SwarmMaster.prototype.update.call(this);
@@ -46,7 +53,7 @@ export class SKMaster extends HordeMaster {
         this.lairs[i] = <StructureKeeperLair>Game.getObjectById(this.lairs[i].id);
     }
 
-    if (this.hive.bassboost && this.pos.getRoomRangeTo(this.hive.bassboost, true) > 5)
+    if (this.hive.bassboost)
       return;
 
     if (!this.hive.annexInDanger.includes(this.pos.roomName) &&

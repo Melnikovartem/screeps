@@ -491,15 +491,15 @@ export class Hive {
         let roomInfo = Apiary.intel.getInfo(annexName, Infinity);
         if (this.room.energyCapacityAvailable < 5500 && (roomInfo.roomState === roomStates.SKfrontier || roomInfo.roomState === roomStates.SKcentral))
           return;
-        addCC(Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.roads, false));
+        let annexRoads = Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.roads, false)
+        addCC(annexRoads);
         if (this.room.energyCapacityAvailable >= 650) { // 800
           let annexMining = Apiary.planner.checkBuildings(annexName, BUILDABLE_PRIORITY.mining, false);
           addCC(annexMining);
           if (roomInfo.roomState === roomStates.SKfrontier && this.resState[RESOURCE_ENERGY] >= 0) {
             let mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction" && b.pos.findInRange(FIND_MINERALS, 1).length)[0];
             // if (!mineralsContainer) mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction")[0];
-            if (mineralsContainer
-              && !annexMining[0].filter(b => b.sType === STRUCTURE_ROAD && b.type === "construction").length
+            if (mineralsContainer && roomInfo.safePlace && !annexRoads[0].filter(b => b.type === "construction").length
               && !Game.flags["containerBuilder_" + this.roomName]) // one per hive at a time
               mineralsContainer.pos.createFlag("containerBuilder_" + this.roomName, COLOR_BLUE, COLOR_YELLOW);
           }

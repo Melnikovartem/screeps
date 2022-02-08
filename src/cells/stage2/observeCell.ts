@@ -49,11 +49,11 @@ export class ObserveCell extends Cell {
     let closest = we + x + ns + y;
     let roundx = we + Math.round(x / 10) * 10 + ns + y;
     let roundy = we + x + ns + Math.round(y / 10) * 10;
-    if (this.pos.getRoomRangeTo(roundx, true) < this.pos.getRoomRangeTo(roundy, true))
+    if (this.pos.getRoomRangeTo(roundx, "path") < this.pos.getRoomRangeTo(roundy, "path"))
       closest = roundx;
     else
       closest = roundy;
-    this.dfs(closest, this.corridorRooms, this.hive.pos.getRoomRangeTo(closest, true));
+    this.dfs(closest, this.corridorRooms, this.hive.pos.getRoomRangeTo(closest, "path"));
     this.prevRoom = this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
@@ -97,7 +97,7 @@ export class ObserveCell extends Cell {
     }
 
     if (!this.roomsToCheck.length) {
-      let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName) <= OBSERVER_RANGE)[0];
+      let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName, "lin") <= OBSERVER_RANGE)[0];
       if (roomName) {
         this.roomsToCheck = [roomName];
         let index = Apiary.requestRoomSight.indexOf(roomName);
@@ -133,7 +133,7 @@ export class ObserveCell extends Cell {
     _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
       let open = power.pos.getOpenPositions(true).length;
       let dmgPerSecond = ATTACK_POWER * 20 * open;
-      if (power.hits / dmgPerSecond >= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive) * 50)
+      if (power.hits / dmgPerSecond >= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50)
         return;
       this.createOrder(power.pos, prefix.powerMining + power.id, COLOR_YELLOW);
     });

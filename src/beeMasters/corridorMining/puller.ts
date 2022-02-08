@@ -38,7 +38,7 @@ export class PullerMaster extends Master {
     super.update();
 
     let workingPowerSites = this.powerSites.filter(p => p.operational);
-    let inProgress = workingPowerSites.filter(p => p.beesAmount);
+    let inProgress = workingPowerSites.filter(p => p.beesAmount || p.waitingForBees);
     if (!inProgress.length && this.hive.shouldDo("powerMining") && workingPowerSites.length)
       inProgress = [workingPowerSites.pop()!];
     this.sitesON = inProgress;
