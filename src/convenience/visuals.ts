@@ -161,7 +161,7 @@ export class Visuals {
           if (extraDeposits)
             s += extraDeposits + "⛏️";
           if (extraPower)
-            s += (s.length ? " " : "") + extraPower + "🔴";
+            s += (extraDeposits ? " " : "") + extraPower + "🔴";
           miningInfo.push([s])
         }
       }

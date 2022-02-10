@@ -481,9 +481,13 @@ export class SquadWarCrimesMaster extends Master {
       ensurePath: checkFlee ? true : false,
       // allowHostile: true,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
+        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+        if ((roomInfo.roomState === roomStates.corridor ||
+          roomInfo.roomState === roomStates.SKcentral ||
+          roomInfo.roomState === roomStates.noOwner) && roomInfo.dangerlvlmax < 7)
+          return undefined;
         if (!(roomName in Game.rooms))
           return undefined;
-        let roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         for (let x = 1; x <= 48; ++x)
           for (let y = 1; y <= 48; ++y) {
             let moveMent = this.getSquadMoveMentValue(new RoomPosition(x, y, roomName), centerBeeRef);

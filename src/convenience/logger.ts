@@ -1,6 +1,6 @@
 // import { setupsNames } from "../enums";
 import { setups } from "../bees/creepSetups";
-import { roomStates } from "../enums";
+import { roomStates, prefix } from "../enums";
 
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
@@ -248,12 +248,13 @@ export class Logger {
   reportEnemy(creep: Creep) {
     if (!Memory.report.enemies)
       Memory.report.enemies = {};
-
-    Memory.report.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
-      time: Game.time,
-      owner: creep.owner.username,
-      ...Apiary.intel.getStats(creep).max,
-    }
+    let stats = Apiary.intel.getStats(creep).max;
+    if (stats.dism > 1250 || stats.dmgRange > 200 || stats.dmgClose > 750 || stats.heal > 300)
+      Memory.report.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
+        time: Game.time,
+        owner: creep.owner.username,
+        ...stats,
+      }
   }
 
   reportOrder(order: FlagOrder) {
@@ -261,10 +262,11 @@ export class Logger {
       return;
     if (!Memory.report.orders)
       Memory.report.orders = {};
-    Memory.report.orders[order.ref] = {
-      time: Game.time,
-      pos: order.pos,
-    }
+    if (order.master && order.master.spawned && !order.ref.includes(prefix.defSwarm))
+      Memory.report.orders[order.ref] = {
+        time: Game.time,
+        pos: order.pos,
+      }
   }
 
   clean() {

@@ -39,7 +39,7 @@ export class DepositMaster extends SwarmMaster {
     if (!this.order.memory.extraInfo)
       this.order.memory.extraInfo = {
         roadTime: this.pos.getTimeForPath(this.hive),
-        decay: 0,
+        decay: Game.time,
         lastCooldown: 1,
       };
     if (this.pos.roomName in Game.rooms)
@@ -48,11 +48,11 @@ export class DepositMaster extends SwarmMaster {
 
 
   get decay() {
-    return <number>this.order.memory.extraInfo.decay;
+    return <number>this.order.memory.extraInfo.decay - Game.time;
   }
 
   set decay(value) {
-    this.order.memory.extraInfo.decay = value;
+    this.order.memory.extraInfo.decay = Game.time + value;
   }
 
   get lastCooldown() {
@@ -77,7 +77,7 @@ export class DepositMaster extends SwarmMaster {
       this.lastCooldown = this.target.lastCooldown;
       this.decay = this.target.ticksToDecay;
     } else
-      this.decay = -1;
+      this.decay = -Game.time;
   }
 
   update() {
@@ -90,9 +90,8 @@ export class DepositMaster extends SwarmMaster {
     if (this.pos.roomName in Game.rooms)
       this.updateTarget();
     else {
-      --this.decay;
       this.target = undefined;
-      if (!this.decay && this.hive.cells.observe)
+      if (this.decay <= 0 && this.hive.cells.observe)
         Apiary.requestSight(this.pos.roomName);
     }
 

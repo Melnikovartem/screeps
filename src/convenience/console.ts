@@ -130,6 +130,14 @@ export class CustomConsole {
     return ans;
   }
 
+  miningDist(value: number) {
+    Memory.settings.miningDist = value;
+    _.forEach(Apiary.hives, h => {
+      if (h.cells.observe)
+        h.cells.observe.updateRoomsToCheck();
+    });
+  }
+
   balance(min: number | "fit" = Game.market.credits * 0.8) {
     if (typeof min !== "number")
       min = Game.market.credits;

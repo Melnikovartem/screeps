@@ -75,9 +75,22 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
+    else if (this.order.ref.includes("polar")) {
+      this.boosts = [{ type: "attack", lvl: 2 }
+        , { type: "heal", lvl: BOOST_LVL }, { type: "damage", lvl: 2 }];
+      this.setup.patternLimit = 10;
+      this.setup.pattern = [ATTACK];
+      this.setup.fixed = [TOUGH, TOUGH, TOUGH].concat(Array(12).fill(HEAL));
+      this.maxSpawns = 100;
+    } else if (this.order.ref.includes("6g3y")) {
+      this.targetBeeCount = 2;
+      this.maxSpawns = 100;
+      this.setup.patternLimit = 30;
+      this.setup.fixed = [TOUGH, TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL];
+    }
     else if (this.boosts && !this.order.ref.includes("full")) {
-      this.setup.patternLimit = 5;
-      this.setup.fixed = [TOUGH, HEAL, HEAL];
+      this.setup.patternLimit = 15;
+      this.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL];
     }
     if (this.order.ref.includes("keep"))
       this.maxSpawns = 30;
@@ -94,7 +107,7 @@ export class HordeMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10)
-      && (Game.time >= roomInfo.safeModeEndTime - 200 + this.hive.pos.getRoomRangeTo(this.pos) * 35)) {
+      && (Game.time >= roomInfo.safeModeEndTime - 200 + this.hive.pos.getRoomRangeTo(this.pos) * 50)) {
       this.wish({
         setup: this.setup,
         priority: 4,

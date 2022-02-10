@@ -37,7 +37,7 @@ export class PowerMaster extends SwarmMaster {
       this.order.memory.extraInfo = {
         roadTime: this.pos.getTimeForPath(this.hive),
         hits: 0,
-        decay: 0,
+        decay: Game.time,
         power: 0,
       };
 
@@ -70,11 +70,11 @@ export class PowerMaster extends SwarmMaster {
   }
 
   get decay() {
-    return <number>this.order.memory.extraInfo.decay;
+    return <number>this.order.memory.extraInfo.decay - Game.time;
   }
 
   set decay(value) {
-    this.order.memory.extraInfo.decay = value;
+    this.order.memory.extraInfo.decay = Game.time + value;
   }
 
   get pickupTime() {
@@ -95,6 +95,7 @@ export class PowerMaster extends SwarmMaster {
   }
 
   deleteBee(ref: string) {
+    super.deleteBee(ref);
     for (let i = 0; i < this.healers.length; ++i)
       if (this.healers[i].ref === ref) {
         this.healers.splice(i, 1);
@@ -176,9 +177,8 @@ export class PowerMaster extends SwarmMaster {
     if (this.pos.roomName in Game.rooms)
       this.updateTarget();
     else {
-      --this.decay;
       this.target = undefined;
-      if (!this.hits && this.hive.cells.observe)
+      if (this.hits <= 0 && this.hive.cells.observe)
         Apiary.requestSight(this.pos.roomName);
     }
 
@@ -233,7 +233,8 @@ export class PowerMaster extends SwarmMaster {
       let [knight, healer] = couple;
 
       if (knight && healer && (knight.state !== beeStates.work || healer.state !== beeStates.work)) {
-        if (knight.pos.isNearTo(healer) && !knight.creep.spawning && !healer.creep.spawning) {
+        if ((knight.pos.isNearTo(healer) || (knight.pos.enteranceToRoom && knight.pos.enteranceToRoom.isNearTo(healer)))
+          && !knight.creep.spawning && !healer.creep.spawning) {
           knight.state = beeStates.work;
           healer.state = beeStates.work;
         } else {
@@ -246,7 +247,7 @@ export class PowerMaster extends SwarmMaster {
       let chill = false;
       if (knight && knight.state === beeStates.work) {
         let target: Creep | PowerCreep | Structure | undefined;
-        if (knight.pos.roomName === this.pos.roomName)
+        if (knight.pos.roomName === this.pos.roomName && this.target)
           target = this.target;
         let enemy = Apiary.intel.getEnemy(knight.pos, 20);
         if (enemy && knight.pos.getRangeTo(enemy) < 3 || (knight.pos.roomName === this.pos.roomName && !target))

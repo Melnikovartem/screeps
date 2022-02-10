@@ -40,12 +40,12 @@ export class PullerMaster extends Master {
     let workingPowerSites = this.powerSites.filter(p => p.operational);
     let inProgress = workingPowerSites.filter(p => p.beesAmount || p.waitingForBees);
     if (!inProgress.length && this.hive.shouldDo("powerMining") && workingPowerSites.length)
-      inProgress = [workingPowerSites.pop()!];
+      inProgress = [workingPowerSites.reduce((prev, curr) => prev.roadTime > curr.roadTime ? curr : prev)];
     this.sitesON = inProgress;
 
     if (workingPowerSites.length)
       _.forEach(this.powerSites, p => {
-        if (!p.maxSpawns)
+        if (!p.operational)
           _.forEach(p.bees, b => {
             let inNeed = workingPowerSites.filter(wp => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1);
             let nextMaster = b.pos.findClosest(inNeed.length ? inNeed : workingPowerSites);

@@ -113,6 +113,7 @@ declare global {
       minBalance: number,
       generatePixel: boolean,
       wallsHealth: number,
+      miningDist: number,
     }
 
     report: {

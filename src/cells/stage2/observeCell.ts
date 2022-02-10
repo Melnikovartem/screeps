@@ -45,6 +45,7 @@ export class ObserveCell extends Cell {
   }
 
   updateRoomsToCheck() {
+    this.corridorRooms = [];
     let [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
     let closest = we + x + ns + y;
     let roundx = we + Math.round(x / 10) * 10 + ns + y;
@@ -61,7 +62,7 @@ export class ObserveCell extends Cell {
     return this.obeserver.pos;
   }
 
-  dfs(roomName: string, checked: string[], depth: number = 0, maxDepth: number = 10) {
+  dfs(roomName: string, checked: string[], depth: number = 0, maxDepth: number = Memory.settings.miningDist) {
     if (depth > maxDepth)
       return;
     checked.push(roomName);
