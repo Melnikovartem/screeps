@@ -2,7 +2,7 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepsetups";
-import { beeStates, enemyTypes, hiveStates } from "../../enums";
+import { beeStates, enemyTypes, hiveStates, roomStates } from "../../enums";
 
 import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
@@ -75,18 +75,31 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
-    else if (this.order.ref.includes("polar")) {
-      this.boosts = [{ type: "attack", lvl: 2 }
-        , { type: "heal", lvl: BOOST_LVL }, { type: "damage", lvl: 2 }];
+    else if (this.order.ref.includes("guard")) {
+      this.maxSpawns = 5;
+      this.setup.patternLimit = 12;
+      this.setup.fixed = [HEAL, HEAL, HEAL];
+    } else if (this.order.ref.includes("polar")) {
+      this.boosts = [{ type: "attack", lvl: 2 }, { type: "damage", lvl: 2 }];
       this.setup.patternLimit = 10;
       this.setup.pattern = [ATTACK];
       this.setup.fixed = [TOUGH, TOUGH, TOUGH].concat(Array(12).fill(HEAL));
       this.maxSpawns = 100;
+    } else if (this.order.ref.includes("6g3y_1")) {
+      this.boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "attack", lvl: 2 }
+        , { type: "heal", lvl: 2 }, { type: "fatigue", lvl: 2 }, { type: "damage", lvl: 2 }];
+      this.targetBeeCount = 2;
+      this.maxSpawns = 10;
+      this.setup.pattern = [ATTACK];
+      // this.setup.patternLimit = 30;
+      this.setup.fixed = Array(5).fill(TOUGH).concat(Array(10).fill(HEAL));
     } else if (this.order.ref.includes("6g3y")) {
+      this.boosts = [{ type: "rangedAttack", lvl: 2 }, { type: "attack", lvl: 2 }
+        , { type: "heal", lvl: 2 }, { type: "fatigue", lvl: 2 }, { type: "damage", lvl: 2 }];
       this.targetBeeCount = 2;
       this.maxSpawns = 100;
-      this.setup.patternLimit = 30;
-      this.setup.fixed = [TOUGH, TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL];
+      // this.setup.patternLimit = 30;
+      this.setup.fixed = [TOUGH, TOUGH, TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL];
     }
     else if (this.boosts && !this.order.ref.includes("full")) {
       this.setup.patternLimit = 15;
@@ -107,7 +120,7 @@ export class HordeMaster extends SwarmMaster {
 
     let roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10)
-      && (Game.time >= roomInfo.safeModeEndTime - 200 + this.hive.pos.getRoomRangeTo(this.pos) * 50)) {
+      && (Game.time >= roomInfo.safeModeEndTime - (roomInfo.roomState === roomStates.ownedByMe ? 300 : 150 + this.hive.pos.getRoomRangeTo(this.pos) * 50))) {
       this.wish({
         setup: this.setup,
         priority: 4,
@@ -141,8 +154,6 @@ export class HordeMaster extends SwarmMaster {
     let action2;
 
     let opt: TravelToOptions = {};
-    if (target)
-      opt.movingTarget = true;
     let beeStats = Apiary.intel.getStats(bee.creep).current;
     let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
 
@@ -278,7 +289,8 @@ export class HordeMaster extends SwarmMaster {
       }
     }
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
-      opt.movingTarget = true;
+      if (target && target.pos.getRangeTo(bee) <= 3)
+        opt.movingTarget = true;
       bee.goTo(bee.pos.enteranceToRoom && rangeToTarget <= 1 && target.pos.getOpenPositions(false)[0] || target, opt);
       if (bee.targetPosition && bee.targetPosition.enteranceToRoom && bee.pos.roomName === this.pos.roomName)
         bee.targetPosition = bee.pos;

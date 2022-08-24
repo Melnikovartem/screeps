@@ -10,6 +10,7 @@ import type { Boosts } from "../_Master";
 export class HelpUpgradeMaster extends SwarmMaster {
 
   boosts: Boosts = [{ type: "upgrade", lvl: 2 }, { type: "upgrade", lvl: 1 }, { type: "upgrade", lvl: 0 }];
+
   get targetBeeCount() {
     if (!this.order)
       return 0;
@@ -17,6 +18,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
       this.order.memory.extraInfo = 5;
     return this.order.memory.extraInfo;
   }
+
   set targetBeeCount(value) {
     if (this.order && this.order.memory.extraInfo)
       this.order.memory.extraInfo = value
@@ -28,11 +30,11 @@ export class HelpUpgradeMaster extends SwarmMaster {
     super.update();
 
     let controller = Game.rooms[this.pos.roomName].controller;
-    if (!controller || !controller.my) {
+    if (!controller || !controller.my || (controller.level === 8 && !this.beesAmount)) {
       this.order.delete();
       return;
     }
-    if (this.checkBees() && Apiary.intel.getInfo(this.pos.roomName).safePlace && this.hive.resState[RESOURCE_ENERGY] > 0)
+    if (this.checkBees() && Apiary.intel.getInfo(this.pos.roomName).safePlace && this.hive.resState[RESOURCE_ENERGY] >= 0 && controller.level < 8)
       this.wish({
         setup: setups.upgrader.manual,
         priority: 8,
@@ -67,8 +69,10 @@ export class HelpUpgradeMaster extends SwarmMaster {
           bee.upgradeController(controller, this.hive.opt);
         else
           bee.goRest(this.pos, this.hive.opt);
-      } else if (this.hive.cells.storage)
+      } else if (this.hive.cells.storage && bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50)
         bee.withdraw(this.hive.cells.storage.storage, RESOURCE_ENERGY, undefined, this.hive.opt);
+      else
+        this.removeBee(bee);
     });
   }
 }

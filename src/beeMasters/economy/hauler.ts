@@ -168,7 +168,8 @@ export class HaulerMaster extends Master {
           }
 
           // overproduction or energy from SK defenders
-          let overproduction: Resource | Tombstone | undefined = target.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]; // , 3)[0];
+          let overproduction: Resource | Tombstone | undefined = target.pos.findInRange(FIND_DROPPED_RESOURCES, 3)
+            .filter(r => r.pos.getRangeTo(bee) <= 2 || r.pos.getRangeTo(target!) <= 1)[0];
           if (overproduction)
             bee.pickup(overproduction);
           else {

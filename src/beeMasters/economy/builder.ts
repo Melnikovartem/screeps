@@ -34,14 +34,23 @@ export class BuilderMaster extends Master {
       else if (roomInfo.dangerlvlmax <= 6 && this.hive.sumCost < 500)
         realBattle = false;
     }
-    if (this.hive.state === hiveStates.nukealert
-      || realBattle
+    let otherEmergency = this.hive.state === hiveStates.nukealert
       || (this.hive.wallsHealth < this.hive.wallsHealthMax && this.hive.resState[RESOURCE_ENERGY] > 0)
-      || this.hive.sumCost > 40000) {
-      this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
+      || this.hive.sumCost > 50000;
+
+    switch (this.hive.shouldDo("buildBoost")) {
+      case 1:
+        if (!realBattle)
+          break;
+      case 2:
+        this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
+        break;
+    }
+
+    if (realBattle || otherEmergency) {
       this.patternPerBee = Infinity;
       ++target;
-      if (this.hive.cells.lab && this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL)
+      if (this.boosts && this.hive.cells.lab && this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL)
         _.forEach(this.bees, b => {
           if (!b.boosted && b.ticksToLive >= 1200)
             b.state = beeStates.boosting;
@@ -52,11 +61,9 @@ export class BuilderMaster extends Master {
       this.patternPerBee = 5;
       if (this.hive.sumCost > 5000)
         ++target;
-      if (this.hive.sumCost > 10000) {
-        this.boosts = [{ type: "build", lvl: 2 }, { type: "build", lvl: 1 }, { type: "build", lvl: 0 }];
+      if (this.hive.sumCost > 10000)
         if (this.hive.resState[RESOURCE_ENERGY] > 0)
           this.patternPerBee = 8;
-      }
     }
 
     this.targetBeeCount = target;

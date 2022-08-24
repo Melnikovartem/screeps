@@ -19,7 +19,7 @@ export class SquadWarCrimesMaster extends Master {
   formationBees: (Bee | undefined)[] = [];
   refInfo: string;
   parent: WarcrimesModule;
-  boosts: Boosts = [{ type: "fatigue", lvl: 2 }, { type: "rangedAttack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "damage", lvl: 2 }, { type: "dismantle", lvl: 1 }];
+  boosts: Boosts = [{ type: "fatigue", lvl: 2 }, { type: "rangedAttack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "damage", lvl: 2 }, { type: "dismantle", lvl: 2 }];
 
   constructor(parent: WarcrimesModule
     , info: { hive: string, setup: CreepSetup[], poss: Pos[], poss_ent: Pos[], target: { x: number, y: number, roomName: string }, ref: string, ent: string }) {

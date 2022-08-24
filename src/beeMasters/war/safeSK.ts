@@ -58,7 +58,7 @@ export class SKMaster extends HordeMaster {
 
     if (!this.hive.annexInDanger.includes(this.pos.roomName) &&
       this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.maxPath - 50)
-      && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8)
+      && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8 && !this.hive.annexInDanger.includes(this.order.pos.roomName))
       this.wish({
         setup: setups.defender.sk,
         priority: 4,

@@ -67,8 +67,10 @@ export class HelpTransferMaster extends SwarmMaster {
           bee.transfer(storage, findOptimalResource(bee.store), undefined, this.hive.opt);
         else
           this.delete();
-      } else if (this.hive.cells.storage)
+      } else if (this.hive.cells.storage && bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50)
         bee.withdraw(this.hive.cells.storage.storage, this.res, undefined, this.hive.opt);
+      else
+        this.removeBee(bee);
     });
   }
 }
