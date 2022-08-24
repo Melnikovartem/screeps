@@ -74,6 +74,7 @@ export class FlagOrder {
         case COLOR_YELLOW: case COLOR_WHITE: case COLOR_GREY: case COLOR_BLUE:
           filter = _ => true;
           break;
+        case COLOR_ORANGE:
         case COLOR_RED:
           parsed = /_room_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
           if (parsed)

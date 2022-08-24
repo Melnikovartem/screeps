@@ -69,63 +69,83 @@ export class CustomConsole {
     return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
   }
 
-  mode(mode = "", hiveName?: string, value: number = 1) {
+  mode(mode = "", hiveName?: string, value?: number) {
     let ans = "";
     mode = mode.toLowerCase();
-    _.forEach(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
+
+    switch (mode) {
+      case "upg":
+        mode = "upgrade";
+        break;
+      case "build":
+      case "buildboost":
+        mode = "buildBoost";
+        break;
+      case "sell":
+      case "selloff":
+        mode = "sellOff";
+        break;
+      case "buy":
+      case "buyin":
+        mode = "buyIn";
+        break;
+    }
+    _.forEach(_.filter(Apiary.hives, h => !hiveName || hiveName.includes(h.roomName)), h => {
       let dd = Memory.cache.hives[h.roomName].do;
       switch (mode) {
         case "power":
-          dd.powerMining = dd.powerMining ? 0 : 1;
-          if (dd.powerMining)
+          dd.powerMining = value === 0 || value === 1 ? value : (dd.powerMining ? 0 : 1);
+          if (dd.powerMining && value !== 0)
             dd.powerRefining = 1;
           break;
         case "powermining":
           if (value === 0 || value === 1)
             dd.powerMining = value;
         case "deposit":
-          dd.depositMining = dd.depositMining ? 0 : 1;
+          dd.depositMining = value === 0 || value === 1 ? value : (dd.depositMining ? 0 : 1);
           if (dd.depositMining)
             dd.depositRefining = 1;
           break;
         case "depositrefining":
           if (value === 0 || value === 1)
             dd.depositRefining = value;
+          break;
+        case "upgrade":
+          if (value === 3) {
+            dd[mode] = value;
+            break;
+          }
+        case "buildBoost":
+          if (value === 2) {
+            dd[mode] = value;
+            break;
+          }
+        case "unboost":
+        case "saveCpu":
         case "war":
-          dd.war = dd.war ? 0 : 1;
+        case "sellOff":
+        case "buyIn":
+          dd[mode] = value === 0 || value === 1 ? value : (dd[mode] ? 0 : 1);
           break;
         case "hib":
         case "hibernate":
-          let on: 0 | 1 = dd.unboost && dd.saveCpu ? 0 : 1;
+          let on: 0 | 1 = value === 0 || value === 1 ? value : (dd.unboost && dd.saveCpu ? 0 : 1);
           dd.unboost = on;
           dd.saveCpu = on;
           break;
-        case "upd":
-        case "upgrade":
-          if (value === 0 || value === 1 || value === 2 || value === 3)
-            dd.upgrade = value;
-          break;
-        case "selloff":
-          if (value === 0 || value === 1)
-            dd.sellOff = value;
-          break;
-        case "buyin":
-          if (value === 0 || value === 1)
-            dd.buyIn = value;
-          break;
         case "def":
         case "default":
-          dd = BASE_MODE_HIVE;
+          Memory.cache.hives[h.roomName].do = { ...BASE_MODE_HIVE };
           break;
       }
-      let addString = (name: keyof HiveCache["do"], ref: string = name) => `${ref.toUpperCase()}: ${!h.shouldDo(name) ? "OFF" : ("ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : ""))} `
+      let addString = (name: keyof HiveCache["do"], ref: string = name) => `${ref.toUpperCase()}${h.shouldDo(name) === BASE_MODE_HIVE[name] ? "" : "❗"}: ${!h.shouldDo(name) ? "OFF" : ("ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : ""))} `
       ans += `@ ${h.print
         }:\n${addString("depositRefining", "refining") + addString("depositMining", "deposit")
         }\n${addString("powerRefining", "refining") + addString("powerMining", "power")
         }\n${addString("war") + addString("lab")
         }\n${addString("sellOff") + addString("buyIn")
         }\n${addString("saveCpu", "cpu") + addString("unboost")
-        }\n${addString("upgrade")}\n`;
+        }\n${addString("buildBoost") + addString("upgrade")}\n`;
     });
     return ans;
   }
