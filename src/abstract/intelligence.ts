@@ -8,7 +8,7 @@ import { profile } from "../profiler/decorator";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "6g3y", "Lapitz", "YoRHa", "Bestia"]; // "buger"
+export const PEACE_PACKS: string[] = ["Hi_Melnikov", "Digital", "Lapitz", "YoRHa", "Bestia", "6g3y"]; // "buger"
 export const NON_AGRESSION_PACKS: string[] = ["TgDgNU"];
 
 export interface Enemy {
