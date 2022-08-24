@@ -44,6 +44,7 @@ export enum prefix {
   annex = "annex_",
   claim = "claim",
   mine = "mine_",
+  clear = "clear_",
   // haltlab = "haltlab_",
   // nukes = "nukes_",
   // terminal = "terminal_",
@@ -57,7 +58,7 @@ export enum prefix {
 
   // TODO shorten?
 
-  //cells
+  // cells
   defenseCell = "def",
   respawnCell = "spawn",
   developmentCell = "dev",

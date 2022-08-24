@@ -19,6 +19,7 @@ import { AnnexMaster } from "./beeMasters/civil/annexer";
 import { PickupMaster } from "./beeMasters/civil/pickup";
 import { HelpUpgradeMaster } from "./beeMasters/civil/helpUpgrade";
 import { HelpTransferMaster } from "./beeMasters/civil/helpTransfer";
+import { ClearMaster } from "./beeMasters/civil/clear";
 import { ContainerBuilderMaster } from "./beeMasters/civil/containerBuilder";
 import { SignerMaster } from "./beeMasters/civil/randomSigner";
 import { ClaimerMaster } from "./beeMasters/civil/claimer";
@@ -518,6 +519,9 @@ export class FlagOrder {
             case COLOR_BLUE:
               if (this.hive.puller)
                 this.master = new DepositMaster(this, this.hive.puller);
+              break;
+            case COLOR_RED:
+              this.master = new ClearMaster(this);
               break;
           }
         break;

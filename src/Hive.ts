@@ -19,6 +19,8 @@ import { makeId } from "./abstract/utils";
 import { hiveStates, prefix, roomStates } from "./enums";
 import { BASE_MODE_HIVE } from "./abstract/hiveMemory";
 
+import { FULL_CAPACITY } from "./abstract/terminalNetwork";
+
 import { profile } from "./profiler/decorator";
 import type { CreepSetup } from "./bees/creepSetups";
 import type { HiveCache } from "./abstract/hiveMemory";
@@ -621,6 +623,10 @@ export class Hive {
       if (validHives.length)
         this.pos.createFlag(prefix.boost + this.roomName, COLOR_PURPLE, COLOR_WHITE);
     }
+
+    // check if hive storage is full
+    if (this.cells.storage && this.cells.storage.storage.store.getFreeCapacity() <= FULL_CAPACITY * 0.5 && !Apiary.orders[prefix.clear + this.roomName])
+      this.pos.createFlag(prefix.clear + this.roomName, COLOR_ORANGE, COLOR_RED);
 
     _.forEach(this.cells, cell => {
       Apiary.wrap(() => cell.update(), cell.ref, "update");

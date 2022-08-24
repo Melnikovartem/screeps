@@ -8,7 +8,8 @@ import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
 import type { Hive, ResTarget } from "../hive";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
-export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1
+export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
+export const FULL_CAPACITY = STORAGE_CAPACITY * 0.01;
 
 @profile
 export class Network {
@@ -160,7 +161,7 @@ export class Network {
         if (hive.resState[res]! < 0)
           continue;
         if (hive.shouldDo("sellOff"))
-          Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getUsedCapacity() > stStore.getCapacity() * 0.98);
+          Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getFreeCapacity() < FULL_CAPACITY * 2);
       }
     }
   }

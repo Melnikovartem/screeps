@@ -216,8 +216,6 @@ export class Broker {
     let roomName = terminal.pos.roomName;
     if (creditsToUse === undefined)
       creditsToUse = this.creditsToUse(roomName);
-    if (creditsToUse < REASONABLE_MONEY)
-      return "no money";
     let orders;
     if (!hurry)
       orders = this.longOrders(roomName, res, ORDER_SELL);
@@ -251,6 +249,9 @@ export class Broker {
 
     if (price === Infinity)
       return "long";
+
+    if (creditsToUse < REASONABLE_MONEY)
+      return "no money";
 
     if (!orders) // prob never
       orders = this.longOrders(roomName, res, ORDER_SELL);;

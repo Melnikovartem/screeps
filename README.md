@@ -10,3 +10,5 @@ But i am too lazy for that (not like ppl will look into it)
 So you can just find me [here](https://screeps.com/a/#!/profile/Hi_Melnikov)
 
 <!-- TODO some cool pictures of my architecture -->
+
+<!-- rollup -c --environment DEST:main -->
