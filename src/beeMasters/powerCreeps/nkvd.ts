@@ -31,7 +31,6 @@ export class NKVDMaster extends PowerMaster {
     [PWR_OPERATE_TERMINAL]?: StorageCell,
     [PWR_OPERATE_STORAGE]?: StorageCell,
 
-
     [PWR_FORTIFY]?: DefenseCell,
     [PWR_OPERATE_TOWER]?: DefenseCell,
 

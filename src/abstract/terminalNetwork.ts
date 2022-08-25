@@ -10,6 +10,7 @@ import type { Hive, ResTarget } from "../hive";
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
 export const FULL_CAPACITY = STORAGE_CAPACITY * 0.01;
+const SELL_STEP = 8192
 
 @profile
 export class Network {
@@ -161,7 +162,7 @@ export class Network {
         if (hive.resState[res]! < 0)
           continue;
         if (hive.shouldDo("sellOff"))
-          Apiary.broker.sellOff(terminal, res, Math.min(1024, hive.resState[res]! * 0.8), stStore.getFreeCapacity() < FULL_CAPACITY * 2);
+          Apiary.broker.sellOff(terminal, res, Math.min(SELL_STEP, hive.resState[res]! * 0.8), stStore.getFreeCapacity() < FULL_CAPACITY * 2);
       }
     }
   }
