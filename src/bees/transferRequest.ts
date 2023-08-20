@@ -1,11 +1,19 @@
-
 import { beeStates } from "../enums";
 import { findOptimalResource } from "../abstract/utils";
 
 import type { Bee } from "./bee";
 
-type TransferTarget = StructureLink | StructureTerminal | StructureStorage | StructureTower
-  | StructureLab | StructurePowerSpawn | StructureExtension | StructureSpawn | StructureFactory | StructureContainer;
+type TransferTarget =
+  | StructureLink
+  | StructureTerminal
+  | StructureStorage
+  | StructureTower
+  | StructureLab
+  | StructurePowerSpawn
+  | StructureExtension
+  | StructureSpawn
+  | StructureFactory
+  | StructureContainer;
 
 export class TransferRequest {
   ref: string;
@@ -24,12 +32,18 @@ export class TransferRequest {
   // 4 - terminal
   // 5 - not important shit
   // 6 - pickup
-  stillExists: boolean
+  stillExists: boolean;
 
   nextup: TransferRequest | undefined;
 
-  constructor(ref: string, from: TransferRequest["from"], to: TransferRequest["to"], priority: TransferRequest["priority"]
-    , res: ResourceConstant | undefined, amount: number) {
+  constructor(
+    ref: string,
+    from: TransferRequest["from"],
+    to: TransferRequest["to"],
+    priority: TransferRequest["priority"],
+    res: ResourceConstant | undefined,
+    amount: number
+  ) {
     this.ref = ref;
     this.to = to;
     this.from = from;
@@ -41,44 +55,47 @@ export class TransferRequest {
       this.fromAmount = from.amount;
     } else {
       this.resource = res;
-      this.fromAmount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(this.resource);
+      this.fromAmount = (
+        from.store as Store<ResourceConstant, false>
+      ).getUsedCapacity(this.resource);
     }
-    this.toAmount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(this.resource);
+    this.toAmount = (
+      to.store as Store<ResourceConstant, false>
+    ).getFreeCapacity(this.resource);
     this.amount = amount;
     this.stillExists = true;
   }
 
   update() {
-    let from = <TransferRequest["from"] | null>Game.getObjectById(this.from.id);
+    const from = Game.getObjectById(this.from.id) as
+      | TransferRequest["from"]
+      | null;
     if (from) {
       this.from = from;
-      if (from instanceof Resource)
-        this.fromAmount = from.amount;
+      if (from instanceof Resource) this.fromAmount = from.amount;
       else
-        this.fromAmount = (<Store<ResourceConstant, false>>from.store).getUsedCapacity(this.resource);
-    } else if (this.from.pos.roomName in Game.rooms)
-      this.stillExists = false;
+        this.fromAmount = (
+          from.store as Store<ResourceConstant, false>
+        ).getUsedCapacity(this.resource);
+    } else if (this.from.pos.roomName in Game.rooms) this.stillExists = false;
 
-    let to = <TransferRequest["to"] | null>Game.getObjectById(this.to.id);
+    const to = Game.getObjectById(this.to.id) as TransferRequest["to"] | null;
     if (to) {
       this.to = to;
-      this.toAmount = (<Store<ResourceConstant, false>>to.store).getFreeCapacity(this.resource);
-    } else if (this.to.pos.roomName in Game.rooms)
-      this.stillExists = false;
+      this.toAmount = (
+        to.store as Store<ResourceConstant, false>
+      ).getFreeCapacity(this.resource);
+    } else if (this.to.pos.roomName in Game.rooms) this.stillExists = false;
 
     this.inProcess = 0;
     this.beeProcess = 0;
   }
 
   isValid(inBee = 0) {
-    if (!this.fromAmount && !this.inProcess && !inBee)
-      return false;
-    if (this.amount <= 0)
-      return false;
-    if (this.toAmount <= 0)
-      return false;
-    if (!this.stillExists)
-      return false
+    if (!this.fromAmount && !this.inProcess && !inBee) return false;
+    if (this.amount <= 0) return false;
+    if (this.toAmount <= 0) return false;
+    if (!this.stillExists) return false;
     return true;
   }
 
@@ -87,12 +104,16 @@ export class TransferRequest {
     ++this.beeProcess;
     if (bee.target !== this.ref) {
       bee.target = this.ref;
-      if (bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(this.resource)) {
+      if (
+        bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(this.resource)
+      ) {
         bee.state = beeStates.fflush;
-      } else if (bee.store.getUsedCapacity() < Math.min(this.amount, this.toAmount, bee.store.getCapacity()))
+      } else if (
+        bee.store.getUsedCapacity() <
+        Math.min(this.amount, this.toAmount, bee.store.getCapacity())
+      )
         bee.state = beeStates.refill;
-      else
-        bee.state = beeStates.work;
+      else bee.state = beeStates.work;
     }
     if (!this.isValid()) {
       if (this.nextup) {
@@ -110,17 +131,18 @@ export class TransferRequest {
     let transfer = false;
     switch (bee.state) {
       case beeStates.refill:
-        if (bee.store.getUsedCapacity() !== bee.store.getUsedCapacity(this.resource))
+        if (
+          bee.store.getUsedCapacity() !==
+          bee.store.getUsedCapacity(this.resource)
+        )
           bee.state = beeStates.fflush;
         else if (!bee.store.getFreeCapacity(this.resource))
           bee.state = beeStates.work;
         else if (bee.store.getUsedCapacity(this.resource) >= this.amount)
           bee.state = beeStates.work;
         else if (!this.fromAmount) {
-          if (this.nextup)
-            transfer = this.nextup.process(bee);
-          else
-            bee.state = beeStates.work;
+          if (this.nextup) transfer = this.nextup.process(bee);
+          else bee.state = beeStates.work;
           return transfer;
         }
         break;
@@ -133,29 +155,49 @@ export class TransferRequest {
 
     switch (bee.state) {
       case beeStates.refill:
-        amountBee = Math.min(bee.store.getFreeCapacity(this.resource), this.fromAmount);
+        amountBee = Math.min(
+          bee.store.getFreeCapacity(this.resource),
+          this.fromAmount
+        );
         let ans;
-        if (this.from instanceof Resource)
-          ans = bee.pickup(this.from);
+        if (this.from instanceof Resource) ans = bee.pickup(this.from);
         else {
-          let res = this.resource || findOptimalResource(this.from.store, -1);
+          const res = this.resource || findOptimalResource(this.from.store, -1);
           if (this.resource === undefined)
-            amountBee = Math.min(amountBee, (<Store<ResourceConstant, false>>this.from.store).getUsedCapacity(res));
+            amountBee = Math.min(
+              amountBee,
+              (
+                this.from.store as Store<ResourceConstant, false>
+              ).getUsedCapacity(res)
+            );
           ans = bee.withdraw(this.from, res, amountBee);
         }
         if (ans === OK) {
           transfer = true;
-          if (this.nextup && this.to instanceof StructureStorage && this.fromAmount < bee.store.getFreeCapacity(this.resource)) {
+          if (
+            this.nextup &&
+            this.to instanceof StructureStorage &&
+            this.fromAmount < bee.store.getFreeCapacity(this.resource)
+          ) {
             bee.goTo(this.nextup.from);
             bee.target = this.nextup.ref;
-          } else
-            bee.goTo(this.to);
+          } else bee.goTo(this.to);
         }
         break;
 
       case beeStates.work:
-        amountBee = Math.min(this.amount, bee.store.getUsedCapacity(this.resource), this.toAmount);
-        if (bee.transfer(this.to, this.resource || findOptimalResource(bee.store), amountBee) === OK) {
+        amountBee = Math.min(
+          this.amount,
+          bee.store.getUsedCapacity(this.resource),
+          this.toAmount
+        );
+        if (
+          bee.transfer(
+            this.to,
+            this.resource || findOptimalResource(bee.store),
+            amountBee
+          ) === OK
+        ) {
           transfer = true;
           this.amount -= amountBee;
           this.toAmount -= amountBee;
@@ -163,12 +205,10 @@ export class TransferRequest {
             if (this.nextup && this.nextup.isValid()) {
               if (bee.store.getUsedCapacity(this.resource) === amountBee)
                 bee.goTo(this.nextup.from);
-              else
-                bee.goTo(this.nextup.to);
+              else bee.goTo(this.nextup.to);
               bee.target = this.nextup.ref;
             }
-          } else
-            bee.goTo(this.from);
+          } else bee.goTo(this.from);
         }
         break;
     }

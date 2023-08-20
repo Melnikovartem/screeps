@@ -1,7 +1,7 @@
 import { SwarmMaster } from "../_SwarmMaster";
 
 import { prefix, beeStates } from "../../enums";
-import { setups } from "../../bees/creepsetups";
+import { setups } from "../../bees/creepSetups";
 
 import { profile } from "../../profiler/decorator";
 import type { FlagOrder } from "../../order";
@@ -35,9 +35,8 @@ export class PortalMaster extends SwarmMaster {
       this.setup.patternLimit = 3;
     } else if (this.order.ref.includes("transfer")) {
       this.setup = setups.hauler.copy();
-      let parsed = /transfer_(.*)/.exec(this.order.ref);
-      if (parsed)
-        this.res = <ResourceConstant>parsed[1];
+      const parsed = /transfer_(.*)/.exec(this.order.ref);
+      if (parsed) this.res = parsed[1] as ResourceConstant;
       if (this.res && this.res.length > 1) {
         this.setup.fixed = [TOUGH];
         this.setup.moveMax = "best";
@@ -57,24 +56,31 @@ export class PortalMaster extends SwarmMaster {
         this.order.delete();
         return;
       }
-      if (!this.ref.includes("keep") && !this.hive.cells.storage.getUsedCapacity(this.res)) {
+      if (
+        !this.ref.includes("keep") &&
+        !this.hive.cells.storage.getUsedCapacity(this.res)
+      ) {
         this.order.delete();
         return;
       }
 
-      let inStore = this.hive.cells.storage.storage.store.getUsedCapacity(this.res);
+      const inStore = this.hive.cells.storage.storage.store.getUsedCapacity(
+        this.res
+      );
       shouldSpawn = inStore > 2048;
       this.targetBeeCount = inStore > 4096 ? 2 : 1;
     }
 
     if (this.pos.roomName in Game.rooms) {
-      let portal = this.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
+      let portal = this.pos
+        .findInRange(FIND_STRUCTURES, 1)
+        .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
       if (!portal) {
-        portal = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
-        if (portal)
-          this.order.flag.setPosition(portal.pos.x, portal.pos.y)
-        else
-          this.order.delete();
+        portal = Game.rooms[this.pos.roomName]
+          .find(FIND_STRUCTURES)
+          .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
+        if (portal) this.order.flag.setPosition(portal.pos.x, portal.pos.y);
+        else this.order.delete();
       }
     }
 
@@ -87,26 +93,32 @@ export class PortalMaster extends SwarmMaster {
   }
 
   run() {
-    _.forEach(this.bees, bee => {
+    _.forEach(this.bees, (bee) => {
       if (bee.state === beeStates.boosting)
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
           bee.state = beeStates.chill;
     });
 
-    _.forEach(this.activeBees, bee => {
+    _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case beeStates.boosting:
           return;
         case beeStates.chill:
-          if (this.res && bee.store.getFreeCapacity(this.res) && this.hive.cells.storage && this.hive.cells.storage.storage.store.getUsedCapacity(this.res)) {
+          if (
+            this.res &&
+            bee.store.getFreeCapacity(this.res) &&
+            this.hive.cells.storage &&
+            this.hive.cells.storage.storage.store.getUsedCapacity(this.res)
+          ) {
             bee.withdraw(this.hive.cells.storage.storage, this.res);
             break;
           }
           let pos = this.pos;
           if (this.pos.roomName in Game.rooms) {
-            let portal = this.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_PORTAL)[0];
-            if (portal)
-              pos = portal.pos;
+            const portal = this.pos
+              .findInRange(FIND_STRUCTURES, 1)
+              .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
+            if (portal) pos = portal.pos;
           }
           bee.goTo(pos);
           this.checkFlee(bee, undefined, undefined, false, 200);

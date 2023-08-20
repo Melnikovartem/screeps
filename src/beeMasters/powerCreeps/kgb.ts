@@ -1,7 +1,7 @@
 import { PowerMaster } from "../_PowerMaster";
 
 // import { beeStates, prefix } from "../../enums";
-// import { setups } from "../../bees/creepsetups";
+// import { setups } from "../../bees/creepSetups";
 
 import { profile } from "../../profiler/decorator";
 
@@ -9,12 +9,9 @@ import { profile } from "../../profiler/decorator";
 
 @profile
 export class KGBMaster extends PowerMaster {
-
   update() {
     super.update();
   }
 
-  run() {
-
-  }
+  run() {}
 }

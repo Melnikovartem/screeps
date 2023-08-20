@@ -33,7 +33,6 @@ export const HIVE_OPS = 5000;
 
 @profile
 export abstract class PowerMaster extends Master {
-
   readonly powerCreep: PowerBee;
   readonly cell: PowerCell;
   usedPower = false;
@@ -50,17 +49,21 @@ export abstract class PowerMaster extends Master {
     super.update();
     if (!this.powerCreep.shard)
       this.powerCreep.creep.spawn(this.cell.powerSpawn);
-    if (this.powerCreep.creep.spawnCooldownTime)
-      this.delete();
+    if (this.powerCreep.creep.spawnCooldownTime) this.delete();
   }
 
   run() {
     if (!this.usedPower) {
-      let ans = this.powerCreep.usePower(PWR_GENERATE_OPS);
+      const ans = this.powerCreep.usePower(PWR_GENERATE_OPS);
       if (ans === OK && Apiary.logger) {
-        let pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
+        const pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
         if (pwrStats)
-          Apiary.logger.addResourceStat(this.hive.roomName, "PowerCreep", POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level], RESOURCE_OPS);
+          Apiary.logger.addResourceStat(
+            this.hive.roomName,
+            "PowerCreep",
+            POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level],
+            RESOURCE_OPS
+          );
       }
     }
     this.usedPower = false;

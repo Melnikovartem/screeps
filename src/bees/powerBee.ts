@@ -38,32 +38,32 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   }
 
   usePower(pwr: PowerConstant, t?: RoomObject, opt?: TravelToOptions) {
-    let pwrInfo = POWER_INFO[pwr];
-    let pwrStats = this.powers[pwr];
+    const pwrInfo = POWER_INFO[pwr];
+    const pwrStats = this.powers[pwr];
     if (pwrStats) {
-      if (pwrStats.cooldown)
-        return ERR_TIRED;
-      else if ("ops" in pwrInfo && this.store.getUsedCapacity(RESOURCE_OPS) < pwrInfo.ops)
+      if (pwrStats.cooldown) return ERR_TIRED;
+      else if (
+        "ops" in pwrInfo &&
+        this.store.getUsedCapacity(RESOURCE_OPS) < pwrInfo.ops
+      )
         return ERR_NOT_ENOUGH_RESOURCES;
-    } else
-      return ERR_NOT_FOUND;
+    } else return ERR_NOT_FOUND;
     let ans: ScreepsReturnCode = OK;
     if (t) {
       let range;
-      if ("range" in pwrInfo)
-        range = pwrInfo.range;
-      ans = this.actionCheck(t.pos, opt, range)
+      if ("range" in pwrInfo) range = pwrInfo.range;
+      ans = this.actionCheck(t.pos, opt, range);
     }
     return ans === OK ? this.creep.usePower(pwr, t) : ans;
   }
 
   enableRoom(t: StructureController, opt?: TravelToOptions) {
-    let ans = this.actionCheck(t.pos, opt);
+    const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.enableRoom(t) : ans;
   }
 
   renew(t: StructurePowerSpawn | StructurePowerBank, opt?: TravelToOptions) {
-    let ans = this.actionCheck(t.pos, opt);
+    const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.renew(t) : ans;
   }
 
@@ -73,23 +73,27 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   }
 
   static makeMaster(ref: string): ((pb: PowerBee) => Master) | undefined {
-    let validCells = _.compact(_.map(Apiary.hives, h => h.cells.power!));
+    let validCells = _.compact(_.map(Apiary.hives, (h) => h.cells.power!));
     if (ref.includes(prefix.nkvd)) {
-      validCells = validCells.filter(c => c.powerManager === ref && !c.powerManagerBee);
-      if (validCells.length)
-        return (pb) => new NKVDMaster(validCells[0], pb);
+      validCells = validCells.filter(
+        (c) => c.powerManager === ref && !c.powerManagerBee
+      );
+      if (validCells.length) return (pb) => new NKVDMaster(validCells[0], pb);
     }
     return undefined;
   }
 
   static checkBees() {
     for (const name in Game.powerCreeps) {
-      let pc = Game.powerCreeps[name];
-      if ((!pc.shard || pc.shard === Game.shard.name) && !pc.spawnCooldownTime) {
+      const pc = Game.powerCreeps[name];
+      if (
+        (!pc.shard || pc.shard === Game.shard.name) &&
+        !pc.spawnCooldownTime
+      ) {
         if (!Apiary.bees[name] && !Apiary.masters[prefix.master + name]) {
-          let futureMaster = this.makeMaster(pc.name);
+          const futureMaster = this.makeMaster(pc.name);
           if (futureMaster) {
-            let bee = new PowerBee(pc);
+            const bee = new PowerBee(pc);
             Apiary.bees[name] = bee;
             bee.master = futureMaster(bee);
           }

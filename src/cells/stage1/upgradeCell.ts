@@ -2,7 +2,7 @@ import { Cell } from "../_Cell";
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 
 import { prefix, hiveStates } from "../../enums";
-import { setups } from "../../bees/creepsetups";
+import { setups } from "../../bees/creepSetups";
 
 import { profile } from "../../profiler/decorator";
 import type { Hive } from "../../Hive";
@@ -10,7 +10,6 @@ import type { StorageCell } from "./storageCell";
 
 @profile
 export class UpgradeCell extends Cell {
-
   controller: StructureController;
   link: StructureLink | undefined;
   master: UpgraderMaster;
@@ -28,11 +27,13 @@ export class UpgradeCell extends Cell {
 
     this.controller = controller;
 
-    this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
+    this.link = _.filter(
+      this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3),
+      (structure) => structure.structureType === STRUCTURE_LINK
+    )[0] as StructureLink;
 
     this.roadTime = this.hive.pos.getTimeForPath(this);
-    if (this.roadTime === Infinity)
-      this.roadTime = 0;
+    if (this.roadTime === Infinity) this.roadTime = 0;
 
     this.master = new UpgraderMaster(this);
   }
@@ -42,41 +43,57 @@ export class UpgradeCell extends Cell {
   }
 
   recalculateRate() {
-    let futureResourceCells = _.filter(Game.flags, f => f.color === COLOR_YELLOW && f.secondaryColor === COLOR_YELLOW && f.memory.hive === this.hive.roomName);
+    const futureResourceCells = _.filter(
+      Game.flags,
+      (f) =>
+        f.color === COLOR_YELLOW &&
+        f.secondaryColor === COLOR_YELLOW &&
+        f.memory.hive === this.hive.roomName
+    );
     this.maxRate = Math.max(1, futureResourceCells.length) * 10;
 
     let setup;
     let suckerTime = 0;
 
     if (this.link && this.sCell.link) {
-      this.maxRate = Math.min(800 / this.link.pos.getRangeTo(this.sCell.link), this.maxRate); // how to get more in?
-      _.forEach(this.hive.cells.excavation.resourceCells, cell => {
+      this.maxRate = Math.min(
+        800 / this.link.pos.getRangeTo(this.sCell.link),
+        this.maxRate
+      ); // how to get more in?
+      _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
         if (cell.link)
-          this.maxRate += Math.min(800 / this.link!.pos.getRangeTo(cell.link), cell.ratePT);
+          this.maxRate += Math.min(
+            800 / this.link!.pos.getRangeTo(cell.link),
+            cell.ratePT
+          );
       });
       setup = setups.upgrader.fast;
     } else {
-      suckerTime = Math.max(this.sCell.storage.pos.getTimeForPath(this.controller) * 2 - 3, 0);
+      suckerTime = Math.max(
+        this.sCell.storage.pos.getTimeForPath(this.controller) * 2 - 3,
+        0
+      );
       if (this.controller.pos.getRangeTo(this.sCell.storage) < 4)
         setup = setups.upgrader.fast;
-      else
-        setup = setups.upgrader.manual;
+      else setup = setups.upgrader.manual;
     }
 
     setup.patternLimit = Infinity;
-    let body = setup.getBody(this.hive.room.energyCapacityAvailable).body
-    let carry = body.filter(b => b === CARRY).length * CARRY_CAPACITY;
-    let work = body.filter(b => b === WORK).length;
+    const body = setup.getBody(this.hive.room.energyCapacityAvailable).body;
+    const carry = body.filter((b) => b === CARRY).length * CARRY_CAPACITY;
+    const work = body.filter((b) => b === WORK).length;
     this.ratePerCreepMax = carry / (suckerTime + carry / work);
     this.workPerCreepMax = work;
 
     this.maxBees = 10;
     if (this.link)
-      this.maxBees = this.link.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.controller) <= 3).length;
+      this.maxBees = this.link.pos
+        .getOpenPositions(true)
+        .filter((p) => p.getRangeTo(this.controller) <= 3).length;
   }
 
   get maxPossibleRate() {
-    return this.controller.level === 8 ? 15 : Infinity
+    return this.controller.level === 8 ? 15 : Infinity;
   }
 
   update() {
@@ -87,39 +104,69 @@ export class UpgradeCell extends Cell {
         this.recalculateRate();
     } */
 
-    if (this.hive.phase === 1 && this.controller.level === 8 && Apiary.useBucket)
+    if (
+      this.hive.phase === 1 &&
+      this.controller.level === 8 &&
+      Apiary.useBucket
+    )
       Apiary.destroyTime = Game.time;
 
-    if (Game.time === Apiary.createTime)
-      this.recalculateRate();
+    if (Game.time === Apiary.createTime) this.recalculateRate();
 
-    if (!this.master.beesAmount)
-      return;
+    if (!this.master.beesAmount) return;
 
-    let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+    const freeCap =
+      this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
     if (freeCap && freeCap >= LINK_CAPACITY / 2) {
       if (this.sCell.link) {
-        if (!this.sCell.master.activeBees.length || this.hive.state === hiveStates.lowenergy)
+        if (
+          !this.sCell.master.activeBees.length ||
+          this.hive.state === hiveStates.lowenergy
+        )
           return;
-        this.sCell.requestFromStorage([this.sCell.link], freeCap >= LINK_CAPACITY - 100 ? 3 : 1, RESOURCE_ENERGY);
+        this.sCell.requestFromStorage(
+          [this.sCell.link],
+          freeCap >= LINK_CAPACITY - 100 ? 3 : 1,
+          RESOURCE_ENERGY
+        );
         if (!this.sCell.linkState || this.sCell.linkState.priority >= 1)
-          this.sCell.linkState = { using: this.ref, priority: 1, lastUpdated: Game.time };
+          this.sCell.linkState = {
+            using: this.ref,
+            priority: 1,
+            lastUpdated: Game.time,
+          };
       }
     }
   }
 
   run() {
-    if (!this.master.beesAmount)
-      return;
-    if (this.link && this.sCell.link && this.sCell.linkState && this.sCell.linkState.using === this.ref) {
-      let freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-      if (freeCap < LINK_CAPACITY / 2)
-        return;
-      if (freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) || freeCap >= LINK_CAPACITY * 0.85) {
-        let amount = Math.min(freeCap, this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY));
-        if (!this.sCell.link.cooldown && this.sCell.link.transferEnergy(this.link, amount) === OK)
+    if (!this.master.beesAmount) return;
+    if (
+      this.link &&
+      this.sCell.link &&
+      this.sCell.linkState &&
+      this.sCell.linkState.using === this.ref
+    ) {
+      const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+      if (freeCap < LINK_CAPACITY / 2) return;
+      if (
+        freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) ||
+        freeCap >= LINK_CAPACITY * 0.85
+      ) {
+        const amount = Math.min(
+          freeCap,
+          this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY)
+        );
+        if (
+          !this.sCell.link.cooldown &&
+          this.sCell.link.transferEnergy(this.link, amount) === OK
+        )
           if (Apiary.logger)
-            Apiary.logger.addResourceStat(this.hive.roomName, "upgrade", -amount * 0.03);
+            Apiary.logger.addResourceStat(
+              this.hive.roomName,
+              "upgrade",
+              -amount * 0.03
+            );
       }
     }
   }

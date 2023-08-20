@@ -1,4 +1,4 @@
-import { signText, prefix, roomStates } from "../enums";
+import { prefix, roomStates, signText } from "../enums";
 
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
@@ -8,68 +8,93 @@ import { setups } from "../bees/creepSetups";
 
 import type { RoomSetup } from "../abstract/roomPlanner";
 import type { Master } from "../beeMasters/_Master";
-import type { TransferRequest } from "../bees/transferRequest";
 import type { HiveCache } from "../abstract/hiveMemory";
 import type { ReactionConstant } from "../cells/stage1/laboratoryCell";
+import { TransferRequest } from "bees/transferRequest";
 
 export class CustomConsole {
-  lastActionRoomName: string;
+  public lastActionRoomName: string;
 
-  constructor() {
-    this.lastActionRoomName = _.map(Apiary.hives, h => h).reduce((prev, curr) => prev.room.controller!.level < curr.room.controller!.level ? curr : prev).roomName;
+  public constructor() {
+    this.lastActionRoomName = _.map(Apiary.hives, (h) => h).reduce(
+      (prev, curr) =>
+        prev.room.controller!.level < curr.room.controller!.level ? curr : prev
+    ).roomName;
   }
 
-  vis(framerate?: number, force: number = 0) {
-    for (let name in Apiary.visuals.caching) {
-      if (framerate === undefined && Apiary.visuals.caching[name].lastRecalc - Game.time > 5)
+  public vis(framerate?: number, force: number = 0) {
+    for (const name in Apiary.visuals.caching) {
+      if (
+        framerate === undefined &&
+        Apiary.visuals.caching[name].lastRecalc - Game.time > 5
+      )
         framerate = Memory.settings.framerate; // updating some sticky state
       Apiary.visuals.caching[name].lastRecalc = Game.time;
     }
 
-    Memory.settings.framerate = framerate !== undefined ? framerate : (Memory.settings.framerate !== 1 ? 1 : 0);
+    Memory.settings.framerate =
+      framerate !== undefined
+        ? framerate
+        : Memory.settings.framerate !== 1
+        ? 1
+        : 0;
     Memory.settings.forceBucket = force;
 
-    return `framerate: ${Memory.settings.framerate}${Memory.settings.forceBucket ? ", ignoring bucket" : ""}`;
+    return `framerate: ${Memory.settings.framerate}${
+      Memory.settings.forceBucket ? ", ignoring bucket" : ""
+    }`;
   }
 
-  pixel(state?: boolean) {
-    if (Memory.settings.generatePixel && Game.cpu.bucket < 500 && state === undefined)
+  public reportCPUpixel(state?: boolean) {
+    if (state === undefined || state == null) {
+      state = !Memory.settings.reportCPU;
+    }
+    Memory.settings.reportCPU = state;
+    return `CPU logging is ${Memory.settings.reportCPU ? "on" : "off"}`;
+  }
+
+  public pixel(state?: boolean) {
+    if (
+      Memory.settings.generatePixel &&
+      Game.cpu.bucket < 500 &&
+      state === undefined
+    )
       return `bucket is too low ${Game.cpu.bucket} wait untill it will be atleast 1000`;
-    Memory.settings.generatePixel = state ? state : !Memory.settings.generatePixel;
-    return `pixel generation is ${Memory.settings.generatePixel ? "on" : "off"}`;
+    Memory.settings.generatePixel = state
+      ? state
+      : !Memory.settings.generatePixel;
+    return `pixel generation is ${
+      Memory.settings.generatePixel ? "on" : "off"
+    }`;
   }
 
-  siedge(roomName: string, attack = 0) {
+  public siedge(roomName: string, attack = 0) {
     Apiary.warcrimes.updateRoom(roomName, attack ? Game.time : null);
   }
 
-  h(hiveName: string = this.lastActionRoomName) {
+  public h(hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     return `active hive is ${this.lastActionRoomName}`;
   }
 
-  addPowerManager(hiveName: string) {
-    if (Game.gpl.level)
-      hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public addPowerManager(hiveName: string) {
+    if (Game.gpl.level) hiveName = this.format(hiveName);
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     if (!hive.cells.power)
       return `ERROR: NO POWER CELL @ ${this.formatRoom(hiveName)}`;
-    let name = prefix.nkvd + " " + makeId(4);
-    let ans = PowerCreep.create(name, "operator");
-    if (ans !== OK)
-      return `ERROR: ${ans}`;
+    const name = prefix.nkvd + " " + makeId(4);
+    const ans = PowerCreep.create(name, "operator");
+    if (ans !== OK) return `ERROR: ${ans}`;
     hive.cells.power.powerManager = name;
     return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
   }
 
-  mode(mode = "", hiveName?: string, value?: number) {
+  public mode(mode = "", hiveName?: string, value?: number) {
     let ans = "";
     mode = mode.toLowerCase();
 
@@ -90,90 +115,107 @@ export class CustomConsole {
         mode = "buyIn";
         break;
     }
-    _.forEach(_.filter(Apiary.hives, h => !hiveName || hiveName.includes(h.roomName)), h => {
-      let dd = Memory.cache.hives[h.roomName].do;
-      switch (mode) {
-        case "power":
-          dd.powerMining = value === 0 || value === 1 ? value : (dd.powerMining ? 0 : 1);
-          if (dd.powerMining && value !== 0)
-            dd.powerRefining = 1;
-          break;
-        case "powermining":
-          if (value === 0 || value === 1)
-            dd.powerMining = value;
-        case "deposit":
-          dd.depositMining = value === 0 || value === 1 ? value : (dd.depositMining ? 0 : 1);
-          if (dd.depositMining)
-            dd.depositRefining = 1;
-          break;
-        case "depositrefining":
-          if (value === 0 || value === 1)
-            dd.depositRefining = value;
-          break;
-        case "upgrade":
-          if (value === 3) {
-            dd[mode] = value;
+    let on: 0 | 1;
+    _.forEach(
+      _.filter(Apiary.hives, (h) => !hiveName || hiveName.includes(h.roomName)),
+      (h) => {
+        const dd = Memory.cache.hives[h.roomName].do;
+        switch (mode) {
+          case "power":
+            dd.powerMining =
+              value === 0 || value === 1 ? value : dd.powerMining ? 0 : 1;
+            if (dd.powerMining && value !== 0) dd.powerRefining = 1;
             break;
-          }
-        case "buildBoost":
-          if (value === 2) {
-            dd[mode] = value;
+          case "powermining":
+            if (value === 0 || value === 1) dd.powerMining = value;
             break;
-          }
-        case "unboost":
-        case "saveCpu":
-        case "war":
-        case "sellOff":
-        case "buyIn":
-          dd[mode] = value === 0 || value === 1 ? value : (dd[mode] ? 0 : 1);
-          break;
-        case "hib":
-        case "hibernate":
-          let on: 0 | 1 = value === 0 || value === 1 ? value : (dd.unboost && dd.saveCpu ? 0 : 1);
-          dd.unboost = on;
-          dd.saveCpu = on;
-          break;
-        case "def":
-        case "default":
-          Memory.cache.hives[h.roomName].do = { ...BASE_MODE_HIVE };
-          break;
+          case "deposit":
+            dd.depositMining =
+              value === 0 || value === 1 ? value : dd.depositMining ? 0 : 1;
+            if (dd.depositMining) dd.depositRefining = 1;
+            break;
+          case "depositrefining":
+            if (value === 0 || value === 1) dd.depositRefining = value;
+            break;
+          case "upgrade":
+            if (value === 3) {
+              dd[mode] = value;
+              break;
+            }
+            break;
+          case "buildBoost":
+            if (value === 2) {
+              dd[mode] = value;
+              break;
+            }
+            dd[mode] = value === 0 || value === 1 ? value : dd[mode] ? 0 : 1;
+            break;
+          case "unboost" || "saveCpu" || "war" || "sellOff" || "buyIn":
+            dd[mode] = value === 0 || value === 1 ? value : dd[mode] ? 0 : 1;
+            break;
+          case "hib" || "hibernate":
+            on =
+              value === 0 || value === 1
+                ? value
+                : dd.unboost && dd.saveCpu
+                ? 0
+                : 1;
+            dd.unboost = on;
+            dd.saveCpu = on;
+            break;
+          case "def":
+          case "default":
+            Memory.cache.hives[h.roomName].do = { ...BASE_MODE_HIVE };
+            break;
+        }
+        const addString = (name: keyof HiveCache["do"], ref: string = name) =>
+          `${ref.toUpperCase()}${
+            h.shouldDo(name) === BASE_MODE_HIVE[name] ? "" : "❗"
+          }: ${
+            !h.shouldDo(name)
+              ? "OFF"
+              : "ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : "")
+          } `;
+        ans += `@ ${h.print}:\n${
+          addString("depositRefining", "refining") +
+          addString("depositMining", "deposit")
+        }\n${
+          addString("powerRefining", "refining") +
+          addString("powerMining", "power")
+        }\n${addString("war") + addString("lab")}\n${
+          addString("sellOff") + addString("buyIn")
+        }\n${addString("saveCpu", "cpu") + addString("unboost")}\n${
+          addString("buildBoost") + addString("upgrade")
+        }\n`;
       }
-      let addString = (name: keyof HiveCache["do"], ref: string = name) => `${ref.toUpperCase()}${h.shouldDo(name) === BASE_MODE_HIVE[name] ? "" : "❗"}: ${!h.shouldDo(name) ? "OFF" : ("ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : ""))} `
-      ans += `@ ${h.print
-        }:\n${addString("depositRefining", "refining") + addString("depositMining", "deposit")
-        }\n${addString("powerRefining", "refining") + addString("powerMining", "power")
-        }\n${addString("war") + addString("lab")
-        }\n${addString("sellOff") + addString("buyIn")
-        }\n${addString("saveCpu", "cpu") + addString("unboost")
-        }\n${addString("buildBoost") + addString("upgrade")}\n`;
-    });
+    );
     return ans;
   }
 
-  miningDist(value: number) {
+  public miningDist(value: number) {
     Memory.settings.miningDist = value;
-    _.forEach(Apiary.hives, h => {
-      if (h.cells.observe)
-        h.cells.observe.updateRoomsToCheck();
+    _.forEach(Apiary.hives, (h) => {
+      if (h.cells.observe) h.cells.observe.updateRoomsToCheck();
     });
   }
 
-  balance(min: number | "fit" = Game.market.credits * 0.8) {
-    if (typeof min !== "number")
-      min = Game.market.credits;
+  public balance(min: number | "fit" = Game.market.credits * 0.8) {
+    if (typeof min !== "number") min = Game.market.credits;
     Memory.settings.minBalance = Math.ceil(min);
     return "use credit down to balance of " + Memory.settings.minBalance;
   }
 
-  format(s: string) {
-    if (/\d/.exec(s) !== null)
-      return s.toUpperCase();
-    else
-      return s.toLowerCase();
+  public format(s: string) {
+    if (/\d/.exec(s) !== null) return s.toUpperCase();
+    else return s.toLowerCase();
   }
 
-  showMap(roomName: string = this.lastActionRoomName, keep: boolean, visual: (x: number, y: number, vis: RoomVisual) => void) {
-    let terrain = Game.map.getRoomTerrain(roomName);
+  public showMap(
+    roomName: string = this.lastActionRoomName,
+    keep: boolean,
+    visual: (x: number, y: number, vis: RoomVisual) => void
+  ) {
+    const terrain = Game.map.getRoomTerrain(roomName);
     Apiary.visuals.changeAnchor(0, 0, roomName);
     for (let x = 0; x <= 49; ++x)
       for (let y = 0; y <= 49; ++y)
@@ -184,43 +226,49 @@ export class CustomConsole {
     return `OK @ ${this.formatRoom(roomName)}`;
   }
 
-  showBreach(hiveName: string = this.lastActionRoomName, keep = false) {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public showBreach(hiveName: string = this.lastActionRoomName, keep = false) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let mask = Apiary.useBucket ? 1 : 3;
+    const mask = Apiary.useBucket ? 1 : 3;
     return this.showMap(hiveName, keep, (x, y, vis) => {
       if (x % mask === 0 && y % mask === 0) {
-        let pos = new RoomPosition(x, y, hiveName);
-        if (!pos.lookFor(LOOK_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART).length
-          && hive.cells.defense.wasBreached(pos))
+        const pos = new RoomPosition(x, y, hiveName);
+        if (
+          !pos
+            .lookFor(LOOK_STRUCTURES)
+            .filter(
+              (s) =>
+                s.structureType === STRUCTURE_WALL ||
+                s.structureType === STRUCTURE_RAMPART
+            ).length &&
+          hive.cells.defense.wasBreached(pos)
+        )
           vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
       }
     });
   }
 
-  showSiedge(roomName: string, keep = false) {
-    let siedge = Apiary.warcrimes.siedge[roomName];
-    if (!siedge)
-      return "ERROR: NO SIEDGE INFO @ " + this.formatRoom(roomName);
-    let minslot = _.min(siedge.squadSlots, s => s.lastSpawned);
-    let exits = Game.map.describeExits(roomName);
+  public showSiedge(roomName: string, keep = false) {
+    const siedge = Apiary.warcrimes.siedge[roomName];
+    if (!siedge) return "ERROR: NO SIEDGE INFO @ " + this.formatRoom(roomName);
+    const minslot = _.min(siedge.squadSlots, (s) => s.lastSpawned);
+    const exits = Game.map.describeExits(roomName);
     return this.showMap(roomName, keep, (x, y, vis) => {
-
-      if (siedge.freeTargets.filter(p => p.x === x && p.y === y).length)
+      if (siedge.freeTargets.filter((p) => p.x === x && p.y === y).length)
         vis.circle(x, y, { radius: 0.4, opacity: 0.3, fill: "#EBF737" });
 
-      let breakIn = siedge.breakIn.filter(p => p.x === x && p.y === y)[0];
+      const breakIn = siedge.breakIn.filter((p) => p.x === x && p.y === y)[0];
       if (breakIn) {
         vis.circle(x, y, { radius: 0.4, opacity: 0.7, fill: "#1C6F21" });
         let direction: TOP | BOTTOM | RIGHT | LEFT | undefined;
         for (const ex in exits)
-          if (exits[<ExitKey>ex] === breakIn.ent) {
-            direction = <TOP | BOTTOM | RIGHT | LEFT>+ex;
+          if (exits[ex as ExitKey] === breakIn.ent) {
+            direction = +ex as TOP | BOTTOM | RIGHT | LEFT;
             break;
           }
-        let dx = 0, dy = 0;
+        let dx = 0;
+        let dy = 0;
         switch (direction) {
           case TOP:
             dy = -2;
@@ -235,13 +283,31 @@ export class CustomConsole {
             dx = -2;
             break;
         }
-        vis.line(x, y, x + dx, y + dy, { opacity: 0.7, color: "#1C6F21", width: 0.3 });
-        vis.text(breakIn.state + "", x - 0.2, y + 0.23, Apiary.visuals.textStyle({ color: "#FF7D54" }));
+        vis.line(x, y, x + dx, y + dy, {
+          opacity: 0.7,
+          color: "#1C6F21",
+          width: 0.3,
+        });
+        vis.text(
+          breakIn.state + "",
+          x - 0.2,
+          y + 0.23,
+          Apiary.visuals.textStyle({ color: "#FF7D54" })
+        );
       }
 
-      let slot = _.filter(siedge.squadSlots, p => p.breakIn.x === x && p.breakIn.y === y)[0];
+      const slot = _.filter(
+        siedge.squadSlots,
+        (p) => p.breakIn.x === x && p.breakIn.y === y
+      )[0];
       if (slot) {
-        let txt = (slot.type === "dism" ? "⚒️" : "🗡️") + ": " + (slot.lastSpawned + CREEP_LIFE_TIME < Game.time ? "❗" : slot.lastSpawned + CREEP_LIFE_TIME - Game.time) + (slot === minslot ? " 🔥" : "")
+        const txt =
+          (slot.type === "dism" ? "⚒️" : "🗡️") +
+          ": " +
+          (slot.lastSpawned + CREEP_LIFE_TIME < Game.time
+            ? "❗"
+            : slot.lastSpawned + CREEP_LIFE_TIME - Game.time) +
+          (slot === minslot ? " 🔥" : "");
         vis.text(txt, x - 0.15, y + 1.2, Apiary.visuals.textStyle());
       }
 
@@ -254,110 +320,146 @@ export class CustomConsole {
     });
   }
 
-  showSpawnMap(hiveName: string = this.lastActionRoomName, keep = false) {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public showSpawnMap(
+    hiveName: string = this.lastActionRoomName,
+    keep = false
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
 
-    let targets: (StructureSpawn | StructureExtension)[] = Object.values(hive.cells.spawn.spawns);
-    targets = targets.concat(Object.values(hive.cells.spawn.extensions))
-    targets.sort((a, b) => (hive.cells.spawn.priorityMap[a.id] || Infinity) - (hive.cells.spawn.priorityMap[b.id] || Infinity));
+    let targets: (StructureSpawn | StructureExtension)[] = Object.values(
+      hive.cells.spawn.spawns
+    );
+    targets = targets.concat(Object.values(hive.cells.spawn.extensions));
+    targets.sort(
+      (a, b) =>
+        (hive.cells.spawn.priorityMap[a.id] || Infinity) -
+        (hive.cells.spawn.priorityMap[b.id] || Infinity)
+    );
     return this.showMap(hiveName, keep, (x, y, vis) => {
       // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
       for (let i = 0; i < targets.length; ++i) {
-        let t = targets[i];
-        if (t.pos.x === x && t.pos.y == y) {
-          vis.text("" + i, x, y + 0.15,
-            Apiary.visuals.textStyle({ opacity: 1, font: 0.35, strokeWidth: 0.75, color: "#1C6F21", align: "center" }));
+        const t = targets[i];
+        if (t.pos.x === x && t.pos.y === y) {
+          vis.text(
+            "" + i,
+            x,
+            y + 0.15,
+            Apiary.visuals.textStyle({
+              opacity: 1,
+              font: 0.35,
+              strokeWidth: 0.75,
+              color: "#1C6F21",
+              align: "center",
+            })
+          );
           break;
         }
       }
     });
   }
 
-  showBuildMap(hiveName: string = this.lastActionRoomName, keep = false) {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public showBuildMap(
+    hiveName: string = this.lastActionRoomName,
+    keep = false
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let targets = hive.structuresConst;
+    const targets = hive.structuresConst;
     let ans = "";
-    let rooms = targets.map(c => c.pos.roomName)
+    let rooms = targets.map((c) => c.pos.roomName);
     rooms = rooms.filter((r, i) => rooms.indexOf(r) === i);
-    _.forEach(rooms, roomName => {
-      ans += this.showMap(roomName, keep, (x, y, vis) => {
-        // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
-        for (let i = 0; i < targets.length; ++i) {
-          let t = targets[i];
-          if (t.pos.x === x && t.pos.y == y && t.pos.roomName === roomName) {
-            vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
-            break;
+    _.forEach(rooms, (roomName) => {
+      ans +=
+        this.showMap(roomName, keep, (x, y, vis) => {
+          // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
+          for (const t of targets) {
+            if (t.pos.x === x && t.pos.y === y && t.pos.roomName === roomName) {
+              vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
+              break;
+            }
           }
-        }
-      }) + "\n";
+        }) + "\n";
     });
     return ans;
   }
 
-  showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      let op = Math.pow(hive.cells.defense.getDmgAtPos(new RoomPosition(x, y, hiveName)) / TOWER_POWER_ATTACK / Object.keys(hive.cells.defense.towers).length * 0.9, 3);
+      const op = Math.pow(
+        (hive.cells.defense.getDmgAtPos(new RoomPosition(x, y, hiveName)) /
+          TOWER_POWER_ATTACK /
+          Object.keys(hive.cells.defense.towers).length) *
+          0.9,
+        3
+      );
       vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: op });
     });
   }
 
-  showNukeDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+  public showNukeDefMap(
+    hiveName: string = this.lastActionRoomName,
+    keep = false
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let defMap = hive.cells.defense.getNukeDefMap()
+    const defMap = hive.cells.defense.getNukeDefMap();
     return this.showMap(hiveName, keep, (x, y, vis) => {
-      if (_.filter(defMap[0], p => p.pos.x === x && p.pos.y === y).length)
+      if (_.filter(defMap[0], (p) => p.pos.x === x && p.pos.y === y).length)
         vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
     });
   }
 
-  showEnergy(hiveName: string = this.lastActionRoomName, keep?: boolean, x: number = 1, y: number = 1) {
+  public showEnergy(
+    hiveName: string = this.lastActionRoomName,
+    keep?: boolean,
+    x: number = 1,
+    y: number = 1
+  ) {
     Apiary.visuals.changeAnchor(x, y, hiveName);
     Apiary.visuals.visualizeEnergy(hiveName);
     Apiary.visuals.exportAnchor(keep ? Infinity : 20);
     return `OK @ ${this.formatRoom(hiveName)}`;
   }
 
-  pickup(hiveName: string = this.lastActionRoomName) {
+  public pickup(hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     if (!hive.cells.storage)
       return `ERROR: NO STORAGE CELL @ ${this.formatRoom(hiveName)}`;
-    let ans = hive.cells.storage.pickupResources();
+    const ans = hive.cells.storage.pickupResources();
     return `SCHEDULED ${ans} UNITS`;
   }
 
-  recalcResTime(hiveName?: string) {
+  public recalcResTime(hiveName?: string) {
     let hives;
     if (hiveName) {
       this.lastActionRoomName = hiveName;
       hives = [Apiary.hives[hiveName]];
-    } else
-      hives = _.map(Apiary.hives, h => h);
-    _.forEach(hives, h => {
-      _.forEach(h.cells.excavation.resourceCells, cell => {
-        cell.roadTime = cell.pos.getTimeForPath(cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos);
+    } else hives = _.map(Apiary.hives, (h) => h);
+    _.forEach(hives, (h) => {
+      _.forEach(h.cells.excavation.resourceCells, (cell) => {
+        cell.roadTime = cell.pos.getTimeForPath(
+          cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos
+        );
         cell.restTime = cell.pos.getTimeForPath(h.rest);
         cell.recalcLairFleeTime();
       });
-      _.forEach(h.annexNames, annexName => {
-        let order = Apiary.orders[prefix.annex + annexName];
-        if (order && order.color === COLOR_PURPLE && order.secondaryColor === COLOR_PURPLE)
+      _.forEach(h.annexNames, (annexName) => {
+        const order = Apiary.orders[prefix.annex + annexName];
+        if (
+          order &&
+          order.flag.color === COLOR_PURPLE &&
+          order.flag.secondaryColor === COLOR_PURPLE
+        )
           order.memory.extraInfo = 0; // h.pos.getTimeForPath(order)
       });
       h.cells.excavation.shouldRecalc = true;
@@ -365,70 +467,86 @@ export class CustomConsole {
     return "OK";
   }
 
-  spawnDefender(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
+  public spawnDefender(
+    patternLimit = Infinity,
+    hiveName: string = this.lastActionRoomName
+  ) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    let destroyer = setups.defender.destroyer.copy();
+    const destroyer = setups.defender.destroyer.copy();
     destroyer.patternLimit = patternLimit;
-    hive.cells.defense.master.wish({ setup: destroyer, priority: 1 }, "force_" + makeId(4));
+    hive.cells.defense.master.wish(
+      { setup: destroyer, priority: 1 },
+      "force_" + makeId(4)
+    );
     return `DEFENDER SPAWNED @ ${this.formatRoom(hiveName)}`;
   }
 
-  spawnBuilder(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
+  public spawnBuilder(
+    patternLimit = Infinity,
+    hiveName: string = this.lastActionRoomName
+  ) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     if (!hive.builder)
       return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
-    let builder = setups.builder.copy();
+    const builder = setups.builder.copy();
     builder.patternLimit = patternLimit;
     hive.builder.wish({ setup: builder, priority: 4 }, "force_" + makeId(4));
     return `BUILDER SPAWNED @ ${this.formatRoom(hiveName)}`;
   }
 
-  spawnUpgrader(patternLimit = Infinity, hiveName: string = this.lastActionRoomName) {
+  public spawnUpgrader(
+    patternLimit = Infinity,
+    hiveName: string = this.lastActionRoomName
+  ) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
     if (!hive.cells.upgrade)
       return `ERROR: NO UPGRADE CELL @ ${this.formatRoom(hiveName)}`;
     let upgrader;
     if (hive.cells.upgrade.master.fastModePossible)
       upgrader = setups.upgrader.fast.copy();
-    else
-      upgrader = setups.upgrader.manual.copy();
+    else upgrader = setups.upgrader.manual.copy();
     upgrader.patternLimit = patternLimit;
-    hive.cells.upgrade.master.wish({ setup: upgrader, priority: 4 }, "force_" + makeId(4));
+    hive.cells.upgrade.master.wish(
+      { setup: upgrader, priority: 4 },
+      "force_" + makeId(4)
+    );
     return `UPGRADER SPAWNED @ ${this.formatRoom(hiveName)}`;
   }
 
-  removeConst() {
-    let saved: string[] = [];
-    _.forEach(Game.constructionSites, c => {
-      if (!c.progress)
-        c.remove();
-      else if (saved.indexOf(c.pos.roomName) === -1)
-        saved.push(c.pos.roomName);
+  public removeConst() {
+    const saved: string[] = [];
+    _.forEach(Game.constructionSites, (c) => {
+      if (!c.progress) c.remove();
+      else if (saved.indexOf(c.pos.roomName) === -1) saved.push(c.pos.roomName);
     });
-    return "non empty constructionSites in " + saved.map(r => this.formatRoom(r)).join(" ");
+    return (
+      "non empty constructionSites in " +
+      saved.map((r) => this.formatRoom(r)).join(" ")
+    );
   }
 
   // some hand used functions
-  terminal(hiveName: string = this.lastActionRoomName, amount: number = Infinity, resource: ResourceConstant = RESOURCE_ENERGY, mode: "fill" | "empty" = "fill") {
+  public terminal(
+    hiveName: string = this.lastActionRoomName,
+    amount: number = Infinity,
+    resource: ResourceConstant = RESOURCE_ENERGY,
+    mode: "fill" | "empty" = "fill"
+  ) {
     hiveName = this.format(hiveName);
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
 
-    let cell = hive && hive.cells.storage;
+    const cell = hive && hive.cells.storage;
     if (!cell || !cell.terminal)
       return `ERROR: TERMINAL NOT FOUND @ ${hive.print}`;
 
@@ -444,111 +562,175 @@ export class CustomConsole {
     let ans;
     if (amount > 0)
       if (mode === "empty")
-        ans = cell.requestToStorage([cell.terminal], 1, resource, Math.min(amount, cell.terminal.store.getUsedCapacity(resource)));
+        ans = cell.requestToStorage(
+          [cell.terminal],
+          1,
+          resource,
+          Math.min(amount, cell.terminal.store.getUsedCapacity(resource))
+        );
       else
-        ans = cell.requestFromStorage([cell.terminal], 1, resource, Math.min(amount, cell.terminal.store.getFreeCapacity(resource)));
+        ans = cell.requestFromStorage(
+          [cell.terminal],
+          1,
+          resource,
+          Math.min(amount, cell.terminal.store.getFreeCapacity(resource))
+        );
 
-    return `${mode.toUpperCase()} TERMINAL @ ${hive.print} \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
+    return `${mode.toUpperCase()} TERMINAL @ ${
+      hive.print
+    } \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
   }
 
-  sendBlind(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant, amount: number = Infinity) {
+  public sendBlind(
+    roomNameFrom: string,
+    roomNameTo: string,
+    resource: ResourceConstant,
+    amount: number = Infinity
+  ) {
     roomNameFrom = this.format(roomNameFrom);
     roomNameTo = this.format(roomNameTo);
-    let hiveFrom = Apiary.hives[roomNameFrom];
+    const hiveFrom = Apiary.hives[roomNameFrom];
     if (!hiveFrom)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    let terminalFrom = hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage!.terminal;
+    const terminalFrom =
+      hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage.terminal;
     if (!terminalFrom)
       return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
-    if (terminalFrom.cooldown > 0)
-      return "TERMINAL COOLDOWN";
+    if (terminalFrom.cooldown > 0) return "TERMINAL COOLDOWN";
 
     amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
 
-    let energyCost = Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
-    let energyCap = Math.floor(terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+    const energyCost =
+      Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
+    const energyCap = Math.floor(
+      terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost
+    );
     amount = Math.min(amount, energyCap);
 
-    if (resource === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY))
+    if (
+      resource === RESOURCE_ENERGY &&
+      amount * (1 + energyCost) >
+        terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY)
+    )
       amount = Math.floor(amount * (1 - energyCost));
 
-    let ans = terminalFrom.send(resource, amount, roomNameTo);
+    const ans = terminalFrom.send(resource, amount, roomNameTo);
 
-    let info = ` SEND FROM ${hiveFrom.print} TO ${roomNameTo} \nRESOURCE ${resource.toUpperCase()}: ${amount
-      } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
-    if (ans === OK)
-      return "OK" + info;
-    else
-      return `ERROR: ${ans}` + info;
+    const info = ` SEND FROM ${
+      hiveFrom.print
+    } TO ${roomNameTo} \nRESOURCE ${resource.toUpperCase()}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(
+      amount,
+      roomNameFrom,
+      roomNameTo
+    )}`;
+    if (ans === OK) return "OK" + info;
+    else return `ERROR: ${ans}` + info;
   }
 
-  send(roomNameFrom: string, roomNameTo: string, resource: ResourceConstant = RESOURCE_ENERGY, amount: number = Infinity) {
+  public send(
+    roomNameFrom: string,
+    roomNameTo: string,
+    resource: ResourceConstant = RESOURCE_ENERGY,
+    amount: number = Infinity
+  ) {
     roomNameFrom = this.format(roomNameFrom);
     roomNameTo = this.format(roomNameTo);
-    let hiveFrom = Apiary.hives[roomNameFrom];
+    const hiveFrom = Apiary.hives[roomNameFrom];
     if (!hiveFrom)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    let terminalFrom = hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage!.terminal;
+    const terminalFrom =
+      hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage.terminal;
     if (!terminalFrom)
       return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
-    if (terminalFrom.cooldown > 0)
-      return "TERMINAL COOLDOWN";
-    let hiveTo = Apiary.hives[roomNameTo];
+    if (terminalFrom.cooldown > 0) return "TERMINAL COOLDOWN";
+    const hiveTo = Apiary.hives[roomNameTo];
     if (!hiveTo)
       return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    let terminalTo = hiveTo && hiveTo.cells.storage && hiveTo.cells.storage!.terminal;
-    if (!terminalTo)
-      return `ERROR: TO TERMINAL NOT @ ${roomNameTo}`;
+    const terminalTo =
+      hiveTo && hiveTo.cells.storage && hiveTo.cells.storage.terminal;
+    if (!terminalTo) return `ERROR: TO TERMINAL NOT @ ${roomNameTo}`;
 
     amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
     amount = Math.min(amount, terminalTo.store.getFreeCapacity(resource));
 
-    let energyCost = Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
-    let energyCap = Math.floor(terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost);
+    const energyCost =
+      Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
+    const energyCap = Math.floor(
+      terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost
+    );
     amount = Math.min(amount, energyCap);
 
-    if (resource === RESOURCE_ENERGY && amount * (1 + energyCost) > terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY))
+    if (
+      resource === RESOURCE_ENERGY &&
+      amount * (1 + energyCost) >
+        terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY)
+    )
       amount = Math.floor(amount * (1 - energyCost));
 
-    let ans = terminalFrom.send(resource, amount, roomNameTo);
+    const ans = terminalFrom.send(resource, amount, roomNameTo);
     if (ans === OK && Apiary.logger)
-      Apiary.logger.newTerminalTransfer(terminalFrom, terminalTo, amount, resource);
+      Apiary.logger.newTerminalTransfer(
+        terminalFrom,
+        terminalTo,
+        amount,
+        resource
+      );
 
-    let info = ` SEND FROM ${hiveFrom.print} TO ${hiveTo.print} \nRESOURCE ${resource.toUpperCase()}: ${amount
-      } \nENERGY: ${Game.market.calcTransactionCost(amount, roomNameFrom, roomNameTo)}`;
-    if (ans === OK)
-      return "OK" + info;
-    else
-      return `ERROR: ${ans}` + info;
+    const info = ` SEND FROM ${hiveFrom.print} TO ${
+      hiveTo.print
+    } \nRESOURCE ${resource.toUpperCase()}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(
+      amount,
+      roomNameFrom,
+      roomNameTo
+    )}`;
+    if (ans === OK) return "OK" + info;
+    else return `ERROR: ${ans}` + info;
   }
 
-  transfer(roomNameFrom: string, roomNameTo: string, res: ResourceConstant = RESOURCE_ENERGY, amount?: number) {
+  public transfer(
+    roomNameFrom: string,
+    roomNameTo: string,
+    res: ResourceConstant = RESOURCE_ENERGY,
+    amount?: number
+  ) {
     console.log(this.terminal(roomNameFrom, amount, res, "fill"));
     console.log(this.terminal(roomNameTo, amount, res, "empty"));
     console.log(this.send(roomNameFrom, roomNameTo, res, amount));
   }
 
-  changeOrderPrice(orderId: string, newPrice: number) {
-    return this.marketReturn(Game.market.changeOrderPrice(orderId, newPrice), "ORDER CHANGE TO " + newPrice);
+  public changeOrderPrice(orderId: string, newPrice: number) {
+    return this.marketReturn(
+      Game.market.changeOrderPrice(orderId, newPrice),
+      "ORDER CHANGE TO " + newPrice
+    );
   }
 
-  cancelOrdersHive(hiveName: string = this.lastActionRoomName, nonActive = false) {
+  public cancelOrdersHive(
+    hiveName: string = this.lastActionRoomName,
+    nonActive = false
+  ) {
     let ans = `OK @ ${this.format(hiveName)}`;
-    _.forEach(Game.market.orders, o => {
+    _.forEach(Game.market.orders, (o) => {
       if (o.roomName === hiveName && (!o.active || nonActive))
-        ans += this.marketReturn(Apiary.broker.cancelOrder(o.id), `canceled ${o.resourceType}`) + "\n";
+        ans +=
+          this.marketReturn(
+            Apiary.broker.cancelOrder(o.id),
+            `canceled ${o.resourceType}`
+          ) + "\n";
     });
     return ans;
   }
 
-  cancelOrder(orderId: string) {
-    return this.marketReturn(Apiary.broker.cancelOrder(orderId), "ORDER CANCEL");
+  public cancelOrder(orderId: string) {
+    return this.marketReturn(
+      Apiary.broker.cancelOrder(orderId),
+      "ORDER CANCEL"
+    );
   }
 
-  completeOrder(orderId: string, roomName?: string, sets: number = 1) {
-    let order = Game.market.getOrderById(orderId);
-    if (!order)
-      return `ERROR: ORDER NOT FOUND`;
+  public completeOrder(orderId: string, roomName?: string, sets: number = 1) {
+    const order = Game.market.getOrderById(orderId);
+    if (!order) return `ERROR: ORDER NOT FOUND`;
     let amount = Math.min(sets * 5000, order.amount);
     let ans;
     let energy: number | string = "NOT NEEDED";
@@ -556,79 +738,96 @@ export class CustomConsole {
     if (!order.roomName) {
       ans = Game.market.deal(orderId, amount);
     } else {
-      let resource = <ResourceConstant>order.resourceType;
-
+      const resource = order.resourceType as ResourceConstant;
 
       let terminal;
-      let validateTerminal = (t: StructureTerminal) => t.store.getUsedCapacity(resource) > amount;
+      let validateTerminal = (t: StructureTerminal) =>
+        t.store.getUsedCapacity(resource) > amount;
       if (order.type === ORDER_SELL)
         validateTerminal = (t) => t.store.getFreeCapacity(resource) > amount;
 
       if (roomName)
         terminal = this.getTerminal(roomName, order.type === ORDER_BUY);
       else {
-        let validHives = _.filter(Apiary.hives, h => h.cells.storage && h.cells.storage.terminal && validateTerminal(h.cells.storage.terminal));
-        if (!validHives.length)
-          return "NO VALID HIVES FOUND";
+        const validHives = _.filter(
+          Apiary.hives,
+          (h) =>
+            h.cells.storage &&
+            h.cells.storage.terminal &&
+            validateTerminal(h.cells.storage.terminal)
+        );
+        if (!validHives.length) return "NO VALID HIVES FOUND";
 
-        let hive = validHives.reduce((prev, curr) => Game.market.calcTransactionCost(100, prev.roomName, order!.roomName!) >
-          Game.market.calcTransactionCost(100, curr.roomName, order!.roomName!) ? curr : prev);
+        const hive = validHives.reduce((prev, curr) =>
+          Game.market.calcTransactionCost(100, prev.roomName, order.roomName!) >
+          Game.market.calcTransactionCost(100, curr.roomName, order.roomName!)
+            ? curr
+            : prev
+        );
         terminal = hive.cells.storage!.terminal!;
       }
 
-      if (typeof terminal === "string")
-        return terminal;
+      if (typeof terminal === "string") return terminal;
 
       hiveName = this.formatRoom(terminal.pos.roomName);
 
       if (order.type === ORDER_BUY)
         amount = Math.min(amount, terminal.store.getUsedCapacity(resource));
-      else
-        amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
+      else amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
 
-      energy = Game.market.calcTransactionCost(amount, terminal.pos.roomName, order.roomName);
+      energy = Game.market.calcTransactionCost(
+        amount,
+        terminal.pos.roomName,
+        order.roomName
+      );
       ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
       if (ans === OK && order.roomName && Apiary.logger)
         Apiary.logger.marketShort(order, amount, terminal.pos.roomName);
     }
 
-    let info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${order.roomName ? " from " + this.formatRoom(order.roomName) : ""
-      }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${amount * order.price} \nENERGY: ${energy}`;
+    const info = `${
+      order.type === ORDER_SELL ? "BOUGHT" : "SOLD"
+    } @ ${hiveName}${
+      order.roomName ? " from " + this.formatRoom(order.roomName) : ""
+    }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${
+      amount * order.price
+    } \nENERGY: ${energy}`;
 
     return this.marketReturn(ans, info);
   }
 
-  getTerminal(roomName: string, checkCooldown = false) {
-    let hive = Apiary.hives[roomName];
-    if (!hive)
-      return `NO VALID HIVE FOUND @ ${this.formatRoom(roomName)}`;
+  public getTerminal(roomName: string, checkCooldown = false) {
+    const hive = Apiary.hives[roomName];
+    if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(roomName)}`;
     this.lastActionRoomName = hive.roomName;
-    let terminal = hive.cells.storage && hive.cells.storage.terminal!;
-    if (!terminal)
-      return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
-    if (checkCooldown && terminal.cooldown)
-      return `TERMINAL COOLDOWN`;
+    const terminal = hive.cells.storage && hive.cells.storage.terminal!;
+    if (!terminal) return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
+    if (checkCooldown && terminal.cooldown) return `TERMINAL COOLDOWN`;
     return terminal;
   }
 
-  buyMastersMinerals(padding = 0, hiveName: string = this.lastActionRoomName, mode = "fast") {
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
-    let state = hive.mastersResTarget;
+  public buyMastersMinerals(
+    padding = 0,
+    hiveName: string = this.lastActionRoomName,
+    mode = "fast"
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
+    const state = hive.mastersResTarget;
     let ans = `OK @ ${this.format(hiveName)}`;
     let skip = !hive.room.terminal || !!hive.room.terminal.cooldown;
     _.forEach(state, (amount, r) => {
-      if (!amount || !r || r === RESOURCE_ENERGY)
-        return;
-      let res = <ResourceConstant>r;
-      if (!(res in REACTION_MAP) || hive.resState[res]! > 0)
-        return;
+      if (!amount || !r || r === RESOURCE_ENERGY) return;
+      const res = r as ResourceConstant;
+      if (!(res in REACTION_MAP) || hive.resState[res]! > 0) return;
       if (skip) {
         ans += `\n${res}: skipped ${amount}`;
         return;
       }
-      let sets = Math.min(Math.round((amount + padding) / 5000 * 1000) / 1000, 1);
+      const sets = Math.min(
+        Math.round(((amount + padding) / 5000) * 1000) / 1000,
+        1
+      );
       let buyAns;
       switch (mode) {
         case "short":
@@ -646,63 +845,114 @@ export class CustomConsole {
     return ans;
   }
 
-  buy(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, hurry: boolean = false) {
+  public buy(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1,
+    hurry: boolean = false
+  ) {
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  sell(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, hurry: boolean = false) {
+  public sell(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1,
+    hurry: boolean = false
+  ) {
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  buyShort(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
+  public buyShort(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1
+  ) {
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  sellShort(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) {
+  public sellShort(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1
+  ) {
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.sellShort(terminal, resource, 5000 * sets), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.sellShort(terminal, resource, 5000 * sets),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  buyLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1) { // coef = 0.95
+  public buyLong(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1
+  ) {
+    // coef = 0.95
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.buyLong(terminal, resource, 5000 * sets, Infinity
-      , Apiary.broker.priceLongBuy(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.buyLong(
+        terminal,
+        resource,
+        5000 * sets,
+        Infinity,
+        Apiary.broker.priceLongBuy(resource, 0.02)
+      ),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  sellLong(resource: ResourceConstant, hiveName: string = this.lastActionRoomName, sets: number = 1, price?: number) { // coef = 1.05
+  public sellLong(
+    resource: ResourceConstant,
+    hiveName: string = this.lastActionRoomName,
+    sets: number = 1,
+    price?: number
+  ) {
+    // coef = 1.05
     hiveName = hiveName.toUpperCase();
-    let terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string")
-      return terminal;
+    const terminal = this.getTerminal(hiveName);
+    if (typeof terminal === "string") return terminal;
     Apiary.broker.update();
-    return this.marketReturn(Apiary.broker.sellLong(terminal, resource, 5000 * sets, Infinity
-      , price || Apiary.broker.priceLongSell(resource, 0.02)), `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`);
+    return this.marketReturn(
+      Apiary.broker.sellLong(
+        terminal,
+        resource,
+        5000 * sets,
+        Infinity,
+        price || Apiary.broker.priceLongSell(resource, 0.02)
+      ),
+      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    );
   }
 
-  marketReturn(ans: number | string, info: string) {
+  public marketReturn(ans: number | string, info: string) {
     switch (ans) {
       case ERR_NOT_FOUND:
         ans = "NO GOOD DEAL NEAR";
@@ -716,165 +966,258 @@ export class CustomConsole {
     return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
   }
 
-  produce(resource: ReactionConstant | CommodityConstant, hiveName: string = this.lastActionRoomName, amount = 10000) {
+  public produce(
+    resource: ReactionConstant | CommodityConstant,
+    hiveName: string = this.lastActionRoomName,
+    amount = 10000
+  ) {
     hiveName = hiveName.toUpperCase();
 
-    let hive = Apiary.hives[hiveName];
-    if (!hive)
-      return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
     this.lastActionRoomName = hive.roomName;
-    if (REACTION_MAP[<ReactionConstant>resource]) {
-      if (!hive.cells.lab)
-        return `ERROR: LAB NOT FOUND @ ${hive.print}`;
-      hive.cells.lab.synthesizeTarget = { res: <ReactionConstant>resource, amount: amount };
+    if (REACTION_MAP[resource as ReactionConstant]) {
+      if (!hive.cells.lab) return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+      hive.cells.lab.synthesizeTarget = {
+        res: resource as ReactionConstant,
+        amount,
+      };
       hive.cells.lab.prod = undefined;
       hive.cells.lab.synthesizeRes = undefined;
       return `OK LAB @ ${hive.print}: ${resource} ${amount}`;
-    } else if (COMMODITIES[<CommodityConstant>resource]) {
+    } else if (COMMODITIES[resource as CommodityConstant]) {
       if (!hive.cells.factory)
         return `ERROR: FACTORY NOT FOUND @ ${hive.print}`;
-      hive.cells.factory.commodityTarget = { res: <CommodityConstant>resource, amount: amount };
+      hive.cells.factory.commodityTarget = {
+        res: resource as CommodityConstant,
+        amount,
+      };
       hive.cells.factory.prod = undefined;
       hive.cells.factory.commodityRes = undefined;
       return `OK FACTORY @ ${hive.print}: ${resource} ${amount}`;
     }
     return `ERROR: NOT A VALID COMPOUND ${resource}`;
-
   }
 
-  update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {
+  public update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {
     if (!(roomName in Game.rooms))
-      return `CANNOT ACCESS ${this.formatRoom(roomName)}`
+      return `CANNOT ACCESS ${this.formatRoom(roomName)}`;
     if (!Memory.cache.roomPlanner[roomName])
       return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
 
     if (!(roomName in Apiary.planner.activePlanning))
-      return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`
+      return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`;
 
-    for (let t in cache) {
-      let val: BuildableStructureConstant | null = <BuildableStructureConstant>t;
+    for (const t in cache) {
+      let val: BuildableStructureConstant | null =
+        t as BuildableStructureConstant;
       if (!(t in CONSTRUCTION_COST))
-        if (t === "null")
-          val = null;
-        else
-          continue;
-      for (let i in cache[<BuildableStructureConstant>t]!.pos) {
-        let pos = cache[<BuildableStructureConstant>t]!.pos[i];
-        Apiary.planner.addToPlan(pos, roomName, val, true);
+        if (t === "null") val = null;
+        else continue;
+      for (const posBuilding of cache[t as BuildableStructureConstant]!.pos) {
+        Apiary.planner.addToPlan(posBuilding, roomName, val, true);
       }
     }
-    let contr = Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
-    let pos = contr && [new RoomPosition(contr.x, contr.y + 1, roomName), new RoomPosition(contr.x, contr.y - 1, roomName)]
-      .filter(p => p.lookFor(LOOK_FLAGS).length == 0)[0];
+    const contr =
+      Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
+    const pos =
+      contr &&
+      [
+        new RoomPosition(contr.x, contr.y + 1, roomName),
+        new RoomPosition(contr.x, contr.y - 1, roomName),
+      ].filter((p) => p.lookFor(LOOK_FLAGS).length === 0)[0];
     if (pos)
-      pos.createFlag("change_" + roomName + "_" + makeId(4), COLOR_WHITE, COLOR_ORANGE);
-    else
-      return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
+      pos.createFlag(
+        "change_" + roomName + "_" + makeId(4),
+        COLOR_WHITE,
+        COLOR_ORANGE
+      );
+    else return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
 
     return "OK";
   }
 
-  sign(textMy = signText.my, textAnnex = signText.annex, textOther = signText.other) {
-    let sgn = [];
-    for (let name in Game.creeps) {
-      let creep = Game.creeps[name];
-      if (!creep.getBodyParts(CLAIM))
-        continue;
-      let controller = <StructureController | undefined>creep.pos.findInRange(FIND_STRUCTURES, 1).filter(s => s.structureType === STRUCTURE_CONTROLLER)[0];
-      if (!controller)
-        continue;
+  public sign(
+    textMy = signText.my,
+    textAnnex = signText.annex,
+    textOther = signText.other
+  ) {
+    const sgn = [];
+    for (const name in Game.creeps) {
+      const creep = Game.creeps[name];
+      if (!creep.getBodyParts(CLAIM)) continue;
+      const controller = creep.pos
+        .findInRange(FIND_STRUCTURES, 1)
+        .filter((s) => s.structureType === STRUCTURE_CONTROLLER)[0] as
+        | StructureController
+        | undefined;
+      if (!controller) continue;
 
       let text = textOther;
-      if (controller.my)
-        text = textMy;
-      else if (controller.reservation && controller.reservation.username === Apiary.username)
+      if (controller.my) text = textMy;
+      else if (
+        controller.reservation &&
+        controller.reservation.username === Apiary.username
+      )
         text = textAnnex;
-      let ans = creep.signController(controller, text);
-      if (ans === OK)
-        sgn.push(controller.pos.roomName + " " + text);
+      const ans = creep.signController(controller, text);
+      if (ans === OK) sgn.push(controller.pos.roomName + " " + text);
       else
-        console.log(`ERROR @ ${this.formatRoom(controller.pos.roomName)}: ${ans}`);
+        console.log(
+          `ERROR @ ${this.formatRoom(controller.pos.roomName)}: ${ans}`
+        );
     }
-    return `SIGNED ${sgn.length} controllers${sgn.length ? "\n" : ""}` + sgn.join("\n");
+    return (
+      `SIGNED ${sgn.length} controllers${sgn.length ? "\n" : ""}` +
+      sgn.join("\n")
+    );
   }
 
-  printHives() {
-    return _.map(Apiary.hives, o => o.print).join('\n');
+  public printHives() {
+    return _.map(Apiary.hives, (o) => o.print).join("\n");
   }
 
-  printByHive(obj: { print: string, hive: { roomName: string } }[]) {
-    return _.compact(_.map(Apiary.hives, h => {
-      let objHive = _.map(_.filter(obj, o => o.hive.roomName === h.roomName), o => o.print);
-      if (!objHive.length)
-        return;
-      return `${h.print}:\n${objHive.join('\n')}\n----------`;
-    })).join('\n');
+  public printByHive(obj: { print: string; hive: { roomName: string } }[]) {
+    return _.compact(
+      _.map(Apiary.hives, (h) => {
+        const objHive = _.map(
+          _.filter(obj, (o) => o.hive.roomName === h.roomName),
+          (o) => o.print
+        );
+        if (!objHive.length) return;
+        return `${h.print}:\n${objHive.join("\n")}\n----------`;
+      })
+    ).join("\n");
   }
 
-  printByMasters(obj: { print: string, master?: { ref: string } }[]) {
-    return _.compact((<(Master | undefined)[]>_.map(Apiary.masters).concat([undefined])).map(m => {
-      let objHive = _.map(_.filter(obj, o => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)), o => o.print);
-      if (!objHive.length)
-        return;
-      return `${m ? m.print : "None"}:\n${objHive.join('\n')}\n----------`;
-    })).join('\n');
+  public printByMasters(obj: { print: string; master?: { ref: string } }[]) {
+    return _.compact(
+      (_.map(Apiary.masters).concat([undefined]) as (Master | undefined)[]).map(
+        (m) => {
+          const objHive = _.map(
+            _.filter(
+              obj,
+              (o) =>
+                (!m && !o.master) || (m && o.master && o.master.ref === m.ref)
+            ),
+            (o) => o.print
+          );
+          if (!objHive.length) return;
+          return `${m ? m.print : "None"}:\n${objHive.join("\n")}\n----------`;
+        }
+      )
+    ).join("\n");
   }
 
-  printMasters(ref?: string) {
-    let obj = _.filter(Apiary.masters, m => !ref || m.hive.roomName === ref || m.ref.includes(ref));
+  public printMasters(ref?: string) {
+    const obj = _.filter(
+      Apiary.masters,
+      (m) => !ref || m.hive.roomName === ref || m.ref.includes(ref)
+    );
     return this.printByHive(obj);
   }
 
-  printOrders(ref?: string) {
-    let extraFilter = (rr: string) => !rr.includes(prefix.annex) && !rr.includes(prefix.mine) && !rr.includes(prefix.puppet)
-    let obj = _.filter(Apiary.orders, o => (!ref || o.hive.roomName === ref || o.ref.includes(ref)) && extraFilter(o.ref));
+  public printOrders(ref?: string) {
+    const extraFilter = (rr: string) =>
+      !rr.includes(prefix.annex) &&
+      !rr.includes(prefix.mine) &&
+      !rr.includes(prefix.puppet);
+    const obj = _.filter(
+      Apiary.orders,
+      (o) =>
+        (!ref || o.hive.roomName === ref || o.ref.includes(ref)) &&
+        extraFilter(o.ref)
+    );
     return this.printByHive(obj);
   }
 
-  printBees(ref?: string, byHives: boolean = false) {
-    let bees = _.filter(Apiary.bees, b => !ref || ("refMaster" in b.creep.memory && b.creep.memory.refMaster.includes(ref)));
+  public printBees(ref?: string, byHives: boolean = false) {
+    const bees = _.filter(
+      Apiary.bees,
+      (b) =>
+        !ref ||
+        ("refMaster" in b.creep.memory &&
+          b.creep.memory.refMaster.includes(ref))
+    );
+    let obj;
     if (byHives) {
-      let obj = _.map(bees, b => { return { print: b.print, hive: { roomName: b.master ? b.master.hive.roomName : "none" } } });
+      obj = _.map(bees, (b) => {
+        return {
+          print: b.print,
+          hive: { roomName: b.master ? b.master.hive.roomName : "none" },
+        };
+      });
       return this.printByHive(obj);
     }
-    let obj = _.map(bees, b => { return { print: b.print, master: b.master } });
+    obj = _.map(bees, (b) => {
+      return { print: b.print, master: b.master };
+    });
     return this.printByMasters(obj);
   }
 
-  formatRoom(roomName: string, text: string = roomName) {
-    return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`
+  public formatRoom(roomName: string, text: string = roomName) {
+    return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`;
   }
 
-  printSpawnOrders(hiveName?: string) {
-    return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => `${h.print}: \n${
-      _.map(_.map(h.spawOrders, (order, master) => { return { order: order, master: master! } }).sort(
-        (a, b) => a.order.priority - b.order.priority),
-        o => `${o.order.priority} ${o.master}: ${o.order.setup.name}`).join('\n')
-      } \n`).join('\n');
+  public printSpawnOrders(hiveName?: string) {
+    return _.map(
+      _.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName),
+      (h) =>
+        `${h.print}: \n${_.map(
+          _.map(h.spawOrders, (order, master) => {
+            return { order, master: master! };
+          }).sort((a, b) => a.order.priority - b.order.priority),
+          (o) => `${o.order.priority} ${o.master}: ${o.order.setup.name}`
+        ).join("\n")} \n`
+    ).join("\n");
   }
 
-  printStorageOrders(hiveName: string = this.lastActionRoomName) {
-    return _.map(_.filter(Apiary.hives, h => !hiveName || h.roomName === hiveName), h => {
-      if (!h.cells.storage)
-        return "";
-      return `${h.print}: \n${
-        _.map((<TransferRequest[]>_.map(h.cells.storage.requests)).sort((a, b) => a.priority - b.priority),
-          o => `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${o.from instanceof Structure ? o.from.structureType : o.from} -> ${o.resource}${o.amount !== Infinity ? ": " + o.amount : ""} -> ${o.to.structureType}${o.nextup ? " -> " + o.nextup.ref : ""}`).join('\n')
-        } \n`
-    }).join('\n');
+  public printStorageOrders(hiveName: string = this.lastActionRoomName) {
+    return _.map(
+      _.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName),
+      (h) => {
+        if (!h.cells.storage) return "";
+        return `${h.print}: \n${_.map(
+          _.map(h.cells.storage.requests).sort(
+            (a, b) =>
+              (a as TransferRequest).priority - (b as TransferRequest).priority
+          ),
+          (o: TransferRequest) =>
+            `${o.isValid() ? "" : "-"} ${o.priority} ${o.ref}: ${
+              o.from instanceof Structure ? o.from.structureType : o.from
+            } -> ${o.resource}${
+              o.amount !== Infinity ? ": " + o.amount : ""
+            } -> ${o.to.structureType}${o.nextup ? " -> " + o.nextup.ref : ""}`
+        ).join("\n")} \n`;
+      }
+    ).join("\n");
   }
 
-  cleanIntel(quadToclean: string, xmin: number, xmax: number, ymin: number, ymax: number) {
-    let quad = /^([WE])([NS])$/.exec(quadToclean);
-    for (let roomName in Memory.cache.intellegence) {
-      let parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+  public cleanIntel(
+    quadToclean: string,
+    xmin: number,
+    xmax: number,
+    ymin: number,
+    ymax: number
+  ) {
+    const quad = /^([WE])([NS])$/.exec(quadToclean);
+    for (const roomName in Memory.cache.intellegence) {
+      const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
       if (parsed && quad) {
-        let [, we, x, ns, y] = parsed;
-        let state = Apiary.intel.getInfo(roomName, Infinity).roomState;
-        if (we === quad[1] && ns == quad[2] && (+x < xmin || +x > xmax || +y < ymin || +y > ymax || (state > roomStates.reservedByMe && state < roomStates.reservedByEnemy)))
+        const [, we, x, ns, y] = parsed;
+        const state = Apiary.intel.getInfo(roomName, Infinity).roomState;
+        if (
+          we === quad[1] &&
+          ns === quad[2] &&
+          (+x < xmin ||
+            +x > xmax ||
+            +y < ymin ||
+            +y > ymax ||
+            (state > roomStates.reservedByMe &&
+              state < roomStates.reservedByEnemy))
+        )
           delete Memory.cache.intellegence[roomName];
-      } else
-        delete Memory.cache.intellegence[roomName];
+      } else delete Memory.cache.intellegence[roomName];
     }
   }
 }

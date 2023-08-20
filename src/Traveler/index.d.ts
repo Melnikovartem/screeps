@@ -19,7 +19,10 @@ interface TravelToOptions {
   allowHostile?: boolean;
   range?: number;
   obstacles?: { pos: RoomPosition }[];
-  roomCallback?: (roomName: string, matrix: CostMatrix) => CostMatrix | boolean | undefined;
+  roomCallback?: (
+    roomName: string,
+    matrix: CostMatrix
+  ) => CostMatrix | boolean | undefined;
   routeCallback?: (roomName: string) => number;
   returnData?: TravelToReturnData;
   restrictDistance?: number;
@@ -40,7 +43,7 @@ interface TravelToOptions {
 
 interface TravelData {
   state: any[];
-  path: string;
+  path?: string;
 }
 
 interface TravelState {
@@ -51,12 +54,23 @@ interface TravelState {
 }
 
 interface Creep {
-  travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): ScreepsReturnCode | RoomPosition;
+  travelTo(
+    destination: HasPos | RoomPosition,
+    ops?: TravelToOptions
+  ): ScreepsReturnCode | RoomPosition;
 }
 
 interface PowerCreep {
-  travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): ScreepsReturnCode | RoomPosition;
+  travelTo(
+    destination: HasPos | RoomPosition,
+    ops?: TravelToOptions
+  ): ScreepsReturnCode | RoomPosition;
 }
 
-type Coord = { x: number, y: number };
-type HasPos = { pos: RoomPosition }
+interface Coord {
+  x: number;
+  y: number;
+}
+interface HasPos {
+  pos: RoomPosition;
+}

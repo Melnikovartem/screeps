@@ -9,10 +9,13 @@ import "./prototypes/pos";
 import { _Apiary } from "./Apiary";
 
 import { LOGGING_CYCLE, PROFILER } from "./settings";
-import profiler from 'screeps-profiler';
+import profiler from "screeps-profiler";
 
 // if (Game.shard.name === "shard3")
-// Mem.wipe();
+Mem.wipe();
+
+declare let Apiary: _Apiary;
+declare let A: CustomConsole;
 
 // This gets run on each global reset
 function onGlobalReset(): void {
@@ -20,25 +23,25 @@ function onGlobalReset(): void {
   Mem.init();
 
   console.log(`Reset ${Game.shard.name}? Cool time is ${Game.time}`);
-  if (LOGGING_CYCLE) Memory.log.reset = Game.time;
+  if (LOGGING_CYCLE) Memory.log.tick.reset = Game.time;
   if (PROFILER) profiler.enable();
 
-  delete global.Apiary;
-  global.Apiary = new _Apiary();
+  Apiary = new _Apiary();
   Apiary.init();
 
-  global.A = new CustomConsole();
+  A = new CustomConsole();
 }
 
 function main() {
   if (!Memory.settings.generatePixel && Game.cpu.bucket < 250) {
-    console.log(`CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`);
+    console.log(
+      `CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`
+    );
     return;
   }
 
   if (!Apiary || Game.time >= Apiary.destroyTime) {
-    delete global.Apiary;
-    global.Apiary = new _Apiary();
+    Apiary = new _Apiary();
     Apiary.init();
   }
 
@@ -50,24 +53,29 @@ function main() {
 
   if (Game.time % 10000 === 0) {
     // for the time beeing. Change from A to another class
-    A.sign()
-    A.recalcResTime()
+    A.sign();
+    A.recalcResTime();
   }
 
   // now it checks itself!! i am genius
-  if (Memory.settings.generatePixel && Game.cpu.bucket === 10000 && Game.cpu.generatePixel && Apiary.destroyTime - Game.time >= 20)
+  if (
+    Memory.settings.generatePixel &&
+    Game.cpu.bucket === 10000 &&
+    Game.cpu.generatePixel &&
+    Apiary.destroyTime - Game.time >= 20
+  )
     Game.cpu.generatePixel();
 }
 
 // time to wrap things up
-let _loop: () => void;
+let preLoop: () => void;
 
 if (PROFILER) {
-  _loop = () => profiler.wrap(main);
+  preLoop = () => profiler.wrap(main);
 } else {
-  _loop = main;
+  preLoop = main;
 }
 
-export const loop = _loop;
+export const loop = preLoop;
 
 onGlobalReset();

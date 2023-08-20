@@ -1,4 +1,4 @@
-import { setups } from "../../bees/creepsetups";
+import { setups } from "../../bees/creepSetups";
 import { SquadMaster, FormationPositions } from "./squad";
 
 import type { Boosts } from "../_Master";
@@ -7,7 +7,7 @@ import type { Boosts } from "../_Master";
 
 const TOUGHT_AMOUNT = 10;
 
-/*const TOWER_NUM = 6; // 6;
+/* const TOWER_NUM = 6; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
 const TOUGHT_AMOUNT = Math.ceil(TOWER_DMG / 100);
 
@@ -19,11 +19,18 @@ const ARCHER = setups.knight.copy();
 ARCHER.fixed = [HEAL, HEAL].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
 
 const HEALER = setups.healer.copy();
-HEALER.fixed = [RANGED_ATTACK, RANGED_ATTACK].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
+HEALER.fixed = [RANGED_ATTACK, RANGED_ATTACK].concat(
+  Array(TOUGHT_AMOUNT).fill(TOUGH)
+);
 
 // my most powerfull weapon to date
 export class GangQuad extends SquadMaster {
-  boosts: Boosts = [{ type: "fatigue", lvl: 2 }, { type: "rangedAttack", lvl: 2 }, { type: "heal", lvl: 2 }, { type: "damage", lvl: 2 }];
+  boosts: Boosts = [
+    { type: "fatigue", lvl: 2 },
+    { type: "rangedAttack", lvl: 2 },
+    { type: "heal", lvl: 2 },
+    { type: "damage", lvl: 2 },
+  ];
   formation: FormationPositions = [
     [{ x: 0, y: 0 }, ARCHER],
     [{ x: 1, y: 0 }, ARCHER],
@@ -32,14 +39,17 @@ export class GangQuad extends SquadMaster {
   ];
 
   get checkup() {
-    let healerMinerals = this.checkMinerals(HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body, 2);
-    let archerMinerals = this.checkMinerals(ARCHER.getBody(this.hive.room.energyCapacityAvailable, 10).body, 2);
+    const healerMinerals = this.checkMinerals(
+      HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
+      2
+    );
+    const archerMinerals = this.checkMinerals(
+      ARCHER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
+      2
+    );
     return healerMinerals && archerMinerals;
   }
 }
-
-
-
 
 /* const ARCHER = setups.knight.copy();
 ARCHER.fixed = [HEAL, HEAL].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
