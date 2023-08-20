@@ -6,16 +6,16 @@ import { Master } from "../_Master";
 
 @profile
 export class UpgraderMaster extends Master {
-  cell: UpgradeCell;
-  patternPerBee = 0;
-  fastModePossible = false;
+  private cell: UpgradeCell;
+  private patternPerBee = 0;
+  public fastModePossible = false;
 
-  constructor(upgradeCell: UpgradeCell) {
+  public constructor(upgradeCell: UpgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
     this.cell = upgradeCell;
   }
 
-  recalculateTargetBee() {
+  private recalculateTargetBee() {
     this.fastModePossible =
       !!(this.cell.link && this.cell.sCell.link) ||
       this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
@@ -37,7 +37,7 @@ export class UpgraderMaster extends Master {
       return;
     }
 
-    if (polen != 2 || this.cell.controller.level < 8)
+    if (polen !== 2 || this.cell.controller.level < 8)
       this.boosts = [
         { type: "upgrade", lvl: 2 },
         { type: "upgrade", lvl: 1 },
@@ -72,7 +72,7 @@ export class UpgraderMaster extends Master {
     );
   }
 
-  checkBeesWithRecalc() {
+  private checkBeesWithRecalc() {
     this.recalculateTargetBee();
     return this.checkBees(
       this.cell.controller.ticksToDowngrade <
@@ -80,7 +80,7 @@ export class UpgraderMaster extends Master {
     );
   }
 
-  update() {
+  public update() {
     super.update();
 
     if (this.checkBeesWithRecalc()) {
@@ -96,7 +96,7 @@ export class UpgraderMaster extends Master {
     }
   }
 
-  run() {
+  public run() {
     let suckerTarget:
       | StructureStorage
       | StructureLink

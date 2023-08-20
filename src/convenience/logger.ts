@@ -1,6 +1,7 @@
 // import { setupsNames } from "../enums";
 import { HiveLog } from "abstract/hiveMemory";
 import { makeId } from "abstract/utils";
+import { object } from "lodash";
 
 import type { ProtoOrder } from "../abstract/broker";
 import { setups } from "../bees/creepSetups";
@@ -47,7 +48,6 @@ export class Logger {
 
   public run() {
     const cpu = Game.cpu.getUsed();
-    Memory.log.hives = {};
     _.forEach(Apiary.hives, (hive) => {
       this.hiveLog(hive);
     });
@@ -93,7 +93,8 @@ export class Logger {
   }
 
   public hiveLog(hive: Hive) {
-    const mem = this.emptyHiveLog;
+    const mem = Memory.log.hives[hive.roomName];
+    if (!mem) return;
     mem.annexNames = hive.annexNames;
     mem.spawOrders = Object.keys(hive.spawOrders).length;
     mem.construction = {
@@ -145,8 +146,6 @@ export class Logger {
       });
       mem.resState = hive.resState;
     }
-    // send to memory only once
-    Memory.log.hives[hive.roomName] = mem;
   }
 
   private get newEventId() {
@@ -163,7 +162,7 @@ export class Logger {
     if (!Memory.log.hives[hiveName].resourceEvents[resource])
       Memory.log.hives[hiveName].resourceEvents[resource] = {};
     let ref = this.newEventId;
-    while (ref in Memory.log.hives[hiveName].resourceEvents[resource]!)
+    while (Memory.log.hives[hiveName].resourceEvents[resource]![ref])
       ref = this.newEventId;
     Memory.log.hives[hiveName].resourceEvents[resource]![ref] = {
       tick: Game.time,
@@ -418,18 +417,21 @@ export class Logger {
   }
 
   /**
-   * Removes old events
+   * Removes old resource events
    * Also keeps report of events / crashes small
-   * TODO optimize for storage on vps
    */
   public clean() {
-    for (const key in Memory.log.hives) {
-      const resourceEvents = Memory.log.hives[key].resourceEvents;
+    for (const hiveName in Memory.log.hives) {
+      if (!Apiary.hives[hiveName]) {
+        delete Memory.log.hives[hiveName];
+        continue;
+      }
+      const resourceEvents = Memory.log.hives[hiveName].resourceEvents;
       for (const r in resourceEvents) {
         const res = r as ResourceConstant;
-        for (const idEvent in resourceEvents[res]) {
-          if (Game.time - resourceEvents[res]![idEvent].tick > LOGGING_CYCLE)
-            delete resourceEvents[res]![idEvent];
+        for (const eventId in resourceEvents[res]) {
+          if (Game.time - resourceEvents[res]![eventId].tick > LOGGING_CYCLE)
+            delete resourceEvents[res]![eventId];
         }
         if (Object.keys(resourceEvents[res]!).length === 0)
           delete resourceEvents[res];

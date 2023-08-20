@@ -1,25 +1,22 @@
-import { Mem } from "./abstract/memory";
-import { CustomConsole } from "./convenience/console";
+import "Traveler/TravelerModified";
+import "prototypes/creeps";
+import "prototypes/pos";
 
-import "./Traveler/TravelerModified";
-
-import "./prototypes/creeps";
-import "./prototypes/pos";
-
-import { _Apiary } from "./Apiary";
-
-import { LOGGING_CYCLE, PROFILER } from "./settings";
+import { Mem } from "abstract/memory";
+import { _Apiary } from "Apiary";
+import { CustomConsole } from "convenience/console";
 import profiler from "screeps-profiler";
+import { LOGGING_CYCLE, PROFILER } from "settings";
 
 // if (Game.shard.name === "shard3")
-Mem.wipe();
+// Mem.wipe();
 
 declare global {
   namespace NodeJS {
     interface Global {
-      Apiary?:_Apiary;
+      Apiary?: _Apiary;
       A: CustomConsole;
-    } 
+    }
   }
 }
 

@@ -1,36 +1,30 @@
-import { HordeDefenseMaster } from "./beeMasters/war/hordeDefense";
-import { HordeMaster } from "./beeMasters/war/horde";
-import { DowngradeMaster } from "./beeMasters/war/downgrader";
-import { DismanleBoys } from "./beeMasters/squads/dismatleBoys";
-import { AnnoyOBot } from "./beeMasters/squads/annoyOBot";
-import { WaiterMaster } from "./beeMasters/war/waiter";
-import { SKMaster } from "./beeMasters/war/safeSK";
-
-import { GangDuo } from "./beeMasters/squads/gangDuo";
-import { GangQuad } from "./beeMasters/squads/quadSquad";
-// import { TestSquad } from "./beeMasters/squads/test";
-
-import { DepositMaster } from "./beeMasters/corridorMining/deposit";
-import { PowerMaster } from "./beeMasters/corridorMining/power";
-
-import { PuppetMaster } from "./beeMasters/civil/puppet";
-import { PortalMaster } from "./beeMasters/civil/portal";
-import { AnnexMaster } from "./beeMasters/civil/annexer";
-import { PickupMaster } from "./beeMasters/civil/pickup";
-import { HelpUpgradeMaster } from "./beeMasters/civil/helpUpgrade";
-import { HelpTransferMaster } from "./beeMasters/civil/helpTransfer";
-import { ClearMaster } from "./beeMasters/civil/clear";
-import { ContainerBuilderMaster } from "./beeMasters/civil/containerBuilder";
-import { SignerMaster } from "./beeMasters/civil/randomSigner";
-import { ClaimerMaster } from "./beeMasters/civil/claimer";
-
-import { hiveStates, prefix, roomStates } from "./enums";
-import { makeId, findOptimalResource } from "./abstract/utils";
-
-import { profile } from "./profiler/decorator";
-
-import type { SwarmMaster } from "./beeMasters/_SwarmMaster";
-import type { Hive } from "./Hive";
+import { findOptimalResource, makeId } from "abstract/utils";
+import type { SwarmMaster } from "beeMasters/_SwarmMaster";
+import { AnnexMaster } from "beeMasters/civil/annexer";
+import { ClaimerMaster } from "beeMasters/civil/claimer";
+import { ClearMaster } from "beeMasters/civil/clear";
+import { ContainerBuilderMaster } from "beeMasters/civil/containerBuilder";
+import { HelpTransferMaster } from "beeMasters/civil/helpTransfer";
+import { HelpUpgradeMaster } from "beeMasters/civil/helpUpgrade";
+import { PickupMaster } from "beeMasters/civil/pickup";
+import { PortalMaster } from "beeMasters/civil/portal";
+import { PuppetMaster } from "beeMasters/civil/puppet";
+import { SignerMaster } from "beeMasters/civil/randomSigner";
+// import { TestSquad } from "beeMasters/squads/test";
+import { DepositMaster } from "beeMasters/corridorMining/deposit";
+import { PowerMaster } from "beeMasters/corridorMining/power";
+import { AnnoyOBot } from "beeMasters/squads/annoyOBot";
+import { DismanleBoys } from "beeMasters/squads/dismatleBoys";
+import { GangDuo } from "beeMasters/squads/gangDuo";
+import { GangQuad } from "beeMasters/squads/quadSquad";
+import { DowngradeMaster } from "beeMasters/war/downgrader";
+import { HordeMaster } from "beeMasters/war/horde";
+import { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
+import { SKMaster } from "beeMasters/war/safeSK";
+import { WaiterMaster } from "beeMasters/war/waiter";
+import { hiveStates, prefix, roomStates } from "enums";
+import type { Hive } from "Hive";
+import { profile } from "profiler/decorator";
 
 const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 
