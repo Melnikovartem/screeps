@@ -1,7 +1,7 @@
 {
   "name": "screeps-statsd",
   "description": "screeps stats in graphite :3",
-  "version": "0.9.13",
+  "version": "0.10.0",
   "homepage": "https://github.com/screepers/screeps-grafana",
   "author": {
     "name": "Bryan Conrad",
@@ -21,33 +21,16 @@
     }
   ],
   "main": "index.js",
+  "type": "module",
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 14"
   },
   "scripts": {
-    "test": "grunt test",
-    "start": "coffee index.coffee"
-  },
-  "devDependencies": {
-    "coffee-script": "~1.7.0",
-    "grunt": "~0.4.2",
-    "grunt-codo": "~0.1.0",
-    "grunt-coffeelint": "0.0.8",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-coffee": "~0.10.0",
-    "grunt-contrib-uglify": "~0.3.1",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-mocha-cli": "~1.5.0",
-    "load-grunt-tasks": "~0.3.0",
-    "node-statsd": "^0.1.1",
-    "request-debug": "^0.2.0",
-    "should": "~3.1.0"
+    "start": "node index.js"
   },
   "keywords": [],
   "dependencies": {
-    "coffee": "^3.0.3",
     "node-statsd": "^0.1.1",
-    "request-promise": "^4.2.6",
-    "sleep": "^3.0.0"
+    "node-fetch": "^3.2.4"
   }
 }
