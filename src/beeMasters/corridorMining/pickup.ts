@@ -1,10 +1,9 @@
+import { findOptimalResource } from "abstract/utils";
+import { setups } from "bees/creepSetups";
+import { beeStates, prefix } from "enums";
+import { profile } from "profiler/decorator";
+
 import { Master } from "../_Master";
-
-import { beeStates, prefix } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
 import type { DepositMaster } from "./deposit";
 
 @profile

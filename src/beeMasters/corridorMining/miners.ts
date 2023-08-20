@@ -1,12 +1,9 @@
+import { setups } from "bees/creepSetups";
+import { beeStates, prefix } from "enums";
+import { profile } from "profiler/decorator";
+
 import { Master } from "../_Master";
-
-import { beeStates, prefix } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-// import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-
-import { profile } from "../../profiler/decorator";
 import type { DepositMaster } from "./deposit";
-// import type { Boosts } from "../_Master";
 
 @profile
 export class DepositMinerMaster extends Master {

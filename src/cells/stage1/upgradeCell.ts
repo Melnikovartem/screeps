@@ -165,7 +165,8 @@ export class UpgradeCell extends Cell {
             Apiary.logger.addResourceStat(
               this.hive.roomName,
               "upgrade",
-              -amount * 0.03
+              -amount * 0.03,
+              RESOURCE_ENERGY
             );
       }
     }

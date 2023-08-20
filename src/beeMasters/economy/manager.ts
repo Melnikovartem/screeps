@@ -1,25 +1,23 @@
-import { Master } from "../_Master";
-
-import { beeStates, hiveStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
 import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
-import type { StorageCell } from "../../cells/stage1/storageCell";
+import { setups } from "../../bees/creepSetups";
 import type { TransferRequest } from "../../bees/transferRequest";
+import type { StorageCell } from "../../cells/stage1/storageCell";
+import { beeStates, hiveStates } from "../../enums";
+import { profile } from "../../profiler/decorator";
+import { Master } from "../_Master";
 
 @profile
 export class ManagerMaster extends Master {
-  cell: StorageCell;
-  movePriority = 3 as const;
-  targetBeeCount = 2;
+  private cell: StorageCell;
+  public movePriority = 3 as const;
 
-  constructor(storageCell: StorageCell) {
+  public constructor(storageCell: StorageCell) {
     super(storageCell.hive, storageCell.ref);
+    this.targetBeeCount = 2;
     this.cell = storageCell;
   }
 
-  update() {
+  public update() {
     super.update();
 
     this.activeBees.sort(
@@ -47,20 +45,20 @@ export class ManagerMaster extends Master {
           r.to.id === this.cell.storage.id
       );
 
-    let non_refill_needed = false;
+    let nonRefillNeeded = false;
     if (refilling > 1) {
-      const non_refill_requests = _.filter(
+      const nonRefillRequests = _.filter(
         requests,
         (r: TransferRequest) => r.priority > 0 && r.priority < 5
       );
-      non_refill_needed = !!non_refill_requests.length;
+      nonRefillNeeded = !!nonRefillRequests.length;
 
-      if (non_refill_needed) {
+      if (nonRefillNeeded) {
         this.activeBees.sort(
           (a, b) =>
             a.pos.getRangeTo(this.cell.pos) - b.pos.getRangeTo(this.cell.pos)
         );
-        requests = non_refill_requests;
+        requests = nonRefillRequests;
       }
     }
 
@@ -69,7 +67,7 @@ export class ManagerMaster extends Master {
       if (
         !transfer ||
         !transfer.isValid() ||
-        (non_refill_needed && transfer.priority === 0) ||
+        (nonRefillNeeded && transfer.priority === 0) ||
         (transfer.priority === 2 &&
           this.hive.state >= hiveStates.battle &&
           transfer.toAmount < 20)
@@ -89,9 +87,14 @@ export class ManagerMaster extends Master {
             (prev: TransferRequest, curr) => {
               let ans = curr.priority - prev.priority;
               if (!ans) {
-                const refPoint = bee.store.getUsedCapacity(curr.resource) >= curr.amount ? bee.pos : this.cell.storage.pos;
-                const nonStoragePrev = prev.to.id === this.cell.storage.id ? prev.from : prev.to;
-                const nonStorageCurr = curr.to.id === this.cell.storage.id ? curr.from : curr.to;
+                const refPoint =
+                  bee.store.getUsedCapacity(curr.resource) >= curr.amount
+                    ? bee.pos
+                    : this.cell.storage.pos;
+                const nonStoragePrev =
+                  prev.to.id === this.cell.storage.id ? prev.from : prev.to;
+                const nonStorageCurr =
+                  curr.to.id === this.cell.storage.id ? curr.from : curr.to;
                 ans =
                   refPoint.getRangeTo(nonStorageCurr) -
                   refPoint.getRangeTo(nonStoragePrev);
@@ -107,7 +110,7 @@ export class ManagerMaster extends Master {
           if (transfer && transfer.priority === 0) {
             --refilling;
             requests = _.map(this.cell.requests, (r) => r);
-            non_refill_needed = false;
+            nonRefillNeeded = false;
           }
           if (newTransfer.priority === 6) ++pickingup;
         }
@@ -133,7 +136,7 @@ export class ManagerMaster extends Master {
     }
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
         bee.fleeRoom(this.hive.roomName, this.hive.opt);
@@ -161,10 +164,15 @@ export class ManagerMaster extends Master {
           !transfer.priority &&
           bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
         ) {
-          const ss = (bee.pos.findInRange(FIND_MY_STRUCTURES, 1)
-            .filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN) as (StructureSpawn | StructureExtension)[])
-              )
-          )).filter((s) => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
+          const ss = (
+            bee.pos
+              .findInRange(FIND_MY_STRUCTURES, 1)
+              .filter(
+                (s) =>
+                  s.structureType === STRUCTURE_EXTENSION ||
+                  s.structureType === STRUCTURE_SPAWN
+              ) as (StructureSpawn | StructureExtension)[]
+          ).filter((s) => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
           if (ss) bee.transfer(ss, RESOURCE_ENERGY);
         }
       } else if (bee.creep.store.getUsedCapacity() > 0)

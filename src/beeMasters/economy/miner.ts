@@ -216,12 +216,14 @@ export class MinerMaster extends Master {
             Apiary.logger.addResourceStat(
               this.hive.roomName,
               this.cell.loggerRef,
-              spend
+              spend,
+              RESOURCE_ENERGY
             );
             Apiary.logger.addResourceStat(
               this.hive.roomName,
               this.cell.loggerUpkeepRef,
-              -spend
+              -spend,
+              RESOURCE_ENERGY
             );
           }
         } else if (this.cell.lair) mode = 0;
@@ -253,12 +255,14 @@ export class MinerMaster extends Master {
                   Apiary.logger.addResourceStat(
                     this.hive.roomName,
                     this.cell.loggerRef,
-                    spend
+                    spend,
+                    RESOURCE_ENERGY
                   );
                   Apiary.logger.addResourceStat(
                     this.hive.roomName,
                     this.cell.loggerUpkeepRef,
-                    -spend
+                    -spend,
+                    RESOURCE_ENERGY
                   );
                 }
               }

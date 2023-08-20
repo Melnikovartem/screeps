@@ -1,18 +1,16 @@
-import { Hive } from "../Hive";
 import { Master } from "../beeMasters/_Master";
-
 import { prefix } from "../enums";
-
-import { profile } from "../profiler/decorator";
 import type { HiveCells } from "../Hive";
+import { Hive } from "../Hive";
+import { profile } from "../profiler/decorator";
 
 @profile
 export abstract class Cell {
-  private readonly hive: Hive;
-  private readonly ref: string;
-  private master: Master | undefined;
+  public readonly hive: Hive;
+  public readonly ref: string;
+  public master: Master | undefined;
 
-  private constructor(hive: Hive, cellName: string) {
+  public constructor(hive: Hive, cellName: string) {
     this.hive = hive;
     this.ref = cellName;
 
@@ -23,15 +21,15 @@ export abstract class Cell {
       this.master = Apiary.masters[prefix.master + this.ref];
   }
 
-  private get refCache() {
+  public get refCache() {
     return this.ref.split("_")[0];
   }
 
-  private get pos(): RoomPosition {
+  public get pos(): RoomPosition {
     return this.hive.pos;
   }
 
-  private delete() {
+  public delete() {
     for (const cellType in this.hive.cells)
       if (this.hive.cells[cellType as keyof HiveCells]!.ref === this.ref)
         delete this.hive.cells[cellType as keyof HiveCells];
@@ -39,7 +37,7 @@ export abstract class Cell {
   }
 
   // first stage of decision making like do i a logistic transfer do i need more masters
-  private update<K extends keyof this>(
+  public update<K extends keyof this>(
     updateMapKey: K[] = [],
     nonforceMapKey: K[] = []
   ): void {
@@ -71,7 +69,7 @@ export abstract class Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   protected abstract run(): void;
 
-  private setCahe<K extends keyof this, T extends this[K]>(
+  public setCahe<K extends keyof this, T extends this[K]>(
     key: K,
     baseValue: T
   ) {
@@ -86,18 +84,18 @@ export abstract class Cell {
       ] = baseValue;
   }
 
-  private toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
+  public toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
     Memory.cache.hives[this.hive.roomName].cells[this.refCache][key as string] =
       value;
   }
 
-  private fromCache<K extends keyof this, T extends this[K]>(key: K) {
+  public fromCache<K extends keyof this, T extends this[K]>(key: K) {
     return Memory.cache.hives[this.hive.roomName].cells[this.refCache][
       key as string
     ] as T;
   }
 
-  private get print(): string {
+  public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

@@ -1,31 +1,37 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
 
-import { Master } from "./_Master";
-
-import { prefix } from "../enums";
-
 import type { Bee } from "../bees/bee";
+import { prefix } from "../enums";
 import type { FlagOrder } from "../order";
 import { profile } from "../profiler/decorator";
+import { Master } from "./_Master";
 
 @profile
 export abstract class SwarmMaster extends Master {
-  readonly order: FlagOrder;
-  maxSpawns: number = 1;
+  public readonly order: FlagOrder;
+  private _maxSpawns: number = 1;
 
-  constructor(order: FlagOrder) {
+  public constructor(order: FlagOrder) {
     super(order.hive, prefix.swarm + order.ref);
     this.order = order;
 
     if (this.order.flag.memory.info) this.spawned = this.order.flag.memory.info;
   }
 
-  checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
+  public get maxSpawns() {
+    return this._maxSpawns;
+  }
+
+  public set maxSpawns(value) {
+    this._maxSpawns = value;
+  }
+
+  public checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
     return this.checkBeesSwarm() && super.checkBees(spawnExtreme, spawnCycle);
   }
 
-  checkBeesSwarm() {
+  public checkBeesSwarm() {
     if (
       this.spawned >= this.maxSpawns &&
       !this.waitingForBees &&
@@ -35,27 +41,27 @@ export abstract class SwarmMaster extends Master {
     return this.spawned < this.maxSpawns;
   }
 
-  newBee(bee: Bee) {
+  public newBee(bee: Bee) {
     super.newBee(bee);
     if (bee.creep.memory.born + 1 === Game.time) ++this.spawned;
     this.order.flag.memory.info = this.spawned;
   }
 
-  set spawned(value) {
+  public set spawned(value) {
     this.order.flag.memory.info = value;
   }
 
-  get spawned() {
+  public get spawned() {
     if (this.order.flag.memory.info === undefined)
       this.order.flag.memory.info = 0;
     return this.order.flag.memory.info;
   }
 
-  get pos() {
+  public get pos() {
     return this.order.pos;
   }
 
-  get print() {
+  public get print() {
     /* let firstBee = this.bees[Object.keys(this.bees)[0]];
     let roomName = this.pos.roomName;
     if (firstBee && firstBee.pos)

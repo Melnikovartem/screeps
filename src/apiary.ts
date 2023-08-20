@@ -99,12 +99,11 @@ export class _Apiary {
     amount = 1,
     safe = true
   ) {
-    let cpu = 0;
-    if (Apiary.logger) cpu = Game.cpu.getUsed();
+    const cpu = Game.cpu.getUsed();
     if (safe) safeWrap(func, ref + " " + mode);
     else func();
-    if (Apiary.logger && Memory.settings.reportCPU && amount > 0)
-      Apiary.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
+    if (Memory.settings.reportCPU && this.logger)
+      this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 
   // update phase

@@ -1,33 +1,38 @@
-import { SwarmMaster } from "../_SwarmMaster";
+import { setups } from "bees/creepSetups";
+import { beeStates } from "enums";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
 
-import { beeStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
 import type { Boosts } from "../_Master";
+import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class HelpUpgradeMaster extends SwarmMaster {
-  boosts: Boosts = [
-    { type: "upgrade", lvl: 2 },
-    { type: "upgrade", lvl: 1 },
-    { type: "upgrade", lvl: 0 },
-  ];
-
-  get targetBeeCount() {
-    if (!this.order) return 0;
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 5;
-    return this.order.memory.extraInfo;
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.maxSpawns = 100;
   }
 
-  set targetBeeCount(value) {
+  public get boosts(): Boosts {
+    return [
+      { type: "upgrade", lvl: 2 },
+      { type: "upgrade", lvl: 1 },
+      { type: "upgrade", lvl: 0 },
+    ];
+  }
+
+  public get targetBeeCount() {
+    if (!this.order) return 0;
+    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 5;
+    return this.order.memory.extraInfo as number;
+  }
+
+  public set targetBeeCount(value) {
     if (this.order && this.order.memory.extraInfo)
       this.order.memory.extraInfo = value;
   }
 
-  maxSpawns = 100;
-
-  update() {
+  public update() {
     super.update();
 
     const controller = Game.rooms[this.pos.roomName].controller;
@@ -51,7 +56,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
       });
   }
 
-  run() {
+  public run() {
     const controller =
       Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
 

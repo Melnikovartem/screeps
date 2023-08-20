@@ -1,3 +1,4 @@
+import type { Master } from "../beeMasters/_Master";
 import { beeStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import {
@@ -6,7 +7,6 @@ import {
   STATE_DEST_Y,
   STATE_STUCK,
 } from "../Traveler/TravelerModified";
-import type { Master } from "../beeMasters/_Master";
 
 interface InfoMove {
   bee: ProtoBee<Creep | PowerCreep>;

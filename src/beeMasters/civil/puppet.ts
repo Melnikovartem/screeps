@@ -1,9 +1,8 @@
+import { setups } from "bees/creepSetups";
+import { hiveStates } from "enums";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { hiveStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
 
 @profile
 export class PuppetMaster extends SwarmMaster {

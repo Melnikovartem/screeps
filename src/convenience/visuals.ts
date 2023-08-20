@@ -1,9 +1,8 @@
-import { hiveStates, prefix } from "../enums";
 import { makeId } from "../abstract/utils";
-
-import { profile } from "../profiler/decorator";
 import { AnnexMaster } from "../beeMasters/civil/annexer";
+import { hiveStates, prefix } from "../enums";
 import type { Hive } from "../Hive";
+import { profile } from "../profiler/decorator";
 
 const TEXT_SIZE = 0.8;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
@@ -379,45 +378,6 @@ export class Visuals {
       }
       this.exportAnchor(1);
     }
-  }
-
-  public visualizeEnergy(
-    hiveName: string,
-    align: "center" | "right" | "left" = "left",
-    snap: "bottom" | "top" = "top"
-  ) {
-    if (!Apiary.logger) return;
-    const report = Apiary.logger.reportEnergy(hiveName);
-    const ans: string[][] = [["energy"], ["", "⚡", "💸"]];
-    let overAll = 0;
-    const prep = (rate: number): string => String(Math.round(rate * 100) / 100);
-
-    ans.push(["  📈income"]);
-    for (const ref in report)
-      if (Math.round(report[ref] * 100) > 0) {
-        overAll += report[ref];
-        ans.push([ref, prep(report[ref])]);
-      }
-
-    ans.push(["  📉expenditure"]);
-    for (const ref in report)
-      if (Math.round(report[ref] * 100) < 0) {
-        overAll += report[ref];
-        ans.push([ref, prep(report[ref])]);
-      }
-
-    ans.splice(2, 0, ["  💎🙌", "", prep(overAll)]);
-
-    this.anchor.y = this.table(
-      ans,
-      this.anchor,
-      undefined,
-      undefined,
-      undefined,
-      align,
-      snap
-    ).y;
-    return;
   }
 
   public statsHive(hive: Hive) {

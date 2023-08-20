@@ -1,11 +1,9 @@
-import { getEnterances, makeId } from "./utils";
 import { prefix, roomStates } from "../enums";
-
+import type { BuildProject } from "../Hive";
 import { profile } from "../profiler/decorator";
 import { Traveler } from "../Traveler/TravelerModified";
 import { BASE_MODE_HIVE } from "./hiveMemory";
-
-import type { BuildProject } from "../Hive";
+import { getEnterances, makeId } from "./utils";
 
 export type RoomSetup = {
   [key in BuildableStructureConstant | "null"]?: {
@@ -198,7 +196,7 @@ function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
       const roomInfo = Apiary.intel.getInfo(roomName, Infinity);
       const room = Game.rooms[roomName];
       if (roomInfo.roomState === roomStates.SKfrontier && room) {
-        for (const structure of room.find<Structure>(FIND_STRUCTURES))
+        for (const structure of room.find(FIND_STRUCTURES))
           if (structure instanceof StructureKeeperLair) {
             _.forEach(structure.pos.getOpenPositions(true, 1), (p) =>
               costMatrix.set(
@@ -258,8 +256,7 @@ export class RoomPlanner {
       const jobs = this.activePlanning[roomName].jobsToDo;
       while (jobs.length) {
         this.activePlanning[roomName].correct = "work";
-        let ans;
-        ans = jobs[0].func();
+        const ans = jobs[0].func();
         // console .log("?:", jobs[0].context, ans);
         if (ans === ERR_FULL) {
           this.activePlanning[roomName].correct = "fail";
@@ -394,8 +391,7 @@ export class RoomPlanner {
 
         net = net.filter((pos) => {
           const positions = pos.getPositionsInRange(1);
-          for (let i = 0; i < positions.length; ++i) {
-            const p = positions[i];
+          for (const p of positions) {
             if (pos.getRangeApprox(p, "linear") > 1) continue;
             if (
               terrain.get(p.x, p.y) === TERRAIN_MASK_WALL ||
@@ -414,41 +410,41 @@ export class RoomPlanner {
       func: () => {
         // some cells for starters
         const terrain = Game.map.getRoomTerrain(anchor.roomName);
-        const refillNet = net.filter((pos) => {
-          if (anchor.getRangeApprox(pos, "linear") <= 20) return false;
-          return !pos
+        const refillNet = net.filter((posToAdd) => {
+          if (anchor.getRangeApprox(posToAdd, "linear") <= 20) return false;
+          return !posToAdd
             .getPositionsInRange(3)
             .filter(
               (p) =>
                 terrain.get(p.x, p.y) === TERRAIN_MASK_WALL &&
-                p.getRangeApprox(pos, "linear") <= 10
+                p.getRangeApprox(posToAdd, "linear") <= 10
             ).length;
         });
 
         const closest = anchor.findClosest(refillNet);
         if (!closest) return ERR_FULL;
         const pos = this.filterNet(anchor, closest, refillNet, 0);
-        let rotation: 0 | 1 | 2 | 3;
+        let rotationDirection: 0 | 1 | 2 | 3;
         switch (pos.getDirectionTo(anchor)) {
           case TOP_LEFT:
           case TOP_RIGHT:
           case BOTTOM:
-            rotation = 1;
+            rotationDirection = 1;
             break;
           case RIGHT:
-            rotation = 3;
+            rotationDirection = 3;
             break;
           case LEFT:
-            rotation = 2;
+            rotationDirection = 2;
             break;
           default:
-            rotation = 0;
+            rotationDirection = 0;
         }
-        const transformPos = (a: Pos) => this.rotate(pos, a, rotation);
+        const transformPos = (a: Pos) => this.rotate(pos, a, rotationDirection);
         this.addModule(anchor.roomName, FAST_REFILL, transformPos);
         const spawns = FAST_REFILL.setup.spawn!.pos;
-        for (let i = 0; i < spawns.length; ++i) {
-          const pp = transformPos(spawns[i]);
+        for (const spawn of spawns) {
+          const pp = transformPos(spawn);
           const spawnPos = new RoomPosition(pp.x, pp.y, anchor.roomName);
           const ans = this.connectWithRoad(anchor, spawnPos, true, {
             range: 1,
@@ -470,28 +466,28 @@ export class RoomPlanner {
         // some cells for starters
         const terrain = Game.map.getRoomTerrain(anchor.roomName);
         const plan = this.activePlanning[anchor.roomName].plan;
-        const getTransformation = (pos: RoomPosition) => {
-          let rotation: 0 | 1 | 2 | 3 = 0;
-          switch (pos.getDirectionTo(anchor)) {
+        const getTransformation = (posToTransform: RoomPosition) => {
+          let rotationDirection: 0 | 1 | 2 | 3 = 0;
+          switch (posToTransform.getDirectionTo(anchor)) {
             case TOP_LEFT:
             case TOP_RIGHT:
             case BOTTOM:
-              rotation = 1;
+              rotationDirection = 1;
               break;
             case RIGHT:
-              rotation = 3;
+              rotationDirection = 3;
               break;
             case LEFT:
-              rotation = 2;
+              rotationDirection = 2;
               break;
             default:
-              rotation = 0;
+              rotationDirection = 0;
           }
-          return (a: Pos) => this.rotate(pos, a, rotation);
+          return (a: Pos) => this.rotate(posToTransform, a, rotationDirection);
         };
-        const labNet = net.filter((pos) => {
-          if (anchor.getRangeApprox(pos, "linear") <= 15) return false;
-          const transformTemp = getTransformation(pos);
+        const labNet = net.filter((posForNet) => {
+          if (anchor.getRangeApprox(posForNet, "linear") <= 15) return false;
+          const transformTemp = getTransformation(posForNet);
           return !LABS.setup.lab!.pos.filter((pp) => {
             const p = transformTemp(pp);
             return (
@@ -522,8 +518,7 @@ export class RoomPlanner {
       },
     });
 
-    for (const i in fillTypes) {
-      const sType = fillTypes[i];
+    for (const sType of fillTypes) {
       jobs.push({
         context: `placing ${sType}`,
         func: () => {
@@ -696,8 +691,8 @@ export class RoomPlanner {
             -1
           );
         }
-        for (let i = 0; i < toFix.length; ++i) {
-          const f = (x: number) => toFix[i][0] * x + toFix[i][1];
+        for (const problemToFix of toFix) {
+          const f = (x: number) => problemToFix[0] * x + problemToFix[1];
           reset();
           for (let x = 2; x <= 47; ++x) {
             const y = f(x);
@@ -717,7 +712,7 @@ export class RoomPlanner {
     });
   }
 
-  removeNonUsedWalls(roomName: string) {
+  public removeNonUsedWalls(roomName: string) {
     this.activePlanning[roomName].jobsToDo.push({
       context: "removing walls",
       func: () => {
@@ -1144,8 +1139,8 @@ export class RoomPlanner {
     for (const t in configuration.setup) {
       const sType = t as keyof Module["setup"];
       const poss = configuration.setup[sType]!.pos;
-      for (let i = 0; i < poss.length; ++i) {
-        const ans = transformPos(poss[i]);
+      for (const posForConf of poss) {
+        const ans = transformPos(posForConf);
         if (
           this.addToPlan(
             ans,
@@ -1171,8 +1166,8 @@ export class RoomPlanner {
       const sType = t as BuildableStructureConstant;
       if (ignore.indexOf(sType) !== -1) continue;
       const poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (let i = 0; i < poss.length; ++i)
-        this.addToPlan(poss[i], roomName, sType, true);
+      for (const posToAdd of poss)
+        this.addToPlan(posToAdd, roomName, sType, true);
       if (!poss.length) delete Memory.cache.roomPlanner[roomName][sType];
     }
 
@@ -1373,8 +1368,7 @@ export class RoomPlanner {
     );
     const firstDefense = defenseIndex > 0 ? priorityQue[defenseIndex] : "";
     let energyCost = 0;
-    for (let i = 0; i < priorityQue.length; ++i) {
-      const sType = priorityQue[i];
+    for (const sType of priorityQue) {
       if (ans.length && sType === firstDefense) break;
       if (!(sType in Memory.cache.roomPlanner[roomName])) continue;
       const cc = this.getCase({
@@ -1385,8 +1379,12 @@ export class RoomPlanner {
       const toadd: RoomPosition[] = [];
       let placed = 0;
       const positions = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (let i = 0; i < positions.length; ++i) {
-        const pos = new RoomPosition(positions[i].x, positions[i].y, roomName);
+      for (const positionToPut of positions) {
+        const pos = new RoomPosition(
+          positionToPut.x,
+          positionToPut.y,
+          roomName
+        );
         const structure = _.filter(
           pos.lookFor(LOOK_STRUCTURES),
           (s) => s.structureType === sType
@@ -1476,7 +1474,7 @@ export class RoomPlanner {
             });
         }
       }
-      energyCost += _.sum(ans, (cc) => cc.energyCost);
+      energyCost += _.sum(ans, (bProject) => bProject.energyCost);
       if (!constructions)
         for (let i = 0; i < toadd.length && i < cc.amount - placed; ++i) {
           let anss;

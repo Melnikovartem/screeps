@@ -1,7 +1,7 @@
+import type { Master } from "../beeMasters/_Master";
 import { beeStates, prefix, setupsNames } from "../enums";
 import { profile } from "../profiler/decorator";
 import { ProtoBee } from "./protoBee";
-import type { Master } from "../beeMasters/_Master";
 
 @profile
 export class Bee extends ProtoBee<Creep> {

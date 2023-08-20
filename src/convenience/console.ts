@@ -1,16 +1,15 @@
-import { prefix, roomStates, signText } from "../enums";
-
-import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
-import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
-import { BASE_MODE_HIVE } from "../abstract/hiveMemory";
-import { makeId } from "../abstract/utils";
-import { setups } from "../bees/creepSetups";
-
-import type { RoomSetup } from "../abstract/roomPlanner";
-import type { Master } from "../beeMasters/_Master";
-import type { HiveCache } from "../abstract/hiveMemory";
-import type { ReactionConstant } from "../cells/stage1/laboratoryCell";
 import { TransferRequest } from "bees/transferRequest";
+
+import type { HiveCache } from "../abstract/hiveMemory";
+import { BASE_MODE_HIVE } from "../abstract/hiveMemory";
+import type { RoomSetup } from "../abstract/roomPlanner";
+import { makeId } from "../abstract/utils";
+import type { Master } from "../beeMasters/_Master";
+import { setups } from "../bees/creepSetups";
+import type { ReactionConstant } from "../cells/stage1/laboratoryCell";
+import { REACTION_MAP } from "../cells/stage1/laboratoryCell";
+import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
+import { prefix, roomStates, signText } from "../enums";
 
 export class CustomConsole {
   public lastActionRoomName: string;
@@ -414,18 +413,6 @@ export class CustomConsole {
       if (_.filter(defMap[0], (p) => p.pos.x === x && p.pos.y === y).length)
         vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
     });
-  }
-
-  public showEnergy(
-    hiveName: string = this.lastActionRoomName,
-    keep?: boolean,
-    x: number = 1,
-    y: number = 1
-  ) {
-    Apiary.visuals.changeAnchor(x, y, hiveName);
-    Apiary.visuals.visualizeEnergy(hiveName);
-    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
-    return `OK @ ${this.formatRoom(hiveName)}`;
   }
 
   public pickup(hiveName: string = this.lastActionRoomName) {

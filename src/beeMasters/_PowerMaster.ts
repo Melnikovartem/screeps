@@ -1,11 +1,10 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
 
-import { Master } from "./_Master";
-
-import { profile } from "../profiler/decorator";
-import type { PowerCell } from "../cells/stage2/powerCell";
 import type { PowerBee } from "../bees/powerBee";
+import type { PowerCell } from "../cells/stage2/powerCell";
+import { profile } from "../profiler/decorator";
+import { Master } from "./_Master";
 
 export const POWER_NAMES: { [id in PowerConstant]: string } = {
   [PWR_GENERATE_OPS]: "OPS",

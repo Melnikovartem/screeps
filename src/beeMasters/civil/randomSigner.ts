@@ -1,16 +1,20 @@
+import { setups } from "bees/creepSetups";
+import { signText } from "enums";
+import { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { signText } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
 
 @profile
 export class SignerMaster extends SwarmMaster {
-  maxSpawns = 1;
-  movePriority = 3 as const;
+  public movePriority = 3 as const;
 
-  update() {
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.maxSpawns = 1;
+  }
+
+  public update() {
     super.update();
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
@@ -23,7 +27,7 @@ export class SignerMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (!bee.target) {
         const rooms = Memory.cache.roomsToSign;

@@ -1,33 +1,32 @@
-import { SwarmMaster } from "../_SwarmMaster";
+import { setups } from "bees/creepSetups";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
 
-import { setups } from "../../bees/creepSetups";
+import { SwarmMaster } from "../_SwarmMaster";
 import { DepositMinerMaster } from "./miners";
 import { DepositPickupMaster } from "./pickup";
-
-import { profile } from "../../profiler/decorator";
-import type { FlagOrder } from "../../order";
 import type { PullerMaster } from "./puller";
 
 // first tandem btw
 @profile
 export class DepositMaster extends SwarmMaster {
-  target: Deposit | undefined;
-  maxSpawns = Infinity;
+  public target: Deposit | undefined;
 
-  miners: DepositMinerMaster;
+  public miners: DepositMinerMaster;
   // puller: DepositPullerMaster;
-  pickup: DepositPickupMaster;
-  positions: { pos: RoomPosition }[];
-  operational: boolean = false;
-  rate: number = 0;
-  rest: RoomPosition;
-  workAmount: number;
+  public pickup: DepositPickupMaster;
+  public positions: { pos: RoomPosition }[];
+  public operational: boolean = false;
+  public rate: number = 0;
+  public rest: RoomPosition;
+  public workAmount: number;
 
-  parent: PullerMaster;
+  public parent: PullerMaster;
 
-  constructor(order: FlagOrder, parent: PullerMaster) {
+  public constructor(order: FlagOrder, parent: PullerMaster) {
     super(order);
     this.parent = parent;
+    this.maxSpawns = Infinity;
     this.positions = this.pos.getOpenPositions(true).map((p) => {
       return { pos: p };
     });
@@ -50,31 +49,31 @@ export class DepositMaster extends SwarmMaster {
     if (this.pos.roomName in Game.rooms) this.updateTarget();
   }
 
-  get decay() {
+  public get decay() {
     return (this.order.memory.extraInfo.decay as number) - Game.time;
   }
 
-  set decay(value) {
+  public set decay(value) {
     this.order.memory.extraInfo.decay = Game.time + value;
   }
 
-  get lastCooldown() {
+  public get lastCooldown() {
     return this.order.memory.extraInfo.lastCooldown as number;
   }
 
-  set lastCooldown(value) {
+  public set lastCooldown(value) {
     this.order.memory.extraInfo.lastCooldown = value;
   }
 
-  get roadTime() {
+  public get roadTime() {
     return this.order.memory.extraInfo.roadTime as number;
   }
 
-  get shouldSpawn() {
+  public get shouldSpawn() {
     return this.operational && this.parent.sitesON.includes(this);
   }
 
-  updateTarget() {
+  public updateTarget() {
     this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
     if (this.target) {
       this.lastCooldown = this.target.lastCooldown;
@@ -82,7 +81,7 @@ export class DepositMaster extends SwarmMaster {
     } else this.decay = -Game.time;
   }
 
-  update() {
+  public update() {
     super.update();
 
     if (!this.hive.cells.storage) {
@@ -112,9 +111,9 @@ export class DepositMaster extends SwarmMaster {
       this.hive.cells.defense.checkAndDefend(this.pos.roomName);
   }
 
-  run() {}
+  public run() {}
 
-  delete() {
+  public delete() {
     super.delete();
     this.miners.delete();
     this.pickup.delete();

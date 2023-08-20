@@ -1,21 +1,23 @@
+import { findOptimalResource } from "abstract/utils";
+import { setups } from "bees/creepSetups";
+import { beeStates, hiveStates } from "enums";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { setups } from "../../bees/creepSetups";
-import { beeStates, hiveStates } from "../../enums";
-import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
-import type { Boosts } from "../_Master";
 
 @profile
 export class PickupMaster extends SwarmMaster {
-  waitPos = this.pos.getOpenPositions(true, 3)[0];
-  boosts: Boosts | undefined = [
-    { type: "capacity", lvl: 0 },
-    { type: "fatigue", lvl: 0 },
-  ];
+  private waitPos = this.pos.getOpenPositions(true, 3)[0];
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.boosts = [
+      { type: "capacity", lvl: 0 },
+      { type: "fatigue", lvl: 0 },
+    ];
+  }
 
-  update() {
+  public update() {
     super.update();
     if (this.checkBees(this.hive.state !== hiveStates.battle)) {
       let setup = setups.pickup;
@@ -31,23 +33,23 @@ export class PickupMaster extends SwarmMaster {
     }
   }
 
-  get target():
-    | Tombstone
-    | Ruin
-    | Resource
-    | StructureStorage
-    | null
-    | undefined {
+  public get target() {
     if (!this.order.memory.extraInfo) this.order.memory.extraInfo = "";
-    return Game.getObjectById(this.order.memory.extraInfo);
+    return Game.getObjectById(this.order.memory.extraInfo) as
+      | Tombstone
+      | Ruin
+      | Resource
+      | StructureStorage
+      | null
+      | undefined;
   }
 
-  set target(value) {
+  public set target(value) {
     if (value) this.order.memory.extraInfo = value.id;
     else this.order.memory.extraInfo = "";
   }
 
-  getTarget() {
+  public getTarget() {
     let target:
       | Tombstone
       | Ruin
@@ -113,7 +115,7 @@ export class PickupMaster extends SwarmMaster {
     return target;
   }
 
-  run() {
+  public run() {
     if (!this.hive.cells.storage) return;
     const storage = this.hive.cells.storage.storage;
 

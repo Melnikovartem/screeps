@@ -58,8 +58,7 @@ export interface HiveLog {
   energy: {
     storage: number;
     terminal: number;
-    spawnersAvailable: number;
-    spawnersCapacity: number;
+    spawners: number;
   };
   controller: { level: number; progress: number; progressTotal: number };
   nukes: { [id: string]: { [launchRoomName: string]: number } };

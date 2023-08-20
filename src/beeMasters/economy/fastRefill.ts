@@ -1,29 +1,29 @@
-import { Master } from "../_Master";
-import { setups } from "../../bees/creepSetups";
+import { setups } from "bees/creepSetups";
+import type { FastRefillCell } from "cells/stage1/fastRefill";
+import { profile } from "profiler/decorator";
 
-import { profile } from "../../profiler/decorator";
-import type { FastRefillCell } from "../../cells/stage1/fastRefill";
+import { Master } from "../_Master";
 
 @profile
 export class FastRefillMaster extends Master {
-  cell: FastRefillCell;
-  container: StructureContainer;
-  movePriority = 3 as const;
-  targetBeeCount = 1;
-  pos: RoomPosition;
+  private cell: FastRefillCell;
+  public container: StructureContainer;
+  public movePriority = 3 as const;
+  public pos: RoomPosition;
 
-  constructor(
+  public constructor(
     fastRefillCell: FastRefillCell,
     container: StructureContainer,
     pos: RoomPosition
   ) {
     super(fastRefillCell.hive, fastRefillCell.ref + "_" + pos.x + "_" + pos.y);
+    this.targetBeeCount = 1;
     this.cell = fastRefillCell;
     this.container = container;
     this.pos = pos;
   }
 
-  update() {
+  public update() {
     super.update();
     this.container = Game.getObjectById(
       this.container.id
@@ -43,13 +43,13 @@ export class FastRefillMaster extends Master {
     }
   }
 
-  delete() {
+  public delete() {
     super.delete();
     const index = this.cell.masters.indexOf(this);
     if (index !== -1) this.cell.masters.splice(index);
   }
 
-  run() {
+  public run() {
     const lowContainer =
       this.container.store.getUsedCapacity(RESOURCE_ENERGY) <=
       CONTAINER_CAPACITY * 0.7;

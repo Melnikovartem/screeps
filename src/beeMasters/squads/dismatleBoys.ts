@@ -1,7 +1,6 @@
 import { setups } from "../../bees/creepSetups";
-import { SquadMaster, FormationPositions } from "./squad";
-
 import type { Boosts } from "../_Master";
+import { FormationPositions, SquadMaster } from "./squad";
 
 const TOWER_NUM = 3; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;
@@ -18,15 +17,17 @@ HEALER.patternLimit =
 
 // my most powerfull weapon to date
 export class DismanleBoys extends SquadMaster {
-  boosts: Boosts = [
-    { type: "rangedAttack", lvl: 1 },
-    { type: "dismantle", lvl: 2 },
-    { type: "heal", lvl: 2 },
-    { type: "damage", lvl: 2 },
-    { type: "fatigue", lvl: 1 },
-  ];
+  public get boosts(): Boosts {
+    return [
+      { type: "rangedAttack", lvl: 1 },
+      { type: "dismantle", lvl: 2 },
+      { type: "heal", lvl: 2 },
+      { type: "damage", lvl: 2 },
+      { type: "fatigue", lvl: 1 },
+    ];
+  }
 
-  get formation(): FormationPositions {
+  protected get formation(): FormationPositions {
     if (
       this.pos.x <= 2 ||
       this.pos.x >= 48 ||
@@ -45,7 +46,7 @@ export class DismanleBoys extends SquadMaster {
     ];
   }
 
-  get checkup() {
+  protected get checkup() {
     const healerMinerals = this.checkMinerals(
       HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
       1

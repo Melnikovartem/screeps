@@ -1,15 +1,20 @@
+import { setups } from "bees/creepSetups";
+import { hiveStates, roomStates, signText } from "enums";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { signText, roomStates, hiveStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
 
 @profile
 export class ClaimerMaster extends SwarmMaster {
-  maxSpawns = 5;
-  movePriority = 3 as const;
-  update() {
+  public movePriority = 3 as const;
+
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.maxSpawns = 5;
+  }
+
+  public update() {
     super.update();
 
     if (
@@ -31,7 +36,7 @@ export class ClaimerMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (bee.pos.roomName !== this.pos.roomName) {
         bee.goTo(this.pos, { useFindRoute: true, ignoreRoads: true });

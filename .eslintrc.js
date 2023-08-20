@@ -19,7 +19,7 @@ module.exports = {
       project: "tsconfig.json",
       sourceType: "module"
     },
-    plugins: ["@typescript-eslint", "import"],
+    plugins: ["@typescript-eslint", "import", "simple-import-sort"],
     settings: {
       "import/parsers": {
         "@typescript-eslint/parser": [".ts", ".tsx"]
@@ -84,7 +84,9 @@ module.exports = {
       "quote-props": "off",
       radix: "error",
       "spaced-comment": "error",
-      // "sort-imports": "warn",
+      //"sort-imports": "error",
       "@typescript-eslint/no-unsafe-assignment": "warn",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
     }
   };

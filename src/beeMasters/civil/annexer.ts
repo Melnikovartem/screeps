@@ -1,23 +1,27 @@
+import { setups } from "bees/creepSetups";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
 
 @profile
 export class AnnexMaster extends SwarmMaster {
-  movePriority = 3 as const;
-  maxSpawns = Infinity;
+  public movePriority = 3 as const;
 
-  get reservationTime() {
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.maxSpawns = Infinity;
+  }
+
+  public get reservationTime() {
     return (this.order.memory.extraInfo as number) || 0;
   }
 
-  set reservationTime(value: number) {
+  public set reservationTime(value: number) {
     this.order.memory.extraInfo = value;
   }
 
-  update() {
+  public update() {
     super.update();
 
     if (this.pos.roomName in Game.rooms) {
@@ -48,7 +52,7 @@ export class AnnexMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (bee.pos.roomName !== this.pos.roomName)
         bee.goTo(this.pos, { ignoreRoads: true });

@@ -1,5 +1,4 @@
 import { COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
-
 import { profile } from "../profiler/decorator";
 
 export interface ProtoOrder {

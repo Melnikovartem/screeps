@@ -1,12 +1,11 @@
+import { makeId } from "abstract/utils";
+import type { Bee } from "bees/bee";
+import { setups } from "bees/creepSetups";
+import { beeStates } from "enums";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { setups } from "../../bees/creepSetups";
-import { beeStates } from "../../enums";
-import { makeId } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
-import type { Bee } from "../../bees/bee";
-import type { FlagOrder } from "../../order";
 import type { PullerMaster } from "./puller";
 
 // first tandem btw

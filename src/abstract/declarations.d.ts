@@ -1,10 +1,10 @@
 import type { _Apiary } from "../Apiary";
-import type { beeStates } from "../enums";
-import type { CustomConsole } from "../convenience/console";
-import type { RoomSetup } from "./roomPlanner";
-import type { CreepAllBattleInfo } from "./intelligence";
-import type { HiveCache, HiveLog } from "./hiveMemory";
 import type { CreepSetup } from "../bees/creepSetups";
+import type { CustomConsole } from "../convenience/console";
+import type { beeStates } from "../enums";
+import type { HiveCache, HiveLog } from "./hiveMemory";
+import type { CreepAllBattleInfo } from "./intelligence";
+import type { RoomSetup } from "./roomPlanner";
 // import type { Boosts } from "../beeMasters/_Master";
 
 declare global {
@@ -141,7 +141,7 @@ declare global {
           time: number;
           context: string;
           message: string;
-          stack: string;
+          stack?: string;
         };
       };
       enemies?: {

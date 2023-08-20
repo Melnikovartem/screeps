@@ -3,8 +3,8 @@
 // in this case on battlefield
 
 import { enemyTypes, roomStates } from "../enums";
-import { towerCoef } from "./utils";
 import { profile } from "../profiler/decorator";
+import { towerCoef } from "./utils";
 
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 

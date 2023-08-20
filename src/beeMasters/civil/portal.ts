@@ -1,23 +1,22 @@
+import { setups } from "bees/creepSetups";
+import { beeStates, prefix } from "enums";
+import type { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { prefix, beeStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
-import type { FlagOrder } from "../../order";
 
 // this will become outdated soon
 
 @profile
 export class PortalMaster extends SwarmMaster {
-  maxSpawns = Infinity;
-  setup = setups.puppet;
-  priority: 2 | 9 = 9;
-  res: ResourceConstant | undefined;
-  cycle: number = CREEP_LIFE_TIME;
+  public setup = setups.puppet;
+  public priority: 2 | 9 = 9;
+  public res: ResourceConstant | undefined;
+  public cycle: number = CREEP_LIFE_TIME;
 
-  constructor(order: FlagOrder) {
+  public constructor(order: FlagOrder) {
     super(order);
+    this.maxSpawns = Infinity;
     if (this.order.ref.includes(prefix.boost)) {
       this.setup = setups.bootstrap.copy();
       this.setup.patternLimit += 4;
@@ -47,7 +46,7 @@ export class PortalMaster extends SwarmMaster {
     }
   }
 
-  update() {
+  public update() {
     super.update();
 
     let shouldSpawn = Game.time >= this.oldestSpawn + this.cycle - 100;
@@ -92,7 +91,7 @@ export class PortalMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     _.forEach(this.bees, (bee) => {
       if (bee.state === beeStates.boosting)
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)

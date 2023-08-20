@@ -1,14 +1,13 @@
+import type { Bee } from "bees/bee";
+import { setups } from "bees/creepSetups";
+import { beeStates, hiveStates, prefix } from "enums";
+import type { Hive } from "Hive";
+import { profile } from "profiler/decorator";
+
 import { Master } from "../_Master";
+import type { DepositMaster } from "./deposit";
 import { DepositMinerMaster } from "./miners";
 import { PowerMaster } from "./power";
-
-import { beeStates, prefix, hiveStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
-import type { DepositMaster } from "./deposit";
-import type { Hive } from "../../Hive";
-import type { Bee } from "../../bees/bee";
 
 @profile
 export class PullerMaster extends Master {

@@ -1,50 +1,51 @@
+import type { Master } from "../beeMasters/_Master";
+import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
 import { prefix } from "../enums";
 import { profile } from "../profiler/decorator";
-
 import { ProtoBee } from "./protoBee";
-import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
-
-import type { Master } from "../beeMasters/_Master";
 
 @profile
 export class PowerBee extends ProtoBee<PowerCreep> {
-  master: Master | undefined;
-  lifeTime: number;
+  public master: Master | undefined;
+  public lifeTime: number;
 
-  boosted = false;
+  public boosted = false;
 
   // for now it will be forever binded
-  constructor(creep: PowerCreep) {
+  public constructor(creep: PowerCreep) {
     super(creep);
     this.lifeTime = POWER_CREEP_LIFE_TIME;
     // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
   }
 
-  get memory() {
+  public get memory() {
     return this.creep.memory;
   }
 
-  get powers() {
+  public get powers() {
     return this.creep.powers;
   }
 
-  get shard() {
+  public get shard() {
     return this.creep.shard;
   }
 
-  get fatigue() {
+  public get fatigue() {
     return 0;
   }
 
-  usePower(pwr: PowerConstant, t?: RoomObject, opt?: TravelToOptions) {
+  public usePower(pwr: PowerConstant, t?: RoomObject, opt?: TravelToOptions) {
     const pwrInfo = POWER_INFO[pwr];
     const pwrStats = this.powers[pwr];
     if (pwrStats) {
       if (pwrStats.cooldown) return ERR_TIRED;
       else if (
         "ops" in pwrInfo &&
-        this.store.getUsedCapacity(RESOURCE_OPS) < pwrInfo.ops
+        this.store.getUsedCapacity(RESOURCE_OPS) <
+          (Array.isArray(pwrInfo.ops)
+            ? pwrInfo.ops[pwrStats.level]
+            : pwrInfo.ops)
       )
         return ERR_NOT_ENOUGH_RESOURCES;
     } else return ERR_NOT_FOUND;
@@ -57,22 +58,27 @@ export class PowerBee extends ProtoBee<PowerCreep> {
     return ans === OK ? this.creep.usePower(pwr, t) : ans;
   }
 
-  enableRoom(t: StructureController, opt?: TravelToOptions) {
+  public enableRoom(t: StructureController, opt?: TravelToOptions) {
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.enableRoom(t) : ans;
   }
 
-  renew(t: StructurePowerSpawn | StructurePowerBank, opt?: TravelToOptions) {
+  public renew(
+    t: StructurePowerSpawn | StructurePowerBank,
+    opt?: TravelToOptions
+  ) {
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.renew(t) : ans;
   }
 
-  update() {
+  public update() {
     super.update();
     this.creep = Game.powerCreeps[this.ref];
   }
 
-  static makeMaster(ref: string): ((pb: PowerBee) => Master) | undefined {
+  public static makeMaster(
+    ref: string
+  ): ((pb: PowerBee) => Master) | undefined {
     let validCells = _.compact(_.map(Apiary.hives, (h) => h.cells.power!));
     if (ref.includes(prefix.nkvd)) {
       validCells = validCells.filter(
@@ -83,7 +89,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
     return undefined;
   }
 
-  static checkBees() {
+  public static checkBees() {
     for (const name in Game.powerCreeps) {
       const pc = Game.powerCreeps[name];
       if (
@@ -102,7 +108,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
     }
   }
 
-  get print(): string {
+  public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

@@ -1,25 +1,24 @@
+import { FREE_CAPACITY } from "abstract/terminalNetwork";
+import { findOptimalResource } from "abstract/utils";
+import type { Bee } from "bees/bee";
+import { setups } from "bees/creepSetups";
+import type { ExcavationCell } from "cells/base/excavationCell";
+import { BASE_MINERALS } from "cells/stage1/laboratoryCell";
+import { beeStates, hiveStates } from "enums";
+import { profile } from "profiler/decorator";
+
 import { Master } from "../_Master";
-
-import { beeStates, hiveStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-import { findOptimalResource } from "../../abstract/utils";
-import { BASE_MINERALS } from "../../cells/stage1/laboratoryCell";
-import { FREE_CAPACITY } from "../../abstract/terminalNetwork";
-
-import { profile } from "../../profiler/decorator";
-import type { ExcavationCell } from "../../cells/base/excavationCell";
-import type { Bee } from "../../bees/bee";
 
 @profile
 export class HaulerMaster extends Master {
-  cell: ExcavationCell;
-  targetMap: { [id: string]: string | undefined } = {};
-  roadUpkeepCost: { [id: string]: number } = {};
-  accumRoadTime = 0;
-  dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
-  minRoadTime: number = 0;
+  public cell: ExcavationCell;
+  public targetMap: { [id: string]: string | undefined } = {};
+  public roadUpkeepCost: { [id: string]: number } = {};
+  public accumRoadTime = 0;
+  public dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
+  public minRoadTime: number = 0;
 
-  constructor(
+  public constructor(
     excavationCell: ExcavationCell,
     storage: StructureStorage | StructureTerminal
   ) {
@@ -29,18 +28,18 @@ export class HaulerMaster extends Master {
     this.recalculateTargetBee();
   }
 
-  newBee(bee: Bee) {
+  public newBee(bee: Bee) {
     if (bee.state === beeStates.idle && bee.store.getUsedCapacity())
       bee.state = beeStates.work;
     super.newBee(bee);
   }
 
-  deleteBee(ref: string) {
+  public deleteBee(ref: string) {
     super.deleteBee(ref);
     delete this.roadUpkeepCost[ref];
   }
 
-  recalculateRoadTime() {
+  public recalculateRoadTime() {
     this.accumRoadTime = 0; // roadTime * minePotential
     this.minRoadTime = Infinity;
     if (this.hive.cells.storage)
@@ -65,7 +64,7 @@ export class HaulerMaster extends Master {
     this.cell.shouldRecalc = false;
   }
 
-  recalculateTargetBee() {
+  public recalculateTargetBee() {
     const body = setups.hauler.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;
@@ -81,7 +80,7 @@ export class HaulerMaster extends Master {
     );
   }
 
-  checkBeesWithRecalc() {
+  public checkBeesWithRecalc() {
     const check = () =>
       this.checkBees(
         hiveStates.battle !== this.hive.state ||
@@ -95,7 +94,7 @@ export class HaulerMaster extends Master {
     return check();
   }
 
-  update() {
+  public update() {
     super.update();
 
     if (!this.accumRoadTime) {
@@ -149,7 +148,7 @@ export class HaulerMaster extends Master {
     });
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
         bee.fleeRoom(this.hive.roomName, this.hive.opt);
@@ -166,7 +165,9 @@ export class HaulerMaster extends Master {
             break;
           }
 
-          const target = Game.getObjectById(bee.target) as StructureContainer | undefined;
+          const target = Game.getObjectById(bee.target) as
+            | StructureContainer
+            | undefined;
 
           if (!target) {
             this.targetMap[bee.target] = undefined;
@@ -195,8 +196,7 @@ export class HaulerMaster extends Master {
           let overproduction: Resource | Tombstone | undefined = target.pos
             .findInRange(FIND_DROPPED_RESOURCES, 3)
             .filter(
-              (r) =>
-                r.pos.getRangeTo(bee) <= 2 || r.pos.getRangeTo(target) <= 1
+              (r) => r.pos.getRangeTo(bee) <= 2 || r.pos.getRangeTo(target) <= 1
             )[0];
           if (overproduction) bee.pickup(overproduction);
           else {
@@ -261,14 +261,16 @@ export class HaulerMaster extends Master {
                 Apiary.logger.addResourceStat(
                   this.hive.roomName,
                   ref,
-                  this.roadUpkeepCost[bee.ref]
+                  this.roadUpkeepCost[bee.ref],
+                  RESOURCE_ENERGY
                 );
                 Apiary.logger.addResourceStat(
                   this.hive.roomName,
                   sameRes
                     ? "upkeep_" + bee.target.slice(bee.target.length - 4)
                     : "build",
-                  -this.roadUpkeepCost[bee.ref]
+                  -this.roadUpkeepCost[bee.ref],
+                  RESOURCE_ENERGY
                 );
                 this.roadUpkeepCost[bee.ref] = 0;
               }
@@ -285,10 +287,16 @@ export class HaulerMaster extends Master {
             bee.pos.getRangeTo(this.hive) <= 8 &&
             bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0
           ) {
-            const ss = (bee.pos.findInRange(FIND_MY_STRUCTURES, 1)
-              .filter(s => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN) as (StructureSpawn | StructureExtension)[])
-                )
-            )).filter((s) => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
+            const ss = (
+              bee.pos
+                .findInRange(FIND_MY_STRUCTURES, 1)
+                .filter(
+                  (s) =>
+                    s.structureType === STRUCTURE_EXTENSION ||
+                    s.structureType === STRUCTURE_SPAWN
+                ) as (StructureSpawn | StructureExtension)[]
+            ).filter((s) => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
+
             if (ss && bee.transfer(ss, RESOURCE_ENERGY) === OK)
               if (Apiary.logger && bee.target) {
                 const ref = "mining_" + bee.target.slice(bee.target.length - 4);
@@ -306,10 +314,13 @@ export class HaulerMaster extends Master {
           if (!bee.store.getUsedCapacity()) {
             bee.state = beeStates.chill;
             bee.target = undefined;
-          } else break;
+          } else {
+            break;
+          }
 
         case beeStates.chill:
           bee.goRest(this.cell.pos, { offRoad: true });
+          break;
       }
       if (this.checkFlee(bee) && bee.targetPosition && bee.hits < bee.hitsMax) {
         const diff =

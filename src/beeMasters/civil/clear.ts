@@ -1,27 +1,25 @@
+import { FULL_CAPACITY } from "abstract/terminalNetwork";
+import { findOptimalResource } from "abstract/utils";
+import { setups } from "bees/creepSetups";
+import type { ResTarget } from "Hive";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { setups } from "../../bees/creepSetups";
-import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
-import { FULL_CAPACITY } from "../../abstract/terminalNetwork";
-
-import type { ResTarget } from "../../Hive";
 
 @profile
 export class ClearMaster extends SwarmMaster {
-  get targetBeeCount() {
+  public get targetBeeCount() {
     return 1;
   }
 
-  set targetBeeCount(_) {}
+  public set targetBeeCount(_) {}
 
-  get maxSpawns() {
+  public get maxSpawns() {
     return 1;
   }
-  set maxSpawns(_) {}
+  public set maxSpawns(_) {}
 
-  update() {
+  public update() {
     super.update();
     if (this.checkBees()) {
       const setup = setups.queen.copy();
@@ -34,7 +32,7 @@ export class ClearMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     const storage = this.hive.cells.storage!.storage;
     _.forEach(this.activeBees, (bee) => {
       if (storage) {

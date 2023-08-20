@@ -1,7 +1,6 @@
 import { setups } from "../../bees/creepSetups";
-import { SquadMaster, FormationPositions } from "./squad";
-
 import type { Boosts } from "../_Master";
+import { FormationPositions, SquadMaster } from "./squad";
 
 // i am poor so there is this for top lvl harass
 const TOWER_NUM = 6; // 6;
@@ -17,16 +16,18 @@ HEALER.patternLimit =
 
 // my most powerfull weapon to date
 export class AnnoyOBot extends SquadMaster {
-  boosts: Boosts = [
-    { type: "rangedAttack", lvl: 2 },
-    { type: "heal", lvl: 2 },
-    { type: "damage", lvl: 2 },
-    { type: "fatigue", lvl: 2 },
-  ];
+  public get boosts(): Boosts {
+    return [
+      { type: "rangedAttack", lvl: 2 },
+      { type: "heal", lvl: 2 },
+      { type: "damage", lvl: 2 },
+      { type: "fatigue", lvl: 2 },
+    ];
+  }
 
-  formation: FormationPositions = [[{ x: 0, y: 0 }, HEALER]];
+  protected formation: FormationPositions = [[{ x: 0, y: 0 }, HEALER]];
 
-  get checkup() {
+  protected get checkup() {
     return this.checkMinerals(
       HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body
     );

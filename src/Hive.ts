@@ -229,8 +229,6 @@ export class Hive {
     this.updateCellData(true);
     if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
       this.cells.dev = new DevelopmentCell(this);
-
-    if (Apiary.logger) Apiary.logger.initHive(this.roomName);
   }
 
   public shouldDo(action: keyof HiveCache["do"]) {

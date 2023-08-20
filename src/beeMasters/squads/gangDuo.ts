@@ -1,7 +1,6 @@
 import { setups } from "../../bees/creepSetups";
-import { SquadMaster, FormationPositions } from "./squad";
-
 import type { Boosts } from "../_Master";
+import { FormationPositions, SquadMaster } from "./squad";
 
 const GANG = setups.knight.copy();
 
@@ -20,24 +19,22 @@ GANG.fixed = Array(HEAL_AMOUNT)
 
 // boosted duo to take down
 export class GangDuo extends SquadMaster {
-  boosts: Boosts = [
-    { type: "fatigue", lvl: 2 },
-    { type: "rangedAttack", lvl: 2 },
-    { type: "heal", lvl: 2 },
-    { type: "damage", lvl: 2 },
-  ];
-  formation: FormationPositions = [
+  public get boosts(): Boosts {
+    return [
+      { type: "fatigue", lvl: 2 },
+      { type: "rangedAttack", lvl: 2 },
+      { type: "heal", lvl: 2 },
+      { type: "damage", lvl: 2 },
+    ];
+  }
+  protected formation: FormationPositions = [
     [{ x: 0, y: 0 }, GANG],
     [{ x: 1, y: 0 }, GANG],
   ];
 
-  get checkup() {
+  protected get checkup() {
     return this.checkMinerals(
       GANG.getBody(this.hive.room.energyCapacityAvailable, 17).body
     );
-  }
-
-  get extreme() {
-    return true;
   }
 }

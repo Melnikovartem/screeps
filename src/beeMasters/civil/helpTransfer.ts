@@ -1,36 +1,37 @@
-import { SwarmMaster } from "../_SwarmMaster";
+import { findOptimalResource } from "abstract/utils";
+import { setups } from "bees/creepSetups";
+import { beeStates } from "enums";
+import { profile } from "profiler/decorator";
 
-import { beeStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
 import type { Boosts } from "../_Master";
+import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class HelpTransferMaster extends SwarmMaster {
-  boosts: Boosts = [
-    { type: "capacity", lvl: 2 },
-    { type: "capacity", lvl: 1 },
-    { type: "capacity", lvl: 0 },
-  ];
-  get targetBeeCount() {
+  public get boosts(): Boosts {
+    return [
+      { type: "capacity", lvl: 2 },
+      { type: "capacity", lvl: 1 },
+      { type: "capacity", lvl: 0 },
+    ];
+  }
+  public get targetBeeCount() {
     if (!this.order) return 2;
     if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 2;
-    return this.order.memory.extraInfo;
+    return this.order.memory.extraInfo as number;
   }
-  set targetBeeCount(value) {
+  public set targetBeeCount(value) {
     if (this.order && this.order.memory.extraInfo)
       this.order.memory.extraInfo = value;
   }
-  get maxSpawns() {
+  public get maxSpawns() {
     return this.targetBeeCount;
   }
-  set maxSpawns(_) {}
+  public set maxSpawns(_) {}
 
-  res = RESOURCE_ENERGY;
+  public res = RESOURCE_ENERGY;
 
-  update() {
+  public update() {
     super.update();
     if (
       this.checkBees() &&
@@ -43,7 +44,7 @@ export class HelpTransferMaster extends SwarmMaster {
       });
   }
 
-  run() {
+  public run() {
     _.forEach(this.bees, (bee) => {
       if (bee.state === beeStates.boosting)
         if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)

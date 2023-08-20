@@ -14,8 +14,14 @@ import profiler from "screeps-profiler";
 // if (Game.shard.name === "shard3")
 Mem.wipe();
 
-declare let Apiary: _Apiary;
-declare let A: CustomConsole;
+declare global {
+  namespace NodeJS {
+    interface Global {
+      Apiary?:_Apiary;
+      A: CustomConsole;
+    } 
+  }
+}
 
 // This gets run on each global reset
 function onGlobalReset(): void {
@@ -26,10 +32,11 @@ function onGlobalReset(): void {
   if (LOGGING_CYCLE) Memory.log.tick.reset = Game.time;
   if (PROFILER) profiler.enable();
 
-  Apiary = new _Apiary();
-  Apiary.init();
+  delete global.Apiary;
+  global.Apiary = new _Apiary();
+  global.Apiary.init();
 
-  A = new CustomConsole();
+  global.A = new CustomConsole();
 }
 
 function main() {
@@ -40,21 +47,22 @@ function main() {
     return;
   }
 
-  if (!Apiary || Game.time >= Apiary.destroyTime) {
-    Apiary = new _Apiary();
-    Apiary.init();
+  if (global.Apiary === undefined || Game.time >= Apiary.destroyTime) {
+    delete global.Apiary;
+    global.Apiary = new _Apiary();
+    global.Apiary.init();
   }
 
   // Automatically delete memory
   Mem.clean();
 
-  Apiary.update();
-  Apiary.run();
+  global.Apiary.update();
+  global.Apiary.run();
 
   if (Game.time % 10000 === 0) {
     // for the time beeing. Change from A to another class
-    A.sign();
-    A.recalcResTime();
+    global.A.sign();
+    global.A.recalcResTime();
   }
 
   // now it checks itself!! i am genius
@@ -62,7 +70,7 @@ function main() {
     Memory.settings.generatePixel &&
     Game.cpu.bucket === 10000 &&
     Game.cpu.generatePixel &&
-    Apiary.destroyTime - Game.time >= 20
+    global.Apiary.destroyTime - Game.time >= 20
   )
     Game.cpu.generatePixel();
 }

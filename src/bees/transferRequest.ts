@@ -1,6 +1,5 @@
-import { beeStates } from "../enums";
 import { findOptimalResource } from "../abstract/utils";
-
+import { beeStates } from "../enums";
 import type { Bee } from "./bee";
 
 type TransferTarget =

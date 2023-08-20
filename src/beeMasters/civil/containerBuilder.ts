@@ -1,17 +1,20 @@
+import { makeId } from "abstract/utils";
+import { setups } from "bees/creepSetups";
+import { beeStates } from "enums";
+import { FlagOrder } from "order";
+import { profile } from "profiler/decorator";
+
 import { SwarmMaster } from "../_SwarmMaster";
-
-import { beeStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-import { makeId } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
 
 @profile
 export class ContainerBuilderMaster extends SwarmMaster {
-  targetBeeCount = 3;
-  maxSpawns = 3;
+  public constructor(order: FlagOrder) {
+    super(order);
+    this.targetBeeCount = 3;
+    this.maxSpawns = 3;
+  }
 
-  update() {
+  public update() {
     super.update();
     const room = Game.rooms[this.pos.roomName];
     if (
@@ -46,7 +49,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
     }
   }
 
-  run() {
+  public run() {
     let target: { pos: RoomPosition } =
       Game.rooms[this.pos.roomName] &&
       this.pos

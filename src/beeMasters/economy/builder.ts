@@ -1,26 +1,33 @@
+import { findOptimalResource } from "abstract/utils";
+import { CreepSetup, setups } from "bees/creepSetups";
+import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
+import type { StorageCell } from "cells/stage1/storageCell";
+import { beeStates, hiveStates, prefix } from "enums";
+import type { Hive } from "Hive";
+import { profile } from "profiler/decorator";
+
 import { Master } from "../_Master";
-
-import { beeStates, hiveStates, prefix } from "../../enums";
-import { setups } from "../../bees/creepSetups";
 import { findRamp } from "../war/siegeDefender";
-import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
-import type { Hive } from "../../Hive";
-import type { StorageCell } from "../../cells/stage1/storageCell";
 
 @profile
 export class BuilderMaster extends Master {
-  patternPerBee = 10;
-  sCell: StorageCell;
+  private patternPerBee = 10;
+  private sCell: StorageCell;
 
-  constructor(hive: Hive, sCell: StorageCell) {
+  public constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.builder + hive.room.name);
     this.sCell = sCell;
   }
 
-  recalculateTargetBee() {
+  private get builderBoosts(): BoostRequest[] {
+    return [
+      { type: "build", lvl: 2 },
+      { type: "build", lvl: 1 },
+      { type: "build", lvl: 0 },
+    ];
+  }
+
+  private recalculateTargetBee() {
     let target = this.hive.sumCost > 0 ? 1 : 0;
     this.patternPerBee = 3;
 
@@ -48,12 +55,10 @@ export class BuilderMaster extends Master {
     switch (this.hive.shouldDo("buildBoost")) {
       case 1:
         if (!realBattle) break;
+        this.boosts = this.builderBoosts;
+        break;
       case 2:
-        this.boosts = [
-          { type: "build", lvl: 2 },
-          { type: "build", lvl: 1 },
-          { type: "build", lvl: 0 },
-        ];
+        this.boosts = this.builderBoosts;
         break;
     }
 
@@ -91,7 +96,7 @@ export class BuilderMaster extends Master {
     this.targetBeeCount = target;
   }
 
-  update() {
+  public update() {
     super.update();
     const emergency =
       this.hive.state >= hiveStates.nukealert ||
@@ -118,7 +123,10 @@ export class BuilderMaster extends Master {
         setup = setup.copy();
         setup.pattern = [WORK, CARRY, CARRY];
       } */
-      const order = {
+      const order: {
+        setup: CreepSetup;
+        priority: 2 | 5 | 7;
+      } = {
         setup: setups.builder,
         priority: emergency ? 2 : this.beesAmount ? 7 : 5,
       };
@@ -127,7 +135,7 @@ export class BuilderMaster extends Master {
     }
   }
 
-  run() {
+  public run() {
     const chill =
       this.hive.state !== hiveStates.battle &&
       this.sCell.getUsedCapacity(RESOURCE_ENERGY) < 2500;
@@ -291,7 +299,11 @@ export class BuilderMaster extends Master {
           } else {
             let target: Structure | ConstructionSite | undefined | null;
             if (bee.target) {
-              target = Game.getObjectById(bee.target);
+              target = Game.getObjectById(bee.target) as
+                | Structure
+                | ConstructionSite
+                | undefined
+                | null;
               if (target instanceof Structure) {
                 let healTarget;
                 if (

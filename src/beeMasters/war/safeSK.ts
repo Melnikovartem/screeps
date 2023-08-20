@@ -1,14 +1,13 @@
-import { HordeMaster } from "./horde";
-import { SwarmMaster } from "../_SwarmMaster";
-
-import { setups } from "../../bees/creepsetups";
-import { beeStates, hiveStates } from "../../enums";
-
-import { profile } from "../../profiler/decorator";
 import type { Bee } from "../../bees/bee";
+import { setups } from "../../bees/creepSetups";
+import { beeStates, hiveStates } from "../../enums";
 import type { FlagOrder } from "../../order";
+import { profile } from "../../profiler/decorator";
+import { SwarmMaster } from "../_SwarmMaster";
+import { HordeMaster } from "./horde";
 
-const ticksToSpawn = (x: StructureKeeperLair) => x.ticksToSpawn ? x.ticksToSpawn : 0;
+const ticksToSpawn = (x: StructureKeeperLair) =>
+  x.ticksToSpawn ? x.ticksToSpawn : 0;
 
 @profile
 export class SKMaster extends HordeMaster {
@@ -19,46 +18,59 @@ export class SKMaster extends HordeMaster {
     super(order);
   }
 
-  init() { }
+  init() {}
 
-  get targetBeeCount() { return 1; }
+  get targetBeeCount() {
+    return 1;
+  }
 
-  set targetBeeCount(_) { }
+  set targetBeeCount(_) {}
 
-  get maxSpawns() { return Infinity; }
+  get maxSpawns() {
+    return Infinity;
+  }
 
-  set maxSpawns(_) { }
+  set maxSpawns(_) {}
 
   update() {
     SwarmMaster.prototype.update.call(this);
 
     if (this.pos.roomName in Game.rooms) {
       if (!this.lairs.length) {
-        this.lairs = <StructureKeeperLair[]>Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } });
+        this.lairs = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, {
+          filter: { structureType: STRUCTURE_KEEPER_LAIR },
+        });
         /* if (!this.lairs.length)
           this.order.delete(); */
       }
 
       if (!this.maxPath && this.lairs.length) {
         let max = 0;
-        _.forEach(this.lairs, lair => {
-          let time = this.hive.pos.getTimeForPath(lair);
-          if (max < time)
-            max = time;
+        _.forEach(this.lairs, (lair) => {
+          const time = this.hive.pos.getTimeForPath(lair);
+          if (max < time) max = time;
         });
         this.maxPath = max;
       }
 
       for (let i = 0; i < this.lairs.length; ++i)
-        this.lairs[i] = <StructureKeeperLair>Game.getObjectById(this.lairs[i].id);
+        this.lairs[i] = Game.getObjectById(
+          this.lairs[i].id
+        ) as StructureKeeperLair;
     }
 
-    if (this.hive.bassboost)
-      return;
+    if (this.hive.bassboost) return;
 
-    if (!this.hive.annexInDanger.includes(this.pos.roomName) &&
-      this.checkBees(this.hive.state !== hiveStates.battle && this.hive.state !== hiveStates.lowenergy, CREEP_LIFE_TIME - this.maxPath - 50)
-      && Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8 && !this.hive.annexInDanger.includes(this.order.pos.roomName))
+    if (
+      !this.hive.annexInDanger.includes(this.pos.roomName) &&
+      this.checkBees(
+        this.hive.state !== hiveStates.battle &&
+          this.hive.state !== hiveStates.lowenergy,
+        CREEP_LIFE_TIME - this.maxPath - 50
+      ) &&
+      Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8 &&
+      !this.hive.annexInDanger.includes(this.order.pos.roomName)
+    )
       this.wish({
         setup: setups.defender.sk,
         priority: 4,
@@ -67,23 +79,28 @@ export class SKMaster extends HordeMaster {
 
   useLair(bee: Bee, lair: StructureKeeperLair) {
     if (ticksToSpawn(lair) < 1) {
-      let enemy = lair.pos.findClosest(lair.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(e => e.owner.username === "Source Keeper"));
+      const enemy = lair.pos.findClosest(
+        lair.pos
+          .findInRange(FIND_HOSTILE_CREEPS, 5)
+          .filter((e) => e.owner.username === "Source Keeper")
+      );
       if (enemy) {
         Apiary.intel.getInfo(bee.pos.roomName);
         this.attackOrFleeSK(bee, enemy);
         return;
       }
     }
-    let enemy = Apiary.intel.getEnemy(bee.pos, 10);
+    const enemy = Apiary.intel.getEnemy(bee.pos, 10);
     let ans: number = OK;
-    if (enemy instanceof Creep && (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3)) {
+    if (
+      enemy instanceof Creep &&
+      (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3)
+    ) {
       ans = this.attackOrFleeSK(bee, enemy);
       Apiary.intel.getInfo(bee.pos.roomName);
     }
-    if (ans === OK)
-      bee.goTo(lair, { range: 2 });
+    if (ans === OK) bee.goTo(lair, { range: 2 });
     bee.target = lair.id;
-
   }
 
   attackOrFleeSK(bee: Bee, target: Creep) {
@@ -91,8 +108,9 @@ export class SKMaster extends HordeMaster {
     bee.target = target.id;
     if (bee.pos.getRangeTo(target) <= 4 || bee.hits < bee.hitsMax)
       bee.heal(bee);
-    let shouldFlee = (bee.pos.getRangeTo(target) < 3)
-      || (bee.pos.getRangeTo(target) <= 4 && bee.hits <= bee.hitsMax * 0.65);
+    const shouldFlee =
+      bee.pos.getRangeTo(target) < 3 ||
+      (bee.pos.getRangeTo(target) <= 4 && bee.hits <= bee.hitsMax * 0.65);
     if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
       bee.rangedAttack(target, { movingTarget: true });
     if (shouldFlee)
@@ -101,27 +119,31 @@ export class SKMaster extends HordeMaster {
   }
 
   run() {
-
-    _.forEach(this.activeBees, bee => {
-      if (bee.state === beeStates.boosting)
-        return;
+    _.forEach(this.activeBees, (bee) => {
+      if (bee.state === beeStates.boosting) return;
 
       if (bee.pos.roomName !== this.pos.roomName && !bee.target) {
         let ans: number = OK;
-        let enemy = Apiary.intel.getEnemy(bee.pos, 20);
+        const enemy = Apiary.intel.getEnemy(bee.pos, 20);
         if (enemy && enemy.pos.getRangeTo(bee) <= 3)
           ans = this.beeAct(bee, enemy);
-        if (ans === OK)
-          bee.goTo(this.pos);
+        if (ans === OK) bee.goTo(this.pos);
         return;
       }
 
-      let target = <Creep | Structure | undefined>(bee.target && Game.getObjectById(bee.target));
-      let roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
+      const target = (bee.target && Game.getObjectById(bee.target)) as
+        | Creep
+        | Structure
+        | undefined;
+      const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
       if (roomInfo.dangerlvlmax >= 4) {
-        let defSquad = Apiary.defenseSwarms[this.pos.roomName];
-        let pos = defSquad && defSquad.activeBees.filter(b => b.pos.roomName === this.pos.roomName)[0];
-        let enemy = Apiary.intel.getEnemy(pos && pos.pos || bee.pos);
+        const defSquad = Apiary.defenseSwarms[this.pos.roomName];
+        const pos =
+          defSquad &&
+          defSquad.activeBees.filter(
+            (b) => b.pos.roomName === this.pos.roomName
+          )[0];
+        const enemy = Apiary.intel.getEnemy((pos && pos.pos) || bee.pos);
         if (enemy) {
           // killer mode
           this.beeAct(bee, enemy);
@@ -129,34 +151,32 @@ export class SKMaster extends HordeMaster {
         }
       }
 
-
       if (target instanceof Creep) {
         // update the enemies
         this.attackOrFleeSK(bee, target);
         return;
       }
 
-      if (bee.hits < bee.hitsMax)
-        bee.heal(bee);
+      if (bee.hits < bee.hitsMax) bee.heal(bee);
       else if (bee.pos.roomName === this.pos.roomName) {
-        let healingTarget = bee.pos.findClosest(bee.pos.findInRange(FIND_MY_CREEPS, 3).filter(b => b.hits < b.hitsMax));
+        const healingTarget = bee.pos.findClosest(
+          bee.pos
+            .findInRange(FIND_MY_CREEPS, 3)
+            .filter((b) => b.hits < b.hitsMax)
+        );
         if (healingTarget)
-          if (bee.pos.isNearTo(healingTarget))
-            bee.heal(healingTarget);
-          else
-            bee.rangedHeal(healingTarget);
+          if (bee.pos.isNearTo(healingTarget)) bee.heal(healingTarget);
+          else bee.rangedHeal(healingTarget);
       }
 
       if (target instanceof StructureKeeperLair) {
         this.useLair(bee, target);
         return;
-      } else
-        bee.target = undefined;
+      } else bee.target = undefined;
 
-      if (!this.lairs.length)
-        return;
+      if (!this.lairs.length) return;
 
-      let lair = this.lairs.reduce((prev, curr) => {
+      const lair = this.lairs.reduce((prev, curr) => {
         let ans = ticksToSpawn(curr) - ticksToSpawn(prev);
         if (ans === 0)
           ans = curr.pos.getRangeTo(bee) - prev.pos.getRangeTo(bee);

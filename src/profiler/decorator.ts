@@ -1,5 +1,6 @@
-import { PROFILER } from "../settings";
 import profiler from "screeps-profiler";
+
+import { PROFILER } from "../settings";
 
 // This is a *not yet modified* version of screeps-profiler taken from https://github.com/bencbartlett/Overmind
 

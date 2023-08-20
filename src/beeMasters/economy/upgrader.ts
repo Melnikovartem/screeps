@@ -1,10 +1,8 @@
-import { UpgradeCell } from "../../cells/stage1/upgradeCell";
-import { Master } from "../_Master";
-
-import { beeStates, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepSetups";
-
+import { UpgradeCell } from "../../cells/stage1/upgradeCell";
+import { beeStates, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { Master } from "../_Master";
 
 @profile
 export class UpgraderMaster extends Master {
@@ -182,7 +180,11 @@ export class UpgraderMaster extends Master {
             Apiary.logger.addResourceStat(
               this.hive.roomName,
               "upgrade",
-              -Math.min(bee.getActiveBodyParts(WORK), this.cell.maxPossibleRate)
+              -Math.min(
+                bee.getActiveBodyParts(WORK),
+                this.cell.maxPossibleRate
+              ),
+              RESOURCE_ENERGY
             );
           break;
         case beeStates.chill:
