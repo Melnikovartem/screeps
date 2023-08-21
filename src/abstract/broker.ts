@@ -1,3 +1,8 @@
+import {
+  ReactionConstant,
+  USEFUL_MINERAL_STOCKPILE,
+} from "cells/stage1/laboratoryCell";
+
 import { COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
 import { profile } from "../profiler/decorator";
 
@@ -29,6 +34,8 @@ type PriceStat = { [key in ResourceConstant]?: number };
 export class Broker {
   // if it will become to heavy will switch to storing orderId
 
+  public profitableCompunds: ReactionConstant[] = [];
+
   private info: {
     [key in ResourceConstant]?: {
       // buy - i buy in resource
@@ -37,6 +44,8 @@ export class Broker {
       goodSell: ProtoOrder[];
       bestPriceBuy?: number;
       bestPriceSell?: number;
+      // avg price of past 2 days
+      avgPrice: number;
       lastUpdated: number;
     };
   } = {};
@@ -57,6 +66,7 @@ export class Broker {
         goodBuy: [],
         goodSell: [],
         lastUpdated: Game.time,
+        avgPrice: this.weightedAvgPrice(res),
       };
       info = this.info[res]!;
     }
@@ -113,20 +123,55 @@ export class Broker {
       }
     });
 
-    // coef to account for fact that energy is extremly unprofitable to cell cause of costs
-    if (res === RESOURCE_ENERGY) {
-      const energyToSell = info.bestPriceSell
-        ? info.bestPriceSell * 0.5
-        : Infinity;
-      const energyToBuy = info.bestPriceBuy ? info.bestPriceBuy * 2 : Infinity;
-      this.energyPrice = Math.min(energyToBuy, energyToSell);
-    }
-    // later will be used to calc is it even profitable to sell something faraway
     return info;
+  }
+
+  private weightedAvgPrice(res: ResourceConstant, lastNDays = 10) {
+    let volume = 0;
+    let sumPriceWeighted = 0;
+    const transactions = Game.market.getHistory(res).slice(-lastNDays);
+    for (let i = 0; i < transactions.length; ++i) {
+      const volumeWeighted = transactions[i].volume * (i / transactions.length);
+      sumPriceWeighted += transactions[i].avgPrice * volumeWeighted;
+      volume += volumeWeighted;
+    }
+    return volume ? sumPriceWeighted / volume : Infinity;
+  }
+
+  private checkIfLabProfitable(compound: ReactionConstant) {
+    const shoppingList = compound.split("");
+    let costToProduce = 0;
+    let resource;
+    for (let i = 0; i < shoppingList.length; ++i) {
+      if (shoppingList[i] !== "2") resource = shoppingList[i];
+      else resource = shoppingList[i - 1];
+      this.updateRes(resource as ReactionConstant, 100);
+      costToProduce += this.info[resource as ReactionConstant]!.avgPrice;
+    }
+    this.updateRes(compound, 100);
+    // from buying materials/selling product. Not all compound need to buy in so * 0.5
+    const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.5;
+    return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
+  }
+
+  private checkIfAnyLabProfitable() {
+    this.profitableCompunds = [];
+    for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
+      const compound = comp as ReactionConstant;
+      if (this.checkIfLabProfitable(compound))
+        this.profitableCompunds.push(compound);
+    }
   }
 
   public update() {
     this.updateRes(RESOURCE_ENERGY, MARKET_LAG * 100);
+
+    if ((Game.time - Apiary.createTime) % 1000 === 0) {
+      console.log("here", (Game.time - Apiary.createTime) % 1000, Game.time);
+      // later will be used to calc is it even profitable to sell something faraway
+      this.energyPrice = this.weightedAvgPrice(RESOURCE_ENERGY);
+      this.checkIfAnyLabProfitable();
+    }
 
     for (const id in Game.market.orders)
       if (!Game.market.orders[id].remainingAmount) this.cancelOrder(id);
@@ -207,7 +252,9 @@ export class Broker {
         case ERR_FULL:
         case ERR_NOT_FOUND:
           if (!hurry) return "long";
+          break;
         default:
+          break;
       }
     }
 

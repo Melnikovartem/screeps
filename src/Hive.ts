@@ -53,7 +53,8 @@ export interface HiveCells {
 
 export type ResTarget = { [key in ResourceConstant]?: number };
 
-const HIVE_MINERAL = LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 2;
+const HIVE_MINERAL = 5000; // LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 3.333333
+
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
 type StructureGroups =
   | "essential"

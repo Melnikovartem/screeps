@@ -1,7 +1,8 @@
-import { findOptimalResource } from "../../abstract/utils";
-import { hiveStates, prefix } from "../../enums";
-import type { Hive } from "../../Hive";
-import { profile } from "../../profiler/decorator";
+import { findOptimalResource } from "abstract/utils";
+import { hiveStates, prefix } from "enums";
+import { type Hive, HIVE_ENERGY } from "Hive";
+import { profile } from "profiler/decorator";
+
 import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";
 
@@ -30,7 +31,7 @@ export const COMMON_COMMODITIES: FactoryResourceConstant[] = [
   RESOURCE_LIQUID,
 ];
 
-const STOP_PRODUCTION = -100_000;
+const STOP_PRODUCTION = -HIVE_ENERGY * 0.25;
 /*
 let ss = '"metal", "biomass", "silicon", "mist", ';
 for (const r in COMMODITIES)
@@ -194,8 +195,8 @@ export class FactoryCell extends Cell {
           }
         } else if (res === RESOURCE_ENERGY) {
           // energy below 100000
-          const toProduce = -this.hive.resState[res] - 100000;
-          num = Math.ceil(toProduce / recipe.amount);
+          const toProduce = -this.hive.resState[res] + STOP_PRODUCTION * 1.2;
+          num = Math.max(0, Math.ceil(toProduce / recipe.amount));
         } else if (res === RESOURCE_BATTERY) {
           // can compress some energy
           if (
@@ -205,10 +206,11 @@ export class FactoryCell extends Cell {
           )
             continue;
           const toProduce = 500 - this.hive.resState[res]!;
-          num = Math.ceil(toProduce / recipe.amount);
+          num = Math.max(0, Math.ceil(toProduce / recipe.amount));
         }
-        if (num > 1)
+        if (num > 1) {
           targets.push({ res, amount: Math.floor(num) * recipe.amount });
+        }
       }
 
       const nonCommon = targets.filter(
@@ -239,6 +241,7 @@ export class FactoryCell extends Cell {
       this.commodityTarget.res,
       this.commodityTarget.amount
     );
+
     _.forEach(ingredients, (amountNeeded, component) => {
       this.resTarget[component as CommodityIngredient] = Math.min(
         amountNeeded *

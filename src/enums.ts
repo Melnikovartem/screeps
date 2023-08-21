@@ -138,4 +138,5 @@ export enum setupsNames {
   destroyer = "Leaf insect",
   skdefender = "Orchid Mantis",
 }
-// Lady bug / Carpenter ant / Earthworm
+// Lady bug / Carpenter ant / Earthworm / Black widow
+// Nomadic ants (new update)

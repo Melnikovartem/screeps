@@ -12,7 +12,7 @@ export interface HiveCache {
     unboost: 0 | 1;
     saveCpu: 0 | 1;
     upgrade: 0 | 1 | 2 | 3; // do not, up to lvl 8, 15 after lvl 8, boosted after lvl 8
-    lab: 0 | 1 | 2; // do not, if any is needed, just produce
+    lab: 0 | 1 | 2; // do not, if any is needed, (up to some stockpile after if profitable)
     buyIn: 0 | 1 | 2 | 3; // nothing, minerals, minerals + energy + ops, anything
     sellOff: 0 | 1; // drop / sellOff for balance,
     buildBoost: 0 | 1 | 2; // no boosting / only war / all cases (nukes, walls etc)

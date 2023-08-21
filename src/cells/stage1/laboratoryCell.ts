@@ -55,15 +55,15 @@ export type BoostType =
 export const BOOST_MINERAL: {
   [key in BoostType]: [ReactionConstant, ReactionConstant, ReactionConstant];
 } = {
-  harvest: ["UO", "UHO2", "XUHO2"],
-  build: ["LH", "LH2O", "XLH2O"],
-  dismantle: ["ZH", "ZH2O", "XZH2O"],
-  upgrade: ["GH", "GH2O", "XGH2O"],
   attack: ["UH", "UH2O", "XUH2O"],
-  rangedAttack: ["KO", "KHO2", "XKHO2"],
-  heal: ["LO", "LHO2", "XLHO2"],
+  harvest: ["UO", "UHO2", "XUHO2"],
   capacity: ["KH", "KH2O", "XKH2O"],
+  rangedAttack: ["KO", "KHO2", "XKHO2"],
+  build: ["LH", "LH2O", "XLH2O"],
+  heal: ["LO", "LHO2", "XLHO2"],
+  dismantle: ["ZH", "ZH2O", "XZH2O"],
   fatigue: ["ZO", "ZHO2", "XZHO2"],
+  upgrade: ["GH", "GH2O", "XGH2O"],
   damage: ["GO", "GHO2", "XGHO2"],
 };
 export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = {
@@ -78,6 +78,20 @@ export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = {
   fatigue: MOVE,
   damage: TOUGH,
 };
+
+export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
+  {
+    [BOOST_MINERAL.attack[2]]: 50000,
+    [BOOST_MINERAL.harvest[2]]: 4000,
+    [BOOST_MINERAL.capacity[2]]: 4000,
+    [BOOST_MINERAL.rangedAttack[2]]: 50000,
+    [BOOST_MINERAL.build[2]]: 50000,
+    [BOOST_MINERAL.heal[2]]: 50000,
+    [BOOST_MINERAL.dismantle[2]]: 50000,
+    [BOOST_MINERAL.fatigue[2]]: 50000,
+    [BOOST_MINERAL.upgrade[2]]: 50000,
+    [BOOST_MINERAL.damage[2]]: 50000,
+  };
 
 export const BASE_MINERALS: ResourceConstant[] = [
   "H",
@@ -132,22 +146,22 @@ type LabState =
   | ReactionConstant;
 @profile
 export class LaboratoryCell extends Cell {
-  laboratories: { [id: string]: StructureLab } = {};
+  public laboratories: { [id: string]: StructureLab } = {};
   // inLab check for delivery system
-  master: undefined;
-  sCell: StorageCell;
+  public master: undefined;
+  private sCell: StorageCell;
 
-  synthesizeRes: SynthesizeRequest | undefined;
-  resTarget: { [key in ResourceConstant]?: number } = {};
-  prod?: SynthesizeRequest & { lab1: string; lab2: string };
-  patience: number = 0;
-  patienceProd: number = 0;
-  prodCooldown = 0;
-  usedBoost: string[] = [];
+  public synthesizeRes: SynthesizeRequest | undefined;
+  public resTarget: { [key in ResourceConstant]?: number } = {};
+  public prod?: SynthesizeRequest & { lab1: string; lab2: string };
+  private patience: number = 0;
+  private patienceProd: number = 0;
+  private prodCooldown = 0;
+  private usedBoost: string[] = [];
 
-  positions: RoomPosition[] = [];
+  private positions: RoomPosition[] = [];
 
-  constructor(hive: Hive, sCell: StorageCell) {
+  public constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell + "_" + hive.room.name);
     this.sCell = sCell;
 
@@ -157,16 +171,16 @@ export class LaboratoryCell extends Cell {
     this.initCache("poss", { x: 25, y: 25 });
   }
 
-  get poss(): { x: number; y: number } {
+  public get poss(): { x: number; y: number } {
     return this.fromCache("poss");
   }
 
-  get pos(): RoomPosition {
+  public get pos(): RoomPosition {
     const pos = this.fromCache("poss");
     return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
-  bakeMap() {
+  public bakeMap() {
     this.positions = [];
     _.forEach(this.laboratories, (l) => {
       _.forEach(l.pos.getOpenPositions(true), (p) => {
@@ -176,43 +190,46 @@ export class LaboratoryCell extends Cell {
     });
   }
 
-  get labStates(): { [id: string]: LabState } {
+  public get labStates(): { [id: string]: LabState } {
     return this.fromCache("labStates");
   }
 
-  set labStates(value) {
+  public set labStates(value) {
     this.toCache("labStates", value);
   }
 
-  get boostLabs(): { [key in ResourceConstant]?: string } {
+  public get boostLabs(): { [key in ResourceConstant]?: string } {
     return this.fromCache("boostLabs");
   }
 
-  set boostLabs(value) {
+  public set boostLabs(value) {
     this.toCache("boostLabs", value);
   }
 
-  get boostRequests(): {
+  public get boostRequests(): {
     [id: string]: { info: BoostInfo[]; lastUpdated: number };
   } {
     return this.fromCache("boostRequests");
   }
 
-  set boostRequests(value) {
+  public set boostRequests(value) {
     this.toCache("boostRequests", value);
   }
 
-  get synthesizeTarget():
+  public get synthesizeTarget():
     | undefined
     | { res: ReactionConstant; amount: number } {
     return this.fromCache("synthesizeTarget");
   }
 
-  set synthesizeTarget(value) {
+  public set synthesizeTarget(value) {
     this.toCache("synthesizeTarget", value);
   }
 
-  newSynthesize(resource: ReactionConstant, amount: number = Infinity): number {
+  private newSynthesize(
+    resource: ReactionConstant,
+    amount: number = Infinity
+  ): number {
     if (!(resource in REACTION_TIME)) return 0;
     const res1Amount = this.sCell.getUsedCapacity(REACTION_MAP[resource]!.res1);
     const res2Amount = this.sCell.getUsedCapacity(REACTION_MAP[resource]!.res2);
@@ -228,7 +245,7 @@ export class LaboratoryCell extends Cell {
     return amount;
   }
 
-  stepToTarget() {
+  private stepToTarget() {
     this.resTarget = {};
     if (!this.synthesizeTarget) {
       const mode = this.hive.shouldDo("lab");
@@ -241,29 +258,37 @@ export class LaboratoryCell extends Cell {
           targets.push({ res, amount: toCreate });
       }
       const canCreate = targets.filter((t) => {
-        const [createQue] = this.getCreateQue(t.res, t.amount);
-        return createQue.length;
+        const [createQueTest] = this.getCreateQue(t.res, t.amount);
+        return createQueTest.length;
       });
       if (canCreate.length) targets = canCreate;
       if (!targets.length) {
         if (mode === 1) return;
-        const usefulM: ReactionConstant[] = [
-          "XGH2O",
-          "XGHO2",
-          "XLH2O",
-          "XLHO2",
-          "XZHO2",
-          "XKHO2",
-          "XUH2O",
-          "XZH2O",
+        // not eve gonna try to create mid ones (not profitable)
+        let usefulR: ReactionConstant[] = [];
+
+        for (const comp in USEFUL_MINERAL_STOCKPILE) {
+          const compound: ReactionConstant = comp as ReactionConstant;
+          if (
+            USEFUL_MINERAL_STOCKPILE[compound]! -
+              (this.hive.resState[compound] || 0) >
+            0
+          )
+            usefulR.push(compound);
+        }
+        if (!usefulR.length) usefulR = Apiary.broker.profitableCompunds;
+        if (!usefulR.length) return;
+        targets = [
+          {
+            res: usefulR.reduce((prev, curr) =>
+              (Apiary.network.resState[curr] || 0) <
+              (Apiary.network.resState[prev] || 0)
+                ? curr
+                : prev
+            ),
+            amount: 2500,
+          },
         ];
-        const usefulR = usefulM.reduce((prev, curr) =>
-          (Apiary.network.resState[curr] || 0) <
-          (Apiary.network.resState[prev] || 0)
-            ? curr
-            : prev
-        );
-        targets = [{ res: usefulR, amount: 2048 }];
         // targets = [{ res: usefulM[Math.floor(Math.random() * usefulM.length)], amount: 2048 }];
       }
       this.patience = 0;
@@ -303,7 +328,7 @@ export class LaboratoryCell extends Cell {
     }
   }
 
-  getCreateQue(
+  private getCreateQue(
     res: ReactionConstant,
     amount: number
   ): [ReactionConstant[], MineralConstant[]] {
@@ -344,7 +369,7 @@ export class LaboratoryCell extends Cell {
     return [createQue, ingredients];
   }
 
-  newProd() {
+  private newProd() {
     if (
       Object.keys(this.laboratories).length < 3 ||
       _.filter(this.laboratories, (l) => !l.cooldown).length < 1
@@ -407,7 +432,7 @@ export class LaboratoryCell extends Cell {
     return true;
   }
 
-  getBoostInfo(
+  private getBoostInfo(
     r: BoostRequest,
     bee?: Bee,
     boostedSameType?: number
@@ -439,7 +464,7 @@ export class LaboratoryCell extends Cell {
   }
 
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
-  askForBoost(bee: Bee, requests?: BoostRequest[]) {
+  private askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
 
     if (bee.ticksToLive < 1000)
@@ -456,8 +481,7 @@ export class LaboratoryCell extends Cell {
       Game.time >= this.boostRequests[bee.ref].lastUpdated + 25
     ) {
       this.boostRequests[bee.ref] = { info: [], lastUpdated: Game.time };
-      for (let k = 0; k < requests.length; ++k) {
-        const r = requests[k];
+      for (const r of requests) {
         const sameType = _.sum(
           this.boostRequests[bee.ref].info.filter((br) => br.type === r.type),
           (br) => br.amount
@@ -467,8 +491,7 @@ export class LaboratoryCell extends Cell {
       }
     }
 
-    for (let k = 0; k < this.boostRequests[bee.ref].info.length; ++k) {
-      const r = this.boostRequests[bee.ref].info[k];
+    for (const r of this.boostRequests[bee.ref].info) {
       let lab: StructureLab | undefined;
 
       if (!r.res || !r.amount) continue;
@@ -574,7 +597,7 @@ export class LaboratoryCell extends Cell {
     return rCode;
   }
 
-  updateLabState(l: StructureLab, rec = 0) {
+  private updateLabState(l: StructureLab, rec = 0) {
     switch (rec) {
       // max recursion = 2 just to be safe i count
       default:
@@ -587,7 +610,7 @@ export class LaboratoryCell extends Cell {
     }
     const state = this.labStates[l.id];
     switch (state) {
-      case "unboosted":
+      case "unboosted": {
         const resources = l.pos.findInRange(FIND_DROPPED_RESOURCES, 1);
         this.sCell.requestToStorage(resources, 2, undefined);
         if (Apiary.logger)
@@ -599,8 +622,11 @@ export class LaboratoryCell extends Cell {
               r.resourceType
             )
           );
+        // falls through
+      }
       case undefined:
         this.labStates[l.id] = "idle";
+      // falls through
       case "idle":
         if (this.prod) {
           if (l.id === this.prod.lab1 || l.id === this.prod.lab2) {
@@ -618,7 +644,7 @@ export class LaboratoryCell extends Cell {
         } else if (l.mineralType)
           this.sCell.requestToStorage([l], 5, l.mineralType);
         break;
-      case "source":
+      case "source": {
         if (!this.prod) {
           this.labStates[l.id] = "idle";
           this.updateLabState(l, rec + 1);
@@ -644,7 +670,8 @@ export class LaboratoryCell extends Cell {
         )
           this.sCell.requestFromStorage([l], 3, r, this.prod.plan);
         break;
-      case "production":
+      }
+      case "production": {
         const res = l.mineralType;
         if (!this.prod || l.cooldown > this.prod.cooldown * 2) {
           this.labStates[l.id] = "idle";
@@ -662,9 +689,13 @@ export class LaboratoryCell extends Cell {
             l.store.getUsedCapacity(res)
           );
         break;
-      default: // boosting lab : state === resource
+      }
+      default: {
+        // boosting lab : state === resource
         const toBoostMinerals = _.sum(this.boostRequests, (br) => {
-          const sameType = br.info.filter((r) => r.res == this.labStates[l.id]);
+          const sameType = br.info.filter(
+            (r) => r.res === this.labStates[l.id]
+          );
           return _.sum(sameType, (r) => r.amount * LAB_BOOST_MINERAL);
         });
         if (!toBoostMinerals) {
@@ -684,10 +715,11 @@ export class LaboratoryCell extends Cell {
             true
           );
         break;
+      }
     }
   }
 
-  update() {
+  public update() {
     super.update(["laboratories"]);
     if (!Object.keys(this.laboratories).length) return;
 
@@ -748,7 +780,7 @@ export class LaboratoryCell extends Cell {
         delete this.boostRequests[ref];
   }
 
-  getUnboostLab(ticksToLive: number) {
+  public getUnboostLab(ticksToLive: number) {
     if (!this.hive.shouldDo("unboost")) return undefined;
     let lab: StructureLab | undefined;
     _.some(this.laboratories, (l) => {
