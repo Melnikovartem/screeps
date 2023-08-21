@@ -1,15 +1,15 @@
-import { Cell } from "../_Cell";
 import { ManagerMaster } from "../../beeMasters/economy/manager";
 import { TransferRequest } from "../../bees/transferRequest";
-
-import { prefix, hiveStates } from "../../enums";
-import { BASE_MINERALS } from "./laboratoryCell";
-// import { findOptimalResource } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../enums";
 import type { Hive, ResTarget } from "../../Hive";
+import { profile } from "../../profiler/decorator";
+import { Cell } from "../_Cell";
+import { BASE_MINERALS } from "./laboratoryCell";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
+
+export const ENERGY_FOR_REVERTING_TO_DEV_CELLS = 3000;
+const EXTREMLY_LOW_ENERGY = 10000;
 
 @profile
 export class StorageCell extends Cell {
@@ -48,16 +48,14 @@ export class StorageCell extends Cell {
   ): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
-    for (let i = 0; i < objects.length; ++i) {
-      const ref = objects[i].id;
+    for (const obj of objects) {
+      const ref = obj.id;
       const existing = this.requests[ref];
       let amountCC = amount;
       if (fitStore)
         amountCC = Math.min(
           amountCC,
-          (objects[i].store as Store<ResourceConstant, false>).getFreeCapacity(
-            res
-          )
+          (obj.store as Store<ResourceConstant, false>).getFreeCapacity(res)
         );
       if (existing && existing.priority <= priority) {
         if (existing.resource === res && existing.to.id === ref)
@@ -68,7 +66,7 @@ export class StorageCell extends Cell {
       const request = new TransferRequest(
         ref,
         this.storage,
-        objects[i],
+        obj,
         priority,
         res,
         amountCC
@@ -92,23 +90,20 @@ export class StorageCell extends Cell {
     let sum = 0;
     let prev: TransferRequest | undefined;
     amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
-    for (let i = 0; i < objects.length; ++i) {
-      const ref = objects[i].id;
+    for (const obj of objects) {
+      const ref = obj.id;
       const existing = this.requests[ref];
       if (existing && existing.priority <= priority) continue;
       let amountCC = amount;
-      if (fitStore && !(objects[i] instanceof Resource))
+      if (fitStore && !(obj instanceof Resource))
         amountCC = Math.min(
           amountCC,
-          (
-            (objects[i] as Exclude<TransferRequest["from"], Resource>)
-              .store as Store<ResourceConstant, false>
-          ).getUsedCapacity(res)
+          (obj.store as Store<ResourceConstant, false>).getUsedCapacity(res)
         );
       if (amountCC <= 0) continue;
       const request = new TransferRequest(
         ref,
-        objects[i],
+        obj,
         this.storage,
         priority,
         res,
@@ -182,10 +177,11 @@ export class StorageCell extends Cell {
 
     this.hive.stateChange(
       "lowenergy",
-      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000
+      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < EXTREMLY_LOW_ENERGY
     );
     if (
-      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 4000 &&
+      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
+        ENERGY_FOR_REVERTING_TO_DEV_CELLS &&
       !this.hive.cells.dev &&
       Apiary.useBucket
     )

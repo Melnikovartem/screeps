@@ -1,11 +1,9 @@
-import { Cell } from "../_Cell";
-import { FlagOrder } from "../../order";
-
-import { prefix, roomStates } from "../../enums";
 import { getRoomCoorinates } from "../../abstract/utils";
-
-import { profile } from "../../profiler/decorator";
+import { prefix, roomStates } from "../../enums";
 import type { Hive } from "../../Hive";
+import { FlagOrder } from "../../order";
+import { profile } from "../../profiler/decorator";
+import { Cell } from "../_Cell";
 import type { StorageCell } from "../stage1/storageCell";
 
 @profile
@@ -21,11 +19,10 @@ export class ObserveCell extends Cell {
     this.sCell = sCell;
     this.obeserver = obeserver;
 
-    this.setCahe("corridorRooms", []);
-    this.setCahe("prevRoom", "");
+    this.initCache("corridorRooms", []);
+    this.initCache("prevRoom", "");
 
-    if (!this.corridorRooms.length)
-      this.updateRoomsToCheck();
+    if (!this.corridorRooms.length) this.updateRoomsToCheck();
   }
 
   get corridorRooms(): string[] {
@@ -46,32 +43,42 @@ export class ObserveCell extends Cell {
 
   updateRoomsToCheck() {
     this.corridorRooms = [];
-    let [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
+    const [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
     let closest = we + x + ns + y;
-    let roundx = we + Math.round(x / 10) * 10 + ns + y;
-    let roundy = we + x + ns + Math.round(y / 10) * 10;
-    if (this.pos.getRoomRangeTo(roundx, "path") < this.pos.getRoomRangeTo(roundy, "path"))
+    const roundx = we + Math.round(x / 10) * 10 + ns + y;
+    const roundy = we + x + ns + Math.round(y / 10) * 10;
+    if (
+      this.pos.getRoomRangeTo(roundx, "path") <
+      this.pos.getRoomRangeTo(roundy, "path")
+    )
       closest = roundx;
-    else
-      closest = roundy;
-    this.dfs(closest, this.corridorRooms, this.hive.pos.getRoomRangeTo(closest, "path"));
-    this.prevRoom = this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
+    else closest = roundy;
+    this.dfs(
+      closest,
+      this.corridorRooms,
+      this.hive.pos.getRoomRangeTo(closest, "path")
+    );
+    this.prevRoom =
+      this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
   get pos() {
     return this.obeserver.pos;
   }
 
-  dfs(roomName: string, checked: string[], depth: number = 0, maxDepth: number = Memory.settings.miningDist) {
-    if (depth > maxDepth)
-      return;
+  dfs(
+    roomName: string,
+    checked: string[],
+    depth: number = 0,
+    maxDepth: number = Memory.settings.miningDist
+  ) {
+    if (depth > maxDepth) return;
     checked.push(roomName);
-    let exits = Game.map.describeExits(roomName);
-    for (let num in exits) {
-      let exitName = exits[<ExitKey>num]!;
-      if (checked.indexOf(exitName) !== -1)
-        continue;
-      let [x, y] = getRoomCoorinates(exitName);
+    const exits = Game.map.describeExits(roomName);
+    for (const num in exits) {
+      const exitName = exits[num as ExitKey]!;
+      if (checked.indexOf(exitName) !== -1) continue;
+      const [x, y] = getRoomCoorinates(exitName);
       if (x % 10 === 0 || y % 10 === 0)
         this.dfs(exitName, checked, depth + 1, maxDepth);
     }
@@ -80,16 +87,16 @@ export class ObserveCell extends Cell {
   update() {
     super.update();
     if (!this.obeserver) {
-      this.delete()
+      this.delete();
       return;
     }
     this.roomsToCheck = [];
 
     if (this.hive.cells.defense.timeToLand < 75) {
-      let exits = Game.map.describeExits(this.hive.roomName);
-      let roomNames = <string[]>Object.values(exits);;
+      const exits = Game.map.describeExits(this.hive.roomName);
+      const roomNames = Object.values(exits);
       for (let i = 0; i < roomNames.length; ++i) {
-        let roomInfo = Apiary.intel.getInfo(roomNames[i], 25);
+        const roomInfo = Apiary.intel.getInfo(roomNames[i], 25);
         if (Game.time - roomInfo.lastUpdated > 25) {
           this.roomsToCheck = [roomNames[i]];
           break;
@@ -98,68 +105,87 @@ export class ObserveCell extends Cell {
     }
 
     if (!this.roomsToCheck.length) {
-      let roomName = Apiary.requestRoomSight.filter(roomName => this.pos.getRoomRangeTo(roomName, "lin") <= OBSERVER_RANGE)[0];
+      const roomName = Apiary.requestRoomSight.filter(
+        (roomName) => this.pos.getRoomRangeTo(roomName, "lin") <= OBSERVER_RANGE
+      )[0];
       if (roomName) {
         this.roomsToCheck = [roomName];
-        let index = Apiary.requestRoomSight.indexOf(roomName);
-        if (index !== -1)
-          Apiary.requestRoomSight.splice(index, 1);
-      } else if (this.hive.shouldDo("powerMining") || this.hive.shouldDo("depositMining"))
+        const index = Apiary.requestRoomSight.indexOf(roomName);
+        if (index !== -1) Apiary.requestRoomSight.splice(index, 1);
+      } else if (
+        this.hive.shouldDo("powerMining") ||
+        this.hive.shouldDo("depositMining")
+      )
         this.roomsToCheck = this.corridorRooms;
     }
 
-    let room = Game.rooms[this.prevRoom];
-    if (!room)
-      return;
+    const room = Game.rooms[this.prevRoom];
+    if (!room) return;
 
-    let roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
+    const roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
     if (roomInfo.roomState === roomStates.corridor) {
-      if (this.hive.shouldDo("powerMining"))
-        this.powerCheck(room);
-      if (this.hive.shouldDo("depositMining"))
-        this.depositCheck(room);
-    } else
-      Apiary.intel.getInfo(this.prevRoom, 50);
+      if (this.hive.shouldDo("powerMining")) this.powerCheck(room);
+      if (this.hive.shouldDo("depositMining")) this.depositCheck(room);
+    } else Apiary.intel.getInfo(this.prevRoom, 50);
   }
 
   depositCheck(room: Room) {
-    _.forEach(room.find(FIND_DEPOSITS), deposit => {
-      if (deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 || deposit.ticksToDecay <= CREEP_LIFE_TIME)
+    _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
+      if (
+        deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 ||
+        deposit.ticksToDecay <= CREEP_LIFE_TIME
+      )
         return;
-      this.createOrder(deposit.pos, prefix.depositMining + deposit.id, COLOR_BLUE);
+      this.createOrder(
+        deposit.pos,
+        prefix.depositMining + deposit.id,
+        COLOR_BLUE
+      );
     });
   }
 
   powerCheck(room: Room) {
-    _.forEach(room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } }), (power: StructurePowerBank) => {
-      let open = power.pos.getOpenPositions(true).length;
-      let dmgPerSecond = ATTACK_POWER * 20 * open;
-      if (power.hits / dmgPerSecond >= power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50)
-        return;
-      this.createOrder(power.pos, prefix.powerMining + power.id, COLOR_YELLOW);
-    });
+    _.forEach(
+      room.find(FIND_STRUCTURES, {
+        filter: { structureType: STRUCTURE_POWER_BANK },
+      }),
+      (power: StructurePowerBank) => {
+        const open = power.pos.getOpenPositions(true).length;
+        const dmgPerSecond = ATTACK_POWER * 20 * open;
+        if (
+          power.hits / dmgPerSecond >=
+          power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50
+        )
+          return;
+        this.createOrder(
+          power.pos,
+          prefix.powerMining + power.id,
+          COLOR_YELLOW
+        );
+      }
+    );
   }
 
   createOrder(pos: RoomPosition, ref: string, secondaryColor: ColorConstant) {
-    let flags = pos.lookFor(LOOK_FLAGS).filter(f => f.color === COLOR_ORANGE && f.secondaryColor === secondaryColor).length;
-    if (flags)
-      return;
-    let name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
+    const flags = pos
+      .lookFor(LOOK_FLAGS)
+      .filter(
+        (f) => f.color === COLOR_ORANGE && f.secondaryColor === secondaryColor
+      ).length;
+    if (flags) return;
+    const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
     if (typeof name === "string") {
       Game.flags[name].memory.hive = this.hive.roomName;
-      let order = new FlagOrder(Game.flags[name]);
+      const order = new FlagOrder(Game.flags[name]);
       order.update();
     }
   }
 
   run() {
-
     let index = 0;
-    if (this.prevRoom)
-      index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
+    if (this.prevRoom) index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
 
-    if (index < 0 || index >= this.roomsToCheck.length)
-      index = 0;
+    if (index < 0 || index >= this.roomsToCheck.length) index = 0;
 
     if (this.roomsToCheck.length > 0) {
       this.prevRoom = this.roomsToCheck[index];

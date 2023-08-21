@@ -23,7 +23,7 @@ export class FastRefillCell extends Cell {
     this.sCell = sCell;
     this.link = link;
     this.parentCell = this.hive.cells.spawn;
-    this.setCahe("poss", { x: link.pos.x, y: link.pos.y });
+    this.initCache("poss", { x: link.pos.x, y: link.pos.y });
     for (let dx = -1; dx <= 1; dx += 2)
       for (let dy = -1; dy <= 1; dy += 2) {
         const pos = new RoomPosition(

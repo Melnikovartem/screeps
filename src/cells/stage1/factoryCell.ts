@@ -1,5 +1,5 @@
 import { findOptimalResource } from "../../abstract/utils";
-import { prefix } from "../../enums";
+import { hiveStates, prefix } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
 import { Cell } from "../_Cell";
@@ -30,7 +30,7 @@ export const COMMON_COMMODITIES: FactoryResourceConstant[] = [
   RESOURCE_LIQUID,
 ];
 
-const STOP_PRODUCTION = -1000000;
+const STOP_PRODUCTION = -100_000;
 /*
 let ss = '"metal", "biomass", "silicon", "mist", ';
 for (const r in COMMODITIES)
@@ -109,7 +109,7 @@ export class FactoryCell extends Cell {
     super(hive, prefix.factoryCell + "_" + hive.room.name);
     this.sCell = sCell;
     this.factory = factory;
-    // this.setCahe("commodityTarget", undefined);
+    // this.initCache("commodityTarget", undefined);
   }
 
   public get commodityTarget():
@@ -156,7 +156,7 @@ export class FactoryCell extends Cell {
         toCheck = [RESOURCE_ENERGY];
 
       for (const resToCheck of toCheck) {
-        const res = resToCheck as FactoryResourceConstant; // atually ResourceConstant
+        const res = resToCheck as FactoryResourceConstant; // actually ResourceConstant
         const recipe = COMMODITIES[res];
         if (recipe.level && recipe.level !== this.factory.level) continue;
 
@@ -193,13 +193,24 @@ export class FactoryCell extends Cell {
             else this.uncommon = true;
           }
         } else if (res === RESOURCE_ENERGY) {
-          const balance =
-            -(this.hive.resState[res] + 100000) + (this.resTarget[res] || 0);
-          num = Math.ceil(balance / recipe.amount);
+          // energy below 100000
+          const toProduce = -this.hive.resState[res] - 100000;
+          num = Math.ceil(toProduce / recipe.amount);
+        } else if (res === RESOURCE_BATTERY) {
+          // can compress some energy
+          if (
+            this.hive.resState.energy < 10000 ||
+            this.hive.state !== hiveStates.economy ||
+            !(res in this.hive.resState)
+          )
+            continue;
+          const toProduce = 500 - this.hive.resState[res]!;
+          num = Math.ceil(toProduce / recipe.amount);
         }
         if (num > 1)
           targets.push({ res, amount: Math.floor(num) * recipe.amount });
       }
+
       const nonCommon = targets.filter(
         (t) => !COMMON_COMMODITIES.includes(t.res)
       );
