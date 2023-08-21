@@ -1,7 +1,6 @@
 // import { setupsNames } from "../enums";
 import { HiveLog } from "abstract/hiveMemory";
 import { makeId } from "abstract/utils";
-import { object } from "lodash";
 
 import type { ProtoOrder } from "../abstract/broker";
 import { setups } from "../bees/creepSetups";
@@ -144,7 +143,6 @@ export class Logger {
       _.forEach(hive.cells.defense.nukes, (nuke) => {
         mem.nukes[nuke.id] = { [nuke.launchRoomName]: nuke.timeToLand };
       });
-      mem.resState = hive.resState;
     }
   }
 
@@ -292,7 +290,6 @@ export class Logger {
       controller: { level: 0, progress: 0, progressTotal: 0 },
 
       nukes: {},
-      resState: {},
       defenseHealth: { max: 0, min: 0, avg: 0 },
       resourceEvents: {},
     };

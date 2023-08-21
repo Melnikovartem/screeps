@@ -1,13 +1,11 @@
-import { Master } from "../_Master";
-
-import { beeStates } from "../../enums";
-import { setups } from "../../bees/creepSetups";
-import { findOptimalResource } from "../../abstract/utils";
 import { FREE_CAPACITY } from "../../abstract/terminalNetwork";
-
-import { profile } from "../../profiler/decorator";
-import type { ResourceCell } from "../../cells/base/resourceCell";
+import { findOptimalResource } from "../../abstract/utils";
 import type { Bee } from "../../bees/bee";
+import { setups } from "../../bees/creepSetups";
+import type { ResourceCell } from "../../cells/base/resourceCell";
+import { beeStates } from "../../enums";
+import { profile } from "../../profiler/decorator";
+import { Master } from "../_Master";
 
 @profile
 export class MinerMaster extends Master {
@@ -29,7 +27,7 @@ export class MinerMaster extends Master {
     this.cell.parentCell.shouldRecalc = true;
   }
 
-  get beeRate() {
+  public get beeRate() {
     const beeRates = _.map(this.activeBees, (bee) => {
       if (bee.pos.getRangeTo(this.cell.pos) > 10) return 0;
       let work = 0;

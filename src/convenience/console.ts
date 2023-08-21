@@ -175,17 +175,33 @@ export class CustomConsole {
               ? "OFF"
               : "ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : "")
           } `;
+        let buyInMode = addString("buyIn").slice(0, -3);
+        switch (h.shouldDo("buyIn")) {
+          case 3:
+            buyInMode += "ANYTHING";
+            break;
+          case 2:
+            buyInMode += "ENERGY + MINERALS + OPS";
+            break;
+          case 1:
+            buyInMode += "MINERALS";
+            break;
+          case 0:
+            buyInMode += " OFF";
+            break;
+        }
+
         ans += `@ ${h.print}:\n${
-          addString("depositRefining", "refining") +
-          addString("depositMining", "deposit")
+          addString("depositMining", "deposit") +
+          addString("depositRefining", "refining")
         }\n${
-          addString("powerRefining", "refining") +
-          addString("powerMining", "power")
-        }\n${addString("war") + addString("lab")}\n${
-          addString("sellOff") + addString("buyIn")
-        }\n${addString("saveCpu", "cpu") + addString("unboost")}\n${
-          addString("buildBoost") + addString("upgrade")
-        }\n`;
+          addString("powerMining", "power") +
+          addString("powerRefining", "refining")
+        }\n${addString("war") + addString("lab")}\n${addString(
+          "sellOff"
+        )}\n${buyInMode}\n${
+          addString("saveCpu", "cpu") + addString("unboost")
+        }\n${addString("buildBoost") + addString("upgrade")}\n`;
       }
     );
     return ans;

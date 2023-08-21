@@ -7,23 +7,23 @@ import type { DepositMaster } from "./deposit";
 
 @profile
 export class DepositMinerMaster extends Master {
-  parent: DepositMaster;
-  movePriority = 1 as const;
+  public parent: DepositMaster;
+  public movePriority = 1 as const;
 
-  constructor(parent: DepositMaster) {
+  public constructor(parent: DepositMaster) {
     super(parent.hive, parent.order.ref + prefix.miner);
     this.parent = parent;
     this.targetBeeCount = this.parent.positions.length;
   }
 
-  checkBees() {
+  public checkBees() {
     return (
       this.parent.shouldSpawn &&
       super.checkBees(true, CREEP_LIFE_TIME - this.parent.roadTime)
     );
   }
 
-  update() {
+  public update() {
     super.update();
 
     if (!this.hive.puller) return;
@@ -38,7 +38,7 @@ export class DepositMinerMaster extends Master {
       });
   }
 
-  run() {
+  public run() {
     const target = this.parent.target!;
     if (!target || target.cooldown) return;
     if (

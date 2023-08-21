@@ -31,21 +31,11 @@ export class BuilderMaster extends Master {
     let target = this.hive.sumCost > 0 ? 1 : 0;
     this.patternPerBee = 3;
 
-    this.boosts = undefined;
+    const realBattle =
+      this.hive.state === hiveStates.battle &&
+      (this.hive.sumCost > 500 ||
+        Apiary.intel.getInfo(this.hive.roomName, 20).dangerlvlmax >= 6);
 
-    let realBattle = this.hive.state === hiveStates.battle;
-    if (realBattle) {
-      const roomInfo = Apiary.intel.getInfo(this.hive.roomName, 20);
-      if (
-        !roomInfo.enemies.filter(
-          (e) =>
-            e.object instanceof Creep && e.object.owner.username !== "Invader"
-        ).length
-      )
-        realBattle = false;
-      else if (roomInfo.dangerlvlmax <= 6 && this.hive.sumCost < 500)
-        realBattle = false;
-    }
     const otherEmergency =
       this.hive.state === hiveStates.nukealert ||
       (this.hive.wallsHealth < this.hive.wallsHealthMax &&
@@ -60,6 +50,8 @@ export class BuilderMaster extends Master {
       case 2:
         this.boosts = this.builderBoosts;
         break;
+      default:
+        this.boosts = undefined;
     }
 
     if (realBattle || otherEmergency) {
@@ -99,7 +91,7 @@ export class BuilderMaster extends Master {
   public update() {
     super.update();
     const emergency =
-      this.hive.state >= hiveStates.nukealert ||
+      this.hive.state === hiveStates.nukealert ||
       this.sCell.storage instanceof StructureTerminal;
 
     this.recalculateTargetBee();
@@ -144,7 +136,10 @@ export class BuilderMaster extends Master {
       if (bee.state === beeStates.boosting)
         if (this.boosts) {
           let boosts = this.boosts;
-          if (this.hive.state >= hiveStates.battle)
+          if (
+            this.hive.state === hiveStates.battle ||
+            this.hive.state === hiveStates.nukealert
+          )
             boosts = boosts.concat([
               {
                 type: "fatigue",
@@ -276,7 +271,7 @@ export class BuilderMaster extends Master {
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(
                 this.hive.roomName,
-                this.hive.state >= hiveStates.nukealert
+                this.hive.state === hiveStates.nukealert
                   ? "defense_build"
                   : "build",
                 this.sCell.storage.store,
@@ -311,7 +306,11 @@ export class BuilderMaster extends Master {
                   target.structureType === STRUCTURE_RAMPART
                 ) {
                   healTarget = this.hive.wallsHealth;
-                  if (this.hive.state >= hiveStates.battle) healTarget *= 2;
+                  if (
+                    this.hive.state === hiveStates.battle ||
+                    this.hive.state === hiveStates.nukealert
+                  )
+                    healTarget *= 2;
                 } else healTarget = Apiary.planner.getCase(target).heal;
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
@@ -328,7 +327,9 @@ export class BuilderMaster extends Master {
 
             if (
               !target ||
-              (Game.time % 25 === 0 && this.hive.state >= hiveStates.battle) ||
+              (Game.time % 25 === 0 &&
+                (this.hive.state === hiveStates.battle ||
+                  this.hive.state === hiveStates.nukealert)) ||
               bee.pos.enteranceToRoom
             )
               target = this.hive.getBuildTarget(bee) || target;

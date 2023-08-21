@@ -11,7 +11,10 @@ import { RespawnCell } from "cells/base/respawnCell";
 import { DevelopmentCell } from "cells/stage0/developmentCell";
 import { FactoryCell } from "cells/stage1/factoryCell";
 import { BOOST_MINERAL, LaboratoryCell } from "cells/stage1/laboratoryCell";
-import { StorageCell } from "cells/stage1/storageCell";
+import {
+  ENERGY_FOR_REVERTING_TO_DEV_CELLS,
+  StorageCell,
+} from "cells/stage1/storageCell";
 import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
@@ -104,6 +107,7 @@ export class Hive {
   public bassboost: Hive | null = null;
 
   public structuresConst: BuildProject[] = [];
+  /** sum of construction cost */
   public sumCost: number = 0;
 
   public readonly wallsHealthMax = Memory.settings.wallsHealth;
@@ -152,7 +156,8 @@ export class Hive {
       this.phase = 1;
       if (
         this.room.storage &&
-        this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 6000
+        this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
+          ENERGY_FOR_REVERTING_TO_DEV_CELLS * 1.5
       )
         this.cells.dev = new DevelopmentCell(this);
       const sCell = new StorageCell(this, storage);
@@ -203,7 +208,7 @@ export class Hive {
         let powerSpawn: StructurePowerSpawn | undefined;
         _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
           if (s.structureType === STRUCTURE_OBSERVER) obeserver = s;
-          else if (s.structureType == STRUCTURE_POWER_SPAWN) powerSpawn = s;
+          else if (s.structureType === STRUCTURE_POWER_SPAWN) powerSpawn = s;
         });
         if (obeserver)
           this.cells.observe = new ObserveCell(this, obeserver, sCell);
@@ -215,6 +220,13 @@ export class Hive {
       this.wallsHealth = Memory.settings.wallsHealth * 0.0005;
       this.wallsHealthMax = this.wallsHealth * 10;
       this.cells.dev = new DevelopmentCell(this);
+    }
+
+    if (this.cells.storage) {
+      this.cells.defense.pos = this.cells.storage.storage.pos;
+    } else if (Object.keys(this.cells.spawn.spawns).length) {
+      this.cells.defense.pos =
+        this.cells.spawn.spawns[Object.keys(this.cells.spawn.spawns)[0]].pos;
     }
 
     if (this.wallsHealth > this.wallsHealthMax)
