@@ -17,16 +17,16 @@ const ROUNDING_ERROR = 0.0001;
 
 @profile
 export class CreepSetup {
-  name: string;
-  fixed: BodyPartConstant[];
-  pattern: BodyPartConstant[];
-  patternLimit: number;
-  moveMax: number | "best";
-  ignoreCarry?: boolean;
-  ignoreMove?: boolean;
-  scheme: 0 | 1 | 2;
+  public fixed: BodyPartConstant[];
+  public name: string;
+  public pattern: BodyPartConstant[];
+  public patternLimit: number;
+  public moveMax: number | "best";
+  public ignoreCarry?: boolean;
+  public ignoreMove?: boolean;
+  public scheme: 0 | 1 | 2;
 
-  constructor(
+  public constructor(
     setupName: string,
     bodySetup: BodySetup,
     moveMax: number | "best",
@@ -48,7 +48,7 @@ export class CreepSetup {
     this.scheme = scheme;
   }
 
-  getBody(
+  public getBody(
     energy: number,
     moveMax: number = this.moveMax === "best" ? 25 : this.moveMax
   ): { body: BodyPartConstant[]; cost: number } {
@@ -124,7 +124,7 @@ export class CreepSetup {
     };
   }
 
-  copy() {
+  public copy() {
     return new CreepSetup(
       this.name,
       {
@@ -150,7 +150,7 @@ export const setups = {
     25
   ),
   downgrader: new CreepSetup(
-    setupsNames.claimer + " D",
+    setupsNames.downgrader,
     {
       pattern: [CLAIM],
       patternLimit: Infinity,
@@ -173,7 +173,7 @@ export const setups = {
     50 / 3
   ),
   pickup: new CreepSetup(
-    setupsNames.hauler + " P",
+    setupsNames.depositHauler,
     {
       pattern: [CARRY],
     },
@@ -181,7 +181,7 @@ export const setups = {
   ),
   miner: {
     energy: new CreepSetup(
-      setupsNames.miner,
+      setupsNames.minerEnergy,
       {
         fixed: [CARRY],
         pattern: [WORK],
@@ -192,7 +192,7 @@ export const setups = {
       true
     ),
     minerals: new CreepSetup(
-      setupsNames.miner + " M",
+      setupsNames.minerMinerals,
       {
         pattern: [WORK],
       },
@@ -201,7 +201,7 @@ export const setups = {
       true
     ),
     power: new CreepSetup(
-      setupsNames.miner + " P",
+      setupsNames.powerMinerAttacker,
       {
         pattern: [ATTACK],
         patternLimit: 20,
@@ -209,14 +209,14 @@ export const setups = {
       25
     ),
     powerhealer: new CreepSetup(
-      setupsNames.healer + " P",
+      setupsNames.powerMinerHealer,
       {
         pattern: [HEAL],
       },
       25
     ),
     deposit: new CreepSetup(
-      setupsNames.miner + " D",
+      setupsNames.depositMinerMiner,
       {
         fixed: [CARRY, CARRY],
         pattern: [WORK],
@@ -227,6 +227,22 @@ export const setups = {
       true
     ),
   },
+  puller: new CreepSetup(
+    setupsNames.depositMinerPuller,
+    {
+      pattern: [MOVE],
+      patternLimit: 50,
+    },
+    50
+  ),
+  puppet: new CreepSetup(
+    setupsNames.scout,
+    {
+      pattern: [MOVE],
+      patternLimit: 1,
+    },
+    25
+  ),
   upgrader: {
     manual: new CreepSetup(
       setupsNames.upgrader,
@@ -264,22 +280,6 @@ export const setups = {
     50 / 3,
     0
   ),
-  puppet: new CreepSetup(
-    setupsNames.scout,
-    {
-      pattern: [MOVE],
-      patternLimit: 1,
-    },
-    25
-  ),
-  puller: new CreepSetup(
-    setupsNames.scout + " P",
-    {
-      pattern: [MOVE],
-      patternLimit: 50,
-    },
-    50
-  ),
   defender: {
     normal: new CreepSetup(
       setupsNames.defender,
@@ -304,7 +304,7 @@ export const setups = {
       25
     ),
     destroyer: new CreepSetup(
-      setupsNames.defender + " DD",
+      setupsNames.destroyer,
       {
         pattern: [ATTACK],
       },

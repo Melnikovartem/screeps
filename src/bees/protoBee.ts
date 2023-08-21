@@ -18,19 +18,19 @@ interface MoveMap {
 
 @profile
 export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
-  abstract master: Master | undefined;
-  abstract lifeTime: number;
+  public abstract master: Master | undefined;
+  public abstract lifeTime: number;
 
-  creep: ProtoCreep;
-  ref: string;
+  public creep: ProtoCreep;
+  public ref: string;
 
   // target caching and states to have some tools to work with in masters
 
-  targetPosition: RoomPosition | undefined;
-  actionPosition: RoomPosition | undefined;
+  public targetPosition: RoomPosition | undefined;
+  public actionPosition: RoomPosition | undefined;
 
   // for now it will be forever binded
-  constructor(creep: ProtoCreep) {
+  public constructor(creep: ProtoCreep) {
     this.creep = creep;
     this.ref = creep.name;
     if (this.state === undefined) this.state = beeStates.idle;
@@ -38,42 +38,42 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     Apiary.bees[this.creep.name] = this;
   }
 
-  abstract memory: CreepMemory | PowerCreepMemory;
-  abstract readonly fatigue: number;
+  public abstract memory: CreepMemory | PowerCreepMemory;
+  public abstract readonly fatigue: number;
 
-  get state() {
+  public get state() {
     return this.creep.memory.state;
   }
 
-  set state(state) {
+  public set state(state) {
     this.creep.memory.state = state;
   }
 
-  get target() {
+  public get target() {
     return this.creep.memory.target;
   }
 
-  set target(target) {
+  public set target(target) {
     this.creep.memory.target = target;
   }
 
-  get hits() {
+  public get hits() {
     return this.creep.hits;
   }
 
-  get hitsMax() {
+  public get hitsMax() {
     return this.creep.hitsMax;
   }
 
-  get store() {
+  public get store() {
     return this.creep.store;
   }
 
-  get pos() {
+  public get pos() {
     return this.creep.pos;
   }
 
-  get movePosition() {
+  public get movePosition() {
     if (!this.memory._trav || !this.memory._trav.state) return undefined;
     const x = this.memory._trav.state[STATE_DEST_X];
     const y = this.memory._trav.state[STATE_DEST_Y];
@@ -81,19 +81,19 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return new RoomPosition(x, y, roomName);
   }
 
-  set movePosition(pos) {
+  public set movePosition(pos) {
     if (!pos || !this.memory._trav || !this.memory._trav.state) return;
     this.memory._trav.state[STATE_DEST_X] = pos.x;
     this.memory._trav.state[STATE_DEST_Y] = pos.y;
     this.memory._trav.state[STATE_DEST_ROOMNAME] = pos.roomName;
   }
 
-  get ticksToLive() {
+  public get ticksToLive() {
     if (this.creep.ticksToLive) return this.creep.ticksToLive;
     else return this.lifeTime;
   }
 
-  update() {
+  public update() {
     this.targetPosition = undefined;
     this.actionPosition = undefined;
   }
@@ -102,7 +102,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
-  actionCheck(
+  public actionCheck(
     pos: RoomPosition,
     opt: TravelToOptions = {},
     range: number = 1
@@ -124,7 +124,10 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     }
   }
 
-  goRest(pos: RoomPosition, opt: TravelToOptions = {}): ScreepsReturnCode {
+  public goRest(
+    pos: RoomPosition,
+    opt: TravelToOptions = {}
+  ): ScreepsReturnCode {
     this.actionPosition = pos;
     if (pos.equal(this)) return OK;
     opt.range = opt.range || 2;
@@ -149,7 +152,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ERR_NOT_IN_RANGE;
   }
 
-  fleeRoom(roomName: string, opt?: TravelToOptions) {
+  public fleeRoom(roomName: string, opt?: TravelToOptions) {
     let roomToRest = this.pos.roomName;
     if (roomToRest === roomName) {
       const exits = Game.map.describeExits(roomName);
@@ -172,11 +175,11 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return this.goRest(new RoomPosition(25, 25, roomToRest), opt);
   }
 
-  goToRoom(roomName: string, opt?: TravelToOptions): ScreepsReturnCode {
+  public goToRoom(roomName: string, opt?: TravelToOptions): ScreepsReturnCode {
     return this.goTo(new RoomPosition(25, 25, roomName), opt);
   }
 
-  goTo(target: ProtoPos, opt: TravelToOptions = {}): ScreepsReturnCode {
+  public goTo(target: ProtoPos, opt: TravelToOptions = {}): ScreepsReturnCode {
     Apiary.intel.getInfo(this.pos.roomName, Infinity);
     const ans = this.creep.travelTo(target, opt);
     if (typeof ans === "number") {
@@ -186,7 +189,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ERR_NOT_IN_RANGE;
   }
 
-  transfer(
+  public transfer(
     t: Structure,
     resourceType: ResourceConstant,
     amount?: number,
@@ -196,7 +199,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ans === OK ? this.creep.transfer(t, resourceType, amount) : ans;
   }
 
-  withdraw(
+  public withdraw(
     t: Structure | Tombstone | Ruin,
     resourceType: ResourceConstant,
     amount?: number,
@@ -206,21 +209,21 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ans === OK ? this.creep.withdraw(t, resourceType, amount) : ans;
   }
 
-  pickup(t: Resource, opt?: TravelToOptions) {
+  public pickup(t: Resource, opt?: TravelToOptions) {
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.pickup(t) : ans;
   }
 
-  drop(resourceType: ResourceConstant, amount?: number) {
+  public drop(resourceType: ResourceConstant, amount?: number) {
     return this.creep.drop(resourceType, amount);
   }
 
-  stop() {
+  public stop() {
     this.targetPosition = undefined;
     if (this.memory._trav) this.memory._trav.state[STATE_STUCK] = 0;
   }
 
-  getFleeOpt(opt: TravelToOptions) {
+  public getFleeOpt(opt: TravelToOptions) {
     if (!opt.maxRooms || opt.maxRooms > 4) opt.maxRooms = 3;
     opt.stuckValue = 1;
     opt.restrictDistance = 10;
@@ -268,7 +271,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return opt;
   }
 
-  flee(
+  public flee(
     posToFlee: RoomPosition | null,
     opt: TravelToOptions = {},
     doExit: boolean = false
@@ -302,7 +305,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ans;
   }
 
-  static beesMove() {
+  public static beesMove() {
     const moveMap: MoveMap = {};
     const chillMap: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
     Apiary.wrap(
@@ -407,7 +410,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return OK;
   }
 
-  get print(): string {
+  public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

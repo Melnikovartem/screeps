@@ -5,17 +5,17 @@ import { ProtoBee } from "./protoBee";
 
 @profile
 export class Bee extends ProtoBee<Creep> {
-  master: Master | undefined;
+  public master: Master | undefined;
 
-  boosted = false;
-  lifeTime: number;
+  public boosted = false;
+  public lifeTime: number;
 
-  workMax: number;
+  public workMax: number;
 
-  pulledPos: RoomPosition | undefined = undefined;
+  public pulledPos: RoomPosition | undefined = undefined;
 
   // for now it will be forever binded
-  constructor(creep: Creep) {
+  public constructor(creep: Creep) {
     super(creep);
     this.creep = creep;
     this.boosted = !!this.body.filter((b) => b.boost).length;
@@ -23,29 +23,28 @@ export class Bee extends ProtoBee<Creep> {
       ? CREEP_CLAIM_LIFE_TIME
       : CREEP_LIFE_TIME;
     this.workMax = this.getBodyParts(WORK);
-    // not sure weather i should copy all parameters from creep like body and stuff
     Apiary.bees[this.creep.name] = this;
   }
 
-  get pos() {
+  public get pos() {
     return this.pulledPos || this.creep.pos;
   }
 
-  get body() {
+  public get body() {
     return this.creep.body;
   }
 
-  get memory() {
+  public get memory() {
     return this.creep.memory;
   }
 
-  get fatigue() {
+  public get fatigue() {
     return (
       this.creep.fatigue || (this.creep.getActiveBodyparts(MOVE) ? 0 : Infinity)
     );
   }
 
-  update() {
+  public update() {
     super.update();
     this.pulledPos = undefined;
     this.creep = Game.creeps[this.ref];
@@ -58,7 +57,7 @@ export class Bee extends ProtoBee<Creep> {
     }
   }
 
-  findMaster() {
+  public findMaster() {
     if (this.ref.includes(setupsNames.hauler)) {
       if (
         this.findClosestByHive(
@@ -161,32 +160,39 @@ export class Bee extends ProtoBee<Creep> {
     return "";
   }
 
-  findClosestByHive(masters: Master[]) {
+  public findClosestByHive(masters: Master[]) {
     if (!masters.length) return false;
     const ans = masters.reduce((prev, curr) => {
-      let ans =
+      let diffDist =
         curr.hive.pos.getRoomRangeTo(this) - prev.hive.pos.getRoomRangeTo(this);
-      if (ans === 0)
-        ans =
+      if (diffDist === 0)
+        diffDist =
           prev.targetBeeCount -
           prev.beesAmount -
           (curr.targetBeeCount - curr.beesAmount);
-      return ans < 0 ? curr : prev;
+      return diffDist < 0 ? curr : prev;
     });
     if (ans.hive.pos.getRoomRangeTo(this) * 25 > this.ticksToLive) return false;
     this.memory.refMaster = ans.ref;
     return true;
   }
 
-  getBodyParts(partType: BodyPartConstant, boosted: 1 | 0 | -1 = 0): number {
+  public getBodyParts(
+    partType: BodyPartConstant,
+    boosted: 1 | 0 | -1 = 0
+  ): number {
     return this.creep.getBodyParts(partType, boosted);
   }
 
-  getActiveBodyParts(partType: BodyPartConstant): number {
+  public getActiveBodyParts(partType: BodyPartConstant): number {
     return this.creep.getBodyParts(partType, undefined, true);
   }
 
-  pull(t: Bee, pos: RoomPosition, opt: TravelToOptions): ScreepsReturnCode {
+  public pull(
+    t: Bee,
+    pos: RoomPosition,
+    opt: TravelToOptions
+  ): ScreepsReturnCode {
     if (!this.pos.isNearTo(t)) {
       const tEnt = t.pos.enteranceToRoom;
       if (!tEnt || tEnt.roomName !== this.pos.roomName) {
@@ -212,7 +218,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans;
   }
 
-  attack(
+  public attack(
     t: Creep | Structure | PowerCreep,
     opt: TravelToOptions = {}
   ): ScreepsReturnCode {
@@ -221,7 +227,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.attack(t) : ans;
   }
 
-  rangedAttack(
+  public rangedAttack(
     t: Creep | Structure | PowerCreep,
     opt: TravelToOptions = {}
   ): ScreepsReturnCode {
@@ -232,30 +238,30 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.rangedAttack(t) : ans;
   }
 
-  rangedMassAttack(): ScreepsReturnCode {
+  public rangedMassAttack(): ScreepsReturnCode {
     return this.creep.rangedMassAttack();
   }
 
-  heal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
+  public heal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
     if (t instanceof Bee) t = t.creep;
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.heal(t) : ans;
   }
 
-  rangedHeal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
+  public rangedHeal(t: Creep | PowerCreep | Bee, opt: TravelToOptions = {}) {
     opt.movingTarget = true;
     if (t instanceof Bee) t = t.creep;
     const ans = this.actionCheck(t.pos, opt, 3);
     return ans === OK ? this.creep.rangedHeal(t) : ans;
   }
 
-  dismantle(t: Structure, opt: TravelToOptions = {}): ScreepsReturnCode {
+  public dismantle(t: Structure, opt: TravelToOptions = {}): ScreepsReturnCode {
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.dismantle(t) : ans;
   }
 
-  harvest(
+  public harvest(
     t: Source | Mineral | Deposit,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
@@ -263,19 +269,19 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.harvest(t) : ans;
   }
 
-  build(t: ConstructionSite, opt?: TravelToOptions): ScreepsReturnCode {
+  public build(t: ConstructionSite, opt?: TravelToOptions): ScreepsReturnCode {
     const ans = this.actionCheck(t.pos, opt, 3);
     if (ans === OK && this.pos.enteranceToRoom) this.goTo(t);
     return ans === OK ? this.creep.build(t) : ans;
   }
 
-  repair(t: Structure, opt?: TravelToOptions): ScreepsReturnCode {
+  public repair(t: Structure, opt?: TravelToOptions): ScreepsReturnCode {
     const ans = this.actionCheck(t.pos, opt, 3);
     if (ans === OK && this.pos.enteranceToRoom) this.goTo(t);
     return ans === OK ? this.creep.repair(t) : ans;
   }
 
-  upgradeController(
+  public upgradeController(
     t: StructureController,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
@@ -283,7 +289,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.upgradeController(t) : ans;
   }
 
-  reserveController(
+  public reserveController(
     t: StructureController,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
@@ -291,7 +297,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.reserveController(t) : ans;
   }
 
-  claimController(
+  public claimController(
     t: StructureController,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
@@ -299,7 +305,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.claimController(t) : ans;
   }
 
-  attackController(
+  public attackController(
     t: StructureController,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
@@ -307,7 +313,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans === OK ? this.creep.attackController(t) : ans;
   }
 
-  repairRoadOnMove(
+  public repairRoadOnMove(
     ans: ScreepsReturnCode = ERR_NOT_IN_RANGE
   ): ScreepsReturnCode {
     if (ans === ERR_NOT_IN_RANGE) {
@@ -320,7 +326,7 @@ export class Bee extends ProtoBee<Creep> {
     return ans;
   }
 
-  static checkBees() {
+  public static checkBees() {
     for (const name in Game.creeps) {
       const bee = Apiary.bees[name];
       if (!bee) Apiary.bees[name] = new Bee(Game.creeps[name]);
@@ -330,7 +336,7 @@ export class Bee extends ProtoBee<Creep> {
     }
   }
 
-  get print(): string {
+  public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 }

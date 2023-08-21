@@ -89,7 +89,7 @@ export enum signText {
   other = "🐝☠️🤖",
 }
 
-export enum setupsNames {
+export enum setupsNames_old {
   // Civilian
   claimer = "Bee drone",
   manager = "Stingless bee",
@@ -108,3 +108,34 @@ export enum setupsNames {
   defender = "Vespa affinis",
   skdefender = "Polybia occidentalis",
 }
+
+export enum setupsNames {
+  // Civilian
+  claimer = "Firefly",
+  scout = "Butterfly",
+  // Base
+  bootstrap = "Larva",
+  manager = "Carpenter bee",
+  upgrader = "Honey bee",
+  builder = "Mason bee",
+  queen = "Queen bee",
+  hauler = "Bumblebee",
+  depositHauler = "Garden bumblebee",
+  // Mining
+  minerEnergy = "Scarabaeus sacer",
+  minerMinerals = "Japanese beetle",
+  depositMinerMiner = "Ground beetle",
+  depositMinerPuller = "Dragonfly",
+  powerMinerAttacker = "Hercules beetle",
+  powerMinerHealer = "Atlas moth",
+  // War
+  downgrader = "Housefly",
+  healer = "Luna moth",
+  knight = "European hornet",
+  tank = "Red paper wasp",
+  dismantler = "Assasin bug",
+  defender = "Walking stick",
+  destroyer = "Leaf insect",
+  skdefender = "Orchid Mantis",
+}
+// Lady bug / Carpenter ant / Earthworm
