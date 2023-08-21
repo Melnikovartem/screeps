@@ -13,7 +13,7 @@ const SELL_STEP = 8192;
 @profile
 export class Network {
   public nodes: Hive[] = [];
-  aid: {
+  public aid: {
     [hiveNameFrom: string]: {
       to: string;
       res: ResourceConstant;
@@ -21,9 +21,9 @@ export class Network {
       excess?: number;
     };
   } = {}; // from -> to
-  resState: ResTarget = {};
+  public resState: ResTarget = {};
 
-  init() {
+  public init() {
     this.nodes = _.filter(
       Apiary.hives,
       (h) => h.cells.storage && h.cells.storage.terminal
@@ -36,7 +36,7 @@ export class Network {
     });
   }
 
-  update() {
+  public update() {
     this.resState = {};
     _.forEach(Apiary.hives, (hive) => this.updateState(hive));
 
@@ -61,7 +61,7 @@ export class Network {
     }
   }
 
-  hiveValidForAid(hive: Hive) {
+  public hiveValidForAid(hive: Hive) {
     const sCell = hive.cells.storage;
     return (
       sCell &&
@@ -74,7 +74,7 @@ export class Network {
     );
   }
 
-  calcAmount(from: string, to: string, res: ResourceConstant) {
+  public calcAmount(from: string, to: string, res: ResourceConstant) {
     let fromState = Apiary.hives[from].resState[res];
     const inProcess =
       this.aid[from] && this.aid[from].to === to && this.aid[from].res === res
@@ -94,29 +94,40 @@ export class Network {
     return Math.max(Math.min(toState, fromState, 50000), 0);
   }
 
-  run() {
+  private canHiveBuy(hive: Hive, res: ResourceConstant) {
+    let canBuyIn = false;
+    switch (hive.shouldDo("buyIn")) {
+      case 3:
+        canBuyIn = true;
+        break;
+      case 2:
+        if (
+          res === RESOURCE_ENERGY ||
+          res === RESOURCE_OPS ||
+          BASE_MINERALS.includes(res)
+        )
+          canBuyIn = true;
+        break;
+      case 1:
+        if (BASE_MINERALS.includes(res)) canBuyIn = true;
+        break;
+      case 0:
+        break;
+    }
+    return canBuyIn;
+  }
+
+  public run() {
     // to be able to save some cpu on buyIns
 
-    for (let i = 0; i < this.nodes.length; ++i) {
-      const hive = this.nodes[i];
+    for (const hive of this.nodes) {
       if (!hive.cells.storage || !hive.cells.storage.terminal) continue;
       const terminal = hive.cells.storage.terminal;
       let usedTerminal = false;
 
       for (const r in hive.shortages) {
         const res = r as ResourceConstant;
-        let canBuyIn = 0;
-        switch (hive.shouldDo("buyIn")) {
-          case 3:
-            canBuyIn = 1;
-            break;
-          case 2:
-            if (res === RESOURCE_ENERGY || res === RESOURCE_OPS) canBuyIn = 1;
-          case 1:
-            if (BASE_MINERALS.includes(res)) canBuyIn = 1;
-          case 0:
-        }
-        if (canBuyIn) {
+        if (this.canHiveBuy(hive, res)) {
           const amount = hive.shortages[res]!;
           const ans = Apiary.broker.buyIn(
             terminal,
@@ -175,10 +186,10 @@ export class Network {
 
       for (const r in hive.mastersResTarget) {
         const res = r as ResourceConstant;
-        const balance =
+        const balanceShortage =
           hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res);
-        if (balance > 0) {
-          const ans = Apiary.broker.buyIn(terminal, res, balance, true);
+        if (balanceShortage > 0 && this.canHiveBuy(hive, res)) {
+          const ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
           if (ans === "short") {
             usedTerminal = true;
             break;
@@ -209,7 +220,7 @@ export class Network {
     }
   }
 
-  askAid(hive: Hive) {
+  public askAid(hive: Hive) {
     if (!this.hiveValidForAid(hive)) return;
     hive.shortages = {};
     for (const r in hive.resState) {
@@ -278,7 +289,7 @@ export class Network {
     }
   }
 
-  updateState(hive: Hive) {
+  public updateState(hive: Hive) {
     hive.resState = { energy: 0 };
     const sCell = hive.cells.storage;
     if (!sCell) return;
@@ -326,11 +337,11 @@ export class Network {
       }
     }
 
-    for (const i in ress)
+    for (const resToAdd of ress)
       hive.add(
         hive.resState,
-        ress[i],
-        sCell.getUsedCapacity(ress[i] as ResourceConstant)
+        resToAdd,
+        sCell.getUsedCapacity(resToAdd as ResourceConstant)
       );
 
     for (const res in hive.resTarget)

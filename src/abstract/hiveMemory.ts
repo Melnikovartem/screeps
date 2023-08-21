@@ -64,7 +64,6 @@ export interface HiveLog {
   nukes: { [id: string]: { [launchRoomName: string]: number } };
   defenseHealth: { max: number; min: number; avg: number };
 
-  resState: ResTarget;
   resourceEvents: {
     [key in ResourceConstant]?: {
       [id: string]: {

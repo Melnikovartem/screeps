@@ -6,17 +6,37 @@ import { enemyTypes, roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { towerCoef } from "./utils";
 
+/** Trying to asses danger lvl of threat
+ *
+ * 0 peace pacts ?? in rooms not owned by me OR invulnerable InvaderCore OR any structure that i don't like (enemy walls/old stuff in my room)
+ *
+ * 1 storage/terminal in enemy room or containers/roads in enemy reserved rooms
+ *
+ * 2 source keeper (ignore defender of sources) OR non agression pacts in non hives (rooms not owned by me) OR spawn/extension  in enemy room
+ *
+ * 3 just hostile OR invaderCore in normal rooms OR invaderCore structures in normal rooms marked by Red_Grey flag
+ *
+ * 4 hostile that can bite (range >= 0 || melee >= 0) OR any powerlvl of Invader
+ *
+ * 5 healer can outheal tower (heal >= 300) OR dismantler OR Invader raid on source rooms
+ *
+ * 6 healer (heal >= 300) OR powerful combatant (range >= 250 || melee >= 750)
+ *
+ * 7 enemy powercreeps (so that we smash any attacking ones) OR enemy TOWER
+ *
+ * 8 boosted combatant (ranged >= 900 || melee >= 2700)
+ *
+ * 9 invaderCore in source roooms OR invaderCore structures in source roooms marked by Red_Grey flag
+ */
 type DangerLvl = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export const PEACE_PACKS: string[] = [
+export const PEACE_PACTS: string[] = [
   "Hi_Melnikov",
-  "Digital",
-  "Lapitz",
-  "YoRHa",
-  "Bestia",
-  "6g3y",
+  // "Digital",
+  // "Lapitz",
+  // "Bestia",
 ]; // "buger"
-export const NON_AGRESSION_PACKS: string[] = ["TgDgNU"];
+export const NON_AGRESSION_PACKS: string[] = ["TgDgNU", "6g3y", "YoRHa"];
 
 export interface Enemy {
   object: Creep | PowerCreep | Structure;
@@ -53,15 +73,15 @@ export interface CreepAllBattleInfo {
 
 @profile
 export class Intel {
-  roomInfo: { [id: string]: RoomInfo } = {};
-  stats: { [id: string]: CreepAllBattleInfo } = {};
+  private roomInfo: { [id: string]: RoomInfo } = {};
+  private stats: { [id: string]: CreepAllBattleInfo } = {};
 
-  update() {
+  public update() {
     this.stats = {};
     if (Game.time % 50 === 0) this.toCache();
   }
 
-  getEnemyStructure(pos: ProtoPos, lag?: number) {
+  public getEnemyStructure(pos: ProtoPos, lag?: number) {
     return this.getEnemy(pos, lag, (es, ri, _) =>
       es.filter(
         (e) =>
@@ -72,13 +92,13 @@ export class Intel {
     ) as Structure | undefined;
   }
 
-  getEnemyCreep(pos: ProtoPos, lag?: number) {
+  public getEnemyCreep(pos: ProtoPos, lag?: number) {
     return this.getEnemy(pos, lag, (es) =>
       es.filter((e) => e.object instanceof Creep)
     ) as Creep | undefined;
   }
 
-  getEnemy(
+  public getEnemy(
     pos: ProtoPos,
     lag?: number,
     filter: (
@@ -107,7 +127,7 @@ export class Intel {
     }).object;
   }
 
-  getTowerAttack(pos: RoomPosition, lag?: number) {
+  public getTowerAttack(pos: RoomPosition, lag?: number) {
     const roomInfo = this.getInfo(pos.roomName, lag);
     let ans = 0;
     _.forEach(roomInfo.towers, (t) => {
@@ -121,7 +141,7 @@ export class Intel {
     return ans;
   }
 
-  getComplexStats(
+  public getComplexStats(
     pos: ProtoPos,
     range = 1,
     closePadding = 0,
@@ -182,11 +202,11 @@ export class Intel {
     return ans;
   }
 
-  getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
+  public getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
     return this.getComplexStats(pos, range, closePadding, FIND_MY_CREEPS);
   }
 
-  getInfo(roomName: string, lag: number = 0): RoomInfo {
+  public getInfo(roomName: string, lag: number = 0): RoomInfo {
     let roomInfo = this.roomInfo[roomName];
     if (!roomInfo) {
       const cache = Memory.cache.intellegence[roomName];
@@ -301,7 +321,7 @@ export class Intel {
   }
 
   // will *soon* remove in favor for lib
-  toCache() {
+  private toCache() {
     for (const roomName in this.roomInfo) {
       const roomInfo = this.roomInfo[roomName];
       if (
@@ -318,7 +338,7 @@ export class Intel {
     }
   }
 
-  updateEnemiesInRoom(room: Room) {
+  private updateEnemiesInRoom(room: Room) {
     const roomInfo = this.roomInfo[room.name];
     roomInfo.lastUpdated = Game.time;
     roomInfo.enemies = [];
@@ -358,8 +378,9 @@ export class Intel {
           else if (dangerlvl > 4) dangerlvl = 4;
           break;
         default:
+          // TODO better pacts system
           if (Apiary.logger) Apiary.logger.reportEnemy(c);
-          if (PEACE_PACKS.includes(c.owner.username)) {
+          if (PEACE_PACTS.includes(c.owner.username)) {
             if (roomInfo.roomState !== roomStates.ownedByMe) {
               dangerlvl = 0;
               return;
@@ -471,7 +492,7 @@ export class Intel {
     this.updateDangerLvl(roomInfo);
   }
 
-  updateDangerLvl(roomInfo: RoomInfo) {
+  private updateDangerLvl(roomInfo: RoomInfo) {
     if (roomInfo.enemies.length)
       roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) =>
         prev.dangerlvl < curr.dangerlvl ? curr : prev
@@ -483,14 +504,14 @@ export class Intel {
         roomInfo.roomState === roomStates.ownedByMe);
   }
 
-  getFleeDist(creep: Creep, padding = 0) {
+  public getFleeDist(creep: Creep, padding = 0) {
     const info = this.getStats(creep).current;
     if (info.dmgRange > padding) return 4;
     else if (info.dmgClose > padding) return 2;
     else return 0;
   }
 
-  getStats(creep: Creep) {
+  public getStats(creep: Creep) {
     if (creep.id in this.stats) return this.stats[creep.id];
     const ans: CreepAllBattleInfo = {
       max: {
