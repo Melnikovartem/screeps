@@ -16,3 +16,8 @@ curl -s 'http://admin:admin@localhost:1337/api/dashboards/db' -X POST -H 'Conten
 echo All done! 
 echo You should be able connect to http://localhost:1337
 echo with username \'admin\' and password \'admin\'
+
+
+# developing useful with:
+# rm -rf /var/lib/docker/volumes/screeps-grafana_graphite_data/_data/*
+# docker-compose up -d --no-deps --build --remove-orphans node-shard2; docker-compose up -d --no-deps --build node-shard3

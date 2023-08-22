@@ -17,8 +17,8 @@
  *
  * @since  0.1.0
  */
+import StatsD from "hot-shots";
 import fetch from "node-fetch";
-import StatsD from "node-statsd";
 import zlib from "zlib";
 
 export default class ScreepsStatsd {
@@ -36,12 +36,12 @@ export default class ScreepsStatsd {
     this._shard = shard;
     this._graphite = graphite;
     this._client = new StatsD({ host: this._graphite });
-    this._reported_events = []
+    this._reported_events = [];
   }
 
   run(string) {
     this.signin();
-    this._memoryAdress = "log"
+    this._memoryAdress = "log";
 
     setInterval(() => this.loop(), 15000);
   }
@@ -74,7 +74,8 @@ export default class ScreepsStatsd {
       await this.signin();
 
       const response = await fetch(
-        this._host + `/api/user/memory?path=${this._memoryAdress}&shard=${this._shard}`,
+        this._host +
+          `/api/user/memory?path=${this._memoryAdress}&shard=${this._shard}`,
         {
           method: "GET",
           headers: {
@@ -93,22 +94,25 @@ export default class ScreepsStatsd {
           .gunzipSync(Buffer.from(data.data.split("gz:")[1], "base64"))
           .toString()
       );
-      this.resource_event_map = {}
+      this.resource_event_map = {};
       this.report(unzippedData);
-      
+
       for (const prefix in this.resource_event_map)
         for (const comment in this.resource_event_map[prefix]) {
-          if (prefix.includes("market")) 
-            console.log(JSON.stringify(this.resource_event_map[prefix][comment]));
-          this._client.gauge(this._shard + "." + prefix + comment.split("_").join("."), this.resource_event_map[prefix][comment]);
+          this._client.gauge(
+            this._shard + "." + prefix + comment.split("_").join("."),
+            this.resource_event_map[prefix][comment]
+          );
         }
-      
-      this.resource_event_map = {}
+
+      this.resource_event_map = {};
 
       for (const prefix_even_id in this._reported_events)
-        if (unzippedData.tick.current > this._reported_events[prefix_even_id] + 200) 
+        if (
+          unzippedData.tick.current >
+          this._reported_events[prefix_even_id] + 200
+        )
           delete this._reported_events[prefix_even_id];
-
     } catch (e) {
       console.error(e);
       this._token = undefined;
@@ -122,15 +126,16 @@ export default class ScreepsStatsd {
       if (typeof v === "object") {
         if (resource_event) {
           for (const event_id in v) {
-            let event = v[event_id]
+            let event = v[event_id];
             if (!this._reported_events[prefix + event_id]) {
               this._reported_events[prefix + event_id] = event.tick;
-              const prefix_resource = prefix + k + "."
+              const prefix_resource = prefix + k + ".";
               if (!this.resource_event_map[prefix_resource])
                 this.resource_event_map[prefix_resource] = {};
               if (!this.resource_event_map[prefix_resource][event.comment])
                 this.resource_event_map[prefix_resource][event.comment] = 0;
-              this.resource_event_map[prefix_resource][event.comment] += event.amount;
+              this.resource_event_map[prefix_resource][event.comment] +=
+                event.amount;
             }
           }
         } else this.report(v, prefix + k + ".", k == "resourceEvents");

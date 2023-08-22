@@ -4,7 +4,6 @@ volumes:
   graphite_data:
   grafana_data:
 services:
-# testing with: docker-compose up -d --no-deps --build node
   node-shard2:
     build:
         context: .

@@ -32,9 +32,12 @@ export class Logger {
           progress: Game.gpl.progress,
           progressTotal: Game.gpl.progressTotal,
         },
-        market: { credits: Game.market.credits, resourceEvents: {} },
+        market: {
+          credits: Math.round(Game.market.credits * 1000),
+          resourceEvents: {},
+        },
         cpu: { limit: Game.cpu.limit, used: 0, bucket: Game.cpu.bucket },
-        pixels: 0,
+        pixels: Game.resources.pixel as number,
         cpuUsage: { run: {}, update: {} },
         hives: {},
       };
@@ -57,7 +60,7 @@ export class Logger {
       Memory.log.market.resourceEvents[resource] = {};
     Memory.log.market.resourceEvents[resource]![eventId] = {
       tick: time,
-      amount: Math.round(amount * 1000) / 1000,
+      amount: Math.round(amount * 1000),
       comment,
     };
   }
@@ -91,11 +94,12 @@ export class Logger {
 
   private reportMarket() {
     for (const transaction of Game.market.incomingTransactions) {
-      if (Game.time - transaction.time > 10) break;
+      if (Game.time - transaction.time > LOGGING_CYCLE) break;
       if (!transaction.order) continue;
-      if (transaction.order.id in Memory.log.market.resourceEvents) continue;
+      if (transaction.transactionId in Memory.log.market.resourceEvents)
+        continue;
       this.reportMarketEvent(
-        transaction.order.id.slice(0, 4) + makeId(6),
+        transaction.transactionId,
         transaction.resourceType,
         transaction.amount * transaction.order.price,
         "buy_" + (transaction.order.type === ORDER_BUY ? "long" : "short"),
@@ -103,11 +107,12 @@ export class Logger {
       );
     }
     for (const transaction of Game.market.outgoingTransactions) {
-      if (Game.time - transaction.time > 10) break;
+      if (Game.time - transaction.time > LOGGING_CYCLE) break;
       if (!transaction.order) continue;
-      if (transaction.order.id in Memory.log.market.resourceEvents) continue;
+      if (transaction.transactionId in Memory.log.market.resourceEvents)
+        continue;
       this.reportMarketEvent(
-        transaction.order.id.slice(0, 4) + makeId(6),
+        transaction.transactionId,
         transaction.resourceType,
         transaction.amount * transaction.order.price,
         "sell_" + (transaction.order.type === ORDER_SELL ? "long" : "short"),
@@ -123,7 +128,7 @@ export class Logger {
     });
 
     Memory.log.tick.current = Game.time;
-    Memory.log.market.credits = Game.market.credits;
+    Memory.log.market.credits = Math.round(Game.market.credits * 1000);
     this.reportMarket();
     Memory.log.pixels = Game.resources.pixel as number;
     Memory.log.gcl = {
