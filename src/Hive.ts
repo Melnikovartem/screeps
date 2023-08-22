@@ -211,8 +211,7 @@ export class Hive {
           if (s.structureType === STRUCTURE_OBSERVER) obeserver = s;
           else if (s.structureType === STRUCTURE_POWER_SPAWN) powerSpawn = s;
         });
-        if (obeserver)
-          this.cells.observe = new ObserveCell(this, obeserver, sCell);
+        if (obeserver) this.cells.observe = new ObserveCell(this, obeserver);
         if (powerSpawn)
           this.cells.power = new PowerCell(this, powerSpawn, sCell);
         // TODO cause i haven' reached yet
@@ -364,8 +363,8 @@ export class Hive {
             this.cells.power = new PowerCell(this, s, this.cells.storage);
           break;
         case STRUCTURE_OBSERVER:
-          if (!this.cells.observe && this.cells.storage)
-            this.cells.observe = new ObserveCell(this, s, this.cells.storage);
+          if (!this.cells.observe)
+            this.cells.observe = new ObserveCell(this, s);
           break;
         case STRUCTURE_TERMINAL:
           if (!this.cells.storage) {

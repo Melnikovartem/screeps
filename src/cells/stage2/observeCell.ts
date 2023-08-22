@@ -4,19 +4,16 @@ import type { Hive } from "../../Hive";
 import { FlagOrder } from "../../order";
 import { profile } from "../../profiler/decorator";
 import { Cell } from "../_Cell";
-import type { StorageCell } from "../stage1/storageCell";
 
 @profile
 export class ObserveCell extends Cell {
-  obeserver: StructureObserver;
-  roomsToCheck: string[] = [];
-  doPowerCheck = false;
-  master: undefined;
-  sCell: StorageCell;
+  public obeserver: StructureObserver;
+  private roomsToCheck: string[] = [];
+  private doPowerCheck = false;
+  public master: undefined;
 
-  constructor(hive: Hive, obeserver: StructureObserver, sCell: StorageCell) {
-    super(hive, prefix.observerCell + "_" + hive.room.name);
-    this.sCell = sCell;
+  public constructor(hive: Hive, obeserver: StructureObserver) {
+    super(hive, prefix.observerCell);
     this.obeserver = obeserver;
 
     this.initCache("corridorRooms", []);
@@ -25,23 +22,23 @@ export class ObserveCell extends Cell {
     if (!this.corridorRooms.length) this.updateRoomsToCheck();
   }
 
-  get corridorRooms(): string[] {
+  public get corridorRooms(): string[] {
     return this.fromCache("corridorRooms");
   }
 
-  set prevRoom(value) {
+  public set prevRoom(value) {
     this.toCache("prevRoom", value);
   }
 
-  get prevRoom(): string {
+  public get prevRoom(): string {
     return this.fromCache("prevRoom");
   }
 
-  set corridorRooms(value) {
+  public set corridorRooms(value) {
     this.toCache("corridorRooms", value);
   }
 
-  updateRoomsToCheck() {
+  public updateRoomsToCheck() {
     this.corridorRooms = [];
     const [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
     let closest = we + x + ns + y;
@@ -62,11 +59,11 @@ export class ObserveCell extends Cell {
       this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
-  get pos() {
+  public get pos() {
     return this.obeserver.pos;
   }
 
-  dfs(
+  private dfs(
     roomName: string,
     checked: string[],
     depth: number = 0,
@@ -84,7 +81,7 @@ export class ObserveCell extends Cell {
     }
   }
 
-  update() {
+  public update() {
     super.update();
     if (!this.obeserver) {
       this.delete();
@@ -95,10 +92,10 @@ export class ObserveCell extends Cell {
     if (this.hive.cells.defense.timeToLand < 75) {
       const exits = Game.map.describeExits(this.hive.roomName);
       const roomNames = Object.values(exits);
-      for (let i = 0; i < roomNames.length; ++i) {
-        const roomInfo = Apiary.intel.getInfo(roomNames[i], 25);
-        if (Game.time - roomInfo.lastUpdated > 25) {
-          this.roomsToCheck = [roomNames[i]];
+      for (const roomName of roomNames) {
+        const roomInfoCheck = Apiary.intel.getInfo(roomName, 25);
+        if (Game.time - roomInfoCheck.lastUpdated > 25) {
+          this.roomsToCheck = [roomName];
           break;
         }
       }
@@ -106,7 +103,8 @@ export class ObserveCell extends Cell {
 
     if (!this.roomsToCheck.length) {
       const roomName = Apiary.requestRoomSight.filter(
-        (roomName) => this.pos.getRoomRangeTo(roomName, "lin") <= OBSERVER_RANGE
+        (roomNameRequested) =>
+          this.pos.getRoomRangeTo(roomNameRequested, "lin") <= OBSERVER_RANGE
       )[0];
       if (roomName) {
         this.roomsToCheck = [roomName];
@@ -129,7 +127,7 @@ export class ObserveCell extends Cell {
     } else Apiary.intel.getInfo(this.prevRoom, 50);
   }
 
-  depositCheck(room: Room) {
+  public depositCheck(room: Room) {
     _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
       if (
         deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 ||
@@ -144,7 +142,7 @@ export class ObserveCell extends Cell {
     });
   }
 
-  powerCheck(room: Room) {
+  public powerCheck(room: Room) {
     _.forEach(
       room.find(FIND_STRUCTURES, {
         filter: { structureType: STRUCTURE_POWER_BANK },
@@ -166,7 +164,11 @@ export class ObserveCell extends Cell {
     );
   }
 
-  createOrder(pos: RoomPosition, ref: string, secondaryColor: ColorConstant) {
+  public createOrder(
+    pos: RoomPosition,
+    ref: string,
+    secondaryColor: ColorConstant
+  ) {
     const flags = pos
       .lookFor(LOOK_FLAGS)
       .filter(
@@ -181,7 +183,7 @@ export class ObserveCell extends Cell {
     }
   }
 
-  run() {
+  public run() {
     let index = 0;
     if (this.prevRoom) index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
 

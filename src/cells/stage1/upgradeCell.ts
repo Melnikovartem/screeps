@@ -1,11 +1,9 @@
-import { Cell } from "../_Cell";
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
-
-import { prefix, hiveStates } from "../../enums";
 import { setups } from "../../bees/creepSetups";
-
-import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../enums";
 import type { Hive } from "../../Hive";
+import { profile } from "../../profiler/decorator";
+import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";
 
 @profile
@@ -22,7 +20,7 @@ export class UpgradeCell extends Cell {
   roadTime: number;
 
   constructor(hive: Hive, controller: StructureController, sCell: StorageCell) {
-    super(hive, prefix.upgradeCell + "_" + hive.room.name);
+    super(hive, prefix.upgradeCell);
     this.sCell = sCell;
 
     this.controller = controller;

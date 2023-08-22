@@ -151,7 +151,7 @@ export class Broker {
     }
     this.updateRes(compound, 100);
     // from buying materials/selling product. Not all compound need to buy in so * 0.5
-    const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.5;
+    const energyCosts = this.energyPrice * (shoppingList.length + 1);
     return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
   }
 

@@ -121,7 +121,7 @@ export class WarcrimesModule {
               2
             );
             containers[0].pos.createFlag(
-              haulers + prefix.steal + roomName,
+              haulers + "_" + prefix.steal + roomName,
               COLOR_ORANGE,
               COLOR_GREEN
             );
@@ -341,7 +341,7 @@ export class WarcrimesModule {
             4
           );
           store.pos.createFlag(
-            haulers + prefix.steal + roomName,
+            haulers + "_" + prefix.steal + roomName,
             COLOR_ORANGE,
             COLOR_GREEN
           );

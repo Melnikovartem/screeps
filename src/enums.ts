@@ -34,32 +34,29 @@ export enum beeStates {
 
 export enum prefix {
   // orders
-  // upgrade = "polen",
-  steal = "_borrow_",
-  build = "wax",
-  surrender = "FFF",
+  steal = "borrow_",
+  build = "wax_",
+  surrender = "FFF_",
   boost = "boost_",
-  defSwarm = "def_",
+  defSwarm = "defOrder_",
   puppet = "pup_",
   annex = "annex_",
-  claim = "claim",
+  claim = "claim_",
   mine = "mine_",
   clear = "clear_",
-  // haltlab = "haltlab_",
-  // nukes = "nukes_",
-  // terminal = "terminal_",
+  downgrade = "downgrade_",
   powerMining = "power_",
   depositMining = "deposit_",
-  downgrade = "downgrade_",
+  // upgrade = "polen",
+  // nukes = "nukes_",
+  // terminal = "terminal_",
 
   // deposit master
-  miner = "_miner",
-  pickup = "_pickup",
-
-  // TODO shorten?
+  miner = "depositMiner_",
+  pickup = "depositPickup_",
 
   // cells
-  defenseCell = "def",
+  defenseCell = "defHive",
   respawnCell = "spawn",
   developmentCell = "dev",
   excavationCell = "excav",
@@ -69,11 +66,11 @@ export enum prefix {
   storageCell = "storage",
   upgradeCell = "upgrade",
   observerCell = "observe",
-  powerCell = "power",
+  powerCell = "powerHive",
   factoryCell = "factory",
 
   builder = "builder_",
-  puller = "puller_",
+  puller = "depositPuller_",
 
   // game constants
   master = "master_",

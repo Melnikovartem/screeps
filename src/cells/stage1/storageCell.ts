@@ -33,7 +33,7 @@ export class StorageCell extends Cell {
     hive: Hive,
     storage: StructureStorage | StructureTerminal
   ) {
-    super(hive, prefix.storageCell + "_" + hive.room.name);
+    super(hive, prefix.storageCell);
     this.storage = storage;
     this.terminal = this.hive.room.terminal;
     this.master = new ManagerMaster(this);

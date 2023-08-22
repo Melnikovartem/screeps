@@ -162,7 +162,7 @@ export class LaboratoryCell extends Cell {
   private positions: RoomPosition[] = [];
 
   public constructor(hive: Hive, sCell: StorageCell) {
-    super(hive, prefix.laboratoryCell + "_" + hive.room.name);
+    super(hive, prefix.laboratoryCell);
     this.sCell = sCell;
 
     this.initCache("labStates", {});

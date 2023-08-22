@@ -21,7 +21,7 @@ export class DefenseCell extends Cell {
   public dmgAtPos: { [id: string]: number } = {};
 
   public constructor(hive: Hive) {
-    super(hive, prefix.defenseCell + "_" + hive.room.name);
+    super(hive, prefix.defenseCell);
     this.updateNukes();
     this.master = new SiegeMaster(this);
     this.initCache("poss", { x: 25, y: 25 });

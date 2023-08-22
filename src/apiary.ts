@@ -101,7 +101,8 @@ export class _Apiary {
     const cpu = Game.cpu.getUsed();
     if (safe) safeWrap(func, ref + " " + mode);
     else func();
-    if (Memory.settings.reportCPU && this.logger)
+    // if amount zero we skip the wrap (avoid double counting)
+    if (Memory.settings.reportCPU && this.logger && amount)
       this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 

@@ -12,7 +12,7 @@ export class DepositPickupMaster extends Master {
   parent: DepositMaster;
 
   constructor(parent: DepositMaster) {
-    super(parent.hive, parent.order.ref + prefix.pickup);
+    super(parent.hive, parent.order.ref + "_" + prefix.pickup);
     this.parent = parent;
   }
 

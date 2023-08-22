@@ -148,11 +148,17 @@ export class Bee extends ProtoBee<Creep> {
         )
       )
         return;
-    }
-    if (this.ref.includes(setupsNames.upgrader)) {
+    } else if (this.ref.includes(setupsNames.upgrader)) {
       if (
         this.findClosestByHive(
           _.filter(Apiary.masters, (m) => m.ref.includes(prefix.upgradeCell))
+        )
+      )
+        return;
+    } else if (this.ref.includes(setupsNames.minerEnergy)) {
+      if (
+        this.findClosestByHive(
+          _.filter(Apiary.masters, (m) => m.ref.includes(prefix.resourceCells))
         )
       )
         return;

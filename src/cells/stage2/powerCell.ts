@@ -13,7 +13,7 @@ export class PowerCell extends Cell {
   sCell: StorageCell;
 
   constructor(hive: Hive, powerSpawn: StructurePowerSpawn, sCell: StorageCell) {
-    super(hive, prefix.powerCell + "_" + hive.room.name);
+    super(hive, prefix.powerCell);
     this.sCell = sCell;
     this.powerSpawn = powerSpawn;
     this.initCache("poss", { x: 25, y: 25 });

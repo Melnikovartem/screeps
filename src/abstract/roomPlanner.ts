@@ -1286,10 +1286,10 @@ export class RoomPlanner {
         };
       for (const cellType in cellsCache) {
         const cellCache = cellsCache[cellType];
-        if (!Memory.cache.hives[roomName].cells[cellType.split("_")[0]])
-          Memory.cache.hives[roomName].cells[cellType.split("_")[0]] = {};
+        if (!Memory.cache.hives[roomName].cells[cellType.split("_")[2]])
+          Memory.cache.hives[roomName].cells[cellType.split("_")[2]] = {};
         for (const key in cellCache)
-          Memory.cache.hives[roomName].cells[cellType.split("_")[0]][key] =
+          Memory.cache.hives[roomName].cells[cellType.split("_")[2]][key] =
             cellCache[key as keyof CellCache];
       }
     }

@@ -19,7 +19,7 @@ export class FastRefillCell extends Cell {
     link: StructureLink,
     sCell: StorageCell
   ) {
-    super(parent.hive, prefix.fastRefillCell + "_" + parent.hive.room.name);
+    super(parent.hive, prefix.fastRefillCell);
     this.sCell = sCell;
     this.link = link;
     this.parentCell = this.hive.cells.spawn;

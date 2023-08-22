@@ -9,7 +9,7 @@ import profiler from "screeps-profiler";
 import { LOGGING_CYCLE, PROFILER } from "settings";
 
 // if (Game.shard.name === "shard3")
-// Mem.wipe();
+Mem.wipe();
 
 declare global {
   namespace NodeJS {
@@ -37,7 +37,7 @@ function onGlobalReset(): void {
 }
 
 function main() {
-  if (!Memory.settings.generatePixel && Game.cpu.bucket < 250) {
+  if (!Memory.settings.generatePixel && Game.cpu.bucket < 300) {
     console.log(
       `CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`
     );

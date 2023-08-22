@@ -12,7 +12,7 @@ export abstract class Cell {
 
   public constructor(hive: Hive, cellName: string) {
     this.hive = hive;
-    this.ref = cellName;
+    this.ref = "cell_" + hive.room.name + "_" + cellName;
 
     if (!(this.refCache in Memory.cache.hives[this.hive.roomName].cells))
       Memory.cache.hives[this.hive.roomName].cells[this.refCache] = {};
@@ -22,7 +22,7 @@ export abstract class Cell {
   }
 
   public get refCache() {
-    return this.ref.split("_")[0];
+    return this.ref.split("_")[2];
   }
 
   public get pos(): RoomPosition {

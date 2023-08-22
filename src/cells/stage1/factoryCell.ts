@@ -108,10 +108,9 @@ export class FactoryCell extends Cell {
     factory: StructureFactory,
     sCell: StorageCell
   ) {
-    super(hive, prefix.factoryCell + "_" + hive.room.name);
+    super(hive, prefix.factoryCell);
     this.sCell = sCell;
     this.factory = factory;
-    // this.initCache("commodityTarget", undefined);
   }
 
   public get commodityTarget():
