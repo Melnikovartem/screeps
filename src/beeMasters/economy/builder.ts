@@ -42,16 +42,17 @@ export class BuilderMaster extends Master {
         this.hive.resState[RESOURCE_ENERGY] > 0) ||
       this.hive.sumCost > 50000;
 
+    this.boosts = undefined;
     switch (this.hive.shouldDo("buildBoost")) {
       case 1:
-        if (!realBattle) break;
-        this.boosts = this.builderBoosts;
+        if (!realBattle) this.boosts = this.builderBoosts;
         break;
       case 2:
+        if (realBattle || otherEmergency) this.boosts = this.builderBoosts;
+        break;
+      case 3:
         this.boosts = this.builderBoosts;
         break;
-      default:
-        this.boosts = undefined;
     }
 
     if (realBattle || otherEmergency) {

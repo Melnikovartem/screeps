@@ -19,6 +19,7 @@ const MAX_DEVIATION_PERCENT = 0.1;
 const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_PADDING = 0.001;
+const MARKET_FEE = 0.05;
 
 const CREDIT_THRESHOLD_SLOW = 50000000;
 
@@ -167,7 +168,6 @@ export class Broker {
     this.updateRes(RESOURCE_ENERGY, MARKET_LAG * 100);
 
     if ((Game.time - Apiary.createTime) % 1000 === 0) {
-      console.log("here", (Game.time - Apiary.createTime) % 1000, Game.time);
       // later will be used to calc is it even profitable to sell something faraway
       this.energyPrice = this.weightedAvgPrice(RESOURCE_ENERGY);
       this.checkIfAnyLabProfitable();
@@ -281,9 +281,19 @@ export class Broker {
       if (priceToSellInstant + step >= o.price + step * 100)
         newPrice = o.price + step * 100;
       else if (priceToSellInstant >= o.price) newPrice = o.price + step;
-      if (newPrice && newPrice <= maxPrice)
+      if (newPrice && newPrice <= maxPrice) {
         // ( && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
-        Game.market.changeOrderPrice(o.id, newPrice);
+        const oldPrice = o.price;
+        const ans = Game.market.changeOrderPrice(o.id, newPrice);
+        const fee = (newPrice - oldPrice) * o.remainingAmount * MARKET_FEE;
+        if (fee > 0 && ans === OK && Apiary.logger && newPrice > oldPrice)
+          Apiary.logger.reportMarketFeeChange(
+            o.id,
+            o.resourceType,
+            fee,
+            ORDER_BUY
+          );
+      }
     }
     return "long";
   }
@@ -360,9 +370,19 @@ export class Broker {
       else if (priceToBuyInstant - step <= o.price - step * 100)
         newPrice = o.price - step * 100;
       else if (priceToBuyInstant <= o.price) newPrice = o.price - step;
-      if (newPrice && newPrice >= minPrice)
+      if (newPrice && newPrice >= minPrice) {
         // && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
-        Game.market.changeOrderPrice(o.id, newPrice);
+        const oldPrice = o.price;
+        const ans = Game.market.changeOrderPrice(o.id, newPrice);
+        const fee = (newPrice - oldPrice) * o.remainingAmount * MARKET_FEE;
+        if (fee > 0 && ans === OK && Apiary.logger && newPrice > oldPrice)
+          Apiary.logger.reportMarketFeeChange(
+            o.id,
+            o.resourceType,
+            fee,
+            ORDER_SELL
+          );
+      }
     }
     return "long";
   }
@@ -404,6 +424,12 @@ export class Broker {
       price,
       roomName,
     });
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.reportMarketCreation(
+        res,
+        amount * price * MARKET_FEE,
+        ORDER_BUY
+      );
     return ans;
   }
 
@@ -416,7 +442,7 @@ export class Broker {
   ) {
     this.updateRes(res, MARKET_LAG);
     const roomName = terminal.pos.roomName;
-    const priceCap = Math.floor(creditsToUse / (price * 0.05));
+    const priceCap = Math.floor(creditsToUse / (price * MARKET_FEE));
     amount = Math.min(amount, priceCap);
     if (!amount) return ERR_NOT_ENOUGH_RESOURCES;
     const ans = Game.market.createOrder({
@@ -426,6 +452,12 @@ export class Broker {
       price,
       roomName,
     });
+    if (ans === OK && Apiary.logger)
+      Apiary.logger.reportMarketCreation(
+        res,
+        amount * price * MARKET_FEE,
+        ORDER_SELL
+      );
     return ans;
   }
 

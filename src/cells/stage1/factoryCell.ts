@@ -1,10 +1,11 @@
 import { findOptimalResource } from "abstract/utils";
 import { hiveStates, prefix } from "enums";
-import { type Hive, HIVE_ENERGY } from "Hive";
+import { type Hive } from "Hive";
 import { profile } from "profiler/decorator";
 
 import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";
+import { HIVE_ENERGY } from "./storageCell";
 
 export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16);
 export const COMPRESS_MAP = {

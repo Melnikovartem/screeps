@@ -8,6 +8,7 @@ import { BASE_MINERALS } from "./laboratoryCell";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 
+export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
 export const ENERGY_FOR_REVERTING_TO_DEV_CELLS = 3000;
 const EXTREMLY_LOW_ENERGY = 10000;
 

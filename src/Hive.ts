@@ -13,6 +13,7 @@ import { FactoryCell } from "cells/stage1/factoryCell";
 import { BOOST_MINERAL, LaboratoryCell } from "cells/stage1/laboratoryCell";
 import {
   ENERGY_FOR_REVERTING_TO_DEV_CELLS,
+  HIVE_ENERGY,
   StorageCell,
 } from "cells/stage1/storageCell";
 import { UpgradeCell } from "cells/stage1/upgradeCell";
@@ -55,7 +56,6 @@ export type ResTarget = { [key in ResourceConstant]?: number };
 
 const HIVE_MINERAL = 5000; // LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 3.333333
 
-export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.4);
 type StructureGroups =
   | "essential"
   | "roads"

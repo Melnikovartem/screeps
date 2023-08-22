@@ -98,6 +98,8 @@ export default class ScreepsStatsd {
       
       for (const prefix in this.resource_event_map)
         for (const comment in this.resource_event_map[prefix]) {
+          if (prefix.includes("market")) 
+            console.log(JSON.stringify(this.resource_event_map[prefix][comment]));
           this._client.gauge(this._shard + "." + prefix + comment.split("_").join("."), this.resource_event_map[prefix][comment]);
         }
       

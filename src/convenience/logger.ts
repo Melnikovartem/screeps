@@ -32,9 +32,9 @@ export class Logger {
           progress: Game.gpl.progress,
           progressTotal: Game.gpl.progressTotal,
         },
+        market: { credits: Game.market.credits, resourceEvents: {} },
         cpu: { limit: Game.cpu.limit, used: 0, bucket: Game.cpu.bucket },
         pixels: 0,
-        credits: 0,
         cpuUsage: { run: {}, update: {} },
         hives: {},
       };
@@ -45,6 +45,77 @@ export class Logger {
     Memory.log.cpuUsage = { update: {}, run: {} };
   }
 
+  private reportMarketEvent(
+    eventId: string,
+    resMarket: MarketResourceConstant,
+    amount: number,
+    comment: string,
+    time: number = Game.time
+  ) {
+    const resource = resMarket as ResourceConstant;
+    if (!Memory.log.market.resourceEvents[resource])
+      Memory.log.market.resourceEvents[resource] = {};
+    Memory.log.market.resourceEvents[resource]![eventId] = {
+      tick: time,
+      amount: Math.round(amount * 1000) / 1000,
+      comment,
+    };
+  }
+
+  public reportMarketFeeChange(
+    orderId: string,
+    resource: MarketResourceConstant,
+    fee: number,
+    type: ORDER_BUY | ORDER_SELL
+  ) {
+    this.reportMarketEvent(
+      orderId.slice(0, 2) + "CH" + makeId(6),
+      resource,
+      fee,
+      type + "_feeChange"
+    );
+  }
+
+  public reportMarketCreation(
+    resource: MarketResourceConstant,
+    fee: number,
+    type: ORDER_BUY | ORDER_SELL
+  ) {
+    this.reportMarketEvent(
+      "CR" + makeId(8),
+      resource,
+      fee,
+      type + "_feeCreation"
+    );
+  }
+
+  private reportMarket() {
+    for (const transaction of Game.market.incomingTransactions) {
+      if (Game.time - transaction.time > 10) break;
+      if (!transaction.order) continue;
+      if (transaction.order.id in Memory.log.market.resourceEvents) continue;
+      this.reportMarketEvent(
+        transaction.order.id.slice(0, 4) + makeId(6),
+        transaction.resourceType,
+        transaction.amount * transaction.order.price,
+        "buy_" + (transaction.order.type === ORDER_BUY ? "long" : "short"),
+        transaction.time
+      );
+    }
+    for (const transaction of Game.market.outgoingTransactions) {
+      if (Game.time - transaction.time > 10) break;
+      if (!transaction.order) continue;
+      if (transaction.order.id in Memory.log.market.resourceEvents) continue;
+      this.reportMarketEvent(
+        transaction.order.id.slice(0, 4) + makeId(6),
+        transaction.resourceType,
+        transaction.amount * transaction.order.price,
+        "sell_" + (transaction.order.type === ORDER_SELL ? "long" : "short"),
+        transaction.time
+      );
+    }
+  }
+
   public run() {
     const cpu = Game.cpu.getUsed();
     _.forEach(Apiary.hives, (hive) => {
@@ -52,7 +123,8 @@ export class Logger {
     });
 
     Memory.log.tick.current = Game.time;
-    Memory.log.credits = Game.market.credits;
+    Memory.log.market.credits = Game.market.credits;
+    this.reportMarket();
     Memory.log.pixels = Game.resources.pixel as number;
     Memory.log.gcl = {
       level: Game.gcl.level,
@@ -92,8 +164,11 @@ export class Logger {
   }
 
   public hiveLog(hive: Hive) {
-    const mem = Memory.log.hives[hive.roomName];
-    if (!mem) return;
+    let mem = Memory.log.hives[hive.roomName];
+    if (!mem) {
+      Memory.log.hives[hive.roomName] = this.emptyHiveLog;
+      mem = Memory.log.hives[hive.roomName];
+    }
     mem.annexNames = hive.annexNames;
     mem.spawOrders = Object.keys(hive.spawOrders).length;
     mem.construction = {
@@ -413,6 +488,18 @@ export class Logger {
       };
   }
 
+  private cleanResourceEvents(resourceEvents: resourceEventLog) {
+    for (const r in resourceEvents) {
+      const res = r as ResourceConstant;
+      for (const eventId in resourceEvents[res]) {
+        if (Game.time - resourceEvents[res]![eventId].tick > LOGGING_CYCLE)
+          delete resourceEvents[res]![eventId];
+      }
+      if (Object.keys(resourceEvents[res]!).length === 0)
+        delete resourceEvents[res];
+    }
+  }
+
   /**
    * Removes old resource events
    * Also keeps report of events / crashes small
@@ -423,17 +510,9 @@ export class Logger {
         delete Memory.log.hives[hiveName];
         continue;
       }
-      const resourceEvents = Memory.log.hives[hiveName].resourceEvents;
-      for (const r in resourceEvents) {
-        const res = r as ResourceConstant;
-        for (const eventId in resourceEvents[res]) {
-          if (Game.time - resourceEvents[res]![eventId].tick > LOGGING_CYCLE)
-            delete resourceEvents[res]![eventId];
-        }
-        if (Object.keys(resourceEvents[res]!).length === 0)
-          delete resourceEvents[res];
-      }
+      this.cleanResourceEvents(Memory.log.hives[hiveName].resourceEvents);
     }
+    this.cleanResourceEvents(Memory.log.market.resourceEvents);
 
     if (
       Memory.reportEvents.orders &&

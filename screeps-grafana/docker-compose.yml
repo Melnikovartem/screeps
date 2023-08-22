@@ -5,7 +5,7 @@ volumes:
   grafana_data:
 services:
 # testing with: docker-compose up -d --no-deps --build node
-  node:
+  node-shard2:
     build:
         context: .
         dockerfile: Dockerfile
@@ -14,7 +14,17 @@ services:
      - statsd
     environment:
       GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
-    env_file: docker-compose.env
+    env_file: docker-compose-shard2.env
+  node-shard3:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    restart: always
+    links:
+     - statsd
+    environment:
+      GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
+    env_file: docker-compose-shard3.env
   statsd:
     image: ennexa/statsd
     links: 

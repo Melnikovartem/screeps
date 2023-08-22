@@ -6,12 +6,21 @@ import type { HiveCache, HiveLog } from "./hiveMemory";
 import type { CreepAllBattleInfo } from "./intelligence";
 import type { RoomSetup } from "./roomPlanner";
 // import type { Boosts } from "../beeMasters/_Master";
-
 declare global {
   let Apiary: _Apiary;
   let A: CustomConsole;
 
   type ProtoPos = RoomPosition | { pos: RoomPosition };
+  type resourceEventLog = {
+    [key in ResourceConstant]?: {
+      [id: string]: {
+        tick: number;
+        amount: number;
+        comment: string;
+      };
+    };
+  };
+
   interface Pos {
     x: number;
     y: number;
@@ -158,8 +167,8 @@ declare global {
       gcl: { level: number; progress: number; progressTotal: number };
       gpl: { level: number; progress: number; progressTotal: number };
       cpu: { bucket: number; used: number; limit: number };
+      market: { credits: number; resourceEvents: resourceEventLog };
       pixels: number;
-      credits: number;
 
       /** logging reported cpu usage by each part of the system. Global per function and normilized by the amount of creeps/structures */
       cpuUsage: {

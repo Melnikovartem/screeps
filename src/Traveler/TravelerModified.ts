@@ -154,7 +154,12 @@ export class Traveler {
       if (state.cpu > REPORT_CPU_THRESHOLD && TRAVELER_MESSAGE) {
         // see note at end of file for more info on this
         console.log(
-          `TRAVELER: heavy cpu use: ${creep.name}, cpu: ${state.cpu} origin: ${creep.pos}, dest: ${destination}`
+          `TRAVELER: heavy cpu use: ${
+            (Apiary.bees[creep.name] && Apiary.bees[creep.name].print) ||
+            creep.name
+          }, cpu: ${state.cpu} origin: ${creep.pos.to_str}, dest: ${
+            destination.to_str
+          }`
         );
       }
 

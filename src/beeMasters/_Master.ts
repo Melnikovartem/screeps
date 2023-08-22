@@ -269,4 +269,10 @@ export abstract class Master {
     if (firstBee && firstBee.pos) roomName = firstBee.pos.roomName;
     return `<a href=#!/room/${Game.shard.name}/${roomName}>["${this.ref}"]</a>`;
   }
+
+  public get printBees(): string {
+    let ans = this.print + ":\n";
+    _.forEach(this.bees, (bee) => (ans += "\n" + bee.print));
+    return ans;
+  }
 }

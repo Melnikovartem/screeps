@@ -432,7 +432,7 @@ export class LaboratoryCell extends Cell {
     return true;
   }
 
-  private getBoostInfo(
+  public getBoostInfo(
     r: BoostRequest,
     bee?: Bee,
     boostedSameType?: number
@@ -464,7 +464,7 @@ export class LaboratoryCell extends Cell {
   }
 
   // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
-  private askForBoost(bee: Bee, requests?: BoostRequest[]) {
+  public askForBoost(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
 
     if (bee.ticksToLive < 1000)

@@ -1,5 +1,3 @@
-import type { ResTarget } from "../Hive";
-
 export interface HiveCache {
   wallsHealth: number;
   cells: { [id: string]: { [id: string]: any } };
@@ -15,7 +13,7 @@ export interface HiveCache {
     lab: 0 | 1 | 2; // do not, if any is needed, (up to some stockpile after if profitable)
     buyIn: 0 | 1 | 2 | 3; // nothing, minerals, minerals + energy + ops, anything
     sellOff: 0 | 1; // drop / sellOff for balance,
-    buildBoost: 0 | 1 | 2; // no boosting / only war / all cases (nukes, walls etc)
+    buildBoost: 0 | 1 | 2 | 3; // no boosting / only war / all cases (nukes, walls etc) / even when peaceful
   };
 }
 
@@ -64,13 +62,5 @@ export interface HiveLog {
   nukes: { [id: string]: { [launchRoomName: string]: number } };
   defenseHealth: { max: number; min: number; avg: number };
 
-  resourceEvents: {
-    [key in ResourceConstant]?: {
-      [id: string]: {
-        tick: number;
-        amount: number;
-        comment: string;
-      };
-    };
-  };
+  resourceEvents: resourceEventLog;
 }
