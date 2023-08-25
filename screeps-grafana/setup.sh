@@ -28,4 +28,25 @@ curl -X POST -H 'Content-Type: application/json;charset=UTF-8' --data @dashboard
 
 
 # TODO add with code dashboards
-# TODO change settings of statsd to deleteGauges
+# TODO change settings of statsd to deleteGauges in statsd_conf/tcp.js statsd_conf/udp.js
+# Couldn't find where configure rolllup aggregation for whisper so for now runtime aggr only avg
+# TODO change setting of aggregation in graphite_conf/storage-aggregation.conf :
+#[count_legacy]
+#pattern = ^stats_counts.*
+#xFilesFactor = 0
+#aggregationMethod = sum
+
+#[resourceEvents]
+#pattern = \.resourceEvents\.
+#xFilesFactor = 0
+#aggregationMethod = sum
+
+#[cpuUsage]
+#pattern = \.cpuUsage\.
+#xFilesFactor = 0
+#aggregationMethod = average
+
+#[default_average]
+#pattern = .*
+#xFilesFactor = 0.3
+#aggregationMethod = average

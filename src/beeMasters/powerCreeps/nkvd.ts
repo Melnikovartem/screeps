@@ -131,7 +131,7 @@ export class NKVDMaster extends PowerMaster {
           time: Math.max(this.getTimeToRegen(s, power) - padding, cooldownEnd),
         });
       switch (power) {
-        case PWR_OPERATE_SPAWN:
+        case PWR_OPERATE_SPAWN: {
           const spawn = targets as RespawnCell;
           if (
             (!spawn.freeSpawns.length &&
@@ -153,7 +153,8 @@ export class NKVDMaster extends PowerMaster {
               (s) => andNextup(s)
             );
           break;
-        case PWR_OPERATE_FACTORY:
+        }
+        case PWR_OPERATE_FACTORY: {
           const factory = (targets as FactoryCell).factory;
           if (
             factory &&
@@ -163,13 +164,15 @@ export class NKVDMaster extends PowerMaster {
           )
             andNextup(factory, 20);
           break;
-        case PWR_OPERATE_LAB:
+        }
+        case PWR_OPERATE_LAB: {
           const lab = targets as LaboratoryCell;
           if (lab.prod)
             _.forEach(lab.laboratories, (l) => {
               if (lab.labStates[l.id] === "production") andNextup(l);
             });
           break;
+        }
         case PWR_OPERATE_OBSERVER:
           andNextup((targets as ObserveCell).obeserver);
           break;

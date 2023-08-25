@@ -9,7 +9,7 @@ export interface HiveCache {
     war: 0 | 1;
     unboost: 0 | 1;
     saveCpu: 0 | 1;
-    upgrade: 0 | 1 | 2 | 3; // do not, up to lvl 8, 15 after lvl 8, boosted after lvl 8
+    upgrade: 0 | 1 | 2 | 3; // do not boost, boost up to lvl 8, no boosted energy after lvl 8, boosted energy after lvl 8
     lab: 0 | 1 | 2; // do not, if any is needed, (up to some stockpile after if profitable)
     buyIn: 0 | 1 | 2 | 3; // nothing, minerals, minerals + energy + ops, anything
     sellOff: 0 | 1; // drop / sellOff for balance,
@@ -41,7 +41,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] =
         war: 1,
         unboost: 0,
         saveCpu: 0,
-        upgrade: 1,
+        upgrade: 3,
         lab: 2,
         buyIn: 1,
         sellOff: 1,

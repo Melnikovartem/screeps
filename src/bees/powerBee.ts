@@ -1,5 +1,3 @@
-import { PowerCell } from "cells/stage2/powerCell";
-
 import type { Master } from "../beeMasters/_Master";
 import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
 import { prefix } from "../enums";

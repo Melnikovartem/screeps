@@ -1,8 +1,12 @@
+import { HIVE_ENERGY } from "cells/stage1/storageCell";
+
 import { setups } from "../../bees/creepSetups";
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import { beeStates, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
 import { Master } from "../_Master";
+
+const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgrading
 
 @profile
 export class UpgraderMaster extends Master {
@@ -20,24 +24,30 @@ export class UpgraderMaster extends Master {
       !!(this.cell.link && this.cell.sCell.link) ||
       this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
 
-    const polen = this.hive.shouldDo("upgrade");
+    const upgradeMode = this.hive.shouldDo("upgrade"); // polen
     if (
-      !polen ||
-      (polen === 1 && this.cell.controller.level === 8) ||
-      this.hive.state >= hiveStates.nukealert
+      upgradeMode === 0 ||
+      (upgradeMode === 1 && this.cell.controller.level === 8) ||
+      (upgradeMode >= 2 &&
+        this.hive.resState.energy >= UPGRADING_AFTER_8_ENERGY) ||
+      this.hive.state === hiveStates.nukealert // spawn even when nuke
     ) {
       this.boosts = undefined;
 
       this.targetBeeCount =
         this.cell.controller.ticksToDowngrade <
-        CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.75
+          CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.75 ||
+        UPGRADING_AFTER_8_ENERGY
           ? 1
           : 0;
       this.patternPerBee = 1;
       return;
     }
 
-    if (polen !== 2 || this.cell.controller.level < 8)
+    if (
+      upgradeMode === 3 ||
+      (this.cell.controller.level < 8 && upgradeMode <= 2)
+    )
       this.boosts = [
         { type: "upgrade", lvl: 2 },
         { type: "upgrade", lvl: 1 },

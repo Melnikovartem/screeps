@@ -47,7 +47,6 @@ export enum prefix {
   downgrade = "downgrade_",
   powerMining = "power_",
   depositMining = "deposit_",
-  // upgrade = "polen",
   // nukes = "nukes_",
   // terminal = "terminal_",
 

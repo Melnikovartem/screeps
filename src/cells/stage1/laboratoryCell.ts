@@ -566,21 +566,21 @@ export class LaboratoryCell extends Cell {
           this.usedBoost.push(lab.id);
           if (ans === OK) {
             bee.boosted = true;
-            r.amount = 0;
             if (Apiary.logger) {
               Apiary.logger.addResourceStat(
                 this.hive.roomName,
                 "boosts",
-                r.amount * LAB_BOOST_MINERAL,
+                -r.amount * LAB_BOOST_MINERAL,
                 r.res
               );
               Apiary.logger.addResourceStat(
                 this.hive.roomName,
                 "boosts",
-                r.amount * LAB_BOOST_ENERGY,
+                -r.amount * LAB_BOOST_ENERGY,
                 RESOURCE_ENERGY
               );
             }
+            r.amount = 0;
           }
         } else if (rCode !== ERR_NOT_IN_RANGE) {
           bee.goTo(pos);
