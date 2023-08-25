@@ -3,6 +3,7 @@ import type {
   CreepBattleInfo,
   Enemy,
 } from "abstract/intelligence";
+import { addResDict } from "abstract/utils";
 import type { WarcrimesModule } from "abstract/warModule";
 import type { Bee } from "bees/bee";
 import { CreepSetup } from "bees/creepSetups";
@@ -330,7 +331,7 @@ export class SquadWarCrimesMaster extends Master {
         amountNeeded &&
         this.hive.cells.storage.getUsedCapacity(res) < amountNeeded
       ) {
-        this.hive.add(this.hive.mastersResTarget, res, amountNeeded);
+        addResDict(this.hive.mastersResTarget, res, amountNeeded);
         ans = false;
       }
     }

@@ -1,3 +1,5 @@
+import { addResDict } from "abstract/utils";
+
 import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
@@ -188,7 +190,7 @@ export abstract class SquadMaster extends SwarmMaster {
         amountNeeded &&
         this.hive.cells.storage.getUsedCapacity(res) < amountNeeded
       ) {
-        this.hive.add(this.hive.mastersResTarget, res, amountNeeded);
+        addResDict(this.hive.mastersResTarget, res, amountNeeded);
         ans = false;
       }
     }

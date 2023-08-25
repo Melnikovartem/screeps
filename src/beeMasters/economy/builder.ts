@@ -1,4 +1,4 @@
-import { findOptimalResource } from "abstract/utils";
+import { addResDict, findOptimalResource } from "abstract/utils";
 import { CreepSetup, setups } from "bees/creepSetups";
 import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
@@ -99,7 +99,7 @@ export class BuilderMaster extends Master {
     this.movePriority = emergency ? 2 : 5;
 
     if (emergency)
-      this.hive.add(
+      addResDict(
         this.hive.mastersResTarget,
         BOOST_MINERAL.build[2],
         MAX_CREEP_SIZE * LAB_BOOST_MINERAL

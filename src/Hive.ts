@@ -82,6 +82,9 @@ const BUILDABLE_PRIORITY: {
   ],
 };
 
+const UPDATE_STRUCTURES_BATTLE = 100;
+const UPDATE_STRUCTURES_NORMAL = 1500;
+
 @profile
 export class Hive {
   // do i need roomName and roomNames? those ARE kinda aliases for room.name
@@ -958,13 +961,16 @@ export class Hive {
 
     if (Game.time % 50 === 0) this.updateDangerAnnex();
 
-    const updateStructures =
-      Game.time % 500 === 51 ||
-      this.shouldRecalc ||
-      (this.state >= hiveStates.battle && Game.time % 25 === 5) ||
-      (!this.structuresConst.length && this.sumCost);
+    if (
+      Game.time % UPDATE_STRUCTURES_NORMAL === 0 ||
+      (!this.structuresConst.length && this.sumCost) ||
+      ((this.state === hiveStates.battle ||
+        this.state === hiveStates.nukealert) &&
+        Game.time % UPDATE_STRUCTURES_BATTLE === 0)
+    )
+      this.shouldRecalc = Math.max(this.shouldRecalc, 1) as 1 | 2 | 3;
 
-    if (updateStructures) {
+    if (this.shouldRecalc) {
       this.updateAnnexes();
       Apiary.wrap(
         () => this.updateStructures(),
@@ -982,11 +988,6 @@ export class Hive {
     _.forEach(this.cells, (cell: Cell) => {
       Apiary.wrap(() => cell.run(), cell.ref, "run");
     });
-  }
-
-  public add(dict: ResTarget, res: string, amount: number) {
-    if (!dict[res as ResourceConstant]) dict[res as ResourceConstant] = 0;
-    dict[res as ResourceConstant]! += amount;
   }
 
   public get print(): string {

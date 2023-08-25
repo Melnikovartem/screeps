@@ -21,6 +21,22 @@ declare global {
   }
 }
 
+/*
+let cpu = Game.cpu.getUsed();
+    const testing =
+      Game.shard.name === "shard3" &&
+      hive.room.name === "E39S19" &&
+      ((ref: string) => {
+        if (testing) {
+          console.log(
+            ref,
+            Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000
+          );
+          cpu = Game.cpu.getUsed();
+        }
+      });
+*/
+
 // This gets run on each global reset
 function onGlobalReset(): void {
   // check if all memory position were created

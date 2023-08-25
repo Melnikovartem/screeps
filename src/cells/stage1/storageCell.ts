@@ -153,7 +153,6 @@ export class StorageCell extends Cell {
 
   public update() {
     super.update();
-    this.usedCapacity = {};
     if (!this.storage && Apiary.useBucket) {
       Apiary.destroyTime = Game.time;
       return;
@@ -268,44 +267,48 @@ export class StorageCell extends Cell {
     }
   }
 
-  public getUsedCapacity(resource: ResourceConstant) {
-    if (this.usedCapacity[resource]) return this.usedCapacity[resource]!;
-    let amount = this.storage.store.getUsedCapacity(resource);
+  /** Used to check all resources in hive
+   *
+   * called in terminal update
+   */
+  public updateUsedCapacity() {
+    this.usedCapacity = {};
+    const addFromStore = (storePar: { store: ResTarget }, mult = 1) => {
+      for (const [res, amount] of Object.entries(storePar.store)) {
+        const resource = res as ResourceConstant;
+        if (this.usedCapacity[resource] === undefined)
+          this.usedCapacity[resource] = 0;
+        this.usedCapacity[resource]! += amount * mult;
+      }
+    };
+
+    addFromStore(this.storage);
     if (this.terminal) {
-      let toAdd = this.terminal.store.getUsedCapacity(resource);
-      if (resource && resource in this.resTargetTerminal)
-        toAdd = Math.max(0, toAdd - this.resTargetTerminal[resource]!);
-      amount += toAdd;
+      const disrupted =
+        this.terminal.effects &&
+        this.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL);
+      if (!disrupted) {
+        addFromStore(this.terminal);
+        addFromStore({ store: this.resTargetTerminal }, -1);
+      }
     }
 
-    _.forEach(this.master.activeBees, (bee) => {
-      amount += bee.store.getUsedCapacity(resource);
-    });
+    _.forEach(this.master.activeBees, (b) => addFromStore(b));
 
-    if (
-      (resource in REACTION_TIME || BASE_MINERALS.includes(resource)) &&
-      this.hive.cells.lab
-    )
-      _.forEach(this.hive.cells.lab.laboratories, (lab) => {
-        const toAdd = lab.store.getUsedCapacity(resource);
-        if (toAdd) amount += toAdd;
-      });
+    if (this.hive.cells.lab)
+      _.forEach(this.hive.cells.lab.laboratories, (l) => addFromStore(l));
 
-    if (this.hive.cells.factory)
-      amount += this.hive.cells.factory.factory.store.getUsedCapacity(resource);
-    if (this.hive.cells.power)
-      switch (resource) {
-        case RESOURCE_OPS:
-          const powerManager = this.hive.cells.power.powerManagerBee;
-          if (powerManager)
-            amount += powerManager.store.getUsedCapacity(resource);
-          break;
-        case RESOURCE_POWER:
-          amount +=
-            this.hive.cells.power.powerSpawn.store.getUsedCapacity(resource);
-          break;
-      }
-    this.usedCapacity[resource] = amount;
-    return amount;
+    if (this.hive.cells.factory) addFromStore(this.hive.cells.factory.factory);
+
+    /*  no need to add this cause will be spent anyways
+    if (this.hive.cells.power) {
+      addFromStore(this.hive.cells.power.powerSpawn);
+      if (this.hive.cells.power.powerManagerBee)
+        addFromStore(this.hive.cells.power.powerManagerBee.creep);
+    } */
+  }
+
+  public getUsedCapacity(resource: ResourceConstant) {
+    return this.usedCapacity[resource] || 0;
   }
 }

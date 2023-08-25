@@ -1,3 +1,5 @@
+import { addResDict } from "abstract/utils";
+
 import { setups } from "../../bees/creepSetups";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 import { beeStates, hiveStates, roomStates } from "../../enums";
@@ -32,7 +34,7 @@ export class HordeDefenseMaster extends HordeMaster {
       _.filter(this.bees, (b) => b.state === beeStates.boosting).length
     )
       _.forEach(this.boosts, (boost) =>
-        this.hive.add(
+        addResDict(
           this.hive.mastersResTarget,
           BOOST_MINERAL[boost.type][boost.lvl],
           35 * this.targetBeeCount * LAB_BOOST_MINERAL

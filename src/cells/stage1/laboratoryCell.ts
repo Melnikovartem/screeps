@@ -144,6 +144,9 @@ type LabState =
   | "source"
   | "unboosted"
   | ReactionConstant;
+
+const COOLDOWN_TARGET_LAB = 1000;
+
 @profile
 export class LaboratoryCell extends Cell {
   public laboratories: { [id: string]: StructureLab } = {};
@@ -160,6 +163,8 @@ export class LaboratoryCell extends Cell {
   private usedBoost: string[] = [];
 
   private positions: RoomPosition[] = [];
+  /** if nothing to create we take a break for COOLDOWN_TARGET_LAB ticks */
+  private targetCooldown = Game.time;
 
   public constructor(hive: Hive, sCell: StorageCell) {
     super(hive, prefix.laboratoryCell);
@@ -248,19 +253,19 @@ export class LaboratoryCell extends Cell {
   private stepToTarget() {
     this.resTarget = {};
     if (!this.synthesizeTarget) {
+      if (Game.time < this.targetCooldown) return;
       const mode = this.hive.shouldDo("lab");
       if (!mode) return;
       let targets: { res: ReactionConstant; amount: number }[] = [];
       for (const r in this.hive.resState) {
-        const res = r as ReactionConstant; // atually ResourceConstant
+        const res = r as ReactionConstant; // catually ResourceConstant
         const toCreate = -this.hive.resState[res]!;
         if (toCreate > 0 && res in REACTION_MAP)
           targets.push({ res, amount: toCreate });
       }
-      const canCreate = targets.filter((t) => {
-        const [createQueTest] = this.getCreateQue(t.res, t.amount);
-        return createQueTest.length;
-      });
+      const canCreate = targets.filter(
+        (t) => this.getCreateQue(t.res, t.amount)[0].length
+      );
       if (canCreate.length) targets = canCreate;
       if (!targets.length) {
         if (mode === 1) return;
@@ -276,7 +281,7 @@ export class LaboratoryCell extends Cell {
           )
             usefulR.push(compound);
         }
-        if (!usefulR.length) usefulR = Apiary.broker.profitableCompunds;
+        if (!usefulR.length) usefulR = Apiary.broker.profitableCompounds;
         if (!usefulR.length) return;
         targets = [
           {
@@ -754,6 +759,9 @@ export class LaboratoryCell extends Cell {
 
     if (!this.prod && !this.newProd()) {
       this.stepToTarget();
+      // chill if nothing to produce
+      if (!this.synthesizeTarget && Game.time >= this.targetCooldown)
+        this.targetCooldown = Game.time + COOLDOWN_TARGET_LAB;
       this.newProd();
     }
 

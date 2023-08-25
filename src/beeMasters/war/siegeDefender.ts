@@ -1,3 +1,5 @@
+import { addResDict } from "abstract/utils";
+
 import type { Bee } from "../../bees/bee";
 import { setups } from "../../bees/creepSetups";
 import type { DefenseCell } from "../../cells/base/defenseCell";
@@ -92,8 +94,8 @@ export class SiegeMaster extends Master {
         if (!b.boosted && b.ticksToLive >= 600) b.state = beeStates.boosting;
       });
     this.movePriority = 1 as const;
-    this.hive.add(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
-    this.hive.add(this.hive.mastersResTarget, BOOST_MINERAL.attack[2], 2000);
+    addResDict(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
+    addResDict(this.hive.mastersResTarget, BOOST_MINERAL.attack[2], 2000);
 
     if (this.checkBees(true, CREEP_LIFE_TIME - 75)) {
       const defender = setups.defender.destroyer.copy();

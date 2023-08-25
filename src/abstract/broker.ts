@@ -37,7 +37,7 @@ type PriceStat = { [key in ResourceConstant]?: number };
 export class Broker {
   // if it will become to heavy will switch to storing orderId
 
-  public profitableCompunds: ReactionConstant[] = [];
+  public profitableCompounds: ReactionConstant[] = [];
 
   private info: {
     [key in ResourceConstant]?: {
@@ -158,17 +158,19 @@ export class Broker {
     }
     this.updateRes(compound, 100);
     // from buying materials/selling product. Not all compound need to buy in so * 0.8
+    // not always paying 1 energy so * 0.9
+    // 0.8 * 0.9 = 0.72 ~ 0.7
     // MARKET DANGER
-    const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.8;
+    const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.7;
     return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
   }
 
   private checkIfAnyLabProfitable() {
-    this.profitableCompunds = [];
+    this.profitableCompounds = [];
     for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
       const compound = comp as ReactionConstant;
       if (this.checkIfLabProfitable(compound))
-        this.profitableCompunds.push(compound);
+        this.profitableCompounds.push(compound);
     }
   }
 
@@ -395,7 +397,7 @@ export class Broker {
     return "long";
   }
 
-  public creditsToUse(_: string) {
+  private creditsToUse(_: string) {
     return Game.market.credits - Memory.settings.minBalance;
   }
 
@@ -482,11 +484,11 @@ export class Broker {
     if (!orders) return ERR_NOT_FOUND;
     if (creditsToUse < CREDIT_THRESHOLD_SLOW)
       orders = orders.filter(
-        (order) => terminal.pos.getRoomRangeTo(order.roomName, "lin") <= 30
+        (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
       );
     if (res === RESOURCE_ENERGY)
       orders = orders.filter(
-        (order) => terminal.pos.getRoomRangeTo(order.roomName, "lin") <= 30
+        (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
       );
     if (!orders.length) return ERR_NOT_IN_RANGE;
 

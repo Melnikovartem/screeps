@@ -1,3 +1,5 @@
+import type { ResTarget } from "Hive";
+
 import { DEVELOPING, LOGGING_CYCLE, SAFE_DEV } from "../settings";
 
 export function makeId(length: number): string {
@@ -132,4 +134,13 @@ export function getEnterances(roomName: string): RoomPosition[] {
       }
   }
   return enterances;
+}
+
+export function addResDict(
+  dict: ResTarget,
+  res: string,
+  amount: number | undefined
+) {
+  if (!dict[res as ResourceConstant]) dict[res as ResourceConstant] = 0;
+  dict[res as ResourceConstant]! += amount || 0;
 }

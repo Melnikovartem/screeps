@@ -4,6 +4,7 @@ import { hiveStates } from "../enums";
 //  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 import type { Hive, ResTarget } from "../Hive";
 import { profile } from "../profiler/decorator";
+import { addResDict } from "./utils";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
@@ -70,7 +71,7 @@ export class Network {
             delete this.aid[hiveName];
             continue;
           }
-          hive.add(sCell.resTargetTerminal, aid.res, aid.amount);
+          addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
         }
       },
       "network_planAid",
@@ -312,34 +313,21 @@ export class Network {
     const sCell = hive.cells.storage;
     if (!sCell) return;
 
-    const ress = Object.keys(sCell.storage.store);
-    if (
-      sCell.terminal &&
-      !(
-        sCell.terminal.effects &&
-        sCell.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL)
-      )
-    )
-      for (const res in sCell.terminal.store)
-        if (ress.indexOf(res) === -1) ress.push(res);
+    sCell.updateUsedCapacity();
+
+    for (const [res, amount] of Object.entries(sCell.usedCapacity))
+      addResDict(hive.resState, res, amount);
 
     if (hive.cells.lab) {
-      for (const res in hive.cells.lab.resTarget) {
-        if (ress.indexOf(res) === -1) ress.push(res);
-        const amount = -hive.cells.lab.resTarget[res as ResourceConstant]!;
-        hive.add(hive.resState, res, amount);
-      }
+      for (const [res, amount] of Object.entries(hive.cells.lab.resTarget))
+        addResDict(hive.resState, res, -amount);
       if (hive.cells.lab.prod) {
-        if (ress.indexOf(hive.cells.lab.prod.res1) === -1)
-          ress.push(hive.cells.lab.prod.res1);
-        if (ress.indexOf(hive.cells.lab.prod.res2) === -1)
-          ress.push(hive.cells.lab.prod.res2);
-        hive.add(
+        addResDict(
           hive.resState,
           hive.cells.lab.prod.res1,
           -hive.cells.lab.prod.plan
         );
-        hive.add(
+        addResDict(
           hive.resState,
           hive.cells.lab.prod.res2,
           -hive.cells.lab.prod.plan
@@ -347,30 +335,15 @@ export class Network {
       }
     }
 
-    if (hive.cells.factory) {
-      for (const res in hive.cells.factory.resTarget) {
-        if (ress.indexOf(res) === -1) ress.push(res);
-        const amount = -hive.cells.factory.resTarget[res as ResourceConstant]!;
-        hive.add(hive.resState, res, amount);
-      }
-    }
+    if (hive.cells.factory)
+      for (const [res, amount] of Object.entries(hive.cells.factory.resTarget))
+        addResDict(hive.resState, res, -amount);
 
-    for (const resToAdd of ress)
-      hive.add(
-        hive.resState,
-        resToAdd,
-        sCell.getUsedCapacity(resToAdd as ResourceConstant)
-      );
+    for (const [res, amount] of Object.entries(hive.resTarget))
+      addResDict(hive.resState, res, -amount);
 
-    for (const res in hive.resTarget)
-      hive.add(hive.resState, res, -hive.resTarget[res as ResourceConstant]!);
-
-    for (const res in hive.mastersResTarget)
-      hive.add(
-        hive.resState,
-        res,
-        -hive.mastersResTarget[res as ResourceConstant]!
-      );
+    for (const [res, amount] of Object.entries(hive.mastersResTarget))
+      addResDict(hive.resState, res, -amount);
 
     if (!sCell.terminal) return;
 
@@ -390,20 +363,16 @@ export class Network {
 
     sCell.resTargetTerminal = { energy: TERMINAL_ENERGY * fullStorage };
 
-    if (hive.state !== hiveStates.battle) {
-      const marketState = Apiary.broker.getTargetLongOrders(hive.roomName);
-      for (const res in marketState)
-        hive.add(
-          sCell.resTargetTerminal,
-          res,
-          Math.min(marketState[res as ResourceConstant]!, 5000)
-        );
-    }
+    if (hive.state !== hiveStates.battle)
+      for (const [res, amount] of Object.entries(
+        Apiary.broker.getTargetLongOrders(hive.roomName)
+      ))
+        addResDict(sCell.resTargetTerminal, res, Math.min(amount, 5000));
 
     const aid = this.aid[hive.roomName];
-    if (aid) hive.add(sCell.resTargetTerminal, aid.res, aid.amount);
+    if (aid) addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
 
-    for (const res in hive.resState)
-      hive.add(this.resState, res, hive.resState[res as ResourceConstant]!);
+    for (const [res, amount] of Object.entries(hive.resState))
+      addResDict(this.resState, res, amount);
   }
 }
