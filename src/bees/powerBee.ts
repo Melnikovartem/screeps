@@ -83,17 +83,20 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   ): ((pb: PowerBee) => Master) | undefined {
     let validCells = _.compact(_.map(Apiary.hives, (h) => h.cells.power!));
     if (pc.name.includes(prefix.nkvd)) {
-      validCells = validCells.filter(
-        (c) =>
-          (c.powerManager === pc.name || c.powerManager === undefined) &&
-          !c.powerManagerBee
+      const validCellsExact = validCells.filter(
+        (c) => c.powerManager === pc.name && !c.powerManagerBee
       );
-      if (validCells.length && PWR_OPERATE_FACTORY in pc.powers) {
+      if (validCellsExact.length) validCells = validCellsExact;
+      else {
+        const factoryPower =
+          PWR_OPERATE_FACTORY in pc.powers &&
+          pc.powers[PWR_OPERATE_FACTORY].level;
         validCells = validCells.filter(
           (c) =>
+            c.powerManager === undefined &&
             c.hive.cells.factory &&
-            c.hive.cells.factory.factory.level ===
-              pc.powers[PWR_OPERATE_FACTORY].level
+            (c.hive.cells.factory.factory.level === factoryPower ||
+              c.hive.cells.factory.factory.level === undefined)
         );
       }
       if (validCells.length) return (pb) => new NKVDMaster(validCells[0], pb);

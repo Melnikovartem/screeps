@@ -375,11 +375,6 @@ export class LaboratoryCell extends Cell {
   }
 
   private newProd() {
-    if (
-      Object.keys(this.laboratories).length < 3 ||
-      _.filter(this.laboratories, (l) => !l.cooldown).length < 1
-    )
-      return true;
     if (!this.synthesizeRes) return false;
 
     const res1 = this.synthesizeRes.res1;
@@ -744,8 +739,10 @@ export class LaboratoryCell extends Cell {
       true
     );
 
-    for (const id in this.laboratories)
+    for (const id in this.laboratories) {
       this.updateLabState(this.laboratories[id]);
+    }
+
     this.usedBoost = [];
 
     let prev;
@@ -757,7 +754,12 @@ export class LaboratoryCell extends Cell {
       }
     }
 
-    if (!this.prod && !this.newProd()) {
+    if (
+      !this.prod &&
+      (Object.keys(this.laboratories).length < 3 ||
+        _.filter(this.laboratories, (l) => !l.cooldown).length < 1) &&
+      !this.newProd()
+    ) {
       this.stepToTarget();
       // chill if nothing to produce
       if (!this.synthesizeTarget && Game.time >= this.targetCooldown)

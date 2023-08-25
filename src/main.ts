@@ -23,18 +23,19 @@ declare global {
 
 /*
 let cpu = Game.cpu.getUsed();
-    const testing =
-      Game.shard.name === "shard3" &&
-      hive.room.name === "E39S19" &&
-      ((ref: string) => {
-        if (testing) {
-          console.log(
-            ref,
-            Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000
-          );
-          cpu = Game.cpu.getUsed();
-        }
-      });
+let totalCpu = 0;
+const testingCpu = Game.shard.name === "shard3" &&
+  this.hive.room.name === "E39S19" && {
+    it: (ref: string) => {
+      const diff = Game.cpu.getUsed() - cpu;
+      totalCpu += diff;
+      console.log("after", ref, Math.round(diff * 1000) / 1000);
+      cpu = Game.cpu.getUsed();
+    },
+    total: () => console.log("\ttotal cpu:", totalCpu),
+  };
+if (testingCpu) testingCpu("");
+f (testingCpu) testingCpu.total();
 */
 
 // This gets run on each global reset

@@ -300,7 +300,8 @@ export class Hive {
           !s.pos
             .lookFor(LOOK_STRUCTURES)
             .filter(
-              (s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()
+              (sIt) =>
+                sIt.structureType === STRUCTURE_EXTRACTOR && sIt.isActive()
             ).length
         )
           return;
@@ -410,8 +411,8 @@ export class Hive {
 
     const wax = Game.flags[prefix.build + this.roomName];
     if (wax && this.state !== hiveStates.battle) {
-      const proj = projects.filter((p) => wax.pos.getRangeTo(p) <= 2);
-      if (proj.length) projects = proj;
+      const projNear = projects.filter((p) => wax.pos.getRangeTo(p) <= 2);
+      if (projNear.length) projects = projNear;
     }
 
     if (this.state >= hiveStates.battle) {
@@ -462,8 +463,8 @@ export class Hive {
       if (!target) {
         for (let k = 0; k < projects.length; ++k)
           if (
-            projects[k].pos.x == proj.pos.x &&
-            projects[k].pos.y == proj.pos.y
+            projects[k].pos.x === proj.pos.x &&
+            projects[k].pos.y === proj.pos.y
           ) {
             projects.splice(k, 1);
             break;

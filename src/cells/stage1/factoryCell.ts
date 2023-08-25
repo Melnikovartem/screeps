@@ -86,6 +86,8 @@ type CommodityIngredient =
   | RESOURCE_ENERGY
   | RESOURCE_GHODIUM;
 
+const COOLDOWN_TARGET_FACTORY = 50;
+
 @profile
 export class FactoryCell extends Cell {
   public factory: StructureFactory;
@@ -147,7 +149,7 @@ export class FactoryCell extends Cell {
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       if (
         !this.hive.shouldDo("depositRefining") ||
-        (!this.commodityTarget && Game.time % 25 !== 8)
+        (!this.commodityTarget && Game.time % COOLDOWN_TARGET_FACTORY !== 8)
       )
         return;
       this.commodityTarget = undefined;

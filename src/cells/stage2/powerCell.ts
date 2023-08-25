@@ -7,49 +7,50 @@ import type { StorageCell } from "../stage1/storageCell";
 
 @profile
 export class PowerCell extends Cell {
-  powerSpawn: StructurePowerSpawn;
-  roomsToCheck: string[] = [];
-  master: undefined;
-  sCell: StorageCell;
+  public powerSpawn: StructurePowerSpawn;
+  public master: undefined;
+  public sCell: StorageCell;
 
-  constructor(hive: Hive, powerSpawn: StructurePowerSpawn, sCell: StorageCell) {
+  public constructor(
+    hive: Hive,
+    powerSpawn: StructurePowerSpawn,
+    sCell: StorageCell
+  ) {
     super(hive, prefix.powerCell);
     this.sCell = sCell;
     this.powerSpawn = powerSpawn;
     this.initCache("poss", { x: 25, y: 25 });
   }
 
-  get poss(): { x: number; y: number } {
+  public get poss(): { x: number; y: number } {
     return this.fromCache("poss");
   }
 
-  get pos(): RoomPosition {
+  public get pos(): RoomPosition {
     const pos = this.fromCache("poss");
     return new RoomPosition(pos.x, pos.y, this.hive.roomName);
   }
 
-  get powerManager(): string | undefined {
+  public get powerManager(): string | undefined {
     return this.fromCache("powerManager");
   }
 
-  set powerManager(value) {
+  public set powerManager(value) {
     this.toCache("powerManager", value);
   }
 
-  get powerManagerBee(): PowerBee | undefined {
+  public get powerManagerBee(): PowerBee | undefined {
     return (this.powerManager && Apiary.bees[this.powerManager]) as
       | PowerBee
       | undefined;
   }
 
-  update() {
+  public update() {
     super.update();
     if (!this.powerSpawn) {
       this.delete();
       return;
     }
-
-    this.roomsToCheck = this.hive.annexNames;
 
     if (
       this.hive.state !== hiveStates.economy ||
@@ -81,7 +82,7 @@ export class PowerCell extends Cell {
     }
   }
 
-  run() {
+  public run() {
     if (
       this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) > 0 &&
       this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) >
