@@ -10,9 +10,9 @@ services:
         dockerfile: Dockerfile
     restart: always
     links:
-     - statsd
+     - graphite-statsd
     environment:
-      GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
+      GRAPHITE_PORT_8125_UDP_ADDR: "graphite-statsd"
     env_file: docker-compose-shard2.env
   node-shard3:
     build:
@@ -20,16 +20,12 @@ services:
         dockerfile: Dockerfile
     restart: always
     links:
-     - statsd
+     - graphite-statsd
     environment:
-      GRAPHITE_PORT_8125_UDP_ADDR: "statsd"
+      GRAPHITE_PORT_8125_UDP_ADDR: "graphite-statsd"
     env_file: docker-compose-shard3.env
-  statsd:
-    image: ennexa/statsd
-    links: 
-     - graphite
-  graphite: 
-    image: ennexa/graphite
+  graphite-statsd: 
+    image: graphiteapp/graphite-statsd
     restart: always
     volumes:
      - graphite_conf:/opt/graphite/conf
@@ -40,7 +36,7 @@ services:
     volumes:
      - grafana_data:/var/lib/grafana
     links:
-     - graphite
+     - graphite-statsd
     ports:
      - "1337:3000"
 #  grafana_setup_datasource:

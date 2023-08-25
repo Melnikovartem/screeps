@@ -1,0 +1,1480 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 0,
+        "y": 0
+      },
+      "id": 191,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "groupByNode(scale(removeEmptySeries(stats.gauges.$shard.cpuUsage.*.*.$mode), $scaling), 4, 'sum')",
+          "textEditor": false
+        }
+      ],
+      "title": "Total CPU by Phase",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 5,
+        "y": 0
+      },
+      "id": 190,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "groupByNode(removeEmptySeries(stats.gauges.$shard.cpuUsage.*.*.$mode), 4, 'sum')",
+          "textEditor": false
+        }
+      ],
+      "title": "Mean CPU by Phase",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 10,
+        "y": 0
+      },
+      "id": 192,
+      "links": [],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum')",
+          "targetFull": "groupByNode(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), '^(run|update)\\.master.*'), 1, 'sum')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(grep(#A, 'deposit')), 'deposit mining')",
+          "targetFull": "alias(sumSeries(grep(groupByNode(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'structures_room_')), 'hive update structures')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(sumSeries(grep(#B, 'network')), 'network')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'network')), 'network')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'warcrimes')), 'warcrimes')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(sumSeries(grep(#B, 'log|visuals')), 'convinience')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'log|visuals')), 'convinience')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(sumSeries(grep(#B, 'beesMove')), 'beesMove')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'beesMove')), 'beesMove')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(absolute(sumSeries(scale(#B, -1), #C, #D, #E, #F, #G, #H, #I, #J, #K, #M)), 'other')",
+          "targetFull": "alias(absolute(sumSeries(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), -1), alias(sumSeries(grep(groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining'), alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense'), alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures'), alias(sumSeries(grep(#B, 'network')), 'network'), alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes'), alias(sumSeries(grep(#B, 'log|visuals')), 'convinience'), alias(sumSeries(grep(#B, 'beesMove')), 'beesMove'))), 'other')",
+          "textEditor": false
+        }
+      ],
+      "title": "Total CPU by Category",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 17,
+        "y": 0
+      },
+      "id": 193,
+      "links": [],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum')",
+          "targetFull": "groupByNode(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), '^(run|update)\\.master.*'), 1, 'sum')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(grep(#A, 'deposit')), 'deposit mining')",
+          "targetFull": "alias(sumSeries(grep(groupByNode(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'structures_room_')), 'hive update structures')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(sumSeries(grep(#B, 'network')), 'network')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'network')), 'network')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'warcrimes')), 'warcrimes')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(sumSeries(grep(#B, 'log|visuals')), 'convinience')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'log|visuals')), 'convinience')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(sumSeries(grep(#B, 'beesMove')), 'beesMove')",
+          "targetFull": "alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'beesMove')), 'beesMove')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(absolute(sumSeries(scale(#B, -1), #C, #D, #E, #F, #G, #H, #I, #J, #K, #M)), 'other')",
+          "targetFull": "alias(absolute(sumSeries(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), -1), alias(sumSeries(grep(groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining'), alias(sumSeries(grep(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense'), alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures'), alias(sumSeries(grep(#B, 'network')), 'network'), alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes'), alias(sumSeries(grep(#B, 'log|visuals')), 'convinience'), alias(sumSeries(grep(#B, 'beesMove')), 'beesMove'))), 'other')",
+          "textEditor": false
+        }
+      ],
+      "title": "Mean CPU by Category",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bucket"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "max",
+                "value": 10000
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Bucket"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#890F02",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 1,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(sumSeries(stats.gauges.$shard.cpu.used), 'Used')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(sumSeries(stats.gauges.$shard.cpu.bucket), 'Bucket')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(stats.gauges.$shard.cpu.limit), 'Limit')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(scale(sumSeries(stats.gauges.$shard.cpuUsage.$phase.*.cpu), $scaling), 'Accounted')",
+          "textEditor": false
+        }
+      ],
+      "title": "CPU general",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 188,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "stdDev"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Mean",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.2.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "B",
+          "target": "scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "A",
+          "target": "groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum')",
+          "targetFull": "groupByNode(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), '^(run|update)\\.master.*'), 1, 'sum')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(grep(#A, 'deposit')), 'deposit mining')",
+          "targetFull": "alias(sumSeries(grep(groupByNode(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'structures_room_')), 'hive update structures')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(sumSeries(grep(#B, 'network')), 'network')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'network')), 'network')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'warcrimes')), 'warcrimes')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(sumSeries(grep(#B, 'log|visuals')), 'convinience')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'log|visuals')), 'convinience')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(sumSeries(grep(#B, 'beesMove')), 'beesMove')",
+          "targetFull": "alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'beesMove')), 'beesMove')",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(absolute(sumSeries(scale(#B, -1), #C, #D, #E, #F, #G, #H, #I, #J, #K, #M)), 'other')",
+          "targetFull": "alias(absolute(sumSeries(scale(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), -1), alias(sumSeries(grep(groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining'), alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense'), alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures'), alias(sumSeries(grep(#B, 'network')), 'network'), alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes'), alias(sumSeries(grep(#B, 'log|visuals')), 'convinience'), alias(sumSeries(grep(#B, 'beesMove')), 'beesMove'))), 'other')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "N",
+          "target": "alias(sumSeries(#C, #D, #E, #F, #G, #H, #I, #J, #K, #L, #M), 'Total')",
+          "targetFull": "alias(sumSeries(alias(sumSeries(grep(groupByNode(grep(#B, '^(run|update)\\.master.*'), 1, 'sum'), 'deposit')), 'deposit mining'), alias(sumSeries(grep(scale(removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5)), $scaling), 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense'), alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures'), alias(sumSeries(grep(#B, 'network')), 'network'), alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes'), alias(sumSeries(grep(#B, 'log|visuals')), 'convinience'), alias(absolute(sumSeries(scale(#B, -1), alias(sumSeries(grep(#A, 'deposit')), 'deposit mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(lab|factory|powerHive)')), 'hive production'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(spawn|dev|fastRef|storage|upgrade)')), 'hive operation'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(res|excav)|master_swarm_annex')), 'hive mining'), alias(sumSeries(grep(#B, 'cell_[A-Z1-9]+_(defHive|observe)')), 'hive defense'), alias(sumSeries(grep(#B, 'structures_room_')), 'hive update structures'), alias(sumSeries(grep(#B, 'network')), 'network'), alias(sumSeries(grep(#B, 'warcrimes')), 'warcrimes'), alias(sumSeries(grep(#B, 'log|visuals')), 'convinience'), alias(sumSeries(grep(#B, 'beesMove')), 'beesMove'))), 'other'), alias(sumSeries(grep(#B, 'beesMove')), 'beesMove')), 'Total')"
+        }
+      ],
+      "title": "CPU by Category",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 189,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        }
+      ],
+      "title": "CPU by Process",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 0,
+        "y": 29
+      },
+      "id": 194,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        }
+      ],
+      "title": "Total CPU by Process",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 4,
+        "y": 29
+      },
+      "id": 197,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        }
+      ],
+      "title": "Mean CPU by Process",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 29
+      },
+      "id": 195,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "removeEmptySeries(aliasByNode(highestAverage(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 10), 4, 5))",
+          "textEditor": false
+        }
+      ],
+      "title": "Total CPU by Top10 Process",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 29
+      },
+      "id": 196,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "removeEmptySeries(aliasByNode(stats.gauges.$shard.cpuUsage.$phase.*.$mode, 4, 5))",
+          "textEditor": true
+        }
+      ],
+      "title": "Mean CPU by TOP10 Process",
+      "type": "piechart"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "screeps",
+    "perfomance"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "shard2"
+          ],
+          "value": [
+            "shard2"
+          ]
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+        },
+        "definition": "stats.gauges.*",
+        "hide": 0,
+        "includeAll": false,
+        "multi": true,
+        "name": "shard",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.*"
+        },
+        "refresh": 1,
+        "regex": "shard.*",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "cpu",
+          "value": "cpu"
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+        },
+        "definition": "stats.gauges.$shard.cpuUsage.$phase.*.*",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "mode",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.$shard.cpuUsage.$phase.*.*"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "run",
+            "update"
+          ],
+          "value": [
+            "run",
+            "update"
+          ]
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+        },
+        "definition": "stats.gauges.$shard.cpuUsage.*",
+        "hide": 0,
+        "includeAll": false,
+        "multi": true,
+        "name": "phase",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.$shard.cpuUsage.*"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "0.001",
+          "value": "0.001"
+        },
+        "hide": 2,
+        "name": "scaling",
+        "options": [
+          {
+            "selected": true,
+            "text": "0.001",
+            "value": "0.001"
+          }
+        ],
+        "query": "0.001",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "CPU performance",
+  "uid": "f5584055-f817-4851-a341-c1ea277a93e1",
+  "version": 17,
+  "weekStart": ""
+}

@@ -1,0 +1,845 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 5,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "With fees",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "groupByNode(scale(stats.gauges.*.market.resourceEvents.*.buy.*, $scaling), 5, 'sum')"
+        }
+      ],
+      "title": "Credits spend to buy",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "Accounted for fees",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "grep(stats.gauges.*.market.resourceEvents.*.sell.*, '(long|short)$')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "scale(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '\\.fee'), -1)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "groupByNode(scale(group(#A, #B), $scaling), 5, 'sum')",
+          "targetFull": "groupByNode(scale(group(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '(long|short)$'), scale(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '\\.fee'), -1)), $scaling), 5, 'sum')",
+          "textEditor": false
+        }
+      ],
+      "title": "Credits from selling",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "With fees",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 1000000,
+          "min": -1000000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(sumSeries(scale(scale(stats.gauges.*.market.resourceEvents.*.buy.*, 0.001), -1)), 'Expenditure ')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "grep(stats.gauges.*.market.resourceEvents.*.sell.*, '(long|short)$')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "scale(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '\\.fee'), -1)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(scale(group(#B, #D), $scaling)), 'Income')",
+          "targetFull": "alias(sumSeries(scale(group(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '(long|short)$'), scale(grep(stats.gauges.*.market.resourceEvents.*.sell.*, '\\.fee'), -1)), $scaling)), 'Income')",
+          "textEditor": false
+        }
+      ],
+      "title": "Credits balance",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Income",
+              "reducer": "sum",
+              "right": "Expenditure "
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Credits",
+            "axisPlacement": "auto",
+            "axisSoftMin": -4,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "refId": "A",
+          "target": "alias(averageSeries(scale(stats.gauges.*.market.credits, 0.001)), 'Credits')",
+          "textEditor": true
+        }
+      ],
+      "title": "Credits Available ",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "max": 1000000,
+          "min": -1000000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 7
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(averageSeries(scale(stats.gauges.*.market.credits, 0.001)), 'Credits')",
+          "textEditor": false
+        }
+      ],
+      "title": "Last balance",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "max": 1000000,
+          "min": -1000000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 7
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(averageSeries(scale(stats.gauges.*.market.credits, 0.001)), 'Credits')",
+          "textEditor": false
+        }
+      ],
+      "title": "Mean balance",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "displayName": "Balance",
+          "mappings": [],
+          "max": 1000000,
+          "min": -1000000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 20,
+        "y": 7
+      },
+      "id": 7,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(averageSeries(scale(stats.gauges.*.market.credits, $scaling)), 'Credits')",
+          "textEditor": false
+        }
+      ],
+      "title": "Diff",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": false,
+            "reducers": [
+              "firstNotNull",
+              "lastNotNull"
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Last *",
+              "operator": "-",
+              "reducer": "sum",
+              "right": "First *"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "max": 1000000,
+          "min": -1000000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 10
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "range"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(averageSeries(scale(stats.gauges.*.market.credits, 0.001)), 'Credits')",
+          "textEditor": false
+        }
+      ],
+      "title": "Range balance",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*sell\\.(long|short)/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*buy.(long|short)/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*fee.+/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 2,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "afe8a941-4dbb-4d6a-a439-bd515863d772"
+          },
+          "key": "Q-c8aedc38-a734-4f9b-8527-dbdd979698d1-0",
+          "refCount": 0,
+          "refId": "A",
+          "target": "aliasSub(aliasByNode(sortByTotal(scale(maximumAbove(stats.gauges.*.market.resourceEvents.*.*.*, 0.00001), $scaling)), 2, 5, 6, 7), '^(shard)', '\\1')"
+        }
+      ],
+      "title": "Last trades",
+      "transformations": [],
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "screeps"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "0.001",
+          "value": "0.001"
+        },
+        "hide": 2,
+        "name": "scaling",
+        "options": [
+          {
+            "selected": true,
+            "text": "0.001",
+            "value": "0.001"
+          }
+        ],
+        "query": "0.001",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Credits economy",
+  "uid": "a278af22-0944-4d6b-8fe0-d5d639eb268f",
+  "version": 11,
+  "weekStart": ""
+}
