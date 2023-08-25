@@ -1,28 +1,25 @@
-import { PowerMaster, POWER_NAMES } from "../_PowerMaster";
-
-import { hiveStates } from "../../enums";
-import { profile } from "../../profiler/decorator";
-
 import type { PowerBee } from "../../bees/powerBee";
-import type { PowerCell } from "../../cells/stage2/powerCell";
-
-import type { RespawnCell } from "../../cells/base/respawnCell";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 import type { ResourceCell } from "../../cells/base/resourceCell";
+import type { RespawnCell } from "../../cells/base/respawnCell";
 import type { FactoryCell } from "../../cells/stage1/factoryCell";
 import type { LaboratoryCell } from "../../cells/stage1/laboratoryCell";
 import type { StorageCell } from "../../cells/stage1/storageCell";
 import type { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import type { ObserveCell } from "../../cells/stage2/observeCell";
+import type { PowerCell } from "../../cells/stage2/powerCell";
+import { hiveStates } from "../../enums";
+import { profile } from "../../profiler/decorator";
+import { POWER_NAMES, PowerMaster } from "../_PowerMaster";
 
 @profile
 export class NKVDMaster extends PowerMaster {
-  nextup?: {
+  private nextup?: {
     target: RoomObject;
     power: keyof NKVDMaster["targets"];
     time: number;
   };
-  targets: {
+  private targets: {
     [PWR_OPERATE_SPAWN]?: RespawnCell;
 
     [PWR_OPERATE_FACTORY]?: FactoryCell;
@@ -43,20 +40,19 @@ export class NKVDMaster extends PowerMaster {
     [PWR_REGEN_MINERAL]?: ResourceCell[];
   } = {};
 
-  constructor(cell: PowerCell, powerCreep: PowerBee) {
+  public constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell, powerCreep);
     this.updateTargets();
     this.cell.powerManager = this.powerCreep.ref;
   }
 
-  updateTargets() {
+  private updateTargets() {
     for (const powerId in this.powerCreep.powers) {
       const power = +powerId as PowerConstant;
       switch (power) {
         case PWR_OPERATE_SPAWN:
           this.targets[power] = this.hive.cells.spawn;
           break;
-
         case PWR_OPERATE_FACTORY:
           this.targets[power] = this.hive.cells.factory;
           break;
@@ -105,7 +101,7 @@ export class NKVDMaster extends PowerMaster {
     }
   }
 
-  getTimeToRegen(obj: RoomObject, pwr: PowerConstant) {
+  private getTimeToRegen(obj: RoomObject, pwr: PowerConstant) {
     if (!obj.effects) return Game.time;
     const powerEffect = obj.effects.filter((e) => e.effect === pwr)[0] as
       | PowerEffect
@@ -114,7 +110,7 @@ export class NKVDMaster extends PowerMaster {
     return Game.time;
   }
 
-  getNext() {
+  private getNext() {
     this.nextup = undefined;
     if (
       (this.hive.resState[RESOURCE_OPS] || 0) < 0 &&
@@ -160,9 +156,10 @@ export class NKVDMaster extends PowerMaster {
         case PWR_OPERATE_FACTORY:
           const factory = (targets as FactoryCell).factory;
           if (
-            (factory.level === powerStats.level &&
+            factory &&
+            ((factory.level === powerStats.level &&
               (targets as FactoryCell).uncommon) ||
-            !factory.level
+              !factory.level)
           )
             andNextup(factory, 20);
           break;
@@ -221,12 +218,12 @@ export class NKVDMaster extends PowerMaster {
     );
   }
 
-  update() {
+  public update() {
     super.update();
     if (!this.nextup || Game.time % 50 === 0) this.getNext();
   }
 
-  chillMove() {
+  private chillMove() {
     if (this.powerCreep.ticksToLive < POWER_CREEP_LIFE_TIME / 2)
       this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
     else if (
@@ -242,7 +239,7 @@ export class NKVDMaster extends PowerMaster {
     } else this.powerCreep.goRest(this.cell.pos, this.hive.opt);
   }
 
-  run() {
+  public run() {
     if (this.hive.cells.defense.timeToLand < 50)
       this.powerCreep.fleeRoom(this.hive.roomName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)

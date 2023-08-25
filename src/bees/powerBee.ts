@@ -1,3 +1,5 @@
+import { PowerCell } from "cells/stage2/powerCell";
+
 import type { Master } from "../beeMasters/_Master";
 import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
 import { prefix } from "../enums";
@@ -77,13 +79,23 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   }
 
   public static makeMaster(
-    ref: string
+    pc: PowerCreep
   ): ((pb: PowerBee) => Master) | undefined {
     let validCells = _.compact(_.map(Apiary.hives, (h) => h.cells.power!));
-    if (ref.includes(prefix.nkvd)) {
+    if (pc.name.includes(prefix.nkvd)) {
       validCells = validCells.filter(
-        (c) => c.powerManager === ref && !c.powerManagerBee
+        (c) =>
+          (c.powerManager === pc.name || c.powerManager === undefined) &&
+          !c.powerManagerBee
       );
+      if (validCells.length && PWR_OPERATE_FACTORY in pc.powers) {
+        validCells = validCells.filter(
+          (c) =>
+            c.hive.cells.factory &&
+            c.hive.cells.factory.factory.level ===
+              pc.powers[PWR_OPERATE_FACTORY].level
+        );
+      }
       if (validCells.length) return (pb) => new NKVDMaster(validCells[0], pb);
     }
     return undefined;
@@ -97,7 +109,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
         !pc.spawnCooldownTime
       ) {
         if (!Apiary.bees[name] && !Apiary.masters[prefix.master + name]) {
-          const futureMaster = this.makeMaster(pc.name);
+          const futureMaster = this.makeMaster(pc);
           if (futureMaster) {
             const bee = new PowerBee(pc);
             Apiary.bees[name] = bee;

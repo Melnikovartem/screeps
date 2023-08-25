@@ -5,6 +5,7 @@ import { makeId } from "abstract/utils";
 import { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { CreepSetup } from "bees/creepSetups";
+import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { RespawnCell } from "cells/base/respawnCell";
@@ -222,12 +223,12 @@ export class Hive {
       this.cells.dev = new DevelopmentCell(this);
     }
 
-    if (this.cells.storage) {
+    /* if (this.cells.storage) {
       this.cells.defense.pos = this.cells.storage.storage.pos;
     } else if (Object.keys(this.cells.spawn.spawns).length) {
       this.cells.defense.pos =
         this.cells.spawn.spawns[Object.keys(this.cells.spawn.spawns)[0]].pos;
-    }
+    } */
 
     if (this.wallsHealth > this.wallsHealthMax)
       this.wallsHealthMax = this.wallsHealth;
@@ -950,7 +951,7 @@ export class Hive {
         COLOR_RED
       );
 
-    _.forEach(this.cells, (cell) => {
+    _.forEach(this.cells, (cell: Cell) => {
       Apiary.wrap(() => cell.update(), cell.ref, "update");
     });
 
@@ -966,7 +967,7 @@ export class Hive {
       this.updateAnnexes();
       Apiary.wrap(
         () => this.updateStructures(),
-        "structures " + this.room,
+        "structures_" + this.roomName,
         "update"
       );
       if (this.shouldRecalc > 2) this.markResources();

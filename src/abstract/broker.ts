@@ -26,6 +26,8 @@ const CREDIT_THRESHOLD_SLOW = 50000000;
 const REASONABLE_MONEY = 50;
 export const MARKET_LAG = Game.cpu.limit <= 20 ? 8 : 2;
 
+// MARKET DANGER for strange/custom coefs
+
 /* const MAX_SPENDING_HIVE = 50000;
 const SPENDING_PERIOD = 250; */
 
@@ -127,6 +129,11 @@ export class Broker {
     return info;
   }
 
+  public avgPrice(res: ResourceConstant) {
+    this.updateRes(res, 1000);
+    return this.info[res]!.avgPrice;
+  }
+
   private weightedAvgPrice(res: ResourceConstant, lastNDays = 10) {
     let volume = 0;
     let sumPriceWeighted = 0;
@@ -150,8 +157,9 @@ export class Broker {
       costToProduce += this.info[resource as ReactionConstant]!.avgPrice;
     }
     this.updateRes(compound, 100);
-    // from buying materials/selling product. Not all compound need to buy in so * 0.5
-    const energyCosts = this.energyPrice * (shoppingList.length + 1);
+    // from buying materials/selling product. Not all compound need to buy in so * 0.8
+    // MARKET DANGER
+    const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.8;
     return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
   }
 

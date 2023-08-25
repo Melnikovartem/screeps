@@ -35,7 +35,7 @@ export class _Apiary {
   public bees: { [id: string]: ProtoBee<Creep | PowerCreep> };
   public hives: { [id: string]: Hive };
   public masters: { [id: string]: Master };
-  public orders: { [id: string]: FlagOrder };
+  public orders: { [fid: string]: FlagOrder };
 
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public requestRoomSight: string[] = [];
@@ -109,40 +109,37 @@ export class _Apiary {
   // update phase
   public update() {
     // this.cpuPrev = { real: Game.cpu.getUsed(), acc: 0 };
-    if (this.logger) this.logger.update();
     /* if (Game.time % 10 == 0) {
       let cpuNew = { real: Game.cpu.getUsed(), acc: _.sum(Memory.log.cpuUsage.update, c => c.cpu) + _.sum(Memory.log.cpuUsage.run, c => c.cpu) };
       console .log("1", cpuNew.real - this.cpuPrev.real, cpuNew.acc - this.cpuPrev.acc, (cpuNew.real - this.cpuPrev.real) - (cpuNew.acc - this.cpuPrev.acc));
       this.cpuPrev = cpuNew;
     } */
     this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
-    this.intel.update();
+    this.wrap(() => this.intel.update(), "intel", "update");
 
-    this.wrap(() => this.broker.update(), "broker update", "update");
+    this.wrap(() => this.broker.update(), "broker", "update");
 
-    FlagOrder.checkFlags();
+    this.wrap(() => FlagOrder.checkFlags(), "checkFlags", "update");
     _.forEach(Apiary.orders, (order) => {
       if (order) this.wrap(() => order.update(), order.ref, "update");
     });
 
-    this.wrap(
-      () => this.network.update(),
-      "network",
-      "update",
-      this.network.nodes.length
-    );
-    this.wrap(() => this.warcrimes.update(), "warcrimes", "update", 1);
+    this.wrap(() => this.network.update(), "network", "update", 0);
 
+    this.wrap(() => this.warcrimes.update(), "warcrimes", "update");
+
+    // loses about 0.05 per hive of cpu log, but more detailed
     _.forEach(this.hives, (hive) => {
       this.wrap(() => hive.update(), hive.roomName, "update", 0);
     });
 
-    Bee.checkBees();
-    PowerBee.checkBees();
+    this.wrap(() => Bee.checkBees(), "checkBees", "update");
+    this.wrap(() => PowerBee.checkBees(), "checkPowerBees", "update");
     _.forEach(this.bees, (bee) => {
       bee.update();
     });
 
+    const cpu = Game.cpu.getUsed();
     _.forEach(this.masters, (master) => {
       if (master)
         this.wrap(

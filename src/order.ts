@@ -653,8 +653,8 @@ export class FlagOrder {
         break;
       case COLOR_GREY:
         switch (this.secondaryColor) {
-          case COLOR_BROWN:
-            const parsed = /(sell|buy)_([A-Za-z0-9]*)(_\d*)?$/.exec(this.ref);
+          case COLOR_BROWN: {
+            const parsed = /^(sell|buy)_([A-Za-z0-9]*)?/.exec(this.ref);
             const res = parsed && (parsed[2] as ResourceConstant);
             const mode = parsed && parsed[1];
             this.acted = false;
@@ -668,8 +668,7 @@ export class FlagOrder {
             ) {
               const hurry = this.ref.includes("hurry");
               const fast = this.ref.includes("fast");
-              const priceFix =
-                parsed[3] && parsed[3].length > 1 && +parsed[3].slice(1);
+              const priceFix = Apiary.broker.avgPrice(res);
               if ("all" === parsed[2]) {
                 if (mode === "sell") {
                   // if (hurry || Game.time % 10 === 0)
@@ -709,6 +708,17 @@ export class FlagOrder {
                 return;
               }
               if (RESOURCES_ALL.includes(res)) {
+                if (Game.time === Apiary.createTime)
+                  console.log(
+                    "@",
+                    this.hive.print,
+                    res,
+                    mode,
+                    "for",
+                    priceFix,
+                    hurry ? "hurry" : " ",
+                    fast ? "fast" : " "
+                  );
                 if (hurry || Game.time % 10 === 0) {
                   switch (mode) {
                     case "sell":
@@ -755,6 +765,7 @@ export class FlagOrder {
               } else this.delete();
             } else this.delete();
             break;
+          }
           case COLOR_RED:
             if (!this.memory.extraInfo) this.memory.extraInfo = Game.time;
             this.acted = false;

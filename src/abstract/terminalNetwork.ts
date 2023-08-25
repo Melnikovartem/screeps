@@ -38,27 +38,45 @@ export class Network {
 
   public update() {
     this.resState = {};
-    _.forEach(Apiary.hives, (hive) => this.updateState(hive));
+    Apiary.wrap(
+      () => _.forEach(Apiary.hives, (hive) => this.updateState(hive)),
+      "network_updateState",
+      "update",
+      Object.keys(Apiary.hives).length
+    );
 
     if (Game.time !== Apiary.createTime)
-      for (let i = 0; i < this.nodes.length; ++i) this.askAid(this.nodes[i]);
+      Apiary.wrap(
+        () => _.forEach(this.nodes, (node) => this.askAid(node)),
+        "network_askAid",
+        "update",
+        this.nodes.length
+      );
 
-    for (const hiveName in this.aid) {
-      const hive = Apiary.hives[hiveName];
-      const sCell = hive.cells.storage;
-      if (!sCell) continue;
-      const aid = this.aid[hiveName];
-      if (!aid.excess) aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
-      if (
-        !this.hiveValidForAid(Apiary.hives[aid.to]) ||
-        aid.amount <= 0 ||
-        hive.state !== hiveStates.economy
-      ) {
-        delete this.aid[hiveName];
-        continue;
-      }
-      hive.add(sCell.resTargetTerminal, aid.res, aid.amount);
-    }
+    Apiary.wrap(
+      () => {
+        for (const hiveName in this.aid) {
+          const hive = Apiary.hives[hiveName];
+          const sCell = hive.cells.storage;
+          if (!sCell) continue;
+          const aid = this.aid[hiveName];
+          if (!aid.excess)
+            aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
+          if (
+            !this.hiveValidForAid(Apiary.hives[aid.to]) ||
+            aid.amount <= 0 ||
+            hive.state !== hiveStates.economy
+          ) {
+            delete this.aid[hiveName];
+            continue;
+          }
+          hive.add(sCell.resTargetTerminal, aid.res, aid.amount);
+        }
+      },
+      "network_planAid",
+      "update",
+      Object.keys(this.aid).length
+    );
   }
 
   public hiveValidForAid(hive: Hive) {

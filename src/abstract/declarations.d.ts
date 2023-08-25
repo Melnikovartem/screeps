@@ -1,6 +1,6 @@
 import type { _Apiary } from "../Apiary";
 import type { CreepSetup } from "../bees/creepSetups";
-import type { CustomConsole } from "../convenience/console";
+import type { CustomConsole } from "../convenience/console/console";
 import type { beeStates } from "../enums";
 import type { HiveCache, HiveLog } from "./hiveMemory";
 import type { CreepAllBattleInfo } from "./intelligence";
