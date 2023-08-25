@@ -107,7 +107,7 @@ export class DepositMaster extends SwarmMaster {
       (!this.pickup.beesAmount || !this.miners.beesAmount)
     )
       this.order.delete();
-    if (this.shouldSpawn && Game.shard.name !== "shard3")
+    if (this.shouldSpawn)
       this.hive.cells.defense.checkAndDefend(this.pos.roomName);
   }
 

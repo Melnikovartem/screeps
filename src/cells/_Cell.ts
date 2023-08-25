@@ -67,7 +67,7 @@ export abstract class Cell {
   }
 
   // second stage of decision making like where do i need to spawn creeps or do i need
-  protected abstract run(): void;
+  public abstract run(): void;
 
   public initCache<K extends keyof this, T extends this[K]>(
     key: K,

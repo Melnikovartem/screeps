@@ -3,6 +3,7 @@ volumes:
   graphite_conf:
   graphite_data:
   grafana_data:
+  statsd_conf:
 services:
   node-shard2:
     build:
@@ -30,6 +31,7 @@ services:
     volumes:
      - graphite_conf:/opt/graphite/conf
      - graphite_data:/opt/graphite/storage/whisper
+     - statsd_conf:/opt/statsd/config
   grafana:
     image: grafana/grafana
     restart: always

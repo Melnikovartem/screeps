@@ -255,7 +255,7 @@ export class Hive {
     } else if (this.state === st) this.state = hiveStates.economy;
   }
 
-  public updateAnnexes(): void {
+  private updateAnnexes(): void {
     const annexes = _.compact(
       _.map(this.annexNames, (annexName) => {
         const annex = Game.rooms[annexName];
@@ -715,7 +715,7 @@ export class Hive {
         );
         checkAnnex();
         break;
-      case hiveStates.battle:
+      case hiveStates.battle: {
         const roomInfo = Apiary.intel.getInfo(this.roomName);
         if (roomInfo.enemies.length) {
           const proj = Apiary.planner.checkBuildings(
@@ -748,6 +748,7 @@ export class Hive {
             )
           );
         break;
+      }
       case hiveStates.economy:
         addCC(
           Apiary.planner.checkBuildings(
@@ -955,13 +956,13 @@ export class Hive {
       Apiary.wrap(() => cell.update(), cell.ref, "update");
     });
 
+    if (Game.time % 50 === 0) this.updateDangerAnnex();
+
     const updateStructures =
-      Game.time % 150 === 5 ||
+      Game.time % 500 === 51 ||
       this.shouldRecalc ||
       (this.state >= hiveStates.battle && Game.time % 25 === 5) ||
       (!this.structuresConst.length && this.sumCost);
-
-    if (Game.time % 50 === 0) this.updateDangerAnnex();
 
     if (updateStructures) {
       this.updateAnnexes();
@@ -978,7 +979,7 @@ export class Hive {
   }
 
   public run() {
-    _.forEach(this.cells, (cell) => {
+    _.forEach(this.cells, (cell: Cell) => {
       Apiary.wrap(() => cell.run(), cell.ref, "run");
     });
   }
