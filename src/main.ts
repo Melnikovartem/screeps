@@ -1,15 +1,16 @@
 import "Traveler/TravelerModified";
 import "prototypes/creeps";
 import "prototypes/pos";
+import "convenience/console/console-hand-fix";
+import "convenience/console/console-debug";
 
 import { Mem } from "abstract/memory";
 import { _Apiary } from "Apiary";
-import { CustomConsole } from "convenience/console";
+import { CustomConsole } from "convenience/console/console";
 import profiler from "screeps-profiler";
 import { LOGGING_CYCLE, PROFILER } from "settings";
 
-// if (Game.shard.name === "shard3")
-Mem.wipe();
+// Migrate memory do not wipe!!
 
 declare global {
   namespace NodeJS {
@@ -43,6 +44,13 @@ function main() {
     );
     return;
   }
+  let cpu: number | undefined =
+    Apiary.logger && Memory.settings.reportCPU ? Game.cpu.getUsed() : undefined;
+  if (cpu !== undefined) {
+    Apiary.logger!.update();
+    Apiary.logger!.reportCPU("rollup", "update", cpu, 1);
+    cpu = Game.cpu.getUsed();
+  }
 
   if (global.Apiary === undefined || Game.time >= Apiary.destroyTime) {
     delete global.Apiary;
@@ -50,8 +58,16 @@ function main() {
     global.Apiary.init();
   }
 
+  if (cpu !== undefined) {
+    Apiary.logger!.reportCPU("init", "update", Game.cpu.getUsed() - cpu, 1);
+    cpu = Game.cpu.getUsed();
+  }
+
   // Automatically delete memory
   Mem.clean();
+
+  if (cpu !== undefined)
+    Apiary.logger!.reportCPU("cleanup", "update", Game.cpu.getUsed() - cpu, 1);
 
   global.Apiary.update();
   global.Apiary.run();

@@ -14,6 +14,11 @@ const EVENT_ID_LENGTH = 6;
 
 @profile
 export class Logger {
+  private smallProcesses = {
+    update: { sum: 0, amount: 0 },
+    run: { sum: 0, amount: 0 },
+  };
+
   public constructor() {
     Memory.log.tick.create = Game.time;
   }
@@ -46,6 +51,18 @@ export class Logger {
 
   public update() {
     Memory.log.cpuUsage = { update: {}, run: {} };
+    this.smallProcesses = {
+      update: { sum: 0, amount: 0 },
+      run: { sum: 0, amount: 0 },
+    };
+  }
+
+  public get notAccountedMemory() {
+    return (
+      _.reduce(Memory.log.cpuUsage.update, (mem, curr) => curr.cpu + mem, 0) +
+      _.reduce(Memory.log.cpuUsage.run, (mem, curr) => curr.cpu + mem, 0) -
+      Game.cpu.getUsed()
+    );
   }
 
   private reportMarketEvent(
@@ -141,13 +158,28 @@ export class Logger {
       progress: Game.gpl.progress,
       progressTotal: Game.gpl.progressTotal,
     };
-    if (Memory.settings.reportCPU)
+    if (Memory.settings.reportCPU) {
       this.reportCPU(
         "log",
         "run",
         Game.cpu.getUsed() - cpu,
         Object.keys(Apiary.hives).length
       );
+      this.reportCPU(
+        "small_proc",
+        "update",
+        this.smallProcesses.run.sum,
+        this.smallProcesses.run.amount,
+        true
+      );
+      this.reportCPU(
+        "small_proc",
+        "run",
+        this.smallProcesses.run.sum,
+        this.smallProcesses.run.amount,
+        true
+      );
+    }
     Memory.log.cpu = {
       limit: Game.cpu.limit,
       used: Game.cpu.getUsed(),
@@ -159,9 +191,15 @@ export class Logger {
     ref: string,
     mode: "run" | "update",
     usedCPU: number,
-    amount: number
+    amount: number,
+    reportSmall: boolean = false
   ) {
-    if (usedCPU < 0.01) return;
+    if (usedCPU < 0.001 && !reportSmall) {
+      this.smallProcesses[mode].sum += usedCPU;
+      this.smallProcesses[mode].amount += 1;
+      return;
+    }
+    usedCPU *= 1000;
     Memory.log.cpuUsage[mode][ref] = {
       cpu: usedCPU,
       norm: usedCPU / (amount || 1),
