@@ -1,8 +1,8 @@
 import type { Bee } from "../../bees/bee";
 import { setups } from "../../bees/creepSetups";
-import { beeStates, hiveStates } from "../../enums";
-import type { FlagOrder } from "../../order";
+import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates } from "../../static/enums";
 import { SwarmMaster } from "../_SwarmMaster";
 import { HordeMaster } from "./horde";
 

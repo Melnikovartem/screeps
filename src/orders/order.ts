@@ -1,4 +1,3 @@
-import { findOptimalResource, makeId } from "abstract/utils";
 import type { SwarmMaster } from "beeMasters/_SwarmMaster";
 import { AnnexMaster } from "beeMasters/civil/annexer";
 import { ClaimerMaster } from "beeMasters/civil/claimer";
@@ -22,9 +21,10 @@ import { HordeMaster } from "beeMasters/war/horde";
 import { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { SKMaster } from "beeMasters/war/safeSK";
 import { WaiterMaster } from "beeMasters/war/waiter";
-import { hiveStates, prefix, roomStates } from "enums";
 import type { Hive } from "Hive";
 import { profile } from "profiler/decorator";
+import { hiveStates, prefix, roomStates } from "static/enums";
+import { findOptimalResource, makeId } from "static/utils";
 
 const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 

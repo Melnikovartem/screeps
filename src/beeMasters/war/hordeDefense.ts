@@ -1,9 +1,9 @@
-import { addResDict } from "abstract/utils";
+import { addResDict } from "static/utils";
 
 import { setups } from "../../bees/creepSetups";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-import { beeStates, hiveStates, roomStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates, roomStates } from "../../static/enums";
 import { SwarmMaster } from "../_SwarmMaster";
 import { HordeMaster } from "./horde";
 // most basic of bitches a horde full of wasps

@@ -1,8 +1,8 @@
-import { makeId } from "abstract/utils";
 import { setups } from "bees/creepSetups";
-import { beeStates } from "enums";
-import { FlagOrder } from "order";
+import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
+import { beeStates } from "static/enums";
+import { makeId } from "static/utils";
 
 import { SwarmMaster } from "../_SwarmMaster";
 

@@ -1,7 +1,7 @@
 import type { Bee } from "../../bees/bee";
-import { hiveStates, prefix } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";
 

@@ -1,7 +1,7 @@
 import { setups } from "../../bees/creepSetups";
-import { signText } from "../../enums";
-import type { FlagOrder } from "../../order";
+import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
+import { signText } from "../../static/enums";
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile

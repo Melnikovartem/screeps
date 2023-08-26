@@ -1,7 +1,7 @@
-import { findOptimalResource } from "abstract/utils";
 import { setups } from "bees/creepSetups";
-import { beeStates } from "enums";
 import { profile } from "profiler/decorator";
+import { beeStates } from "static/enums";
+import { findOptimalResource } from "static/utils";
 
 import type { Boosts } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";

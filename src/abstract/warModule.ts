@@ -1,10 +1,10 @@
 import { SquadWarCrimesMaster } from "../beeMasters/squads/squadWarcrimes";
 import { setups } from "../bees/creepSetups";
-import { enemyTypes, prefix, roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { Traveler } from "../Traveler/TravelerModified";
+import { enemyTypes, prefix, roomStates } from "../static/enums";
+import { getEnterances, makeId, towerCoef } from "../static/utils";
 import type { Enemy } from "./intelligence";
-import { getEnterances, makeId, towerCoef } from "./utils";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 

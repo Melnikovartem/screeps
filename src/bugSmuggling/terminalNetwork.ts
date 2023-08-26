@@ -1,10 +1,10 @@
 import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
-import { hiveStates } from "../enums";
 //  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 import type { Hive, ResTarget } from "../Hive";
 import { profile } from "../profiler/decorator";
-import { addResDict } from "./utils";
+import { hiveStates } from "../static/enums";
+import { addResDict } from "../static/utils";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;

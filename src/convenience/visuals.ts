@@ -1,8 +1,8 @@
-import { makeId } from "../abstract/utils";
 import { AnnexMaster } from "../beeMasters/civil/annexer";
-import { hiveStates, prefix } from "../enums";
 import type { Hive } from "../Hive";
 import { profile } from "../profiler/decorator";
+import { hiveStates, prefix } from "../static/enums";
+import { makeId } from "../static/utils";
 
 const TEXT_SIZE = 0.8;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;

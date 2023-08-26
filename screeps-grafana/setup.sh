@@ -48,5 +48,5 @@ curl -X POST -H 'Content-Type: application/json;charset=UTF-8' --data @dashboard
 
 #[default_average]
 #pattern = .*
-#xFilesFactor = 0.3
+#xFilesFactor = 0
 #aggregationMethod = average

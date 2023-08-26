@@ -2,9 +2,9 @@
  * To start using Traveler, require it in main.js:
  * Example: var Traveler = require('Traveler.js');
  */
-import { roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
 import { TRAVELER_MESSAGE, VISUALS_TRAVELER } from "../settings";
+import { roomStates } from "../static/enums";
 
 @profile
 export class Traveler {

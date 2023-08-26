@@ -2,9 +2,9 @@
 import type { Bee } from "../bees/bee";
 import type { ProtoBee } from "../bees/protoBee";
 import type { BoostRequest } from "../cells/stage1/laboratoryCell";
-import { beeStates, hiveStates, prefix, roomStates } from "../enums";
 import type { Hive, SpawnOrder } from "../Hive";
 import { profile } from "../profiler/decorator";
+import { beeStates, hiveStates, prefix, roomStates } from "../static/enums";
 
 export type Boosts = BoostRequest[];
 

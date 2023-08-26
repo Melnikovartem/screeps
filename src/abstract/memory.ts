@@ -1,26 +1,13 @@
+import { CACHE_EMPTY_DEFAULT, SETTINGS_DEFAULT } from "constants";
+
 import { Logger } from "../convenience/logger";
 import { profile } from "../profiler/decorator";
 
 @profile
 export class Mem {
   public static init() {
-    if (!Memory.cache)
-      Memory.cache = {
-        intellegence: {},
-        roomPlanner: {},
-        hives: {},
-        war: { siedgeInfo: {}, squadsInfo: {} },
-        roomsToSign: [],
-      };
-    if (!Memory.settings)
-      Memory.settings = {
-        framerate: 10,
-        forceBucket: 0,
-        generatePixel: Game.cpu.limit > 20,
-        wallsHealth: 20000000,
-        miningDist: 8,
-        reportCPU: false,
-      };
+    if (!Memory.cache) Memory.cache = CACHE_EMPTY_DEFAULT;
+    if (!Memory.settings) Memory.settings = SETTINGS_DEFAULT;
 
     for (const roomName in Memory.cache.hives) {
       const room = Game.rooms[roomName];
@@ -32,22 +19,8 @@ export class Mem {
 
   public static wipe() {
     console.log("> > Memory wipe!");
-    Memory.masters = undefined;
-    Memory.cache = {
-      intellegence: {},
-      roomPlanner: Memory.cache.roomPlanner || {},
-      hives: {},
-      war: { siedgeInfo: {}, squadsInfo: {} },
-      roomsToSign: [],
-    };
-    Memory.settings = {
-      framerate: 10,
-      forceBucket: 0,
-      generatePixel: Game.cpu.limit > 20,
-      wallsHealth: 20000000,
-      miningDist: 8,
-      reportCPU: false,
-    };
+    Memory.cache = CACHE_EMPTY_DEFAULT;
+    Memory.settings = SETTINGS_DEFAULT;
 
     Logger.init(true);
   }

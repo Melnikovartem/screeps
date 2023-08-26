@@ -1,9 +1,9 @@
-import { findOptimalResource } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";
 import type { TransferRequest } from "../../bees/transferRequest";
 import type { StorageCell } from "../../cells/stage1/storageCell";
-import { beeStates, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates } from "../../static/enums";
+import { findOptimalResource } from "../../static/utils";
 import { Master } from "../_Master";
 
 @profile

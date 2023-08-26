@@ -1,11 +1,11 @@
-import { addResDict } from "abstract/utils";
+import { addResDict } from "static/utils";
 
 import type { Bee } from "../../bees/bee";
 import { setups } from "../../bees/creepSetups";
 import type { DefenseCell } from "../../cells/base/defenseCell";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-import { beeStates, hiveStates, roomStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates, roomStates } from "../../static/enums";
 import { Master } from "../_Master";
 
 const rampFilter = (ss: Structure[]) =>

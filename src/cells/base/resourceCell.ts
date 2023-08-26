@@ -1,7 +1,7 @@
 import { MinerMaster } from "../../beeMasters/economy/miner";
-import { hiveStates, prefix, roomStates } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix, roomStates } from "../../static/enums";
 import { Traveler } from "../../Traveler/TravelerModified";
 import { Cell } from "../_Cell";
 import type { ExcavationCell } from "./excavationCell";

@@ -1,5 +1,5 @@
-import { findOptimalResource } from "../abstract/utils";
-import { beeStates } from "../enums";
+import { beeStates } from "../static/enums";
+import { findOptimalResource } from "../static/utils";
 import type { Bee } from "./bee";
 
 type TransferTarget =

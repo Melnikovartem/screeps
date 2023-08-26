@@ -1,9 +1,9 @@
-import { prefix, roomStates } from "../enums";
 import type { BuildProject } from "../Hive";
 import { profile } from "../profiler/decorator";
+import { prefix, roomStates } from "../static/enums";
+import { getEnterances, makeId } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
 import { BASE_MODE_HIVE } from "./hiveMemory";
-import { getEnterances, makeId } from "./utils";
 
 export type RoomSetup = {
   [key in BuildableStructureConstant | "null"]?: {

@@ -1,7 +1,7 @@
 import { setups } from "bees/creepSetups";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
-import { beeStates, hiveStates, roomStates } from "enums";
 import { profile } from "profiler/decorator";
+import { beeStates, hiveStates, roomStates } from "static/enums";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";

@@ -1,10 +1,10 @@
-import { addResDict, findOptimalResource } from "abstract/utils";
 import { CreepSetup, setups } from "bees/creepSetups";
 import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
-import { beeStates, hiveStates, prefix } from "enums";
 import type { Hive } from "Hive";
 import { profile } from "profiler/decorator";
+import { beeStates, hiveStates, prefix } from "static/enums";
+import { addResDict, findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";

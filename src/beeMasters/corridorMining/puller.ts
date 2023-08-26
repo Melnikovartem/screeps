@@ -1,8 +1,8 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { beeStates, hiveStates, prefix } from "enums";
 import type { Hive } from "Hive";
 import { profile } from "profiler/decorator";
+import { beeStates, hiveStates, prefix } from "static/enums";
 
 import { Master } from "../_Master";
 import type { DepositMaster } from "./deposit";

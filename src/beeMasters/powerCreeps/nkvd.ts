@@ -8,8 +8,8 @@ import type { StorageCell } from "../../cells/stage1/storageCell";
 import type { UpgradeCell } from "../../cells/stage1/upgradeCell";
 import type { ObserveCell } from "../../cells/stage2/observeCell";
 import type { PowerCell } from "../../cells/stage2/powerCell";
-import { hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { hiveStates } from "../../static/enums";
 import { POWER_NAMES, PowerMaster } from "../_PowerMaster";
 
 @profile

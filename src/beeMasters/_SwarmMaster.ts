@@ -2,9 +2,9 @@
 // so i can check instanceof SwarmMaster aka my army
 
 import type { Bee } from "../bees/bee";
-import { prefix } from "../enums";
-import type { FlagOrder } from "../order";
+import type { FlagOrder } from "../orders/order";
 import { profile } from "../profiler/decorator";
+import { prefix } from "../static/enums";
 import { Master } from "./_Master";
 
 @profile

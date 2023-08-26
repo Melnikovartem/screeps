@@ -1,8 +1,8 @@
 import type { HiveCache } from "../../abstract/hiveMemory";
 import { BASE_MODE_HIVE } from "../../abstract/hiveMemory";
 import type { RoomSetup } from "../../abstract/roomPlanner";
-import { makeId } from "../../abstract/utils";
-import { prefix } from "../../enums";
+import { prefix } from "../../static/enums";
+import { makeId } from "../../static/utils";
 
 export class CustomConsole {
   public lastActionRoomName: string;

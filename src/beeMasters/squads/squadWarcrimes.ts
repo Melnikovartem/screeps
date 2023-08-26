@@ -3,14 +3,14 @@ import type {
   CreepBattleInfo,
   Enemy,
 } from "abstract/intelligence";
-import { addResDict } from "abstract/utils";
 import type { WarcrimesModule } from "abstract/warModule";
 import type { Bee } from "bees/bee";
 import { CreepSetup } from "bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "cells/stage1/laboratoryCell";
-import { beeStates, enemyTypes, hiveStates, roomStates } from "enums";
 import { profile } from "profiler/decorator";
 import { SQUAD_VISUALS } from "settings";
+import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
+import { addResDict } from "static/utils";
 
 import type { Boosts } from "../_Master";
 import { Master } from "../_Master";

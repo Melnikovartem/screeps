@@ -1,6 +1,6 @@
 import type { Master } from "beeMasters/_Master";
 import { TransferRequest } from "bees/transferRequest";
-import { prefix } from "enums";
+import { prefix } from "static/enums";
 
 import { CustomConsole } from "./console";
 

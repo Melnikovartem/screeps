@@ -1,4 +1,4 @@
-import { addResDict } from "abstract/utils";
+import { addResDict } from "static/utils";
 
 import type {
   CreepAllBattleInfo,
@@ -8,10 +8,15 @@ import type {
 import type { Bee } from "../../bees/bee";
 import type { CreepSetup } from "../../bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "../../cells/stage1/laboratoryCell";
-import { beeStates, enemyTypes, hiveStates, roomStates } from "../../enums";
-import type { FlagOrder } from "../../order";
+import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
 import { SQUAD_VISUALS } from "../../settings";
+import {
+  beeStates,
+  enemyTypes,
+  hiveStates,
+  roomStates,
+} from "../../static/enums";
 import { SwarmMaster } from "../_SwarmMaster";
 
 export type FormationPositions = [Pos, CreepSetup][];

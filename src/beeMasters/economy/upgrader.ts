@@ -2,8 +2,8 @@ import { HIVE_ENERGY } from "cells/stage1/storageCell";
 
 import { setups } from "../../bees/creepSetups";
 import { UpgradeCell } from "../../cells/stage1/upgradeCell";
-import { beeStates, hiveStates } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates } from "../../static/enums";
 import { Master } from "../_Master";
 
 const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgrading

@@ -2,9 +2,14 @@ import type { CreepBattleInfo } from "../../abstract/intelligence";
 import type { Bee } from "../../bees/bee";
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";
-import { beeStates, enemyTypes, hiveStates, roomStates } from "../../enums";
-import type { FlagOrder } from "../../order";
+import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
+import {
+  beeStates,
+  enemyTypes,
+  hiveStates,
+  roomStates,
+} from "../../static/enums";
 import type { Boosts } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";
 

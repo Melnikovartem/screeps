@@ -1,8 +1,8 @@
-import { safeWrap } from "../../abstract/utils";
 import { HaulerMaster } from "../../beeMasters/economy/hauler";
-import { prefix } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { prefix } from "../../static/enums";
+import { safeWrap } from "../../static/utils";
 import { Cell } from "../_Cell";
 import { ResourceCell } from "./resourceCell";
 

@@ -1,14 +1,14 @@
 // import { setupsNames } from "../enums";
 import { HiveLog } from "abstract/hiveMemory";
-import { makeId } from "abstract/utils";
+import { makeId } from "utils/utils";
 
 import type { ProtoOrder } from "../abstract/broker";
 import { setups } from "../bees/creepSetups";
-import { prefix } from "../enums";
 import type { Hive } from "../Hive";
 import type { FlagOrder } from "../order";
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
+import { prefix } from "../utils/enums";
 
 const EVENT_ID_LENGTH = 6;
 
@@ -310,8 +310,15 @@ export class Logger {
     return OK;
   }
 
-  public newSpawn(beeName: string, spawn: StructureSpawn, cost: number) {
-    const name = beeName.substring(0, beeName.length - 5);
+  public newSpawn(
+    beeName: string,
+    spawn: StructureSpawn,
+    cost: number,
+    masterName: string
+  ) {
+    let name = beeName.substring(0, beeName.length - 5);
+    if (name === setups.miner.energy.name)
+      name += " " + masterName.slice(masterName.length - 4);
     this.addResourceStat(
       spawn.pos.roomName,
       "spawn_" + name,

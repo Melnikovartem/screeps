@@ -1,12 +1,12 @@
-import { makeId, towerCoef } from "../../abstract/utils";
 import { HordeMaster } from "../../beeMasters/war/horde";
 import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
 import type { Bee } from "../../bees/bee";
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-import { beeStates, hiveStates, prefix } from "../../enums";
 import type { BuildProject, Hive } from "../../Hive";
-import { FlagOrder } from "../../order";
+import { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
+import { beeStates, hiveStates, prefix } from "../../static/enums";
+import { makeId, towerCoef } from "../../static/utils";
 import { Cell } from "../_Cell";
 
 @profile

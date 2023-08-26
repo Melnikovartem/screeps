@@ -1,5 +1,5 @@
-import { getRoomCoorinates } from "../abstract/utils";
 import { Traveler } from "../Traveler/TravelerModified";
+import { getRoomCoorinates } from "../static/utils";
 
 Object.defineProperty(RoomPosition.prototype, "to_str", {
   get: function str() {

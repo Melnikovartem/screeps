@@ -1,8 +1,8 @@
 import { ManagerMaster } from "../../beeMasters/economy/manager";
 import { TransferRequest } from "../../bees/transferRequest";
-import { hiveStates, prefix } from "../../enums";
 import type { Hive, ResTarget } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);

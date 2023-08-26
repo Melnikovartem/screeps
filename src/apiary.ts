@@ -1,8 +1,7 @@
 import { Broker } from "abstract/broker";
 import { Intel } from "abstract/intelligence";
 import { RoomPlanner } from "abstract/roomPlanner";
-import { Network } from "abstract/terminalNetwork";
-import { safeWrap } from "abstract/utils";
+import { Network } from "bugSmuggling/terminalNetwork";
 import { WarcrimesModule } from "abstract/warModule";
 import { Master } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
@@ -12,9 +11,10 @@ import { ProtoBee } from "bees/protoBee";
 import { Logger } from "convenience/logger";
 import { Visuals } from "convenience/visuals";
 import { Hive } from "Hive";
-import { FlagOrder } from "order";
+import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
+import { safeWrap } from "static/utils";
 
 const STARVE_HIM_OUT_CLAIMS = [""];
 
@@ -114,7 +114,7 @@ export class _Apiary {
       console .log("1", cpuNew.real - this.cpuPrev.real, cpuNew.acc - this.cpuPrev.acc, (cpuNew.real - this.cpuPrev.real) - (cpuNew.acc - this.cpuPrev.acc));
       this.cpuPrev = cpuNew;
     } */
-    this.useBucket = Game.cpu.bucket > 500 || Memory.settings.forceBucket > 0;
+    this.useBucket = Game.cpu.bucket > 500;
     this.wrap(() => this.intel.update(), "intel", "update");
 
     this.wrap(() => this.broker.update(), "broker", "update");

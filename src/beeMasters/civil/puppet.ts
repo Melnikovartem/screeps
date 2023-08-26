@@ -1,6 +1,6 @@
 import { setups } from "bees/creepSetups";
-import { hiveStates } from "enums";
 import { profile } from "profiler/decorator";
+import { hiveStates } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 

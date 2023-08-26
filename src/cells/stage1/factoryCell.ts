@@ -1,7 +1,7 @@
-import { findOptimalResource } from "abstract/utils";
-import { hiveStates, prefix } from "enums";
 import { type Hive } from "Hive";
 import { profile } from "profiler/decorator";
+import { hiveStates, prefix } from "static/enums";
+import { findOptimalResource } from "static/utils";
 
 import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";

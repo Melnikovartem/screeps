@@ -1,11 +1,11 @@
-import { FREE_CAPACITY } from "abstract/terminalNetwork";
-import { findOptimalResource } from "abstract/utils";
+import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import { BASE_MINERALS } from "cells/stage1/laboratoryCell";
-import { beeStates, hiveStates } from "enums";
 import { profile } from "profiler/decorator";
+import { beeStates, hiveStates } from "static/enums";
+import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 

@@ -1,7 +1,7 @@
 import type { Master } from "../beeMasters/_Master";
 import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
-import { prefix } from "../enums";
 import { profile } from "../profiler/decorator";
+import { prefix } from "../static/enums";
 import { ProtoBee } from "./protoBee";
 
 @profile

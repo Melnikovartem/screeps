@@ -1,6 +1,6 @@
 import type { Master } from "../beeMasters/_Master";
-import { beeStates, prefix, setupsNames } from "../enums";
 import { profile } from "../profiler/decorator";
+import { beeStates, prefix, setupsNames } from "../static/enums";
 import { ProtoBee } from "./protoBee";
 
 @profile

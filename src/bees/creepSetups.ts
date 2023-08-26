@@ -1,7 +1,7 @@
 // body generating idea from overmind kinda
 // i think i dont need custom ordered creeps
-import { setupsNames } from "../enums";
 import { profile } from "../profiler/decorator";
+import { setupsNames } from "../static/enums";
 
 interface BodySetup {
   fixed?: BodyPartConstant[];

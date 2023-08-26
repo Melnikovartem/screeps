@@ -3,8 +3,7 @@
  */
 import type { HiveCache } from "abstract/hiveMemory";
 import { BASE_MODE_HIVE } from "abstract/hiveMemory";
-import { FULL_CAPACITY } from "abstract/terminalNetwork";
-import { makeId } from "abstract/utils";
+import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { CreepSetup } from "bees/creepSetups";
@@ -23,9 +22,10 @@ import {
 import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
-import { hiveStates, prefix, roomStates } from "enums";
 import { profile } from "profiler/decorator";
 import { Traveler } from "Traveler/TravelerModified";
+import { hiveStates, prefix, roomStates } from "static/enums";
+import { makeId } from "static/utils";
 // Import various modules and types
 
 // Define the SpawnOrder interface for creep spawning

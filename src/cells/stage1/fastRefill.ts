@@ -1,6 +1,6 @@
 import { FastRefillMaster } from "../../beeMasters/economy/fastRefill";
-import { prefix } from "../../enums";
 import { profile } from "../../profiler/decorator";
+import { prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
 import type { RespawnCell } from "./../base/respawnCell";
 import type { StorageCell } from "./storageCell";

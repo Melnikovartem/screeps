@@ -1,10 +1,10 @@
 import { Traveler } from "Traveler/TravelerModified";
 
-import { makeId } from "../../abstract/utils";
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
-import { hiveStates, prefix } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../static/enums";
+import { makeId } from "../../static/utils";
 import { Cell } from "../_Cell";
 
 @profile

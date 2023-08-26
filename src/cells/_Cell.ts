@@ -1,8 +1,8 @@
 import { Master } from "../beeMasters/_Master";
-import { prefix } from "../enums";
 import type { HiveCells } from "../Hive";
 import { Hive } from "../Hive";
 import { profile } from "../profiler/decorator";
+import { prefix } from "../static/enums";
 
 @profile
 export abstract class Cell {

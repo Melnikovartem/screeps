@@ -2,9 +2,9 @@
 // we collect data about enemy
 // in this case on battlefield
 
-import { enemyTypes, roomStates } from "../enums";
 import { profile } from "../profiler/decorator";
-import { towerCoef } from "./utils";
+import { enemyTypes, roomStates } from "../static/enums";
+import { towerCoef } from "../static/utils";
 
 /** Trying to asses danger lvl of threat
  *

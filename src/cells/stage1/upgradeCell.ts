@@ -1,8 +1,8 @@
 import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
 import { setups } from "../../bees/creepSetups";
-import { hiveStates, prefix } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
 import type { StorageCell } from "./storageCell";
 

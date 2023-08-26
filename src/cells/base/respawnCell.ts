@@ -1,7 +1,7 @@
-import { makeId } from "../../abstract/utils";
-import { beeStates, prefix, setupsNames } from "../../enums";
 import type { Hive } from "../../Hive";
 import { profile } from "../../profiler/decorator";
+import { beeStates, prefix, setupsNames } from "../../static/enums";
+import { makeId } from "../../static/utils";
 import { Cell } from "../_Cell";
 import { FastRefillCell } from "../stage1/fastRefill";
 
@@ -240,7 +240,8 @@ export class RespawnCell extends Cell {
       const ans = spawn.spawnCreep(setup.body, name, { memory });
 
       if (ans === OK) {
-        if (Apiary.logger) Apiary.logger.newSpawn(name, spawn, setup.cost);
+        if (Apiary.logger)
+          Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
         energyAvailable -= setup.cost;
         delete this.hive.spawOrders[order.ref];
       }

@@ -1,5 +1,5 @@
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "order";
+import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 
 import { SwarmMaster } from "../_SwarmMaster";

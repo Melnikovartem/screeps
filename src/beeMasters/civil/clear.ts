@@ -1,8 +1,8 @@
-import { FULL_CAPACITY } from "abstract/terminalNetwork";
-import { findOptimalResource } from "abstract/utils";
+import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import { setups } from "bees/creepSetups";
 import type { ResTarget } from "Hive";
 import { profile } from "profiler/decorator";
+import { findOptimalResource } from "static/utils";
 
 import { SwarmMaster } from "../_SwarmMaster";
 

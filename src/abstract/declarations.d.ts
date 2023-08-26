@@ -1,11 +1,12 @@
 import type { _Apiary } from "../Apiary";
 import type { CreepSetup } from "../bees/creepSetups";
 import type { CustomConsole } from "../convenience/console/console";
-import type { beeStates } from "../enums";
+import type { beeStates, roomStates } from "../static/enums";
 import type { HiveCache, HiveLog } from "./hiveMemory";
 import type { CreepAllBattleInfo } from "./intelligence";
 import type { RoomSetup } from "./roomPlanner";
 // import type { Boosts } from "../beeMasters/_Master";
+
 declare global {
   let Apiary: _Apiary;
   let A: CustomConsole;
@@ -80,10 +81,31 @@ declare global {
     extraInfo?: any;
   }
 
+  interface IntelBattle {
+    roomState: roomStates;
+    currentOwner: string | undefined;
+    safePlace: boolean;
+    safeModeEndTime: number;
+  }
+
   interface Memory {
     cache: {
-      intellegence: { [roomName: string]: any };
-      roomsToSign: string[];
+      intellegence: { [roomName: string]: IntelBattle };
+      map: {
+        /** structure to keep roomInfo */
+        rooms: {
+          [oomName: string]: {
+            energyRes: number;
+            mineral: MineralConstant | undefined;
+            enemyInfo?: {};
+          };
+        };
+        users: {
+          [username: string]: {
+            rooms: string[];
+          };
+        };
+      };
       roomPlanner: { [id: string]: RoomSetup };
       hives: {
         [id: string]: HiveCache;
@@ -125,12 +147,10 @@ declare global {
         };
       };
     };
-    masters: undefined;
 
     // some setting that i wan't to be able to change dynamically
     settings: {
       framerate: number;
-      forceBucket: number;
       generatePixel: boolean;
       wallsHealth: number;
       miningDist: number;

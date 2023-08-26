@@ -1,7 +1,7 @@
 import { setups } from "bees/creepSetups";
-import { beeStates } from "enums";
-import type { FlagOrder } from "order";
+import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
+import { beeStates } from "static/enums";
 
 import type { Boosts } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";
