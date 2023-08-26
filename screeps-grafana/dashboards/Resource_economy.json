@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 8,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -30,7 +30,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 119,
+      "id": 84,
       "panels": [],
       "repeat": "shard",
       "repeatDirection": "h",
@@ -42,7 +42,7 @@
         "type": "graphite",
         "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
       },
-      "description": "with import/export",
+      "description": "No import/export. Not even local import/export",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -89,7 +89,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "none"
         },
         "overrides": [
           {
@@ -128,7 +128,7 @@
         "x": 0,
         "y": 1
       },
-      "id": 137,
+      "id": 86,
       "maxDataPoints": 1000000,
       "options": {
         "legend": {
@@ -155,9 +155,9 @@
           },
           "hide": false,
           "refCount": 0,
-          "refId": "C",
-          "target": "alias(divideSeries(movingSum(transformNull(sumSeries(group(#E, #F)), 0), '5min'), #B), '5m average')",
-          "targetFull": "alias(divideSeries(movingSum(transformNull(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), 0), '5min'), movingSum(derivative(stats.gauges.$shard.tick.current), '5min')), '5m average')",
+          "refId": "A",
+          "target": "alias(transformNull(divideSeries(movingSum(sumSeries(group(#E, #F)), '1hour'), #D), 0), '1h average')",
+          "targetFull": "alias(transformNull(divideSeries(movingSum(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), '1hour'), movingSum(derivative(stats.gauges.$shard.tick.current), '1hour')), 0), '1h average')",
           "textEditor": false
         },
         {
@@ -167,9 +167,9 @@
           },
           "hide": false,
           "refCount": 0,
-          "refId": "A",
-          "target": "alias(divideSeries(movingSum(transformNull(sumSeries(group(#E, #F)), 0), '1hour'), #D), '1h average')",
-          "targetFull": "alias(divideSeries(movingSum(transformNull(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), 0), '1hour'), movingSum(derivative(stats.gauges.$shard.tick.current), '1hour')), '1h average')",
+          "refId": "C",
+          "target": "alias(transformNull(divideSeries(movingSum(sumSeries(group(#E, #F)), '5min'), #B), 0), '5m average')",
+          "targetFull": "alias(transformNull(divideSeries(movingSum(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), '5min'), movingSum(derivative(stats.gauges.$shard.tick.current), '5min')), 0), '5m average')",
           "textEditor": false
         },
         {
@@ -215,7 +215,7 @@
           "textEditor": true
         }
       ],
-      "title": "$resource per tick ",
+      "title": "$resource per tick",
       "transformations": [],
       "type": "timeseries"
     },
@@ -236,8 +236,7 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "unit": "short"
+          "mappings": []
         },
         "overrides": [
           {
@@ -273,7 +272,7 @@
         ]
       },
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 6,
         "x": 12,
         "y": 1
@@ -285,12 +284,9 @@
           "name"
         ],
         "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "values": [
-            "value"
-          ]
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -379,13 +375,12 @@
                 "value": 0
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 6,
         "x": 18,
         "y": 1
@@ -490,8 +485,7 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "unit": "short"
+          "mappings": []
         },
         "overrides": [
           {
@@ -622,9 +616,9 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 6
+        "y": 7
       },
-      "id": 124,
+      "id": 131,
       "maxDataPoints": 1000000,
       "options": {
         "displayLabels": [
@@ -658,8 +652,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "groupByNode(absolute(averageAbove(group(#A, #C), 0.000001)), 7, 'sum')",
-          "targetFull": "groupByNode(absolute(averageAbove(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), 0.000001)), 7, 'sum')",
+          "target": "groupByNodes(removeEmptySeries(absolute(averageAbove(group(#A, #C), 0.000001))), 'sum', 6, 7)",
+          "targetFull": "groupByNodes(removeEmptySeries(absolute(averageAbove(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), 0.000001))), 'sum', 6, 7)",
           "textEditor": false
         },
         {
@@ -706,8 +700,7 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "unit": "short"
+          "mappings": []
         },
         "overrides": [
           {
@@ -838,9 +831,9 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 6
+        "y": 7
       },
-      "id": 2,
+      "id": 132,
       "maxDataPoints": 1000000,
       "options": {
         "displayLabels": [
@@ -874,8 +867,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "groupByNode(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 7, 'sum')",
-          "targetFull": "groupByNode(removeEmptySeries(absolute(averageBelow(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), -0.000001))), 7, 'sum')",
+          "target": "groupByNodes(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 'sum', 6, 7)",
+          "targetFull": "groupByNodes(removeEmptySeries(absolute(averageBelow(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), -0.000001))), 'sum', 6, 7)",
           "textEditor": false
         },
         {
@@ -901,7 +894,7 @@
           "textEditor": false
         }
       ],
-      "title": "$resource expenditure ",
+      "title": "$resource expenditure",
       "transformations": [],
       "type": "piechart"
     },
@@ -959,8 +952,7 @@
                 "value": null
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": [
           {
@@ -1149,493 +1141,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-      },
-      "description": "not ideal as some overlap is still there",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mining"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "import"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "spawn"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "export"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "terminal"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "build"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "/.+_local/"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": true,
-                  "tooltip": true,
-                  "viz": true
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "boosts"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": true,
-                  "tooltip": true,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 12,
-        "y": 14
-      },
-      "id": 144,
-      "maxDataPoints": 1000000,
-      "options": {
-        "displayLabels": [
-          "percent"
-        ],
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "values": [
-            "value"
-          ]
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.0.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.'))",
-          "textEditor": false
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sumSeries(grep(#C, 'Queen_bee|Carpenter_bee')), 'managers')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Queen_bee|Carpenter_bee')), 'managers')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(sumSeries(grep(#C, 'Honey_bee')), 'upgrader')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Honey_bee')), 'upgrader')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "D",
-          "target": "alias(sumSeries(grep(#C, 'Mason_bee')), 'builder')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Mason_bee')), 'builder')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "E",
-          "target": "alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'depositmining')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'depositmining')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "F",
-          "target": "alias(sumSeries(grep(#C, 'Japanese_beetle')), 'mineralmining')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Japanese_beetle')), 'mineralmining')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "G",
-          "target": "alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energymining')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Scarabaeus_sacer')), 'energymining')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "H",
-          "target": "alias(sumSeries(grep(#C, 'Bumblebee')), 'haulers')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Bumblebee')), 'haulers')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "I",
-          "target": "alias(sumSeries(grep(#C, 'Walking_stick')), 'defense')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Walking_stick')), 'defense')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "J",
-          "target": "alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexupkeep')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Orchid_Mantis|Firefly')), 'annexupkeep')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "K",
-          "target": "alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth')), 'powermining')",
-          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Hercules_beetle|Atlas_moth')), 'powermining')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "L",
-          "target": "alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers')",
-          "targetFull": "alias(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "M",
-          "target": "alias(diffSeries(sumSeries(#C), #A, #B, #D, #E, #F, #G, #H, #I, #J, #K, #L), 'other')",
-          "targetFull": "alias(diffSeries(sumSeries(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.'))), alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Queen_bee|Carpenter_bee')), 'managers'), alias(sumSeries(grep(#C, 'Honey_bee')), 'upgrader'), alias(sumSeries(grep(#C, 'Mason_bee')), 'builder'), alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'depositmining'), alias(sumSeries(grep(#C, 'Japanese_beetle')), 'mineralmining'), alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energymining'), alias(sumSeries(grep(#C, 'Bumblebee')), 'haulers'), alias(sumSeries(grep(#C, 'Walking_stick')), 'defense'), alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexupkeep'), alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth')), 'powermining'), alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers')), 'other')"
-        }
-      ],
-      "title": "$resource income ",
-      "transformations": [],
-      "type": "piechart"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Energy",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total"
-            },
-            "properties": [
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.stacking",
-                "value": {
-                  "group": "A",
-                  "mode": "none"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 15
-      },
-      "id": 104,
-      "links": [],
-      "maxDataPoints": 1000000,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "10.0.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.spawners), 'Spawns and Extensions')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.storage), 'Storage')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.terminal), 'Terminal')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "D",
-          "target": "alias(sumSeries(#A, #B, #C), 'Total')",
-          "targetFull": "alias(sumSeries(alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.storage), 'Storage'), alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.spawners), 'Spawns and Extensions'), alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.terminal), 'Terminal')), 'Total')",
-          "textEditor": false
-        }
-      ],
-      "title": "$hiveName Stored Energy",
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 15
       },
       "id": 83,
       "panels": [],
@@ -1649,7 +1160,7 @@
         "type": "graphite",
         "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
       },
-      "description": "",
+      "description": "No import/export. Not even local import/export",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1691,11 +1202,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": [
           {
@@ -1714,9 +1225,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 12,
         "x": 0,
-        "y": 22
+        "y": 16
       },
       "id": 87,
       "maxDataPoints": 1000000,
@@ -1796,165 +1307,13 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Energy",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total"
-            },
-            "properties": [
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.stacking",
-                "value": {
-                  "group": "A",
-                  "mode": "none"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 22
-      },
-      "id": 138,
-      "links": [],
-      "maxDataPoints": 1000000,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "10.0.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.spawners), 'Spawns and Extensions')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.storage), 'Storage')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.terminal), 'Terminal')",
-          "textEditor": true
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-          },
-          "refCount": 0,
-          "refId": "D",
-          "target": "alias(sumSeries(#A, #B, #C), 'Total')",
-          "targetFull": "alias(sumSeries(alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.storage), 'Storage'), alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.spawners), 'Spawns and Extensions'), alias(sumSeries(stats.gauges.$shard.hives.$hiveName.energy.terminal), 'Terminal')), 'Total')",
-          "textEditor": false
-        }
-      ],
-      "title": "$hiveName Stored Energy",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             }
           },
-          "mappings": [],
-          "unit": "short"
+          "mappings": []
         },
         "overrides": [
           {
@@ -2085,7 +1444,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 22
+        "y": 16
       },
       "id": 117,
       "maxDataPoints": 1000000,
@@ -2121,8 +1480,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "groupByNode(removeEmptySeries(absolute(averageAbove(group(#A, #C), 0.000001))), 7, 'sum')",
-          "targetFull": "groupByNode(removeEmptySeries(absolute(averageAbove(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), 0.000001))), 7, 'sum')",
+          "target": "groupByNodes(removeEmptySeries(absolute(averageAbove(group(#A, #C), 0.000001))), 'sum', 6, 7)",
+          "targetFull": "groupByNodes(removeEmptySeries(absolute(averageAbove(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), 0.000001))), 'sum', 6, 7)",
           "textEditor": false
         },
         {
@@ -2169,8 +1528,7 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "unit": "short"
+          "mappings": []
         },
         "overrides": [
           {
@@ -2301,7 +1659,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 22
+        "y": 16
       },
       "id": 118,
       "maxDataPoints": 1000000,
@@ -2337,8 +1695,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "groupByNode(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 7, 'sum')",
-          "targetFull": "groupByNode(removeEmptySeries(absolute(averageBelow(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), -0.000001))), 7, 'sum')",
+          "target": "groupByNodes(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 'sum', 6, 7)",
+          "targetFull": "groupByNodes(removeEmptySeries(absolute(averageBelow(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), -0.000001))), 'sum', 6, 7)",
           "textEditor": false
         },
         {
@@ -2435,33 +1793,41 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "energy",
           "value": "energy"
         },
-        "hide": 2,
+        "datasource": {
+          "type": "graphite",
+          "uid": "c019a046-76ba-4dbe-9e15-d3fad47ff6f2"
+        },
+        "definition": "stats.gauges.$shard.hives.$hiveName.resourceEvents.*",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
         "name": "resource",
-        "options": [
-          {
-            "selected": true,
-            "text": "energy",
-            "value": "energy"
-          }
-        ],
-        "query": "energy",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.*"
+        },
+        "refresh": 1,
+        "regex": "",
         "skipUrlSync": false,
-        "type": "textbox"
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-5h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Energy economy",
-  "uid": "e8371baf-3c97-4115-838c-5484c5069b64",
-  "version": 13,
+  "title": "Resource economy",
+  "uid": "resource_economy_screeps_grafana",
+  "version": 4,
   "weekStart": ""
 }
