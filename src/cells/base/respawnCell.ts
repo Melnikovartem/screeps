@@ -240,8 +240,7 @@ export class RespawnCell extends Cell {
       const ans = spawn.spawnCreep(setup.body, name, { memory });
 
       if (ans === OK) {
-        if (Apiary.logger)
-          Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
+        if (Apiary.logger) Apiary.logger.newSpawn(name, spawn, setup.cost);
         energyAvailable -= setup.cost;
         delete this.hive.spawOrders[order.ref];
       }

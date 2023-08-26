@@ -310,15 +310,8 @@ export class Logger {
     return OK;
   }
 
-  public newSpawn(
-    beeName: string,
-    spawn: StructureSpawn,
-    cost: number,
-    masterName: string
-  ) {
-    let name = beeName.substring(0, beeName.length - 5);
-    if (name === setups.miner.energy.name)
-      name = masterName.slice(masterName.length - 4);
+  public newSpawn(beeName: string, spawn: StructureSpawn, cost: number) {
+    const name = beeName.substring(0, beeName.length - 5);
     this.addResourceStat(
       spawn.pos.roomName,
       "spawn_" + name,
