@@ -131,7 +131,6 @@ declare global {
     settings: {
       framerate: number;
       forceBucket: number;
-      minBalance: number;
       generatePixel: boolean;
       wallsHealth: number;
       miningDist: number;

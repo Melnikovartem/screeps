@@ -92,6 +92,7 @@ function main() {
   if (Game.time % 10000 === 0) {
     // for the time beeing. Change from A to another class
     global.A.sign();
+    global.A.removeConst();
     global.A.recalcResTime();
   }
 

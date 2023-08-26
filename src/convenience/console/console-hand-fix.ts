@@ -1,6 +1,6 @@
 import type { ReactionConstant } from "cells/stage1/laboratoryCell";
 import { REACTION_MAP } from "cells/stage1/laboratoryCell";
-import { signText } from "enums";
+import { roomStates, signText } from "enums";
 
 import { makeId } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";
@@ -8,15 +8,70 @@ import { CustomConsole } from "./console";
 
 declare module "./console" {
   export interface CustomConsole {
+    /**
+     * Spawns a defender creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the defender.
+     * @param hiveName - Name of the hive to spawn the defender.
+     * @returns Result message of the spawning operation.
+     */
     spawnDefender: (patternLimit: number, hiveName?: string) => string;
+
+    /**
+     * Spawns a builder creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the builder.
+     * @param hiveName - Name of the hive to spawn the builder.
+     * @returns Result message of the spawning operation.
+     */
     spawnBuilder: (patternLimit: number, hiveName?: string) => string;
+
+    /**
+     * Spawns an upgrader creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the upgrader.
+     * @param hiveName - Name of the hive to spawn the upgrader.
+     * @returns Result message of the spawning operation.
+     */
     spawnUpgrader: (patternLimit: number, hiveName?: string) => string;
+
+    /**
+     * Produces a resource using labs or factories in a hive.
+     * @param resource - The resource to produce.
+     * @param hiveName - Name of the hive to perform the production.
+     * @param amount - Amount of the resource to produce.
+     * @returns Result message of the production operation.
+     */
     produce: (
       resource: ReactionConstant | CommodityConstant,
       hiveName?: string,
       amount?: number
     ) => string;
+
+    /**
+     * Signs controller rooms next to bees with claim.
+     * Need to be called from time to time.
+     * @param textMy - Text to sign controllers in your rooms.
+     * @param textAnnex - Text to sign controllers in annexed rooms.
+     * @param textOther - Text to sign controllers in other rooms.
+     * @returns Result message of the signing operation.
+     * @todo Automate this process.
+     */
     sign: (textMy?: string, textAnnex?: string, textOther?: string) => string;
+
+    /**
+     * Cleans up outdated intelligence data in a specific quadrant.
+     * Saves intel data from the specified quadrant within the given square.
+     * @param quadToclean - Quadrant to clean (e.g., "W0N0").
+     * @param xmin - Minimum X coordinate for cleaning.
+     * @param xmax - Maximum X coordinate for cleaning.
+     * @param ymin - Minimum Y coordinate for cleaning.
+     * @param ymax - Maximum Y coordinate for cleaning.
+     */
+    cleanIntel: (
+      quadToclean: string,
+      xmin: number,
+      xmax: number,
+      ymin: number,
+      ymax: number
+    ) => void;
   }
 }
 
@@ -143,4 +198,33 @@ CustomConsole.prototype.sign = function (
   return (
     `SIGNED ${sgn.length} controllers${sgn.length ? "\n" : ""}` + sgn.join("\n")
   );
+};
+
+CustomConsole.prototype.cleanIntel = function (
+  quadToclean: string,
+  xmin: number,
+  xmax: number,
+  ymin: number,
+  ymax: number
+) {
+  const quad = /^([WE])([NS])$/.exec(quadToclean);
+  for (const roomName in Memory.cache.intellegence) {
+    const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+    if (parsed && quad) {
+      const [, we, x, ns, y] = parsed;
+      const state = Apiary.intel.getInfo(roomName, Infinity).roomState;
+      if (
+        we === quad[1] &&
+        ns === quad[2] &&
+        (+x < xmin ||
+          +x > xmax ||
+          +y < ymin ||
+          +y > ymax ||
+          (state > roomStates.reservedByMe &&
+            state < roomStates.reservedByEnemy))
+      )
+        delete Memory.cache.intellegence[roomName];
+      else console.log("SAVED INTEL FROM", this.formatRoom(roomName), "\n");
+    } else delete Memory.cache.intellegence[roomName];
+  }
 };

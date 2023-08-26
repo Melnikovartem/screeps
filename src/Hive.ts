@@ -1,3 +1,6 @@
+/**
+ * Import statements
+ */
 import type { HiveCache } from "abstract/hiveMemory";
 import { BASE_MODE_HIVE } from "abstract/hiveMemory";
 import { FULL_CAPACITY } from "abstract/terminalNetwork";
@@ -23,15 +26,18 @@ import { PowerCell } from "cells/stage2/powerCell";
 import { hiveStates, prefix, roomStates } from "enums";
 import { profile } from "profiler/decorator";
 import { Traveler } from "Traveler/TravelerModified";
+// Import various modules and types
 
+// Define the SpawnOrder interface for creep spawning
 export interface SpawnOrder {
   setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // how urgent is this creep
+  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // Priority of the creep
   master: string;
   ref: string;
   createTime: number;
 }
 
+// Define the BuildProject interface for construction projects
 export interface BuildProject {
   pos: RoomPosition;
   sType: StructureConstant;
@@ -40,6 +46,7 @@ export interface BuildProject {
   type: "repair" | "construction";
 }
 
+// Define the HiveCells interface for different cell types within a hive
 export interface HiveCells {
   storage?: StorageCell;
   defense: DefenseCell;
@@ -53,10 +60,13 @@ export interface HiveCells {
   power?: PowerCell;
 }
 
+// Define a type for resource targets
 export type ResTarget = { [key in ResourceConstant]?: number };
 
-const HIVE_MINERAL = 5000; // LAB_BOOST_MINERAL * MAX_CREEP_SIZE * 3.333333
+// Constant for a minimum amount of a certain mineral in the hive
+const HIVE_MINERAL = 5000;
 
+// Define structure group types
 type StructureGroups =
   | "essential"
   | "roads"
@@ -65,6 +75,7 @@ type StructureGroups =
   | "hightech"
   | "trade";
 
+// Define a mapping of structure groups to buildable structure constants
 const BUILDABLE_PRIORITY: {
   [key in StructureGroups]: BuildableStructureConstant[];
 } = {
@@ -82,29 +93,41 @@ const BUILDABLE_PRIORITY: {
   ],
 };
 
+// Constants for update intervals
 const UPDATE_STRUCTURES_BATTLE = 100;
 const UPDATE_STRUCTURES_NORMAL = 1500;
 
+// Decorator to profile class methods
 @profile
 export class Hive {
-  // do i need roomName and roomNames? those ARE kinda aliases for room.name
+  /** Hive room name */
   public readonly roomName: string;
+  /** List of annex names */
   public annexNames: string[] = [];
+  /** List of annexes in danger */
   public annexInDanger: string[] = [];
 
+  /** The main room controlled by the hive */
   public room: Room;
-  /** this room and annexes */
+  /** List of rooms controlled by the hive */
   public rooms: Room[] = [];
+  /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
 
+  /** Dictionary of spawn orders */
   public spawOrders: { [id: string]: SpawnOrder } = {};
 
+  /** BuilderMaster instance for managing building-related tasks */
   public readonly builder?: BuilderMaster;
+  /** PullerMaster instance for managing resource transportation */
   public readonly puller?: PullerMaster;
 
-  /** Whic stage of develpment of hive current
+  /** Current development phase of the hive *
+   *
    * 0 up to storage tech
+   *
    * 1 storage - 7lvl
+   *
    * max */
   public readonly phase: 0 | 1 | 2;
 
@@ -134,6 +157,10 @@ export class Hive {
   public mastersResTarget: ResTarget = {};
   public shortages: ResTarget = {};
 
+  /**
+   * Constructor for the Hive class
+   * @param {string} roomName - The name of the hive's main room
+   */
   public constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
@@ -241,16 +268,30 @@ export class Hive {
       this.cells.dev = new DevelopmentCell(this);
   }
 
+  /**
+   * Check if a specific action should be performed by the hive
+   * @param {keyof HiveCache["do"]} action - The action to check
+   * @returns {boolean} - Whether the action should be performed
+   */
   public shouldDo(action: keyof HiveCache["do"]) {
     return this.cache.do[action];
   }
 
+  /**
+   * Add an annex to the hive
+   * @param {string} annexName - The name of the annex to add
+   */
   public addAnex(annexName: string) {
     if (!this.annexNames.includes(annexName)) this.annexNames.push(annexName);
     if (this.cells.dev) this.cells.dev.shouldRecalc = true;
     if (this.shouldRecalc < 3) this.shouldRecalc = 3;
   }
 
+  /**
+   * Handle changes in hive state
+   * @param {keyof typeof hiveStates} state - The new state of the hive
+   * @param {boolean} trigger - Whether the change was triggered
+   */
   public stateChange(state: keyof typeof hiveStates, trigger: boolean) {
     const st = hiveStates[state];
     if (trigger) {

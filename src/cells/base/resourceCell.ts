@@ -90,7 +90,7 @@ export class ResourceCell extends Cell {
     return 0;
   }
 
-  updateStructure() {
+  private updateStructure() {
     if (!(this.pos.roomName in Game.rooms)) return;
 
     this.container = _.filter(

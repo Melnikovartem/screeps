@@ -36,7 +36,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] =
     : {
         powerMining: 0,
         powerRefining: 1,
-        depositMining: 1,
+        depositMining: 0,
         depositRefining: 1,
         war: 1,
         unboost: 0,

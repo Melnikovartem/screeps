@@ -2,9 +2,7 @@ import type { HiveCache } from "../../abstract/hiveMemory";
 import { BASE_MODE_HIVE } from "../../abstract/hiveMemory";
 import type { RoomSetup } from "../../abstract/roomPlanner";
 import { makeId } from "../../abstract/utils";
-import { REACTION_MAP } from "../../cells/stage1/laboratoryCell";
-import { TERMINAL_ENERGY } from "../../cells/stage1/storageCell";
-import { prefix, roomStates } from "../../enums";
+import { prefix } from "../../enums";
 
 export class CustomConsole {
   public lastActionRoomName: string;
@@ -37,14 +35,6 @@ export class CustomConsole {
     return `framerate: ${Memory.settings.framerate}${
       Memory.settings.forceBucket ? ", ignoring bucket" : ""
     }`;
-  }
-
-  public reportCPU(state?: boolean) {
-    if (state === undefined || state == null) {
-      state = !Memory.settings.reportCPU;
-    }
-    Memory.settings.reportCPU = state;
-    return `CPU logging is ${Memory.settings.reportCPU ? "on" : "off"}`;
   }
 
   public pixel(state?: boolean) {
@@ -109,6 +99,8 @@ export class CustomConsole {
       case "buyin":
         mode = "buyIn";
         break;
+      case "deposit":
+        mode = "depositmining";
     }
     let on: 0 | 1;
     _.forEach(
@@ -124,7 +116,7 @@ export class CustomConsole {
           case "powermining":
             if (value === 0 || value === 1) dd.powerMining = value;
             break;
-          case "deposit":
+          case "depositmining":
             dd.depositMining =
               value === 0 || value === 1 ? value : dd.depositMining ? 0 : 1;
             if (dd.depositMining) dd.depositRefining = 1;
@@ -208,12 +200,6 @@ export class CustomConsole {
     _.forEach(Apiary.hives, (h) => {
       if (h.cells.observe) h.cells.observe.updateRoomsToCheck();
     });
-  }
-
-  public balance(min: number | "fit" = Game.market.credits * 0.8) {
-    if (typeof min !== "number") min = Game.market.credits;
-    Memory.settings.minBalance = Math.ceil(min);
-    return "use credit down to balance of " + Memory.settings.minBalance;
   }
 
   public format(s: string) {
@@ -438,6 +424,12 @@ export class CustomConsole {
     return `SCHEDULED ${ans} UNITS`;
   }
 
+  /** recalcs time for resources
+   *
+   * need to be called from time to time
+   *
+   * TODO automate
+   */
   public recalcResTime(hiveName?: string) {
     let hives;
     if (hiveName) {
@@ -466,6 +458,12 @@ export class CustomConsole {
     return "OK";
   }
 
+  /** removes all empty construction sites of mine
+   *
+   * need to be called from time to time
+   *
+   * TODO automate
+   */
   public removeConst() {
     const saved: string[] = [];
     _.forEach(Game.constructionSites, (c) => {
@@ -478,444 +476,14 @@ export class CustomConsole {
     );
   }
 
-  // some hand used functions
-  public terminal(
-    hiveName: string = this.lastActionRoomName,
-    amount: number = Infinity,
-    resource: ResourceConstant = RESOURCE_ENERGY,
-    mode: "fill" | "empty" = "fill"
+  public addStructureToPlan(
+    roomName: string = this.lastActionRoomName,
+    cache: RoomSetup
   ) {
-    hiveName = this.format(hiveName);
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-
-    const cell = hive && hive.cells.storage;
-    if (!cell || !cell.terminal)
-      return `ERROR: TERMINAL NOT FOUND @ ${hive.print}`;
-
-    if (!mode || (mode !== "fill" && mode !== "empty"))
-      return `ERROR: NO VALID MODE @ ${hive.print}`;
-
-    if (mode === "fill" && resource === RESOURCE_ENERGY && amount === Infinity)
-      amount = Math.min(cell.terminal.store.getFreeCapacity(resource), 11000);
-
-    if (mode === "empty" && resource === RESOURCE_ENERGY)
-      amount -= TERMINAL_ENERGY;
-
-    let ans;
-    if (amount > 0)
-      if (mode === "empty")
-        ans = cell.requestToStorage(
-          [cell.terminal],
-          1,
-          resource,
-          Math.min(amount, cell.terminal.store.getUsedCapacity(resource))
-        );
-      else
-        ans = cell.requestFromStorage(
-          [cell.terminal],
-          1,
-          resource,
-          Math.min(amount, cell.terminal.store.getFreeCapacity(resource))
-        );
-
-    return `${mode.toUpperCase()} TERMINAL @ ${
-      hive.print
-    } \nRESOURCE ${resource.toUpperCase()}: ${ans} `;
-  }
-
-  public sendBlind(
-    roomNameFrom: string,
-    roomNameTo: string,
-    resource: ResourceConstant,
-    amount: number = Infinity
-  ) {
-    roomNameFrom = this.format(roomNameFrom);
-    roomNameTo = this.format(roomNameTo);
-    const hiveFrom = Apiary.hives[roomNameFrom];
-    if (!hiveFrom)
-      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    const terminalFrom =
-      hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage.terminal;
-    if (!terminalFrom)
-      return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
-    if (terminalFrom.cooldown > 0) return "TERMINAL COOLDOWN";
-
-    amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
-
-    const energyCost =
-      Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
-    const energyCap = Math.floor(
-      terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost
-    );
-    amount = Math.min(amount, energyCap);
-
-    if (
-      resource === RESOURCE_ENERGY &&
-      amount * (1 + energyCost) >
-        terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY)
-    )
-      amount = Math.floor(amount * (1 - energyCost));
-
-    const ans = terminalFrom.send(resource, amount, roomNameTo);
-
-    const info = ` SEND FROM ${
-      hiveFrom.print
-    } TO ${roomNameTo} \nRESOURCE ${resource.toUpperCase()}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(
-      amount,
-      roomNameFrom,
-      roomNameTo
-    )}`;
-    if (ans === OK) return "OK" + info;
-    else return `ERROR: ${ans}` + info;
-  }
-
-  public send(
-    roomNameFrom: string,
-    roomNameTo: string,
-    resource: ResourceConstant = RESOURCE_ENERGY,
-    amount: number = Infinity
-  ) {
-    roomNameFrom = this.format(roomNameFrom);
-    roomNameTo = this.format(roomNameTo);
-    const hiveFrom = Apiary.hives[roomNameFrom];
-    if (!hiveFrom)
-      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    const terminalFrom =
-      hiveFrom && hiveFrom.cells.storage && hiveFrom.cells.storage.terminal;
-    if (!terminalFrom)
-      return `ERROR: FROM TERMINAL NOT FOUND @ ${hiveFrom.print}`;
-    if (terminalFrom.cooldown > 0) return "TERMINAL COOLDOWN";
-    const hiveTo = Apiary.hives[roomNameTo];
-    if (!hiveTo)
-      return `ERROR: NO HIVE @ <a href=#!/room/${Game.shard.name}/${roomNameFrom}>${roomNameFrom}</a>`;
-    const terminalTo =
-      hiveTo && hiveTo.cells.storage && hiveTo.cells.storage.terminal;
-    if (!terminalTo) return `ERROR: TO TERMINAL NOT @ ${roomNameTo}`;
-
-    amount = Math.min(amount, terminalFrom.store.getUsedCapacity(resource));
-    amount = Math.min(amount, terminalTo.store.getFreeCapacity(resource));
-
-    const energyCost =
-      Game.market.calcTransactionCost(10000, roomNameFrom, roomNameTo) / 10000;
-    const energyCap = Math.floor(
-      terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost
-    );
-    amount = Math.min(amount, energyCap);
-
-    if (
-      resource === RESOURCE_ENERGY &&
-      amount * (1 + energyCost) >
-        terminalFrom.store.getUsedCapacity(RESOURCE_ENERGY)
-    )
-      amount = Math.floor(amount * (1 - energyCost));
-
-    const ans = terminalFrom.send(resource, amount, roomNameTo);
-    if (ans === OK && Apiary.logger)
-      Apiary.logger.newTerminalTransfer(
-        terminalFrom,
-        terminalTo,
-        amount,
-        resource
-      );
-
-    const info = ` SEND FROM ${hiveFrom.print} TO ${
-      hiveTo.print
-    } \nRESOURCE ${resource.toUpperCase()}: ${amount} \nENERGY: ${Game.market.calcTransactionCost(
-      amount,
-      roomNameFrom,
-      roomNameTo
-    )}`;
-    if (ans === OK) return "OK" + info;
-    else return `ERROR: ${ans}` + info;
-  }
-
-  public transfer(
-    roomNameFrom: string,
-    roomNameTo: string,
-    res: ResourceConstant = RESOURCE_ENERGY,
-    amount?: number
-  ) {
-    console.log(this.terminal(roomNameFrom, amount, res, "fill"));
-    console.log(this.terminal(roomNameTo, amount, res, "empty"));
-    console.log(this.send(roomNameFrom, roomNameTo, res, amount));
-  }
-
-  public changeOrderPrice(orderId: string, newPrice: number) {
-    return this.marketReturn(
-      Game.market.changeOrderPrice(orderId, newPrice),
-      "ORDER CHANGE TO " + newPrice
-    );
-  }
-
-  public cancelOrdersHive(
-    hiveName: string = this.lastActionRoomName,
-    nonActive = false
-  ) {
-    let ans = `OK @ ${this.format(hiveName)}`;
-    _.forEach(Game.market.orders, (o) => {
-      if (o.roomName === hiveName && (!o.active || nonActive))
-        ans +=
-          this.marketReturn(
-            Apiary.broker.cancelOrder(o.id),
-            `canceled ${o.resourceType}`
-          ) + "\n";
-    });
-    return ans;
-  }
-
-  public cancelOrder(orderId: string) {
-    return this.marketReturn(
-      Apiary.broker.cancelOrder(orderId),
-      "ORDER CANCEL"
-    );
-  }
-
-  public completeOrder(orderId: string, roomName?: string, sets: number = 1) {
-    const order = Game.market.getOrderById(orderId);
-    if (!order) return `ERROR: ORDER NOT FOUND`;
-    let amount = Math.min(sets * 5000, order.amount);
-    let ans;
-    let energy: number | string = "NOT NEEDED";
-    let hiveName: string = "NO HIVE";
-    if (!order.roomName) {
-      ans = Game.market.deal(orderId, amount);
-    } else {
-      const resource = order.resourceType as ResourceConstant;
-
-      let terminal;
-      let validateTerminal = (t: StructureTerminal) =>
-        t.store.getUsedCapacity(resource) > amount;
-      if (order.type === ORDER_SELL)
-        validateTerminal = (t) => t.store.getFreeCapacity(resource) > amount;
-
-      if (roomName)
-        terminal = this.getTerminal(roomName, order.type === ORDER_BUY);
-      else {
-        const validHives = _.filter(
-          Apiary.hives,
-          (h) =>
-            h.cells.storage &&
-            h.cells.storage.terminal &&
-            validateTerminal(h.cells.storage.terminal)
-        );
-        if (!validHives.length) return "NO VALID HIVES FOUND";
-
-        const hive = validHives.reduce((prev, curr) =>
-          Game.market.calcTransactionCost(100, prev.roomName, order.roomName!) >
-          Game.market.calcTransactionCost(100, curr.roomName, order.roomName!)
-            ? curr
-            : prev
-        );
-        terminal = hive.cells.storage!.terminal!;
-      }
-
-      if (typeof terminal === "string") return terminal;
-
-      hiveName = this.formatRoom(terminal.pos.roomName);
-
-      if (order.type === ORDER_BUY)
-        amount = Math.min(amount, terminal.store.getUsedCapacity(resource));
-      else amount = Math.min(amount, terminal.store.getFreeCapacity(resource));
-
-      energy = Game.market.calcTransactionCost(
-        amount,
-        terminal.pos.roomName,
-        order.roomName
-      );
-      ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
-      if (ans === OK && order.roomName && Apiary.logger)
-        Apiary.logger.marketShort(order, amount, terminal.pos.roomName);
-    }
-
-    const info = `${
-      order.type === ORDER_SELL ? "BOUGHT" : "SOLD"
-    } @ ${hiveName}${
-      order.roomName ? " from " + this.formatRoom(order.roomName) : ""
-    }\nRESOURCE ${order.resourceType.toUpperCase()}: ${amount} \nMONEY: ${
-      amount * order.price
-    } \nENERGY: ${energy}`;
-
-    return this.marketReturn(ans, info);
-  }
-
-  public getTerminal(roomName: string, checkCooldown = false) {
-    const hive = Apiary.hives[roomName];
-    if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(roomName)}`;
-    this.lastActionRoomName = hive.roomName;
-    const terminal = hive.cells.storage && hive.cells.storage.terminal!;
-    if (!terminal) return `NO VALID TERMINAL NOT FOUND @ ${hive.print}`;
-    if (checkCooldown && terminal.cooldown) return `TERMINAL COOLDOWN`;
-    return terminal;
-  }
-
-  public buyMastersMinerals(
-    padding = 0,
-    hiveName: string = this.lastActionRoomName,
-    mode = "fast"
-  ) {
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
-    const state = hive.mastersResTarget;
-    let ans = `OK @ ${this.format(hiveName)}`;
-    let skip = !hive.room.terminal || !!hive.room.terminal.cooldown;
-    _.forEach(state, (amount, r) => {
-      if (!amount || !r || r === RESOURCE_ENERGY) return;
-      const res = r as ResourceConstant;
-      if (!(res in REACTION_MAP) || hive.resState[res]! > 0) return;
-      if (skip) {
-        ans += `\n${res}: skipped ${amount}`;
-        return;
-      }
-      const sets = Math.min(
-        Math.round(((amount + padding) / 5000) * 1000) / 1000,
-        1
-      );
-      let buyAns;
-      switch (mode) {
-        case "short":
-          buyAns = this.buyShort(res, hiveName, sets);
-          break;
-        case "long":
-          buyAns = this.buyLong(res, hiveName, sets);
-          break;
-        default:
-          buyAns = this.buy(res, hiveName, sets, mode === "fast");
-      }
-      skip = buyAns.includes("short");
-      ans += `\n${res}: ${buyAns} ${sets * 5000}/${amount}`;
-    });
-    return ans;
-  }
-
-  public buy(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1,
-    hurry: boolean = false
-  ) {
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public sell(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1,
-    hurry: boolean = false
-  ) {
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public buyShort(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1
-  ) {
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public sellShort(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1
-  ) {
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.sellShort(terminal, resource, 5000 * sets),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public buyLong(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1
-  ) {
-    // coef = 0.95
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.buyLong(
-        terminal,
-        resource,
-        5000 * sets,
-        Infinity,
-        Apiary.broker.priceLongBuy(resource, 0.02)
-      ),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public sellLong(
-    resource: ResourceConstant,
-    hiveName: string = this.lastActionRoomName,
-    sets: number = 1,
-    price?: number
-  ) {
-    // coef = 1.05
-    hiveName = hiveName.toUpperCase();
-    const terminal = this.getTerminal(hiveName);
-    if (typeof terminal === "string") return terminal;
-    Apiary.broker.update();
-    return this.marketReturn(
-      Apiary.broker.sellLong(
-        terminal,
-        resource,
-        5000 * sets,
-        Infinity,
-        price || Apiary.broker.priceLongSell(resource, 0.02)
-      ),
-      `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-    );
-  }
-
-  public marketReturn(ans: number | string, info: string) {
-    switch (ans) {
-      case ERR_NOT_FOUND:
-        ans = "NO GOOD DEAL NEAR";
-        break;
-      case ERR_NOT_ENOUGH_RESOURCES:
-        ans = "NOT ENOUGH RESOURCES";
-        break;
-      case OK:
-        return "OK " + info;
-    }
-    return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
-  }
-
-  public update(roomName: string = this.lastActionRoomName, cache: RoomSetup) {
     if (!(roomName in Game.rooms))
       return `CANNOT ACCESS ${this.formatRoom(roomName)}`;
     if (!Memory.cache.roomPlanner[roomName])
       return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
-
     if (!(roomName in Apiary.planner.activePlanning))
       return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`;
 
@@ -946,34 +514,6 @@ export class CustomConsole {
     else return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
 
     return "OK";
-  }
-
-  public cleanIntel(
-    quadToclean: string,
-    xmin: number,
-    xmax: number,
-    ymin: number,
-    ymax: number
-  ) {
-    const quad = /^([WE])([NS])$/.exec(quadToclean);
-    for (const roomName in Memory.cache.intellegence) {
-      const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
-      if (parsed && quad) {
-        const [, we, x, ns, y] = parsed;
-        const state = Apiary.intel.getInfo(roomName, Infinity).roomState;
-        if (
-          we === quad[1] &&
-          ns === quad[2] &&
-          (+x < xmin ||
-            +x > xmax ||
-            +y < ymin ||
-            +y > ymax ||
-            (state > roomStates.reservedByMe &&
-              state < roomStates.reservedByEnemy))
-        )
-          delete Memory.cache.intellegence[roomName];
-      } else delete Memory.cache.intellegence[roomName];
-    }
   }
 
   public formatRoom(roomName: string, text: string = roomName) {
