@@ -164,6 +164,14 @@ export const setups = {
     },
     50 / 3
   ),
+  manager: new CreepSetup(
+    setupsNames.manager,
+    {
+      pattern: [CARRY],
+      patternLimit: 6,
+    },
+    1
+  ),
   hauler: new CreepSetup(
     setupsNames.hauler,
     {

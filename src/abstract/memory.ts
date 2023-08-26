@@ -3,7 +3,7 @@ import { profile } from "../profiler/decorator";
 
 @profile
 export class Mem {
-  static init() {
+  public static init() {
     if (!Memory.cache)
       Memory.cache = {
         intellegence: {},
@@ -16,7 +16,6 @@ export class Mem {
       Memory.settings = {
         framerate: 10,
         forceBucket: 0,
-        minBalance: 0,
         generatePixel: Game.cpu.limit > 20,
         wallsHealth: 20000000,
         miningDist: 8,
@@ -31,7 +30,7 @@ export class Mem {
     Logger.init();
   }
 
-  static wipe() {
+  public static wipe() {
     console.log("> > Memory wipe!");
     Memory.masters = undefined;
     Memory.cache = {
@@ -44,7 +43,6 @@ export class Mem {
     Memory.settings = {
       framerate: 10,
       forceBucket: 0,
-      minBalance: 0,
       generatePixel: Game.cpu.limit > 20,
       wallsHealth: 20000000,
       miningDist: 8,
@@ -54,7 +52,7 @@ export class Mem {
     Logger.init(true);
   }
 
-  static clean() {
+  public static clean() {
     for (const name in Memory.creeps)
       if (!(name in Game.creeps)) {
         delete Memory.creeps[name];

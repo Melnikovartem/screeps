@@ -666,9 +666,8 @@ export class FlagOrder {
               this.hive.cells.storage &&
               this.hive.cells.storage.terminal
             ) {
-              const hurry = this.ref.includes("hurry");
-              const fast = this.ref.includes("fast");
               const priceFix = Apiary.broker.avgPrice(res);
+              const fast = this.ref.includes("fast");
               if ("all" === parsed[2]) {
                 if (mode === "sell") {
                   // if (hurry || Game.time % 10 === 0)
@@ -697,10 +696,7 @@ export class FlagOrder {
                         this.hive.cells.storage!.terminal!,
                         res,
                         Math.min(5000, getAmount(res)),
-                        this.hive.cells.defense.isBreached,
-                        Infinity,
-                        hurry ? 10 : 100,
-                        priceFix || undefined
+                        this.hive.cells.defense.isBreached
                       );
                     }
                   );
@@ -716,10 +712,9 @@ export class FlagOrder {
                     mode,
                     "for",
                     priceFix,
-                    hurry ? "hurry" : " ",
                     fast ? "fast" : " "
                   );
-                if (hurry || Game.time % 10 === 0) {
+                if (fast || Game.time % 10 === 0) {
                   switch (mode) {
                     case "sell":
                       if (
@@ -733,28 +728,23 @@ export class FlagOrder {
                           this.hive.cells.storage.terminal,
                           res,
                           500,
-                          hurry,
-                          this.ref.includes("noinf") ? undefined : Infinity,
-                          fast ? 2 : 50,
-                          priceFix || undefined
+                          fast
                         );
                         return;
                       }
                       break;
                     case "buy":
+                      // @MARKETDANGER
                       if (
-                        this.hive.cells.storage.getUsedCapacity(res) <
-                        (res === RESOURCE_ENERGY ? 500000 : 10000) *
-                          (fast ? 3 : 1)
+                        (this.hive.resState[res] || 0) <= 0 ||
+                        (Apiary.broker.avgPrice(res) <= 50 &&
+                          (this.hive.resState[res] || 0) < 1000)
                       ) {
                         Apiary.broker.buyIn(
                           this.hive.cells.storage.terminal,
                           res,
                           res === RESOURCE_ENERGY ? 16384 : 2048,
-                          hurry,
-                          this.ref.includes("noinf") ? undefined : Infinity,
-                          fast ? 2 : 50,
-                          priceFix || undefined
+                          fast
                         );
                         return;
                       }

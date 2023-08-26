@@ -33,13 +33,7 @@ export const COMMON_COMMODITIES: FactoryResourceConstant[] = [
 ];
 
 const STOP_PRODUCTION = -HIVE_ENERGY * 0.25;
-/*
-let ss = '"metal", "biomass", "silicon", "mist", ';
-for (const r in COMMODITIES)
-  if (Object.keys(COMMODITIES[<CommodityConstant>r].components).length > 2)
-    ss += `"${r}", `;
-console .log(`[ ${ss}]`)
-*/
+const COMMON_COMMODITIES_STOCKPILE = 5000;
 
 export const DEPOSIT_COMMODITIES: DepositConstant[] = [
   "metal",
@@ -145,13 +139,13 @@ export class FactoryCell extends Cell {
 
   public stepToTarget() {
     this.resTarget = {};
-    this.uncommon = false;
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       if (
         !this.hive.shouldDo("depositRefining") ||
         (!this.commodityTarget && Game.time % COOLDOWN_TARGET_FACTORY !== 8)
       )
         return;
+      this.uncommon = false;
       this.commodityTarget = undefined;
       let targets: { res: FactoryResourceConstant; amount: number }[] = [];
       let toCheck = Object.keys(COMMODITIES);
@@ -162,38 +156,28 @@ export class FactoryCell extends Cell {
         const res = resToCheck as FactoryResourceConstant; // actually ResourceConstant
         const recipe = COMMODITIES[res];
         if (recipe.level && recipe.level !== this.factory.level) continue;
-
         let num = 0;
-
         if (recipe.level || COMMODITIES_TO_SELL.includes(res)) {
           num = 40;
           if (!COMMON_COMMODITIES.includes(res)) {
             const componentAmount: number[] = [];
-            _.forEach(recipe.components, (amountNeeded, component) => {
-              if (
-                COMMODITIES_TO_SELL.includes(component as CommodityConstant)
-              ) {
-                let toUse = this.sCell.getUsedCapacity(
-                  component as CommodityConstant
-                );
+            _.forEach(recipe.components, (amountNeeded, comp) => {
+              const component = comp as CommodityConstant;
+              if (COMMODITIES_TO_SELL.includes(component)) {
+                let toUse = this.sCell.getUsedCapacity(component);
                 if (recipe.level)
                   toUse = Math.max(
                     toUse,
-                    Apiary.network.resState[component as CommodityConstant] || 0
+                    Apiary.network.resState[component] || 0
                   );
                 componentAmount.push(toUse / amountNeeded);
               }
             });
             num = Math.min(num, ...componentAmount);
-            if (num > 1 && recipe.level) {
-              this.uncommon = true;
-              if (recipe.level !== this.level) num = 0;
-            }
           } else {
             const amountInUse =
               Apiary.network.resState[res as CommodityConstant] || 0;
-            if (amountInUse >= 5000) num = 0;
-            else this.uncommon = true;
+            if (amountInUse >= COMMON_COMMODITIES_STOCKPILE) num = 0;
           }
         } else if (res === RESOURCE_ENERGY) {
           // energy below 100000
@@ -209,6 +193,10 @@ export class FactoryCell extends Cell {
             continue;
           const toProduce = 500 - this.hive.resState[res]!;
           num = Math.max(0, Math.ceil(toProduce / recipe.amount));
+        }
+        if (recipe.level && recipe.level !== this.level) {
+          num = 0;
+          this.uncommon = true; // ask for boost if not yet
         }
         if (num > 1) {
           targets.push({ res, amount: Math.floor(num) * recipe.amount });
@@ -379,6 +367,7 @@ export class FactoryCell extends Cell {
         this.commodityTarget = undefined;
       }
     }
+
     if (!this.prod) this.stepToTarget();
 
     if (!this.prod) {

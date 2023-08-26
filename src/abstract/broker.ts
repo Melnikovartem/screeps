@@ -6,6 +6,9 @@ import {
 import { COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
 import { profile } from "../profiler/decorator";
 
+// @MARKETDANGER tag for strange/custom coefs bases on data from summer 2023
+
+// Define the structure of a proto order for market transactions
 export interface ProtoOrder {
   id: string;
   roomName: string;
@@ -15,55 +18,91 @@ export interface ProtoOrder {
   type: ORDER_BUY | ORDER_SELL;
 }
 
+// Constants for controlling market behavior
 const MAX_DEVIATION_PERCENT = 0.1;
 const MAX_DEVIATION_PRICE = 10;
 
-const ORDER_PADDING = 0.001;
+const ORDER_OFFSET = 0.001;
 const MARKET_FEE = 0.05;
 
-const CREDIT_THRESHOLD_SLOW = 50000000;
+// @MARKETDANGER
+const SKIP_SMALL_ORDER = 500;
+const MARKET_SETTINGS = {
+  pocketChange: 100, // i do not care if i lose this amount on an order
+  okLossAmount: 10000, // i can pay this price to smooth things
+  reserveCredits: 1_000_000, // Maintain balance above this amount
+  mineralCredits: 5_000_000, // Buy credits if above this amount
+  boostCredits: 10_000_000, // Buy boosts directly if above this amount
+  energyCredits: 50_000_000, // Buy energy if above this amount
+  orders: {
+    timeout: 1_000_000, // Remove orders after this many ticks if remaining amount < cleanupAmount
+    cleanupAmount: 10, // RemainingAmount threshold to remove expiring orders
+  },
+};
+export const MARKET_LAG = Game.cpu.limit <= 20 ? 40 : 10;
 
-const REASONABLE_MONEY = 50;
-export const MARKET_LAG = Game.cpu.limit <= 20 ? 8 : 2;
-
-// MARKET DANGER for strange/custom coefs
-
-/* const MAX_SPENDING_HIVE = 50000;
-const SPENDING_PERIOD = 250; */
-
+/* 
+  Define the structure to store price statistics for different resources.
+  This will help keep track of good buy and sell orders for each resource.
+*/
 type PriceStat = { [key in ResourceConstant]?: number };
 
 @profile
 export class Broker {
-  // if it will become to heavy will switch to storing orderId
-
+  /**
+   * List of profitable compounds for reactions
+   * @param profitableCompounds - List of ReactionConstant values representing profitable compounds.
+   */
   public profitableCompounds: ReactionConstant[] = [];
 
+  /**
+   * Information about resource orders and prices
+   * @param info - Object storing information about different resources' orders and prices.
+   */
   private info: {
     [key in ResourceConstant]?: {
-      // buy - i buy in resource
+      /** buy - i buy in resource */
       goodBuy: ProtoOrder[];
-      // sell - i sell resource
+      /** sell - i sell resource */
       goodSell: ProtoOrder[];
+      /** best Market Price to Buy | they sell i buy instant */
       bestPriceBuy?: number;
+      /** best Market Price to Sell | they buy i sell instant */
       bestPriceSell?: number;
-      // avg price of past 2 days
+      /** Weighted avg/high/low price of past 10 days
+       *
+       * VERY!! unrelaible way to access price */
       avgPrice: number;
+      /** Last time metric was updated */
       lastUpdated: number;
     };
   } = {};
 
+  /**
+   * Short-term sell orders for resources
+   * Stored to move resources in terminal and exec order
+   * @param shortOrdersSell - Object storing short-term sell orders for different room names.
+   */
   public shortOrdersSell: {
     [roomName: string]: { orders: PriceStat; lastUpdated: number };
   } = {};
+
+  /**
+   * Energy price in the market
+   * @param energyPrice - Current energy price in the market.
+   */
   private energyPrice: number = Infinity;
 
-  private updateRes(res: ResourceConstant, lag: number = 0) {
+  /**
+   * Function to update resource information and orders
+   * @param res - ResourceConstant for which to update information.
+   * @param lag - Lag parameter for updating information.
+   * @returns Updated resource information.
+   */
+  private updateRes(res: ResourceConstant, lag: number = MARKET_LAG) {
     let info = this.info[res]!;
     if (info && info.lastUpdated + lag >= Game.time) return info;
 
-    // on shard2 during 10.2021 it took about 10.5CPU to calc all this
-    // let cpu = Game.cpu.getUsed();
     if (!info) {
       this.info[res] = {
         goodBuy: [],
@@ -83,7 +122,11 @@ export class Broker {
     const orders = Game.market.getAllOrders({ resourceType: res });
 
     _.forEach(orders, (order) => {
-      if (!order.roomName || !order.amount || order.id in Game.market.orders)
+      if (
+        !order.roomName ||
+        order.amount <= SKIP_SMALL_ORDER ||
+        order.id in Game.market.orders
+      )
         return;
       if (order.type === ORDER_BUY) {
         // they buy i sell
@@ -129,11 +172,22 @@ export class Broker {
     return info;
   }
 
+  /**
+   * Function to get the average price of a resource
+   * @param res - ResourceConstant for which to get the average price.
+   * @returns Average price of the specified resource.
+   */
   public avgPrice(res: ResourceConstant) {
     this.updateRes(res, 1000);
     return this.info[res]!.avgPrice;
   }
 
+  /**
+   * Calculate the weighted average price of a resource
+   * @param res - ResourceConstant for which to calculate the weighted average price.
+   * @param lastNDays - Number of days to consider for weighted average calculation.
+   * @returns Weighted average price of the specified resource.
+   */
   private weightedAvgPrice(res: ResourceConstant, lastNDays = 10) {
     let volume = 0;
     let sumPriceWeighted = 0;
@@ -146,6 +200,11 @@ export class Broker {
     return volume ? sumPriceWeighted / volume : Infinity;
   }
 
+  /**
+   * Check if a lab-produced compound is profitable
+   * @param compound - ReactionConstant representing the compound to check.
+   * @returns Whether the compound is profitable to produce.
+   */
   private checkIfLabProfitable(compound: ReactionConstant) {
     const shoppingList = compound.split("");
     let costToProduce = 0;
@@ -160,11 +219,14 @@ export class Broker {
     // from buying materials/selling product. Not all compound need to buy in so * 0.8
     // not always paying 1 energy so * 0.9
     // 0.8 * 0.9 = 0.72 ~ 0.7
-    // MARKET DANGER
+    // @MARKETDANGER
     const energyCosts = this.energyPrice * (shoppingList.length + 1) * 0.7;
     return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
   }
 
+  /**
+   * Check if any lab-produced compounds are profitable
+   */
   private checkIfAnyLabProfitable() {
     this.profitableCompounds = [];
     for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
@@ -174,23 +236,39 @@ export class Broker {
     }
   }
 
+  /**
+   * Update market-related information
+   */
   public update() {
     this.updateRes(RESOURCE_ENERGY, MARKET_LAG * 100);
 
-    if ((Game.time - Apiary.createTime) % 1000 === 0) {
+    if ((Game.time - Apiary.createTime) % 1000 === 571) {
       // later will be used to calc is it even profitable to sell something faraway
       this.energyPrice = this.weightedAvgPrice(RESOURCE_ENERGY);
       this.checkIfAnyLabProfitable();
     }
 
-    for (const id in Game.market.orders)
-      if (!Game.market.orders[id].remainingAmount) this.cancelOrder(id);
+    // clean empty / old inactive small orders
+    for (const [id, order] of Object.entries(Game.market.orders))
+      if (
+        (!order.active &&
+          Game.time - order.created >= MARKET_SETTINGS.orders.timeout &&
+          order.remainingAmount < MARKET_SETTINGS.orders.cleanupAmount) ||
+        !order.remainingAmount
+      )
+        this.cancelOrder(id);
 
+    // empty shortOrdersSell
     for (const roomName in this.shortOrdersSell)
       if (Game.time > this.shortOrdersSell[roomName].lastUpdated + 20)
         this.shortOrdersSell[roomName] = { orders: {}, lastUpdated: Game.time };
   }
 
+  /**
+   * Cancel a market order
+   * @param orderId - ID of the market order to cancel.
+   * @returns Result of the order cancellation.
+   */
   public cancelOrder(orderId: string) {
     if (Apiary.logger) {
       const order = Game.market.getOrderById(orderId);
@@ -199,6 +277,11 @@ export class Broker {
     return Game.market.cancelOrder(orderId);
   }
 
+  /**
+   * Get target long orders for a room
+   * @param roomName - Name of the room for which to get target long orders.
+   * @returns Object containing target long orders for different resources.
+   */
   public getTargetLongOrders(roomName: string) {
     const orders = _.filter(Game.market.orders, (o) => o.roomName === roomName);
     const ans: { [key in ResourceConstant]?: number } = {};
@@ -216,6 +299,9 @@ export class Broker {
     return ans;
   }
 
+  /**
+   * Get long orders for a specific resource and order type
+   */
   public longOrders(
     roomName: string,
     res: ResourceConstant,
@@ -230,113 +316,152 @@ export class Broker {
     );
   }
 
+  /** Main smart function to buy stuff */
   public buyIn(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    hurry = false,
-    creditsToUse?: number,
-    coef = hurry ? 4 : 2,
-    maxPrice = Infinity
+    tryFaster: boolean = false
   ): "no money" | "short" | "long" {
     const roomName = terminal.pos.roomName;
-    if (creditsToUse === undefined) creditsToUse = this.creditsToUse(roomName);
-    if (creditsToUse < REASONABLE_MONEY) return "no money";
-    let orders;
-    if (!hurry) orders = this.longOrders(roomName, res, ORDER_BUY);
-    const info = this.updateRes(res, orders && orders.length ? 16 : MARKET_LAG);
-    const step = ORDER_PADDING * coef;
-    const price = this.priceLongBuy(res, step);
-    let priceToBuyInstant = info.bestPriceBuy || Infinity;
+    const hive = Apiary.hives[roomName];
+    if (!hive) return "no money"; // safecheck
+    const creditsToUse = this.creditsToUse();
+    if (creditsToUse < MARKET_SETTINGS.reserveCredits) return "no money";
 
-    if (res === RESOURCE_ENERGY) priceToBuyInstant *= 2; // 1.5654; // approx transfer costs
+    let hurry;
+    const speedUpBuy = hive.resState[res] || 0 <= 0;
+    if (tryFaster) hurry = speedUpBuy ? "RightNow" : "GoodPrice";
+    else hurry = speedUpBuy ? "AnyBuck" : "RightNow";
 
-    if (hurry || priceToBuyInstant <= price * 1.05) {
-      let ans: number = ERR_NOT_ENOUGH_RESOURCES;
-      if (Math.floor(creditsToUse / priceToBuyInstant))
-        ans = this.buyShort(terminal, res, amount, creditsToUse, maxPrice);
+    let okLoss = 0;
+    switch (hurry) {
+      case "GoodPrice":
+        break;
+      case "RightNow":
+        okLoss = MARKET_SETTINGS.pocketChange;
+        break;
+      case "AnyBuck":
+        okLoss = MARKET_SETTINGS.okLossAmount;
+        break;
+    }
+
+    const info = this.updateRes(res, MARKET_LAG);
+    const priceToBuyLong = info.bestPriceSell || info.avgPrice;
+    const priceToBuyInstant = info.bestPriceBuy || info.avgPrice;
+
+    if (
+      Math.floor(
+        creditsToUse / Math.min(priceToBuyInstant, priceToBuyLong * 1.05)
+      ) < 0
+    )
+      return "no money";
+
+    const loss =
+      (priceToBuyInstant +
+        this.energyPrice * 0.7 -
+        priceToBuyLong * (1 + MARKET_FEE)) *
+      amount;
+
+    if (loss < okLoss) {
+      const ans = this.buyShort(
+        terminal,
+        res,
+        amount,
+        priceToBuyInstant + okLoss
+      );
       switch (ans) {
         case OK:
         case ERR_TIRED:
-          return "short";
+          return "short"; // tried to buy short
         case ERR_FULL:
         case ERR_NOT_FOUND:
-          if (!hurry) return "long";
-          break;
+          return "long"; // do not force it
         default:
           break;
       }
     }
 
-    if (!orders)
-      // prob never
-      orders = this.longOrders(roomName, res, ORDER_BUY);
-
-    if (!orders.length && Math.floor(creditsToUse / (price * 1.05)) > 0)
-      this.buyLong(
-        terminal,
-        res,
-        amount,
-        creditsToUse,
-        Math.min(price, maxPrice)
-      );
+    const orders = this.longOrders(roomName, res, ORDER_BUY);
+    let myPrice = priceToBuyLong + ORDER_OFFSET;
+    if (!orders.length) this.buyLong(terminal, res, amount, myPrice);
     else {
-      const o = orders.sort((a, b) => a.created - b.created)[0];
-      let newPrice;
-      const priceToSellInstant = info.bestPriceSell || 0;
-      if (priceToSellInstant + step >= o.price + step * 10000)
-        newPrice = o.price + step * 10000;
-      if (priceToSellInstant + step >= o.price + step * 1000)
-        newPrice = o.price + step * 1000;
-      if (priceToSellInstant + step >= o.price + step * 100)
-        newPrice = o.price + step * 100;
-      else if (priceToSellInstant >= o.price) newPrice = o.price + step;
-      if (newPrice && newPrice <= maxPrice) {
-        // ( && newPrice <= price && priceToBuyInstant >= newPrice * 1.1)
-        const oldPrice = o.price;
-        const ans = Game.market.changeOrderPrice(o.id, newPrice);
-        const fee = (newPrice - oldPrice) * o.remainingAmount * MARKET_FEE;
-        if (fee > 0 && ans === OK && Apiary.logger && newPrice > oldPrice)
-          Apiary.logger.reportMarketFeeChange(
-            o.id,
-            o.resourceType,
-            fee,
-            ORDER_BUY
-          );
-      }
+      const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+
+      const diffInPrice = myPrice - myOrder.price;
+      const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
+      myPrice = myOrder.price + diffInPrice * coefForStep; // trying to get to myPrice but not too fast
+
+      const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
+
+      // report stuff
+      const fee =
+        (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
+      if (fee > 0 && ans === OK && Apiary.logger)
+        Apiary.logger.reportMarketFeeChange(
+          myOrder.id,
+          myOrder.resourceType,
+          fee,
+          ORDER_BUY
+        );
     }
     return "long";
   }
 
+  /** Main smart function to sell stuff */
   public sellOff(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    hurry = false,
-    creditsToUse?: number,
-    coef = hurry ? 4 : 2,
-    minPrice = 0
+    tryFaster: boolean = false
   ): "no money" | "short" | "long" {
     const roomName = terminal.pos.roomName;
-    if (creditsToUse === undefined) creditsToUse = this.creditsToUse(roomName);
-    let orders;
-    if (!hurry) orders = this.longOrders(roomName, res, ORDER_SELL);
-    const info = this.updateRes(res, orders && orders.length ? 16 : MARKET_LAG);
-    let priceToSellInstant = info.bestPriceSell ? info.bestPriceSell : Infinity;
+    const hive = Apiary.hives[roomName];
+    if (!hive) return "no money"; // safecheck
+    const creditsToUse = this.creditsToUse();
 
-    const step = ORDER_PADDING * coef;
-    const price = this.priceLongSell(res, step);
+    let hurry;
+    const speedUpBuy =
+      (hive.resState[res] || 0) > (hive.resState[res] || 0) + 1000;
+    if (tryFaster) hurry = speedUpBuy ? "RightNow" : "GoodPrice";
+    else hurry = speedUpBuy ? "AnyBuck" : "RightNow";
 
-    priceToSellInstant -= this.energyPrice;
+    let okLoss = 0;
+    switch (hurry) {
+      case "GoodPrice":
+        break;
+      case "RightNow":
+        okLoss = MARKET_SETTINGS.pocketChange;
+        break;
+      case "AnyBuck":
+        okLoss = MARKET_SETTINGS.okLossAmount;
+        break;
+    }
 
-    if (
-      hurry ||
-      priceToSellInstant >= price * 0.95 ||
-      COMMODITIES_TO_SELL.includes(res as CommodityConstant)
-    ) {
-      const ans = this.sellShort(terminal, res, amount, minPrice);
+    const info = this.updateRes(res, MARKET_LAG);
+    const priceToSellLong = info.bestPriceBuy || info.avgPrice;
+    const priceToSellInstant = info.bestPriceSell || info.avgPrice;
+
+    const loss =
+      (priceToSellInstant +
+        this.energyPrice * 0.7 -
+        priceToSellLong * (1 + MARKET_FEE)) *
+      amount;
+    const okToShortSell =
+      loss < okLoss ||
+      COMMODITIES_TO_SELL.includes(res as CommodityConstant) ||
+      creditsToUse < MARKET_SETTINGS.reserveCredits;
+
+    if (okToShortSell) {
+      const ans = this.sellShort(
+        terminal,
+        res,
+        amount,
+        priceToSellInstant - okLoss
+      );
       switch (ans) {
         case OK:
+          // move reosources to terminal
           this.shortOrdersSell[roomName].orders[res] = amount;
           this.shortOrdersSell[roomName].lastUpdated = Game.time;
           return "short";
@@ -345,6 +470,7 @@ export class Broker {
         case ERR_NOT_FOUND:
         case ERR_NOT_ENOUGH_RESOURCES:
         case ERR_FULL:
+          // move reosources to terminal
           this.shortOrdersSell[roomName].orders[res] = amount;
           this.shortOrdersSell[roomName].lastUpdated = Game.time;
           return "long";
@@ -352,86 +478,56 @@ export class Broker {
       }
     }
 
-    if (price === Infinity) return "long";
-
-    if (creditsToUse < REASONABLE_MONEY) return "no money";
-
-    if (!orders)
-      // prob never
-      orders = this.longOrders(roomName, res, ORDER_SELL);
-
-    if (!orders.length)
-      this.sellLong(
-        terminal,
-        res,
-        amount,
-        creditsToUse,
-        Math.max(price, minPrice)
-      );
+    const orders = this.longOrders(roomName, res, ORDER_SELL);
+    let myPrice = priceToSellLong - ORDER_OFFSET;
+    if (!orders.length) this.sellLong(terminal, res, amount, myPrice);
     else {
-      const o = orders.sort((a, b) => a.created - b.created)[0];
-      let newPrice;
-      const priceToBuyInstant = info.bestPriceBuy || Infinity;
-      // to prevent money drain by instant price rise
-      if (priceToBuyInstant - step <= o.price - step * 10000)
-        newPrice = o.price - step * 10000;
-      else if (priceToBuyInstant - step <= o.price - step * 1000)
-        newPrice = o.price - step * 1000;
-      else if (priceToBuyInstant - step <= o.price - step * 100)
-        newPrice = o.price - step * 100;
-      else if (priceToBuyInstant <= o.price) newPrice = o.price - step;
-      if (newPrice && newPrice >= minPrice) {
-        // && newPrice >= price && priceToSellInstant <= newPrice * 0.9)
-        const oldPrice = o.price;
-        const ans = Game.market.changeOrderPrice(o.id, newPrice);
-        const fee = (newPrice - oldPrice) * o.remainingAmount * MARKET_FEE;
-        if (fee > 0 && ans === OK && Apiary.logger && newPrice > oldPrice)
-          Apiary.logger.reportMarketFeeChange(
-            o.id,
-            o.resourceType,
-            fee,
-            ORDER_SELL
-          );
-      }
+      const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+
+      const diffInPrice = myPrice - myOrder.price;
+      const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
+      myPrice = myOrder.price + diffInPrice * coefForStep; // trying to get to myPrice but not too fast
+
+      const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
+
+      // report stuff
+      const fee =
+        (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
+      if (fee > 0 && ans === OK && Apiary.logger)
+        Apiary.logger.reportMarketFeeChange(
+          myOrder.id,
+          myOrder.resourceType,
+          fee,
+          ORDER_SELL
+        );
     }
     return "long";
   }
 
-  private creditsToUse(_: string) {
-    return Game.market.credits - Memory.settings.minBalance;
-  }
-
-  // i buy as long
-  public priceLongBuy(res: ResourceConstant, step: number) {
-    const info = this.updateRes(res, MARKET_LAG * 100);
-    return info.bestPriceSell || 0 + step / 2;
-  }
-
-  // i sell as long
-  public priceLongSell(res: ResourceConstant, step: number) {
-    const info = this.updateRes(res, MARKET_LAG * 100);
-    return (
-      (info.bestPriceBuy || (info.bestPriceSell || Infinity) * 1.3) - step / 2
-    );
-  }
-
+  /**
+   * Buy resources through a long order
+   *
+   * @param {StructureTerminal} terminal - The terminal structure in the room
+   * @param {ResourceConstant} res - The resource constant to buy
+   * @param {number} amount - The amount of resources to buy
+   * @param {number} price - The price at which to buy the resources
+   * @returns {number} - Result code indicating the success of the operation
+   */
   public buyLong(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    creditsToUse: number,
     price: number
   ) {
-    this.updateRes(res, MARKET_LAG);
     const roomName = terminal.pos.roomName;
-    const priceCap = Math.floor(creditsToUse / (price * 1.05));
+    const priceCap = Math.floor(this.creditsToUse() / (price * 1.05));
     amount = Math.min(amount, priceCap);
     if (!amount) return ERR_NOT_ENOUGH_RESOURCES;
     const ans = Game.market.createOrder({
       type: ORDER_BUY,
       resourceType: res,
-      totalAmount: amount,
       price,
+      totalAmount: amount,
       roomName,
     });
     if (ans === OK && Apiary.logger)
@@ -443,16 +539,23 @@ export class Broker {
     return ans;
   }
 
+  /**
+   * Sell resources through a long order
+   *
+   * @param {StructureTerminal} terminal - The terminal structure in the room
+   * @param {ResourceConstant} res - The resource constant to sell
+   * @param {number} amount - The amount of resources to sell
+   * @param {number} price - The price at which to sell the resources
+   * @returns {number} - Result code indicating the success of the operation
+   */
   public sellLong(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    creditsToUse: number,
     price: number
   ) {
-    this.updateRes(res, MARKET_LAG);
     const roomName = terminal.pos.roomName;
-    const priceCap = Math.floor(creditsToUse / (price * MARKET_FEE));
+    const priceCap = Math.floor(this.creditsToUse() / (price * MARKET_FEE));
     amount = Math.min(amount, priceCap);
     if (!amount) return ERR_NOT_ENOUGH_RESOURCES;
     const ans = Game.market.createOrder({
@@ -471,42 +574,46 @@ export class Broker {
     return ans;
   }
 
+  /**
+   * Buy resources through a short order
+   */
   public buyShort(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    creditsToUse: number,
-    maxPrice = Infinity
+    okPrice: number
   ) {
     if (terminal.cooldown) return ERR_TIRED;
+    const roomName = terminal.pos.roomName;
+    const hive = Apiary.hives[roomName];
+    if (!hive) return; // failsafe
+
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodBuy;
-    if (!orders) return ERR_NOT_FOUND;
-    if (creditsToUse < CREDIT_THRESHOLD_SLOW)
-      orders = orders.filter(
-        (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
-      );
-    if (res === RESOURCE_ENERGY)
+    if (!orders.length) return ERR_NOT_FOUND;
+    if (hive.resState[RESOURCE_ENERGY] < 0)
       orders = orders.filter(
         (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
       );
     if (!orders.length) return ERR_NOT_IN_RANGE;
 
-    if (maxPrice) {
-      orders = orders.filter((o) => o.price <= maxPrice);
-      if (!orders.length) return ERR_NOT_FOUND;
-    }
-
-    const roomName = terminal.pos.roomName;
+    orders = orders.filter((o) => o.price <= okPrice);
+    if (!orders.length) return ERR_NOT_FOUND;
+    // @MARKETDANGER energy coef not stable
+    const calcCostWithEnergy = (o: ProtoOrder) =>
+      o.price +
+      this.energyPrice *
+        Game.market.calcTransactionCost(amount, roomName, o.roomName) *
+        0.5;
     const order = orders.reduce((prev, curr) =>
-      curr.price > prev.price ? curr : prev
+      calcCostWithEnergy(curr) > calcCostWithEnergy(prev) ? curr : prev
     );
     const energyCost =
       Game.market.calcTransactionCost(10000, roomName, order.roomName) / 10000;
     const energyCap = Math.floor(
       terminal.store.getUsedCapacity(RESOURCE_ENERGY) / energyCost
     );
-    const priceCap = Math.floor(creditsToUse / order.price);
+    const priceCap = Math.floor(this.creditsToUse() / order.price);
 
     amount = Math.min(
       amount,
@@ -523,34 +630,39 @@ export class Broker {
     return ans;
   }
 
+  /**
+   * Sell resources through a short order
+   */
   public sellShort(
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    minPrice = 0
+    okPrice: number
   ) {
     if (terminal.cooldown) return ERR_TIRED;
+    const roomName = terminal.pos.roomName;
+    const hive = Apiary.hives[roomName];
+    if (!hive) return; // failsafe
+
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodSell;
-    if (!orders) return ERR_NOT_FOUND;
-    // if (!_.filter(COMPRESS_MAP, r => r === res).length)
-    // orders = orders.filter(order => terminal.pos.getRoomRangeTo(order.roomName) <= 50)
+    if (!orders.length) return ERR_NOT_FOUND;
+    if (hive.resState[RESOURCE_ENERGY] < 0)
+      orders = orders.filter(
+        (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
+      );
     if (!orders.length) return ERR_NOT_IN_RANGE;
 
-    if (minPrice) {
-      orders = orders.filter((o) => o.price >= minPrice);
-      if (!orders.length) return ERR_NOT_FOUND;
-    }
+    orders = orders.filter((o) => o.price >= okPrice);
+    if (!orders.length) return ERR_NOT_FOUND;
 
-    const roomName = terminal.pos.roomName;
-    const calcEnergyCost = (o: ProtoOrder) =>
-      (this.energyPrice *
-        Game.market.calcTransactionCost(10000, roomName, o.roomName)) /
-      10000;
+    const calcCostWithEnergy = (o: ProtoOrder) =>
+      o.price +
+      this.energyPrice *
+        Game.market.calcTransactionCost(amount, roomName, o.roomName) *
+        0.5;
     const order = orders.reduce((prev, curr) =>
-      curr.price + calcEnergyCost(curr) < prev.price + calcEnergyCost(prev)
-        ? curr
-        : prev
+      calcCostWithEnergy(curr) < calcCostWithEnergy(prev) ? curr : prev
     );
 
     const energyCost =
@@ -578,5 +690,40 @@ export class Broker {
     if (ans === OK && Apiary.logger)
       Apiary.logger.marketShort(order, amount, roomName);
     return ans;
+  }
+
+  /**
+   * Function to determine the price that i am ready to pay for a long buy order
+   *
+   * @param {ResourceConstant} res - The resource constant for which to calculate the price
+   * @param {number} step - The step value for price calculation
+   * @returns {number} - The calculated buy order price
+   */
+  public priceLongBuy(res: ResourceConstant, step: number) {
+    const info = this.updateRes(res, MARKET_LAG * 100);
+    return info.bestPriceSell || 0 + step / 2;
+  }
+
+  /**
+   * Function to determine the price that i am ready to pay for a long sell order
+   *
+   * @param {ResourceConstant} res - The resource constant for which to calculate the price
+   * @param {number} step - The step value for price calculation
+   * @returns {number} - The calculated sell order price
+   */
+  public priceLongSell(res: ResourceConstant, step: number) {
+    const info = this.updateRes(res, MARKET_LAG * 100);
+    return (
+      (info.bestPriceBuy || (info.bestPriceSell || Infinity) * 1.3) - step / 2
+    );
+  }
+
+  /**
+   * Calculate the credits available for use in market transactions
+   *
+   * @returns {number} - The available credits for market transactions
+   */
+  private creditsToUse() {
+    return Game.market.credits;
   }
 }
