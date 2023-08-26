@@ -1,13 +1,13 @@
 import { Broker } from "abstract/broker";
 import { Intel } from "abstract/intelligence";
 import { RoomPlanner } from "abstract/roomPlanner";
-import { Network } from "bugSmuggling/terminalNetwork";
 import { WarcrimesModule } from "abstract/warModule";
 import { Master } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
 import { Bee } from "bees/bee";
 import { PowerBee } from "bees/powerBee";
 import { ProtoBee } from "bees/protoBee";
+import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { Visuals } from "convenience/visuals";
 import { Hive } from "Hive";
@@ -108,12 +108,6 @@ export class _Apiary {
 
   // update phase
   public update() {
-    // this.cpuPrev = { real: Game.cpu.getUsed(), acc: 0 };
-    /* if (Game.time % 10 == 0) {
-      let cpuNew = { real: Game.cpu.getUsed(), acc: _.sum(Memory.log.cpuUsage.update, c => c.cpu) + _.sum(Memory.log.cpuUsage.run, c => c.cpu) };
-      console .log("1", cpuNew.real - this.cpuPrev.real, cpuNew.acc - this.cpuPrev.acc, (cpuNew.real - this.cpuPrev.real) - (cpuNew.acc - this.cpuPrev.acc));
-      this.cpuPrev = cpuNew;
-    } */
     this.useBucket = Game.cpu.bucket > 500;
     this.wrap(() => this.intel.update(), "intel", "update");
 

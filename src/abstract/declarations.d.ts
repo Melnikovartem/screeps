@@ -152,7 +152,6 @@ declare global {
     settings: {
       framerate: number;
       generatePixel: boolean;
-      wallsHealth: number;
       miningDist: number;
       reportCPU: boolean;
     };

@@ -591,7 +591,6 @@ export class LaboratoryCell extends Cell {
       continue;
     }
 
-    // console .log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
     if (rCode === ERR_TIRED) bee.goRest(this.pos);
     else if (rCode === OK) delete this.boostRequests[bee.ref];
     return rCode;
@@ -906,37 +905,3 @@ export class LaboratoryCell extends Cell {
     }
   }
 }
-
-/*
-// i rly don't like to type in all the reactions;
-let s: string[] = []; REACTION_TIME
-for (let key in REACTIONS)
-  if (!s.includes(key))
-    s.push(key);
-for (let key in REACTION_TIME) {
-  if (!s.includes(key))
-    s.push(key);
-}
-let ss = "";
-for (let key in s)
-  ss += " | " + '"' + s[key] + '"';
-console. log(""ss);
-===========================================
-let s: { [action: string]: string[] } = {};
-for (let key in BOOSTS)
-  for (let reaction in BOOSTS[key])
-    for (let action in BOOSTS[key][reaction]) {
-      if (!s[action]) {
-        s[action] = [];
-      }
-      s[action].push(reaction);
-    }
-
-let ss = "";
-for (let action in s) {
-  ss += action + ", ";
-  s[action].reverse();
-}
-console. log(`{${ss}}`);
-console. log(JSON.stringify(s));
-*/

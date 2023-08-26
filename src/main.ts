@@ -11,8 +11,11 @@ import { _Apiary } from "Apiary";
 import { CustomConsole } from "convenience/console/console";
 import profiler from "screeps-profiler";
 import { LOGGING_CYCLE, PROFILER } from "settings";
+import { MigrateManager } from "static/migration";
 
 // Migrate memory do not wipe!!
+MigrateManager.migrate005();
+
 // Declare global namespace properties
 declare global {
   namespace NodeJS {
@@ -22,23 +25,6 @@ declare global {
     }
   }
 }
-
-/*
-let cpu = Game.cpu.getUsed();
-let totalCpu = 0;
-const testingCpu = Game.shard.name === "shard3" &&
-  this.hive.room.name === "E39S19" && {
-    it: (ref: string) => {
-      const diff = Game.cpu.getUsed() - cpu;
-      totalCpu += diff;
-      console.log("after", ref, Math.round(diff * 1000) / 1000);
-      cpu = Game.cpu.getUsed();
-    },
-    total: () => console.log("\ttotal cpu:", totalCpu),
-  };
-if (testingCpu) testingCpu("");
-f (testingCpu) testingCpu.total();
-*/
 
 // Function for handling global reset
 function onGlobalReset(): void {

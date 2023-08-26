@@ -257,7 +257,6 @@ export class RoomPlanner {
       while (jobs.length) {
         this.activePlanning[roomName].correct = "work";
         const ans = jobs[0].func();
-        // console .log("?:", jobs[0].context, ans);
         if (ans === ERR_FULL) {
           this.activePlanning[roomName].correct = "fail";
           console.log("FAIL: ", jobs[0].context);

@@ -1,7 +1,6 @@
 export const SETTINGS_DEFAULT: Memory["settings"] = {
   framerate: 10,
   generatePixel: Game.cpu.limit > 20,
-  wallsHealth: 2_000_0000,
   miningDist: 8,
   reportCPU: false,
 };
