@@ -1,5 +1,4 @@
 import { SETTINGS_DEFAULT } from "./constants";
-import { prefix } from "./enums";
 
 export class MigrateManager {
   public static currVersion = "0.0.5";
@@ -24,7 +23,7 @@ export class MigrateManager {
           toAdd._restTime = cellCache.restTime;
         if ("poss" in Object.keys(cellCache)) toAdd.poss = cellCache.poss;
         if ("powerManager" in Object.keys(cellCache))
-          toAdd.powerManager = cellCache.powerManager;
+          toAdd._powerManager = cellCache.powerManager;
 
         if (Object.keys(toAdd).length)
           hivesCache[hiveName].cells[cellType] = toAdd;

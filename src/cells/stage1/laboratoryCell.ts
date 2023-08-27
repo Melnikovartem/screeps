@@ -177,7 +177,7 @@ export class LaboratoryCell extends Cell {
     y: 25,
   };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.hive.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
   }
 
   public _labStates: { [id: string]: LabState } =
@@ -566,13 +566,13 @@ export class LaboratoryCell extends Cell {
             bee.boosted = true;
             if (Apiary.logger) {
               Apiary.logger.addResourceStat(
-                this.hive.roomName,
+                this.roomName,
                 "boosts",
                 -r.amount * LAB_BOOST_MINERAL,
                 r.res
               );
               Apiary.logger.addResourceStat(
-                this.hive.roomName,
+                this.roomName,
                 "boosts",
                 -r.amount * LAB_BOOST_ENERGY,
                 RESOURCE_ENERGY
@@ -613,7 +613,7 @@ export class LaboratoryCell extends Cell {
         if (Apiary.logger)
           _.forEach(resources, (r) =>
             Apiary.logger!.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "unboost",
               r.amount,
               r.resourceType
@@ -870,19 +870,19 @@ export class LaboratoryCell extends Cell {
         this.prod.plan -= cc;
         if (Apiary.logger) {
           Apiary.logger.addResourceStat(
-            this.hive.roomName,
+            this.roomName,
             "labs",
             cc,
             this.prod.res
           );
           Apiary.logger.addResourceStat(
-            this.hive.roomName,
+            this.roomName,
             "labs",
             -cc,
             this.prod.res1
           );
           Apiary.logger.addResourceStat(
-            this.hive.roomName,
+            this.roomName,
             "labs",
             -cc,
             this.prod.res2

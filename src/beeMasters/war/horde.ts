@@ -1,9 +1,9 @@
-import type { CreepBattleInfo } from "../../spiderSense/intelligence";
 import type { Bee } from "../../bees/bee";
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";
 import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
+import type { CreepBattleInfo } from "../../spiderSense/intelligence";
 import {
   beeStates,
   enemyTypes,
@@ -158,7 +158,7 @@ export class HordeMaster extends SwarmMaster {
   public get emergency() {
     return (
       this.hive.state !== hiveStates.battle ||
-      this.pos.roomName === this.hive.roomName
+      this.pos.roomName === this.roomName
     );
   }
 
@@ -395,7 +395,7 @@ export class HordeMaster extends SwarmMaster {
       )
         bee.targetPosition = bee.pos;
     }
-    // if (bee.targetPosition && this.hive.roomName === bee.pos.roomName)
+    // if (bee.targetPosition && this.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;
   }

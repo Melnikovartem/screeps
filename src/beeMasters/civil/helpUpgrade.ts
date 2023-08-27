@@ -74,12 +74,12 @@ export class HelpUpgradeMaster extends SwarmMaster {
         bee.ticksToLive > 50 &&
         bee.pos.getRoomRangeTo(this.hive) === 1
       ) {
-        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        bee.fleeRoom(this.roomName, this.hive.opt);
         return;
       }
       const lab =
         bee.ticksToLive < 50 &&
-        bee.pos.roomName === this.hive.roomName &&
+        bee.pos.roomName === this.roomName &&
         this.hive.cells.lab &&
         this.hive.cells.lab.getUnboostLab(bee.ticksToLive);
       if (lab) bee.goRest(lab.pos, this.hive.opt);

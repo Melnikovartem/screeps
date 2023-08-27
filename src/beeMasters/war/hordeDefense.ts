@@ -56,7 +56,7 @@ export class HordeDefenseMaster extends HordeMaster {
       if (
         !this.checkBees(
           this.hive.state !== hiveStates.battle ||
-            this.pos.roomName === this.hive.roomName,
+            this.pos.roomName === this.roomName,
           CREEP_LIFE_TIME / 2
         )
       )
@@ -246,7 +246,7 @@ export class HordeDefenseMaster extends HordeMaster {
         this.order.delete();
         return;
       }
-      if (this.pos.roomName !== this.hive.roomName && !this.boosts)
+      if (this.pos.roomName !== this.roomName && !this.boosts)
         order.priority = Math.max(4, order.priority) as 4 | 7;
       this.wish(order);
       return;

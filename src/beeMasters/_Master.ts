@@ -58,6 +58,10 @@ export abstract class Master {
     this._boosts = value;
   }
 
+  public get roomName() {
+    return this.hive.roomName;
+  }
+
   // catch a bee after it has requested a master
   public newBee(bee: Bee) {
     bee.memory.refMaster = this.ref;
@@ -265,7 +269,7 @@ export abstract class Master {
 
   public get print(): string {
     const firstBee = this.bees[Object.keys(this.bees)[0]];
-    let roomName = this.hive.roomName;
+    let roomName = this.roomName;
     if (firstBee && firstBee.pos) roomName = firstBee.pos.roomName;
     return `<a href=#!/room/${Game.shard.name}/${roomName}>["${this.ref}"]</a>`;
   }

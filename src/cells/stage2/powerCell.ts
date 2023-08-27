@@ -3,40 +3,33 @@ import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
-import type { StorageCell } from "../stage1/storageCell";
 
 @profile
 export class PowerCell extends Cell {
   public powerSpawn: StructurePowerSpawn;
   public master: undefined;
-  public sCell: StorageCell;
 
-  public constructor(
-    hive: Hive,
-    powerSpawn: StructurePowerSpawn,
-    sCell: StorageCell
-  ) {
+  public constructor(hive: Hive, powerSpawn: StructurePowerSpawn) {
     super(hive, prefix.powerCell);
-    this.sCell = sCell;
     this.powerSpawn = powerSpawn;
-    this.initCache("poss", { x: 25, y: 25 });
+    this.poss = this.cache("poss") || this.powerSpawn.pos;
   }
 
-  public get poss(): { x: number; y: number } {
-    return this.fromCache("poss");
+  public get sCell() {
+    return this.hive.cells.storage!;
   }
 
+  public poss: { x: number; y: number };
   public get pos(): RoomPosition {
-    const pos = this.fromCache("poss");
-    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
   }
 
-  public get powerManager(): string | undefined {
-    return this.fromCache("powerManager");
+  public _powerManager: string | undefined = this.cache("_powerManager");
+  public get powerManager() {
+    return this._powerManager;
   }
-
   public set powerManager(value) {
-    this.toCache("powerManager", value);
+    this._powerManager = this.cache("_powerManager", value);
   }
 
   public get powerManagerBee(): PowerBee | undefined {
@@ -88,15 +81,15 @@ export class PowerCell extends Cell {
       this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) >
         POWER_SPAWN_ENERGY_RATIO
     )
-      if (this.powerSpawn.processPower() == OK && Apiary.logger) {
+      if (this.powerSpawn.processPower() === OK && Apiary.logger) {
         Apiary.logger.addResourceStat(
-          this.hive.roomName,
+          this.roomName,
           "power_upgrade",
           -1,
           RESOURCE_POWER
         );
         Apiary.logger.addResourceStat(
-          this.hive.roomName,
+          this.roomName,
           "power_upgrade",
           -1 * POWER_SPAWN_ENERGY_RATIO,
           RESOURCE_ENERGY

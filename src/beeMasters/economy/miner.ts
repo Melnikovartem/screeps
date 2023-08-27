@@ -16,7 +16,7 @@ export class MinerMaster extends Master {
     super(resourceCell.hive, resourceCell.ref);
     this.cell = resourceCell;
     if (
-      this.cell.pos.roomName === this.hive.roomName &&
+      this.cell.pos.roomName === this.roomName &&
       this.cell.resourceType === RESOURCE_ENERGY
     )
       this.boosts = [{ type: "harvest", lvl: 0 }];
@@ -72,7 +72,7 @@ export class MinerMaster extends Master {
       };
 
       if (this.cell.resourceType === RESOURCE_ENERGY) {
-        if (this.cell.pos.roomName !== this.hive.roomName) order.priority = 5;
+        if (this.cell.pos.roomName !== this.roomName) order.priority = 5;
         order.setup = setups.miner.energy.copy();
         order.setup.patternLimit = Math.round(this.cell.ratePT / 2) + 1;
         if (this.cell.link)
@@ -97,7 +97,7 @@ export class MinerMaster extends Master {
     if (this.cell.resourceType !== RESOURCE_ENERGY) return undefined;
     if (
       this.cell.container &&
-      (this.cell.pos.roomName !== this.hive.roomName || this.cell.link)
+      (this.cell.pos.roomName !== this.roomName || this.cell.link)
     )
       return undefined;
 
@@ -106,7 +106,7 @@ export class MinerMaster extends Master {
       .filter((c) => c.structureType === STRUCTURE_ROAD)[0];
     if (construction) return construction;
 
-    if (this.cell.pos.roomName === this.hive.roomName) {
+    if (this.cell.pos.roomName === this.roomName) {
       construction = this.cell.resource.pos
         .findInRange(FIND_CONSTRUCTION_SITES, 2)
         .filter((c) => c.structureType === STRUCTURE_LINK)[0];
@@ -212,13 +212,13 @@ export class MinerMaster extends Master {
               construction.progressTotal - construction.progress
             );
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               this.cell.loggerRef,
               spend,
               RESOURCE_ENERGY
             );
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               this.cell.loggerUpkeepRef,
               -spend,
               RESOURCE_ENERGY
@@ -251,13 +251,13 @@ export class MinerMaster extends Master {
                     Math.floor((target.hitsMax - target.hits) / 100)
                   );
                   Apiary.logger.addResourceStat(
-                    this.hive.roomName,
+                    this.roomName,
                     this.cell.loggerRef,
                     spend,
                     RESOURCE_ENERGY
                   );
                   Apiary.logger.addResourceStat(
-                    this.hive.roomName,
+                    this.roomName,
                     this.cell.loggerUpkeepRef,
                     -spend,
                     RESOURCE_ENERGY

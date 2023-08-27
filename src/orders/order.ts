@@ -81,7 +81,7 @@ export class FlagOrder {
       this.hive = this.findHive(filter);
     }
     const newMemory: FlagMemory = {
-      hive: this.hive.roomName,
+      hive: this.roomName,
       info: this.memory.info,
       extraPos: this.memory.extraPos,
       extraInfo: this.memory.extraInfo,
@@ -185,7 +185,7 @@ export class FlagOrder {
               this.master = new AnnoyOBot(this);
               break;
             case COLOR_WHITE:
-              this.fixedName(prefix.surrender + this.hive.roomName);
+              this.fixedName(prefix.surrender + this.roomName);
               if (!this.flag.memory.info) this.flag.memory.info = Game.time;
               if (Game.time - this.flag.memory.info > CREEP_LIFE_TIME)
                 this.delete();
@@ -234,7 +234,7 @@ export class FlagOrder {
                 );
                 if (typeof ans === "string")
                   Game.flags[ans].memory = {
-                    hive: this.hive.roomName,
+                    hive: this.roomName,
                     info: this.master.spawned,
                   };
               }
@@ -299,7 +299,7 @@ export class FlagOrder {
           case COLOR_WHITE:
             this.acted = false;
             const hiveToBoos = Apiary.hives[this.pos.roomName];
-            if (!hiveToBoos || this.pos.roomName === this.hive.roomName) {
+            if (!hiveToBoos || this.pos.roomName === this.roomName) {
               this.delete();
               break;
             }
@@ -332,7 +332,7 @@ export class FlagOrder {
         break;
       case COLOR_CYAN:
         this.uniqueFlag();
-        if (this.hive.roomName === this.pos.roomName) {
+        if (this.roomName === this.pos.roomName) {
           let cellType = "";
           let action = () => {};
           switch (this.secondaryColor) {
@@ -372,17 +372,17 @@ export class FlagOrder {
               y: this.pos.y,
             };
             action();
-            if (Apiary.planner.activePlanning[this.hive.roomName]) {
+            if (Apiary.planner.activePlanning[this.roomName]) {
               if (
-                !Apiary.planner.activePlanning[this.hive.roomName].cellsCache[
+                !Apiary.planner.activePlanning[this.roomName].cellsCache[
                   cellType
                 ]
               )
-                Apiary.planner.activePlanning[this.hive.roomName].cellsCache[
+                Apiary.planner.activePlanning[this.roomName].cellsCache[
                   cellType
                 ] = { poss: { x: this.pos.x, y: this.pos.y } };
               else
-                Apiary.planner.activePlanning[this.hive.roomName].cellsCache[
+                Apiary.planner.activePlanning[this.roomName].cellsCache[
                   cellType
                 ].poss = { x: this.pos.x, y: this.pos.y };
             }
@@ -632,7 +632,7 @@ export class FlagOrder {
         break;
       case COLOR_BLUE:
         if (
-          this.hive.roomName !== this.pos.roomName &&
+          this.roomName !== this.pos.roomName &&
           this.secondaryColor !== COLOR_YELLOW
         ) {
           this.delete();
@@ -658,7 +658,7 @@ export class FlagOrder {
             if (
               res &&
               mode &&
-              this.hive.roomName === this.pos.roomName &&
+              this.roomName === this.pos.roomName &&
               this.hive.cells.storage &&
               this.hive.cells.storage.terminal
             ) {
@@ -890,5 +890,9 @@ export class FlagOrder {
 
   public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
+  }
+
+  public get roomName(): string {
+    return this.hive.roomName;
   }
 }

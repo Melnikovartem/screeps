@@ -139,7 +139,7 @@ export class ManagerMaster extends Master {
   public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        bee.fleeRoom(this.roomName, this.hive.opt);
         return;
       }
 

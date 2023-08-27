@@ -58,7 +58,7 @@ export abstract class PowerMaster extends Master {
         const pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
         if (pwrStats)
           Apiary.logger.addResourceStat(
-            this.hive.roomName,
+            this.roomName,
             "PowerCreep",
             POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level],
             RESOURCE_OPS

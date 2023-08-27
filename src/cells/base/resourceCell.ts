@@ -32,7 +32,7 @@ export class ResourceCell extends Cell {
     super(hive, prefix.resourceCells + resource.id);
     this.resource = resource;
 
-    if (this.resource.pos.roomName === this.hive.roomName)
+    if (this.resource.pos.roomName === this.roomName)
       this.poss = this.resource.pos;
     else if (this.cache("poss")) this.poss = this.cache("poss");
     else this.poss = this.cache("poss", this.resource.pos);
@@ -74,7 +74,7 @@ export class ResourceCell extends Cell {
   }
   public set pos(value) {
     this.poss = value;
-    if (value.roomName !== this.hive.roomName) this.cache("poss", value);
+    if (value.roomName !== this.roomName) this.cache("poss", value);
   }
 
   public get ratePT() {
@@ -101,7 +101,7 @@ export class ResourceCell extends Cell {
       (s) => s.structureType === STRUCTURE_CONTAINER
     )[0] as StructureContainer;
     if (this.resource instanceof Source) {
-      if (this.pos.roomName === this.hive.roomName) {
+      if (this.pos.roomName === this.roomName) {
         this.link = _.filter(
           this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
           (s) =>
@@ -214,7 +214,7 @@ export class ResourceCell extends Cell {
           if (ans === OK) {
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 this.loggerRef,
                 this.link.store,
                 fastRefLink.store,
@@ -242,7 +242,7 @@ export class ResourceCell extends Cell {
           if (ans === OK) {
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 this.loggerRef,
                 this.link.store,
                 upgradeLink.store,
@@ -264,7 +264,7 @@ export class ResourceCell extends Cell {
           const ans = this.link.transferEnergy(storageLink);
           if (Apiary.logger && ans === OK)
             Apiary.logger.resourceTransfer(
-              this.hive.roomName,
+              this.roomName,
               this.loggerRef,
               this.link.store,
               storageLink.store,

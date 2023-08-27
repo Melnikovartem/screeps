@@ -11,6 +11,7 @@ import type { PowerCell } from "../../cells/stage2/powerCell";
 import { profile } from "../../profiler/decorator";
 import { hiveStates } from "../../static/enums";
 import { POWER_NAMES, PowerMaster } from "../_PowerMaster";
+import { defenseWalls } from "./nkvd-utils";
 
 @profile
 export class NKVDMaster extends PowerMaster {
@@ -69,7 +70,7 @@ export class NKVDMaster extends PowerMaster {
           this.targets[power] = this.hive.cells.storage;
           break;
 
-        case PWR_FORTIFY:
+        case PWR_FORTIFY: // fortify doesn't need cell
         case PWR_OPERATE_TOWER:
           this.targets[power] = this.hive.cells.defense;
           break;
@@ -85,16 +86,14 @@ export class NKVDMaster extends PowerMaster {
           this.targets[power] = _.filter(
             this.hive.cells.excavation.resourceCells,
             (r) =>
-              r.pos.roomName === this.hive.roomName &&
-              r.resource instanceof Source
+              r.pos.roomName === this.roomName && r.resource instanceof Source
           );
           break;
         case PWR_REGEN_MINERAL:
           this.targets[power] = _.filter(
             this.hive.cells.excavation.resourceCells,
             (r) =>
-              r.pos.roomName === this.hive.roomName &&
-              r.resource instanceof Mineral
+              r.pos.roomName === this.roomName && r.resource instanceof Mineral
           );
           break;
       }
@@ -189,7 +188,7 @@ export class NKVDMaster extends PowerMaster {
           break;
         case PWR_FORTIFY:
           if (this.hive.state >= hiveStates.battle)
-            _.forEach((targets as DefenseCell).walls, (s) => andNextup(s, 0));
+            _.forEach(defenseWalls(this.roomName), (s) => andNextup(s, 0));
           break;
         case PWR_OPERATE_TOWER:
           if (this.hive.state >= hiveStates.battle)
@@ -244,7 +243,7 @@ export class NKVDMaster extends PowerMaster {
 
   public run() {
     if (this.hive.cells.defense.timeToLand < 50)
-      this.powerCreep.fleeRoom(this.hive.roomName, this.hive.opt);
+      this.powerCreep.fleeRoom(this.roomName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
       this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
@@ -261,7 +260,7 @@ export class NKVDMaster extends PowerMaster {
           const pwrInfo = POWER_INFO[this.nextup.power];
           if ("ops" in pwrInfo)
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "NKVD_" + POWER_NAMES[this.nextup.power],
               -pwrInfo.ops,
               RESOURCE_OPS

@@ -188,7 +188,7 @@ export class UpgraderMaster extends Master {
             Apiary.logger
           )
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "upgrade",
               -Math.min(
                 bee.getActiveBodyParts(WORK),

@@ -14,7 +14,6 @@ export class FastRefillCell extends Cell {
 
   public constructor(parent: RespawnCell, link: StructureLink) {
     super(parent.hive, prefix.fastRefillCell);
-    if (!this.sCell) this.delete();
     this.link = link;
     this.parentCell = this.hive.cells.spawn;
     for (let dx = -1; dx <= 1; dx += 2)
@@ -34,12 +33,21 @@ export class FastRefillCell extends Cell {
       }
   }
 
-  public get parent() {
-    return this.hive.cells.spawn;
+  private get sCell() {
+    return this.hive.cells.storage!;
   }
 
-  public get sCell() {
-    return this.hive.cells.storage!;
+  public static poss(hiveName: string) {
+    const cache = Memory.cache.hives[hiveName].cells[prefix.fastRefillCell];
+    if (cache && cache.poss) {
+      const p = cache.poss as { x: number; y: number };
+      return new RoomPosition(p.x, p.y, hiveName);
+    }
+    return undefined;
+  }
+
+  public get parent() {
+    return this.hive.cells.spawn;
   }
 
   public get pos(): RoomPosition {
@@ -99,7 +107,7 @@ export class FastRefillCell extends Cell {
         )
           if (Apiary.logger)
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "upkeep",
               -amount * 0.03,
               RESOURCE_ENERGY

@@ -1,13 +1,13 @@
 import { HordeMaster } from "../../beeMasters/war/horde";
 import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
 import type { Bee } from "../../bees/bee";
-import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
-import type { BuildProject, Hive } from "../../hive/hive";
+import type { Hive } from "../../hive/hive";
 import { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
 import { beeStates, hiveStates, prefix } from "../../static/enums";
 import { makeId, towerCoef } from "../../static/utils";
 import { Cell } from "../_Cell";
+import { getNukeDefMap, updateNukes } from "./defenseCell-nukes";
 
 @profile
 export class DefenseCell extends Cell {
@@ -24,194 +24,25 @@ export class DefenseCell extends Cell {
     super(hive, prefix.defenseCell);
     this.updateNukes();
     this.master = new SiegeMaster(this);
-    this.initCache("poss", { x: 25, y: 25 });
+
+    this.poss = this.cache("poss");
+
+    if (this.poss === undefined) {
+      const spawn = Object.values(this.hive.cells.spawn.spawns)[0];
+      this.poss = spawn?.pos || {
+        x: 25,
+        y: 25,
+      };
+    }
   }
 
-  public get poss(): { x: number; y: number } {
-    return this.fromCache("poss");
-  }
-
-  public set pos(pos) {
-    this.toCache("poss", { x: pos.x, y: pos.y });
-  }
-
+  public poss: { x: number; y: number };
   public get pos(): RoomPosition {
-    const pos = this.fromCache("poss");
-    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
   }
 
-  public get walls() {
-    const ans: (StructureWall | StructureRampart)[] = [];
-    const planner = Memory.cache.roomPlanner[this.hive.roomName];
-    const walls =
-      (planner.constructedWall && planner.constructedWall.pos) || [];
-    const ramps = (planner.rampart && planner.rampart.pos) || [];
-    _.forEach(walls, (p) => {
-      const pos = new RoomPosition(p.x, p.y, this.hive.roomName);
-      const s = pos
-        .lookFor(LOOK_STRUCTURES)
-        .filter((s) => s.structureType === STRUCTURE_WALL)[0];
-      if (s) ans.push(s as StructureWall);
-    });
-    _.forEach(ramps, (p) => {
-      const pos = new RoomPosition(p.x, p.y, this.hive.roomName);
-      const s = pos
-        .lookFor(LOOK_STRUCTURES)
-        .filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
-      if (s) ans.push(s as StructureRampart);
-    });
-    return ans;
-  }
-
-  public updateNukes() {
-    this.nukes = {};
-    this.timeToLand = Infinity;
-    _.forEach(this.hive.room.find(FIND_NUKES), (n) => {
-      this.nukes[n.id] = n;
-      if (this.timeToLand > n.timeToLand) this.timeToLand = n.timeToLand;
-    });
-    if (!Object.keys(this.nukes).length) this.timeToLand = Infinity;
-    else this.getNukeDefMap();
-  }
-
-  // mini roomPlanner
-  public getNukeDefMap(oneAtATime = false): [BuildProject[], number] {
-    // i should think what to do if my defenses are under strike
-    const prevState = this.nukeCoverReady;
-    this.nukeCoverReady = true;
-    if (!Object.keys(this.nukes).length)
-      // || Game.flags[prefix.nukes + this.hive.roomName])
-      return [[], 0];
-    const map: { [id: number]: { [id: number]: number } } = {};
-    const minLandTime = _.min(this.nukes, (n) => n.timeToLand).timeToLand;
-    _.forEach(this.nukes, (n) => {
-      if (n.timeToLand > minLandTime + NUKE_LAND_TIME * 0.8 && !prevState)
-        return; // can handle multiple rounds
-      const pp = n.pos;
-      const poss = pp.getPositionsInRange(2);
-      _.forEach(poss, (p) => {
-        if (!map[p.x]) map[p.x] = {};
-        if (!map[p.x][p.y]) map[p.x][p.y] = 0;
-        map[p.x][p.y] += NUKE_DAMAGE[2];
-      });
-      map[pp.x][pp.y] += NUKE_DAMAGE[0] - NUKE_DAMAGE[2];
-    });
-
-    const maxLandTime = _.max(this.nukes, (n) => n.timeToLand).timeToLand;
-    const rampPadding =
-      Math.ceil(maxLandTime / RAMPART_DECAY_TIME + 100) * RAMPART_DECAY_AMOUNT;
-
-    const ans: BuildProject[] = [];
-    const extraCovers: string[] = [];
-    const leaveOne = (ss: { [id: string]: Structure }) => {
-      const underStrike = _.filter(
-        ss,
-        (s) => map[s.pos.x] && map[s.pos.x][s.pos.y]
-      );
-      if (!underStrike.length || underStrike.length !== Object.keys(ss).length)
-        return;
-      const cover = underStrike.reduce((prev, curr) =>
-        map[curr.pos.x][curr.pos.y] < map[prev.pos.x][prev.pos.y] ? curr : prev
-      );
-      extraCovers.push(cover.pos.x + "_" + cover.pos.y);
-    };
-
-    let coef = 1;
-    if (this.hive.cells) {
-      const storage = this.hive.cells.storage;
-      if (storage) {
-        const checkMineralLvl = (lvl: 0 | 1 | 2) =>
-          storage.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
-        if (checkMineralLvl(2)) coef = 2;
-        else if (checkMineralLvl(1)) coef = 1.8;
-        else if (checkMineralLvl(0)) coef = 1.5;
-      }
-
-      leaveOne(this.hive.cells.spawn.spawns);
-      if (this.hive.cells.lab) leaveOne(this.hive.cells.lab.laboratories);
-    }
-
-    let energyCost = 0;
-    for (const x in map)
-      for (const y in map[x]) {
-        const pos = new RoomPosition(+x, +y, this.hive.roomName);
-        const structures = pos.lookFor(LOOK_STRUCTURES);
-        if (
-          structures.filter((s) => {
-            if (extraCovers.includes(s.pos.x + "_" + s.pos.y)) return true;
-            const cost =
-              CONSTRUCTION_COST[s.structureType as BuildableStructureConstant];
-            const rampart = s.pos
-              .lookFor(LOOK_STRUCTURES)
-              .filter((s) => s.structureType === STRUCTURE_RAMPART)[0];
-            let workNotDone = map[x][y];
-            if (s instanceof StructureStorage)
-              workNotDone -=
-                Math.max(0, s.store.getUsedCapacity() - TERMINAL_CAPACITY) *
-                100;
-            if (rampart) workNotDone -= rampart.hits;
-            let ss = 1.5;
-            if (s.structureType === STRUCTURE_SPAWN) ss = 4.9;
-            else if (s.structureType === STRUCTURE_LAB) ss = 3;
-            return cost * ss >= workNotDone / (100 * coef);
-          }).length
-        ) {
-          const rampart = structures.filter(
-            (s) => s.structureType === STRUCTURE_RAMPART
-          )[0];
-          let energy;
-          const heal = map[x][y] + rampPadding;
-          if (rampart) energy = Math.max(heal - rampart.hits, 0) / 100;
-          else {
-            energy = map[x][y] / 100;
-            if (!pos.lookFor(LOOK_CONSTRUCTION_SITES).length)
-              pos.createConstructionSite(STRUCTURE_RAMPART);
-            ans.push({
-              pos,
-              sType: STRUCTURE_RAMPART,
-              targetHits: heal,
-              energyCost: 1,
-              type: "construction",
-            });
-          }
-          if (energy > 0) {
-            energyCost += Math.ceil(energy);
-            ans.push({
-              pos,
-              sType: STRUCTURE_RAMPART,
-              targetHits: heal,
-              energyCost: Math.ceil(energy),
-              type: "repair",
-            });
-            this.nukeCoverReady = false;
-          }
-        }
-      }
-
-    if (oneAtATime && ans.length) {
-      const findType = (
-        prev: { pos: RoomPosition },
-        curr: { pos: RoomPosition },
-        type: StructureConstant
-      ) =>
-        prev.pos
-          .lookFor(LOOK_STRUCTURES)
-          .filter((s) => s.structureType === type).length -
-        curr.pos
-          .lookFor(LOOK_STRUCTURES)
-          .filter((s) => s.structureType === type).length;
-      const theOne = ans.reduce((prev, curr) => {
-        let ans = findType(prev, curr, STRUCTURE_STORAGE);
-        if (ans === 0) ans = findType(prev, curr, STRUCTURE_TERMINAL);
-        if (ans === 0) ans = findType(prev, curr, STRUCTURE_SPAWN);
-        if (ans === 0)
-          ans = map[curr.pos.x][curr.pos.y] - map[prev.pos.x][prev.pos.y];
-        return ans < 0 ? curr : prev;
-      });
-      return [[theOne], energyCost];
-    }
-    return [ans, energyCost];
-  }
+  public getNukeDefMap = getNukeDefMap;
+  public updateNukes = updateNukes;
 
   public update() {
     super.update(["towers", "nukes"]);
@@ -239,7 +70,7 @@ export class DefenseCell extends Cell {
 
     const isWar = this.hive.state >= hiveStates.battle;
     if (!isWar || Game.time % 10 === 0) {
-      const roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+      const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
       this.hive.stateChange(
         "battle",
         roomInfo.dangerlvlmax >= 5 &&
@@ -329,7 +160,7 @@ export class DefenseCell extends Cell {
       else canWin = false;
       if (ans === OK) {
         swarm.order.hive = this.hive;
-        swarm.order.flag.memory.hive = this.hive.roomName;
+        swarm.order.flag.memory.hive = this.roomName;
         delete Apiary.defenseSwarms[swarm.pos.roomName];
         Apiary.defenseSwarms[pos.roomName] = swarm;
         return OK;
@@ -445,11 +276,9 @@ export class DefenseCell extends Cell {
       3
     );
     if (centerPoss.length) {
-      for (let i = 0; i < centerPoss.length; ++i)
-        if (
-          terrain.get(centerPoss[i].x, centerPoss[i].y) !== TERRAIN_MASK_SWAMP
-        ) {
-          pos = centerPoss[i];
+      for (const center of centerPoss)
+        if (terrain.get(center.x, center.y) !== TERRAIN_MASK_SWAMP) {
+          pos = center;
           break;
         }
       if (!pos) pos = centerPoss[0];
@@ -500,7 +329,7 @@ export class DefenseCell extends Cell {
     let enemy = Apiary.intel.getEnemy(this)!;
     if (!enemy) return;
 
-    const roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
     _.forEach(roomInfo.enemies, (e) => {
       const statsE = Apiary.intel.getComplexStats(e.object).current;
       const statsEnemy = Apiary.intel.getComplexStats(enemy).current;
@@ -514,7 +343,7 @@ export class DefenseCell extends Cell {
   }
 
   public run() {
-    const roomInfo = Apiary.intel.getInfo(this.hive.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
 
     let healTargets: (Creep | PowerCreep)[] = [];
     const prepareHeal = (
@@ -526,7 +355,7 @@ export class DefenseCell extends Cell {
         .filter(
           (b) =>
             b.hits < b.hitsMax &&
-            b.pos.roomName === this.hive.roomName &&
+            b.pos.roomName === this.roomName &&
             (nonclose || b.pos.getRangeTo(this) < 10)
         )
         .map((b) => b.creep);
@@ -537,7 +366,7 @@ export class DefenseCell extends Cell {
       if (
         powerManager &&
         powerManager.hits < powerManager.hitsMax &&
-        powerManager.pos.roomName === this.hive.roomName
+        powerManager.pos.roomName === this.roomName
       )
         healTargets = [powerManager.creep];
     }
@@ -621,7 +450,7 @@ export class DefenseCell extends Cell {
           // healer = undefined;
           if (tower.attack(enemy) === OK && Apiary.logger)
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "defense_dmg",
               -10,
               RESOURCE_ENERGY
@@ -634,7 +463,7 @@ export class DefenseCell extends Cell {
             toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
             if (Apiary.logger)
               Apiary.logger.addResourceStat(
-                this.hive.roomName,
+                this.roomName,
                 "defense_heal",
                 -10,
                 RESOURCE_ENERGY
@@ -677,7 +506,7 @@ export class DefenseCell extends Cell {
             Apiary.logger
           )
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "defense_repair",
               -10,
               RESOURCE_ENERGY
@@ -696,7 +525,7 @@ export class DefenseCell extends Cell {
           toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
           if (Apiary.logger)
             Apiary.logger.addResourceStat(
-              this.hive.roomName,
+              this.roomName,
               "defense_heal",
               -10,
               RESOURCE_ENERGY

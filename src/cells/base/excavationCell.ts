@@ -8,28 +8,28 @@ import { ResourceCell } from "./resourceCell";
 
 @profile
 export class ExcavationCell extends Cell {
-  resourceCells: { [id: string]: ResourceCell } = {};
-  quitefullCells: ResourceCell[] = [];
-  shouldRecalc: boolean = true;
-  master: HaulerMaster | undefined;
-  roomResources: { [id: string]: number } = {};
-  fullContainer = CONTAINER_CAPACITY * 0.9;
+  public resourceCells: { [id: string]: ResourceCell } = {};
+  public quitefullCells: ResourceCell[] = [];
+  public shouldRecalc: boolean = true;
+  public master: HaulerMaster | undefined;
+  private roomResources: { [id: string]: number } = {};
+  public fullContainer = CONTAINER_CAPACITY * 0.9;
 
-  constructor(hive: Hive) {
+  public constructor(hive: Hive) {
     super(hive, prefix.excavationCell + "_" + hive.room.name);
-    this.initCache("poss", { x: 25, y: 25 });
+    // @todo smth smarter for rest pos base
+    this.poss = this.cache("poss") || {
+      x: Math.max(Math.min(50 - this.hive.pos.x, 45), 15),
+      y: Math.max(Math.min(50 - this.hive.pos.x, 45), 15),
+    };
   }
 
-  get poss(): { x: number; y: number } {
-    return this.fromCache("poss");
+  public poss: { x: number; y: number };
+  public get pos(): RoomPosition {
+    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
   }
 
-  get pos(): RoomPosition {
-    const pos = this.fromCache("poss");
-    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
-  }
-
-  addResource(resource: Source | Mineral) {
+  public addResource(resource: Source | Mineral) {
     if (!this.resourceCells[resource.id]) {
       if (!this.roomResources[resource.pos.roomName])
         this.roomResources[resource.pos.roomName] = 0;
@@ -43,7 +43,7 @@ export class ExcavationCell extends Cell {
     }
   }
 
-  update() {
+  public update() {
     _.forEach(this.resourceCells, (cell) =>
       safeWrap(() => cell.update(), cell.print + " update")
     );
@@ -74,7 +74,7 @@ export class ExcavationCell extends Cell {
           this.fullContainer
         ) {
           const roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 20);
-          if (roomInfo.safePlace || cell.pos.roomName === this.hive.roomName)
+          if (roomInfo.safePlace || cell.pos.roomName === this.roomName)
             this.quitefullCells.push(cell);
         }
       }
@@ -86,7 +86,7 @@ export class ExcavationCell extends Cell {
     );
   }
 
-  run() {
+  public run() {
     _.forEach(this.resourceCells, (cell) => {
       safeWrap(() => {
         cell.run();

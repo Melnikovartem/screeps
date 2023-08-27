@@ -140,7 +140,7 @@ export class StorageCell extends Cell {
       .find(FIND_TOMBSTONES)
       .filter((t) => t.store.getUsedCapacity() > 0);
     const enemies = Apiary.intel
-      .getInfo(this.hive.roomName, 10)
+      .getInfo(this.roomName, 10)
       .enemies.map((e) => e.object);
     let rrs = (resources as (Resource | Tombstone)[]).concat(tombstones);
     if (enemies.length)

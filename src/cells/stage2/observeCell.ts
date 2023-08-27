@@ -16,31 +16,28 @@ export class ObserveCell extends Cell {
     super(hive, prefix.observerCell);
     this.obeserver = obeserver;
 
-    this.initCache("corridorRooms", []);
-    this.initCache("prevRoom", "");
-
     if (!this.corridorRooms.length) this.updateRoomsToCheck();
   }
 
+  public _corridorRooms: string[] = this.cache("_corridorRooms") || [];
   public get corridorRooms(): string[] {
-    return this.fromCache("corridorRooms");
+    return this._corridorRooms;
   }
-
-  public set prevRoom(value) {
-    this.toCache("prevRoom", value);
-  }
-
-  public get prevRoom(): string {
-    return this.fromCache("prevRoom");
-  }
-
   public set corridorRooms(value) {
-    this.toCache("corridorRooms", value);
+    this._corridorRooms = this.cache("_corridorRooms", value);
+  }
+
+  public _prevRoom: string = this.cache("_prevRoom") || "";
+  public get prevRoom() {
+    return this._prevRoom;
+  }
+  public set prevRoom(value) {
+    this._prevRoom = this.cache("_prevRoom", value);
   }
 
   public updateRoomsToCheck() {
     this.corridorRooms = [];
-    const [x, y, we, ns] = getRoomCoorinates(this.hive.roomName);
+    const [x, y, we, ns] = getRoomCoorinates(this.roomName);
     let closest = we + x + ns + y;
     const roundx = we + Math.round(x / 10) * 10 + ns + y;
     const roundy = we + x + ns + Math.round(y / 10) * 10;
@@ -90,7 +87,7 @@ export class ObserveCell extends Cell {
     this.roomsToCheck = [];
 
     if (this.hive.cells.defense.timeToLand < 75) {
-      const exits = Game.map.describeExits(this.hive.roomName);
+      const exits = Game.map.describeExits(this.roomName);
       const roomNames = Object.values(exits);
       for (const roomName of roomNames) {
         const roomInfoCheck = Apiary.intel.getInfo(roomName, 25);
@@ -177,7 +174,7 @@ export class ObserveCell extends Cell {
     if (flags) return;
     const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
     if (typeof name === "string") {
-      Game.flags[name].memory.hive = this.hive.roomName;
+      Game.flags[name].memory.hive = this.roomName;
       const order = new FlagOrder(Game.flags[name]);
       order.update();
     }

@@ -1,6 +1,6 @@
-import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
+import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import { BASE_MINERALS } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -151,7 +151,7 @@ export class HaulerMaster extends Master {
   public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        bee.fleeRoom(this.roomName, this.hive.opt);
         return;
       }
 
@@ -259,13 +259,13 @@ export class HaulerMaster extends Master {
 
               if (this.roadUpkeepCost[bee.ref] > 0) {
                 Apiary.logger.addResourceStat(
-                  this.hive.roomName,
+                  this.roomName,
                   ref,
                   this.roadUpkeepCost[bee.ref],
                   RESOURCE_ENERGY
                 );
                 Apiary.logger.addResourceStat(
-                  this.hive.roomName,
+                  this.roomName,
                   sameRes
                     ? "upkeep_" + bee.target.slice(bee.target.length - 4)
                     : "build",
@@ -275,7 +275,7 @@ export class HaulerMaster extends Master {
                 this.roadUpkeepCost[bee.ref] = 0;
               }
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 ref,
                 bee.store,
                 this.dropOff.store,
@@ -301,7 +301,7 @@ export class HaulerMaster extends Master {
               if (Apiary.logger && bee.target) {
                 const ref = "mining_" + bee.target.slice(bee.target.length - 4);
                 Apiary.logger.resourceTransfer(
-                  this.hive.roomName,
+                  this.roomName,
                   ref,
                   bee.store,
                   ss.store,

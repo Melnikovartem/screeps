@@ -30,6 +30,10 @@ export abstract class Cell {
     return this.hive.pos;
   }
 
+  public get roomName() {
+    return this.hive.roomName;
+  }
+
   public delete() {
     for (const cellType in this.hive.cells)
       if (this.hive.cells[cellType as keyof HiveCells]!.ref === this.ref)

@@ -28,27 +28,24 @@ export class DevelopmentCell extends Cell {
 
   public addResources() {
     this.handAddedResources = [];
-    _.forEach(
-      [this.hive.roomName].concat(this.hive.annexNames),
-      (miningRoom) => {
-        const room = Game.rooms[miningRoom];
-        if (!room) return;
+    _.forEach([this.roomName].concat(this.hive.annexNames), (miningRoom) => {
+      const room = Game.rooms[miningRoom];
+      if (!room) return;
 
-        _.forEach(room.find(FIND_DROPPED_RESOURCES), (r) => {
-          if (r.resourceType === RESOURCE_ENERGY)
-            this.handAddedResources.push(r.pos);
-        });
+      _.forEach(room.find(FIND_DROPPED_RESOURCES), (r) => {
+        if (r.resourceType === RESOURCE_ENERGY)
+          this.handAddedResources.push(r.pos);
+      });
 
-        _.forEach(room.find(FIND_STRUCTURES), (s) => {
-          if (
-            s.structureType === STRUCTURE_STORAGE ||
-            s.structureType === STRUCTURE_CONTAINER ||
-            s.structureType === STRUCTURE_TERMINAL
-          )
-            this.handAddedResources.push(s.pos);
-        });
-      }
-    );
+      _.forEach(room.find(FIND_STRUCTURES), (s) => {
+        if (
+          s.structureType === STRUCTURE_STORAGE ||
+          s.structureType === STRUCTURE_CONTAINER ||
+          s.structureType === STRUCTURE_TERMINAL
+        )
+          this.handAddedResources.push(s.pos);
+      });
+    });
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
       if (cell.container) this.handAddedResources.push(cell.container.pos);
     });
@@ -67,19 +64,18 @@ export class DevelopmentCell extends Cell {
     const futureResourceCells = _.filter(
       Game.flags,
       (f) =>
-        f.memory.hive === this.hive.roomName &&
+        f.memory.hive === this.roomName &&
         f.color === COLOR_YELLOW &&
         f.secondaryColor === COLOR_YELLOW
     );
     if (
       Game.time % 100 === 0 &&
       this.hive.controller.level > 1 &&
-      this.hive.state === 0 &&
       this.hive.state === hiveStates.economy &&
       this.master.beesAmount
     ) {
       const addRouteTo = (pos: RoomPosition) => {
-        // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hive.roomName)
+        // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.roomName)
         const route = Traveler.findTravelPath(
           pos,
           this.hive.cells.spawn.fastRefPos || this.hive,

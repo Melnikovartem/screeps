@@ -36,33 +36,21 @@ export class RespawnCell extends Cell {
     );
   }
 
-  public get fastRefPos() {
-    if (this.hive.cache.cells[prefix.fastRefillCell]) {
-      const poss = this.hive.cache.cells[prefix.fastRefillCell].poss as {
-        x: number;
-        y: number;
-      };
-      return new RoomPosition(poss.x, poss.y, this.hive.roomName);
-    }
-    return undefined;
-  }
-
   public update() {
     super.update(["extensions", "spawns"]);
 
-    if (
+    const fastRefPos =
       !this.fastRef &&
       this.hive.phase >= 1 &&
       this.hive.cells.storage &&
-      this.fastRefPos
-    ) {
-      const link = this.fastRefPos
+      FastRefillCell.poss(this.roomName);
+    if (fastRefPos) {
+      const link = fastRefPos
         .lookFor(LOOK_STRUCTURES)
         .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
         | StructureLink
         | undefined;
-      if (link)
-        this.fastRef = new FastRefillCell(this, link, this.hive.cells.storage);
+      if (link) this.fastRef = new FastRefillCell(this, link);
     }
 
     // find free spawners

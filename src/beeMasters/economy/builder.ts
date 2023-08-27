@@ -38,7 +38,7 @@ export class BuilderMaster extends Master {
     const realBattle =
       this.hive.state === hiveStates.battle &&
       (this.hive.sumCost > 500 ||
-        Apiary.intel.getInfo(this.hive.roomName, 20).dangerlvlmax >= 6);
+        Apiary.intel.getInfo(this.roomName, 20).dangerlvlmax >= 6);
 
     const otherEmergency =
       this.hive.state === hiveStates.nukealert ||
@@ -115,7 +115,7 @@ export class BuilderMaster extends Master {
         CREEP_LIFE_TIME - 20
       )
     ) {
-      /* if (!this.hive.structuresConst.filter(cc => cc.pos.roomName === this.hive.roomName)) {
+      /* if (!this.hive.structuresConst.filter(cc => cc.pos.roomName === this.roomName)) {
         let setup = setups.builder;
         setup = setup.copy();
         setup.pattern = [WORK, CARRY, CARRY];
@@ -162,7 +162,7 @@ export class BuilderMaster extends Master {
 
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.hive.roomName, this.hive.opt);
+        bee.fleeRoom(this.roomName, this.hive.opt);
         return;
       }
 
@@ -249,7 +249,7 @@ export class BuilderMaster extends Master {
               Apiary.logger
             )
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 "pickup",
                 bee.store,
                 this.sCell.storage.store,
@@ -276,7 +276,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.work;
             if (Apiary.logger)
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 this.hive.state === hiveStates.nukealert
                   ? "defense_build"
                   : "build",
@@ -321,7 +321,7 @@ export class BuilderMaster extends Master {
               }
               if (
                 target &&
-                target.pos.roomName !== this.hive.roomName &&
+                target.pos.roomName !== this.roomName &&
                 this.hive.annexInDanger.includes(target.pos.roomName)
               ) {
                 target = undefined;
@@ -390,7 +390,7 @@ export class BuilderMaster extends Master {
             const ans = bee.transfer(this.sCell.storage, res);
             if (ans === OK && Apiary.logger)
               Apiary.logger.resourceTransfer(
-                this.hive.roomName,
+                this.roomName,
                 res === RESOURCE_ENERGY ? "build" : "pickup",
                 bee.store,
                 this.sCell.storage.store,

@@ -104,7 +104,7 @@ export class FactoryCell extends Cell {
     this.factory = factory;
   }
 
-  public get sCell() {
+  private get sCell() {
     return this.hive.cells.storage!;
   }
 
@@ -114,7 +114,6 @@ export class FactoryCell extends Cell {
   public get commodityTarget() {
     return this._commodityTarget;
   }
-
   public set commodityTarget(value) {
     this._commodityTarget = this.cache("_commodityTarget", value);
   }
@@ -457,16 +456,11 @@ export class FactoryCell extends Cell {
         const amount = recipe.components[res];
         if (res in this.resTarget) this.resTarget[res]! -= amount;
         if (Apiary.logger)
-          Apiary.logger.addResourceStat(
-            this.hive.roomName,
-            "factory",
-            -amount,
-            res
-          );
+          Apiary.logger.addResourceStat(this.roomName, "factory", -amount, res);
       }
       if (Apiary.logger)
         Apiary.logger.addResourceStat(
-          this.hive.roomName,
+          this.roomName,
           "factory",
           COMMODITIES[this.prod.res].amount,
           this.prod.res
