@@ -110,13 +110,13 @@ declare module "./console" {
      * Buys master's minerals for a hive.
      * @param padding - Additional amount to consider while buying.
      * @param hiveName - Name of the hive to perform the transaction.
-     * @param mode - Transaction mode (fast, short, long).
+     * @param mode - Transaction mode (fast/better price).
      * @returns Result message of the transactions.
      */
     buyMastersMinerals(
       padding?: number,
       hiveName?: string,
-      mode?: string
+      mode?: boolean
     ): string;
 
     /**
@@ -150,60 +150,6 @@ declare module "./console" {
     ): string;
 
     /**
-     * Buys resources from the market using a terminal in short mode.
-     * @param resource - The resource to buy.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param sets - Number of sets to buy.
-     * @returns Result message of the transaction.
-     */
-    buyShort(
-      resource: ResourceConstant,
-      hiveName?: string,
-      sets?: number
-    ): string;
-
-    /**
-     * Sells resources to the market using a terminal in short mode.
-     * @param resource - The resource to sell.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param sets - Number of sets to sell.
-     * @returns Result message of the transaction.
-     */
-    sellShort(
-      resource: ResourceConstant,
-      hiveName?: string,
-      sets?: number
-    ): string;
-
-    /**
-     * Buys resources from the market using a terminal in long mode.
-     * @param resource - The resource to buy.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param sets - Number of sets to buy.
-     * @returns Result message of the transaction.
-     */
-    buyLong(
-      resource: ResourceConstant,
-      hiveName?: string,
-      sets?: number
-    ): string;
-
-    /**
-     * Sells resources to the market using a terminal in long mode.
-     * @param resource - The resource to sell.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param sets - Number of sets to sell.
-     * @param price - Optional price for the transaction.
-     * @returns Result message of the transaction.
-     */
-    sellLong(
-      resource: ResourceConstant,
-      hiveName?: string,
-      sets?: number,
-      price?: number
-    ): string;
-
-    /**
      * Handles the result of a market transaction and provides a formatted message.
      * @param ans - Result code or message of the transaction.
      * @param info - Additional information about the transaction.
@@ -214,11 +160,12 @@ declare module "./console" {
 }
 
 CustomConsole.prototype.terminal = function (
-  hiveName: string = this.lastActionRoomName,
+  hiveName?: string,
   amount: number = Infinity,
   resource: ResourceConstant = RESOURCE_ENERGY,
   mode: "fill" | "empty" = "fill"
 ) {
+  if (hiveName === undefined) hiveName = this.lastActionRoomName;
   hiveName = this.format(hiveName);
   const hive = Apiary.hives[hiveName];
   if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
@@ -263,7 +210,8 @@ CustomConsole.prototype.sendBlind = function (
   roomNameFrom: string,
   roomNameTo: string,
   resource: ResourceConstant,
-  amount: number = Infinity
+  amount: number = Infinity,
+  message = "🐝"
 ) {
   roomNameFrom = this.format(roomNameFrom);
   roomNameTo = this.format(roomNameTo);
@@ -292,7 +240,7 @@ CustomConsole.prototype.sendBlind = function (
   )
     amount = Math.floor(amount * (1 - energyCost));
 
-  const ans = terminalFrom.send(resource, amount, roomNameTo);
+  const ans = terminalFrom.send(resource, amount, roomNameTo, message);
 
   const info = ` SEND FROM ${
     hiveFrom.print
@@ -365,6 +313,7 @@ CustomConsole.prototype.send = function (
   else return `ERROR: ${ans}` + info;
 };
 
+// spam to tranfer // from my early days
 CustomConsole.prototype.transfer = function (
   roomNameFrom: string,
   roomNameTo: string,
@@ -386,10 +335,8 @@ CustomConsole.prototype.changeOrderPrice = function (
   );
 };
 
-CustomConsole.prototype.cancelOrdersHive = function (
-  hiveName: string = this.lastActionRoomName,
-  active = false
-) {
+CustomConsole.prototype.cancelOrdersHive = function (hiveName, active = false) {
+  if (hiveName === undefined) hiveName = this.lastActionRoomName;
   let ans = `OK @ ${this.format(hiveName)}`;
   _.forEach(Game.market.orders, (o) => {
     if (o.roomName === hiveName && (!o.active || active))
@@ -491,9 +438,10 @@ CustomConsole.prototype.getTerminal = function (
 
 CustomConsole.prototype.buyMastersMinerals = function (
   padding = 0,
-  hiveName: string = this.lastActionRoomName,
-  mode = "fast"
+  hiveName?: string,
+  fast = true
 ) {
+  if (hiveName === undefined) hiveName = this.lastActionRoomName;
   const hive = Apiary.hives[hiveName];
   if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
   const state = hive.mastersResTarget;
@@ -511,17 +459,7 @@ CustomConsole.prototype.buyMastersMinerals = function (
       Math.round(((amount + padding) / 5000) * 1000) / 1000,
       1
     );
-    let buyAns;
-    switch (mode) {
-      case "short":
-        buyAns = this.buyShort(res, hiveName, sets);
-        break;
-      case "long":
-        buyAns = this.buyLong(res, hiveName, sets);
-        break;
-      default:
-        buyAns = this.buy(res, hiveName, sets, mode === "fast");
-    }
+    const buyAns = this.buy(res, hiveName, sets, fast);
     skip = buyAns.includes("short");
     ans += `\n${res}: ${buyAns} ${sets * 5000}/${amount}`;
   });
@@ -530,124 +468,34 @@ CustomConsole.prototype.buyMastersMinerals = function (
 
 CustomConsole.prototype.buy = function (
   resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
+  hiveName?: string,
   sets: number = 1,
-  hurry: boolean = false
+  hurry: boolean = true
 ) {
+  if (hiveName === undefined) hiveName = this.lastActionRoomName;
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
   Apiary.broker.update();
   return this.marketReturn(
-    Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry, Infinity),
+    Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry),
     `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
   );
 };
 
 CustomConsole.prototype.sell = function (
   resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
+  hiveName?: string,
   sets: number = 1,
-  hurry: boolean = false
+  hurry: boolean = true
 ) {
+  if (hiveName === undefined) hiveName = this.lastActionRoomName;
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
   Apiary.broker.update();
   return this.marketReturn(
-    Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry, Infinity),
+    Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry),
     `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
   );
-};
-
-CustomConsole.prototype.buyShort = function (
-  resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
-  sets: number = 1
-) {
-  hiveName = hiveName.toUpperCase();
-  const terminal = this.getTerminal(hiveName);
-  if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
-    Apiary.broker.buyShort(terminal, resource, 5000 * sets, Infinity),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-  );
-};
-
-CustomConsole.prototype.sellShort = function (
-  resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
-  sets: number = 1
-) {
-  hiveName = hiveName.toUpperCase();
-  const terminal = this.getTerminal(hiveName);
-  if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
-    Apiary.broker.sellShort(terminal, resource, 5000 * sets),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-  );
-};
-
-CustomConsole.prototype.buyLong = function (
-  resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
-  sets: number = 1
-) {
-  // coef = 0.95
-  hiveName = hiveName.toUpperCase();
-  const terminal = this.getTerminal(hiveName);
-  if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
-    Apiary.broker.buyLong(
-      terminal,
-      resource,
-      5000 * sets,
-      Infinity,
-      Apiary.broker.priceLongBuy(resource, 0.02)
-    ),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-  );
-};
-
-CustomConsole.prototype.sellLong = function (
-  resource: ResourceConstant,
-  hiveName: string = this.lastActionRoomName,
-  sets: number = 1,
-  price?: number
-) {
-  // coef = 1.05
-  hiveName = hiveName.toUpperCase();
-  const terminal = this.getTerminal(hiveName);
-  if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
-    Apiary.broker.sellLong(
-      terminal,
-      resource,
-      5000 * sets,
-      Infinity,
-      price || Apiary.broker.priceLongSell(resource, 0.02)
-    ),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
-  );
-};
-
-CustomConsole.prototype.marketReturn = function (
-  ans: number | string,
-  info: string
-) {
-  switch (ans) {
-    case ERR_NOT_FOUND:
-      ans = "NO GOOD DEAL NEAR";
-      break;
-    case ERR_NOT_ENOUGH_RESOURCES:
-      ans = "NOT ENOUGH RESOURCES";
-      break;
-    case OK:
-      return "OK " + info;
-  }
-  return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
 };

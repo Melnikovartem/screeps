@@ -1,4 +1,4 @@
-import { buildingCostsHive } from "abstract/hiveMemory";
+import { buildingCostsHive, HiveCache } from "abstract/hiveMemory";
 
 export const SETTINGS_DEFAULT: Memory["settings"] = {
   framerate: 10,
@@ -24,6 +24,21 @@ export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {
     build: 0,
     repair: 0,
   },
+};
+
+export const BASE_MODE_HIVE: HiveCache["do"] = {
+  powerMining: 0,
+  powerRefining: 1,
+  depositMining: 0,
+  depositRefining: 1,
+  war: 1,
+  unboost: 0,
+  saveCpu: 0,
+  upgrade: 1,
+  lab: 2,
+  buyIn: 2,
+  sellOff: 1,
+  buildBoost: 2,
 };
 
 export const WALLS_START = 10_000;

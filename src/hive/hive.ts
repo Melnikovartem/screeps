@@ -2,7 +2,6 @@
  * Import statements
  */
 import type { HiveCache } from "abstract/hiveMemory";
-import { BASE_MODE_HIVE } from "abstract/hiveMemory";
 import { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { CreepSetup } from "bees/creepSetups";
@@ -23,7 +22,11 @@ import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
-import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import {
+  BASE_MODE_HIVE,
+  WALLS_START,
+  ZERO_COSTS_BUILDING_HIVE,
+} from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
@@ -122,7 +125,7 @@ export class Hive {
 
   public structuresConst: BuildProject[] = [];
   /** sum of construction cost */
-  public buildingCosts = ZERO_COSTS_BUILDING_HIVE;
+  public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
 
   /** current minium wall health */
   private minCurWallHealth = 0;
@@ -164,15 +167,15 @@ export class Hive {
 
     /** How much to check when rechecking buildings
      *
-     * 3
+     * 3 deep recalc with resources check
      *
-     * 2
+     * 2 main room + annexes
      *
-     * 1
+     * 1 main room
      *
      * 0 no need
      */
-    this.shouldRecalc = 3;
+    this.shouldRecalc = 2;
     this.phase = 0;
     if (!this.controller) return;
 

@@ -86,7 +86,8 @@ export abstract class Cell {
     key: K,
     value?: T
   ): T {
-    if (!this.hive.cache.cells) this.hive.cache.cells = {};
+    if (!this.hive.cache.cells[this.refCache])
+      this.hive.cache.cells[this.refCache] = {};
     const mem = this.hive.cache.cells[this.refCache];
     if (value !== undefined) {
       mem[key as string] = value;

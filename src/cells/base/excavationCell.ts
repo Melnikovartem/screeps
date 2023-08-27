@@ -18,9 +18,14 @@ export class ExcavationCell extends Cell {
   public constructor(hive: Hive) {
     super(hive, prefix.excavationCell + "_" + hive.room.name);
     // @todo smth smarter for rest pos base
+    const pos =
+      this.hive.room.storage?.pos ||
+      _.filter(Game.spawns, (sp) => sp.pos.roomName === hive.roomName)[0]
+        ?.pos ||
+      this.hive.controller.pos;
     this.poss = this.cache("poss") || {
-      x: Math.max(Math.min(50 - this.hive.pos.x, 45), 15),
-      y: Math.max(Math.min(50 - this.hive.pos.x, 45), 15),
+      x: Math.max(Math.min(50 - pos.x, 45), 15),
+      y: Math.max(Math.min(50 - pos.x, 45), 15),
     };
   }
 

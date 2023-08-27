@@ -28,7 +28,10 @@ export class DefenseCell extends Cell {
     this.poss = this.cache("poss");
 
     if (this.poss === undefined) {
-      const spawn = Object.values(this.hive.cells.spawn.spawns)[0];
+      const spawn = _.filter(
+        Game.spawns,
+        (sp) => sp.pos.roomName === hive.roomName
+      )[0];
       this.poss = spawn?.pos || {
         x: 25,
         y: 25,

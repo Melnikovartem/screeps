@@ -19,8 +19,8 @@ const APPROX_DSIT = {
 
 const BUILDING_COEFS: { boost: buildingCostsHive; normal: buildingCostsHive } =
   {
-    boost: ZERO_COSTS_BUILDING_HIVE,
-    normal: ZERO_COSTS_BUILDING_HIVE,
+    boost: _.cloneDeep(ZERO_COSTS_BUILDING_HIVE),
+    normal: _.cloneDeep(ZERO_COSTS_BUILDING_HIVE),
   };
 
 type B = keyof typeof BUILDING_COEFS;
@@ -36,8 +36,10 @@ const bakeBuildingCoefs = (boost: B, mode: M, repair: R) => {
 
 for (const boost of ["boost", "normal"] as B[])
   for (const mode of ["hive", "annex"] as M[])
-    for (const repair of ["repair", "buid"] as R[])
+    for (const repair of ["repair", "build"] as R[])
       bakeBuildingCoefs(boost, mode, repair);
+
+console.log(JSON.stringify(BUILDING_COEFS));
 
 @profile
 export class BuilderMaster extends Master {
@@ -84,7 +86,7 @@ export class BuilderMaster extends Master {
     const boost = this.boosts ? "boost" : "normal";
     let patternsNeeded = 0;
     for (const mode of ["hive", "annex"] as M[])
-      for (const repair of ["repair", "buid"] as R[])
+      for (const repair of ["repair", "build"] as R[])
         patternsNeeded +=
           this.hive.buildingCosts[mode][repair] *
           BUILDING_COEFS[boost][mode][repair];
@@ -101,15 +103,6 @@ export class BuilderMaster extends Master {
     else if (target > maxBees) target = patternsNeeded / this.maxPatternBee;
 
     this.targetBeeCount = Math.min(Math.ceil(target), maxBees);
-
-    if (
-      this.boosts &&
-      this.hive.cells.lab &&
-      this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
-    )
-      _.forEach(this.bees, (b) => {
-        if (!b.boosted && b.ticksToLive >= 1200) b.state = beeStates.boosting;
-      });
   }
 
   private get maxPatternBee() {
@@ -120,11 +113,21 @@ export class BuilderMaster extends Master {
 
   public update() {
     super.update();
+
+    this.recalculateTargetBee();
+    if (
+      this.boosts &&
+      this.hive.cells.lab &&
+      this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
+    )
+      _.forEach(this.bees, (b) => {
+        if (!b.boosted && b.ticksToLive >= 1200) b.state = beeStates.boosting;
+      });
+
     const emergency =
       this.hive.state === hiveStates.nukealert ||
       this.sCell.storage instanceof StructureTerminal;
 
-    this.recalculateTargetBee();
     this.movePriority = emergency ? 2 : 5;
 
     if (emergency)
@@ -148,7 +151,7 @@ export class BuilderMaster extends Master {
         priority: emergency ? 2 : this.beesAmount ? 7 : 5,
       };
       order.setup.patternLimit = this.patternPerBee;
-      // add a little spice if battle
+      // add a little secret spice if battle
       if (emergency || this.hive.state === hiveStates.battle)
         order.setup.fixed = [WORK, WORK, CARRY];
       this.wish(order);

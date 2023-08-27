@@ -22,7 +22,7 @@ export function checkBuildings(
   specials: { [key in StructureConstant]?: number } = {}
 ): [BuildProject[], buildingCostsHive["hive"]] {
   if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
-    return [[], ZERO_COSTS_BUILDING_HIVE.hive];
+    return [[], { ...ZERO_COSTS_BUILDING_HIVE.hive }];
 
   const contr = Game.rooms[roomName].controller;
   const hive = Apiary.hives[roomName] as Hive | undefined;
@@ -33,7 +33,7 @@ export function checkBuildings(
 
   const buildProjectList: BuildProject[] = [];
   let constructions = 0;
-  const energyCost = ZERO_COSTS_BUILDING_HIVE.hive;
+  const energyCost = { ...ZERO_COSTS_BUILDING_HIVE.hive };
 
   for (const sType of queToCheck) {
     const mem = Memory.cache.roomPlanner[roomName][sType];
@@ -153,7 +153,7 @@ export function checkBuildings(
       else energyCost.build += bProject.energyCost;
 
     if (!constructions)
-      for (let i = 0; i < toadd.length && i < cc.amount - placed; ++i) {
+      for (let i = 0; i < toadd.length && cc.amount < placed; ++i) {
         let createAns;
         if (nukeAlert && toadd[i].findInRange(FIND_NUKES, 2).length) continue;
         if (constructions >= CONSTRUCTIONS_PER_TYPE) break;
@@ -175,6 +175,7 @@ export function checkBuildings(
             type: "construction",
           });
           ++constructions;
+          ++placed;
         }
         // add even if no construction cost so we can plan bases at all volume of jobs
         energyCost.build += CONSTRUCTION_COST[sType];

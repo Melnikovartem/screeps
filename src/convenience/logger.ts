@@ -399,7 +399,7 @@ export class Logger {
       annexNames: [],
       construction: {
         numStruct: 0,
-        costs: ZERO_COSTS_BUILDING_HIVE,
+        costs: _.cloneDeep(ZERO_COSTS_BUILDING_HIVE),
       },
       spawOrders: 0,
 

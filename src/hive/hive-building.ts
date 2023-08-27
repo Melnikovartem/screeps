@@ -144,7 +144,7 @@ export function updateStructures(this: Hive) {
     this.buildingCosts.annex.build + this.buildingCosts.annex.repair > 0;
 
   this.structuresConst = [];
-  this.buildingCosts = ZERO_COSTS_BUILDING_HIVE;
+  this.buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
   let mode: "annex" | "hive" = "hive";
   const addCC = (ans: [BuildProject[], buildingCostsHive["hive"]]) => {
     this.structuresConst = this.structuresConst.concat(ans[0]);
@@ -243,11 +243,13 @@ export function updateStructures(this: Hive) {
     fearNukes = false
   ) =>
     _.forEach(toCheck, (type) =>
-      checkBuildings(
-        this.roomName,
-        BUILDABLE_PRIORITY[type],
-        fearNukes,
-        type === "defense" ? wallMap(this) : undefined
+      addCC(
+        checkBuildings(
+          this.roomName,
+          BUILDABLE_PRIORITY[type],
+          fearNukes,
+          type === "defense" ? wallMap(this) : undefined
+        )
       )
     );
 
@@ -314,6 +316,7 @@ export function updateStructures(this: Hive) {
       // @todo up the limit on walls
       if (!this.structuresConst.length) {
         this.wallTargetHealth = nextWallTargetHealth(this);
+        checkAdd(["defense"], true);
       }
       break;
     default:
@@ -338,5 +341,7 @@ function nextWallTargetHealth(hive: Hive) {
       +wallHealth
     );
   }
-  return currTarget;
+  return currTarget < WALLS_STEP
+    ? WALLS_STEP
+    : Math.ceil(currTarget / WALLS_STEP) * WALLS_STEP;
 }

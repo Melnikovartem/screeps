@@ -510,16 +510,16 @@ export class Visuals {
     }
 
     if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
-      const sumCost = hive.sumCost;
+      let sumCost: string | number = hive.sumCost;
+      if (sumCost > 1_000_000)
+        sumCost = Math.round((sumCost / 1_000_000) * 10) / 10 + "M";
+      else if (sumCost > 5_000) sumCost = Math.round(sumCost / 1_000) + "K";
+      else if (sumCost > 0)
+        sumCost = Math.round((sumCost / 1_000) * 10) / 10 + "K";
+
       ans.push([
         "build",
-        sumCost === 0
-          ? ""
-          : ` ${
-              sumCost >= 5000
-                ? Math.round(sumCost / 1000)
-                : Math.round((sumCost / 1000) * 10) / 10
-            }K/${hive.structuresConst.length}`,
+        sumCost === 0 ? "" : ` ${sumCost}K/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder),
       ]);
     }

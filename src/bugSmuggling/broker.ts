@@ -586,7 +586,7 @@ export class Broker {
     if (terminal.cooldown) return ERR_TIRED;
     const roomName = terminal.pos.roomName;
     const hive = Apiary.hives[roomName];
-    if (!hive) return; // failsafe
+    if (!hive) return ERR_NOT_FOUND; // failsafe
 
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodBuy;
@@ -642,7 +642,7 @@ export class Broker {
     if (terminal.cooldown) return ERR_TIRED;
     const roomName = terminal.pos.roomName;
     const hive = Apiary.hives[roomName];
-    if (!hive) return; // failsafe
+    if (!hive) return ERR_NOT_FOUND; // failsafe
 
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodSell;
@@ -690,32 +690,6 @@ export class Broker {
     if (ans === OK && Apiary.logger)
       Apiary.logger.marketShort(order, amount, roomName);
     return ans;
-  }
-
-  /**
-   * Function to determine the price that i am ready to pay for a long buy order
-   *
-   * @param {ResourceConstant} res - The resource constant for which to calculate the price
-   * @param {number} step - The step value for price calculation
-   * @returns {number} - The calculated buy order price
-   */
-  public priceLongBuy(res: ResourceConstant, step: number) {
-    const info = this.updateRes(res, MARKET_LAG * 100);
-    return info.bestPriceSell || 0 + step / 2;
-  }
-
-  /**
-   * Function to determine the price that i am ready to pay for a long sell order
-   *
-   * @param {ResourceConstant} res - The resource constant for which to calculate the price
-   * @param {number} step - The step value for price calculation
-   * @returns {number} - The calculated sell order price
-   */
-  public priceLongSell(res: ResourceConstant, step: number) {
-    const info = this.updateRes(res, MARKET_LAG * 100);
-    return (
-      (info.bestPriceBuy || (info.bestPriceSell || Infinity) * 1.3) - step / 2
-    );
   }
 
   /**

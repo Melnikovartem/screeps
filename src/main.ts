@@ -5,16 +5,15 @@ import "prototypes/pos";
 import "convenience/console/console-hand-fix";
 import "convenience/console/console-debug";
 
+// import { MigrateManager } from "static/migration";
+// Migrate memory do not wipe!!
+// MigrateManager.migrate005();
 // Import required classes and constants
 import { Mem } from "abstract/memory";
 import { _Apiary } from "Apiary";
 import { CustomConsole } from "convenience/console/console";
 import profiler from "screeps-profiler";
 import { LOGGING_CYCLE, PROFILER } from "settings";
-import { MigrateManager } from "static/migration";
-
-// Migrate memory do not wipe!!
-MigrateManager.migrate005();
 
 // Declare global namespace properties
 declare global {
