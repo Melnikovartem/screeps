@@ -4,7 +4,7 @@ import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
   Enemy,
-} from "../../abstract/intelligence";
+} from "../../spiderSense/intelligence";
 import type { Bee } from "../../bees/bee";
 import type { CreepSetup } from "../../bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "../../cells/stage1/laboratoryCell";

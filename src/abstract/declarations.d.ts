@@ -3,8 +3,8 @@ import type { CreepSetup } from "../bees/creepSetups";
 import type { CustomConsole } from "../convenience/console/console";
 import type { beeStates, roomStates } from "../static/enums";
 import type { HiveCache, HiveLog } from "./hiveMemory";
-import type { CreepAllBattleInfo } from "./intelligence";
-import type { RoomSetup } from "./roomPlanner";
+import type { CreepAllBattleInfo } from "../spiderSense/intelligence";
+import type { RoomSetup } from "../hivePlanner/planner";
 // import type { Boosts } from "../beeMasters/_Master";
 
 declare global {

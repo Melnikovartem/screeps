@@ -1,9 +1,14 @@
-import type { BuildProject } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { prefix, roomStates } from "../static/enums";
-import { getEnterances, makeId } from "../static/utils";
+import { getEnterances } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
-import { BASE_MODE_HIVE } from "./hiveMemory";
+import {
+  addToCache,
+  currentToActive,
+  resetPlanner,
+  saveActive,
+  toActive,
+} from "./planner-active";
 
 export type RoomSetup = {
   [key in BuildableStructureConstant | "null"]?: {
@@ -162,11 +167,6 @@ const CORE: Module = {
 
 // box of 12 x 11 spawns at dist 1 from center except the opposite of biggest side
 
-const CONSTRUCTIONS_PER_TYPE = 5;
-
-// oh no i need to def
-const ADD_RAMPART: (BuildableStructureConstant | undefined | null)[] = []; // STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN]; // STRUCTURE_LINK
-
 interface Job {
   func: () => OK | ERR_BUSY | ERR_FULL;
   context: string;
@@ -214,17 +214,6 @@ function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
       return costMatrix;
     },
   });
-}
-
-function anchorDist(
-  anchor: RoomPosition,
-  p: Pos,
-  roomName: string = anchor.roomName,
-  pathfind = false
-) {
-  if (pathfind)
-    return anchor.getTimeForPath(new RoomPosition(p.x, p.y, roomName));
-  return anchor.getRangeApprox(new RoomPosition(p.x, p.y, roomName));
 }
 
 @profile
@@ -767,7 +756,7 @@ export class RoomPlanner {
     if (!this.activePlanning[anchor.roomName]) this.toActive(anchor);
 
     this.activePlanning[anchor.roomName].jobsToDo.push({
-      context: `custom road for ${pos}`,
+      context: `custom road for ${pos.to_str}`,
       func: () => {
         const ans = this.connectWithRoad(anchor, pos, true);
         if (typeof ans === "number") return ans;
@@ -869,7 +858,7 @@ export class RoomPlanner {
 
     _.forEach(futureResourceCells, (f) => {
       this.activePlanning[anchor.roomName].jobsToDo.push({
-        context: `resource road for ${f.pos}`,
+        context: `resource road for ${f.pos.to_str}`,
         func: () => {
           this.activePlanning[anchor.roomName].exits = [anchor].concat(
             this.activePlanning[anchor.roomName].exits.filter(
@@ -1154,369 +1143,9 @@ export class RoomPlanner {
     }
   }
 
-  public toActive(
-    anchor: RoomPosition,
-    roomName: string = anchor.roomName,
-    ignore: BuildableStructureConstant[] = []
-  ) {
-    this.initPlanning(roomName, anchor);
-    this.activePlanning[roomName].exits.push(anchor);
-    for (const t in Memory.cache.roomPlanner[roomName]) {
-      const sType = t as BuildableStructureConstant;
-      if (ignore.indexOf(sType) !== -1) continue;
-      const poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (const posToAdd of poss)
-        this.addToPlan(posToAdd, roomName, sType, true);
-      if (!poss.length) delete Memory.cache.roomPlanner[roomName][sType];
-    }
-
-    if (Memory.cache.hives[roomName])
-      for (const cellType in Memory.cache.hives[roomName].cells) {
-        const cellCache = Memory.cache.hives[roomName].cells[cellType];
-        if ("poss" in cellCache)
-          this.activePlanning[roomName].cellsCache[cellType] = {
-            poss: cellCache.poss,
-          };
-      }
-  }
-
-  public resetPlanner(roomName: string, anchor: RoomPosition) {
-    Memory.cache.roomPlanner[roomName] = {};
-    this.currentToActive(roomName, anchor);
-    this.saveActive(roomName);
-    delete this.activePlanning[roomName];
-  }
-
-  public currentToActive(roomName: string, anchor: RoomPosition) {
-    this.initPlanning(roomName, anchor);
-    _.forEach(
-      (
-        Game.rooms[roomName].find(FIND_STRUCTURES) as (
-          | Structure
-          | ConstructionSite
-        )[]
-      ).concat(
-        Game.rooms[roomName].find(FIND_CONSTRUCTION_SITES).filter((c) => c.my)
-      ),
-      (s) => {
-        if (!(s.structureType in CONTROLLER_STRUCTURES)) return;
-        if (this.getCase(s).amount === 0) return;
-        if (s.pos.enteranceToRoom) return;
-        this.addToPlan(
-          s.pos,
-          s.pos.roomName,
-          s.structureType as BuildableStructureConstant
-        );
-      }
-    );
-  }
-
-  public saveActive(roomName: string) {
-    const active = this.activePlanning[roomName];
-    if (!active) return;
-    Memory.cache.roomPlanner[roomName] = {};
-    const myRoom =
-      Game.rooms[roomName] &&
-      Game.rooms[roomName].controller &&
-      Game.rooms[roomName].controller!.my;
-    for (const x in active.plan)
-      for (const y in active.plan[+x]) {
-        if (active.plan[+x][+y].s)
-          this.addToCache({ x: +x, y: +y }, roomName, active.plan[+x][+y].s!);
-        else if (active.plan[+x][+y].s === null && myRoom) {
-          const s = new RoomPosition(+x, +y, roomName).lookFor(
-            LOOK_STRUCTURES
-          )[0];
-          if (
-            s &&
-            s.structureType !== STRUCTURE_RAMPART &&
-            s.structureType !== STRUCTURE_ROAD
-          )
-            s.destroy();
-        }
-
-        if (
-          active.plan[+x][+y].r ||
-          ADD_RAMPART.includes(active.plan[+x][+y].s)
-        )
-          this.addToCache({ x: +x, y: +y }, roomName, STRUCTURE_RAMPART);
-      }
-
-    const anchor = this.activePlanning[roomName].anchor;
-    for (const t in Memory.cache.roomPlanner[roomName]) {
-      const sType = t as BuildableStructureConstant;
-      const poss = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      const contr = Game.rooms[roomName] && Game.rooms[roomName].controller;
-      const terrain = Game.map.getRoomTerrain(roomName);
-      const posWeighted = poss.map((pos) => {
-        return { pos, dist: anchorDist(anchor, pos, roomName, true) };
-      });
-      posWeighted.sort((a, b) => {
-        let ans = a.dist - b.dist;
-        if (sType === STRUCTURE_LINK && contr)
-          if (
-            contr.pos.getRangeTo(
-              new RoomPosition(a.pos.x, a.pos.y, roomName)
-            ) <= 3
-          )
-            ans = -1;
-          else if (
-            contr.pos.getRangeTo(
-              new RoomPosition(b.pos.x, b.pos.y, roomName)
-            ) <= 3
-          )
-            ans = 1;
-        if (ans === 0)
-          ans = terrain.get(a.pos.x, a.pos.y) - terrain.get(b.pos.x, b.pos.y);
-        return ans; //* (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL ? -1 : 1);
-      });
-      Memory.cache.roomPlanner[roomName][sType]!.pos = posWeighted.map(
-        (p) => p.pos
-      );
-    }
-
-    const cellsCache = this.activePlanning[roomName].cellsCache;
-    if (Object.keys(cellsCache).length) {
-      if (!Memory.cache.hives[roomName])
-        Memory.cache.hives[roomName] = {
-          wallsHealth: Memory.settings.wallsHealth * 0.0005,
-          cells: {},
-          do: { ...BASE_MODE_HIVE },
-        };
-      for (const cellType in cellsCache) {
-        const cellCache = cellsCache[cellType];
-        if (!Memory.cache.hives[roomName].cells[cellType.split("_")[2]])
-          Memory.cache.hives[roomName].cells[cellType.split("_")[2]] = {};
-        for (const key in cellCache)
-          Memory.cache.hives[roomName].cells[cellType.split("_")[2]][key] =
-            cellCache[key as keyof CellCache];
-      }
-    }
-  }
-
-  public addToCache(
-    pos: Pos,
-    roomName: string,
-    sType: BuildableStructureConstant
-  ) {
-    if (!Memory.cache.roomPlanner[roomName][sType])
-      Memory.cache.roomPlanner[roomName][sType] = { pos: [] };
-    Memory.cache.roomPlanner[roomName][sType]!.pos.push({ x: pos.x, y: pos.y });
-  }
-
-  public getCase(
-    structure:
-      | Structure
-      | ConstructionSite
-      | {
-          structureType: StructureConstant;
-          pos: { roomName: string };
-          hitsMax: number;
-        }
-  ) {
-    let controller: StructureController | { level: number } | undefined =
-      Game.rooms[structure.pos.roomName] &&
-      Game.rooms[structure.pos.roomName].controller;
-    if (!controller) controller = { level: 0 };
-    let hitsMax =
-      structure instanceof ConstructionSite
-        ? structure.progressTotal
-        : structure.hitsMax;
-    const perType =
-      CONTROLLER_STRUCTURES[
-        structure.structureType as BuildableStructureConstant
-      ];
-    if (!perType) return { amount: 0, heal: 0 };
-    let amount = perType[controller.level];
-    switch (structure.structureType) {
-      case STRUCTURE_RAMPART:
-      case STRUCTURE_WALL:
-        hitsMax = Memory.settings.wallsHealth * 0.0005;
-        if (controller.level < 4) amount = 0;
-        break;
-      case STRUCTURE_ROAD:
-      case STRUCTURE_CONTAINER:
-        if (controller.level > 0 && controller.level < 3) amount = 0;
-        break;
-      default:
-    }
-
-    return { amount: amount ? amount : 0, heal: hitsMax };
-  }
-
-  public checkBuildings(
-    roomName: string,
-    priorityQue: BuildableStructureConstant[],
-    nukeAlert: boolean,
-    specials: { [key in StructureConstant]?: number } = {},
-    coef = 0.7
-  ): [BuildProject[], number] {
-    if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
-      return [[], 0];
-
-    const contr = Game.rooms[roomName].controller;
-    const hive = Apiary.hives[roomName];
-    let controller: StructureController | { level: number } | undefined = contr;
-    if (!controller) controller = { level: 0 };
-
-    const ans: BuildProject[] = [];
-    let constructions = 0;
-    const defenseIndex = Math.min(
-      priorityQue.indexOf(STRUCTURE_RAMPART),
-      priorityQue.indexOf(STRUCTURE_WALL)
-    );
-    const firstDefense = defenseIndex > 0 ? priorityQue[defenseIndex] : "";
-    let energyCost = 0;
-    for (const sType of priorityQue) {
-      if (ans.length && sType === firstDefense) break;
-      if (!(sType in Memory.cache.roomPlanner[roomName])) continue;
-      const cc = this.getCase({
-        structureType: sType,
-        pos: { roomName },
-        hitsMax: 0,
-      });
-      const toadd: RoomPosition[] = [];
-      let placed = 0;
-      const positions = Memory.cache.roomPlanner[roomName][sType]!.pos;
-      for (const positionToPut of positions) {
-        const pos = new RoomPosition(
-          positionToPut.x,
-          positionToPut.y,
-          roomName
-        );
-        const structure = _.filter(
-          pos.lookFor(LOOK_STRUCTURES),
-          (s) => s.structureType === sType
-        )[0] as Structure<BuildableStructureConstant> | undefined;
-        if (!structure) {
-          const constructionSite = _.filter(
-            pos.lookFor(LOOK_CONSTRUCTION_SITES),
-            (s) => s.structureType === sType
-          )[0];
-          if (!constructionSite) {
-            const place = _.filter(
-              pos.lookFor(LOOK_STRUCTURES),
-              (s) =>
-                s.structureType !== STRUCTURE_RAMPART ||
-                !(s as StructureRampart).my
-            )[0];
-            if (place && sType !== STRUCTURE_RAMPART) {
-              if (hive) {
-                if (
-                  sType !== STRUCTURE_SPAWN ||
-                  Object.keys(hive.cells.spawn).length > 1
-                )
-                  place.destroy();
-              } else if (
-                !place.pos
-                  .lookFor(LOOK_FLAGS)
-                  .filter(
-                    (f) =>
-                      f.color === COLOR_GREY && f.secondaryColor === COLOR_RED
-                  ).length
-              )
-                place.pos.createFlag(
-                  "remove_" + makeId(4),
-                  COLOR_GREY,
-                  COLOR_RED
-                );
-            } else toadd.push(pos);
-          } else if (constructionSite.structureType === sType) {
-            ans.push({
-              pos,
-              sType,
-              targetHits: 0,
-              energyCost:
-                constructionSite.progressTotal - constructionSite.progress,
-              type: "construction",
-            });
-            ++constructions;
-            if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
-              let heal = this.getCase(constructionSite).heal;
-              if (sType in specials) heal = specials[sType]!;
-              ans.push({
-                pos,
-                sType,
-                targetHits: heal,
-                energyCost: Math.ceil(heal / 100),
-                type: "repair",
-              });
-            }
-          } else if (
-            constructionSite.my &&
-            constructionSite.structureType !== STRUCTURE_RAMPART &&
-            sType !== STRUCTURE_RAMPART
-          )
-            constructionSite.remove();
-        } else if (structure) {
-          placed++;
-          let heal = this.getCase(structure).heal;
-          if (sType in specials) heal = specials[sType]!;
-          if (
-            nukeAlert &&
-            (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL)
-          ) {
-            const nukeDmg = _.sum(pos.findInRange(FIND_NUKES, 2), (n) =>
-              !n.pos.getRangeTo(pos) ? NUKE_DAMAGE[0] : NUKE_DAMAGE[2]
-            );
-            if (nukeDmg > 0 && nukeDmg <= heal * 2)
-              heal = nukeDmg / coef + heal / 2;
-            else if (nukeDmg > heal) heal = 0;
-          }
-          if (structure.hits < heal * coef)
-            ans.push({
-              pos,
-              sType,
-              targetHits: heal,
-              energyCost: Math.ceil((heal - structure.hits) / 100),
-              type: "repair",
-            });
-        }
-      }
-      energyCost += _.sum(ans, (bProject) => bProject.energyCost);
-      if (!constructions)
-        for (let i = 0; i < toadd.length && i < cc.amount - placed; ++i) {
-          let anss;
-          if (
-            constructions < CONSTRUCTIONS_PER_TYPE &&
-            (!nukeAlert || !toadd[i].findInRange(FIND_NUKES, 2).length)
-          )
-            if (sType === STRUCTURE_SPAWN)
-              anss = toadd[i].createConstructionSite(
-                sType,
-                roomName.toLowerCase() + makeId(4)
-              );
-            else anss = toadd[i].createConstructionSite(sType);
-          if (anss === OK) {
-            ans.push({
-              pos: toadd[i],
-              sType,
-              targetHits: 0,
-              energyCost: CONSTRUCTION_COST[sType],
-              type: "construction",
-            });
-            ++constructions;
-          }
-          energyCost += CONSTRUCTION_COST[sType];
-          if (sType === STRUCTURE_RAMPART || sType === STRUCTURE_WALL) {
-            let heal = this.getCase({
-              structureType: sType,
-              pos: toadd[i],
-              hitsMax: WALL_HITS_MAX,
-            }).heal;
-            if (sType in specials) heal = specials[sType]!;
-            if (anss === OK)
-              ans.push({
-                pos: toadd[i],
-                sType,
-                targetHits: heal,
-                energyCost: Math.ceil(heal / 100),
-                type: "repair",
-              });
-            energyCost += Math.ceil(heal / 100);
-          }
-        }
-    }
-    return [ans, energyCost];
-  }
+  public toActive = toActive;
+  public resetPlanner = resetPlanner;
+  public currentToActive = currentToActive;
+  public saveActive = saveActive;
+  public addToCache = addToCache;
 }

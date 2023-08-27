@@ -143,3 +143,45 @@ export function addResDict(
   if (!dict[res as ResourceConstant]) dict[res as ResourceConstant] = 0;
   dict[res as ResourceConstant]! += amount || 0;
 }
+
+/** gets how many structures should build and up to what health heal them */
+export function getCase(
+  structure:
+    | Structure
+    | ConstructionSite
+    | {
+        structureType: StructureConstant;
+        pos: { roomName: string };
+        hitsMax: number;
+      },
+  wallsHealth = 10_000
+) {
+  let controller: StructureController | { level: number } | undefined =
+    Game.rooms[structure.pos.roomName] &&
+    Game.rooms[structure.pos.roomName].controller;
+  if (!controller) controller = { level: 0 };
+  let hitsMax =
+    structure instanceof ConstructionSite
+      ? structure.progressTotal
+      : structure.hitsMax;
+  const perType =
+    CONTROLLER_STRUCTURES[
+      structure.structureType as BuildableStructureConstant
+    ];
+  if (!perType) return { amount: 0, heal: 0 };
+  let amount = perType[controller.level];
+  switch (structure.structureType) {
+    case STRUCTURE_RAMPART:
+    case STRUCTURE_WALL:
+      hitsMax = wallsHealth;
+      if (controller.level < 4) amount = 0;
+      break;
+    case STRUCTURE_ROAD:
+    case STRUCTURE_CONTAINER:
+      if (controller.level > 0 && controller.level < 3) amount = 0;
+      break;
+    default:
+  }
+
+  return { amount: amount || 0, heal: hitsMax };
+}

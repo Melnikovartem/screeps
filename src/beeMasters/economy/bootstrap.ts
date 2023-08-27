@@ -1,7 +1,9 @@
 import { setups } from "bees/creepSetups";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
+import { wallMap } from "hive/hive-building";
 import { profile } from "profiler/decorator";
-import { beeStates, hiveStates, roomStates } from "static/enums";
+import { getCase } from "static/utils";
+import { beeStates, hiveStates, roomStates } from "utils/enums";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";
@@ -444,13 +446,14 @@ export class BootstrapMaster extends Master {
               } else {
                 oldTarget = "repair";
                 let healTarget;
+
                 if (
                   target.structureType === STRUCTURE_WALL ||
                   target.structureType === STRUCTURE_RAMPART
-                ) {
-                  healTarget = this.hive.wallsHealth;
-                  if (this.hive.state >= hiveStates.battle) healTarget *= 2;
-                } else healTarget = Apiary.planner.getCase(target).heal;
+                )
+                  healTarget = wallMap(this.hive)[target.structureType];
+                else healTarget = getCase(target).heal;
+
                 if (target.hits < Math.min(healTarget, target.hitsMax))
                   workType = "repair";
               }

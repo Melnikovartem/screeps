@@ -1,6 +1,4 @@
 import { Broker } from "abstract/broker";
-import { Intel } from "abstract/intelligence";
-import { RoomPlanner } from "abstract/roomPlanner";
 import { WarcrimesModule } from "abstract/warModule";
 import { Master } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
@@ -11,9 +9,11 @@ import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { Visuals } from "convenience/visuals";
 import { Hive } from "hive/hive";
+import { RoomPlanner } from "hivePlanner/planner";
 import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
+import { Intel } from "spiderSense/intelligence";
 import { safeWrap } from "static/utils";
 
 const STARVE_HIM_OUT_CLAIMS = [""];
@@ -133,7 +133,6 @@ export class _Apiary {
       bee.update();
     });
 
-    const cpu = Game.cpu.getUsed();
     _.forEach(this.masters, (master) => {
       if (master)
         this.wrap(

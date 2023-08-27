@@ -2,6 +2,7 @@ import { HIVE_ENERGY } from "cells/stage1/storageCell";
 import { hiveStates, roomStates } from "static/enums";
 
 import type { BuildProject, Hive } from "./hive";
+import { checkBuildings } from "./hive-checkbuild";
 
 // Define structure group types
 type StructureGroups =
@@ -55,9 +56,9 @@ function nextWallTargetHealth(hive: Hive) {
   return hive.wallTargetHealth;
 }
 
-export function wallMap(hive: Hive, battle = false) {
+export function wallMap(hive: Hive) {
   let targetHealth = hive.wallTargetHealth;
-  if (battle) targetHealth += WALLS_BATTLE_BUFFER;
+  if (hive.state === hiveStates.battle) targetHealth += WALLS_BATTLE_BUFFER;
   return {
     [STRUCTURE_WALL]: Math.min(targetHealth, WALL_HITS_MAX),
     [STRUCTURE_RAMPART]: Math.min(
@@ -176,7 +177,7 @@ export function updateStructures(this: Hive) {
           roomInfo.roomState === roomStates.SKcentral)
       )
         return;
-      const annexRoads = Apiary.planner.checkBuildings(
+      const annexRoads = checkBuildings(
         annexName,
         BUILDABLE_PRIORITY.roads,
         false
@@ -184,7 +185,7 @@ export function updateStructures(this: Hive) {
       addCC(annexRoads);
       if (this.room.energyCapacityAvailable >= 650) {
         // 800
-        const annexMining = Apiary.planner.checkBuildings(
+        const annexMining = checkBuildings(
           annexName,
           BUILDABLE_PRIORITY.mining,
           false
@@ -231,23 +232,11 @@ export function updateStructures(this: Hive) {
 
   switch (this.state) {
     case hiveStates.nukealert:
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.essential,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.mining,
-          false
-        )
-      );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
       if (!this.structuresConst.length)
         addCC(
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             false,
@@ -255,35 +244,17 @@ export function updateStructures(this: Hive) {
             0.55
           )
         );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.roads,
-          false
-        )
-      );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
       if (!this.structuresConst.length)
-        addCC(
-          Apiary.planner.checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.trade,
-            true
-          )
-        );
+        addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade, true));
       if (!this.structuresConst.length)
-        addCC(
-          Apiary.planner.checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.hightech,
-            true
-          )
-        );
+        addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, true));
       if (!this.structuresConst.length)
         addCC(this.cells.defense.getNukeDefMap(true));
       else {
         this.sumCost +=
           this.cells.defense.getNukeDefMap(true)[1] +
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             true,
@@ -294,53 +265,25 @@ export function updateStructures(this: Hive) {
       // checkAnnex();
       break;
     case hiveStates.nospawn:
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          [STRUCTURE_SPAWN],
-          nukeAlert
-        )
-      );
+      addCC(checkBuildings(this.roomName, [STRUCTURE_SPAWN], nukeAlert));
       break;
     case hiveStates.lowenergy:
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
       addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.essential,
-          false
-        )
+        checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, nukeAlert)
       );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.mining,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.defense,
-          nukeAlert
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.roads,
-          false
-        )
-      );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
       checkAnnex();
       break;
     case hiveStates.battle: {
       const roomInfo = Apiary.intel.getInfo(this.roomName);
       if (roomInfo.enemies.length) {
-        const proj = Apiary.planner.checkBuildings(
+        const proj = checkBuildings(
           this.roomName,
           BUILDABLE_PRIORITY.defense,
           false,
-          wallMap(this, true),
+          wallMap(this),
           0.99
         );
         addCC([
@@ -354,7 +297,7 @@ export function updateStructures(this: Hive) {
       }
       if (!this.structuresConst.length)
         addCC(
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             nukeAlert,
@@ -365,31 +308,15 @@ export function updateStructures(this: Hive) {
       break;
     }
     case hiveStates.economy:
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.essential,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.mining,
-          false
-        )
-      );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
       if (!this.structuresConst.length)
         addCC(
-          Apiary.planner.checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.trade,
-            nukeAlert
-          )
+          checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade, nukeAlert)
         );
       if (!this.structuresConst.length)
         addCC(
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             nukeAlert,
@@ -398,7 +325,7 @@ export function updateStructures(this: Hive) {
           )
         );
       else {
-        const defenses = Apiary.planner.checkBuildings(
+        const defenses = checkBuildings(
           this.roomName,
           BUILDABLE_PRIORITY.defense,
           false
@@ -407,13 +334,7 @@ export function updateStructures(this: Hive) {
           this.structuresConst = [];
         addCC(defenses);
       }
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.roads,
-          nukeAlert
-        )
-      );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, nukeAlert));
       if (
         !this.structuresConst.length &&
         this.cells.storage &&
@@ -421,11 +342,7 @@ export function updateStructures(this: Hive) {
           this.resTarget[RESOURCE_ENERGY] / 2
       )
         addCC(
-          Apiary.planner.checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.hightech,
-            nukeAlert
-          )
+          checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, nukeAlert)
         );
       checkAnnex();
       if (
@@ -434,7 +351,7 @@ export function updateStructures(this: Hive) {
         this.builder.activeBees
       )
         addCC(
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             nukeAlert,
@@ -454,11 +371,11 @@ export function updateStructures(this: Hive) {
           this.wallsHealthMax
         );
         addCC(
-          Apiary.planner.checkBuildings(
+          checkBuildings(
             this.roomName,
             BUILDABLE_PRIORITY.defense,
             nukeAlert,
-            this.wallMap,
+            wallMap(this),
             0.99
           )
         );
@@ -466,41 +383,19 @@ export function updateStructures(this: Hive) {
       break;
     default:
       // never for now
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
       addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.essential,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.mining,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
+        checkBuildings(
           this.roomName,
           BUILDABLE_PRIORITY.defense,
           nukeAlert,
-          this.wallMap
+          wallMap(this)
         )
       );
+      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
       addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.roads,
-          false
-        )
-      );
-      addCC(
-        Apiary.planner.checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.hightech,
-          nukeAlert
-        )
+        checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, nukeAlert)
       );
   }
 }

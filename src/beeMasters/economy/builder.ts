@@ -2,9 +2,10 @@ import { CreepSetup, setups } from "bees/creepSetups";
 import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
 import type { Hive } from "hive/hive";
+import { wallMap } from "hive/hive-building";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, prefix } from "static/enums";
-import { addResDict, findOptimalResource } from "static/utils";
+import { addResDict, findOptimalResource, getCase } from "static/utils";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";
@@ -305,17 +306,14 @@ export class BuilderMaster extends Master {
                 | null;
               if (target instanceof Structure) {
                 let healTarget;
+
                 if (
                   target.structureType === STRUCTURE_WALL ||
                   target.structureType === STRUCTURE_RAMPART
-                ) {
-                  healTarget = this.hive.wallsHealth;
-                  if (
-                    this.hive.state === hiveStates.battle ||
-                    this.hive.state === hiveStates.nukealert
-                  )
-                    healTarget *= 2;
-                } else healTarget = Apiary.planner.getCase(target).heal;
+                )
+                  healTarget = wallMap(this.hive)[target.structureType];
+                else healTarget = getCase(target).heal;
+
                 if (target.hits >= Math.min(healTarget, target.hitsMax))
                   target = undefined;
               }

@@ -147,13 +147,7 @@ export class Hive {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
 
-    if (!this.cache) {
-      // @TODO power/deposit mining if on the edge
-      Memory.cache.hives[this.roomName] = {
-        cells: {},
-        do: { ...BASE_MODE_HIVE },
-      };
-    }
+    if (!this.cache) Hive.initMemory(this.roomName);
 
     // create your own fun hive with this cool brand new cells
     this.cells = {
@@ -226,6 +220,14 @@ export class Hive {
     this.updateCellData(true);
     if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
       this.cells.dev = new DevelopmentCell(this);
+  }
+
+  public static initMemory(roomName: string) {
+    // @TODO power/deposit mining if on the edge
+    Memory.cache.hives[roomName] = {
+      cells: {},
+      do: { ...BASE_MODE_HIVE },
+    };
   }
 
   /**

@@ -1,6 +1,6 @@
 import type { HiveCache } from "../../abstract/hiveMemory";
 import { BASE_MODE_HIVE } from "../../abstract/hiveMemory";
-import type { RoomSetup } from "../../abstract/roomPlanner";
+import type { RoomSetup } from "../../hivePlanner/planner";
 import { prefix } from "../../static/enums";
 import { makeId } from "../../static/utils";
 
@@ -14,7 +14,7 @@ export class CustomConsole {
     ).roomName;
   }
 
-  public vis(framerate?: number, force: number = 0) {
+  public framerate(framerate?: number) {
     for (const name in Apiary.visuals.caching) {
       if (
         framerate === undefined &&
@@ -30,11 +30,8 @@ export class CustomConsole {
         : Memory.settings.framerate !== 1
         ? 1
         : 0;
-    Memory.settings.forceBucket = force;
 
-    return `framerate: ${Memory.settings.framerate}${
-      Memory.settings.forceBucket ? ", ignoring bucket" : ""
-    }`;
+    return `framerate: ${Memory.settings.framerate}`;
   }
 
   public pixel(state?: boolean) {

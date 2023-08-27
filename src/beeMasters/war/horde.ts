@@ -1,4 +1,4 @@
-import type { CreepBattleInfo } from "../../abstract/intelligence";
+import type { CreepBattleInfo } from "../../spiderSense/intelligence";
 import type { Bee } from "../../bees/bee";
 // import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";

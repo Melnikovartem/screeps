@@ -2,7 +2,7 @@ import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
   Enemy,
-} from "abstract/intelligence";
+} from "spiderSense/intelligence";
 import type { WarcrimesModule } from "abstract/warModule";
 import type { Bee } from "bees/bee";
 import { CreepSetup } from "bees/creepSetups";

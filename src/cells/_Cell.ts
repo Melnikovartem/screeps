@@ -21,8 +21,12 @@ export abstract class Cell {
       this.master = Apiary.masters[prefix.master + this.ref];
   }
 
+  public static refToCacheName(ref: string) {
+    return ref.split("_")[2];
+  }
+
   public get refCache() {
-    return this.ref.split("_")[2];
+    return Cell.refToCacheName(this.ref);
   }
 
   public get pos(): RoomPosition {
