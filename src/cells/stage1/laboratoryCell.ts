@@ -3,7 +3,6 @@ import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
-import type { StorageCell } from "./storageCell";
 
 export type ReactionConstant =
   | "G"
@@ -152,7 +151,6 @@ export class LaboratoryCell extends Cell {
   public laboratories: { [id: string]: StructureLab } = {};
   // inLab check for delivery system
   public master: undefined;
-  private sCell: StorageCell;
 
   public synthesizeRes: SynthesizeRequest | undefined;
   public resTarget: { [key in ResourceConstant]?: number } = {};
@@ -166,23 +164,59 @@ export class LaboratoryCell extends Cell {
   /** if nothing to create we take a break for COOLDOWN_TARGET_LAB ticks */
   private targetCooldown = Game.time;
 
-  public constructor(hive: Hive, sCell: StorageCell) {
+  public constructor(hive: Hive) {
     super(hive, prefix.laboratoryCell);
-    this.sCell = sCell;
-
-    this.initCache("labStates", {});
-    this.initCache("boostLabs", {});
-    this.initCache("boostRequests", {});
-    this.initCache("poss", { x: 25, y: 25 });
   }
 
-  public get poss(): { x: number; y: number } {
-    return this.fromCache("poss");
+  private get sCell() {
+    return this.hive.cells.storage!;
   }
 
+  public poss: { x: number; y: number } = this.cache("poss") || {
+    x: 25,
+    y: 25,
+  };
   public get pos(): RoomPosition {
-    const pos = this.fromCache("poss");
-    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.hive.roomName);
+  }
+
+  public _labStates: { [id: string]: LabState } =
+    this.cache("_labStates") || {};
+  public get labStates(): { [id: string]: LabState } {
+    return this._labStates;
+  }
+  public set labStates(value) {
+    this._labStates = this.cache("labStates", value);
+  }
+
+  public _boostLabs: { [key in ResourceConstant]?: string } =
+    this.cache("_boostLabs") || {};
+  public get boostLabs() {
+    return this._boostLabs;
+  }
+  public set boostLabs(value) {
+    this._boostLabs = this.cache("_boostLabs", value);
+  }
+
+  public _boostRequests: {
+    [id: string]: { info: BoostInfo[]; lastUpdated: number };
+  } = this.cache("_boostRequests") || {};
+  public get boostRequests() {
+    return this._boostRequests;
+  }
+  public set boostRequests(value) {
+    this._boostRequests = this.cache("_boostRequests", value);
+  }
+
+  public _synthesizeTarget:
+    | undefined
+    | { res: ReactionConstant; amount: number } =
+    this.cache("_synthesizeTarget") || undefined;
+  public get synthesizeTarget() {
+    return this._synthesizeTarget;
+  }
+  public set synthesizeTarget(value) {
+    this._synthesizeTarget = this.cache("_synthesizeTarget", value);
   }
 
   public bakeMap() {
@@ -193,42 +227,6 @@ export class LaboratoryCell extends Cell {
           this.positions.push(p);
       });
     });
-  }
-
-  public get labStates(): { [id: string]: LabState } {
-    return this.fromCache("labStates");
-  }
-
-  public set labStates(value) {
-    this.toCache("labStates", value);
-  }
-
-  public get boostLabs(): { [key in ResourceConstant]?: string } {
-    return this.fromCache("boostLabs");
-  }
-
-  public set boostLabs(value) {
-    this.toCache("boostLabs", value);
-  }
-
-  public get boostRequests(): {
-    [id: string]: { info: BoostInfo[]; lastUpdated: number };
-  } {
-    return this.fromCache("boostRequests");
-  }
-
-  public set boostRequests(value) {
-    this.toCache("boostRequests", value);
-  }
-
-  public get synthesizeTarget():
-    | undefined
-    | { res: ReactionConstant; amount: number } {
-    return this.fromCache("synthesizeTarget");
-  }
-
-  public set synthesizeTarget(value) {
-    this.toCache("synthesizeTarget", value);
   }
 
   private newSynthesize(

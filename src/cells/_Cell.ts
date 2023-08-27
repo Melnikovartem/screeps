@@ -14,9 +14,6 @@ export abstract class Cell {
     this.hive = hive;
     this.ref = "cell_" + hive.room.name + "_" + cellName;
 
-    if (!(this.refCache in Memory.cache.hives[this.hive.roomName].cells))
-      Memory.cache.hives[this.hive.roomName].cells[this.refCache] = {};
-
     if (Apiary.masters[prefix.master + this.ref])
       this.master = Apiary.masters[prefix.master + this.ref];
   }
@@ -73,30 +70,25 @@ export abstract class Cell {
   // second stage of decision making like where do i need to spawn creeps or do i need
   public abstract run(): void;
 
-  public initCache<K extends keyof this, T extends this[K]>(
+  /** access up in the cache of the class
+   *
+   * value needs to be declared first
+   *
+   * get: cache(param)
+   *
+   * set: cache(param, value)
+   */
+  protected cache<K extends keyof this, T extends this[K]>(
     key: K,
-    baseValue: T
-  ) {
-    if (
-      !(
-        (key as string) in
-        Memory.cache.hives[this.hive.roomName].cells[this.refCache]
-      )
-    )
-      Memory.cache.hives[this.hive.roomName].cells[this.refCache][
-        key as string
-      ] = baseValue;
-  }
-
-  public toCache<K extends keyof this, T extends this[K]>(key: K, value: T) {
-    Memory.cache.hives[this.hive.roomName].cells[this.refCache][key as string] =
-      value;
-  }
-
-  public fromCache<K extends keyof this, T extends this[K]>(key: K) {
-    return Memory.cache.hives[this.hive.roomName].cells[this.refCache][
-      key as string
-    ] as T;
+    value?: T
+  ): T {
+    if (!this.hive.cache.cells) this.hive.cache.cells = {};
+    const mem = this.hive.cache.cells[this.refCache];
+    if (value !== undefined) {
+      mem[key as string] = value;
+      return value;
+    }
+    return mem[key as string] as T;
   }
 
   public get print(): string {

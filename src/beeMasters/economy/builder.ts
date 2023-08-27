@@ -181,7 +181,7 @@ export class BuilderMaster extends Master {
       const hive = !bee.pos.enteranceToRoom && Apiary.hives[bee.pos.roomName];
       const opt = (hive || this.hive).opt;
 
-      let checkPos = (_: RoomPosition) => false;
+      let checkPos: (_: RoomPosition) => boolean = () => false;
       if (
         !hive ||
         hive.state !== hiveStates.battle ||
@@ -224,7 +224,7 @@ export class BuilderMaster extends Master {
       }
 
       switch (bee.state) {
-        case beeStates.fflush:
+        case beeStates.fflush: {
           if (!this.hive.cells.lab || !bee.boosted) {
             bee.state = beeStates.chill;
             break;
@@ -234,7 +234,8 @@ export class BuilderMaster extends Master {
             this.hive.cells.lab;
           bee.goTo(lab.pos, { range: 1 });
           break;
-        case beeStates.refill:
+        }
+        case beeStates.refill: {
           const otherRes =
             bee.store.getUsedCapacity() >
             bee.store.getUsedCapacity(RESOURCE_ENERGY);
@@ -292,7 +293,8 @@ export class BuilderMaster extends Master {
           const resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
           if (resource) bee.pickup(resource, opt);
           break;
-        case beeStates.work:
+        }
+        case beeStates.work: {
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
             bee.target = undefined;
@@ -378,6 +380,8 @@ export class BuilderMaster extends Master {
             }
           }
           if (bee.state !== beeStates.chill) break;
+          // fall through
+        }
         case beeStates.chill:
           if (this.hive.structuresConst.length && !chill && !old)
             bee.state = beeStates.refill;

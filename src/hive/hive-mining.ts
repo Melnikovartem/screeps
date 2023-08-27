@@ -14,16 +14,6 @@ export function addAnex(this: Hive, annexName: string) {
   if (this.shouldRecalc < 3) this.shouldRecalc = 3;
 }
 
-export function updateAnnexes(this: Hive): void {
-  const annexes = _.compact(
-    _.map(this.annexNames, (annexName) => {
-      const annex = Game.rooms[annexName];
-      return annex;
-    })
-  );
-  this.rooms = [this.room].concat(annexes);
-}
-
 export function updateDangerAnnex(this: Hive) {
   this.annexInDanger = [];
   _.forEach(this.annexNames, (annexName) => {
@@ -45,7 +35,15 @@ export function updateDangerAnnex(this: Hive) {
 
 // actually needs to be done only once, but well couple times each reboot is (not) worst scenario
 export function markResources(this: Hive) {
-  _.forEach(this.rooms, (room) => {
+  const annexes = _.compact(
+    _.map(this.annexNames, (annexName) => {
+      const annex = Game.rooms[annexName];
+      return annex;
+    })
+  );
+  const rooms = [this.room].concat(annexes);
+
+  _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_SOURCES), (s) => {
       if (
         !s.pos
@@ -68,7 +66,7 @@ export function markResources(this: Hive) {
     });
   });
 
-  _.forEach(this.rooms, (room) => {
+  _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_MINERALS), (s) => {
       if (
         room.name !== this.roomName &&

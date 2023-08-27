@@ -13,12 +13,9 @@ const EXTREMLY_LOW_ENERGY = 10000;
 
 @profile
 export class StorageCell extends Cell {
-  public storage: StructureStorage | StructureTerminal;
-  public link: StructureLink | undefined;
   public linkState:
     | { using: string; priority: 0 | 1; lastUpdated: number }
     | undefined;
-  public terminal: StructureTerminal | undefined;
   public master: ManagerMaster;
 
   public requests: { [id: string]: TransferRequest } = {};
@@ -28,15 +25,32 @@ export class StorageCell extends Cell {
 
   public usedCapacity: ResTarget = {};
 
-  public constructor(
-    hive: Hive,
-    storage: StructureStorage | StructureTerminal
-  ) {
+  public constructor(hive: Hive) {
     super(hive, prefix.storageCell);
-    this.storage = storage;
-    this.terminal = this.hive.room.terminal;
-    this.master = new ManagerMaster(this);
     this.findLink();
+    this.master = new ManagerMaster(this);
+  }
+
+  public get storage() {
+    return this.hive.room.storage!;
+  }
+
+  public get terminal() {
+    return this.hive.room.terminal;
+  }
+
+  public link: StructureLink | undefined | null;
+  public linkId: Id<StructureLink> | undefined | null;
+  public findLink() {
+    let link: typeof this.link =
+      this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
+    if (!link)
+      link = this.pos
+        .findInRange(FIND_MY_STRUCTURES, 2)
+        .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
+        | StructureLink
+        | undefined;
+    this.link = link;
   }
 
   public requestFromStorage(
@@ -143,13 +157,6 @@ export class StorageCell extends Cell {
     return this.requestToStorage(rrs, 6, undefined, 1200, true);
   }
 
-  public findLink() {
-    this.link = _.filter(
-      this.pos.findInRange(FIND_MY_STRUCTURES, 2),
-      (structure) => structure.structureType === STRUCTURE_LINK
-    )[0] as StructureLink | undefined;
-  }
-
   public update() {
     super.update();
     if (!this.storage && Apiary.useBucket) {
@@ -198,16 +205,6 @@ export class StorageCell extends Cell {
         Apiary.destroyTime = Game.time;
       return;
     }
-
-    /* if (Game.flags[prefix.terminal + this.hive.roomName]) {
-      if (this.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < this.resTargetTerminal[RESOURCE_ENERGY])
-        this.requestFromStorage([this.terminal], 4, RESOURCE_ENERGY);
-      else {
-        let res = findOptimalResource(this.storage.store, -1);
-        this.requestFromStorage([this.terminal], 4, res);
-      }
-      return;
-    } */
 
     for (const r in this.terminal.store) {
       const res = r as ResourceConstant;

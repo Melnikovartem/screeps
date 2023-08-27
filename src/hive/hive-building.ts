@@ -54,9 +54,8 @@ export function getBuildTarget(
   ignore?: "ignoreRepair" | "ignoreConst"
 ) {
   if (!this.structuresConst.length) {
-    // this.wallTargetHealth < this.nextWallTargetHealth
-    if (this.shouldRecalc < 2 && this.state >= hiveStates.nukealert)
-      this.shouldRecalc = 2;
+    if (this.shouldRecalc < 1 && this.state >= hiveStates.nukealert)
+      this.shouldRecalc = 1;
     return;
   }
 
@@ -150,7 +149,7 @@ export function updateStructures(this: Hive) {
   };
   let checkAnnex = () => {};
   // do check annex if not rc 1 and needed
-  if (this.controller.level >= 2 && (reCheckAnnex || this.shouldRecalc >= 2)) {
+  if (this.controller.level >= 2 && (reCheckAnnex || this.shouldRecalc > 2)) {
     const checkAnnexStruct = () => {
       _.forEach(this.annexNames, (annexName) => {
         // dont check if can't see / dont build in annexes with enemies

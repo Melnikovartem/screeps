@@ -84,11 +84,11 @@ const COOLDOWN_TARGET_FACTORY = 50;
 
 @profile
 export class FactoryCell extends Cell {
-  public factory: StructureFactory;
   public roomsToCheck: string[] = [];
   public master: undefined;
-  public sCell: StorageCell;
+  public factory: StructureFactory;
 
+  // @todo move bulk of calc in cache
   public commodityRes?: FactoryResourceConstant;
   public prod?: { res: FactoryResourceConstant; plan: number };
   public resTarget: { [key in ResourceConstant]?: number } = {};
@@ -99,24 +99,24 @@ export class FactoryCell extends Cell {
 
   public uncommon: boolean = false;
 
-  public constructor(
-    hive: Hive,
-    factory: StructureFactory,
-    sCell: StorageCell
-  ) {
+  public constructor(hive: Hive, factory: StructureFactory) {
     super(hive, prefix.factoryCell);
-    this.sCell = sCell;
     this.factory = factory;
   }
 
-  public get commodityTarget():
-    | undefined
-    | { res: FactoryResourceConstant; amount: number } {
-    return this.fromCache("commodityTarget");
+  public get sCell() {
+    return this.hive.cells.storage!;
+  }
+
+  public _commodityTarget:
+    | { res: FactoryResourceConstant; amount: number }
+    | undefined = this.cache("_commodityTarget");
+  public get commodityTarget() {
+    return this._commodityTarget;
   }
 
   public set commodityTarget(value) {
-    this.toCache("commodityTarget", value);
+    this._commodityTarget = this.cache("_commodityTarget", value);
   }
 
   public newCommodity(res: FactoryResourceConstant, num: number): number {
@@ -257,6 +257,7 @@ export class FactoryCell extends Cell {
     if (amount) this.patience = 0;
     else ++this.patience;
 
+    // @todo better patience system so no need to recreate que
     if (this.patience >= 100) {
       this.patience = 0;
       this.commodityTarget = undefined;

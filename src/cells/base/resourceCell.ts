@@ -6,23 +6,25 @@ import { Traveler } from "../../Traveler/TravelerModified";
 import { Cell } from "../_Cell";
 import type { ExcavationCell } from "./excavationCell";
 
+const MAX_MINING_DIST = 350;
+
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
 export class ResourceCell extends Cell {
-  resource: Source | Mineral;
-  resourceType: ResourceConstant = RESOURCE_ENERGY;
-  link: StructureLink | undefined;
-  container: StructureContainer | undefined;
-  extractor: StructureExtractor | undefined;
-  parentCell: ExcavationCell;
-  master: MinerMaster;
+  public resource: Source | Mineral;
+  public resourceType: ResourceConstant = RESOURCE_ENERGY;
+  public link: StructureLink | undefined;
+  public container: StructureContainer | undefined;
+  public extractor: StructureExtractor | undefined;
+  public parentCell: ExcavationCell;
+  public master: MinerMaster;
 
-  updateTime: number;
-  lair?: StructureKeeperLair;
+  private updateTime: number;
+  public lair?: StructureKeeperLair;
 
-  operational: boolean = false;
+  public operational: boolean = false;
 
-  constructor(
+  public constructor(
     hive: Hive,
     resource: Source | Mineral,
     excavationCell: ExcavationCell
@@ -30,9 +32,10 @@ export class ResourceCell extends Cell {
     super(hive, prefix.resourceCells + resource.id);
     this.resource = resource;
 
-    this.initCache("roadTime", Infinity);
-    this.initCache("restTime", Infinity);
-    this.initCache("pos", this.resource.pos);
+    if (this.resource.pos.roomName === this.hive.roomName)
+      this.poss = this.resource.pos;
+    else if (this.cache("poss")) this.poss = this.cache("poss");
+    else this.poss = this.cache("poss", this.resource.pos);
 
     if (resource instanceof Mineral) this.resourceType = resource.mineralType;
     this.parentCell = excavationCell;
@@ -41,40 +44,40 @@ export class ResourceCell extends Cell {
     this.updateStructure();
   }
 
-  get roadTime(): number {
-    return this.fromCache("roadTime");
+  public _roadTime: number = this.cache("_roadTime") || Infinity;
+  public get roadTime() {
+    return this._roadTime;
+  }
+  public set roadTime(value) {
+    this._roadTime = this.cache("_roadTime", value);
   }
 
-  set roadTime(value) {
-    this.toCache("roadTime", value);
+  public _restTime: number = this.cache("_restTime") || Infinity;
+  public get restTime() {
+    return this._restTime;
+  }
+  public set restTime(value) {
+    this._restTime = this.cache("_restTime", value);
   }
 
-  get restTime(): number {
-    return this.fromCache("restTime");
+  public _fleeLairTime: number = this.cache("_fleeLairTime") || Infinity;
+  public get fleeLairTime() {
+    return this._fleeLairTime;
+  }
+  public set fleeLairTime(value) {
+    this._fleeLairTime = this.cache("_fleeLairTime", value);
   }
 
-  set restTime(value) {
-    this.toCache("restTime", value);
+  public poss: { x: number; y: number; roomName: string };
+  public get pos(): RoomPosition {
+    return new RoomPosition(this.poss.x, this.poss.y, this.poss.roomName);
+  }
+  public set pos(value) {
+    this.poss = value;
+    if (value.roomName !== this.hive.roomName) this.cache("poss", value);
   }
 
-  set pos(value) {
-    this.toCache("pos", value);
-  }
-
-  get fleeLairTime(): number | undefined {
-    return this.fromCache("fleeLairTime");
-  }
-
-  set fleeLairTime(value) {
-    this.toCache("fleeLairTime", value);
-  }
-
-  get pos(): RoomPosition {
-    const p = this.fromCache("pos");
-    return new RoomPosition(p.x, p.y, p.roomName);
-  }
-
-  get ratePT() {
+  public get ratePT() {
     if (this.resource instanceof Source)
       return this.resource.energyCapacity / ENERGY_REGEN_TIME;
     else if (this.operational) {
@@ -149,7 +152,7 @@ export class ResourceCell extends Cell {
       : this.hive.pos;
     if (this.roadTime === Infinity || this.roadTime === null)
       this.roadTime = this.pos.getTimeForPath(storagePos);
-    if (this.roadTime > 350) this.operational = false;
+    if (this.roadTime > MAX_MINING_DIST) this.operational = false;
     if (this.restTime === Infinity || this.restTime === null)
       this.restTime = this.pos.getTimeForPath(this.hive.rest);
     if (this.operational) {
@@ -158,7 +161,7 @@ export class ResourceCell extends Cell {
     }
   }
 
-  recalcLairFleeTime() {
+  public recalcLairFleeTime() {
     if (!this.lair) return;
     const path = Traveler.findTravelPath(this.pos, this.hive).path;
     let i = 0;
@@ -171,15 +174,15 @@ export class ResourceCell extends Cell {
     this.fleeLairTime = i + 2;
   }
 
-  get loggerRef() {
+  public get loggerRef() {
     return "mining_" + this.resource.id.slice(this.resource.id.length - 4);
   }
 
-  get loggerUpkeepRef() {
+  public get loggerUpkeepRef() {
     return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
   }
 
-  update() {
+  public update() {
     super.update(undefined, ["resource"]);
 
     if (this.operational) {
@@ -194,7 +197,7 @@ export class ResourceCell extends Cell {
     } else if (Game.time % this.updateTime === 0) this.updateStructure();
   }
 
-  run() {
+  public run() {
     if (this.link && !this.link.cooldown) {
       const usedCap = this.link.store.getUsedCapacity(RESOURCE_ENERGY);
       if (usedCap >= LINK_CAPACITY / 4 && this.link.cooldown === 0) {

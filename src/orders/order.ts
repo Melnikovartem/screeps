@@ -365,9 +365,9 @@ export class FlagOrder {
               break;
           }
           if (cellType) {
-            if (!Memory.cache.hives[this.hive.roomName].cells[cellType])
-              Memory.cache.hives[this.hive.roomName].cells[cellType] = {};
-            Memory.cache.hives[this.hive.roomName].cells[cellType].poss = {
+            if (!this.hive.cache.cells[cellType])
+              this.hive.cache.cells[cellType] = {};
+            this.hive.cache.cells.poss = {
               x: this.pos.x,
               y: this.pos.y,
             };
@@ -429,10 +429,6 @@ export class FlagOrder {
               Object.keys(Memory.cache.roomPlanner[this.pos.roomName]).length
             ) {
               Apiary.planner.toActive(this.hive.pos, this.pos.roomName);
-              if (this.hive.shouldRecalc < 3)
-                if (this.hive.roomName === this.pos.roomName)
-                  this.hive.shouldRecalc = 1;
-                else this.hive.shouldRecalc = 2;
             } else this.delete();
             break;
           case COLOR_RED:

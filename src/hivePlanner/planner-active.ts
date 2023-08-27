@@ -148,10 +148,9 @@ export function saveActive(this: RoomPlanner, roomName: string) {
     const mem = Memory.cache.hives[roomName];
     for (const cellType in cellsCache) {
       const cellCache = cellsCache[cellType];
-      const cellCacheRef = Cell.refToCacheName(cellType);
-      if (!mem.cells[cellCacheRef]) mem.cells[cellCacheRef] = {};
+      if (!mem.cells[cellType]) mem.cells[cellType] = {};
       for (const key in cellCache)
-        mem.cells[cellCacheRef][key] = cellCache[key as keyof CellCache];
+        mem.cells[cellType][key] = cellCache[key as keyof CellCache];
     }
   }
 }

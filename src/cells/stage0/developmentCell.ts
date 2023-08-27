@@ -9,22 +9,24 @@ import { Cell } from "../_Cell";
 
 @profile
 export class DevelopmentCell extends Cell {
-  controller: StructureController;
-  master: BootstrapMaster;
-  shouldRecalc: boolean = true;
-  handAddedResources: RoomPosition[] = [];
-  addedRooms: string[] = [];
-  constructor(hive: Hive) {
+  public master: BootstrapMaster;
+  public shouldRecalc: boolean = true;
+  public handAddedResources: RoomPosition[] = [];
+  public addedRooms: string[] = [];
+  public constructor(hive: Hive) {
     super(hive, prefix.developmentCell);
-    this.controller = this.hive.controller;
     this.master = new BootstrapMaster(this);
   }
 
-  get pos() {
+  public get pos() {
     return this.hive.controller.pos;
   }
 
-  addResources() {
+  public get controller() {
+    return this.hive.room.controller;
+  }
+
+  public addResources() {
     this.handAddedResources = [];
     _.forEach(
       [this.hive.roomName].concat(this.hive.annexNames),
@@ -52,7 +54,7 @@ export class DevelopmentCell extends Cell {
     });
   }
 
-  update() {
+  public update() {
     super.update();
     if (
       this.hive.room.storage &&
@@ -134,7 +136,7 @@ export class DevelopmentCell extends Cell {
     }
   }
 
-  run() {
+  public run() {
     if (
       !this.master.beesAmount &&
       this.hive.phase > 0 &&

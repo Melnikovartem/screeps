@@ -27,12 +27,7 @@ import { WALLS_START } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
-import {
-  addAnex,
-  markResources,
-  updateAnnexes,
-  updateDangerAnnex,
-} from "./hive-mining";
+import { addAnex, markResources, updateDangerAnnex } from "./hive-mining";
 import { opt, updateCellData } from "./hive-utils";
 // Import various modules and types
 
@@ -90,8 +85,6 @@ export class Hive {
 
   /** The main room controlled by the hive */
   public room: Room;
-  /** List of rooms controlled by the hive */
-  public rooms: Room[] = [];
   /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
 
@@ -107,11 +100,23 @@ export class Hive {
    *
    * 0 up to storage tech
    *
-   * 1 storage - 7lvl
+   * 1 storage to 7lvl
+   *
+   * 2 end game aka 8lvl
    *
    * max */
   public readonly phase: 0 | 1 | 2;
 
+  /** How much of buildings and resources to recheck
+   *
+   * 3
+   *
+   * 2
+   *
+   * 1
+   *
+   * 0 nothing
+   */
   public shouldRecalc: 0 | 1 | 2 | 3;
   public bassboost: Hive | null = null;
 
@@ -160,6 +165,16 @@ export class Hive {
       excavation: new ExcavationCell(this),
     };
 
+    /** How much to check when rechecking buildings
+     *
+     * 3
+     *
+     * 2
+     *
+     * 1
+     *
+     * 0 no need
+     */
     this.shouldRecalc = 3;
     this.phase = 0;
     if (!this.controller) return;
@@ -257,7 +272,6 @@ export class Hive {
 
   public addAnex = addAnex;
   private updateDangerAnnex = updateDangerAnnex;
-  private updateAnnexes = updateAnnexes;
   private markResources = markResources;
 
   private updateCellData = updateCellData;
@@ -349,13 +363,12 @@ export class Hive {
       this.shouldRecalc = Math.max(this.shouldRecalc, 1) as 1 | 2 | 3;
 
     if (this.shouldRecalc) {
-      this.updateAnnexes();
       Apiary.wrap(
         () => this.updateStructures(),
         "structures_" + this.roomName,
         "update"
       );
-      if (this.shouldRecalc > 2) this.markResources();
+      if (this.shouldRecalc === 3) this.markResources();
       this.shouldRecalc = 0;
     }
     if (Game.time % 500 === 29 || this.state === hiveStates.nospawn)

@@ -1,10 +1,10 @@
-import { Broker } from "abstract/broker";
 import { WarcrimesModule } from "abstract/warModule";
 import { Master } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
 import { Bee } from "bees/bee";
 import { PowerBee } from "bees/powerBee";
 import { ProtoBee } from "bees/protoBee";
+import { Broker } from "bugSmuggling/broker";
 import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { Visuals } from "convenience/visuals";

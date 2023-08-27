@@ -4,43 +4,55 @@ import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
-import type { StorageCell } from "./storageCell";
 
 @profile
 export class UpgradeCell extends Cell {
-  controller: StructureController;
-  link: StructureLink | undefined;
-  master: UpgraderMaster;
-  sCell: StorageCell;
-  maxRate = 1;
-  ratePerCreepMax = 1;
-  workPerCreepMax = 1;
-  maxBees = 10;
+  public master: UpgraderMaster;
+  public maxRate = 1;
+  public ratePerCreepMax = 1;
+  public workPerCreepMax = 1;
+  public maxBees = 10;
 
-  roadTime: number;
+  public roadTime: number;
 
-  constructor(hive: Hive, controller: StructureController, sCell: StorageCell) {
+  public constructor(hive: Hive) {
     super(hive, prefix.upgradeCell);
-    this.sCell = sCell;
-
-    this.controller = controller;
-
-    this.link = _.filter(
-      this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3),
-      (structure) => structure.structureType === STRUCTURE_LINK
-    )[0] as StructureLink;
-
-    this.roadTime = this.hive.pos.getTimeForPath(this);
-    if (this.roadTime === Infinity) this.roadTime = 0;
-
+    this.findLink();
+    this.roadTime = this.cache("roadTime");
+    if (this.roadTime === undefined) {
+      this.roadTime = this.hive.pos.getTimeForPath(this);
+      if (this.roadTime === Infinity) this.roadTime = 0;
+      this.cache("roadTime", this.roadTime);
+    }
     this.master = new UpgraderMaster(this);
   }
 
-  get pos() {
+  // shouldn't exist if this one is not real
+  public get sCell() {
+    return this.hive.cells.storage!;
+  }
+  public get controller() {
+    return this.hive.controller;
+  }
+  public get pos() {
     return this.controller.pos;
   }
 
-  recalculateRate() {
+  public link: StructureLink | undefined | null;
+  public linkId: Id<StructureLink> | undefined | null;
+  public findLink() {
+    let link: typeof this.link =
+      this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
+    if (!link)
+      link = this.pos
+        .findInRange(FIND_MY_STRUCTURES, 2)
+        .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
+        | StructureLink
+        | undefined;
+    this.link = link;
+  }
+
+  private recalculateRate() {
     const futureResourceCells = _.filter(
       Game.flags,
       (f) =>
@@ -90,17 +102,12 @@ export class UpgradeCell extends Cell {
         .filter((p) => p.getRangeTo(this.controller) <= 3).length;
   }
 
-  get maxPossibleRate() {
+  public get maxPossibleRate() {
     return this.controller.level === 8 ? 15 : Infinity;
   }
 
-  update() {
+  public update() {
     super.update();
-    /* if (!this.link && Game.time % 30 === 7 && this.controller.level >= 5 && Object.keys(this.sCell.links).length) {
-      this.link = <StructureLink>_.filter(this.controller.pos.findInRange(FIND_MY_STRUCTURES, 3), structure => structure.structureType === STRUCTURE_LINK)[0];
-      if (this.link)
-        this.recalculateRate();
-    } */
 
     if (
       this.hive.phase === 1 &&
@@ -137,7 +144,7 @@ export class UpgradeCell extends Cell {
     }
   }
 
-  run() {
+  public run() {
     if (!this.master.beesAmount) return;
     if (
       this.link &&

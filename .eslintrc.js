@@ -88,5 +88,6 @@ module.exports = {
       "@typescript-eslint/no-unsafe-assignment": "warn",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
+      "no-underscore-dangle": ["warn", { "allowAfterThis": true }],
     }
   };

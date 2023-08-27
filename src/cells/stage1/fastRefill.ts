@@ -3,7 +3,6 @@ import { profile } from "../../profiler/decorator";
 import { prefix } from "../../static/enums";
 import { Cell } from "../_Cell";
 import type { RespawnCell } from "./../base/respawnCell";
-import type { StorageCell } from "./storageCell";
 
 @profile
 export class FastRefillCell extends Cell {
@@ -11,19 +10,13 @@ export class FastRefillCell extends Cell {
   private parentCell: RespawnCell;
   public masters: FastRefillMaster[] = [];
   public refillTargets: (StructureSpawn | StructureExtension)[] = [];
-  private sCell: StorageCell;
   private needEnergy = false;
 
-  public constructor(
-    parent: RespawnCell,
-    link: StructureLink,
-    sCell: StorageCell
-  ) {
+  public constructor(parent: RespawnCell, link: StructureLink) {
     super(parent.hive, prefix.fastRefillCell);
-    this.sCell = sCell;
+    if (!this.sCell) this.delete();
     this.link = link;
     this.parentCell = this.hive.cells.spawn;
-    this.initCache("poss", { x: link.pos.x, y: link.pos.y });
     for (let dx = -1; dx <= 1; dx += 2)
       for (let dy = -1; dy <= 1; dy += 2) {
         const pos = new RoomPosition(
@@ -41,13 +34,16 @@ export class FastRefillCell extends Cell {
       }
   }
 
-  public get poss(): { x: number; y: number } {
-    return this.fromCache("poss");
+  public get parent() {
+    return this.hive.cells.spawn;
+  }
+
+  public get sCell() {
+    return this.hive.cells.storage!;
   }
 
   public get pos(): RoomPosition {
-    const pos = this.fromCache("poss");
-    return new RoomPosition(pos.x, pos.y, this.hive.roomName);
+    return this.link.pos;
   }
 
   public delete() {
