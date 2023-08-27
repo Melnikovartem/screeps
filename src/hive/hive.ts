@@ -23,7 +23,7 @@ import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
-import { WALLS_START } from "static/constants";
+import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
@@ -122,10 +122,7 @@ export class Hive {
 
   public structuresConst: BuildProject[] = [];
   /** sum of construction cost */
-  public sumCost = {
-    hive: 0,
-    annex: 0,
-  };
+  public buildingCosts = ZERO_COSTS_BUILDING_HIVE;
 
   /** current minium wall health */
   private minCurWallHealth = 0;
@@ -179,8 +176,11 @@ export class Hive {
     this.phase = 0;
     if (!this.controller) return;
 
-    const storage = this.room.storage || this.room.terminal;
-    if (storage && storage.isActive()) {
+    const activeStorage =
+      (this.room.storage && this.room.storage.isActive()) ||
+      (this.room.terminal && this.room.terminal.isActive());
+    if (activeStorage) {
+      // no extra checks about sCell, so careful
       this.phase = 1;
       if (
         this.room.storage &&
@@ -188,17 +188,17 @@ export class Hive {
           ENERGY_FOR_REVERTING_TO_DEV_CELLS * 1.5
       )
         this.cells.dev = new DevelopmentCell(this);
-      const sCell = new StorageCell(this, storage);
+      const sCell = new StorageCell(this);
       this.cells.storage = sCell;
-      this.cells.upgrade = new UpgradeCell(this, this.controller, sCell);
-      this.cells.lab = new LaboratoryCell(this, sCell);
+      this.cells.upgrade = new UpgradeCell(this);
+      this.cells.lab = new LaboratoryCell(this);
 
       this.builder = new BuilderMaster(this, sCell);
       let factory: StructureFactory | undefined;
       _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
         if (s.structureType === STRUCTURE_FACTORY) factory = s;
       });
-      if (factory) this.cells.factory = new FactoryCell(this, factory, sCell);
+      if (factory) this.cells.factory = new FactoryCell(this, factory);
       if (this.controller.level < 8) {
         // try to develop the hive
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
@@ -228,8 +228,7 @@ export class Hive {
           else if (s.structureType === STRUCTURE_POWER_SPAWN) powerSpawn = s;
         });
         if (obeserver) this.cells.observe = new ObserveCell(this, obeserver);
-        if (powerSpawn)
-          this.cells.power = new PowerCell(this, powerSpawn, sCell);
+        if (powerSpawn) this.cells.power = new PowerCell(this, powerSpawn);
         // @TODO cause i haven' reached yet
       }
     } else {
@@ -304,6 +303,15 @@ export class Hive {
     return Memory.cache.hives[this.roomName];
   }
 
+  public get sumCost() {
+    return (
+      this.buildingCosts.hive.build +
+      this.buildingCosts.hive.repair +
+      this.buildingCosts.annex.build +
+      this.buildingCosts.annex.repair
+    );
+  }
+
   public update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
@@ -371,7 +379,7 @@ export class Hive {
       if (this.shouldRecalc === 3) this.markResources();
       this.shouldRecalc = 0;
     }
-    if (Game.time % 500 === 29 || this.state === hiveStates.nospawn)
+    if (Game.time % 1500 === 29 || this.state === hiveStates.nospawn)
       this.updateCellData();
   }
 

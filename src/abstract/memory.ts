@@ -1,4 +1,4 @@
-import { CACHE_EMPTY_DEFAULT, SETTINGS_DEFAULT } from "constants";
+import { CACHE_EMPTY_DEFAULT, SETTINGS_DEFAULT } from "static/constants";
 
 import { Logger } from "../convenience/logger";
 import { profile } from "../profiler/decorator";

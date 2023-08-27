@@ -510,14 +510,15 @@ export class Visuals {
     }
 
     if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
+      const sumCost = hive.sumCost;
       ans.push([
         "build",
-        !hive.sumCost
+        sumCost === 0
           ? ""
           : ` ${
-              hive.sumCost >= 5000
-                ? Math.round(hive.sumCost / 1000)
-                : Math.round((hive.sumCost / 1000) * 10) / 10
+              sumCost >= 5000
+                ? Math.round(sumCost / 1000)
+                : Math.round((sumCost / 1000) * 10) / 10
             }K/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder),
       ]);

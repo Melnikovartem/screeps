@@ -2,8 +2,8 @@ import { setups } from "bees/creepSetups";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
 import { wallMap } from "hive/hive-building";
 import { profile } from "profiler/decorator";
+import { beeStates, hiveStates, roomStates } from "static/enums";
 import { getCase } from "static/utils";
-import { beeStates, hiveStates, roomStates } from "utils/enums";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";
@@ -368,11 +368,12 @@ export class BootstrapMaster extends Master {
             else bee.state = beeStates.chill;
             bee.target = undefined;
           }
+        // fall through
         case beeStates.chill:
           ++countCurrent.chilling;
           bee.goRest(this.hive.rest, opt);
           break;
-        case beeStates.work:
+        case beeStates.work: {
           workType = "chilling";
           oldTarget = "chilling";
 
@@ -600,6 +601,7 @@ export class BootstrapMaster extends Master {
           ++countCurrent[workType];
           bee.target = target.id;
           break;
+        }
       }
     });
     this.count = countCurrent;

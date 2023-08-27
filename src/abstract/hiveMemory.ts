@@ -16,6 +16,17 @@ export interface HiveCache {
   };
 }
 
+export interface buildingCostsHive {
+  annex: {
+    build: number;
+    repair: number;
+  };
+  hive: {
+    build: number;
+    repair: number;
+  };
+}
+
 export const BASE_MODE_HIVE: HiveCache["do"] =
   Game.shard.name === "shardSeason"
     ? {
@@ -49,7 +60,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] =
 
 export interface HiveLog {
   annexNames: string[];
-  construction: { numStruct: number; sumEnergy: number };
+  construction: { numStruct: number; costs: buildingCostsHive };
   spawOrders: number;
 
   energy: {

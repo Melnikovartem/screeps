@@ -87,7 +87,7 @@ export class CreepSetup {
           if (!this.ignoreCarry || s !== CARRY) ++nonMove;
         });
 
-        _.times(moveToAdd, (_) => {
+        _.times(moveToAdd, () => {
           body.push(MOVE);
           bodyCost += BODYPART_COST[MOVE];
           move += 1;
@@ -100,7 +100,7 @@ export class CreepSetup {
     switch (this.scheme) {
       case 0:
         break;
-      case 1:
+      case 1: {
         body.sort(
           (a, b) => partScheme.normal.indexOf(a) - partScheme.normal.indexOf(b)
         );
@@ -110,6 +110,7 @@ export class CreepSetup {
           body.push(MOVE);
         }
         break;
+      }
       case 2:
         body.sort(
           (a, b) =>
@@ -274,10 +275,10 @@ export const setups = {
   builder: new CreepSetup(
     setupsNames.builder,
     {
-      pattern: [WORK, WORK, CARRY],
+      pattern: [WORK, CARRY],
       patternLimit: 10,
     },
-    20
+    10
   ),
   bootstrap: new CreepSetup(
     setupsNames.bootstrap,

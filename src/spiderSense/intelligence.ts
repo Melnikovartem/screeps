@@ -82,7 +82,7 @@ export class Intel {
   }
 
   public getEnemyStructure(pos: ProtoPos, lag?: number) {
-    return this.getEnemy(pos, lag, (es, ri, _) =>
+    return this.getEnemy(pos, lag, (es, ri) =>
       es.filter(
         (e) =>
           (![7, 9].includes(ri.dangerlvlmax) ||
@@ -105,11 +105,11 @@ export class Intel {
       enemies: Enemy[],
       roomInfo: RoomInfo,
       pos: RoomPosition
-    ) => Enemy[] = (es, ri, pos) =>
+    ) => Enemy[] = (es, ri, posInterest) =>
       es.filter(
         (e) =>
           e.dangerlvl === ri.dangerlvlmax ||
-          (e.dangerlvl >= 4 && pos.getRangeTo(e.object) <= 5)
+          (e.dangerlvl >= 4 && posInterest.getRangeTo(e.object) <= 5)
       )
   ) {
     if (!(pos instanceof RoomPosition)) pos = pos.pos;
@@ -238,7 +238,7 @@ export class Intel {
         const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
         if (parsed) {
           const [x, y] = [+parsed[2] % 10, +parsed[4] % 10];
-          if (x === 0 || y == 0) roomInfo.roomState = roomStates.corridor;
+          if (x === 0 || y === 0) roomInfo.roomState = roomStates.corridor;
           else if (4 <= x && x <= 6 && 4 <= y && y <= 6)
             if (x === 5 && y === 5) roomInfo.roomState = roomStates.SKcentral;
             else roomInfo.roomState = roomStates.SKfrontier;
@@ -306,12 +306,13 @@ export class Intel {
           roomInfo.roomState = roomStates.reservedByInvader;
         else roomInfo.roomState = roomStates.reservedByEnemy;
       }
-      if (
+      /** sign here
+       * if (
         !owner &&
         (!room.controller.sign ||
           room.controller.sign.username !== Apiary.username)
       )
-        Apiary.unsignedRoom(roomName);
+        Apiary.unsignedRoom(roomName); **/
       roomInfo.currentOwner = owner;
     }
 
@@ -408,9 +409,10 @@ export class Intel {
             type: enemyTypes.moving,
           });
         });
+      // fall through
       case roomStates.reservedByMe:
-      // removing old walls and cores (if only cores then set to 5 around controller)
       case roomStates.reservedByEnemy:
+        // removing old walls and cores (if only cores then set to 5 around controller)
         structures = room.find(FIND_STRUCTURES);
         break;
       case roomStates.SKfrontier:
@@ -558,7 +560,7 @@ export class Intel {
           ans.max.heal += stat;
           if (b.hits) ans.current.heal += stat;
           break;
-        case WORK:
+        case WORK: {
           const boost = b.boost && BOOSTS.work[b.boost];
           stat =
             DISMANTLE_POWER *
@@ -566,6 +568,7 @@ export class Intel {
           ans.max.dism += stat;
           if (b.hits) ans.current.dism += stat;
           break;
+        }
         case TOUGH:
           stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 100;
           ans.max.resist += stat;

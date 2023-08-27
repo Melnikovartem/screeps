@@ -1,4 +1,6 @@
+import { buildingCostsHive } from "abstract/hiveMemory";
 import { HIVE_ENERGY } from "cells/stage1/storageCell";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
 import type { BuildProject, Hive } from "./hive";
@@ -138,14 +140,16 @@ export function getBuildTarget(
 
 export function updateStructures(this: Hive) {
   /** checking if i had some prev constructions and i need to recheck them */
-  const reCheckAnnex = this.sumCost.annex > 0;
+  const reCheckAnnex =
+    this.buildingCosts.annex.build + this.buildingCosts.annex.repair > 0;
 
   this.structuresConst = [];
-  this.sumCost = { annex: 0, hive: 0 };
+  this.buildingCosts = ZERO_COSTS_BUILDING_HIVE;
   let mode: "annex" | "hive" = "hive";
-  const addCC = (ans: [BuildProject[], number]) => {
+  const addCC = (ans: [BuildProject[], buildingCostsHive["hive"]]) => {
     this.structuresConst = this.structuresConst.concat(ans[0]);
-    this.sumCost[mode] += ans[1];
+    this.buildingCosts[mode].build += ans[1].build;
+    this.buildingCosts[mode].repair += ans[1].repair;
   };
   let checkAnnex = () => {};
   // do check annex if not rc 1 and needed
@@ -223,7 +227,7 @@ export function updateStructures(this: Hive) {
         // can be useful to flashstart colonies
         let annexHive = Apiary.hives[annexName]; 
           if (annexHive)
-            addCC([annexHive.structuresConst, annexHive.sumCost]); 
+            addCC([annexHive.structuresConst, this.buildingCosts]); 
         */
       });
     };
@@ -256,7 +260,9 @@ export function updateStructures(this: Hive) {
       if (!this.structuresConst.length) checkAdd(["hightech"], true);
       if (!this.structuresConst.length)
         addCC(this.cells.defense.getNukeDefMap(true));
-      else this.sumCost.hive += this.cells.defense.getNukeDefMap(true)[1];
+      else
+        this.buildingCosts.hive.repair +=
+          this.cells.defense.getNukeDefMap(true)[1].repair;
       break;
     case hiveStates.nospawn:
       addCC(checkBuildings(this.roomName, [STRUCTURE_SPAWN], false));

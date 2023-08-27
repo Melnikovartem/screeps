@@ -83,14 +83,6 @@ export class _Apiary {
       this.requestRoomSightNextTick.push(roomName);
   }
 
-  public unsignedRoom(roomName: string) {
-    if (Memory.cache.roomsToSign.includes(roomName)) return;
-    if (
-      _.filter(this.hives, (h) => h.pos.getRoomRangeTo(roomName) <= 10).length
-    )
-      Memory.cache.roomsToSign.push(roomName);
-  }
-
   public wrap(
     func: () => void,
     ref: string,

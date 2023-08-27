@@ -1,11 +1,18 @@
+import { buildingCostsHive } from "abstract/hiveMemory";
 import type { BuildProject, Hive } from "hive/hive";
-import { WALLS_START } from "static/constants";
+import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { getCase, makeId } from "static/utils";
 
 const RAMPART_BUFFER_ZONE = {
-  aliveBees: 20_000,
-  noBees: 50_000,
+  aliveBees: 20_000, // 6_666 ticks
+  noBees: 50_000, // 16_666 ticks
 };
+
+const ROAD_BUFFER_ZONE = {
+  aliveBees: 500, // 5_000 ticks
+  noBees: 1_500, // 15_0000 ticks
+};
+
 const CONSTRUCTIONS_PER_TYPE = 5;
 
 export function checkBuildings(
@@ -13,9 +20,9 @@ export function checkBuildings(
   queToCheck: BuildableStructureConstant[],
   fearNukes: boolean,
   specials: { [key in StructureConstant]?: number } = {}
-): [BuildProject[], number] {
+): [BuildProject[], buildingCostsHive["hive"]] {
   if (!(roomName in Game.rooms) || !Memory.cache.roomPlanner[roomName])
-    return [[], 0];
+    return [[], ZERO_COSTS_BUILDING_HIVE.hive];
 
   const contr = Game.rooms[roomName].controller;
   const hive = Apiary.hives[roomName] as Hive | undefined;
@@ -26,7 +33,7 @@ export function checkBuildings(
 
   const buildProjectList: BuildProject[] = [];
   let constructions = 0;
-  let energyCost = 0;
+  const energyCost = ZERO_COSTS_BUILDING_HIVE.hive;
 
   for (const sType of queToCheck) {
     const mem = Memory.cache.roomPlanner[roomName][sType];
@@ -56,9 +63,16 @@ export function checkBuildings(
         if (sType === STRUCTURE_RAMPART)
           heal -= Math.min(
             heal * 0.5,
-            hive && hive.builder && hive.builder.activeBees
+            hive && hive.builder && hive.builder.activeBees.length
               ? RAMPART_BUFFER_ZONE.aliveBees
               : RAMPART_BUFFER_ZONE.noBees
+          );
+        if (sType === STRUCTURE_ROAD)
+          heal -= Math.min(
+            heal * 0.5,
+            hive && hive.builder && hive.builder.activeBees.length
+              ? ROAD_BUFFER_ZONE.aliveBees
+              : ROAD_BUFFER_ZONE.noBees
           );
         if (nukeAlert && isDefense) {
           const nukeDmg = _.sum(
@@ -134,7 +148,10 @@ export function checkBuildings(
       }
     }
 
-    energyCost += _.sum(buildProjectList, (bProject) => bProject.energyCost);
+    for (const bProject of buildProjectList)
+      if (bProject.type === "repair") energyCost.repair += bProject.energyCost;
+      else energyCost.build += bProject.energyCost;
+
     if (!constructions)
       for (let i = 0; i < toadd.length && i < cc.amount - placed; ++i) {
         let createAns;
@@ -160,7 +177,7 @@ export function checkBuildings(
           ++constructions;
         }
         // add even if no construction cost so we can plan bases at all volume of jobs
-        energyCost += CONSTRUCTION_COST[sType];
+        energyCost.build += CONSTRUCTION_COST[sType];
 
         if (isDefense) {
           let heal = WALLS_START;
@@ -176,7 +193,7 @@ export function checkBuildings(
               type: "repair",
             });
           // also add energy Cost
-          energyCost += Math.ceil(heal / 100);
+          energyCost.repair += Math.ceil(heal / 100);
         }
       }
   }

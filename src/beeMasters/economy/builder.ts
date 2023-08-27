@@ -1,21 +1,47 @@
+import { buildingCostsHive } from "abstract/hiveMemory";
 import { CreepSetup, setups } from "bees/creepSetups";
 import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
 import type { Hive } from "hive/hive";
 import { wallMap } from "hive/hive-building";
 import { profile } from "profiler/decorator";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { beeStates, hiveStates, prefix } from "static/enums";
 import { addResDict, findOptimalResource, getCase } from "static/utils";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";
 
-// CREEP_LIFE_TIME * 0.8 * 20 * 1 * REPAIR_POWER;
-const REPAIR_BUILDER_PER_LIFE = 24_000;
+const APPROX_DSIT = {
+  hive: 15,
+  annex: 60,
+};
+
+const BUILDING_COEFS: { boost: buildingCostsHive; normal: buildingCostsHive } =
+  {
+    boost: ZERO_COSTS_BUILDING_HIVE,
+    normal: ZERO_COSTS_BUILDING_HIVE,
+  };
+
+type B = keyof typeof BUILDING_COEFS;
+type M = keyof (typeof BUILDING_COEFS)[B];
+type R = keyof (typeof BUILDING_COEFS)[B][M];
+
+const bakeBuildingCoefs = (boost: B, mode: M, repair: R) => {
+  const buildingPower =
+    (boost === "boost" ? 2 : 1) * (repair === "repair" ? 1 : 5);
+  BUILDING_COEFS[boost][mode][repair] =
+    (CREEP_LIFE_TIME - 100) * (APPROX_DSIT[mode] / 25 + 1 / buildingPower);
+};
+
+for (const boost of ["boost", "normal"] as B[])
+  for (const mode of ["hive", "annex"] as M[])
+    for (const repair of ["repair", "buid"] as R[])
+      bakeBuildingCoefs(boost, mode, repair);
 
 @profile
 export class BuilderMaster extends Master {
-  private patternPerBee = 10;
+  private patternPerBee = 0;
   private sCell: StorageCell;
 
   public constructor(hive: Hive, sCell: StorageCell) {
@@ -32,19 +58,15 @@ export class BuilderMaster extends Master {
   }
 
   private recalculateTargetBee() {
-    let target = this.hive.sumCost > 0 ? 1 : 0;
-    this.patternPerBee = 3;
-
     const realBattle =
       this.hive.state === hiveStates.battle &&
-      (this.hive.sumCost > 500 ||
+      (this.hive.buildingCosts.hive.repair > 5_000 ||
         Apiary.intel.getInfo(this.roomName, 20).dangerlvlmax >= 6);
-
     const otherEmergency =
       this.hive.state === hiveStates.nukealert ||
-      (this.hive.wallsHealth < this.hive.wallsHealthMax &&
-        this.hive.resState[RESOURCE_ENERGY] > 0) ||
-      this.hive.sumCost > 50000;
+      this.hive.buildingCosts.hive.build / 5 +
+        this.hive.buildingCosts.hive.repair >
+        500_000;
 
     this.boosts = undefined;
     switch (this.hive.shouldDo("buildBoost")) {
@@ -59,38 +81,41 @@ export class BuilderMaster extends Master {
         break;
     }
 
+    const boost = this.boosts ? "boost" : "normal";
+    let patternsNeeded = 0;
+    for (const mode of ["hive", "annex"] as M[])
+      for (const repair of ["repair", "buid"] as R[])
+        patternsNeeded +=
+          this.hive.buildingCosts[mode][repair] *
+          BUILDING_COEFS[boost][mode][repair];
+
+    this.patternPerBee = setups.builder.patternLimit;
     if (realBattle || otherEmergency) {
       this.patternPerBee = Infinity;
-      ++target;
-      if (
-        this.boosts &&
-        this.hive.cells.lab &&
-        this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
-      )
-        _.forEach(this.bees, (b) => {
-          if (!b.boosted && b.ticksToLive >= 1200) b.state = beeStates.boosting;
-        });
-      const energyPerBee =
-        setups.builder
-          .getBody(this.hive.room.energyCapacityAvailable)
-          .body.filter((b) => b === WORK).length *
-        CREEP_LIFE_TIME *
-        0.85;
-      target = Math.min(
-        Math.max(target, Math.ceil(this.hive.sumCost / energyPerBee)),
-        target + 6
-      );
-    } else if (
-      this.hive.sumCost > 1200 &&
-      this.hive.state !== hiveStates.lowenergy
-    ) {
-      this.patternPerBee = 5;
-      if (this.hive.sumCost > 5000) ++target;
-      if (this.hive.sumCost > 10000)
-        if (this.hive.resState[RESOURCE_ENERGY] > 0) this.patternPerBee = 8;
+      this.patternPerBee = Math.min(this.maxPatternBee, this.patternPerBee);
     }
+    let target = patternsNeeded / this.patternPerBee;
+    let maxBees = this.hive.buildingCosts.hive.build > 5_000 ? 2 : 1;
+    if (realBattle) maxBees = 5;
+    else if (otherEmergency) maxBees = 3;
+    else if (target > maxBees) target = patternsNeeded / this.maxPatternBee;
 
-    this.targetBeeCount = target;
+    this.targetBeeCount = Math.min(Math.ceil(target), maxBees);
+
+    if (
+      this.boosts &&
+      this.hive.cells.lab &&
+      this.sCell.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
+    )
+      _.forEach(this.bees, (b) => {
+        if (!b.boosted && b.ticksToLive >= 1200) b.state = beeStates.boosting;
+      });
+  }
+
+  private get maxPatternBee() {
+    return setups.builder
+      .getBody(this.hive.room.energyCapacityAvailable)
+      .body.filter((b) => b === WORK).length;
   }
 
   public update() {
@@ -111,15 +136,10 @@ export class BuilderMaster extends Master {
 
     if (
       this.checkBees(
-        this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10000,
-        CREEP_LIFE_TIME - 20
+        this.sCell.getUsedCapacity(RESOURCE_ENERGY) > 10_000,
+        CREEP_LIFE_TIME - 90
       )
     ) {
-      /* if (!this.hive.structuresConst.filter(cc => cc.pos.roomName === this.roomName)) {
-        let setup = setups.builder;
-        setup = setup.copy();
-        setup.pattern = [WORK, CARRY, CARRY];
-      } */
       const order: {
         setup: CreepSetup;
         priority: 2 | 5 | 7;
@@ -128,6 +148,9 @@ export class BuilderMaster extends Master {
         priority: emergency ? 2 : this.beesAmount ? 7 : 5,
       };
       order.setup.patternLimit = this.patternPerBee;
+      // add a little spice if battle
+      if (emergency || this.hive.state === hiveStates.battle)
+        order.setup.fixed = [WORK, WORK, CARRY];
       this.wish(order);
     }
   }

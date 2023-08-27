@@ -1,14 +1,14 @@
 // import { setupsNames } from "../enums";
 import { HiveLog } from "abstract/hiveMemory";
-import { makeId } from "utils/utils";
-
-import type { ProtoOrder } from "../abstract/broker";
-import { setups } from "../bees/creepSetups";
-import type { Hive } from "../hive/hive";
-import type { FlagOrder } from "../order";
-import { profile } from "../profiler/decorator";
-import { LOGGING_CYCLE } from "../settings";
-import { prefix } from "../utils/enums";
+import { setups } from "bees/creepSetups";
+import type { ProtoOrder } from "bugSmuggling/broker";
+import type { Hive } from "hive/hive";
+import type { FlagOrder } from "orders/order";
+import { profile } from "profiler/decorator";
+import { LOGGING_CYCLE } from "settings";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import { prefix } from "static/enums";
+import { makeId } from "static/utils";
 
 const EVENT_ID_LENGTH = 6;
 
@@ -216,7 +216,7 @@ export class Logger {
     mem.spawOrders = Object.keys(hive.spawOrders).length;
     mem.construction = {
       numStruct: hive.structuresConst.length,
-      sumEnergy: hive.sumCost,
+      costs: hive.buildingCosts,
     };
     mem.energy = {
       storage: hive.room.storage ? hive.room.storage.store.energy : 0,
@@ -397,7 +397,10 @@ export class Logger {
   private get emptyHiveLog(): HiveLog {
     return {
       annexNames: [],
-      construction: { numStruct: 0, sumEnergy: 0 },
+      construction: {
+        numStruct: 0,
+        costs: ZERO_COSTS_BUILDING_HIVE,
+      },
       spawOrders: 0,
 
       energy: {

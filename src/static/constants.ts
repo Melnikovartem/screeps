@@ -1,3 +1,5 @@
+import { buildingCostsHive } from "abstract/hiveMemory";
+
 export const SETTINGS_DEFAULT: Memory["settings"] = {
   framerate: 10,
   generatePixel: Game.cpu.limit > 20,
@@ -11,6 +13,17 @@ export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
   roomPlanner: Memory.cache.roomPlanner || {},
   hives: Memory.cache.hives || {},
   war: Memory.cache.war || { siedgeInfo: {}, squadsInfo: {} },
+};
+
+export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {
+  annex: {
+    build: 0,
+    repair: 0,
+  },
+  hive: {
+    build: 0,
+    repair: 0,
+  },
 };
 
 export const WALLS_START = 10_000;

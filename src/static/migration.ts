@@ -3,15 +3,21 @@ import { SETTINGS_DEFAULT } from "./constants";
 export class MigrateManager {
   public static currVersion = "0.0.5";
 
+  // careful about this
   public static migrate005() {
+    // @ts-ignore
     delete Memory.profiler;
+    // @ts-ignore
     delete Memory.masters;
+    // @ts-ignore
     delete Memory.roomsToSign;
+    // @ts-ignore
     delete Memory.logs;
     Memory.settings = SETTINGS_DEFAULT;
 
     const hivesCache = Memory.cache.hives;
     for (const hiveName of Object.keys(hivesCache)) {
+      // @ts-ignore
       delete hivesCache[hiveName].wallsHealth;
       const cellsCache = hivesCache[hiveName].cells;
       hivesCache[hiveName].cells = {};

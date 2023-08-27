@@ -1,3 +1,4 @@
+import { FastRefillCell } from "cells/stage1/fastRefill";
 import { Traveler } from "Traveler/TravelerModified";
 
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
@@ -23,7 +24,7 @@ export class DevelopmentCell extends Cell {
   }
 
   public get controller() {
-    return this.hive.room.controller;
+    return this.hive.controller;
   }
 
   public addResources() {
@@ -78,7 +79,7 @@ export class DevelopmentCell extends Cell {
         // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.roomName)
         const route = Traveler.findTravelPath(
           pos,
-          this.hive.cells.spawn.fastRefPos || this.hive,
+          FastRefillCell.poss(this.roomName) || this.hive,
           {
             offRoad: true,
             weightOffRoad: 5,
@@ -102,7 +103,7 @@ export class DevelopmentCell extends Cell {
             Memory.cache.roomPlanner[r.roomName].road;
           if (
             roads &&
-            roads.pos.filter((p) => p.x === r.x && p.y == r.y).length
+            roads.pos.filter((p) => p.x === r.x && p.y === r.y).length
           ) {
             if (
               r

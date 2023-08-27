@@ -163,7 +163,7 @@ export class UpgraderMaster extends Master {
         bee.state = beeStates.work;
       }
       switch (bee.state) {
-        case beeStates.fflush:
+        case beeStates.fflush: {
           if (!this.hive.cells.lab || !bee.boosted) {
             bee.state = beeStates.chill;
             break;
@@ -181,6 +181,7 @@ export class UpgraderMaster extends Master {
             )
               bee.drop(RESOURCE_ENERGY);
           break;
+        }
         case beeStates.work:
           if (
             bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) &&

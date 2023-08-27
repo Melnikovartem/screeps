@@ -1,3 +1,6 @@
+import { buildingCostsHive } from "abstract/hiveMemory";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+
 import { BOOST_MINERAL } from "../../cells/stage1/laboratoryCell";
 import type { BuildProject } from "../../hive/hive";
 import { DefenseCell } from "./defenseCell";
@@ -6,13 +9,13 @@ import { DefenseCell } from "./defenseCell";
 export function getNukeDefMap(
   this: DefenseCell,
   oneAtATime = false
-): [BuildProject[], number] {
+): [BuildProject[], buildingCostsHive["hive"]] {
   // i should think what to do if my defenses are under strike
   const prevState = this.nukeCoverReady;
   this.nukeCoverReady = true;
   if (!Object.keys(this.nukes).length)
     // || Game.flags[prefix.nukes + this.roomName])
-    return [[], 0];
+    return [[], ZERO_COSTS_BUILDING_HIVE.hive];
   const map: { [id: number]: { [id: number]: number } } = {};
   const minLandTime = _.min(this.nukes, (n) => n.timeToLand).timeToLand;
   _.forEach(this.nukes, (n) => {
@@ -61,7 +64,7 @@ export function getNukeDefMap(
     if (this.hive.cells.lab) leaveOne(this.hive.cells.lab.laboratories);
   }
 
-  let energyCost = 0;
+  const energyCost = ZERO_COSTS_BUILDING_HIVE.hive;
   for (const x in map)
     for (const y in map[x]) {
       const pos = new RoomPosition(+x, +y, this.roomName);
@@ -102,9 +105,10 @@ export function getNukeDefMap(
             energyCost: 1,
             type: "construction",
           });
+          // ignore energy to build cause 1 ///
         }
         if (energy > 0) {
-          energyCost += Math.ceil(energy);
+          energyCost.repair += Math.ceil(energy);
           nukesProj.push({
             pos,
             sType: STRUCTURE_RAMPART,

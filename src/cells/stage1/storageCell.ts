@@ -32,7 +32,7 @@ export class StorageCell extends Cell {
   }
 
   public get storage() {
-    return this.hive.room.storage!;
+    return (this.hive.room.storage || this.hive.room.terminal)!;
   }
 
   public get terminal() {

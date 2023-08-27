@@ -66,24 +66,23 @@ export function updateCellData(this: Hive, bake = false) {
         this.cells.lab.laboratories[s.id] = s;
         break;
       case STRUCTURE_STORAGE:
-        if (!this.cells.storage && Apiary.useBucket)
+        if (!this.cells.storage && s.isActive() && Apiary.useBucket)
           Apiary.destroyTime = Game.time;
         break;
       case STRUCTURE_FACTORY:
         if (!this.cells.factory && this.cells.storage)
-          this.cells.factory = new FactoryCell(this, s, this.cells.storage);
+          this.cells.factory = new FactoryCell(this, s);
         break;
       case STRUCTURE_POWER_SPAWN:
         if (!this.cells.power && this.cells.storage)
-          this.cells.power = new PowerCell(this, s, this.cells.storage);
+          this.cells.power = new PowerCell(this, s);
         break;
       case STRUCTURE_OBSERVER:
         if (!this.cells.observe) this.cells.observe = new ObserveCell(this, s);
         break;
       case STRUCTURE_TERMINAL:
-        if (!this.cells.storage) {
+        if (!this.cells.storage && s.isActive() && Apiary.useBucket)
           if (Apiary.useBucket) Apiary.destroyTime = Game.time;
-        } else this.cells.storage.terminal = s;
         break;
     }
   });

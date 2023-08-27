@@ -6,7 +6,7 @@ import { Traveler } from "../../Traveler/TravelerModified";
 import { Cell } from "../_Cell";
 import type { ExcavationCell } from "./excavationCell";
 
-const MAX_MINING_DIST = 350;
+const MAX_MINING_DIST = 200;
 
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile

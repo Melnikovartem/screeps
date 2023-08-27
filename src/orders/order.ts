@@ -8,7 +8,7 @@ import { HelpUpgradeMaster } from "beeMasters/civil/helpUpgrade";
 import { PickupMaster } from "beeMasters/civil/pickup";
 import { PortalMaster } from "beeMasters/civil/portal";
 import { PuppetMaster } from "beeMasters/civil/puppet";
-import { SignerMaster } from "beeMasters/civil/randomSigner";
+// import { SignerMaster } from "beeMasters/civil/randomSigner";
 // import { TestSquad } from "beeMasters/squads/test";
 import { DepositMaster } from "beeMasters/corridorMining/deposit";
 import { PowerMaster } from "beeMasters/corridorMining/power";
@@ -643,7 +643,7 @@ export class FlagOrder {
             this.master = new ContainerBuilderMaster(this);
             break;
           case COLOR_PURPLE:
-            this.master = new SignerMaster(this);
+            // this.master = new SignerMaster(this);
             break;
         }
         break;

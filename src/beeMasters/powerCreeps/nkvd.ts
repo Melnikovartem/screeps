@@ -176,15 +176,13 @@ export class NKVDMaster extends PowerMaster {
           andNextup((targets as ObserveCell).obeserver);
           break;
         case PWR_OPERATE_EXTENSION:
-          _.forEach((targets as StorageCell).storage, (s) => andNextup(s));
-          break;
         case PWR_OPERATE_STORAGE:
-          if ((targets as StorageCell).storage instanceof StructureStorage)
-            _.forEach((targets as StorageCell).storage, (s) => andNextup(s));
+          if ((targets as StorageCell).storage)
+            andNextup((targets as StorageCell).storage);
           break;
         case PWR_OPERATE_TERMINAL:
           if ((targets as StorageCell).terminal)
-            _.forEach((targets as StorageCell).terminal!, (s) => andNextup(s));
+            andNextup((targets as StorageCell).terminal!);
           break;
         case PWR_FORTIFY:
           if (this.hive.state >= hiveStates.battle)
@@ -195,10 +193,10 @@ export class NKVDMaster extends PowerMaster {
             _.forEach((targets as DefenseCell).towers, (s) => andNextup(s, 5));
           break;
         case PWR_OPERATE_CONTROLLER:
-          _.forEach((targets as UpgradeCell).controller, (s) => andNextup(s));
+          andNextup((targets as UpgradeCell).controller);
           break;
         case PWR_OPERATE_POWER:
-          _.forEach((targets as PowerCell).powerSpawn, (s) => andNextup(s));
+          andNextup((targets as PowerCell).powerSpawn);
           break;
         case PWR_REGEN_SOURCE:
           _.forEach(

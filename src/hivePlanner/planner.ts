@@ -15,7 +15,7 @@ export type RoomSetup = {
     pos: { x: number; y: number }[];
   };
 };
-interface CellCache {
+export interface CellCache {
   poss: Pos;
 }
 
