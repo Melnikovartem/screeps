@@ -1,22 +1,13 @@
 import { HIVE_ENERGY } from "cells/stage1/storageCell";
-import { hiveStates, roomStates } from "static/enums";
+import { hiveStates, prefix, roomStates } from "static/enums";
 
 import type { BuildProject, Hive } from "./hive";
-import { checkBuildings } from "./hive-checkbuild";
+import { checkBuildings, checkMinWallHealth } from "./hive-checkbuild";
 
-// Define structure group types
-type StructureGroups =
-  | "essential"
-  | "roads"
-  | "mining"
-  | "defense"
-  | "hightech"
-  | "trade";
-
-// Define a mapping of structure groups to buildable structure constants
-const BUILDABLE_PRIORITY: {
-  [key in StructureGroups]: BuildableStructureConstant[];
-} = {
+/**
+ * Only the first thing in que will be build/repaired
+ * */
+const BUILDABLE_PRIORITY = {
   essential: [STRUCTURE_TOWER, STRUCTURE_SPAWN, STRUCTURE_EXTENSION],
   roads: [STRUCTURE_ROAD],
   mining: [STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_EXTRACTOR],
@@ -34,8 +25,8 @@ const BUILDABLE_PRIORITY: {
 export const HIVE_WALLS_UP = {
   [100_000]: 0,
   [10_000_000]: HIVE_ENERGY * 0.5,
-  [40_000_000]: HIVE_ENERGY,
-  [100_000_000]: HIVE_ENERGY * 1.5,
+  [25_000_000]: HIVE_ENERGY,
+  [50_000_000]: HIVE_ENERGY * 1.5,
   // [WALL_HITS_MAX]: HIVE_ENERGY * 2, // big project
 };
 // KEEP BUFFING WALLS IF BATTLE
@@ -44,17 +35,6 @@ const WALLS_BATTLE_BUFFER = 10_000_000;
  *
  * worst case unboosted 1m energy */
 const WALLS_STEP = 1_000_000;
-export const WALLS_START = 10_000;
-const REPAIR_STEP = WALLS_STEP * 0.5;
-
-function nextWallTargetHealth(hive: Hive) {
-  for (const [wallHealth, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
-    if (hive.wallTargetHealth > +wallHealth) continue;
-    if (hive.resState.energy < energySurplus) break;
-    return Math.min(hive.wallTargetHealth + WALLS_STEP, +wallHealth);
-  }
-  return hive.wallTargetHealth;
-}
 
 export function wallMap(hive: Hive) {
   let targetHealth = hive.wallTargetHealth;
@@ -158,244 +138,200 @@ export function getBuildTarget(
 }
 
 export function updateStructures(this: Hive) {
-  const reCheck = this.sumCost > 0;
-  const nukeAlert = !!Object.keys(this.cells.defense.nukes).length;
+  /** checking if i had some prev constructions and i need to recheck them */
+  const reCheckAnnex = this.sumCost.annex > 0;
+
   this.structuresConst = [];
-  this.sumCost = 0;
+  this.sumCost = { annex: 0, hive: 0 };
+  let mode: "annex" | "hive" = "hive";
   const addCC = (ans: [BuildProject[], number]) => {
     this.structuresConst = this.structuresConst.concat(ans[0]);
-    this.sumCost += ans[1];
+    this.sumCost[mode] += ans[1];
   };
-  let checkAnnex = () => {
-    _.forEach(this.annexNames, (annexName) => {
-      if (!(annexName in Game.rooms) || this.annexInDanger.includes(annexName))
-        return;
-      const roomInfo = Apiary.intel.getInfo(annexName, Infinity);
-      if (
-        this.room.energyCapacityAvailable < 5500 &&
-        (roomInfo.roomState === roomStates.SKfrontier ||
-          roomInfo.roomState === roomStates.SKcentral)
-      )
-        return;
-      const annexRoads = checkBuildings(
-        annexName,
-        BUILDABLE_PRIORITY.roads,
-        false
-      );
-      addCC(annexRoads);
-      if (this.room.energyCapacityAvailable >= 650) {
-        // 800
+  let checkAnnex = () => {};
+  // do check annex if not rc 1 and needed
+  if (this.controller.level >= 2 && (reCheckAnnex || this.shouldRecalc >= 2)) {
+    const checkAnnexStruct = () => {
+      _.forEach(this.annexNames, (annexName) => {
+        // dont check if can't see / dont build in annexes with enemies
+        if (
+          !(annexName in Game.rooms) ||
+          this.annexInDanger.includes(annexName)
+        )
+          return;
+
+        // any info about annex (needed for to check if SK)
+        const roomInfo = Apiary.intel.getInfo(annexName, Infinity);
+        // dont go mining frontiers if not ready
+        if (
+          this.room.energyCapacityAvailable < 5500 &&
+          (roomInfo.roomState === roomStates.SKfrontier ||
+            roomInfo.roomState === roomStates.SKcentral)
+        )
+          return;
+
+        // checks roads in annex
+        const annexRoads = checkBuildings(
+          annexName,
+          BUILDABLE_PRIORITY.roads,
+          false
+        );
+        addCC(annexRoads);
+
+        // check if big enough to start adding containers
+        // based when i start sending acttual miners to locations
+        // 800 possible option as milestone
+        if (this.room.energyCapacityAvailable < 650) return;
+
         const annexMining = checkBuildings(
           annexName,
           BUILDABLE_PRIORITY.mining,
           false
         );
         addCC(annexMining);
-        if (
-          roomInfo.roomState === roomStates.SKfrontier &&
-          this.resState[RESOURCE_ENERGY] >= 0
-        ) {
+
+        // down the raod more complex options
+        if (this.resState.energy < 0) return;
+
+        if (roomInfo.roomState === roomStates.SKfrontier) {
+          // help bootstrap containers for mineral mining in SK as fucker Keepers are annoying
           const mineralsContainer = annexMining[0].filter(
             (b) =>
               b.sType === STRUCTURE_CONTAINER &&
               b.type === "construction" &&
               b.pos.findInRange(FIND_MINERALS, 1).length
           )[0];
+          // old code for also helping to start buidling energy containers
           // if (!mineralsContainer) mineralsContainer = annexMining[0].filter(b => b.sType === STRUCTURE_CONTAINER && b.type === "construction")[0];
+
+          // @todo remove code?
+          // normal builder code could fix the problem
+          // not more then one active order of booting per hive
           if (
             mineralsContainer &&
             roomInfo.safePlace &&
             !annexRoads[0].filter((b) => b.type === "construction").length &&
             !Game.flags["containerBuilder_" + this.roomName]
           )
-            // one per hive at a time
             mineralsContainer.pos.createFlag(
               "containerBuilder_" + this.roomName,
               COLOR_BLUE,
               COLOR_YELLOW
             );
         }
-        /* let annexHive = Apiary.hives[annexName]; old code when i needed to swarm build hives
-        if (annexHive)
-          addCC([annexHive.structuresConst, annexHive.sumCost]); */
-      }
-    });
-  };
+        /* 
+        // old code when i needed to swarm build hives
+        // can be useful to flashstart colonies
+        let annexHive = Apiary.hives[annexName]; 
+          if (annexHive)
+            addCC([annexHive.structuresConst, annexHive.sumCost]); 
+        */
+      });
+    };
+    checkAnnex = () => {
+      mode = "annex";
+      checkAnnexStruct();
+      mode = "hive";
+    };
+  }
 
-  if (
-    (!reCheck &&
-      this.shouldRecalc <= 1 &&
-      Math.round(Game.time / 100) % 8 !== 0) ||
-    this.controller.level < 2
-  )
-    checkAnnex = () => {};
+  const checkAdd = (
+    toCheck: (keyof typeof BUILDABLE_PRIORITY)[],
+    fearNukes = false
+  ) =>
+    _.forEach(toCheck, (type) =>
+      checkBuildings(
+        this.roomName,
+        BUILDABLE_PRIORITY[type],
+        fearNukes,
+        type === "defense" ? wallMap(this) : undefined
+      )
+    );
 
   switch (this.state) {
     case hiveStates.nukealert:
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
-      if (!this.structuresConst.length)
-        addCC(
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            false,
-            wallMap(this),
-            0.55
-          )
-        );
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
-      if (!this.structuresConst.length)
-        addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade, true));
-      if (!this.structuresConst.length)
-        addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, true));
+      checkAdd(["mining", "trade"]);
+      if (!this.structuresConst.length) checkAdd(["trade"]);
+      if (!this.structuresConst.length) checkAdd(["defense"]);
+      checkAdd(["roads"]);
+      if (!this.structuresConst.length) checkAdd(["hightech"], true);
       if (!this.structuresConst.length)
         addCC(this.cells.defense.getNukeDefMap(true));
-      else {
-        this.sumCost +=
-          this.cells.defense.getNukeDefMap(true)[1] +
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            true,
-            wallMap(this),
-            0.99
-          )[1];
-      }
-      // checkAnnex();
+      else this.sumCost.hive += this.cells.defense.getNukeDefMap(true)[1];
       break;
     case hiveStates.nospawn:
-      addCC(checkBuildings(this.roomName, [STRUCTURE_SPAWN], nukeAlert));
+      addCC(checkBuildings(this.roomName, [STRUCTURE_SPAWN], false));
       break;
     case hiveStates.lowenergy:
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
-      addCC(
-        checkBuildings(this.roomName, BUILDABLE_PRIORITY.defense, nukeAlert)
-      );
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
-      checkAnnex();
+      checkAdd(["essential", "mining", "defense", "roads"]);
       break;
     case hiveStates.battle: {
-      const roomInfo = Apiary.intel.getInfo(this.roomName);
+      const roomInfo = Apiary.intel.getInfo(this.roomName, 25);
       if (roomInfo.enemies.length) {
-        const proj = checkBuildings(
+        const defenseBuildings = checkBuildings(
           this.roomName,
           BUILDABLE_PRIORITY.defense,
           false,
-          wallMap(this),
-          0.99
+          wallMap(this)
         );
-        addCC([
-          proj[0].filter(
-            (p) =>
-              roomInfo.enemies.filter((e) => p.pos.getRangeTo(e.object) <= 5)
-                .length
-          ),
-          proj[1],
-        ]);
+        const enemyNearBy = defenseBuildings[0].filter(
+          (p) =>
+            roomInfo.enemies.filter((e) => p.pos.getRangeTo(e.object) <= 5)
+              .length
+        );
+        if (enemyNearBy.length) addCC([enemyNearBy, defenseBuildings[1]]);
       }
-      if (!this.structuresConst.length)
-        addCC(
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            nukeAlert,
-            wallMap(this),
-            0.99
-          )
-        );
+      if (!this.structuresConst.length) checkAdd(["defense"], true);
+      // no need to fall through cause if no enemies trule left next check will diff type
       break;
     }
     case hiveStates.economy:
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
-      if (!this.structuresConst.length)
-        addCC(
-          checkBuildings(this.roomName, BUILDABLE_PRIORITY.trade, nukeAlert)
-        );
-      if (!this.structuresConst.length)
-        addCC(
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            nukeAlert,
-            wallMap(this),
-            this.wallsHealth > 1000000 ? 0.9 : undefined
-          )
-        );
+      checkAdd(["essential", "mining"]);
+      if (!this.structuresConst.length) checkAdd(["trade"]);
+      if (!this.structuresConst.length) checkAdd(["defense"], true);
       else {
         const defenses = checkBuildings(
           this.roomName,
           BUILDABLE_PRIORITY.defense,
           false
         );
+        // if developed build minimal defense first
         if (defenses[0].length && this.controller.level >= 6)
           this.structuresConst = [];
         addCC(defenses);
       }
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, nukeAlert));
-      if (
-        !this.structuresConst.length &&
-        this.cells.storage &&
-        this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >=
-          this.resTarget[RESOURCE_ENERGY] / 2
-      )
-        addCC(
-          checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, nukeAlert)
-        );
+      // hm add roads anyway?
+      checkAdd(["roads"]);
+
+      if (!this.structuresConst.length && this.resState.energy > 0)
+        checkAdd(["hightech"], true);
       checkAnnex();
-      if (
-        !this.structuresConst.length &&
-        this.builder &&
-        this.builder.activeBees
-      )
-        addCC(
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            nukeAlert,
-            wallMap(this),
-            0.99
-          )
-        );
-      if (
-        !this.structuresConst.length &&
-        this.wallsHealth < this.wallsHealthMax &&
-        ((this.cells.storage && this.resState[RESOURCE_ENERGY] > 0) ||
-          (this.wallsHealth < this.wallsHealthMax &&
-            this.controller.level >= 4))
-      ) {
-        this.wallsHealth = Math.min(
-          this.wallsHealth + 4 * Memory.settings.wallsHealth * 0.0005,
-          this.wallsHealthMax
-        );
-        addCC(
-          checkBuildings(
-            this.roomName,
-            BUILDABLE_PRIORITY.defense,
-            nukeAlert,
-            wallMap(this),
-            0.99
-          )
-        );
+      // @todo up the limit on walls
+      if (!this.structuresConst.length) {
+        this.wallTargetHealth = nextWallTargetHealth(this);
       }
       break;
     default:
-      // never for now
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.essential, false));
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.mining, false));
-      addCC(
-        checkBuildings(
-          this.roomName,
-          BUILDABLE_PRIORITY.defense,
-          nukeAlert,
-          wallMap(this)
-        )
-      );
-      addCC(checkBuildings(this.roomName, BUILDABLE_PRIORITY.roads, false));
-      addCC(
-        checkBuildings(this.roomName, BUILDABLE_PRIORITY.hightech, nukeAlert)
-      );
+      // shouldn't happen, but just a failsafe
+      checkAdd(["essential", "mining", "trade"]);
+      checkAdd(["defense", "hightech"], true);
+      checkAnnex();
   }
+}
+
+function nextWallTargetHealth(hive: Hive) {
+  const minHealth = checkMinWallHealth(hive.roomName);
+  if (hive.wallTargetHealth - minHealth >= WALLS_STEP)
+    return Math.ceil(minHealth / WALLS_STEP) * WALLS_STEP;
+  const currTarget = Math.max(hive.wallTargetHealth, minHealth);
+
+  for (const [wallHealth, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
+    if (currTarget > +wallHealth) continue;
+    if (hive.resState.energy < energySurplus) break;
+    return Math.min(
+      Math.ceil(minHealth / WALLS_STEP + 1) * WALLS_STEP,
+      +wallHealth
+    );
+  }
+  return currTarget;
 }

@@ -12,3 +12,5 @@ export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
   hives: Memory.cache.hives || {},
   war: Memory.cache.war || { siedgeInfo: {}, squadsInfo: {} },
 };
+
+export const WALLS_START = 10_000;

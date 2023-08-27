@@ -23,9 +23,10 @@ import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
+import { WALLS_START } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
-import { getBuildTarget, updateStructures, WALLS_START } from "./hive-building";
+import { getBuildTarget, updateStructures } from "./hive-building";
 import {
   addAnex,
   markResources,
@@ -116,7 +117,10 @@ export class Hive {
 
   public structuresConst: BuildProject[] = [];
   /** sum of construction cost */
-  public sumCost: number = 0;
+  public sumCost = {
+    hive: 0,
+    annex: 0,
+  };
 
   /** current minium wall health */
   private minCurWallHealth = 0;
