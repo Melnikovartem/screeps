@@ -1,5 +1,5 @@
 import type { PowerBee } from "../../bees/powerBee";
-import type { Hive } from "../../Hive";
+import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";
 import { Cell } from "../_Cell";

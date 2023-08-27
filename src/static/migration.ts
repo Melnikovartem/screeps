@@ -1,4 +1,4 @@
-import { SETTINGS_DEFAULT } from "constants";
+import { SETTINGS_DEFAULT } from "./constants";
 
 export class MigrateManager {
   public static currVersion = "0.0.5";

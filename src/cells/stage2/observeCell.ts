@@ -1,4 +1,4 @@
-import type { Hive } from "../../Hive";
+import type { Hive } from "../../hive/hive";
 import { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
 import { prefix, roomStates } from "../../static/enums";

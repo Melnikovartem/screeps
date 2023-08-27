@@ -21,7 +21,7 @@ import { HordeMaster } from "beeMasters/war/horde";
 import { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { SKMaster } from "beeMasters/war/safeSK";
 import { WaiterMaster } from "beeMasters/war/waiter";
-import type { Hive } from "Hive";
+import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix, roomStates } from "static/enums";
 import { findOptimalResource, makeId } from "static/utils";

@@ -1,5 +1,4 @@
 export interface HiveCache {
-  wallsHealth: number;
   cells: { [id: string]: { [id: string]: any } };
   do: {
     powerMining: 0 | 1;

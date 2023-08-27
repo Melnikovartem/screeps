@@ -1,6 +1,6 @@
-import { FREE_CAPACITY } from "../../bugSmuggling/terminalNetwork";
 import type { Bee } from "../../bees/bee";
 import { setups } from "../../bees/creepSetups";
+import { FREE_CAPACITY } from "../../bugSmuggling/terminalNetwork";
 import type { ResourceCell } from "../../cells/base/resourceCell";
 import { profile } from "../../profiler/decorator";
 import { beeStates } from "../../static/enums";

@@ -1,4 +1,4 @@
-import type { ResTarget } from "Hive";
+import type { ResTarget } from "hive/hive";
 
 import { DEVELOPING, LOGGING_CYCLE, SAFE_DEV } from "../settings";
 

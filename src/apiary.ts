@@ -10,7 +10,7 @@ import { ProtoBee } from "bees/protoBee";
 import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { Visuals } from "convenience/visuals";
-import { Hive } from "Hive";
+import { Hive } from "hive/hive";
 import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";

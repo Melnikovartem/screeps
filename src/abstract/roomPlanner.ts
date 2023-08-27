@@ -1,4 +1,4 @@
-import type { BuildProject } from "../Hive";
+import type { BuildProject } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { prefix, roomStates } from "../static/enums";
 import { getEnterances, makeId } from "../static/utils";

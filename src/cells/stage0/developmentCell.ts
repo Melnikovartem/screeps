@@ -1,7 +1,7 @@
 import { Traveler } from "Traveler/TravelerModified";
 
 import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
-import type { Hive } from "../../Hive";
+import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";
 import { makeId } from "../../static/utils";

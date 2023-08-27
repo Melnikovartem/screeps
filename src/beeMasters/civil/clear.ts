@@ -1,6 +1,6 @@
-import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import { setups } from "bees/creepSetups";
-import type { ResTarget } from "Hive";
+import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
+import type { ResTarget } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { findOptimalResource } from "static/utils";
 

@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import type { Hive } from "Hive";
+import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, prefix } from "static/enums";
 

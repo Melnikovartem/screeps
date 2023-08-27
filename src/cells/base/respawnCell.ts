@@ -1,4 +1,4 @@
-import type { Hive } from "../../Hive";
+import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { beeStates, prefix, setupsNames } from "../../static/enums";
 import { makeId } from "../../static/utils";

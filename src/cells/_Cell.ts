@@ -1,6 +1,6 @@
 import { Master } from "../beeMasters/_Master";
-import type { HiveCells } from "../Hive";
-import { Hive } from "../Hive";
+import type { HiveCells } from "../hive/hive";
+import { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { prefix } from "../static/enums";
 

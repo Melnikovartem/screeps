@@ -1,13 +1,16 @@
 import { CreepSetup, setups } from "bees/creepSetups";
 import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
-import type { Hive } from "Hive";
+import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, prefix } from "static/enums";
 import { addResDict, findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 import { findRamp } from "../war/siegeDefender";
+
+// CREEP_LIFE_TIME * 0.8 * 20 * 1 * REPAIR_POWER;
+const REPAIR_BUILDER_PER_LIFE = 24_000;
 
 @profile
 export class BuilderMaster extends Master {

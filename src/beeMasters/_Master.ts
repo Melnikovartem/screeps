@@ -2,7 +2,7 @@
 import type { Bee } from "../bees/bee";
 import type { ProtoBee } from "../bees/protoBee";
 import type { BoostRequest } from "../cells/stage1/laboratoryCell";
-import type { Hive, SpawnOrder } from "../Hive";
+import type { Hive, SpawnOrder } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { beeStates, hiveStates, prefix, roomStates } from "../static/enums";
 

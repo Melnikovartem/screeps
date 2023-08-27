@@ -787,7 +787,7 @@ export class SquadWarCrimesMaster extends Master {
           const exit = bee.pos.findClosest(
             Game.rooms[bee.pos.roomName].find(FIND_EXIT)
           );
-          // console .log("flee", bee.pos, this.stuckSiedge);
+          // flee
           this.stuckSiedge++;
           bee.goTo(exit || this.pos, opt);
         } else if (
@@ -795,7 +795,7 @@ export class SquadWarCrimesMaster extends Master {
           this.canBeOutDmged(bee.targetPosition, padding)
         ) {
           this.stuckSiedge++;
-          // console .log("stop", bee.targetPosition, this.stuckSiedge);
+          // stop in place
           if (rightRoom) bee.stop();
         } else if (
           roomInfo.roomState === roomStates.ownedByEnemy &&
@@ -805,7 +805,7 @@ export class SquadWarCrimesMaster extends Master {
             bee.targetPosition &&
             this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
           if (formationBreak) {
-            // console .log("break", this.getSquadMoveMentValue(bee.targetPosition!, bee.ref, false), this.stuckSiedge);
+            // take a break
             let range = 2;
             if (this.stats.current.dism) range = 1;
             if (

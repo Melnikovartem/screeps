@@ -1,5 +1,5 @@
 import { HaulerMaster } from "../../beeMasters/economy/hauler";
-import type { Hive } from "../../Hive";
+import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { prefix } from "../../static/enums";
 import { safeWrap } from "../../static/utils";

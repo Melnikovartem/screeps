@@ -4,7 +4,7 @@ import { makeId } from "utils/utils";
 
 import type { ProtoOrder } from "../abstract/broker";
 import { setups } from "../bees/creepSetups";
-import type { Hive } from "../Hive";
+import type { Hive } from "../hive/hive";
 import type { FlagOrder } from "../order";
 import { profile } from "../profiler/decorator";
 import { LOGGING_CYCLE } from "../settings";
