@@ -43,12 +43,14 @@ export class UpgradeCell extends Cell {
   public findLink() {
     let link: typeof this.link =
       this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
-    if (!link)
+    if (!link) {
       link = this.pos
-        .findInRange(FIND_MY_STRUCTURES, 2)
+        .findInRange(FIND_MY_STRUCTURES, 3)
         .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
         | StructureLink
         | undefined;
+      if (link) this.cache("linkId", link.id);
+    }
     this.link = link;
   }
 

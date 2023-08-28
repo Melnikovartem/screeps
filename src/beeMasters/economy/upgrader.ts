@@ -12,18 +12,20 @@ const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgr
 export class UpgraderMaster extends Master {
   private cell: UpgradeCell;
   private patternPerBee = 0;
-  public fastModePossible = false;
 
   public constructor(upgradeCell: UpgradeCell) {
     super(upgradeCell.hive, upgradeCell.ref);
     this.cell = upgradeCell;
   }
 
-  private recalculateTargetBee() {
-    this.fastModePossible =
+  public get fastModePossible() {
+    return (
       !!(this.cell.link && this.cell.sCell.link) ||
-      this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4;
+      this.cell.pos.getRangeTo(this.cell.sCell.storage) < 4
+    );
+  }
 
+  private recalculateTargetBee() {
     const upgradeMode = this.hive.shouldDo("upgrade"); // polen
     if (
       upgradeMode === 0 ||
@@ -123,11 +125,7 @@ export class UpgraderMaster extends Master {
     )
       suckerTarget = this.cell.sCell.storage;
 
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-          bee.state = beeStates.chill;
-    });
+    this.preRunBoost();
 
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;

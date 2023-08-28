@@ -33,13 +33,17 @@ export function toActive(
     if (!poss.length) delete Memory.cache.roomPlanner[roomName][sType];
   }
 
-  if (Memory.cache.hives[roomName])
-    for (const cellType in Memory.cache.hives[roomName].cells) {
-      const cellCache = Memory.cache.hives[roomName].cells[cellType];
-      if ("poss" in cellCache)
-        this.activePlanning[roomName].cellsCache[cellType] = {
-          poss: cellCache.poss as { x: number; y: number },
-        };
+  const hiveName = anchor.roomName;
+  if (Memory.cache.hives[hiveName])
+    for (const cellType in Memory.cache.hives[hiveName].cells) {
+      const cellCache = Memory.cache.hives[hiveName].cells[cellType];
+      const poss = cellCache?.poss as {
+        x: number;
+        y: number;
+        roomName?: string;
+      };
+      if (poss && (!poss.roomName || poss?.roomName === roomName))
+        this.activePlanning[roomName].cellsCache[cellType] = { poss };
     }
 }
 

@@ -70,9 +70,10 @@ export function checkBuildings(
         if (sType === STRUCTURE_ROAD)
           heal -= Math.min(
             heal * 0.5,
-            hive && hive.builder && hive.builder.activeBees.length
+            (hive && hive.builder && hive.builder.activeBees.length
               ? ROAD_BUFFER_ZONE.aliveBees
-              : ROAD_BUFFER_ZONE.noBees
+              : ROAD_BUFFER_ZONE.noBees) *
+              (structure.hitsMax / ROAD_HITS) // coef for swamp / walls
           );
         if (nukeAlert && isDefense) {
           const nukeDmg = _.sum(

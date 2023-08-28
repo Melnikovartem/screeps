@@ -36,6 +36,7 @@ export class CreepSetup {
   ) {
     this.name = setupName;
 
+    /** if this was full setup how much move  */
     this.moveMax = moveMax;
     this.fixed = bodySetup.fixed ? bodySetup.fixed : [];
     this.pattern = bodySetup.pattern;
@@ -278,7 +279,7 @@ export const setups = {
       pattern: [WORK, CARRY],
       patternLimit: 10,
     },
-    10
+    50 / 3
   ),
   bootstrap: new CreepSetup(
     setupsNames.bootstrap,

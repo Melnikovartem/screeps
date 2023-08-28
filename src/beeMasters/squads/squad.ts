@@ -1,16 +1,16 @@
 import { addResDict } from "static/utils";
 
-import type {
-  CreepAllBattleInfo,
-  CreepBattleInfo,
-  Enemy,
-} from "../../spiderSense/intelligence";
 import type { Bee } from "../../bees/bee";
 import type { CreepSetup } from "../../bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "../../cells/stage1/laboratoryCell";
 import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
 import { SQUAD_VISUALS } from "../../settings";
+import type {
+  CreepAllBattleInfo,
+  CreepBattleInfo,
+  Enemy,
+} from "../../spiderSense/intelligence";
 import {
   beeStates,
   enemyTypes,
@@ -98,7 +98,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
   public set targetBeeCount(_) {}
 
-  public newBee(bee: Bee) {
+  public newBee = (bee: Bee) => {
     super.newBee(bee);
     for (let i = 0; i < this.formation.length; ++i)
       if (
@@ -110,7 +110,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
     if (this.spawned < Object.keys(this.bees).length)
       this.spawned = Object.keys(this.bees).length;
-  }
+  };
 
   public update() {
     super.update();

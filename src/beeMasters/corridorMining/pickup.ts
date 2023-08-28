@@ -8,15 +8,15 @@ import type { DepositMaster } from "./deposit";
 
 @profile
 export class DepositPickupMaster extends Master {
-  movePriority = 4 as const;
-  parent: DepositMaster;
+  public movePriority = 4 as const;
+  private parent: DepositMaster;
 
-  constructor(parent: DepositMaster) {
+  public constructor(parent: DepositMaster) {
     super(parent.hive, parent.order.ref + "_" + prefix.pickup);
     this.parent = parent;
   }
 
-  get setup() {
+  private get setup() {
     const setup = setups.pickup.copy();
     if (this.parent.decay)
       setup.patternLimit = Math.ceil(
@@ -33,7 +33,7 @@ export class DepositPickupMaster extends Master {
     return setup;
   }
 
-  recalculateTargetBee() {
+  private recalculateTargetBee() {
     const body = this.setup.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;
@@ -44,7 +44,7 @@ export class DepositPickupMaster extends Master {
     );
   }
 
-  checkBees() {
+  public checkBees = () => {
     const check = () =>
       super.checkBees(true, CREEP_LIFE_TIME - this.parent.roadTime * 2);
     if (this.targetBeeCount && !check()) return false;
@@ -58,9 +58,9 @@ export class DepositPickupMaster extends Master {
           (b) => b.ticksToLive > CREEP_LIFE_TIME / 2
         ).length)
     );
-  }
+  };
 
-  update() {
+  public update() {
     super.update();
     if (this.checkBees())
       this.wish({
@@ -69,7 +69,7 @@ export class DepositPickupMaster extends Master {
       });
   }
 
-  run() {
+  public run() {
     let pickingup = false;
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {

@@ -28,16 +28,16 @@ export class HaulerMaster extends Master {
     this.recalculateTargetBee();
   }
 
-  public newBee(bee: Bee) {
+  public newBee = (bee: Bee) => {
     if (bee.state === beeStates.idle && bee.store.getUsedCapacity())
       bee.state = beeStates.work;
     super.newBee(bee);
-  }
+  };
 
-  public deleteBee(ref: string) {
+  public deleteBee = (ref: string) => {
     super.deleteBee(ref);
     delete this.roadUpkeepCost[ref];
-  }
+  };
 
   public recalculateRoadTime() {
     this.accumRoadTime = 0; // roadTime * minePotential

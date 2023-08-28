@@ -27,9 +27,9 @@ export abstract class SwarmMaster extends Master {
     this._maxSpawns = value;
   }
 
-  public checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
+  public checkBees = (spawnExtreme?: boolean, spawnCycle?: number) => {
     return this.checkBeesSwarm() && super.checkBees(spawnExtreme, spawnCycle);
-  }
+  };
 
   public checkBeesSwarm() {
     if (
@@ -41,11 +41,11 @@ export abstract class SwarmMaster extends Master {
     return this.spawned < this.maxSpawns;
   }
 
-  public newBee(bee: Bee) {
+  public newBee = (bee: Bee) => {
     super.newBee(bee);
     if (bee.creep.memory.born + 1 === Game.time) ++this.spawned;
     this.order.flag.memory.info = this.spawned;
-  }
+  };
 
   public set spawned(value) {
     this.order.flag.memory.info = value;

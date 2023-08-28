@@ -11,17 +11,18 @@ import type { PullerMaster } from "./puller";
 // first tandem btw
 @profile
 export class PowerMaster extends SwarmMaster {
-  duplets: [Bee | undefined, Bee | undefined][] = [];
-  healers: Bee[] = [];
-  knights: Bee[] = [];
-  target: StructurePowerBank | undefined;
-  movePriority = 1 as const;
-  positions: { pos: RoomPosition }[];
-  operational: boolean = false;
+  public movePriority = 1 as const;
 
-  parent: PullerMaster;
+  public operational: boolean = false;
 
-  constructor(order: FlagOrder, parent: PullerMaster) {
+  private duplets: [Bee | undefined, Bee | undefined][] = [];
+  private healers: Bee[] = [];
+  private knights: Bee[] = [];
+  private target: StructurePowerBank | undefined;
+  private positions: { pos: RoomPosition }[];
+  private parent: PullerMaster;
+
+  public constructor(order: FlagOrder, parent: PullerMaster) {
     super(order);
     this.order.memory.extraInfo = 0;
 
@@ -45,39 +46,39 @@ export class PowerMaster extends SwarmMaster {
     if (this.pos.roomName in Game.rooms) this.updateTarget();
   }
 
-  get roadTime() {
+  public get roadTime() {
     return this.order.memory.extraInfo.roadTime as number;
   }
 
-  set roadTime(value) {
+  public set roadTime(value) {
     this.order.memory.extraInfo.roadTime = value;
   }
 
-  get power() {
+  public get power() {
     return this.order.memory.extraInfo.power as number;
   }
 
-  set power(value) {
+  public set power(value) {
     this.order.memory.extraInfo.power = value;
   }
 
-  get hits() {
+  public get hits() {
     return this.order.memory.extraInfo.hits as number;
   }
 
-  set hits(value) {
+  public set hits(value) {
     this.order.memory.extraInfo.hits = value;
   }
 
-  get decay() {
+  public get decay() {
     return (this.order.memory.extraInfo.decay as number) - Game.time;
   }
 
-  set decay(value) {
+  public set decay(value) {
     this.order.memory.extraInfo.decay = Game.time + value;
   }
 
-  get pickupTime() {
+  public get pickupTime() {
     // spawn time (halfed + roadTime)
     return (
       Math.ceil((this.power / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) * 0.5) *
@@ -87,17 +88,17 @@ export class PowerMaster extends SwarmMaster {
     );
   }
 
-  get shouldSpawn() {
+  public get shouldSpawn() {
     return this.operational && this.parent.sitesON.includes(this);
   }
 
-  newBee(bee: Bee) {
+  public newBee = (bee: Bee) => {
     super.newBee(bee);
     if (bee.creep.getBodyParts(HEAL)) this.healers.push(bee);
     else this.knights.push(bee);
-  }
+  };
 
-  deleteBee(ref: string) {
+  public deleteBee = (ref: string) => {
     super.deleteBee(ref);
     for (let i = 0; i < this.healers.length; ++i)
       if (this.healers[i].ref === ref) {
@@ -109,9 +110,9 @@ export class PowerMaster extends SwarmMaster {
         this.knights.splice(i, 1);
         --i;
       }
-  }
+  };
 
-  updateTarget() {
+  public updateTarget() {
     this.target = this.pos
       .lookFor(LOOK_STRUCTURES)
       .filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0] as
@@ -145,14 +146,14 @@ export class PowerMaster extends SwarmMaster {
     }
   }
 
-  checkBees() {
+  public checkBees = () => {
     return (
       this.shouldSpawn &&
       super.checkBees(true, CREEP_LIFE_TIME - this.roadTime - 30)
     );
-  }
+  };
 
-  createDuplet(knight: Bee) {
+  public createDuplet(knight: Bee) {
     let goodHealers;
     if (knight.target) goodHealers = [this.bees[knight.target]];
     else
@@ -179,7 +180,7 @@ export class PowerMaster extends SwarmMaster {
     return false;
   }
 
-  update() {
+  public update() {
     super.update();
 
     for (let i = 0; i < this.knights.length; ++i)
@@ -248,7 +249,7 @@ export class PowerMaster extends SwarmMaster {
     }
   }
 
-  callPickUp() {
+  private callPickUp() {
     if (
       this.pos
         .lookFor(LOOK_FLAGS)
@@ -267,7 +268,7 @@ export class PowerMaster extends SwarmMaster {
     if (typeof name === "string") Game.flags[name].memory.hive = this.roomName;
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case beeStates.chill:
@@ -391,7 +392,7 @@ export class PowerMaster extends SwarmMaster {
     });
   }
 
-  delete() {
+  public delete() {
     super.delete();
     if (this.hive.puller) {
       const index = this.hive.puller.powerSites.indexOf(this);

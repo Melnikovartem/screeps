@@ -122,7 +122,8 @@ export class CustomConsole {
             if (value === 0 || value === 1) dd.depositRefining = value;
             break;
           case "upgrade":
-            if (value === 3) {
+            if (value === undefined) value = dd[mode] ? 0 : 1;
+            if (value === 3 || value === 2 || value === 1 || value === 0) {
               dd[mode] = value;
               break;
             }

@@ -16,12 +16,12 @@ export class DepositMinerMaster extends Master {
     this.targetBeeCount = this.parent.positions.length;
   }
 
-  public checkBees() {
+  public checkBees = () => {
     return (
       this.parent.shouldSpawn &&
       super.checkBees(true, CREEP_LIFE_TIME - this.parent.roadTime)
     );
-  }
+  };
 
   public update() {
     super.update();

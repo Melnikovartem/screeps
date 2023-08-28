@@ -1,14 +1,14 @@
-import type {
-  CreepAllBattleInfo,
-  CreepBattleInfo,
-  Enemy,
-} from "spiderSense/intelligence";
 import type { WarcrimesModule } from "abstract/warModule";
 import type { Bee } from "bees/bee";
 import { CreepSetup } from "bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
 import { SQUAD_VISUALS } from "settings";
+import type {
+  CreepAllBattleInfo,
+  CreepBattleInfo,
+  Enemy,
+} from "spiderSense/intelligence";
 import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 
@@ -128,12 +128,12 @@ export class SquadWarCrimesMaster extends Master {
     this.info.rotation = value;
   }
 
-  public checkBees() {
+  public checkBees = () => {
     return (
       this.checkBeesSwarm() &&
       super.checkBees(this.emergency, CREEP_LIFE_TIME / 2)
     );
-  }
+  };
 
   public checkBeesSwarm() {
     if (
@@ -215,7 +215,7 @@ export class SquadWarCrimesMaster extends Master {
     if (value) this.info.targetid = value.id;
   }
 
-  public newBee(bee: Bee) {
+  public newBee = (bee: Bee) => {
     super.newBee(bee);
     for (let i = 0; i < this.setup.length; ++i)
       if (!this.formationBees[i] && bee.ref.includes(this.setup[i].name)) {
@@ -227,7 +227,7 @@ export class SquadWarCrimesMaster extends Master {
       this.spawned < Object.keys(this.bees).length
     )
       ++this.spawned;
-  }
+  };
 
   public update() {
     super.update();

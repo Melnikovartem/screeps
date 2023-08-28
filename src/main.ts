@@ -2,8 +2,10 @@
 import "Traveler/TravelerModified";
 import "prototypes/creeps";
 import "prototypes/pos";
+// This import stuff is not the way to go
 import "convenience/console/console-hand-fix";
 import "convenience/console/console-debug";
+import "convenience/console/console-market";
 
 // import { MigrateManager } from "static/migration";
 // Migrate memory do not wipe!!

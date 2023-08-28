@@ -32,10 +32,7 @@ export class ResourceCell extends Cell {
     super(hive, prefix.resourceCells + resource.id);
     this.resource = resource;
 
-    if (this.resource.pos.roomName === this.roomName)
-      this.poss = this.resource.pos;
-    else if (this.cache("poss")) this.poss = this.cache("poss");
-    else this.poss = this.cache("poss", this.resource.pos);
+    this.poss = this.cache("poss") || this.resource.pos;
 
     if (resource instanceof Mineral) this.resourceType = resource.mineralType;
     this.parentCell = excavationCell;
@@ -74,7 +71,7 @@ export class ResourceCell extends Cell {
   }
   public set pos(value) {
     this.poss = value;
-    if (value.roomName !== this.roomName) this.cache("poss", value);
+    this.cache("poss", value);
   }
 
   public get ratePT() {
@@ -144,7 +141,7 @@ export class ResourceCell extends Cell {
           .findInRange(FIND_STRUCTURES, 5)
           .filter((s) => s.structureType === STRUCTURE_KEEPER_LAIR)
       ) as StructureKeeperLair | undefined;
-      if (!this.fleeLairTime) this.recalcLairFleeTime();
+      if (this.fleeLairTime === Infinity) this.recalcLairFleeTime();
     }
 
     const storagePos = this.parentCell.master

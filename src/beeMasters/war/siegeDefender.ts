@@ -108,10 +108,10 @@ export class SiegeMaster extends Master {
     }
   }
 
-  newBee(bee: Bee) {
+  newBee = (bee: Bee) => {
     super.newBee(bee);
     this.patience[bee.ref] = 0;
-  }
+  };
 
   beeAct(
     bee: Bee,

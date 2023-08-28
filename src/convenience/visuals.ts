@@ -519,7 +519,7 @@ export class Visuals {
 
       ans.push([
         "build",
-        sumCost === 0 ? "" : ` ${sumCost}K/${hive.structuresConst.length}`,
+        sumCost === 0 ? "" : ` ${sumCost}/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder),
       ]);
     }

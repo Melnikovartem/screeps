@@ -39,8 +39,6 @@ for (const boost of ["boost", "normal"] as B[])
     for (const repair of ["repair", "build"] as R[])
       bakeBuildingCoefs(boost, mode, repair);
 
-console.log(JSON.stringify(BUILDING_COEFS));
-
 @profile
 export class BuilderMaster extends Master {
   private patternPerBee = 0;

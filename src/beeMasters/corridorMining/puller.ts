@@ -11,19 +11,19 @@ import { PowerMaster } from "./power";
 
 @profile
 export class PullerMaster extends Master {
-  movePriority = 4 as const;
-  maxRoadTime: number = 0;
-  depositSites: DepositMaster[] = [];
-  powerSites: PowerMaster[] = [];
-  freePullers: Bee[] = [];
+  public movePriority = 4 as const;
+  private maxRoadTime: number = 0;
+  public depositSites: DepositMaster[] = [];
+  public powerSites: PowerMaster[] = [];
+  private freePullers: Bee[] = [];
 
-  sitesON: (DepositMaster | PowerMaster)[] = [];
+  public sitesON: (DepositMaster | PowerMaster)[] = [];
 
-  constructor(hive: Hive) {
+  public constructor(hive: Hive) {
     super(hive, prefix.puller + hive.roomName);
   }
 
-  removeFreePuller(roadTime: number) {
+  public removeFreePuller(roadTime: number) {
     const puller = _.filter(
       this.freePullers,
       (b) => b.ticksToLive >= roadTime + b.pos.getRoomRangeTo(this.hive) * 50
@@ -35,7 +35,7 @@ export class PullerMaster extends Master {
     return false;
   }
 
-  update() {
+  public update() {
     super.update();
 
     const workingPowerSites = this.powerSites.filter((p) => p.operational);
@@ -142,14 +142,14 @@ export class PullerMaster extends Master {
       });
   }
 
-  checkBees(): boolean {
+  public checkBees = (): boolean => {
     return (
       super.checkBees(true, CREEP_LIFE_TIME - this.maxRoadTime) &&
       !!this.maxRoadTime
     );
-  }
+  };
 
-  get minersToMove() {
+  private get minersToMove() {
     let minersToMove: Bee[] = [];
     _.forEach(this.depositSites, (m) => {
       const targets = _.filter(
@@ -169,7 +169,7 @@ export class PullerMaster extends Master {
     return minersToMove;
   }
 
-  run() {
+  public run() {
     const pulled: string[] = [];
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
