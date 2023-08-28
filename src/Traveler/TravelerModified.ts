@@ -150,7 +150,7 @@ export class Traveler {
       const ret = this.findTravelPath(creep.pos, destination, options);
 
       const cpuUsed = Game.cpu.getUsed() - cpu;
-      state.cpu = _.round(cpuUsed + state.cpu);
+      state.cpu = _.round(cpuUsed + state.cpu); // accumulated cpu over ticks
       if (state.cpu > REPORT_CPU_THRESHOLD && TRAVELER_MESSAGE) {
         // see note at end of file for more info on this
         console.log(

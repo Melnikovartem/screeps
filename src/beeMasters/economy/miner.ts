@@ -105,6 +105,7 @@ export class MinerMaster extends Master {
       (this.pos.roomName !== this.roomName || this.cell.link)
     )
       return undefined;
+    if (!(this.pos.roomName in Game.rooms)) return undefined;
 
     let construction = this.cell.resource.pos
       .findInRange(FIND_CONSTRUCTION_SITES, 3)

@@ -411,6 +411,7 @@ export class CustomConsole {
     });
   }
 
+  /** markes all dropped resources in a room for pickup */
   public pickup(hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
     const hive = Apiary.hives[hiveName];
@@ -420,6 +421,24 @@ export class CustomConsole {
       return `ERROR: NO STORAGE CELL @ ${this.formatRoom(hiveName)}`;
     const ans = hive.cells.storage.pickupResources();
     return `SCHEDULED ${ans} UNITS`;
+  }
+
+  /** nice output of last crashes */
+  public reportCrashes() {
+    let reportLog = "LAST CRASHES:\n\n";
+    for (const [ref, crash] of Object.entries(
+      Memory.reportEvents.crashes || {}
+    )) {
+      reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${
+        crash.message
+      }${crash.stack ? "\nSTACK\n" + crash.stack : ""}\n\n`;
+    }
+    return reportLog;
+  }
+
+  /** cleans rashes report log */
+  public cleanCrashes() {
+    Memory.reportEvents.crashes = {};
   }
 
   /** recalcs time for resources

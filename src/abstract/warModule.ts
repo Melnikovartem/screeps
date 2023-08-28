@@ -1,18 +1,20 @@
+import { invert } from "lodash";
+
 import { SquadWarCrimesMaster } from "../beeMasters/squads/squadWarcrimes";
 import { setups } from "../bees/creepSetups";
 import { profile } from "../profiler/decorator";
-import { Traveler } from "../Traveler/TravelerModified";
+import type { Enemy } from "../spiderSense/intelligence";
 import { enemyTypes, prefix, roomStates } from "../static/enums";
 import { getEnterances, makeId, towerCoef } from "../static/utils";
-import type { Enemy } from "../spiderSense/intelligence";
+import { Traveler } from "../Traveler/TravelerModified";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 
 @profile
 export class WarcrimesModule {
-  squads: { [id: string]: SquadWarCrimesMaster } = {};
+  public squads: { [id: string]: SquadWarCrimesMaster } = {};
 
-  init() {
+  public init() {
     _.forEach(Memory.cache.war.squadsInfo, (info) => {
       if (!Apiary.hives[info.hive]) {
         if (info.spawned === info.setup.length)
@@ -23,7 +25,7 @@ export class WarcrimesModule {
     });
   }
 
-  getOpt(
+  private getOpt(
     obstacles: { pos: RoomPosition; perc: number }[],
     existingPoints: { x: number; y: number }[]
   ): TravelToOptions {
@@ -65,11 +67,11 @@ export class WarcrimesModule {
     };
   }
 
-  get siedge() {
+  public get siedge() {
     return Memory.cache.war.siedgeInfo;
   }
 
-  updateRoom(roomName: string, attackTime?: number | null) {
+  public updateRoom(roomName: string, attackTime?: number | null) {
     if (!this.siedge[roomName])
       this.siedge[roomName] = {
         lastUpdated: -500,
@@ -96,13 +98,12 @@ export class WarcrimesModule {
       }
       siedge.lastUpdated = Game.time;
       const roomInfo = Apiary.intel.getInfo(roomName);
-      const invaderRaid = roomInfo.roomState === roomStates.SKfrontier;
+      const invaderRaid =
+        roomInfo.roomState === roomStates.SKfrontier ||
+        roomInfo.roomState === roomStates.SKcentral;
       if (
         roomInfo.roomState !== roomStates.ownedByEnemy &&
-        !(
-          roomInfo.dangerlvlmax >= 8 &&
-          roomInfo.roomState === roomStates.SKfrontier
-        )
+        (!invaderRaid || roomInfo.dangerlvlmax < 8)
       ) {
         if (invaderRaid) {
           const containers = room
@@ -479,7 +480,7 @@ export class WarcrimesModule {
     }
   }
 
-  dfs(
+  private dfs(
     pos: RoomPosition,
     matrix: { [id: number]: { [id: number]: number } },
     depth: number = 1,
@@ -510,7 +511,7 @@ export class WarcrimesModule {
     }
   }
 
-  getEasyEnemy(pos: RoomPosition): Enemy["object"] | undefined {
+  public getEasyEnemy(pos: RoomPosition): Enemy["object"] | undefined {
     const roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
     const enemiesPos = roomInfo.enemies
       .filter((e) => {
@@ -553,7 +554,7 @@ export class WarcrimesModule {
     return enemy;
   }
 
-  getEnemy(
+  public getEnemy(
     pos: RoomPosition,
     dismantle: boolean = false
   ): Enemy["object"] | undefined {
@@ -631,7 +632,7 @@ export class WarcrimesModule {
     return enemy;
   }
 
-  getLegionFormation(dmg: number) {
+  private getLegionFormation(dmg: number) {
     const formationBee = setups.knight.copy();
     const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
     const healNeeded =
@@ -655,7 +656,7 @@ export class WarcrimesModule {
     return formation;
   }
 
-  getDuoFormation(dmg: number) {
+  private getDuoFormation(dmg: number) {
     const formationBee = setups.knight.copy();
     const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
     const healNeeded =
@@ -677,7 +678,7 @@ export class WarcrimesModule {
     return formation;
   }
 
-  getBrigadeFormation(dmg: number) {
+  private getBrigadeFormation(dmg: number) {
     const formationHealerBee = setups.healer.copy();
 
     const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
@@ -713,7 +714,7 @@ export class WarcrimesModule {
     return formation;
   }
 
-  sendSquad(roomName: string) {
+  private sendSquad(roomName: string) {
     const siedge = this.siedge[roomName];
     if (!siedge || siedge.lastUpdated + CREEP_LIFE_TIME < Game.time) return;
     const hives = _.filter(
@@ -766,7 +767,7 @@ export class WarcrimesModule {
         { x: 0, y: 1 },
         { x: 1, y: 1 },
       ].slice(0, formation.length),
-      poss_ent: [
+      possEnt: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
         { x: -1, y: 0 },
@@ -780,7 +781,7 @@ export class WarcrimesModule {
       CREEP_LIFE_TIME;
   }
 
-  update() {
+  public update() {
     for (const roomName in this.siedge) {
       this.updateRoom(roomName);
       const attackTime =

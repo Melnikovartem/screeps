@@ -137,10 +137,10 @@ declare global {
             rotation: TOP | BOTTOM | LEFT | RIGHT;
             setup: CreepSetup[];
             poss: Pos[];
-            poss_ent: Pos[];
+            possEnt: Pos[];
             hive: string;
             ref: string;
-            targetid: string;
+            targetid: Id<_HasId> | "";
             lastUpdatedTarget: number;
             ent: string;
           };

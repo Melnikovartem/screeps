@@ -491,6 +491,23 @@ export class Intel {
             type: enemyTypes.static,
           });
       });
+
+    if (!roomInfo.enemies.length && structures && structures.length) {
+      // start removing old ramparts / walls
+      for (const s of structures)
+        if (
+          (s.structureType === STRUCTURE_RAMPART && !s.my) ||
+          (s.structureType === STRUCTURE_WALL &&
+            roomInfo.roomState === roomStates.ownedByEnemy)
+        ) {
+          roomInfo.enemies.push({
+            object: s,
+            dangerlvl: 0,
+            type: enemyTypes.static,
+          });
+          break;
+        }
+    }
     this.updateDangerLvl(roomInfo);
   }
 

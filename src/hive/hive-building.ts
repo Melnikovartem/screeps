@@ -314,7 +314,13 @@ export function updateStructures(this: Hive) {
         checkAdd(["hightech"], true);
       checkAnnex();
       // @todo up the limit on walls
-      if (!this.structuresConst.length) {
+      // always a little smth smth on annex repair
+      if (
+        !this.buildingCosts.hive.build &&
+        !this.buildingCosts.hive.repair &&
+        !this.buildingCosts.annex.build &&
+        this.buildingCosts.annex.repair < 1_000
+      ) {
         this.wallTargetHealth = nextWallTargetHealth(this);
         checkAdd(["defense"], true);
       }

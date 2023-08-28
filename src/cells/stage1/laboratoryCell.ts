@@ -1,3 +1,9 @@
+import {
+  ApiaryReturnCode,
+  ERR_COOLDOWN,
+  ERR_INVALID_ACTION,
+} from "static/constants";
+
 import type { Bee } from "../../bees/bee";
 import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
@@ -80,17 +86,19 @@ export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = {
 
 export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
   {
-    [BOOST_MINERAL.attack[2]]: 50000,
-    [BOOST_MINERAL.harvest[2]]: 4000,
-    [BOOST_MINERAL.capacity[2]]: 4000,
-    [BOOST_MINERAL.rangedAttack[2]]: 50000,
-    [BOOST_MINERAL.build[2]]: 50000,
-    [BOOST_MINERAL.heal[2]]: 50000,
-    [BOOST_MINERAL.dismantle[2]]: 50000,
-    [BOOST_MINERAL.fatigue[2]]: 50000,
-    [BOOST_MINERAL.upgrade[2]]: 50000,
-    [BOOST_MINERAL.damage[2]]: 50000,
+    [BOOST_MINERAL.attack[2]]: 40000,
+    [BOOST_MINERAL.harvest[2]]: 3000,
+    [BOOST_MINERAL.capacity[2]]: 3000,
+    [BOOST_MINERAL.rangedAttack[2]]: 40000,
+    [BOOST_MINERAL.build[2]]: 40000,
+    [BOOST_MINERAL.heal[2]]: 40000,
+    [BOOST_MINERAL.dismantle[2]]: 40000,
+    [BOOST_MINERAL.fatigue[2]]: 40000,
+    [BOOST_MINERAL.upgrade[2]]: 40000,
+    [BOOST_MINERAL.damage[2]]: 40000,
   };
+
+const PRODUCE_PER_BATCH = 2500;
 
 export const BASE_MINERALS: ResourceConstant[] = [
   "H",
@@ -248,60 +256,64 @@ export class LaboratoryCell extends Cell {
     return amount;
   }
 
+  private getNewTarget(ignorePrevTarget: boolean): ApiaryReturnCode {
+    if (this.synthesizeTarget && !ignorePrevTarget) return OK;
+    if (Game.time < this.targetCooldown) return ERR_COOLDOWN;
+    const mode = this.hive.shouldDo("lab");
+    if (!mode) return ERR_INVALID_ACTION;
+    let targets: { res: ReactionConstant; amount: number }[] = [];
+    for (const r in this.hive.resState) {
+      const res = r as ReactionConstant; // catually ResourceConstant
+      const toCreate = -this.hive.resState[res]!;
+      if (toCreate > 0 && res in REACTION_MAP)
+        targets.push({ res, amount: toCreate });
+    }
+    const canCreate = targets.filter(
+      (t) => this.getCreateQue(t.res, t.amount)[0].length
+    );
+    if (canCreate.length) targets = canCreate;
+    if (!targets.length) {
+      if (mode === 1) return ERR_NOT_FOUND;
+      // not eve gonna try to create mid ones (not profitable)
+      let usefulR: ReactionConstant[] = [];
+
+      for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
+        const compound: ReactionConstant = comp as ReactionConstant;
+        if (
+          USEFUL_MINERAL_STOCKPILE[compound]! -
+            (this.hive.resState[compound] || 0) >
+          0
+        )
+          usefulR.push(compound);
+      }
+      if (!usefulR.length) usefulR = Apiary.broker.profitableCompounds;
+      if (!usefulR.length) return ERR_NOT_FOUND;
+      targets = [
+        {
+          res: usefulR.reduce((prev, curr) =>
+            (Apiary.network.resState[curr] || 0) <
+            (Apiary.network.resState[prev] || 0)
+              ? curr
+              : prev
+          ),
+          amount: PRODUCE_PER_BATCH,
+        },
+      ];
+      // targets = [{ res: usefulM[Math.floor(Math.random() * usefulM.length)], amount: 2048 }];
+    }
+    this.patience = 0;
+    targets.sort((a, b) => b.amount - a.amount);
+    this.synthesizeTarget = targets[0];
+    this.synthesizeTarget.amount = Math.max(
+      Math.min(this.synthesizeTarget.amount, LAB_MINERAL_CAPACITY * 2),
+      LAB_MINERAL_CAPACITY / 3
+    );
+    return OK;
+  }
+
   private stepToTarget() {
     this.resTarget = {};
-    if (!this.synthesizeTarget) {
-      if (Game.time < this.targetCooldown) return;
-      const mode = this.hive.shouldDo("lab");
-      if (!mode) return;
-      let targets: { res: ReactionConstant; amount: number }[] = [];
-      for (const r in this.hive.resState) {
-        const res = r as ReactionConstant; // catually ResourceConstant
-        const toCreate = -this.hive.resState[res]!;
-        if (toCreate > 0 && res in REACTION_MAP)
-          targets.push({ res, amount: toCreate });
-      }
-      const canCreate = targets.filter(
-        (t) => this.getCreateQue(t.res, t.amount)[0].length
-      );
-      if (canCreate.length) targets = canCreate;
-      if (!targets.length) {
-        if (mode === 1) return;
-        // not eve gonna try to create mid ones (not profitable)
-        let usefulR: ReactionConstant[] = [];
-
-        for (const comp in USEFUL_MINERAL_STOCKPILE) {
-          const compound: ReactionConstant = comp as ReactionConstant;
-          if (
-            USEFUL_MINERAL_STOCKPILE[compound]! -
-              (this.hive.resState[compound] || 0) >
-            0
-          )
-            usefulR.push(compound);
-        }
-        if (!usefulR.length) usefulR = Apiary.broker.profitableCompounds;
-        if (!usefulR.length) return;
-        targets = [
-          {
-            res: usefulR.reduce((prev, curr) =>
-              (Apiary.network.resState[curr] || 0) <
-              (Apiary.network.resState[prev] || 0)
-                ? curr
-                : prev
-            ),
-            amount: 2500,
-          },
-        ];
-        // targets = [{ res: usefulM[Math.floor(Math.random() * usefulM.length)], amount: 2048 }];
-      }
-      this.patience = 0;
-      targets.sort((a, b) => b.amount - a.amount);
-      this.synthesizeTarget = targets[0];
-      this.synthesizeTarget.amount = Math.max(
-        Math.min(this.synthesizeTarget.amount, LAB_MINERAL_CAPACITY * 2),
-        LAB_MINERAL_CAPACITY / 3
-      );
-    }
+    if (this.getNewTarget(false) !== OK || !this.synthesizeTarget) return;
 
     const [createQue, ingredients] = this.getCreateQue(
       this.synthesizeTarget.res,
@@ -801,7 +813,7 @@ export class LaboratoryCell extends Cell {
   public run() {
     if (this.hive.shouldDo("unboost")) {
       const creepsToUnboost: Creep[] = [];
-      const time = Math.max(20, (this.prod && this.prod.cooldown * 2) || 0);
+      const time = Math.max(10000, (this.prod && this.prod.cooldown * 2) || 0);
       _.forEach(this.positions, (p) => {
         const creep = p
           .lookFor(LOOK_CREEPS)

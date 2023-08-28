@@ -568,6 +568,7 @@ export class FlagOrder {
                   hive.cells.storage &&
                   !this.ref.includes("manual")
                 ) {
+                  // if inside room move by storage system
                   let targets: (
                     | Tombstone
                     | Ruin
@@ -601,6 +602,7 @@ export class FlagOrder {
                   this.acted = false;
                   return;
                 }
+                // pickup it up
                 this.master = new PickupMaster(this);
                 const regex = /^\d*/.exec(this.ref);
                 if (regex && regex[0]) this.master.maxSpawns = +regex[0];

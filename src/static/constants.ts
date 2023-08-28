@@ -42,3 +42,8 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
 };
 
 export const WALLS_START = 10_000;
+
+export type ApiaryReturnCode = ScreepsReturnCode | -101 | -102;
+// all codes still in int8
+export const ERR_COOLDOWN = -101;
+export const ERR_INVALID_ACTION = -102;

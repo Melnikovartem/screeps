@@ -41,7 +41,7 @@ export class SquadWarCrimesMaster extends Master {
       hive: string;
       setup: CreepSetup[];
       poss: Pos[];
-      poss_ent: Pos[];
+      possEnt: Pos[];
       target: { x: number; y: number; roomName: string };
       ref: string;
       ent: string;
@@ -99,7 +99,7 @@ export class SquadWarCrimesMaster extends Master {
       this.pos.y <= 2 ||
       this.pos.y >= 48
     )
-      return this.info.poss_ent;
+      return this.info.possEnt;
     return this.info.poss;
   }
 
@@ -654,19 +654,36 @@ export class SquadWarCrimesMaster extends Master {
     let fatigue = 0;
     let padding = 1;
 
-    const safeMode =
-      Apiary.intel.getInfo(this.pos.roomName, Infinity).safeModeEndTime -
-      Game.time;
+    const targetPosRoomState = Apiary.intel.getInfo(
+      this.pos.roomName,
+      Infinity
+    );
+    let freeToChill =
+      this.pos.roomName === this.hive.roomName &&
+      !targetPosRoomState.enemies.length;
+
+    const ticksToEndSafeMode = targetPosRoomState.safeModeEndTime - Game.time;
+    const endOfRaid =
+      (roomInfo.roomState === roomStates.SKfrontier ||
+        roomInfo.roomState === roomStates.SKcentral) &&
+      !roomInfo.enemies.length;
+    if (endOfRaid) {
+      this.info.targetid = "";
+      this.pos = this.hive.rest;
+      freeToChill = true;
+    }
     // let siedge = this.parent.siedge[this.pos.roomName];
-    if (safeMode > bee.ticksToLive) {
+    if (ticksToEndSafeMode > bee.ticksToLive || freeToChill) {
       // || !siedge || siedge.towerDmgBreach * 0.3 > this.stats.max.heal
+      // no more enemies go chill / unboost
       enemy = undefined;
       const unboost =
-        bee.ticksToLive < 50 &&
+        // bee.ticksToLive < 50 && // unboost as soon as you can
         this.hive.cells.lab &&
         this.hive.cells.lab.getUnboostLab(bee.ticksToLive);
       moveTarget = (unboost && unboost.pos) || this.hive.rest;
-    } else if (safeMode > 0)
+    } else if (ticksToEndSafeMode > 0)
+      // wait for end of safe mode and rush in
       moveTarget = new RoomPosition(25, 25, this.info.ent);
 
     if (this.stuckSiedge > 10) {

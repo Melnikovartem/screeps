@@ -12,27 +12,27 @@ const ticksToSpawn = (x: StructureKeeperLair) =>
 @profile
 export class SKMaster extends HordeMaster {
   // failsafe
-  lairs: StructureKeeperLair[] = [];
+  private lairs: StructureKeeperLair[] = [];
 
-  constructor(order: FlagOrder) {
+  public constructor(order: FlagOrder) {
     super(order);
   }
 
-  init() {}
+  public init() {}
 
-  get targetBeeCount() {
+  public get targetBeeCount() {
     return 1;
   }
 
-  set targetBeeCount(_) {}
+  public set targetBeeCount(_) {}
 
-  get maxSpawns() {
+  public get maxSpawns() {
     return Infinity;
   }
 
-  set maxSpawns(_) {}
+  public set maxSpawns(_) {}
 
-  update() {
+  public update() {
     SwarmMaster.prototype.update.call(this);
 
     if (this.pos.roomName in Game.rooms) {
@@ -63,13 +63,12 @@ export class SKMaster extends HordeMaster {
 
     if (
       !this.hive.annexInDanger.includes(this.pos.roomName) &&
+      Apiary.intel.getInfo(this.pos.roomName, 100).dangerlvlmax < 8 &&
       this.checkBees(
         this.hive.state !== hiveStates.battle &&
           this.hive.state !== hiveStates.lowenergy,
         CREEP_LIFE_TIME - this.maxPath - 50
-      ) &&
-      Apiary.intel.getInfo(this.pos.roomName).dangerlvlmax < 8 &&
-      !this.hive.annexInDanger.includes(this.order.pos.roomName)
+      )
     )
       this.wish({
         setup: setups.defender.sk,
@@ -77,7 +76,7 @@ export class SKMaster extends HordeMaster {
       });
   }
 
-  useLair(bee: Bee, lair: StructureKeeperLair) {
+  private useLair(bee: Bee, lair: StructureKeeperLair) {
     if (ticksToSpawn(lair) < 1) {
       const enemy = lair.pos.findClosest(
         lair.pos
@@ -103,7 +102,7 @@ export class SKMaster extends HordeMaster {
     bee.target = lair.id;
   }
 
-  attackOrFleeSK(bee: Bee, target: Creep) {
+  private attackOrFleeSK(bee: Bee, target: Creep) {
     // worse version of beeAct
     bee.target = target.id;
     if (bee.pos.getRangeTo(target) <= 4 || bee.hits < bee.hitsMax)
@@ -118,7 +117,7 @@ export class SKMaster extends HordeMaster {
     return OK;
   }
 
-  run() {
+  public run() {
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
 
