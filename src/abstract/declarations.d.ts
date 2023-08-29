@@ -49,6 +49,7 @@ declare global {
       opt?: FindPathOpts
     ): Obj | null;
     readonly to_str: string;
+    readonly print: string;
     readonly enteranceToRoom: RoomPosition | null;
   }
 

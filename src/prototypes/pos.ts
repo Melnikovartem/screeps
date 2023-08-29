@@ -1,8 +1,14 @@
-import { Traveler } from "../Traveler/TravelerModified";
 import { getRoomCoorinates } from "../static/utils";
+import { Traveler } from "../Traveler/TravelerModified";
 
 Object.defineProperty(RoomPosition.prototype, "to_str", {
   get: function str() {
+    return this.roomName + "_" + this.x + "_" + this.y;
+  },
+});
+
+Object.defineProperty(RoomPosition.prototype, "print", {
+  get: function str(this: RoomPosition) {
     return this.roomName + "_" + this.x + "_" + this.y;
   },
 });

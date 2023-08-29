@@ -6,6 +6,20 @@ import { profile } from "../profiler/decorator";
 import { TRAVELER_MESSAGE, VISUALS_TRAVELER } from "../settings";
 import { roomStates } from "../static/enums";
 
+// this might be higher than you wish, setting it lower is a great way to diagnose creep behavior issues. When creeps
+// need to repath to often or they aren't finding valid paths, it can sometimes point to problems elsewhere in your code
+const REPORT_CPU_THRESHOLD = 1000;
+
+export const DEFAULT_MAXOPS = 20000;
+export const DEFAULT_STUCK_VALUE = 3;
+export const STATE_PREV_X = 0;
+export const STATE_PREV_Y = 1;
+export const STATE_STUCK = 2;
+export const STATE_CPU = 3;
+export const STATE_DEST_X = 4;
+export const STATE_DEST_Y = 5;
+export const STATE_DEST_ROOMNAME = 6;
+
 @profile
 export class Traveler {
   private static structureMatrixCache: { [roomName: string]: CostMatrix } = {};
@@ -157,8 +171,8 @@ export class Traveler {
           `TRAVELER: heavy cpu use: ${
             (Apiary.bees[creep.name] && Apiary.bees[creep.name].print) ||
             creep.name
-          }, cpu: ${state.cpu} origin: ${creep.pos.to_str}, dest: ${
-            destination.to_str
+          }, cpu: ${state.cpu} origin: ${creep.pos.print}, dest: ${
+            destination.print
           }`
         );
       }
@@ -412,7 +426,9 @@ export class Traveler {
           console.log(
             `TRAVELER: path failed without findroute, trying with options.useFindRoute = true`
           );
-          console.log(`from: ${origin}, destination: ${destination}`);
+          console.log(
+            `from: ${origin.print}, destination: ${destination.print}`
+          );
           options.useFindRoute = true;
           ret = this.findTravelPath(origin, destination, options);
           console.log(
@@ -770,20 +786,6 @@ export class Traveler {
     return stuck;
   }
 }
-
-// this might be higher than you wish, setting it lower is a great way to diagnose creep behavior issues. When creeps
-// need to repath to often or they aren't finding valid paths, it can sometimes point to problems elsewhere in your code
-const REPORT_CPU_THRESHOLD = 1000;
-
-export const DEFAULT_MAXOPS = 20000;
-export const DEFAULT_STUCK_VALUE = 3;
-export const STATE_PREV_X = 0;
-export const STATE_PREV_Y = 1;
-export const STATE_STUCK = 2;
-export const STATE_CPU = 3;
-export const STATE_DEST_X = 4;
-export const STATE_DEST_Y = 5;
-export const STATE_DEST_ROOMNAME = 6;
 
 // assigns a function to Creep.prototype: creep.travelTo(destination)
 Creep.prototype.travelTo = function (

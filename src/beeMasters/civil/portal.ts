@@ -1,7 +1,9 @@
 import { setups } from "bees/creepSetups";
+import { COMMODITIES_TO_SELL } from "cells/stage1/factoryCell";
 import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
+import { Traveler } from "Traveler/TravelerModified";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
@@ -36,9 +38,13 @@ export class PortalMaster extends SwarmMaster {
       this.setup = setups.hauler.copy();
       const parsed = /transfer_(.*)/.exec(this.order.ref);
       if (parsed) this.res = parsed[1] as ResourceConstant;
-      if (this.res && this.res.length > 1) {
-        this.setup.fixed = [TOUGH];
+      if (this.res && this.res in COMMODITIES_TO_SELL) {
+        this.setup.fixed = [TOUGH, HEAL];
         this.setup.moveMax = "best";
+        this.boosts = [
+          { type: "damage", lvl: 2 },
+          { type: "heal", lvl: 2 },
+        ];
       }
     } else {
       this.setup = setups.puppet;
@@ -84,6 +90,11 @@ export class PortalMaster extends SwarmMaster {
     }
 
     if (shouldSpawn && this.checkBees()) {
+      if (this.res) {
+        // check exit if cargo
+        if (!Apiary.intel.getInfo(this.pos.roomName).safePlace) return;
+      }
+
       this.wish({
         setup: this.setup,
         priority: this.priority,
@@ -112,6 +123,7 @@ export class PortalMaster extends SwarmMaster {
           if (portal) pos = portal.pos;
         }
         bee.goTo(pos);
+        if (bee.getActiveBodyParts(HEAL) > 0) bee.heal(bee);
         this.checkFlee(bee, undefined, undefined, false, 200);
       }
     });
