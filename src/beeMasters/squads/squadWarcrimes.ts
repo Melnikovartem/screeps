@@ -53,8 +53,7 @@ export class SquadWarCrimesMaster extends Master {
       Memory.cache.war.squadsInfo[info.ref] = {
         seidgeStuck: 0,
         rotation: TOP,
-        center:
-          this.hive.state >= hiveStates.battle ? this.hive.pos : this.hive.rest,
+        center: this.hive.isBattle ? this.hive.pos : this.hive.rest,
         spawned: 0,
         targetid: "",
         lastUpdatedTarget: -1,

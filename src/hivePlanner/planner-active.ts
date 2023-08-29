@@ -42,7 +42,11 @@ export function toActive(
         y: number;
         roomName?: string;
       };
-      if (poss && (!poss.roomName || poss?.roomName === roomName))
+      if (
+        poss &&
+        ((!poss.roomName && roomName === hiveName) ||
+          poss?.roomName === roomName)
+      )
         this.activePlanning[roomName].cellsCache[cellType] = { poss };
     }
 }

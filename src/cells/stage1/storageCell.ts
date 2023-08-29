@@ -1,8 +1,9 @@
-import { ManagerMaster } from "../../beeMasters/economy/manager";
-import { TransferRequest } from "../../bees/transferRequest";
-import type { Hive, ResTarget } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix } from "../../static/enums";
+import { ManagerMaster } from "beeMasters/economy/manager";
+import { TransferRequest } from "bees/transferRequest";
+import type { Hive, ResTarget } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { prefix } from "static/enums";
+
 import { Cell } from "../_Cell";
 
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
@@ -175,7 +176,7 @@ export class StorageCell extends Cell {
       )
         this.requestToStorage(
           [this.link],
-          this.hive.state >= hiveStates.battle ? 1 : 4,
+          this.hive.isBattle ? 1 : 4,
           RESOURCE_ENERGY
         );
     } else if (this.linkState.lastUpdated + 5 <= Game.time)

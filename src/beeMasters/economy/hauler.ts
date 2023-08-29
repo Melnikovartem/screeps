@@ -319,7 +319,7 @@ export class HaulerMaster extends Master {
           }
 
         case beeStates.chill:
-          bee.goRest(this.cell.pos, { offRoad: true });
+          this.recycleBee(bee, { offRoad: true, ...this.hive.opt });
           break;
       }
       if (this.checkFlee(bee) && bee.targetPosition && bee.hits < bee.hitsMax) {

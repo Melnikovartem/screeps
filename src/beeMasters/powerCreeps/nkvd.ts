@@ -185,11 +185,11 @@ export class NKVDMaster extends PowerMaster {
             andNextup((targets as StorageCell).terminal!);
           break;
         case PWR_FORTIFY:
-          if (this.hive.state >= hiveStates.battle)
+          if (this.hive.isBattle)
             _.forEach(defenseWalls(this.roomName), (s) => andNextup(s, 0));
           break;
         case PWR_OPERATE_TOWER:
-          if (this.hive.state >= hiveStates.battle)
+          if (this.hive.isBattle)
             _.forEach((targets as DefenseCell).towers, (s) => andNextup(s, 5));
           break;
         case PWR_OPERATE_CONTROLLER:

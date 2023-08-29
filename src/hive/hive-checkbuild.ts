@@ -98,7 +98,28 @@ export function checkBuildings(
           (s) => s.structureType === sType
         )[0] as ConstructionSite<BuildableStructureConstant> | undefined;
 
-        if (!constructionSite) {
+        if (constructionSite) {
+          ++constructions;
+          buildProjectList.push({
+            pos,
+            sType,
+            targetHits: 0,
+            energyCost:
+              constructionSite.progressTotal - constructionSite.progress,
+            type: "construction",
+          });
+          if (isDefense) {
+            let heal = getCase(constructionSite).heal;
+            if (sType in specials) heal = specials[sType]!;
+            buildProjectList.push({
+              pos,
+              sType,
+              targetHits: heal,
+              energyCost: Math.ceil(heal / 100),
+              type: "repair",
+            });
+          }
+        } else {
           // anything on this pos
           const place = _.filter(
             pos.lookFor(LOOK_STRUCTURES),
@@ -124,27 +145,6 @@ export function checkBuildings(
           )
             // demolish whatever was there
             place.pos.createFlag("remove_" + makeId(4), COLOR_GREY, COLOR_RED);
-        } else if (constructionSite) {
-          ++constructions;
-          buildProjectList.push({
-            pos,
-            sType,
-            targetHits: 0,
-            energyCost:
-              constructionSite.progressTotal - constructionSite.progress,
-            type: "construction",
-          });
-          if (isDefense) {
-            let heal = getCase(constructionSite).heal;
-            if (sType in specials) heal = specials[sType]!;
-            buildProjectList.push({
-              pos,
-              sType,
-              targetHits: heal,
-              energyCost: Math.ceil(heal / 100),
-              type: "repair",
-            });
-          }
         }
       }
     }
@@ -152,9 +152,8 @@ export function checkBuildings(
     for (const bProject of buildProjectList)
       if (bProject.type === "repair") energyCost.repair += bProject.energyCost;
       else energyCost.build += bProject.energyCost;
-
     if (!constructions)
-      for (let i = 0; i < toadd.length && cc.amount < placed; ++i) {
+      for (let i = 0; i < toadd.length && placed < cc.amount; ++i) {
         let createAns;
         if (nukeAlert && toadd[i].findInRange(FIND_NUKES, 2).length) continue;
         if (constructions >= CONSTRUCTIONS_PER_TYPE) break;

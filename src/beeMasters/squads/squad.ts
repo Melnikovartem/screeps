@@ -38,8 +38,9 @@ export abstract class SquadMaster extends SwarmMaster {
       !("y" in extraPos) ||
       !("roomName" in extraPos)
     )
-      this.order.flag.memory.extraPos =
-        this.hive.state >= hiveStates.battle ? this.hive.pos : this.hive.rest;
+      this.order.flag.memory.extraPos = this.hive.isBattle
+        ? this.hive.pos
+        : this.hive.rest;
     if (![TOP, BOTTOM, LEFT, RIGHT].includes(this.formationRotation))
       this.formationRotation = TOP;
   }

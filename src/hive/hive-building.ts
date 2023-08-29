@@ -26,21 +26,21 @@ const BUILDABLE_PRIORITY = {
 
 export const HIVE_WALLS_UP = {
   [100_000]: 0,
-  [10_000_000]: HIVE_ENERGY * 0.5,
-  [25_000_000]: HIVE_ENERGY,
-  [50_000_000]: HIVE_ENERGY * 1.5,
+  [5_000_000]: HIVE_ENERGY * 0.25, // +100_000 // prob can this easy
+  [25_000_000]: HIVE_ENERGY, // +200_000 // ok spot to be
+  [50_000_000]: HIVE_ENERGY * 1.5, // +300_000 // kinda overkill
   // [WALL_HITS_MAX]: HIVE_ENERGY * 2, // big project
 };
 // KEEP BUFFING WALLS IF BATTLE
 const WALLS_BATTLE_BUFFER = 10_000_000;
-/** AVG case boosted ~100k energy
+/** AVG case boosted ~75k energy
  *
- * worst case unboosted 1m energy */
-const WALLS_STEP = 1_000_000;
+ * worst case unboosted 200k energy */
+const WALLS_STEP = 200_000;
 
 export function wallMap(hive: Hive) {
   let targetHealth = hive.wallTargetHealth;
-  if (hive.state === hiveStates.battle) targetHealth += WALLS_BATTLE_BUFFER;
+  if (hive.isBattle) targetHealth += WALLS_BATTLE_BUFFER;
   return {
     [STRUCTURE_WALL]: Math.min(targetHealth, WALL_HITS_MAX),
     [STRUCTURE_RAMPART]: Math.min(
@@ -347,11 +347,11 @@ function nextWallTargetHealth(hive: Hive) {
       +wallHealth
     );
     console.log(
-      `WALLS UP @ ${hive.print}: \t ${minHealth}/${currTarget} \t -> ${minHealth}/${newWallTargetHealth}`
+      `WALLS UP @ ${hive.print}: \t ${minHealth}/${currTarget} -> \t  ${minHealth}/${newWallTargetHealth}`
     );
     return newWallTargetHealth;
   }
   return currTarget < WALLS_STEP
     ? WALLS_STEP
-    : Math.ceil(currTarget / WALLS_STEP) * WALLS_STEP;
+    : Math.floor(currTarget / WALLS_STEP) * WALLS_STEP;
 }

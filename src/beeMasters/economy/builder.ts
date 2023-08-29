@@ -59,7 +59,7 @@ export class BuilderMaster extends Master {
 
   private recalculateTargetBee() {
     const realBattle =
-      this.hive.state === hiveStates.battle &&
+      this.hive.isBattle &&
       (this.hive.buildingCosts.hive.repair > 5_000 ||
         Apiary.intel.getInfo(this.roomName, 20).dangerlvlmax >= 6);
     const otherEmergency =
@@ -150,7 +150,7 @@ export class BuilderMaster extends Master {
       };
       order.setup.patternLimit = this.patternPerBee;
       // add a little secret spice if battle
-      if (emergency || this.hive.state === hiveStates.battle)
+      if (emergency || this.hive.isBattle)
         order.setup.fixed = [WORK, WORK, CARRY];
       this.wish(order);
     }
@@ -341,9 +341,7 @@ export class BuilderMaster extends Master {
 
             if (
               !target ||
-              (Game.time % 25 === 0 &&
-                (this.hive.state === hiveStates.battle ||
-                  this.hive.state === hiveStates.nukealert)) ||
+              (Game.time % 25 === 0 && this.hive.isBattle) ||
               bee.pos.enteranceToRoom
             )
               target = this.hive.getBuildTarget(bee) || target;
@@ -410,9 +408,7 @@ export class BuilderMaster extends Master {
             // bee.repairRoadOnMove(ans);
           } else
             bee.goRest(
-              this.hive.state >= hiveStates.battle
-                ? this.hive.pos
-                : this.hive.rest,
+              this.hive.isBattle ? this.hive.pos : this.hive.rest,
               opt
             );
           break;

@@ -69,7 +69,7 @@ export class ManagerMaster extends Master {
         !transfer.isValid() ||
         (nonRefillNeeded && transfer.priority === 0) ||
         (transfer.priority === 2 &&
-          this.hive.state >= hiveStates.battle &&
+          this.hive.isBattle &&
           transfer.toAmount < 20)
       ) {
         bee.target = undefined;

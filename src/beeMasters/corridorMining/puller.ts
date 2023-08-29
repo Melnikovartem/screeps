@@ -109,10 +109,7 @@ export class PullerMaster extends Master {
       }
     });
 
-    if (
-      this.hive.resState[RESOURCE_ENERGY] < 0 ||
-      this.hive.state >= hiveStates.battle
-    )
+    if (this.hive.resState[RESOURCE_ENERGY] < 0 || this.hive.isBattle)
       this.sitesON = this.sitesON.filter(
         (m) => m instanceof PowerMaster && m.beesAmount
       );

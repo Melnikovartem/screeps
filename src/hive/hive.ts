@@ -270,6 +270,10 @@ export class Hive {
     } else if (this.state === st) this.state = hiveStates.economy;
   }
 
+  public get isBattle() {
+    return this.state >= hiveStates.battle;
+  }
+
   public addAnex = addAnex;
   private updateDangerAnnex = updateDangerAnnex;
   private markResources = markResources;
@@ -365,8 +369,7 @@ export class Hive {
     if (
       Game.time % UPDATE_STRUCTURES_NORMAL === 0 ||
       (!this.structuresConst.length && this.sumCost) ||
-      ((this.state === hiveStates.battle ||
-        this.state === hiveStates.nukealert) &&
+      (this.state >= hiveStates.battle &&
         Game.time % UPDATE_STRUCTURES_BATTLE === 0)
     )
       this.shouldRecalc = Math.max(this.shouldRecalc, 1) as 1 | 2 | 3;

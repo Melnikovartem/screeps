@@ -19,7 +19,7 @@ export class PickupMaster extends SwarmMaster {
 
   public update() {
     super.update();
-    if (this.checkBees(this.hive.state !== hiveStates.battle)) {
+    if (this.checkBees(this.hive.state <= hiveStates.battle)) {
       let setup = setups.pickup;
       if (this.pos.getRoomRangeTo(this.hive) <= 1) {
         setup = setup.copy();

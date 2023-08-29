@@ -40,9 +40,9 @@ export const DEPOSIT_COMMODITIES: DepositConstant[] = [
   "silicon",
   "mist",
 ];
-// demand driven production
-// so we only keep up to 5k of commodity
-const STOCKPILE_COMMODITIES_TO_SELL = 5000;
+// demand driven production with a little overflow prot
+// so we only keep up to 1k each of pricy commodity
+const STOCKPILE_HIGH_COMMODITIES = 200;
 export const COMMODITIES_TO_SELL = (
   DEPOSIT_COMMODITIES as (FactoryResourceConstant | DepositConstant)[]
 ).concat([
@@ -161,12 +161,17 @@ export class FactoryCell extends Cell {
         if (recipe.level || COMMODITIES_TO_SELL.includes(res)) {
           // if it is from any of the chains of production
 
-          const networkResAmount = Apiary.network.resState[res] || 0;
-          // no need to overproduce the amount of stuff
-          if (networkResAmount >= STOCKPILE_COMMODITIES_TO_SELL) continue;
+          const networkResAmount =
+            (recipe.level && Apiary.network.resState[res]) || 0;
+          // no need to overproduce the amount of stuff (demand driven production)
+          if (networkResAmount >= STOCKPILE_HIGH_COMMODITIES) continue;
 
           if (networkResAmount) num = 40;
-          if (!COMMON_COMMODITIES.includes(res)) {
+          if (COMMON_COMMODITIES.includes(res)) {
+            const amountInUse =
+              Apiary.network.resState[res as CommodityConstant] || 0;
+            if (amountInUse >= COMMON_COMMODITIES_STOCKPILE) num = 0;
+          } else {
             const componentAmount: number[] = [];
             _.forEach(recipe.components, (amountNeeded, comp) => {
               const component = comp as CommodityConstant;
@@ -181,10 +186,6 @@ export class FactoryCell extends Cell {
               }
             });
             num = Math.min(num, ...componentAmount);
-          } else {
-            const amountInUse =
-              Apiary.network.resState[res as CommodityConstant] || 0;
-            if (amountInUse >= COMMON_COMMODITIES_STOCKPILE) num = 0;
           }
         } else if (res === RESOURCE_ENERGY) {
           // energy below 100000

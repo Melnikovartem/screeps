@@ -306,7 +306,7 @@ export class BootstrapMaster extends Master {
               )
                 source = undefined;
             } else if (
-              this.hive.state === hiveStates.battle &&
+              this.hive.isBattle &&
               source &&
               !("structureType" in source)
             )
@@ -540,7 +540,7 @@ export class BootstrapMaster extends Master {
             !target &&
             ((this.count.repair + this.count.build) * CARRY_CAPACITY * 2 <
               this.hive.sumCost ||
-              this.hive.state >= hiveStates.battle)
+              this.hive.isBattle)
           ) {
             target = this.hive.getBuildTarget(bee);
             if (

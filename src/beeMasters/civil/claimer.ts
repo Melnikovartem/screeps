@@ -19,7 +19,7 @@ export class ClaimerMaster extends SwarmMaster {
 
     if (
       this.checkBees(
-        this.hive.state !== hiveStates.battle,
+        this.hive.state <= hiveStates.battle,
         CREEP_CLAIM_LIFE_TIME
       )
     ) {

@@ -71,7 +71,7 @@ export class DefenseCell extends Cell {
             this.hive.resTarget[RESOURCE_ENERGY] / 8)
     );
 
-    const isWar = this.hive.state >= hiveStates.battle;
+    const isWar = this.hive.isBattle;
     if (!isWar || Game.time % 10 === 0) {
       const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
       this.hive.stateChange(
@@ -81,7 +81,7 @@ export class DefenseCell extends Cell {
             this.hive.controller.safeMode < 600)
       );
 
-      if (this.hive.state >= hiveStates.battle) {
+      if (this.hive.isBattle) {
         if (Game.time % 5 === 0) {
           this.isBreached = false;
           _.some(roomInfo.enemies, (enemy) => {
@@ -102,7 +102,7 @@ export class DefenseCell extends Cell {
 
     const storageCell = this.hive.cells.storage;
     if (storageCell) {
-      if (this.hive.state >= hiveStates.battle)
+      if (this.hive.isBattle)
         storageCell.requestFromStorage(
           _.filter(
             this.towers,
