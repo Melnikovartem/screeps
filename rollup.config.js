@@ -35,6 +35,6 @@ export default {
     execute([
       "source ./screeps-backup/env/bin/activate; python3 screeps-backup/screepsbackup/backup.py backups",
     ]),
-    // screeps({ config: cfg, dryRun: cfg == null }),
+    screeps({ config: cfg, dryRun: cfg == null }),
   ],
 };
