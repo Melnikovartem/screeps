@@ -345,19 +345,6 @@ export class Hive {
         );
     }
 
-    // check if hive storage is full
-    if (
-      this.cells.storage &&
-      this.cells.storage.storage.store.getFreeCapacity() <=
-        FULL_CAPACITY * 0.5 &&
-      !Apiary.orders[prefix.clear + this.roomName]
-    )
-      this.pos.createFlag(
-        prefix.clear + this.roomName,
-        COLOR_ORANGE,
-        COLOR_RED
-      );
-
     _.forEach(this.cells, (cell: Cell) => {
       Apiary.wrap(() => cell.update(), cell.ref, "update");
     });

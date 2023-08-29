@@ -118,7 +118,7 @@ export class ManagerMaster extends Master {
     });
 
     if (this.checkBees(true)) {
-      const setup = setups.queen;
+      const setup = setups.managerQueen.copy();
       const lvl = this.hive.controller.level;
       // some cool function i came up with. It works utill lvl 8 though
 

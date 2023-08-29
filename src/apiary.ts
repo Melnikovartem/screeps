@@ -31,6 +31,7 @@ export class _Apiary {
   public warcrimes: WarcrimesModule;
   public logger: Logger | undefined;
   public visuals: Visuals = new Visuals();
+  public maxFactoryLvl = 0;
 
   public bees: { [id: string]: ProtoBee<Creep | PowerCreep> };
   public hives: { [id: string]: Hive };

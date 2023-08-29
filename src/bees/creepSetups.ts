@@ -159,18 +159,18 @@ export const setups = {
     },
     25
   ),
-  queen: new CreepSetup(
-    setupsNames.queen,
+  managerQueen: new CreepSetup(
+    setupsNames.managerQueen,
     {
       pattern: [CARRY],
     },
     50 / 3
   ),
-  manager: new CreepSetup(
-    setupsNames.manager,
+  fastRefill: new CreepSetup(
+    setupsNames.fastRefill,
     {
       pattern: [CARRY],
-      patternLimit: 6,
+      patternLimit: 4,
     },
     1
   ),

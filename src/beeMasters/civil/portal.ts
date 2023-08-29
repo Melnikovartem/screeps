@@ -8,6 +8,8 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 // this will become outdated soon
 
+const HAUL_PER_TRIP = 1_000;
+
 @profile
 export class PortalMaster extends SwarmMaster {
   public setup = setups.puppet;
@@ -42,7 +44,7 @@ export class PortalMaster extends SwarmMaster {
         this.res as DepositConstant
       );
       if (this.res && this.commodities) {
-        this.setup.fixed = [TOUGH, HEAL];
+        this.setup.fixed = [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH];
         this.setup.moveMax = "best";
         /* this.boosts = [
           { type: "damage", lvl: 2 },
@@ -50,7 +52,7 @@ export class PortalMaster extends SwarmMaster {
         ]; */
         if (this.hive.resTarget[this.res] === undefined)
           this.hive.resTarget[this.res] = 0;
-        this.hive.resTarget[this.res] += 1_000;
+        this.hive.resTarget[this.res] += HAUL_PER_TRIP;
       } else this.setup.fixed = [TOUGH];
     } else {
       this.setup = setups.puppet;
@@ -78,8 +80,8 @@ export class PortalMaster extends SwarmMaster {
       const inStore = this.hive.cells.storage.storage.store.getUsedCapacity(
         this.res
       );
-      shouldSpawn = inStore > 2048;
-      this.targetBeeCount = inStore > 4096 ? 2 : 1;
+      shouldSpawn = inStore >= HAUL_PER_TRIP;
+      this.targetBeeCount = inStore >= HAUL_PER_TRIP * 3 ? 2 : 1;
     }
 
     if (this.pos.roomName in Game.rooms) {

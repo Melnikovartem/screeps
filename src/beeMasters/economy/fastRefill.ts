@@ -33,7 +33,7 @@ export class FastRefillMaster extends Master {
       return;
     }
     if (this.checkBees(true)) {
-      const setup = setups.manager.copy();
+      const setup = setups.fastRefill.copy();
       this.wish({
         setup,
         priority: 1,

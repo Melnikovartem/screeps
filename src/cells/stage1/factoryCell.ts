@@ -108,6 +108,8 @@ export class FactoryCell extends Cell {
   public constructor(hive: Hive, factory: StructureFactory) {
     super(hive, prefix.factoryCell);
     this.factory = factory;
+    if (factory.level && factory.level > Apiary.maxFactoryLvl)
+      Apiary.maxFactoryLvl = factory.level;
   }
 
   private get sCell() {
@@ -169,8 +171,11 @@ export class FactoryCell extends Cell {
         // if it is from any of the chains of production
 
         const networkResAmount =
-          (recipe.level && Apiary.network.resState[res]) || 0;
+          (recipe.level !== Apiary.maxFactoryLvl &&
+            Apiary.network.resState[res]) ||
+          0;
         // no need to overproduce the amount of stuff (demand driven production)
+        // but produce max of the latest lvl
         /* console.log(
           this.print,
           res,

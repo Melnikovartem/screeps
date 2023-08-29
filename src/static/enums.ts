@@ -110,10 +110,10 @@ export enum setupsNames {
   scout = "Butterfly" /** Scout setup name */,
   // Base
   bootstrap = "Larva" /** Bootstrap setup name */,
-  manager = "Carpenter bee" /** Manager setup name */,
+  fastRefill = "Carpenter bee" /** Manager setup name */,
+  managerQueen = "Queen bee" /** Queen setup name */,
   upgrader = "Honey bee" /** Upgrader setup name */,
   builder = "Mason bee" /** Builder setup name */,
-  queen = "Queen bee" /** Queen setup name */,
   hauler = "Bumblebee" /** Hauler setup name */,
   depositHauler = "Garden bumblebee" /** Deposit hauler setup name */,
   // Mining

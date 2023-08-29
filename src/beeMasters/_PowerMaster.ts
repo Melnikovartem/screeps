@@ -32,9 +32,9 @@ export const HIVE_OPS = 5000;
 
 @profile
 export abstract class PowerMaster extends Master {
-  readonly powerCreep: PowerBee;
-  readonly cell: PowerCell;
-  usedPower = false;
+  public readonly powerCreep: PowerBee;
+  protected readonly cell: PowerCell;
+  protected usedPower = false;
 
   constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell.hive, powerCreep.ref);

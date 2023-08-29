@@ -22,7 +22,7 @@ export class ClearMaster extends SwarmMaster {
   public update() {
     super.update();
     if (this.checkBees()) {
-      const setup = setups.queen.copy();
+      const setup = setups.managerQueen.copy();
       setup.patternLimit = 4;
       setup.moveMax = 1;
       this.wish({
@@ -32,6 +32,7 @@ export class ClearMaster extends SwarmMaster {
     }
   }
 
+  // @todo add functions to manager queen
   public run() {
     const storage = this.hive.cells.storage!.storage;
     _.forEach(this.activeBees, (bee) => {
