@@ -210,16 +210,14 @@ export class Hive {
         this.puller = new PullerMaster(this);
 
         // hihgh lvl minerals to protect my hive
-        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL * 2;
-
-        if (this.mode.saveCpu)
-          this.resTarget[BOOST_MINERAL.harvest[0]] = HIVE_MINERAL;
-
+        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
         // protect expansions with boost creeps + more attack
         this.resTarget[BOOST_MINERAL.heal[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.rangedAttack[2]] = HIVE_MINERAL;
         this.resTarget[BOOST_MINERAL.damage[2]] = HIVE_MINERAL * 2;
         this.resTarget[BOOST_MINERAL.fatigue[2]] = HIVE_MINERAL * 2;
+        /* if (this.mode.saveCpu) used to boost creeps
+          this.resTarget[BOOST_MINERAL.harvest[0]] = HIVE_MINERAL; */
 
         // save energy for a bad day
         this.resTarget[RESOURCE_BATTERY] = 5000;

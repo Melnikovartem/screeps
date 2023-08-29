@@ -1,3 +1,5 @@
+import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
+
 import {
   BASE_MINERALS,
   USEFUL_MINERAL_STOCKPILE,
@@ -19,6 +21,7 @@ const SELL_STEP_MAX = 8192;
 /** sell for profit if more than this */
 const SELL_THRESHOLD = {
   compound: 4096,
+  commodities: 1,
 };
 
 @profile
@@ -33,6 +36,7 @@ export class Network {
     };
   } = {}; // from -> to
   public resState: ResTarget = {};
+  private commoditiesToSell: CommodityConstant[] = [];
 
   public init() {
     this.nodes = _.filter(
@@ -45,6 +49,12 @@ export class Network {
         lastUpdated: Game.time,
       };
     });
+    for (const [comm, commInfo] of Object.entries(COMMODITIES))
+      if (
+        commInfo.level === Apiary.maxFactoryLvl &&
+        !COMMON_COMMODITIES.includes(comm as CommodityConstant)
+      )
+        this.commoditiesToSell.push(comm as CommodityConstant);
   }
 
   public update() {
@@ -153,12 +163,12 @@ export class Network {
       if (!hive.cells.storage || !hive.cells.storage.terminal) continue;
       const terminal = hive.cells.storage.terminal;
       let usedTerminal = false;
-
+      let ans: "no money" | "long" | "short" = "no money";
       for (const r in hive.shortages) {
         const res = r as ResourceConstant;
         if (this.canHiveBuy(hive, res)) {
           const amount = hive.shortages[res]!;
-          const ans = Apiary.broker.buyIn(
+          ans = Apiary.broker.buyIn(
             terminal,
             res,
             amount + PADDING_RESOURCE,
@@ -197,8 +207,8 @@ export class Network {
             amount = Math.floor(amount * (1 - energyCost));
 
           if (amount > 0) {
-            const ans = terminal.send(aid.res, amount, aid.to);
-            if (ans === OK) {
+            const ansTerminal = terminal.send(aid.res, amount, aid.to);
+            if (ansTerminal === OK) {
               if (Apiary.logger)
                 Apiary.logger.newTerminalTransfer(
                   terminal,
@@ -218,7 +228,7 @@ export class Network {
         const balanceShortage =
           hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res);
         if (balanceShortage > 0 && this.canHiveBuy(hive, res)) {
-          const ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
+          ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
           if (ans === "short") {
             usedTerminal = true;
             break;
@@ -228,18 +238,18 @@ export class Network {
       if (usedTerminal) continue;
 
       const stStore = hive.cells.storage.storage.store;
-      let ans;
       switch (hive.mode.sellOff) {
-        case 2:
+        case 2: {
           // sell for profit
-          for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
-            // sell some compound that created for profit
-            // could also check Apiary.broker.profitableCompounds if want to sell only! those ones
-            const compound = comp as keyof typeof USEFUL_MINERAL_STOCKPILE;
+
+          // sell some compound that are over stockpile
+          for (const comp of Apiary.broker.profitableCompounds) {
+            // could also check Object.keys(USEFUL_MINERAL_STOCKPILE) if want to sell only! those ones
+            const compound = comp;
             const toSell =
               (hive.resState[compound] || 0) -
               (USEFUL_MINERAL_STOCKPILE[compound] || Infinity); // failsafe
-            if (toSell > SELL_THRESHOLD.compound)
+            if (toSell >= SELL_THRESHOLD.compound)
               ans = Apiary.broker.sellOff(
                 terminal,
                 compound,
@@ -248,7 +258,23 @@ export class Network {
               );
           }
           if (ans === "short") continue;
-        // fall through
+
+          // sell best mineral i can produce
+          // @todo check all minerals and find most profitable
+          const commoditiesToSellHive = _.filter(
+            this.commoditiesToSell,
+            (c) => hive.resState[c] || 0 >= SELL_THRESHOLD.commodities
+          );
+          for (const commodity of commoditiesToSellHive) {
+            ans = Apiary.broker.sellOff(
+              terminal,
+              commodity,
+              Math.min(SELL_STEP_MAX, hive.resState[commodity] || 0)
+            );
+            if (ans === "short") continue;
+          }
+          // fall through
+        }
         case 1: {
           // sell for free space
           // thought about storing best resources somewhere in the Apiary but rly too much trouble

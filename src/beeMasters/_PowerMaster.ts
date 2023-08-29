@@ -36,7 +36,7 @@ export abstract class PowerMaster extends Master {
   protected readonly cell: PowerCell;
   protected usedPower = false;
 
-  constructor(cell: PowerCell, powerCreep: PowerBee) {
+  public constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell.hive, powerCreep.ref);
     this.cell = cell;
     this.powerCreep = powerCreep;
@@ -44,14 +44,14 @@ export abstract class PowerMaster extends Master {
       this.hive.resTarget[RESOURCE_OPS] = HIVE_OPS;
   }
 
-  update() {
+  public update() {
     super.update();
     if (!this.powerCreep.shard)
       this.powerCreep.creep.spawn(this.cell.powerSpawn);
     if (this.powerCreep.creep.spawnCooldownTime) this.delete();
   }
 
-  run() {
+  public run() {
     if (!this.usedPower) {
       const ans = this.powerCreep.usePower(PWR_GENERATE_OPS);
       if (ans === OK && Apiary.logger) {
@@ -69,7 +69,7 @@ export abstract class PowerMaster extends Master {
     this.checkFlee(this.powerCreep);
   }
 
-  delete() {
+  public delete() {
     super.delete();
     delete Apiary.bees[this.powerCreep.ref];
   }

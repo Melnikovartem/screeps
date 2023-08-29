@@ -25,6 +25,8 @@ const MAX_DEVIATION_PRICE = 10;
 const ORDER_OFFSET = 0.001;
 const MARKET_FEE = 0.05;
 
+const COEF_GOOD_PRICE_COMMODITY = 0.97;
+
 // @MARKETDANGER
 const SKIP_SMALL_ORDER = {
   volume: 500,
@@ -450,6 +452,17 @@ export class Broker {
     const priceToSellLong = info.bestPriceBuy || info.avgPrice;
     const priceToSellInstant = info.bestPriceSell || info.avgPrice;
 
+    // just wait for npc order
+    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
+    if (
+      commodity &&
+      info.avgPrice * COEF_GOOD_PRICE_COMMODITY > priceToSellInstant
+    ) {
+      // no good prices for commodities so we wait
+      // could estimate better, but oh well
+      return "long";
+    }
+
     const loss =
       (priceToSellInstant +
         this.energyPrice * 0.7 -
@@ -457,9 +470,6 @@ export class Broker {
       amount;
     const okToShortSell =
       loss < okLoss || creditsToUse < MARKET_SETTINGS.reserveCredits;
-
-    // just wait for npc order
-    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
     if (!okToShortSell && commodity && hurry === "GoodPrice") return "long";
 
     if (okToShortSell || commodity) {

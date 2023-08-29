@@ -84,18 +84,19 @@ export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = {
   damage: TOUGH,
 };
 
+// in comments + x_000 are from HIVE_MINERAL in hive.resTarget
 export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
   {
-    [BOOST_MINERAL.attack[2]]: 40000,
-    [BOOST_MINERAL.harvest[2]]: 3000,
-    [BOOST_MINERAL.capacity[2]]: 3000,
-    [BOOST_MINERAL.rangedAttack[2]]: 40000,
-    [BOOST_MINERAL.build[2]]: 40000,
-    [BOOST_MINERAL.heal[2]]: 40000,
-    [BOOST_MINERAL.dismantle[2]]: 40000,
-    [BOOST_MINERAL.fatigue[2]]: 40000,
-    [BOOST_MINERAL.upgrade[2]]: 40000,
-    [BOOST_MINERAL.damage[2]]: 40000,
+    [BOOST_MINERAL.attack[2]]: 25_000, // + 5_000
+    [BOOST_MINERAL.harvest[2]]: 2_500,
+    [BOOST_MINERAL.capacity[2]]: 2_500,
+    [BOOST_MINERAL.rangedAttack[2]]: 25_000, // + 5_000
+    [BOOST_MINERAL.build[2]]: 20_000, // + 20_000
+    [BOOST_MINERAL.heal[2]]: 35_000, // + 5_000
+    [BOOST_MINERAL.dismantle[2]]: 20_000,
+    [BOOST_MINERAL.fatigue[2]]: 20_000, // + 10_000
+    [BOOST_MINERAL.upgrade[2]]: 20_000,
+    [BOOST_MINERAL.damage[2]]: 20_000, // + 10_000
   };
 
 const PRODUCE_PER_BATCH = 2500;
@@ -281,7 +282,7 @@ export class LaboratoryCell extends Cell {
       let usefulR: ReactionConstant[] = [];
 
       for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
-        const compound: ReactionConstant = comp as ReactionConstant;
+        const compound = comp as keyof typeof USEFUL_MINERAL_STOCKPILE;
         if (
           USEFUL_MINERAL_STOCKPILE[compound]! -
             (this.hive.resState[compound] || 0) >

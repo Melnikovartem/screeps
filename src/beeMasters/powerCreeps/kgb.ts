@@ -7,9 +7,11 @@ import { PowerMaster } from "../_PowerMaster";
 
 @profile
 export class KGBMaster extends PowerMaster {
-  update() {
+  public update() {
     super.update();
   }
 
-  run() {}
+  public run() {
+    super.run();
+  }
 }
