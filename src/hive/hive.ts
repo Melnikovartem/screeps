@@ -181,9 +181,7 @@ export class Hive {
     this.phase = 0;
     if (!this.controller) return;
 
-    const activeStorage =
-      (this.room.storage && this.room.storage.isActive()) ||
-      (this.room.terminal && this.room.terminal.isActive());
+    const activeStorage = this.room.storage && this.room.storage.isActive();
     if (activeStorage) {
       // no extra checks about sCell, so careful
       this.phase = 1;

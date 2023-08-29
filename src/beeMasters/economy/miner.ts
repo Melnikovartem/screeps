@@ -1,13 +1,15 @@
-import type { Bee } from "../../bees/bee";
-import { setups } from "../../bees/creepSetups";
-import { FREE_CAPACITY } from "../../bugSmuggling/terminalNetwork";
-import type { ResourceCell } from "../../cells/base/resourceCell";
-import { profile } from "../../profiler/decorator";
-import { beeStates } from "../../static/enums";
-import { findOptimalResource } from "../../static/utils";
+import type { Bee } from "bees/bee";
+import { setups } from "bees/creepSetups";
+import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
+import type { ResourceCell } from "cells/base/resourceCell";
+import { profile } from "profiler/decorator";
+import { beeStates } from "static/enums";
+import { findOptimalResource } from "static/utils";
+
 import { Master } from "../_Master";
 
-const STOP_MINERAL_PROD = FREE_CAPACITY * 0.25;
+/** stop production if backlog too big  */
+const STOP_MINERAL_PROD = FULL_CAPACITY;
 
 @profile
 export class MinerMaster extends Master {

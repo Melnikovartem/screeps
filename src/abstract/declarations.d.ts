@@ -11,6 +11,8 @@ declare global {
   let Apiary: _Apiary;
   let A: CustomConsole;
 
+  type NonUndefined<T> = T extends undefined ? never : T;
+
   type ProtoPos = RoomPosition | { pos: RoomPosition };
   type resourceEventLog = {
     [key in ResourceConstant]?: {
@@ -57,7 +59,7 @@ declare global {
     refMaster: string;
     born: number;
     state: beeStates;
-    target?: string;
+    target?: Id<_HasId>;
 
     // for TRAVELER
     _trav?: any;

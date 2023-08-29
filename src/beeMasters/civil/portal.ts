@@ -3,7 +3,6 @@ import { COMMODITIES_TO_SELL } from "cells/stage1/factoryCell";
 import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
-import { Traveler } from "Traveler/TravelerModified";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
@@ -15,6 +14,7 @@ export class PortalMaster extends SwarmMaster {
   public priority: 2 | 9 = 9;
   public res: ResourceConstant | undefined;
   public cycle: number = CREEP_LIFE_TIME;
+  private commodities = false;
 
   public constructor(order: FlagOrder) {
     super(order);
@@ -38,14 +38,20 @@ export class PortalMaster extends SwarmMaster {
       this.setup = setups.hauler.copy();
       const parsed = /transfer_(.*)/.exec(this.order.ref);
       if (parsed) this.res = parsed[1] as ResourceConstant;
-      if (this.res && this.res in COMMODITIES_TO_SELL) {
+      this.commodities = COMMODITIES_TO_SELL.includes(
+        this.res as DepositConstant
+      );
+      if (this.res && this.commodities) {
         this.setup.fixed = [TOUGH, HEAL];
         this.setup.moveMax = "best";
-        this.boosts = [
+        /* this.boosts = [
           { type: "damage", lvl: 2 },
           { type: "heal", lvl: 2 },
-        ];
-      }
+        ]; */
+        if (this.hive.resTarget[this.res] === undefined)
+          this.hive.resTarget[this.res] = 0;
+        this.hive.resTarget[this.res] += 1_000;
+      } else this.setup.fixed = [TOUGH];
     } else {
       this.setup = setups.puppet;
       this.priority = 2; // well it IS cheap -_-
@@ -62,7 +68,7 @@ export class PortalMaster extends SwarmMaster {
         return;
       }
       if (
-        !this.ref.includes("keep") &&
+        this.ref.includes("nokeep") &&
         !this.hive.cells.storage.getUsedCapacity(this.res)
       ) {
         this.order.delete();
@@ -123,7 +129,9 @@ export class PortalMaster extends SwarmMaster {
           if (portal) pos = portal.pos;
         }
         bee.goTo(pos);
-        if (bee.getActiveBodyParts(HEAL) > 0) bee.heal(bee);
+        const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
+        if (roomInfo.dangerlvlmax >= 2 && bee.getActiveBodyParts(HEAL) > 0)
+          bee.heal(bee);
         this.checkFlee(bee, undefined, undefined, false, 200);
       }
     });

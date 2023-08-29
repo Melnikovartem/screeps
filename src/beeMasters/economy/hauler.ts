@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
+import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import { BASE_MINERALS } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -9,18 +9,20 @@ import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 
+const STOP_HAULING_RESOURCES = FULL_CAPACITY;
+
 @profile
 export class HaulerMaster extends Master {
   public cell: ExcavationCell;
   public targetMap: { [id: string]: string | undefined } = {};
   public roadUpkeepCost: { [id: string]: number } = {};
   public accumRoadTime = 0;
-  public dropOff: StructureStorage | StructureTerminal; // | StructureContainer | StructureLink;
+  public dropOff: StructureStorage; // | StructureContainer | StructureLink | StructureTerminal
   public minRoadTime: number = 0;
 
   public constructor(
     excavationCell: ExcavationCell,
-    storage: StructureStorage | StructureTerminal
+    storage: StructureStorage
   ) {
     super(excavationCell.hive, excavationCell.ref);
     this.cell = excavationCell;
@@ -106,9 +108,11 @@ export class HaulerMaster extends Master {
       } else return;
     }
 
+    // dont haul resources if we are already full
+    // failsafe
     if (
       this.dropOff.store.getFreeCapacity() <=
-      Math.min(this.dropOff.store.getCapacity() * 0.01, FREE_CAPACITY * 0.1)
+      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
     )
       return;
 

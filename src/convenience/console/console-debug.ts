@@ -132,7 +132,9 @@ CustomConsole.prototype.printBees = function (
     Apiary.bees,
     (b) =>
       !ref ||
-      ("refMaster" in b.creep.memory && b.creep.memory.refMaster.includes(ref))
+      ("refMaster" in b.creep.memory &&
+        b.creep.memory.refMaster.includes(ref)) ||
+      b.ref.includes(ref)
   );
   let obj;
   if (byHives) {

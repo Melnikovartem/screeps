@@ -108,22 +108,19 @@ export class UpgraderMaster extends Master {
     }
   }
 
-  public run() {
-    let suckerTarget:
-      | StructureStorage
-      | StructureLink
-      | StructureTerminal
-      | undefined;
-    if (
-      this.cell.link &&
-      this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME / 2
-    ) {
+  protected get suckerTarget(): StructureStorage | StructureLink | undefined {
+    if (this.cell.link) {
       if (this.cell.link.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-        suckerTarget = this.cell.link;
+        return this.cell.link;
     } else if (
       this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000
     )
-      suckerTarget = this.cell.sCell.storage;
+      return this.cell.sCell.storage;
+    return undefined;
+  }
+
+  public run() {
+    const suckerTarget = this.suckerTarget;
 
     this.preRunBoost();
 

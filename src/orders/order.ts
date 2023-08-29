@@ -664,7 +664,6 @@ export class FlagOrder {
               this.hive.cells.storage &&
               this.hive.cells.storage.terminal
             ) {
-              const priceFix = Apiary.broker.avgPrice(res);
               const fast = this.ref.includes("fast");
               if ("all" === parsed[2]) {
                 if (mode === "sell") {
@@ -701,16 +700,13 @@ export class FlagOrder {
                 } else this.delete();
                 return;
               }
+              const [low, high, avg] = Apiary.broker.priceSpread(res);
               if (RESOURCES_ALL.includes(res)) {
                 if (Game.time === Apiary.createTime)
                   console.log(
-                    "@",
-                    this.hive.print,
-                    res,
-                    mode,
-                    "for",
-                    priceFix,
-                    fast ? "fast" : " "
+                    `@${this.hive.print} : ${mode} ${res} ${
+                      fast ? "fast" : " "
+                    } : ${low || avg} - ${high || avg}`
                   );
                 if (fast || Game.time % 10 === 0) {
                   switch (mode) {
@@ -735,8 +731,7 @@ export class FlagOrder {
                       // @MARKETDANGER
                       if (
                         (this.hive.resState[res] || 0) <= 0 ||
-                        (Apiary.broker.avgPrice(res) <= 50 &&
-                          (this.hive.resState[res] || 0) < 1000)
+                        (avg <= 50 && (this.hive.resState[res] || 0) < 1000)
                       ) {
                         Apiary.broker.buyIn(
                           this.hive.cells.storage.terminal,
