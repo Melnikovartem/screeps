@@ -32,11 +32,12 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   depositMining: 0,
   depositRefining: 1,
   war: 1,
-  unboost: 0,
+  unboost: 1,
   saveCpu: 0,
   upgrade: 1,
   lab: 2,
-  buyIn: 2,
+  // @todo code smart buyIn (credits aval -> what can buy) and make 2 default
+  buyIn: 1,
   sellOff: 1,
   buildBoost: 2,
 };

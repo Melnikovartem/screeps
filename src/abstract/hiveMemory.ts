@@ -5,6 +5,7 @@ export interface HiveCache {
     powerRefining: 0 | 1;
     depositMining: 0 | 1;
     depositRefining: 0 | 1;
+    /** spawn creeps for attacks */
     war: 0 | 1;
     /** nothing / unboost / unboost */
     unboost: 0 | 1;
@@ -15,8 +16,8 @@ export interface HiveCache {
     lab: 0 | 1 | 2;
     /** nothing, minerals, minerals + energy + ops, anything */
     buyIn: 0 | 1 | 2 | 3;
-    /** drop / sellOff for balance, */
-    sellOff: 0 | 1;
+    /** drop / sellOff for balance / sellOff for profit (schemes) */
+    sellOff: 0 | 1 | 2;
     /** no boosting / only war / all cases (nukes, walls etc) / even when peaceful */
     buildBoost: 0 | 1 | 2 | 3;
   };
