@@ -4,7 +4,6 @@ import { hiveStates, prefix } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
 import { Cell } from "../_Cell";
-import type { StorageCell } from "./storageCell";
 import { HIVE_ENERGY } from "./storageCell";
 
 export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16);
@@ -41,6 +40,9 @@ export const DEPOSIT_COMMODITIES: DepositConstant[] = [
   "silicon",
   "mist",
 ];
+// demand driven production
+// so we only keep up to 5k of commodity
+const STOCKPILE_COMMODITIES_TO_SELL = 5000;
 export const COMMODITIES_TO_SELL = (
   DEPOSIT_COMMODITIES as (FactoryResourceConstant | DepositConstant)[]
 ).concat([
@@ -140,7 +142,7 @@ export class FactoryCell extends Cell {
     this.resTarget = {};
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       if (
-        !this.hive.shouldDo("depositRefining") ||
+        !this.hive.mode.depositRefining ||
         (!this.commodityTarget && Game.time % COOLDOWN_TARGET_FACTORY !== 8)
       )
         return;
@@ -157,7 +159,13 @@ export class FactoryCell extends Cell {
         if (recipe.level && recipe.level !== this.factory.level) continue;
         let num = 0;
         if (recipe.level || COMMODITIES_TO_SELL.includes(res)) {
-          num = 40;
+          // if it is from any of the chains of production
+
+          const networkResAmount = Apiary.network.resState[res] || 0;
+          // no need to overproduce the amount of stuff
+          if (networkResAmount >= STOCKPILE_COMMODITIES_TO_SELL) continue;
+
+          if (networkResAmount) num = 40;
           if (!COMMON_COMMODITIES.includes(res)) {
             const componentAmount: number[] = [];
             _.forEach(recipe.components, (amountNeeded, comp) => {

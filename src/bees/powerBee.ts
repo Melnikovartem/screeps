@@ -9,8 +9,6 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   public master: Master | undefined;
   public lifeTime: number;
 
-  public boosted = false;
-
   // for now it will be forever binded
   public constructor(creep: PowerCreep) {
     super(creep);

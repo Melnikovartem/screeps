@@ -7,7 +7,7 @@ import { ProtoBee } from "./protoBee";
 export class Bee extends ProtoBee<Creep> {
   public master: Master | undefined;
 
-  public boosted = false;
+  public boosted: boolean;
   public lifeTime: number;
 
   public workMax: number;

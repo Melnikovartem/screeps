@@ -48,7 +48,7 @@ export class PowerCell extends Cell {
     if (
       this.hive.state !== hiveStates.economy ||
       this.hive.resState[RESOURCE_ENERGY] < 0 ||
-      !this.hive.shouldDo("powerRefining")
+      !this.hive.mode.powerRefining
     )
       return;
 

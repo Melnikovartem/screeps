@@ -8,6 +8,7 @@ import {
   checkBees,
   deleteBee,
   newBee,
+  recycleBee,
   removeBee,
   wish,
 } from "./_Master-beeManage";
@@ -71,7 +72,7 @@ export abstract class Master {
 
   public _doUnboosting = false;
   public get doUnboosting() {
-    return !!this.hive.shouldDo("unboost") && this._doUnboosting;
+    return !!this.hive.mode.unboost && this._doUnboosting;
   }
   public set doUnboosting(value) {
     this._doUnboosting = value;
@@ -109,6 +110,9 @@ export abstract class Master {
 
   /** sends to boos any bees with beeState, then frees them with chill status */
   public preRunBoost = preRunBoost;
+
+  /** recycles bees when they are not needed (unboost + energy recycle) */
+  public recycleBee = recycleBee;
 
   // second stage of decision making like where do i need to move
   public abstract run(): void;

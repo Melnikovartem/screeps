@@ -663,6 +663,7 @@ export class SquadWarCrimesMaster extends Master {
       !targetPosRoomState.enemies.length;
 
     const ticksToEndSafeMode = targetPosRoomState.safeModeEndTime - Game.time;
+    // @todo wait untill all resources removed cause ppl steal :/
     const endOfRaid =
       (roomInfo.roomState === roomStates.SKfrontier ||
         roomInfo.roomState === roomStates.SKcentral) &&
@@ -675,13 +676,11 @@ export class SquadWarCrimesMaster extends Master {
     // let siedge = this.parent.siedge[this.pos.roomName];
     if (ticksToEndSafeMode > bee.ticksToLive || freeToChill) {
       // || !siedge || siedge.towerDmgBreach * 0.3 > this.stats.max.heal
-      // no more enemies go chill / unboost
+      // no more enemies go uboost / reCycle
       enemy = undefined;
-      const unboost =
-        // bee.ticksToLive < 50 && // unboost as soon as you can
-        this.hive.cells.lab &&
-        this.hive.cells.lab.getUnboostLab(bee.ticksToLive);
-      moveTarget = (unboost && unboost.pos) || this.hive.rest;
+      _.forEach(this.bees, (b) => this.recycleBee(b));
+      this.formationCenter = bee.pos;
+      return;
     } else if (ticksToEndSafeMode > 0)
       // wait for end of safe mode and rush in
       moveTarget = new RoomPosition(25, 25, this.info.ent);
@@ -893,6 +892,7 @@ export class SquadWarCrimesMaster extends Master {
   }
 
   public run() {
+    this.preRunBoost();
     if (
       this.formationCenter.roomName === this.pos.roomName &&
       (!this.enemy || this.info.lastUpdatedTarget + 100 < Game.time)
@@ -940,17 +940,11 @@ export class SquadWarCrimesMaster extends Master {
       this.beeAct(bee, this.enemy as SquadEnemy, healingTargets, tempTargets)
     );
 
-    let readyToGo = this.spawned >= this.maxSpawns;
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting) {
-        if (
-          !this.hive.cells.lab ||
-          this.hive.cells.lab.askForBoost(bee, this.boosts) === OK
-        )
-          bee.state = beeStates.chill;
-        else readyToGo = false;
-      }
-    });
+    // if all spawned and boosted we go
+    const readyToGo =
+      this.spawned >= this.maxSpawns &&
+      !_.some(this.bees, (b) => b.state === beeStates.boosting);
+
     if (!readyToGo) {
       _.forEach(this.activeBees, (bee) => {
         if (bee.state !== beeStates.boosting) bee.goRest(this.formationCenter);

@@ -342,10 +342,14 @@ function nextWallTargetHealth(hive: Hive) {
   for (const [wallHealth, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
     if (currTarget > +wallHealth) continue;
     if (hive.resState.energy < energySurplus) break;
-    return Math.min(
+    const newWallTargetHealth = Math.min(
       Math.ceil(minHealth / WALLS_STEP + 1) * WALLS_STEP,
       +wallHealth
     );
+    console.log(
+      `WALLS UP @ ${hive.print}: \t ${minHealth}/${currTarget} \t -> ${minHealth}/${newWallTargetHealth}`
+    );
+    return newWallTargetHealth;
   }
   return currTarget < WALLS_STEP
     ? WALLS_STEP

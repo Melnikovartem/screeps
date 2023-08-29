@@ -434,25 +434,12 @@ export class HordeMaster extends SwarmMaster {
   }
 
   public run() {
-    _.forEach(this.bees, (bee) => {
-      if (
-        bee.state === beeStates.boosting &&
-        (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-      )
-        bee.state = beeStates.chill;
-    });
+    this.preRunBoost();
 
     _.forEach(this.activeBees, (bee) => {
       let enemy;
-      if (
-        bee.boosted &&
-        bee.ticksToLive < this.pos.getRoomRangeTo(this.hive) * 50 + 25 &&
-        this.hive.cells.lab &&
-        this.hive.cells.lab.getUnboostLab(bee.ticksToLive)
-      )
-        bee.state = beeStates.fflush;
       switch (bee.state) {
-        case beeStates.work:
+        case beeStates.work: {
           let pos = bee.pos;
           if (
             bee.pos.roomName !== this.pos.roomName &&
@@ -492,21 +479,23 @@ export class HordeMaster extends SwarmMaster {
               bee.heal(healingTarget);
             bee.goRest(this.pos);
           } else this.beeAct(bee, enemy);
-          break;
-        case beeStates.fflush:
-          if (!this.hive.cells.lab || !bee.boosted) {
-            bee.state = beeStates.work;
+          if (
+            enemy ||
+            !bee.boosted ||
+            bee.ticksToLive > this.pos.getRoomRangeTo(this.hive) * 50 + 15
+          )
             break;
-          }
-          const lab =
-            this.hive.cells.lab.getUnboostLab(bee.ticksToLive) ||
-            this.hive.cells.lab;
-          bee.goTo(lab.pos, { range: 1 });
+          // if no enemies we go unboost
+          bee.state = beeStates.fflush;
+          // fall through
+        }
+        case beeStates.fflush:
+          this.recycleBee(bee);
           if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
             bee.heal(bee);
           this.checkFlee(bee);
           break;
-        case beeStates.chill:
+        case beeStates.chill: {
           enemy = Apiary.intel.getEnemy(bee.pos, 20);
           let ans: number = OK;
           if (enemy) {
@@ -523,6 +512,7 @@ export class HordeMaster extends SwarmMaster {
             if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
               bee.heal(bee);
           }
+        }
       }
     });
   }

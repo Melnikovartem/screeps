@@ -6,7 +6,7 @@ import { Master } from "./_Master";
 export function preRunBoost(this: Master) {
   _.forEach(this.bees, (bee) => {
     if (bee.state === beeStates.boosting)
-      if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
+      if (!this.hive.cells.lab || this.hive.cells.lab.boostBee(bee) === OK)
         bee.state = beeStates.chill;
   });
 }

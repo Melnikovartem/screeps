@@ -1,3 +1,6 @@
+import { Bee } from "bees/bee";
+import { ApiaryReturnCode, ERR_INVALID_ACTION } from "static/constants";
+
 import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { beeStates, prefix, setupsNames } from "../../static/enums";
@@ -15,6 +18,8 @@ export class RespawnCell extends Cell {
   public fastRef: FastRefillCell | undefined;
 
   public priorityMap: { [id: string]: number } = {};
+
+  public recycleSpawn: Id<StructureSpawn> | "" = "";
 
   public constructor(hive: Hive) {
     super(hive, prefix.respawnCell + "_" + hive.room.name);
@@ -257,5 +262,51 @@ export class RespawnCell extends Cell {
           s.renewCreep(creep);
       });
     if (this.fastRef) this.fastRef.run();
+  }
+
+  /** move bee to lab and unboost it
+   *
+   * OK - bee should be dead
+   *
+   * ERR_NOT_FOUND - no spawn found
+   *
+   * ERR_NOT_IN_RANGE - going to spawn
+   *
+   * or unboostCreep return code
+   */
+  public recycleBee(bee: Bee, opt?: TravelToOptions): ApiaryReturnCode {
+    // get a spawn
+    const spawn =
+      this.spawns[this.recycleSpawn] || Object.values(this.spawns)[0];
+    if (!spawn) return ERR_NOT_FOUND;
+    if (!spawn.pos.isNearTo(bee)) {
+      // need just to get close
+      opt = { range: 1, ...opt };
+      bee.goTo(spawn, opt);
+      return ERR_NOT_IN_RANGE;
+    }
+    // recycle the creep
+    // tbh kinda not sure if worth at all
+    const ans = spawn.recycleCreep(bee.creep);
+    // if (ans === OK)
+    // @todo Apiary.logger
+    // not sure how to log this cause resources could as well just decay
+    // 0.9 to account for failed pickups
+    if (ans === OK)
+      Apiary.logger?.addResourceStat(
+        this.roomName,
+        "recycle",
+        ((_.sum(
+          bee.body,
+          (bp) =>
+            Math.min(BODYPART_COST[bp.type], 125) + // CREEP_PART_MAX_ENERGY was undefined in .ts
+            (bp.boost ? LAB_BOOST_ENERGY : 0)
+        ) *
+          bee.ticksToLive) /
+          CREEP_LIFE_TIME) *
+          0.9,
+        RESOURCE_ENERGY
+      );
+    return ans;
   }
 }

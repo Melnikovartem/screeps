@@ -26,7 +26,7 @@ export class UpgraderMaster extends Master {
   }
 
   private recalculateTargetBee() {
-    const upgradeMode = this.hive.shouldDo("upgrade"); // polen
+    const upgradeMode = this.hive.mode.upgrade; // polen
     if (
       upgradeMode === 0 ||
       (upgradeMode === 1 && this.cell.controller.level === 8) ||
@@ -131,25 +131,19 @@ export class UpgraderMaster extends Master {
       if (bee.state === beeStates.boosting) return;
 
       const carryPart = bee.getActiveBodyParts(CARRY);
-      let old =
+      const old =
         bee.ticksToLive <=
         (bee.boosted
           ? this.cell.roadTime * 3 + 5
           : carryPart === 1
           ? 2
           : this.cell.roadTime + 2);
-      if (
-        old &&
-        bee.ticksToLive > (carryPart === 1 ? 2 : this.cell.roadTime + 2)
-      )
-        old = !!(
-          this.hive.cells.lab &&
-          this.hive.cells.lab.getUnboostLab(bee.ticksToLive)
-        );
 
       if (old) {
-        if (bee.boosted && this.hive.cells.lab) bee.state = beeStates.fflush;
-        else bee.state = beeStates.chill;
+        // if any energy store it else go recycle yourself
+        if (bee.store.getUsedCapacity(RESOURCE_ENERGY))
+          bee.state = beeStates.chill; // now save energy normal way
+        else bee.state = beeStates.fflush; // recycle boosts
       } else if (
         (this.fastModePossible &&
           bee.store.getUsedCapacity(RESOURCE_ENERGY) < 50 &&
@@ -162,24 +156,27 @@ export class UpgraderMaster extends Master {
       }
       switch (bee.state) {
         case beeStates.fflush: {
-          if (!this.hive.cells.lab || !bee.boosted) {
-            bee.state = beeStates.chill;
+          this.recycleBee(bee, this.hive.opt);
+          break;
+        }
+        case beeStates.chill:
+          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+            bee.goRest(this.cell.pos, this.hive.opt);
             break;
           }
-          const lab =
-            this.hive.cells.lab.getUnboostLab(bee.ticksToLive) ||
-            this.hive.cells.lab;
-          bee.goTo(lab.pos, { range: 1 });
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY))
+          if (old) {
+            // old so to keep resources transfer to storage
             if (
               bee.transfer(
                 this.cell.link || this.cell.sCell.storage,
                 RESOURCE_ENERGY
-              ) === ERR_FULL
+              ) === ERR_FULL &&
+              bee.boosted
             )
               bee.drop(RESOURCE_ENERGY);
-          break;
-        }
+            break;
+          }
+        // fall through
         case beeStates.work:
           if (
             bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) &&
@@ -195,16 +192,6 @@ export class UpgraderMaster extends Master {
               ),
               RESOURCE_ENERGY
             );
-          break;
-        case beeStates.chill:
-          if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-            if (!old) bee.state = beeStates.work;
-            else
-              bee.transfer(
-                this.cell.link || this.cell.sCell.storage,
-                RESOURCE_ENERGY
-              );
-          else bee.goRest(this.cell.pos);
           break;
       }
       this.checkFlee(bee, this.hive);

@@ -721,7 +721,7 @@ export class WarcrimesModule {
       Apiary.hives,
       (h) =>
         h.phase === 2 &&
-        h.shouldDo("war") &&
+        h.mode.war &&
         h.resState[RESOURCE_ENERGY] >= 0 &&
         h.pos.getRoomRangeTo(roomName) <= 12
     );

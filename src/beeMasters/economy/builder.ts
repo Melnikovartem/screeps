@@ -69,7 +69,7 @@ export class BuilderMaster extends Master {
         500_000;
 
     this.boosts = undefined;
-    switch (this.hive.shouldDo("buildBoost")) {
+    switch (this.hive.mode.buildBoost) {
       case 1:
         if (!realBattle) this.boosts = this.builderBoosts;
         break;
@@ -178,7 +178,7 @@ export class BuilderMaster extends Master {
             ]);
           if (
             !this.hive.cells.lab ||
-            this.hive.cells.lab.askForBoost(bee, boosts) === OK
+            this.hive.cells.lab.boostBee(bee, boosts) === OK
           )
             bee.state = beeStates.chill;
         } else bee.state = beeStates.chill;
@@ -193,14 +193,7 @@ export class BuilderMaster extends Master {
       if (chill && !bee.store.getUsedCapacity(RESOURCE_ENERGY))
         bee.state = beeStates.chill;
       const old = bee.ticksToLive <= 25;
-      if (old)
-        if (
-          bee.boosted &&
-          this.hive.cells.lab &&
-          this.hive.cells.lab.getUnboostLab(bee.ticksToLive)
-        )
-          bee.state = beeStates.fflush;
-        else bee.state = beeStates.chill;
+      if (old) bee.state = beeStates.fflush;
 
       const hive = !bee.pos.enteranceToRoom && Apiary.hives[bee.pos.roomName];
       const opt = (hive || this.hive).opt;
@@ -249,14 +242,7 @@ export class BuilderMaster extends Master {
 
       switch (bee.state) {
         case beeStates.fflush: {
-          if (!this.hive.cells.lab || !bee.boosted) {
-            bee.state = beeStates.chill;
-            break;
-          }
-          const lab =
-            this.hive.cells.lab.getUnboostLab(bee.ticksToLive) ||
-            this.hive.cells.lab;
-          bee.goTo(lab.pos, { range: 1 });
+          this.recycleBee(bee);
           break;
         }
         case beeStates.refill: {

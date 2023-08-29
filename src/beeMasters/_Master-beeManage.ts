@@ -1,5 +1,6 @@
 import { Bee } from "bees/bee";
 import { SpawnOrder } from "hive/hive";
+import { ERR_INVALID_ACTION } from "static/constants";
 import { beeStates, hiveStates } from "static/enums";
 
 import { Master } from "./_Master";
@@ -102,4 +103,24 @@ export function wish(
     this.waitingForBees += 1;
   }
   // well he placed an order now just need to catch a creep after a spawn
+}
+
+/** get resources from creep before death
+ * @param endCycle there are nothing for bee to do so it may die. default is true
+ */
+export function recycleBee(
+  this: Master,
+  bee: Bee,
+  opt?: TravelToOptions,
+  endCycle: boolean = true
+) {
+  let ans;
+  if (bee.boosted) {
+    ans = this.hive.cells.lab && this.hive.cells.lab.unboostBee(bee, opt);
+    if (ans === OK || ans === ERR_NOT_IN_RANGE || ans === ERR_BUSY)
+      return ERR_BUSY;
+  }
+  if (!endCycle) ans = this.hive.cells.spawn.recycleBee(bee, opt);
+  if (ans === ERR_INVALID_ACTION || ans === ERR_NOT_FOUND) return OK;
+  return ERR_BUSY;
 }

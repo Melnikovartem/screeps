@@ -45,12 +45,7 @@ export class HelpTransferMaster extends SwarmMaster {
   }
 
   public run() {
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-          bee.state = beeStates.chill;
-    });
-
+    this.preRunBoost();
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
       if (this.checkFlee(bee, this.hive)) return;
@@ -62,13 +57,8 @@ export class HelpTransferMaster extends SwarmMaster {
         bee.fleeRoom(this.roomName, this.hive.opt);
         return;
       }
-      const lab =
-        bee.ticksToLive < 50 &&
-        bee.pos.roomName === this.roomName &&
-        bee.boosted &&
-        this.hive.cells.lab &&
-        this.hive.cells.lab.getUnboostLab(bee.ticksToLive);
-      if (lab) bee.goRest(lab.pos, this.hive.opt);
+      const old = bee.ticksToLive < 50 && bee.pos.roomName === this.roomName;
+      if (old) this.recycleBee(bee);
       else if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
         bee.goRest(this.hive.rest, this.hive.opt);
       else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {

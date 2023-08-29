@@ -107,10 +107,7 @@ export class ObserveCell extends Cell {
         this.roomsToCheck = [roomName];
         const index = Apiary.requestRoomSight.indexOf(roomName);
         if (index !== -1) Apiary.requestRoomSight.splice(index, 1);
-      } else if (
-        this.hive.shouldDo("powerMining") ||
-        this.hive.shouldDo("depositMining")
-      )
+      } else if (this.hive.mode.powerMining || this.hive.mode.depositMining)
         this.roomsToCheck = this.corridorRooms;
     }
 
@@ -119,8 +116,8 @@ export class ObserveCell extends Cell {
 
     const roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
     if (roomInfo.roomState === roomStates.corridor) {
-      if (this.hive.shouldDo("powerMining")) this.powerCheck(room);
-      if (this.hive.shouldDo("depositMining")) this.depositCheck(room);
+      if (this.hive.mode.powerMining) this.powerCheck(room);
+      if (this.hive.mode.depositMining) this.depositCheck(room);
     } else Apiary.intel.getInfo(this.prevRoom, 50);
   }
 

@@ -595,6 +595,7 @@ export abstract class SquadMaster extends SwarmMaster {
   }
 
   public run() {
+    this.preRunBoost();
     let enemy: Enemy["object"] | undefined;
     let roomInfo = Apiary.intel.getInfo(this.formationCenter.roomName, 10);
     if (roomInfo.roomState === roomStates.ownedByEnemy)
@@ -631,17 +632,11 @@ export abstract class SquadMaster extends SwarmMaster {
       this.beeAct(bee, enemy, healingTargets);
     });
 
-    let readyToGo = this.beesAmount >= this.maxSpawns;
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting) {
-        if (
-          !this.hive.cells.lab ||
-          this.hive.cells.lab.askForBoost(bee, this.boosts) === OK
-        )
-          bee.state = beeStates.chill;
-        else readyToGo = false;
-      }
-    });
+    // if all spawned and boosted we go
+    const readyToGo =
+      this.spawned >= this.maxSpawns &&
+      !_.some(this.bees, (b) => b.state === beeStates.boosting);
+
     if (!readyToGo) {
       _.forEach(this.activeBees, (bee) => {
         if (bee.state !== beeStates.boosting) bee.goRest(this.formationCenter);

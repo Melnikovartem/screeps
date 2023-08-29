@@ -249,34 +249,14 @@ export class SiegeMaster extends Master {
     return OK;
   }
 
-  run() {
-    _.forEach(this.bees, (bee) => {
-      if (
-        bee.state === beeStates.boosting &&
-        (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-      )
-        bee.state = beeStates.chill;
-    });
-
+  public run() {
+    this.preRunBoost();
     _.forEach(this.activeBees, (bee) => {
-      const old = bee.ticksToLive <= 50;
-      if (
-        old &&
-        bee.boosted &&
-        this.hive.cells.lab &&
-        this.hive.cells.lab.getUnboostLab(bee.ticksToLive)
-      )
-        bee.state = beeStates.fflush;
+      // unboost old bees
+      if (bee.ticksToLive <= 25 && bee.boosted) bee.state = beeStates.fflush;
       switch (bee.state) {
         case beeStates.fflush:
-          if (!this.hive.cells.lab || !bee.boosted) {
-            bee.state = beeStates.work;
-            break;
-          }
-          const lab =
-            this.hive.cells.lab.getUnboostLab(bee.ticksToLive) ||
-            this.hive.cells.lab;
-          bee.goTo(lab.pos, { range: 1 });
+          this.recycleBee(bee);
           break;
         case beeStates.chill:
           if (this.hive.state !== hiveStates.battle) {
@@ -284,7 +264,8 @@ export class SiegeMaster extends Master {
             break;
           }
           bee.state = beeStates.work;
-        case beeStates.work:
+        // fall through
+        case beeStates.work: {
           let pos;
           if (
             this.hive.state !== hiveStates.battle &&
@@ -422,6 +403,7 @@ export class SiegeMaster extends Master {
               bee.goTo(pos);
             ++this.patience[bee.ref];
           }
+        }
       }
     });
   }

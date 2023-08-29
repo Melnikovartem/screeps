@@ -66,7 +66,9 @@ export interface HiveCells {
   power?: PowerCell;
 }
 
-// Define a type for resource targets
+/** Define a target of amount for resource to keep in storage
+ * Is not flushed tick to ticks
+ */
 export type ResTarget = { [key in ResourceConstant]?: number };
 
 // Constant for a minimum amount of a certain mineral in the hive
@@ -212,7 +214,7 @@ export class Hive {
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL * 2;
 
-        if (this.shouldDo("saveCpu"))
+        if (this.mode.saveCpu)
           this.resTarget[BOOST_MINERAL.harvest[0]] = HIVE_MINERAL;
 
         // protect expansions with boost creeps + more attack
@@ -251,13 +253,9 @@ export class Hive {
     };
   }
 
-  /**
-   * Check if a specific action should be performed by the hive
-   * @param {keyof HiveCache["do"]} action - The action to check
-   * @returns {boolean} - Whether the action should be performed
-   */
-  public shouldDo(action: keyof HiveCache["do"]) {
-    return this.cache.do[action];
+  /** Interface for settings of hive */
+  public get mode() {
+    return this.cache.do;
   }
 
   /**

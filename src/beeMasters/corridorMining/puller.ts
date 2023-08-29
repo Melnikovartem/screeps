@@ -44,7 +44,7 @@ export class PullerMaster extends Master {
     );
     if (
       !inProgress.length &&
-      this.hive.shouldDo("powerMining") &&
+      this.hive.mode.powerMining &&
       workingPowerSites.length &&
       this.hive.cells.storage &&
       this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <= 30000
@@ -74,7 +74,7 @@ export class PullerMaster extends Master {
       });
 
     let workingDeposits: DepositMaster[] = [];
-    if (this.hive.shouldDo("depositMining")) {
+    if (this.hive.mode.depositMining) {
       workingDeposits = this.depositSites.filter((d) => d.operational);
       if (workingDeposits.length > 1) {
         const depositsWithBees = workingDeposits.filter(

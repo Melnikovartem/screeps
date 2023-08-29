@@ -155,14 +155,14 @@ export class CustomConsole {
         }
         const addString = (name: keyof HiveCache["do"], ref: string = name) =>
           `${ref.toUpperCase()}${
-            h.shouldDo(name) === BASE_MODE_HIVE[name] ? "" : "❗"
+            h.mode[name] === BASE_MODE_HIVE[name] ? "" : "❗"
           }: ${
-            !h.shouldDo(name)
+            !h.mode[name]
               ? "OFF"
-              : "ON" + (h.shouldDo(name) !== 1 ? " " + h.shouldDo(name) : "")
+              : "ON" + (h.mode[name] !== 1 ? " " + h.mode[name] : "")
           } `;
         let buyInMode = addString("buyIn").slice(0, -3);
-        switch (h.shouldDo("buyIn")) {
+        switch (h.mode.buyIn) {
           case 3:
             buyInMode += "ANYTHING";
             break;

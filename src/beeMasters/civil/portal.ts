@@ -92,36 +92,27 @@ export class PortalMaster extends SwarmMaster {
   }
 
   public run() {
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-          bee.state = beeStates.chill;
-    });
-
+    this.preRunBoost();
     _.forEach(this.activeBees, (bee) => {
-      switch (bee.state) {
-        case beeStates.boosting:
+      if (bee.state === beeStates.chill) {
+        if (
+          this.res &&
+          bee.store.getFreeCapacity(this.res) &&
+          this.hive.cells.storage &&
+          this.hive.cells.storage.storage.store.getUsedCapacity(this.res)
+        ) {
+          bee.withdraw(this.hive.cells.storage.storage, this.res);
           return;
-        case beeStates.chill:
-          if (
-            this.res &&
-            bee.store.getFreeCapacity(this.res) &&
-            this.hive.cells.storage &&
-            this.hive.cells.storage.storage.store.getUsedCapacity(this.res)
-          ) {
-            bee.withdraw(this.hive.cells.storage.storage, this.res);
-            break;
-          }
-          let pos = this.pos;
-          if (this.pos.roomName in Game.rooms) {
-            const portal = this.pos
-              .findInRange(FIND_STRUCTURES, 1)
-              .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
-            if (portal) pos = portal.pos;
-          }
-          bee.goTo(pos);
-          this.checkFlee(bee, undefined, undefined, false, 200);
-          break;
+        }
+        let pos = this.pos;
+        if (this.pos.roomName in Game.rooms) {
+          const portal = this.pos
+            .findInRange(FIND_STRUCTURES, 1)
+            .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
+          if (portal) pos = portal.pos;
+        }
+        bee.goTo(pos);
+        this.checkFlee(bee, undefined, undefined, false, 200);
       }
     });
   }

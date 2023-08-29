@@ -125,11 +125,7 @@ export class PickupMaster extends SwarmMaster {
       this.target = target;
     }
 
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.boosting)
-        if (!this.hive.cells.lab || this.hive.cells.lab.askForBoost(bee) === OK)
-          bee.state = beeStates.chill;
-    });
+    this.preRunBoost();
 
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {

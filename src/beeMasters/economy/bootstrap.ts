@@ -95,7 +95,7 @@ export class BootstrapMaster extends Master {
     });
 
     this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
-    if (this.hive.phase > 0 || this.hive.shouldDo("saveCpu"))
+    if (this.hive.phase > 0 || this.hive.mode.saveCpu)
       this.targetBeeCount = Math.min(this.targetBeeCount, 2);
     if (this.minRoadTime === Infinity) this.minRoadTime = 0;
     if (this.cell.shouldRecalc) {

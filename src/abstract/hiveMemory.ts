@@ -6,6 +6,7 @@ export interface HiveCache {
     depositMining: 0 | 1;
     depositRefining: 0 | 1;
     war: 0 | 1;
+    /** nothing / unboost / unboost */
     unboost: 0 | 1;
     saveCpu: 0 | 1;
     /** do not boost, boost up to lvl 8, no boosted energy after lvl 8, boosted energy after lvl 8 */

@@ -149,6 +149,7 @@ type LabState =
   | "idle"
   | "production"
   | "source"
+  | "waitingUnboost"
   | "unboosted"
   | ReactionConstant;
 
@@ -169,6 +170,7 @@ export class LaboratoryCell extends Cell {
   private usedBoost: string[] = [];
 
   private positions: RoomPosition[] = [];
+
   /** if nothing to create we take a break for COOLDOWN_TARGET_LAB ticks */
   private targetCooldown = Game.time;
 
@@ -259,19 +261,22 @@ export class LaboratoryCell extends Cell {
   private getNewTarget(ignorePrevTarget: boolean): ApiaryReturnCode {
     if (this.synthesizeTarget && !ignorePrevTarget) return OK;
     if (Game.time < this.targetCooldown) return ERR_COOLDOWN;
-    const mode = this.hive.shouldDo("lab");
+    const mode = this.hive.mode.lab;
     if (!mode) return ERR_INVALID_ACTION;
     let targets: { res: ReactionConstant; amount: number }[] = [];
     for (const r in this.hive.resState) {
-      const res = r as ReactionConstant; // catually ResourceConstant
+      const res = r as ReactionConstant;
       const toCreate = -this.hive.resState[res]!;
       if (toCreate > 0 && res in REACTION_MAP)
         targets.push({ res, amount: toCreate });
     }
+    // create the ones i can first
     const canCreate = targets.filter(
       (t) => this.getCreateQue(t.res, t.amount)[0].length
     );
     if (canCreate.length) targets = canCreate;
+
+    // if nothing to create use mode to choose next target
     if (!targets.length) {
       if (mode === 1) return ERR_NOT_FOUND;
       // not eve gonna try to create mid ones (not profitable)
@@ -301,9 +306,11 @@ export class LaboratoryCell extends Cell {
       ];
       // targets = [{ res: usefulM[Math.floor(Math.random() * usefulM.length)], amount: 2048 }];
     }
+
     this.patience = 0;
     targets.sort((a, b) => b.amount - a.amount);
     this.synthesizeTarget = targets[0];
+    // produce form 1/3 lab to 2 full labs of mineral (6_000 to 1_000)
     this.synthesizeTarget.amount = Math.max(
       Math.min(this.synthesizeTarget.amount, LAB_MINERAL_CAPACITY * 2),
       LAB_MINERAL_CAPACITY / 3
@@ -384,8 +391,9 @@ export class LaboratoryCell extends Cell {
     return [createQue, ingredients];
   }
 
-  private newProd() {
-    if (!this.synthesizeRes) return false;
+  /** new production towards the final target */
+  private newProd(): ERR_NOT_FOUND | OK {
+    if (!this.synthesizeRes) return ERR_NOT_FOUND;
 
     const res1 = this.synthesizeRes.res1;
     const res2 = this.synthesizeRes.res2;
@@ -439,7 +447,7 @@ export class LaboratoryCell extends Cell {
       this.updateLabState(lab2, 1);
       this.synthesizeRes = undefined;
     }
-    return true;
+    return OK;
   }
 
   public getBoostInfo(
@@ -473,13 +481,71 @@ export class LaboratoryCell extends Cell {
     return { type: r.type, res, amount, lvl: r.lvl };
   }
 
-  // lowLvl : 0 - tier 3 , 1 - tier 2+, 2 - tier 1+
-  public askForBoost(bee: Bee, requests?: BoostRequest[]) {
+  /** move bee to lab and unboost it
+   *
+   * OK - no boosts left on bee
+   *
+   * ERR_NOT_FOUND - no lab found
+   *
+   * ERR_BUSY - lab cooldown
+   *
+   * ERR_NOT_IN_RANGE - going to lab
+   *
+   * or unboostCreep return code
+   */
+  public unboostBee(bee: Bee, opt?: TravelToOptions): ApiaryReturnCode {
+    if (this.hive.mode.unboost === 0) return ERR_INVALID_ACTION;
+    if (!bee.boosted) return OK;
+    // used to unboost also enemy creeps
+    // it was not useful
+    // but it WAS funny
+    // @ todo do we care about lab states?
+    const labs = _.filter(
+      this.laboratories,
+      (l) => l.cooldown < bee.ticksToLive
+    );
+    if (!labs.length) return ERR_NOT_FOUND;
+    const lab = _.find(labs, (l) => !l.cooldown);
+    // need just to get close
+    opt = { range: 1, ...opt };
+    if (!lab || lab.cooldown) {
+      bee.goRest(this.pos, opt);
+      // do not use the cooldown
+      if (lab) this.labStates[lab.id] = "waitingUnboost";
+      return ERR_BUSY;
+    }
+    if (lab.pos.isNearTo(bee)) {
+      bee.goTo(lab, opt);
+      // do not use the cooldown
+      this.labStates[lab.id] = "waitingUnboost";
+      return ERR_NOT_IN_RANGE;
+    }
+    // unboost the creep
+    const ans = lab.unboostCreep(bee.creep);
+    if (ans === OK) {
+      bee.boosted = false;
+      this.labStates[lab.id] = "unboosted";
+      // @todo Apiary.logger
+      // not sure how to log this cause resources could as well just decay
+      if (ans === OK && Apiary.logger)
+        _.forEach(bee.body, (b) => {
+          if (b.boost)
+            Apiary.logger!.addResourceStat(
+              this.roomName,
+              "unboosting",
+              LAB_BOOST_MINERAL * 0.5 * 0.9, // LAB_UNBOOST_MINERAL was undefined in .ts
+              b.boost as ReactionConstant
+            );
+        });
+    }
+    return ans;
+  }
+
+  public boostBee(bee: Bee, requests?: BoostRequest[]) {
     let rCode: ScreepsReturnCode = OK;
 
-    if (bee.ticksToLive < 1000)
-      // || bee.pos.roomName !== this.pos.roomName)
-      return rCode;
+    // do not boost old guys lmao
+    if (bee.ticksToLive < 1000) return rCode;
 
     if (!requests) {
       requests = bee.master && bee.master.boosts;
@@ -619,6 +685,9 @@ export class LaboratoryCell extends Cell {
     }
     const state = this.labStates[l.id];
     switch (state) {
+      case "waitingUnboost":
+        this.labStates[l.id] = "idle";
+        break;
       case "unboosted": {
         const resources = l.pos.findInRange(FIND_DROPPED_RESOURCES, 1);
         this.sCell.requestToStorage(resources, 2, undefined);
@@ -763,17 +832,18 @@ export class LaboratoryCell extends Cell {
       }
     }
 
-    if (
-      !this.prod &&
-      (Object.keys(this.laboratories).length < 3 ||
-        _.filter(this.laboratories, (l) => !l.cooldown).length < 1) &&
-      !this.newProd()
-    ) {
+    const needNewTarget =
+      !this.prod && // we have no prod FIND new one
+      Object.keys(this.laboratories).length > 3 && // no need to find prod if no labs
+      _.filter(this.laboratories, (l) => !l.cooldown).length > 1 && // no need to target prod if all labs busy
+      this.newProd() === ERR_NOT_FOUND; // getting new prod // if no prod then target
+
+    if (needNewTarget) {
       this.stepToTarget();
       // chill if nothing to produce
-      if (!this.synthesizeTarget && Game.time >= this.targetCooldown)
+      if (this.newProd() === ERR_NOT_FOUND && Game.time >= this.targetCooldown)
+        // no target found so wait COOLDOWN_TIME_LAB ticks
         this.targetCooldown = Game.time + COOLDOWN_TARGET_LAB;
-      this.newProd();
     }
 
     if (this.prod) {
@@ -799,48 +869,7 @@ export class LaboratoryCell extends Cell {
         delete this.boostRequests[ref];
   }
 
-  public getUnboostLab(ticksToLive: number) {
-    if (!this.hive.shouldDo("unboost")) return undefined;
-    let lab: StructureLab | undefined;
-    _.some(this.laboratories, (l) => {
-      if (l.cooldown > ticksToLive) return false;
-      lab = l;
-      return true;
-    });
-    return lab;
-  }
-
   public run() {
-    if (this.hive.shouldDo("unboost")) {
-      const creepsToUnboost: Creep[] = [];
-      const time = Math.max(10000, (this.prod && this.prod.cooldown * 2) || 0);
-      _.forEach(this.positions, (p) => {
-        const creep = p
-          .lookFor(LOOK_CREEPS)
-          .filter(
-            (c) =>
-              c.ticksToLive &&
-              c.ticksToLive < time &&
-              c.body.filter((b) => b.boost).length
-          )[0];
-        if (creep) creepsToUnboost.push(creep);
-      });
-      _.forEach(creepsToUnboost, (creep) => {
-        const lab = _.filter(
-          this.laboratories,
-          (l) =>
-            !l.cooldown &&
-            l.pos.getRangeTo(creep) <= 1 &&
-            this.labStates[l.id] !== "unboosted"
-        )[0];
-        if (lab && lab.unboostCreep(creep) === OK) {
-          this.labStates[lab.id] = "unboosted";
-          const bee = Apiary.bees[creep.name] as Bee;
-          if (bee) bee.boosted = false;
-        }
-      });
-    }
-
     --this.prodCooldown;
     if (this.prod && this.prodCooldown <= 0 && this.prod.plan > 0) {
       const lab1 = this.laboratories[this.prod.lab1];

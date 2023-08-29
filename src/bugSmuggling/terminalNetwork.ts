@@ -115,7 +115,7 @@ export class Network {
 
   private canHiveBuy(hive: Hive, res: ResourceConstant) {
     let canBuyIn = false;
-    switch (hive.shouldDo("buyIn")) {
+    switch (hive.mode.buyIn) {
       case 3:
         canBuyIn = true;
         break;
@@ -228,7 +228,7 @@ export class Network {
           hive.resState[curr]! > hive.resState[prev]! ? curr : prev
         );
         if (hive.resState[res]! < 0) continue;
-        if (hive.shouldDo("sellOff"))
+        if (hive.mode.sellOff)
           Apiary.broker.sellOff(
             terminal,
             res,
