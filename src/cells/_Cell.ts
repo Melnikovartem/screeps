@@ -75,6 +75,7 @@ export abstract class Cell {
   public abstract run(): void;
 
   /** access up in the cache of the class
+   * caution when using undefined. prefered method is to set to null
    *
    * value needs to be declared first
    *
@@ -82,18 +83,20 @@ export abstract class Cell {
    *
    * set: cache(param, value)
    */
+  protected cache<K extends keyof this, T extends this[K]>(key: K): T | null;
+  protected cache<K extends keyof this, T extends this[K]>(key: K, value: T): T;
   protected cache<K extends keyof this, T extends this[K]>(
     key: K,
     value?: T
-  ): T {
+  ): T | null {
     if (!this.hive.cache.cells[this.refCache])
       this.hive.cache.cells[this.refCache] = {};
     const mem = this.hive.cache.cells[this.refCache];
     if (value !== undefined) {
       mem[key as string] = value;
-      return value;
+      return value as T;
     }
-    return mem[key as string] as T;
+    return (mem[key as string] as T | undefined) || null;
   }
 
   public get print(): string {

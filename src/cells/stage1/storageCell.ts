@@ -32,8 +32,9 @@ export class StorageCell extends Cell {
     this.master = new ManagerMaster(this);
   }
 
+  /** used to support terminal storage, but not helpful and pain in ass */
   public get storage() {
-    return (this.hive.room.storage || this.hive.room.terminal)!;
+    return this.hive.room.storage!;
   }
 
   public get terminal() {

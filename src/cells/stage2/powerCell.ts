@@ -24,7 +24,7 @@ export class PowerCell extends Cell {
     return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
   }
 
-  public _powerManager: string | undefined = this.cache("_powerManager");
+  public _powerManager: string | null = this.cache("_powerManager");
   public get powerManager() {
     return this._powerManager;
   }

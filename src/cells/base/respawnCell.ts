@@ -1,5 +1,5 @@
 import { Bee } from "bees/bee";
-import { ApiaryReturnCode, ERR_INVALID_ACTION } from "static/constants";
+import { ApiaryReturnCode } from "static/constants";
 
 import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";

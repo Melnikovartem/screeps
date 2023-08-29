@@ -18,12 +18,13 @@ export class UpgradeCell extends Cell {
   public constructor(hive: Hive) {
     super(hive, prefix.upgradeCell);
     this.findLink();
-    this.roadTime = this.cache("roadTime");
-    if (this.roadTime === undefined) {
-      this.roadTime = this.hive.pos.getTimeForPath(this);
-      if (this.roadTime === Infinity) this.roadTime = 0;
-      this.cache("roadTime", this.roadTime);
+    let roadTime = this.cache("roadTime");
+    if (roadTime === null) {
+      roadTime = this.hive.pos.getTimeForPath(this);
+      if (roadTime === Infinity) roadTime = 0;
+      this.cache("roadTime", roadTime);
     }
+    this.roadTime = roadTime;
     this.master = new UpgraderMaster(this);
   }
 
@@ -39,7 +40,7 @@ export class UpgradeCell extends Cell {
   }
 
   public link: StructureLink | undefined | null;
-  public linkId: Id<StructureLink> | undefined | null;
+  public linkId: Id<StructureLink> | null = null;
   public findLink() {
     let link: typeof this.link =
       this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);

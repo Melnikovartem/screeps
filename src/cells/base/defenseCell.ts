@@ -25,18 +25,18 @@ export class DefenseCell extends Cell {
     this.updateNukes();
     this.master = new SiegeMaster(this);
 
-    this.poss = this.cache("poss");
-
-    if (this.poss === undefined) {
+    let poss = this.cache("poss");
+    if (poss === null) {
       const spawn = _.filter(
         Game.spawns,
         (sp) => sp.pos.roomName === hive.roomName
       )[0];
-      this.poss = spawn?.pos || {
+      poss = spawn?.pos || {
         x: 25,
         y: 25,
       };
     }
+    this.poss = poss;
   }
 
   public poss: { x: number; y: number };

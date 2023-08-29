@@ -218,10 +218,8 @@ export class LaboratoryCell extends Cell {
     this._boostRequests = this.cache("_boostRequests", value);
   }
 
-  public _synthesizeTarget:
-    | undefined
-    | { res: ReactionConstant; amount: number } =
-    this.cache("_synthesizeTarget") || undefined;
+  public _synthesizeTarget: { res: ReactionConstant; amount: number } | null =
+    this.cache("_synthesizeTarget") || null;
   public get synthesizeTarget() {
     return this._synthesizeTarget;
   }
@@ -327,9 +325,10 @@ export class LaboratoryCell extends Cell {
       this.synthesizeTarget.amount
     );
 
+    const targetAmount = this.synthesizeTarget.amount;
     _.forEach(
       ingredients,
-      (resource) => (this.resTarget[resource] = this.synthesizeTarget!.amount)
+      (resource) => (this.resTarget[resource] = targetAmount)
     );
     const amount =
       createQue.length &&
@@ -346,7 +345,7 @@ export class LaboratoryCell extends Cell {
 
     if (this.patience >= 100) {
       this.patience = 0;
-      this.synthesizeTarget = undefined;
+      this.synthesizeTarget = null;
     }
   }
 
@@ -860,7 +859,7 @@ export class LaboratoryCell extends Cell {
         }
       }
       if (this.synthesizeTarget && this.synthesizeTarget.amount < 15)
-        this.synthesizeTarget = undefined;
+        this.synthesizeTarget = null;
       if (this.prod.plan < 15 || !this.synthesizeTarget) this.prod = undefined;
     }
 
@@ -884,7 +883,7 @@ export class LaboratoryCell extends Cell {
   public run() {
     --this.prodCooldown;
     const prodSetup = this.prodSetup;
-    if (!prodSetup || this.prodCooldown <= 0 || !this.prod) return;
+    if (!prodSetup || this.prodCooldown > 0 || !this.prod) return;
     const [amount, lab1, lab2] = prodSetup;
 
     const labs = _.filter(
