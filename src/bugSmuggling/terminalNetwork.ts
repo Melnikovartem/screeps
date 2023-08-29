@@ -1,4 +1,7 @@
-import { BASE_MINERALS } from "../cells/stage1/laboratoryCell";
+import {
+  BASE_MINERALS,
+  USEFUL_MINERAL_STOCKPILE,
+} from "../cells/stage1/laboratoryCell";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 //  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 import type { Hive, ResTarget } from "../hive/hive";
@@ -7,9 +10,16 @@ import { hiveStates } from "../static/enums";
 import { addResDict } from "../static/utils";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
+/** keep free 100_000 slots free */
 export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
+/** dump everything / stop drop until have 10_000 slots free */
 export const FULL_CAPACITY = STORAGE_CAPACITY * 0.01;
-const SELL_STEP = 8192;
+/**  do not sell mare per transaction */
+const SELL_STEP_MAX = 8192;
+/** sell for profit if more than this */
+const SELL_THRESHOLD = {
+  compound: 4096,
+};
 
 @profile
 export class Network {
@@ -218,23 +228,49 @@ export class Network {
       if (usedTerminal) continue;
 
       const stStore = hive.cells.storage.storage.store;
-      if (
-        stStore.getFreeCapacity() < FREE_CAPACITY * 0.5 &&
-        hive.cells.storage.storage instanceof StructureStorage
-      ) {
-        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-        if (!keys.length) continue;
-        const res = keys.reduce((prev, curr) =>
-          hive.resState[curr]! > hive.resState[prev]! ? curr : prev
-        );
-        if (hive.resState[res]! < 0) continue;
-        if (hive.mode.sellOff)
-          Apiary.broker.sellOff(
-            terminal,
-            res,
-            Math.min(SELL_STEP, hive.resState[res]! * 0.8),
-            stStore.getFreeCapacity() < FULL_CAPACITY * 2
+      let ans;
+      switch (hive.mode.sellOff) {
+        case 2:
+          // sell for profit
+          for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
+            // sell some compound that created for profit
+            // could also check Apiary.broker.profitableCompounds if want to sell only! those ones
+            const compound = comp as keyof typeof USEFUL_MINERAL_STOCKPILE;
+            const toSell =
+              (hive.resState[compound] || 0) -
+              (USEFUL_MINERAL_STOCKPILE[compound] || Infinity); // failsafe
+            if (toSell > SELL_THRESHOLD.compound)
+              ans = Apiary.broker.sellOff(
+                terminal,
+                compound,
+                Math.min(SELL_STEP_MAX, toSell),
+                stStore.getFreeCapacity() < FREE_CAPACITY // need to free some space
+              );
+          }
+          if (ans === "short") continue;
+        // fall through
+        case 1: {
+          // sell for free space
+          // thought about storing best resources somewhere in the Apiary but rly too much trouble
+          if (stStore.getFreeCapacity() > FREE_CAPACITY) break;
+          const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+          if (!keys.length) continue;
+          const res = keys.reduce((prev, curr) =>
+            hive.resState[curr]! > hive.resState[prev]! ? curr : prev
           );
+          if (hive.resState[res]! < 0) break;
+          if (hive.mode.sellOff)
+            ans = Apiary.broker.sellOff(
+              terminal,
+              res,
+              Math.min(SELL_STEP_MAX, hive.resState[res]! * 0.8), // sell some of the resource
+              stStore.getFreeCapacity() < FULL_CAPACITY * 2 // getting close to no space (20_000)
+            );
+          break;
+        }
+        case 0:
+          // dont sell
+          break;
       }
     }
   }

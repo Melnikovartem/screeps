@@ -26,7 +26,11 @@ const ORDER_OFFSET = 0.001;
 const MARKET_FEE = 0.05;
 
 // @MARKETDANGER
-const SKIP_SMALL_ORDER = 500;
+const SKIP_SMALL_ORDER = {
+  volume: 500,
+  price: 1,
+};
+
 const MARKET_SETTINGS = {
   pocketChange: 100, // i do not care if i lose this amount on an order
   okLossAmount: 10000, // i can pay this price to smooth things
@@ -120,11 +124,13 @@ export class Broker {
     info.bestPriceSell = undefined;
 
     const orders = Game.market.getAllOrders({ resourceType: res });
+    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
 
     _.forEach(orders, (order) => {
       if (
         !order.roomName ||
-        order.amount <= SKIP_SMALL_ORDER ||
+        (!commodity && order.amount < SKIP_SMALL_ORDER.volume) || // idiot failsafe
+        order.price < SKIP_SMALL_ORDER.price || // idiot failsafe
         order.id in Game.market.orders
       )
         return;
@@ -175,11 +181,13 @@ export class Broker {
   /**
    * Function to get the average price of a resource
    * @param res - ResourceConstant for which to get the average price.
-   * @returns Average price of the specified resource.
+   * @returns BestSell (for me), BestBuy (for me), Average price of the specified resource.
    */
-  public avgPrice(res: ResourceConstant) {
-    this.updateRes(res, 1000);
-    return this.info[res]!.avgPrice;
+  public priceSpread(
+    res: ResourceConstant
+  ): [number | undefined, number | undefined, number] {
+    const resInfo = this.updateRes(res, 1000);
+    return [resInfo.bestPriceSell, resInfo.bestPriceBuy, resInfo.avgPrice];
   }
 
   /**
@@ -448,11 +456,13 @@ export class Broker {
         priceToSellLong * (1 + MARKET_FEE)) *
       amount;
     const okToShortSell =
-      loss < okLoss ||
-      COMMODITIES_TO_SELL.includes(res as CommodityConstant) ||
-      creditsToUse < MARKET_SETTINGS.reserveCredits;
+      loss < okLoss || creditsToUse < MARKET_SETTINGS.reserveCredits;
 
-    if (okToShortSell) {
+    // just wait for npc order
+    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
+    if (!okToShortSell && commodity && hurry === "GoodPrice") return "long";
+
+    if (okToShortSell || commodity) {
       const ans = this.sellShort(
         terminal,
         res,
