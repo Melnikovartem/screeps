@@ -3,6 +3,7 @@
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import clear from "rollup-plugin-clear";
+import execute from "rollup-plugin-execute";
 import screeps from "rollup-plugin-screeps";
 import typescript from "rollup-plugin-typescript2";
 
@@ -31,6 +32,9 @@ export default {
       // namedExports: { 'node_modules/screeps-profiler/screeps-profiler.js': ['enable', 'wrap'] },
     }),
     typescript({ tsconfig: "./tsconfig.json" }),
-    screeps({ config: cfg, dryRun: cfg == null }),
+    execute([
+      "source ./screeps-backup/env/bin/activate; python3 screeps-backup/screepsbackup/backup.py backups",
+    ]),
+    // screeps({ config: cfg, dryRun: cfg == null }),
   ],
 };

@@ -1,6 +1,7 @@
 screeps.json
 _chatGPT*
 .screeps_settings*
+backups
 
 lib-cov
 *.seed
