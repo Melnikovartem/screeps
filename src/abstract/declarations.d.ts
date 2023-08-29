@@ -152,6 +152,7 @@ declare global {
     settings: {
       framerate: number;
       generatePixel: boolean;
+      /** mining distance for deposit */
       miningDist: number;
       reportCPU: boolean;
     };

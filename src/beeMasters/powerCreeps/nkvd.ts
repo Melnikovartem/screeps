@@ -166,6 +166,10 @@ export class NKVDMaster extends PowerMaster {
         }
         case PWR_OPERATE_LAB: {
           const lab = targets as LaboratoryCell;
+          // boost labs if already loaded (not before cause loosing ops)
+          // or maybe before cause its just 8/1000 of ops each tick and managers can pull off in about 50 ticks
+          // so is 1/125 ops == possible loss of minerals (8)
+          // (lab.prodSetup)
           if (lab.prod)
             _.forEach(lab.laboratories, (l) => {
               if (lab.labStates[l.id] === "production") andNextup(l);

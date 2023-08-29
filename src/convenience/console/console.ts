@@ -1,6 +1,6 @@
 import type { HiveCache } from "abstract/hiveMemory";
 import type { RoomSetup } from "hivePlanner/planner";
-import { BASE_MODE_HIVE } from "static/constants";
+import { BASE_MODE_HIVE, SETTINGS_DEFAULT } from "static/constants";
 import { prefix } from "static/enums";
 import { makeId } from "static/utils";
 
@@ -12,6 +12,10 @@ export class CustomConsole {
       (prev, curr) =>
         prev.room.controller!.level < curr.room.controller!.level ? curr : prev
     ).roomName;
+  }
+
+  public defaultSettings() {
+    Memory.settings = SETTINGS_DEFAULT;
   }
 
   public framerate(framerate?: number) {

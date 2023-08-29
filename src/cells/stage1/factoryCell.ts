@@ -6,7 +6,7 @@ import { findOptimalResource } from "static/utils";
 import { Cell } from "../_Cell";
 import { HIVE_ENERGY } from "./storageCell";
 
-export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16);
+export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16); // 8k
 export const COMPRESS_MAP = {
   [RESOURCE_HYDROGEN]: RESOURCE_REDUCTANT,
   [RESOURCE_OXYGEN]: RESOURCE_OXIDANT,
@@ -93,7 +93,11 @@ export class FactoryCell extends Cell {
   // @todo move bulk of calc in cache
   public commodityRes?: FactoryResourceConstant;
   public prod?: { res: FactoryResourceConstant; plan: number };
-  public resTarget: { [key in ResourceConstant]?: number } = {};
+  public resTarget: { energy: number } & {
+    [key in ResourceConstant]?: number;
+  } = {
+    energy: FACTORY_ENERGY,
+  };
   public patience: number = 0;
   public patienceProd: number = 0;
 
@@ -139,7 +143,7 @@ export class FactoryCell extends Cell {
   }
 
   public stepToTarget() {
-    this.resTarget = {};
+    this.resTarget = { [RESOURCE_ENERGY]: FACTORY_ENERGY };
     if (!this.commodityTarget || this.commodityTarget.amount <= 0) {
       if (
         !this.hive.mode.depositRefining ||
@@ -206,9 +210,8 @@ export class FactoryCell extends Cell {
           num = 0;
           this.uncommon = true; // ask for boost if not yet
         }
-        if (num > 1) {
+        if (num > 1)
           targets.push({ res, amount: Math.floor(num) * recipe.amount });
-        }
       }
 
       const nonCommon = targets.filter(
@@ -241,6 +244,7 @@ export class FactoryCell extends Cell {
     );
 
     _.forEach(ingredients, (amountNeeded, component) => {
+      if (component === RESOURCE_ENERGY) amountNeeded += FACTORY_ENERGY;
       this.resTarget[component as CommodityIngredient] = Math.min(
         amountNeeded *
           (COMMODITIES_TO_SELL.includes(component as CommodityConstant)
@@ -361,8 +365,9 @@ export class FactoryCell extends Cell {
     }
 
     const balance =
-      this.factory.store.getUsedCapacity(RESOURCE_ENERGY) - FACTORY_ENERGY;
-    if (balance < 1000)
+      this.factory.store.getUsedCapacity(RESOURCE_ENERGY) -
+      this.resTarget[RESOURCE_ENERGY];
+    if (balance < 0)
       this.sCell.requestFromStorage(
         [this.factory],
         4,
@@ -387,33 +392,43 @@ export class FactoryCell extends Cell {
       }
       return;
     }
+
     const recipe = COMMODITIES[this.prod.res];
     for (const r in this.factory.store) {
-      if (r === RESOURCE_ENERGY) continue;
       const res = r as ResourceConstant;
+      const amountToTransfer =
+        this.factory.store.getUsedCapacity(res) - (this.resTarget[res] || 0);
       if (
-        this.prod.res === res
-          ? this.factory.store.getUsedCapacity(res) >= 5 * recipe.amount
+        this.prod.res === res || res === RESOURCE_ENERGY
+          ? amountToTransfer >= 1000
           : !(res in recipe.components)
       )
         this.sCell.requestToStorage(
           [this.factory],
           this.factory.store.getFreeCapacity() < FACTORY_CAPACITY / 5 ? 3 : 5,
-          res
+          res,
+          amountToTransfer
         );
     }
+
     let fact = this.prod.plan;
     for (const r in recipe.components) {
-      const res = r as CommodityConstant;
+      const res = r as keyof typeof COMMODITIES.energy.components;
+      if (res === RESOURCE_ENERGY) continue;
+
       const amount = recipe.components[res];
-      const balanceFree =
-        amount * this.prod.plan - this.factory.store.getUsedCapacity(res);
-      if (this.factory.store.getUsedCapacity(res) < amount && balanceFree > 0)
+      const balanceTopUp =
+        (this.prod.plan / recipe.amount) * amount -
+        this.factory.store.getUsedCapacity(res);
+      if (
+        this.factory.store.getUsedCapacity(res) <= amount * 2 &&
+        balanceTopUp > 0
+      )
         this.sCell.requestFromStorage(
           [this.factory],
           4,
           res,
-          Math.min(balanceFree, FACTORY_CAPACITY / 10)
+          Math.min(balanceTopUp, FACTORY_CAPACITY / 10) // 5k
         );
       fact = Math.min(
         fact,
@@ -421,7 +436,7 @@ export class FactoryCell extends Cell {
       );
     }
 
-    if (!this.factory.store.getFreeCapacity()) {
+    if (this.factory.store.getFreeCapacity() < 1_000) {
       const existing = this.sCell.requests[this.factory.id];
       if (!existing || existing.to.id !== this.sCell.storage.id)
         this.sCell.requestToStorage(

@@ -869,78 +869,66 @@ export class LaboratoryCell extends Cell {
         delete this.boostRequests[ref];
   }
 
+  public get prodSetup(): [number, StructureLab, StructureLab] | undefined {
+    if (!this.prod || this.prod.plan <= 0) return undefined;
+    const lab1 = this.laboratories[this.prod.lab1];
+    const lab2 = this.laboratories[this.prod.lab2];
+    const amount = Math.min(
+      lab1.store[this.prod.res1],
+      lab2.store[this.prod.res2]
+    );
+    if (amount < 15) return undefined;
+    return [amount, lab1, lab2];
+  }
+
   public run() {
     --this.prodCooldown;
-    if (this.prod && this.prodCooldown <= 0 && this.prod.plan > 0) {
-      const lab1 = this.laboratories[this.prod.lab1];
-      const lab2 = this.laboratories[this.prod.lab2];
-      const amount = Math.min(
-        lab1.store[this.prod.res1],
-        lab2.store[this.prod.res2]
-      );
-      if (amount >= 15) {
-        const labs = _.filter(
-          this.laboratories,
-          (lab) =>
-            lab.store.getFreeCapacity(this.prod!.res) >= 5 &&
-            !lab.cooldown &&
-            (this.labStates[lab.id] === "production" ||
-              this.labStates[lab.id] === this.prod!.res)
-        );
-        let cc = 0;
-        for (let k = 0; k < labs.length && amount >= cc; ++k) {
-          const lab = labs[k];
-          const ans = lab.runReaction(lab1, lab2);
-          if (ans === OK) {
-            let produced = 5;
-            const powerup =
-              lab.effects &&
-              (lab.effects.filter(
-                (p) => p.effect === PWR_OPERATE_LAB
-              )[0] as PowerEffect);
-            if (powerup) produced += powerup.level * 2;
-            cc += produced;
-          }
-        }
-        if (cc) this.prodCooldown = this.prod.cooldown;
-        if (
-          this.synthesizeTarget &&
-          this.prod.res === this.synthesizeTarget.res
-        )
-          this.synthesizeTarget.amount -= cc;
-        this.prod.plan -= cc;
-        if (Apiary.logger) {
-          Apiary.logger.addResourceStat(
-            this.roomName,
-            "labs",
-            cc,
-            this.prod.res
-          );
-          Apiary.logger.addResourceStat(
-            this.roomName,
-            "labs",
-            -cc,
-            this.prod.res1
-          );
-          Apiary.logger.addResourceStat(
-            this.roomName,
-            "labs",
-            -cc,
-            this.prod.res2
-          );
-        }
-        if (
-          !labs.length &&
-          !_.filter(
-            this.laboratories,
-            (l) =>
-              l.id !== lab1.id &&
-              l.id !== lab2.id &&
-              l.cooldown <= this.prod!.cooldown * 2
-          ).length
-        )
-          this.prod = undefined;
+    const prodSetup = this.prodSetup;
+    if (!prodSetup || this.prodCooldown <= 0 || !this.prod) return;
+    const [amount, lab1, lab2] = prodSetup;
+
+    const labs = _.filter(
+      this.laboratories,
+      (lab) =>
+        lab.store.getFreeCapacity(this.prod!.res) >= 5 &&
+        !lab.cooldown &&
+        (this.labStates[lab.id] === "production" ||
+          this.labStates[lab.id] === this.prod!.res)
+    );
+    let cc = 0;
+    for (let k = 0; k < labs.length && amount >= cc; ++k) {
+      const lab = labs[k];
+      const ans = lab.runReaction(lab1, lab2);
+      if (ans === OK) {
+        let produced = 5;
+        const powerup =
+          lab.effects &&
+          (lab.effects.filter(
+            (p) => p.effect === PWR_OPERATE_LAB
+          )[0] as PowerEffect);
+        if (powerup) produced += powerup.level * 2;
+        cc += produced;
       }
     }
+    if (cc) this.prodCooldown = this.prod.cooldown;
+    if (this.synthesizeTarget && this.prod.res === this.synthesizeTarget.res)
+      this.synthesizeTarget.amount -= cc;
+    this.prod.plan -= cc;
+    if (Apiary.logger) {
+      Apiary.logger.addResourceStat(this.roomName, "labs", cc, this.prod.res);
+      Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res1);
+      Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res2);
+    }
+    if (
+      !labs.length &&
+      !_.filter(
+        this.laboratories,
+        (l) =>
+          l.id !== lab1.id &&
+          l.id !== lab2.id &&
+          l.cooldown <= this.prod!.cooldown * 2
+      ).length
+    )
+      this.prod = undefined;
   }
 }

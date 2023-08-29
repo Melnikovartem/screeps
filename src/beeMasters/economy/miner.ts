@@ -198,11 +198,10 @@ export class MinerMaster extends Master {
       }
 
       if (!bee.pos.equal(this.pos) && mode !== "busy") {
-        bee.goTo(this.pos, this.hive.opt);
         if (bee.pos.isNearTo(this.cell.resource) && mode === "mine")
           bee.harvest(this.cell.resource, this.hive.opt);
-      }
-      if (mode === "mine") {
+        bee.goTo(this.pos, this.hive.opt);
+      } else if (mode === "mine") {
         bee.harvest(this.cell.resource, this.hive.opt);
       } else if (
         mode === "chill" &&

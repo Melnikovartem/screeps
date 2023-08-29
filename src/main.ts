@@ -65,8 +65,8 @@ function main() {
     Apiary.logger && Memory.settings.reportCPU ? Game.cpu.getUsed() : undefined;
 
   // Update logger and report CPU usage if applicable
+  Apiary.logger?.update();
   if (cpu !== undefined) {
-    Apiary.logger!.update();
     Apiary.logger!.reportCPU("rollup", "update", cpu, 1);
     cpu = Game.cpu.getUsed();
   }
