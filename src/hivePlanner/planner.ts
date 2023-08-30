@@ -193,9 +193,9 @@ function getPathArgs(opt: CoustomFindPathOpts = {}): TravelToOptions {
             else costMatrix.set(+x, +y, 0xff);
         }
 
-      const roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+      const roomState = Apiary.intel.getRoomState(roomName);
       const room = Game.rooms[roomName];
-      if (roomInfo.roomState === roomStates.SKfrontier && room) {
+      if (roomState === roomStates.SKfrontier && room) {
         for (const structure of room.find(FIND_STRUCTURES))
           if (structure instanceof StructureKeeperLair) {
             _.forEach(structure.pos.getOpenPositions(true, 1), (p) =>

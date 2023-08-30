@@ -98,6 +98,12 @@ export class Intel {
     ) as Creep | undefined;
   }
 
+  public getRoomState(protoName: { roomName: string } | string) {
+    const roomName: string =
+      typeof protoName === "string" ? protoName : protoName.roomName;
+    return this.getInfo(roomName, Infinity).roomState;
+  }
+
   public getEnemy(
     pos: ProtoPos,
     lag?: number,

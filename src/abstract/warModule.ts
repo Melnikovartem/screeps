@@ -135,8 +135,8 @@ export class WarcrimesModule {
       let enterances = getEnterances(roomName).filter(
         (ent) =>
           ent.enteranceToRoom &&
-          Apiary.intel.getInfo(ent.enteranceToRoom.roomName, Infinity)
-            .roomState !== roomStates.ownedByEnemy
+          Apiary.intel.getRoomState(ent.enteranceToRoom) !==
+            roomStates.ownedByEnemy
       );
       const closesHive = Object.values(Apiary.hives).reduce((prev, curr) =>
         curr.pos.getRoomRangeTo(roomName) < prev.pos.getRoomRangeTo(roomName)

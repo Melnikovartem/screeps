@@ -164,12 +164,12 @@ export function updateStructures(this: Hive) {
           return;
 
         // any info about annex (needed for to check if SK)
-        const roomInfo = Apiary.intel.getInfo(annexName, Infinity);
+        const roomState = Apiary.intel.getRoomState(annexName);
         // dont go mining frontiers if not ready
         if (
           this.room.energyCapacityAvailable < 5500 &&
-          (roomInfo.roomState === roomStates.SKfrontier ||
-            roomInfo.roomState === roomStates.SKcentral)
+          (roomState === roomStates.SKfrontier ||
+            roomState === roomStates.SKcentral)
         )
           return;
 
@@ -196,7 +196,7 @@ export function updateStructures(this: Hive) {
         // down the raod more complex options
         if (this.resState.energy < 0) return;
 
-        if (roomInfo.roomState === roomStates.SKfrontier) {
+        if (roomState === roomStates.SKfrontier) {
           // help bootstrap containers for mineral mining in SK as fucker Keepers are annoying
           const mineralsContainer = annexMining[0].filter(
             (b) =>
@@ -212,7 +212,6 @@ export function updateStructures(this: Hive) {
           // not more then one active order of booting per hive
           if (
             mineralsContainer &&
-            roomInfo.safePlace &&
             !annexRoads[0].filter((b) => b.type === "construction").length &&
             !Game.flags["containerBuilder_" + this.roomName]
           )

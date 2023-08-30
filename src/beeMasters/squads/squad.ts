@@ -446,14 +446,14 @@ export abstract class SquadMaster extends SwarmMaster {
       maxOps: 5000,
       roomCallback: (roomName: string, matrix: CostMatrix) => {
         if (!(roomName in Game.rooms)) return undefined;
-        const roomInfo = Apiary.intel.getInfo(roomName, Infinity);
+        const roomState = Apiary.intel.getRoomState(roomName);
         for (let x = 0; x <= 49; ++x)
           for (let y = 0; y <= 49; ++y) {
             const moveMent = this.getSquadMoveMentValue(
               new RoomPosition(x, y, roomName),
               centerBeeRef
             );
-            if (moveMent > 5 && roomInfo.roomState === roomStates.ownedByEnemy)
+            if (moveMent > 5 && roomState === roomStates.ownedByEnemy)
               matrix.set(x, y, Math.min(moveMent * 2, 255));
             else matrix.set(x, y, moveMent);
           }

@@ -3,7 +3,7 @@ import { setups } from "bees/creepSetups";
 import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ResourceCell } from "cells/base/resourceCell";
 import { profile } from "profiler/decorator";
-import { beeStates } from "static/enums";
+import { beeStates, roomStates } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
@@ -55,10 +55,11 @@ export class MinerMaster extends Master {
   public update() {
     super.update();
 
-    const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
+    const roomState = Apiary.intel.getRoomState(this.pos);
     let shouldSpawn =
       !this.hive.annexInDanger.includes(this.pos.roomName) &&
-      (roomInfo.currentOwner === Apiary.username || !roomInfo.currentOwner);
+      (roomState === roomStates.reservedByMe ||
+        roomState === roomStates.noOwner);
 
     if (shouldSpawn)
       shouldSpawn =
@@ -136,7 +137,7 @@ export class MinerMaster extends Master {
     // check if we need to work
     let sourceOff: boolean | undefined = !this.cell.operational;
     if (this.pos.roomName in Game.rooms) {
-      const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
+      const roomState = Apiary.intel.getRoomState(this.pos);
       sourceOff =
         (sourceOff && !this.construction) ||
         (this.cell.resource instanceof Source &&
@@ -147,7 +148,8 @@ export class MinerMaster extends Master {
           !this.cell.container.store.getFreeCapacity(this.resourceType)) ||
         (this.cell.link &&
           !this.cell.link.store.getFreeCapacity(this.resourceType)) ||
-        (roomInfo.currentOwner && roomInfo.currentOwner !== Apiary.username) ||
+        roomState === roomStates.reservedByEnemy ||
+        roomState === roomStates.ownedByEnemy ||
         (this.cell.container &&
           !this.cell.link &&
           this.cell.container.hits < this.cell.container.hitsMax * 0.2 &&

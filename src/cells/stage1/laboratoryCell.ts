@@ -98,6 +98,7 @@ export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
     [BOOST_MINERAL.upgrade[2]]: 20_000,
     [BOOST_MINERAL.damage[2]]: 20_000, // + 10_000
   };
+const PROFITABLE_MINERAL_STOCKPILE = 20_000;
 
 const PRODUCE_PER_BATCH = 2500;
 
@@ -284,13 +285,17 @@ export class LaboratoryCell extends Cell {
       for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
         const compound = comp as keyof typeof USEFUL_MINERAL_STOCKPILE;
         if (
-          USEFUL_MINERAL_STOCKPILE[compound]! -
-            (this.hive.resState[compound] || 0) >
-          0
+          USEFUL_MINERAL_STOCKPILE[compound]! >
+          (this.hive.resState[compound] || 0)
         )
           usefulR.push(compound);
       }
-      if (!usefulR.length) usefulR = Apiary.broker.profitableCompounds;
+      if (!usefulR.length)
+        usefulR = Apiary.broker.profitableCompounds.filter(
+          (c) =>
+            PROFITABLE_MINERAL_STOCKPILE + (USEFUL_MINERAL_STOCKPILE[c] || 0) >
+            (this.hive.resState[c] || 0)
+        );
       if (!usefulR.length) return ERR_NOT_FOUND;
       targets = [
         {

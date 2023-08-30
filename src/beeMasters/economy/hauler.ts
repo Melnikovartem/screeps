@@ -163,7 +163,7 @@ export class HaulerMaster extends Master {
         bee.state = beeStates.work;
       let res: ResourceConstant;
       switch (bee.state) {
-        case beeStates.refill:
+        case beeStates.refill: {
           if (!bee.target || !this.targetMap[bee.target]) {
             bee.state = beeStates.work;
             break;
@@ -232,7 +232,8 @@ export class HaulerMaster extends Master {
             bee.target = source ? source.id : undefined;
           }
           break;
-        case beeStates.work:
+        }
+        case beeStates.work: {
           res = findOptimalResource(bee.store);
 
           if (
@@ -321,9 +322,11 @@ export class HaulerMaster extends Master {
           } else {
             break;
           }
-
+          // fall through
+        }
         case beeStates.chill:
-          this.recycleBee(bee, { offRoad: true, ...this.hive.opt });
+          bee.goRest(this.hive.rest);
+          // this.recycleBee(bee, { offRoad: true, ...this.hive.opt });
           break;
       }
       if (this.checkFlee(bee) && bee.targetPosition && bee.hits < bee.hitsMax) {

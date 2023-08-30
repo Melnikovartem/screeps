@@ -238,8 +238,8 @@ export class Traveler {
    */
 
   public static checkAvoid(roomName: string): boolean {
-    const roomInfo = Apiary.intel.getInfo(roomName, Infinity);
-    return roomInfo.roomState === roomStates.ownedByEnemy;
+    const roomState = Apiary.intel.getRoomState(roomName);
+    return roomState === roomStates.ownedByEnemy;
   }
 
   /**

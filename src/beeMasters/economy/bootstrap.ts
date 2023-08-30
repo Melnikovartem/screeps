@@ -172,9 +172,9 @@ export class BootstrapMaster extends Master {
     )
       .map((cell) => cell.resource as Source)
       .filter((s) => {
-        const roomInfo = Apiary.intel.getInfo(s.pos.roomName, Infinity);
+        const roomState = Apiary.intel.getRoomState(s.pos.roomName);
         return (
-          roomInfo.roomState <= roomStates.noOwner &&
+          roomState <= roomStates.noOwner &&
           (s.energy > this.patternCount * CARRY_CAPACITY ||
             s.ticksToRegeneration < 20)
         );

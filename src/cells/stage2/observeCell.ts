@@ -114,8 +114,8 @@ export class ObserveCell extends Cell {
     const room = Game.rooms[this.prevRoom];
     if (!room) return;
 
-    const roomInfo = Apiary.intel.getInfo(this.prevRoom, Infinity);
-    if (roomInfo.roomState === roomStates.corridor) {
+    const roomState = Apiary.intel.getRoomState(this.prevRoom);
+    if (roomState === roomStates.corridor) {
       if (this.hive.mode.powerMining) this.powerCheck(room);
       if (this.hive.mode.depositMining) this.depositCheck(room);
     } else Apiary.intel.getInfo(this.prevRoom, 50);

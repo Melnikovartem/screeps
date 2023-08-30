@@ -1,5 +1,5 @@
-import { prefix } from "static/enums";
-import { makeId } from "static/utils";
+import { Cell } from "cells/_Cell";
+import { prefix, roomStates } from "static/enums";
 import { Traveler } from "Traveler/TravelerModified";
 
 import { Hive } from "./hive";
@@ -45,55 +45,21 @@ export function markResources(this: Hive) {
 
   _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_SOURCES), (s) => {
-      if (
-        !s.pos
-          .lookFor(LOOK_FLAGS)
-          .filter(
-            (f) =>
-              f.color === COLOR_YELLOW &&
-              (f.secondaryColor === COLOR_YELLOW ||
-                f.secondaryColor === COLOR_RED)
-          ).length
-      ) {
-        const flag = s.pos.createFlag(
-          prefix.mine + makeId(2) + "_" + s.id.slice(s.id.length - 4),
-          COLOR_YELLOW,
-          COLOR_YELLOW
-        );
-        if (typeof flag === "string")
-          Game.flags[flag].memory.hive = this.roomName;
-      }
+      const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
+      if (!this.cache.cells[ref]) this.cache.cells[ref] = {};
     });
   });
 
   _.forEach(rooms, (room) => {
+    const roomState = Apiary.intel.getRoomState(this.pos);
     _.forEach(room.find(FIND_MINERALS), (s) => {
       if (
-        room.name !== this.roomName &&
-        !s.pos
-          .lookFor(LOOK_STRUCTURES)
-          .filter(
-            (sIt) => sIt.structureType === STRUCTURE_EXTRACTOR && sIt.isActive()
-          ).length
-      )
-        return;
-      if (
-        !s.pos
-          .lookFor(LOOK_FLAGS)
-          .filter(
-            (f) =>
-              f.color === COLOR_YELLOW &&
-              (f.secondaryColor === COLOR_CYAN ||
-                f.secondaryColor === COLOR_RED)
-          ).length
+        room.name === this.roomName ||
+        roomState === roomStates.SKcentral ||
+        roomState === roomStates.SKfrontier
       ) {
-        const flag = s.pos.createFlag(
-          prefix.mine + makeId(2) + "_" + s.id.slice(s.id.length - 4),
-          COLOR_YELLOW,
-          COLOR_CYAN
-        );
-        if (typeof flag === "string")
-          Game.flags[flag].memory.hive = this.roomName;
+        const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
+        if (!this.cache.cells[ref]) this.cache.cells[ref] = {};
       }
     });
   });

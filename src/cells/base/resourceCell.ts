@@ -124,8 +124,6 @@ export class ResourceCell extends Cell {
       );
     }
 
-    const roomInfo = Apiary.intel.getInfo(this.resource.pos.roomName, Infinity);
-
     if (this.container) this.pos = this.container.pos;
     if (this.link) {
       const poss = this.resource.pos.getOpenPositions(true);
@@ -135,7 +133,8 @@ export class ResourceCell extends Cell {
       if (pos) this.pos = pos;
     }
 
-    if (roomInfo.roomState === roomStates.SKfrontier) {
+    const roomState = Apiary.intel.getRoomState(this.pos);
+    if (roomState === roomStates.SKfrontier) {
       this.lair = this.pos.findClosest(
         this.pos
           .findInRange(FIND_STRUCTURES, 5)

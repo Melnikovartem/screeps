@@ -180,7 +180,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   }
 
   public goTo(target: ProtoPos, opt: TravelToOptions = {}): ScreepsReturnCode {
-    Apiary.intel.getInfo(this.pos.roomName, Infinity);
+    Apiary.intel.getRoomState(this.pos);
     const ans = this.creep.travelTo(target, opt);
     if (typeof ans === "number") {
       if (ans === OK) this.targetPosition = undefined;
