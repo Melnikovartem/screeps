@@ -228,19 +228,33 @@ export class NKVDMaster extends PowerMaster {
   }
 
   private chillMove() {
-    if (this.powerCreep.ticksToLive < POWER_CREEP_LIFE_TIME / 2)
-      this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
-    else if (
-      this.powerCreep.store.getUsedCapacity(RESOURCE_OPS) >
-      Math.max(200, this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9)
-    ) {
+    // keep 150ops to 90% fill of storage
+    const upperBound = Math.max(
+      this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
+      150
+    );
+    const lowerBound = 150;
+    const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
+    const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
+    if (currOps < lowerBound) {
+      this.powerCreep.withdraw(
+        this.cell.sCell.storage,
+        RESOURCE_OPS,
+        targetBalance - currOps,
+        this.hive.opt
+      );
+      return;
+    }
+    if (currOps > upperBound) {
       this.powerCreep.transfer(
         this.cell.sCell.storage,
         RESOURCE_OPS,
-        this.powerCreep.store.getUsedCapacity(RESOURCE_OPS) - 200,
+        currOps - targetBalance,
         this.hive.opt
       );
-    } else this.powerCreep.goRest(this.cell.pos, this.hive.opt);
+      return;
+    }
+    this.powerCreep.goRest(this.cell.pos, this.hive.opt);
   }
 
   public run() {

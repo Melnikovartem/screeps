@@ -1,3 +1,5 @@
+import { KGBMaster } from "beeMasters/powerCreeps/kgb";
+
 import type { Master } from "../beeMasters/_Master";
 import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
 import { profile } from "../profiler/decorator";
@@ -96,6 +98,16 @@ export class PowerBee extends ProtoBee<PowerCreep> {
         );
       }
       if (validCells.length) return (pb) => new NKVDMaster(validCells[0], pb);
+    } else if (pc.name.includes(prefix.kgb)) {
+      // no spawning for KGB on shard3 cause no wars there :/
+      if (Game.cpu.limit <= 20) return;
+      if (pc.pos) {
+        const validCellsExact = validCells.filter(
+          (h) => h.pos.roomName === pc.pos.roomName
+        );
+        if (validCellsExact.length) validCells = validCellsExact;
+      }
+      if (validCells.length) return (pb) => new KGBMaster(validCells[0], pb);
     }
     return undefined;
   }

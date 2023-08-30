@@ -1,8 +1,10 @@
-import { AnnexMaster } from "../beeMasters/civil/annexer";
-import type { Hive } from "../hive/hive";
-import { profile } from "../profiler/decorator";
-import { hiveStates, prefix } from "../static/enums";
-import { makeId } from "../static/utils";
+import "./visluals-planning";
+
+import { AnnexMaster } from "../../beeMasters/civil/annexer";
+import type { Hive } from "../../hive/hive";
+import { profile } from "../../profiler/decorator";
+import { hiveStates, prefix } from "../../static/enums";
+import { makeId } from "../../static/utils";
 
 const TEXT_SIZE = 0.8;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;
@@ -267,85 +269,24 @@ export class Visuals {
         this.caching[roomName].lastRecalc > Game.time
       )
         continue;
+      const ActivePlan = Apiary.planner.activePlanning[roomName].plan;
       this.changeAnchor(0, 0, roomName, true);
       const vis = this.anchor.vis;
       const hive = Apiary.hives[roomName];
       if (hive) {
         this.nukeInfo(hive);
-        _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) => {
-          vis.circle(p.pos.x, p.pos.y, {
-            opacity: 0.3,
-            fill: "#A1FF80",
-            radius: 0.5,
-          });
-        });
+        _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) =>
+          vis.structure(p.pos.x, p.pos.y, STRUCTURE_RAMPART)
+        );
       }
 
-      for (const x in Apiary.planner.activePlanning[roomName].plan)
-        for (const y in Apiary.planner.activePlanning[roomName].plan[+x]) {
-          const style: CircleStyle = {
-            opacity: 0.6,
-            radius: 0.35,
-          };
-          switch (Apiary.planner.activePlanning[roomName].plan[+x][+y].s) {
-            case STRUCTURE_ROAD:
-              style.fill = "#B0B0B0";
-              style.radius = 0.2;
-              break;
-            case STRUCTURE_WALL:
-              style.fill = "#333433";
-              style.opacity = 1;
-              break;
-            case STRUCTURE_EXTENSION:
-              style.fill = "#F8C03F";
-              style.radius = 0.4;
-              style.opacity = 0.8;
-              break;
-            case STRUCTURE_LAB:
-              style.fill = "#91EFD8";
-              break;
-            case STRUCTURE_LINK:
-              style.fill = "#8B59EF";
-              break;
-            case STRUCTURE_STORAGE:
-            case STRUCTURE_TERMINAL:
-              style.fill = "#FBA31C";
-              style.opacity = 0.8;
-              break;
-            case STRUCTURE_FACTORY:
-              style.fill = "#D88E54";
-              break;
-            case STRUCTURE_POWER_SPAWN:
-              style.fill = "#EE4610";
-              break;
-            case STRUCTURE_NUKER:
-              style.fill = "#B4F51F";
-              break;
-            case STRUCTURE_TOWER:
-              style.fill = "#F988AE";
-              style.opacity = 0.8;
-              style.radius = 0.3;
-              break;
-            case STRUCTURE_SPAWN:
-              style.fill = "#9E1393";
-              style.opacity = 1;
-              break;
-            case null:
-              style.fill = "#1C1C1C";
-              style.opacity = 0.4;
-              style.radius = 0.1;
-              break;
-            case undefined:
-              style.opacity = 0;
-              break;
-            default:
-              style.fill = "#1823FF";
-              break;
-          }
-          vis.circle(+x, +y, style);
-          if (Apiary.planner.activePlanning[roomName].plan[+x][+y].r)
-            vis.circle(+x, +y, { opacity: 0.3, fill: "#A1FF80", radius: 0.5 });
+      for (const x in ActivePlan)
+        for (const y in ActivePlan[+x]) {
+          const info = ActivePlan[+x][+y];
+          if (info.s) vis.structure(+x, +y, info.s);
+          if (info.r) vis.structure(+x, +y, STRUCTURE_RAMPART);
         }
+      vis.connectRoads();
 
       for (const cellType in Apiary.planner.activePlanning[roomName]
         .cellsCache) {

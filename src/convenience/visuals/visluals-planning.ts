@@ -82,7 +82,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       this.poly(
         outline.map((p) => [p[0] + x, p[1] + y]),
         {
-          fill: null,
+          fill: undefined,
           stroke: colors.outline,
           strokeWidth: 0.05,
           opacity: opts.opacity,
@@ -150,7 +150,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         factoryLevelGaps.map((p) => [p[0] + x, p[1] + y]),
         {
           fill: "#140a0a",
-          stroke: null,
+          stroke: undefined,
           opacity: opts.opacity,
         }
       );
@@ -210,15 +210,16 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       break;
     case STRUCTURE_LINK: {
-      const osize = 0.3;
-      const isize = 0.2;
-      let outer = [
+      // stray variables :/
+      // const osize = 0.3;
+      // const isize = 0.2;
+      let outer: [number, number][] = [
         [0.0, -0.5],
         [0.4, 0.0],
         [0.0, 0.5],
         [-0.4, 0.0],
       ];
-      let inner = [
+      let inner: [number, number][] = [
         [0.0, -0.3],
         [0.25, 0.0],
         [0.0, 0.3],
@@ -236,13 +237,13 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       this.poly(inner, {
         fill: colors.gray,
-        stroke: false,
+        stroke: undefined,
         opacity: opts.opacity,
       });
       break;
     }
     case STRUCTURE_TERMINAL: {
-      let outer = [
+      let outer: [number, number][] = [
         [0.0, -0.8],
         [0.55, -0.55],
         [0.8, 0.0],
@@ -252,7 +253,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         [-0.8, 0.0],
         [-0.55, -0.55],
       ];
-      let inner = [
+      let inner: [number, number][] = [
         [0.0, -0.65],
         [0.45, -0.45],
         [0.65, 0.0],
@@ -274,7 +275,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       this.poly(inner, {
         fill: colors.light,
-        stroke: false,
+        stroke: undefined,
         opacity: opts.opacity,
       });
       this.rect(x - 0.45, y - 0.45, 0.9, 0.9, {
@@ -285,7 +286,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       break;
     }
-    case STRUCTURE_LAB:
+    case STRUCTURE_LAB: {
       this.circle(x, y - 0.025, {
         radius: 0.55,
         fill: colors.dark,
@@ -300,11 +301,11 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       this.rect(x - 0.45, y + 0.3, 0.9, 0.25, {
         fill: colors.dark,
-        stroke: false,
+        stroke: undefined,
         opacity: opts.opacity,
       });
       {
-        let box = [
+        let box: [number, number][] = [
           [-0.45, 0.3],
           [-0.45, 0.55],
           [0.45, 0.55],
@@ -318,6 +319,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         });
       }
       break;
+    }
     case STRUCTURE_TOWER:
       this.circle(x, y, {
         radius: 0.6,
@@ -341,7 +343,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       this.circle(x, y, {
         radius: 0.175,
         fill: colors.road,
-        stroke: false,
+        stroke: undefined,
         opacity: opts.opacity,
       });
       if (!this.roads) this.roads = [];
@@ -365,7 +367,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
-    case STRUCTURE_STORAGE:
+    case STRUCTURE_STORAGE: {
       const outline1 = relPoly(x, y, [
         [-0.45, -0.55],
         [0, -0.65],
@@ -388,6 +390,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
+    }
     case STRUCTURE_OBSERVER:
       this.circle(x, y, {
         fill: colors.dark,
@@ -402,8 +405,8 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
-    case STRUCTURE_NUKER:
-      let outline = [
+    case STRUCTURE_NUKER: {
+      let outline: [number, number][] = [
         [0, -1],
         [-0.47, 0.2],
         [-0.5, 0.5],
@@ -418,7 +421,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         fill: colors.dark,
         opacity: opts.opacity,
       });
-      let inline = [
+      let inline: [number, number][] = [
         [0, -0.8],
         [-0.4, 0.2],
         [0.4, 0.2],
@@ -432,6 +435,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
+    }
     case STRUCTURE_CONTAINER:
       this.rect(x - 0.225, y - 0.3, 0.45, 0.6, {
         fill: colors.gray,
@@ -472,12 +476,12 @@ const dirs = [
 
 RoomVisual.prototype.connectRoads = function (opts = {}) {
   const color = opts.color || colors.road || "white";
-  if (!this.roads) return;
+  if (!this.roads) return this;
   this.roads.forEach((r) => {
     for (let i = 1; i <= 4; i++) {
       const d = dirs[i];
       const c = [r[0] + d[0], r[1] + d[1]];
-      const rd = _.some(this.roads, (r) => r[0] == c[0] && r[1] == c[1]);
+      const rd = _.some(this.roads, (r1) => r1[0] === c[0] && r1[1] === c[1]);
       if (rd) {
         this.line(r[0], r[1], c[0], c[1], {
           color,
@@ -507,7 +511,7 @@ RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
   }
   fontstring += textsize + " " + textfont;
 
-  let pointer = [
+  let pointer: [number, number][] = [
     [-0.2, -0.8],
     [0.2, -0.8],
     [0, -0.3],
@@ -554,18 +558,29 @@ RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
     rotate(0, -radius, s, c, x, y),
   ];
 
-  this.poly(points, { stroke: color, opacity });
+  this.poly(points as RoomPosition[], { stroke: color, opacity });
 
   return this;
 };
 
-function rotate(x, y, s, c, px, py) {
+function rotate(
+  x: number,
+  y: number,
+  s: number,
+  c: number,
+  px: number,
+  py: number
+) {
   const xDelta = x * c - y * s;
   const yDelta = x * s + y * c;
   return { x: px + xDelta, y: py + yDelta };
 }
 
-function relPoly(x, y, poly) {
+function relPoly(
+  x: number,
+  y: number,
+  poly: [number, number][]
+): [number, number][] {
   return poly.map((p) => {
     p[0] += x;
     p[1] += y;
@@ -596,7 +611,7 @@ const ColorSets = {
   blue: ["#50d7f9", "#006181"],
   purple: ["#a071ff", "#371383"],
 };
-const ResourceColors = {
+export const ResourceColors = {
   [RESOURCE_ENERGY]: ColorSets.yellow,
   [RESOURCE_POWER]: ColorSets.red,
 
@@ -657,7 +672,7 @@ const MINERALS = [
   RESOURCE_KEANIUM,
 ];
 
-if (global.SYMBOLS) {
+/* if (global.SYMBOLS) {
   const SYMBOL_MAP = {
     [RESOURCE_SYMBOL_ALEPH]: "𐤀",
     [RESOURCE_SYMBOL_BETH]: "𐤁",
@@ -707,6 +722,7 @@ if (global.SYMBOLS) {
     [RESOURCE_SYMBOL_SIN]: "#DC763D",
     [RESOURCE_SYMBOL_TAW]: "#D64B3D",
   };
+
   RoomVisual.prototype._symbol = function (type, x, y, size = 0.25) {
     const outline = [
       [64, 128],
@@ -734,14 +750,16 @@ if (global.SYMBOLS) {
     });
     return this;
   };
-}
+}*/
+
 RoomVisual.prototype.resource = function (type, x, y, size = 0.25) {
-  if (type == RESOURCE_ENERGY || type == RESOURCE_POWER)
+  if (type === RESOURCE_ENERGY || type === RESOURCE_POWER)
     this._fluid(type, x, y, size);
-  else if (MINERALS.includes(type)) this._mineral(type, x, y, size);
-  else if (ResourceColors[type] != undefined) this._compound(type, x, y, size);
-  else if (global.SYMBOLS && SYMBOLS.includes(type))
-    this._symbol(type, x, y, size);
+  else if (MINERALS.includes(type as MineralConstant))
+    this._mineral(type, x, y, size);
+  else if (ResourceColors[type] !== undefined) this._compound(type, x, y, size);
+  // else if (global.SYMBOLS && SYMBOLS.includes(type))
+  //  this._symbol(type, x, y, size);
   else return ERR_INVALID_ARGS;
   return OK;
 };

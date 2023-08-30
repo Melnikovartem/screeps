@@ -57,6 +57,7 @@ export abstract class PowerMaster extends Master {
       if (ans === OK) {
         const pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
         if (pwrStats)
+          // failsafe
           Apiary.logger.addResourceStat(
             this.roomName,
             "PowerCreep",

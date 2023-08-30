@@ -26,7 +26,9 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
 
   // target caching and states to have some tools to work with in masters
 
+  /** position to wich thi sbee whould like to move this turn */
   public targetPosition: RoomPosition | undefined;
+  /** position that bee want to interact with */
   public actionPosition: RoomPosition | undefined;
 
   // for now it will be forever binded
@@ -98,8 +100,6 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     this.actionPosition = undefined;
   }
 
-  // abstract static checkBees(): string;
-
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
   public actionCheck(
@@ -130,12 +130,12 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   ): ScreepsReturnCode {
     this.actionPosition = pos;
     if (pos.equal(this)) return OK;
-    opt.range = opt.range || 2;
+    opt.range = opt.range || 0;
     this.goTo(pos, opt);
     if (
       this.targetPosition &&
-      !this.targetPosition.isFree(false) &&
-      pos.getRangeTo(this) <= 2
+      pos.getRangeTo(this) <= 2 &&
+      !this.targetPosition.isFree(false)
     ) {
       this.stop();
       if (this.pos.enteranceToRoom) {
@@ -315,8 +315,8 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
           chillMap[bee.pos.to_str] = bee;
           if (bee.fatigue > 0) continue;
           const p = bee.targetPosition;
-          const priority = (bee.master && bee.master.movePriority) || 6;
           if (!p) continue;
+          const priority = (bee.master && bee.master.movePriority) || 6;
           const nodeId = p.to_str;
           if (!moveMap[nodeId]) moveMap[nodeId] = [];
           moveMap[nodeId].push({ bee, priority });
@@ -330,7 +330,9 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     Apiary.wrap(
       () => {
         for (const nodeId in moveMap) {
-          const [, roomName, x, y] = /^(\w*)_(\d*)_(\d*)/.exec(nodeId)!;
+          // @ pos.to_str -> roomName_x_y
+          const [, roomName, x, y] =
+            /^([WE][0-9]+[NS][0-9]+)_(\d*)_(\d*)$/.exec(nodeId)!;
           this.beeMove(moveMap, new RoomPosition(+x, +y, roomName), chillMap);
         }
       },

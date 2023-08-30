@@ -86,9 +86,7 @@ RoomPosition.prototype.getOpenPositions = function (
 };
 
 RoomPosition.prototype.isFree = function (ignoreCreeps?: boolean): boolean {
-  let ans =
-    Game.map.getRoomTerrain(this.roomName).get(this.x, this.y) !==
-    TERRAIN_MASK_WALL;
+  let ans = !_.filter(this.lookFor(LOOK_TERRAIN), (t) => t !== "wall").length;
 
   if (ans && this.roomName in Game.rooms) {
     ans = !_.filter(
@@ -102,6 +100,7 @@ RoomPosition.prototype.isFree = function (ignoreCreeps?: boolean): boolean {
     ).length;
 
     if (ans && !ignoreCreeps) ans = !this.lookFor(LOOK_CREEPS).length;
+    if (ans && !ignoreCreeps) ans = !this.lookFor(LOOK_POWER_CREEPS).length;
   }
 
   return ans;

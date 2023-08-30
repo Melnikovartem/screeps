@@ -8,7 +8,7 @@ import { Broker } from "bugSmuggling/broker";
 import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { EmptyLogger } from "convenience/logger-empty";
-import { Visuals } from "convenience/visuals";
+import { Visuals } from "convenience/visuals/visuals";
 import { Hive } from "hive/hive";
 import { RoomPlanner } from "hivePlanner/planner";
 import { FlagOrder } from "orders/order";
