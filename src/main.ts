@@ -36,7 +36,7 @@ function onGlobalReset(): void {
   console.log(`Reset ${Game.shard.name}? Cool time is ${Game.time}`);
 
   // Initialize logging cycle if enabled
-  if (LOGGING_CYCLE) Memory.log.tick.reset = Game.time;
+  if (Memory.log) Memory.log.tick.reset = Game.time;
 
   // Enable profiler if enabled
   if (PROFILER) profiler.enable();
@@ -61,13 +61,12 @@ function main() {
   }
 
   // Measure CPU usage for logging purposes
-  let cpu: number | undefined =
-    Apiary.logger && Memory.settings.reportCPU ? Game.cpu.getUsed() : undefined;
+  let cpu: number | undefined = Game.cpu.getUsed();
 
   // Update logger and report CPU usage if applicable
-  Apiary.logger?.update();
+  Apiary.logger.update();
   if (cpu !== undefined) {
-    Apiary.logger!.reportCPU("rollup", "update", cpu, 1);
+    Apiary.logger.reportCPU("rollup", "update", cpu, 1);
     cpu = Game.cpu.getUsed();
   }
 
@@ -80,7 +79,7 @@ function main() {
 
   // Report CPU usage if applicable
   if (cpu !== undefined) {
-    Apiary.logger!.reportCPU("init", "update", Game.cpu.getUsed() - cpu, 1);
+    Apiary.logger.reportCPU("init", "update", Game.cpu.getUsed() - cpu, 1);
     cpu = Game.cpu.getUsed();
   }
 
@@ -89,7 +88,7 @@ function main() {
 
   // Report CPU usage if applicable
   if (cpu !== undefined)
-    Apiary.logger!.reportCPU("cleanup", "update", Game.cpu.getUsed() - cpu, 1);
+    Apiary.logger.reportCPU("cleanup", "update", Game.cpu.getUsed() - cpu, 1);
 
   // Update and run Apiary
   global.Apiary.update();

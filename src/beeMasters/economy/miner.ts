@@ -239,7 +239,6 @@ export class MinerMaster extends Master {
     target: ConstructionSite<BuildableStructureConstant> | StructureContainer
   ) {
     if (ans !== OK) return;
-    if (!Apiary.logger) return;
     let spend;
     if (target instanceof StructureContainer) {
       spend = Math.min(

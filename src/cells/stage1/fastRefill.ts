@@ -105,13 +105,12 @@ export class FastRefillCell extends Cell {
           !this.sCell.link.cooldown &&
           this.sCell.link.transferEnergy(this.link, amount) === OK
         )
-          if (Apiary.logger)
-            Apiary.logger.addResourceStat(
-              this.roomName,
-              "upkeep",
-              -amount * 0.03,
-              RESOURCE_ENERGY
-            );
+          Apiary.logger.addResourceStat(
+            this.roomName,
+            "upkeep",
+            -amount * 0.03,
+            RESOURCE_ENERGY
+          );
       }
     }
   }

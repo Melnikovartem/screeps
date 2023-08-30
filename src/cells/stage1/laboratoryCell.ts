@@ -532,10 +532,10 @@ export class LaboratoryCell extends Cell {
       this.labStates[lab.id] = "unboosted";
       // @todo Apiary.logger
       // not sure how to log this cause resources could as well just decay
-      if (ans === OK && Apiary.logger)
+      if (ans === OK)
         _.forEach(bee.body, (b) => {
           if (b.boost)
-            Apiary.logger!.addResourceStat(
+            Apiary.logger.addResourceStat(
               this.roomName,
               "unboosting",
               LAB_BOOST_MINERAL * 0.5 * 0.9, // LAB_UNBOOST_MINERAL was undefined in .ts
@@ -647,20 +647,18 @@ export class LaboratoryCell extends Cell {
           this.usedBoost.push(lab.id);
           if (ans === OK) {
             bee.boosted = true;
-            if (Apiary.logger) {
-              Apiary.logger.addResourceStat(
-                this.roomName,
-                "boosts",
-                -r.amount * LAB_BOOST_MINERAL,
-                r.res
-              );
-              Apiary.logger.addResourceStat(
-                this.roomName,
-                "boosts",
-                -r.amount * LAB_BOOST_ENERGY,
-                RESOURCE_ENERGY
-              );
-            }
+            Apiary.logger.addResourceStat(
+              this.roomName,
+              "boosts",
+              -r.amount * LAB_BOOST_MINERAL,
+              r.res
+            );
+            Apiary.logger.addResourceStat(
+              this.roomName,
+              "boosts",
+              -r.amount * LAB_BOOST_ENERGY,
+              RESOURCE_ENERGY
+            );
             r.amount = 0;
           }
         } else if (rCode !== ERR_NOT_IN_RANGE) {
@@ -696,15 +694,15 @@ export class LaboratoryCell extends Cell {
       case "unboosted": {
         const resources = l.pos.findInRange(FIND_DROPPED_RESOURCES, 1);
         this.sCell.requestToStorage(resources, 2, undefined);
-        if (Apiary.logger)
-          _.forEach(resources, (r) =>
-            Apiary.logger!.addResourceStat(
-              this.roomName,
-              "unboost",
-              r.amount,
-              r.resourceType
-            )
-          );
+
+        _.forEach(resources, (r) =>
+          Apiary.logger.addResourceStat(
+            this.roomName,
+            "unboost",
+            r.amount,
+            r.resourceType
+          )
+        );
         // falls through
       }
       case undefined:
@@ -919,11 +917,11 @@ export class LaboratoryCell extends Cell {
     if (this.synthesizeTarget && this.prod.res === this.synthesizeTarget.res)
       this.synthesizeTarget.amount -= cc;
     this.prod.plan -= cc;
-    if (Apiary.logger) {
-      Apiary.logger.addResourceStat(this.roomName, "labs", cc, this.prod.res);
-      Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res1);
-      Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res2);
-    }
+
+    Apiary.logger.addResourceStat(this.roomName, "labs", cc, this.prod.res);
+    Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res1);
+    Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res2);
+
     if (
       !labs.length &&
       !_.filter(

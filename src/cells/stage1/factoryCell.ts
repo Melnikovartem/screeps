@@ -498,16 +498,16 @@ export class FactoryCell extends Cell {
         const res = r as FactoryResourceConstant;
         const amount = recipe.components[res];
         if (res in this.resTarget) this.resTarget[res]! -= amount;
-        if (Apiary.logger)
-          Apiary.logger.addResourceStat(this.roomName, "factory", -amount, res);
+
+        Apiary.logger.addResourceStat(this.roomName, "factory", -amount, res);
       }
-      if (Apiary.logger)
-        Apiary.logger.addResourceStat(
-          this.roomName,
-          "factory",
-          COMMODITIES[this.prod.res].amount,
-          this.prod.res
-        );
+
+      Apiary.logger.addResourceStat(
+        this.roomName,
+        "factory",
+        COMMODITIES[this.prod.res].amount,
+        this.prod.res
+      );
     }
   }
 }

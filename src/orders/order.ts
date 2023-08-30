@@ -799,7 +799,7 @@ export class FlagOrder {
 
   // what to do when delete if something neede
   public delete() {
-    if (Apiary.logger) Apiary.logger.reportOrder(this);
+    Apiary.logger.reportOrder(this);
 
     switch (this.color) {
       case COLOR_PURPLE:

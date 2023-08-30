@@ -284,15 +284,15 @@ export class BuilderMaster extends Master {
             !otherRes
           ) {
             bee.state = beeStates.work;
-            if (Apiary.logger)
-              Apiary.logger.resourceTransfer(
-                this.roomName,
-                this.hive.state === hiveStates.nukealert
-                  ? "defense_build"
-                  : "build",
-                this.sCell.storage.store,
-                bee.store
-              );
+
+            Apiary.logger.resourceTransfer(
+              this.roomName,
+              this.hive.state === hiveStates.nukealert
+                ? "defense_build"
+                : "build",
+              this.sCell.storage.store,
+              bee.store
+            );
             const target = this.hive.getBuildTarget(bee);
             if (target) {
               bee.target = target.id;
@@ -396,7 +396,7 @@ export class BuilderMaster extends Master {
           else if (bee.store.getUsedCapacity()) {
             const res = findOptimalResource(bee.store);
             const ans = bee.transfer(this.sCell.storage, res);
-            if (ans === OK && Apiary.logger)
+            if (ans === OK)
               Apiary.logger.resourceTransfer(
                 this.roomName,
                 res === RESOURCE_ENERGY ? "build" : "pickup",

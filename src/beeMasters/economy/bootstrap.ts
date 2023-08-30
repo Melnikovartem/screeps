@@ -258,13 +258,12 @@ export class BootstrapMaster extends Master {
           break;
         case beeStates.refill:
           if (!bee.creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
-            if (Apiary.logger)
-              Apiary.logger.addResourceStat(
-                this.roomName,
-                "larva",
-                bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
-                RESOURCE_ENERGY
-              );
+            Apiary.logger.addResourceStat(
+              this.roomName,
+              "larva",
+              bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
+              RESOURCE_ENERGY
+            );
             bee.state = beeStates.work;
             bee.target = undefined;
           }
@@ -559,7 +558,7 @@ export class BootstrapMaster extends Master {
           }
           if (workType === "repair") {
             ans = bee.repair(target as Structure, opt);
-            if (ans === OK && Apiary.logger)
+            if (ans === OK)
               Apiary.logger.addResourceStat(
                 this.roomName,
                 "build",
@@ -568,7 +567,7 @@ export class BootstrapMaster extends Master {
               );
           } else if (workType === "build") {
             ans = bee.build(target as ConstructionSite, opt);
-            if (ans === OK && Apiary.logger)
+            if (ans === OK)
               Apiary.logger.addResourceStat(
                 this.roomName,
                 "build",
@@ -584,7 +583,7 @@ export class BootstrapMaster extends Master {
             );
           else if (workType === "upgrade") {
             ans = bee.upgradeController(target as StructureController, opt);
-            if (ans === OK && Apiary.logger)
+            if (ans === OK)
               Apiary.logger.addResourceStat(
                 this.roomName,
                 "upgrade",

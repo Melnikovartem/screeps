@@ -14,7 +14,8 @@ export class Mem {
       if (!(room && room.controller && room && room.controller.my))
         delete Memory.flags[roomName];
     }
-    Logger.init();
+
+    // Memory log is not managed here as it can be undefined
   }
 
   public static wipe() {
@@ -22,7 +23,7 @@ export class Mem {
     Memory.cache = CACHE_EMPTY_DEFAULT;
     Memory.settings = SETTINGS_DEFAULT;
 
-    Logger.init(true);
+    Logger.wipe();
   }
 
   public static clean() {
@@ -38,6 +39,6 @@ export class Mem {
         if (Apiary.orders[name]) Apiary.orders[name].delete();
       }
 
-    if (Apiary.logger) Apiary.logger.clean();
+    Apiary.logger.clean();
   }
 }

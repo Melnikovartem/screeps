@@ -1,11 +1,11 @@
-import type { _Apiary } from "../Apiary";
-import type { CreepSetup } from "../bees/creepSetups";
-import type { CustomConsole } from "../convenience/console/console";
-import type { RoomSetup } from "../hivePlanner/planner";
-import type { CreepAllBattleInfo } from "../spiderSense/intelligence";
-import type { beeStates, roomStates } from "../static/enums";
+import type { _Apiary } from "Apiary";
+import type { CreepSetup } from "bees/creepSetups";
+import type { CustomConsole } from "convenience/console/console";
+import type { RoomSetup } from "hivePlanner/planner";
+import type { CreepAllBattleInfo } from "spiderSense/intelligence";
+import type { beeStates, roomStates } from "static/enums";
+
 import type { HiveCache, HiveLog } from "./hiveMemory";
-// import type { Boosts } from "../beeMasters/_Master";
 
 declare global {
   let Apiary: _Apiary;
@@ -100,7 +100,7 @@ declare global {
           [oomName: string]: {
             energyRes: number;
             mineral: MineralConstant | undefined;
-            enemyInfo?: {};
+            enemyInfo?: any;
           };
         };
         users: {
@@ -160,7 +160,7 @@ declare global {
       reportCPU: boolean;
     };
 
-    reportEvents: {
+    report: {
       orders?: {
         [id: string]: {
           time: number;
@@ -184,23 +184,25 @@ declare global {
     };
 
     // my giant log
-    log: {
-      tick: { current: number; reset: number; create: number };
-      gcl: { level: number; progress: number; progressTotal: number };
-      gpl: { level: number; progress: number; progressTotal: number };
-      cpu: { bucket: number; used: number; limit: number };
-      market: { credits: number; resourceEvents: resourceEventLog };
-      pixels: number;
-
-      /** logging reported cpu usage by each part of the system. Global per function and normilized by the amount of creeps/structures */
-      cpuUsage: {
-        update: { [ref: string]: { cpu: number; norm: number } };
-        run: { [ref: string]: { cpu: number; norm: number } };
-      };
-
-      hives: {
-        [id: string]: HiveLog;
-      };
-    };
+    log: LogInfo | undefined;
   }
+}
+
+interface LogInfo {
+  tick: { current: number; reset: number; create: number };
+  gcl: { level: number; progress: number; progressTotal: number };
+  gpl: { level: number; progress: number; progressTotal: number };
+  cpu: { bucket: number; used: number; limit: number };
+  market: { credits: number; resourceEvents: resourceEventLog };
+  pixels: number;
+
+  /** logging reported cpu usage by each part of the system. Global per function and normilized by the amount of creeps/structures */
+  cpuUsage: {
+    update: { [ref: string]: { cpu: number; norm: number } };
+    run: { [ref: string]: { cpu: number; norm: number } };
+  };
+
+  hives: {
+    [id: string]: HiveLog;
+  };
 }

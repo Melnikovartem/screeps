@@ -294,7 +294,7 @@ CustomConsole.prototype.send = function (
     amount = Math.floor(amount * (1 - energyCost));
 
   const ans = terminalFrom.send(resource, amount, roomNameTo);
-  if (ans === OK && Apiary.logger)
+  if (ans === OK)
     Apiary.logger.newTerminalTransfer(
       terminalFrom,
       terminalTo,
@@ -410,8 +410,8 @@ CustomConsole.prototype.completeOrder = function (
       order.roomName
     );
     ans = Game.market.deal(orderId, amount, terminal.pos.roomName);
-    if (ans === OK && order.roomName && Apiary.logger)
-      Apiary.logger.marketShort(order, amount, terminal.pos.roomName);
+    if (ans === OK && order.roomName)
+      Apiary.logger.marketShortRes(order, amount, terminal.pos.roomName);
   }
 
   const info = `${order.type === ORDER_SELL ? "BOUGHT" : "SOLD"} @ ${hiveName}${

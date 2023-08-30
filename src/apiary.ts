@@ -7,6 +7,7 @@ import { ProtoBee } from "bees/protoBee";
 import { Broker } from "bugSmuggling/broker";
 import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
+import { EmptyLogger } from "convenience/logger-empty";
 import { Visuals } from "convenience/visuals";
 import { Hive } from "hive/hive";
 import { RoomPlanner } from "hivePlanner/planner";
@@ -29,7 +30,7 @@ export class _Apiary {
   public planner: RoomPlanner;
   public network: Network;
   public warcrimes: WarcrimesModule;
-  public logger: Logger | undefined;
+  public logger: EmptyLogger;
   public visuals: Visuals = new Visuals();
   public maxFactoryLvl = 0;
 
@@ -51,6 +52,7 @@ export class _Apiary {
     this.network = new Network();
     this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE) this.logger = new Logger();
+    else this.logger = new EmptyLogger();
 
     this.bees = {};
     this.hives = {};
@@ -73,7 +75,7 @@ export class _Apiary {
       protoHive.update = () => {};
       protoHive.run = () => {};
       this.hives[roomName] = protoHive;
-      this.logger = undefined;
+      this.logger = new EmptyLogger(); // failsafe
     }
     this.network.init();
     this.warcrimes.init();
@@ -95,7 +97,7 @@ export class _Apiary {
     if (safe) safeWrap(func, ref + " " + mode);
     else func();
     // if amount zero we skip the wrap (avoid double counting)
-    if (Memory.settings.reportCPU && this.logger && amount)
+    if (amount)
       this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 

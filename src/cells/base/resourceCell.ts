@@ -208,16 +208,15 @@ export class ResourceCell extends Cell {
         ) {
           const ans = this.link.transferEnergy(fastRefLink);
           if (ans === OK) {
-            if (Apiary.logger)
-              Apiary.logger.resourceTransfer(
-                this.roomName,
-                this.loggerRef,
-                this.link.store,
-                fastRefLink.store,
-                RESOURCE_ENERGY,
-                1,
-                { ref: this.loggerUpkeepRef, per: 0.03 }
-              );
+            Apiary.logger.resourceTransfer(
+              this.roomName,
+              this.loggerRef,
+              this.link.store,
+              fastRefLink.store,
+              RESOURCE_ENERGY,
+              1,
+              { ref: this.loggerUpkeepRef, per: 0.03 }
+            );
             return;
           }
         }
@@ -236,16 +235,15 @@ export class ResourceCell extends Cell {
         ) {
           const ans = this.link.transferEnergy(upgradeLink);
           if (ans === OK) {
-            if (Apiary.logger)
-              Apiary.logger.resourceTransfer(
-                this.roomName,
-                this.loggerRef,
-                this.link.store,
-                upgradeLink.store,
-                RESOURCE_ENERGY,
-                1,
-                { ref: this.loggerUpkeepRef, per: 0.03 }
-              );
+            Apiary.logger.resourceTransfer(
+              this.roomName,
+              this.loggerRef,
+              this.link.store,
+              upgradeLink.store,
+              RESOURCE_ENERGY,
+              1,
+              { ref: this.loggerUpkeepRef, per: 0.03 }
+            );
             return;
           }
         }
@@ -258,7 +256,7 @@ export class ResourceCell extends Cell {
             closeToFull)
         ) {
           const ans = this.link.transferEnergy(storageLink);
-          if (Apiary.logger && ans === OK)
+          if (ans === OK)
             Apiary.logger.resourceTransfer(
               this.roomName,
               this.loggerRef,

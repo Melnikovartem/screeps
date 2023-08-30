@@ -248,7 +248,7 @@ export class HaulerMaster extends Master {
 
           const ans = bee.transfer(this.dropOff, res);
           if (ans === OK) {
-            if (Apiary.logger && bee.target) {
+            if (bee.target) {
               const source = Game.getObjectById(bee.target);
               let sameRes;
               if (source instanceof Source) sameRes = res === RESOURCE_ENERGY;
@@ -303,7 +303,7 @@ export class HaulerMaster extends Master {
             ).filter((s) => s.store.getFreeCapacity(RESOURCE_ENERGY))[0];
 
             if (ss && bee.transfer(ss, RESOURCE_ENERGY) === OK)
-              if (Apiary.logger && bee.target) {
+              if (bee.target) {
                 const ref = "mining_" + bee.target.slice(bee.target.length - 4);
                 Apiary.logger.resourceTransfer(
                   this.roomName,

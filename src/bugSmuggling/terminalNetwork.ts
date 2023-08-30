@@ -209,13 +209,12 @@ export class Network {
           if (amount > 0) {
             const ansTerminal = terminal.send(aid.res, amount, aid.to);
             if (ansTerminal === OK) {
-              if (Apiary.logger)
-                Apiary.logger.newTerminalTransfer(
-                  terminal,
-                  terminalTo,
-                  amount,
-                  aid.res
-                );
+              Apiary.logger.newTerminalTransfer(
+                terminal,
+                terminalTo,
+                amount,
+                aid.res
+              );
               if (aid.excess) aid.amount -= amount;
             }
             continue;

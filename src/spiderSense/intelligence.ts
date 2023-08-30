@@ -386,7 +386,7 @@ export class Intel {
           break;
         default:
           // TODO better pacts system
-          if (Apiary.logger) Apiary.logger.reportEnemy(c);
+          Apiary.logger.reportEnemy(c);
           if (PEACE_PACTS.includes(c.owner.username)) {
             if (roomInfo.roomState !== roomStates.ownedByMe) {
               dangerlvl = 0;

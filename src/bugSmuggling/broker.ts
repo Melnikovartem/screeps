@@ -280,10 +280,8 @@ export class Broker {
    * @returns Result of the order cancellation.
    */
   public cancelOrder(orderId: string) {
-    if (Apiary.logger) {
-      const order = Game.market.getOrderById(orderId);
-      if (order) Apiary.logger.marketLong(order);
-    }
+    const order = Game.market.getOrderById(orderId);
+    if (order) Apiary.logger.marketLongRes(order);
     return Game.market.cancelOrder(orderId);
   }
 
@@ -407,7 +405,7 @@ export class Broker {
       // report stuff
       const fee =
         (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
-      if (fee > 0 && ans === OK && Apiary.logger)
+      if (fee > 0 && ans === OK)
         Apiary.logger.reportMarketFeeChange(
           myOrder.id,
           myOrder.resourceType,
@@ -513,7 +511,7 @@ export class Broker {
       // report stuff
       const fee =
         (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
-      if (fee > 0 && ans === OK && Apiary.logger)
+      if (fee > 0 && ans === OK)
         Apiary.logger.reportMarketFeeChange(
           myOrder.id,
           myOrder.resourceType,
@@ -550,7 +548,7 @@ export class Broker {
       totalAmount: amount,
       roomName,
     });
-    if (ans === OK && Apiary.logger)
+    if (ans === OK)
       Apiary.logger.reportMarketCreation(
         res,
         amount * price * MARKET_FEE,
@@ -585,7 +583,7 @@ export class Broker {
       price,
       roomName,
     });
-    if (ans === OK && Apiary.logger)
+    if (ans === OK)
       Apiary.logger.reportMarketCreation(
         res,
         amount * price * MARKET_FEE,
@@ -645,8 +643,7 @@ export class Broker {
     if (!amount) return ERR_NOT_ENOUGH_RESOURCES;
 
     const ans = Game.market.deal(order.id, amount, roomName);
-    if (ans === OK && Apiary.logger)
-      Apiary.logger.marketShort(order, amount, roomName);
+    if (ans === OK) Apiary.logger.marketShortRes(order, amount, roomName);
     return ans;
   }
 
@@ -707,8 +704,7 @@ export class Broker {
     if (!amount) return ERR_NOT_ENOUGH_RESOURCES;
 
     const ans = Game.market.deal(order.id, amount, roomName);
-    if (ans === OK && Apiary.logger)
-      Apiary.logger.marketShort(order, amount, roomName);
+    if (ans === OK) Apiary.logger.marketShortRes(order, amount, roomName);
     return ans;
   }
 

@@ -53,7 +53,7 @@ export class DepositMinerMaster extends Master {
     _.forEach(this.activeBees, (bee) => {
       if (target.pos.isNearTo(bee)) {
         bee.state = beeStates.work;
-        if (bee.harvest(target) === OK && Apiary.logger)
+        if (bee.harvest(target) === OK)
           Apiary.logger.addResourceStat(
             this.roomName,
             "deposit",

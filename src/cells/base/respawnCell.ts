@@ -22,7 +22,7 @@ export class RespawnCell extends Cell {
   public recycleSpawn: Id<StructureSpawn> | "" = "";
 
   public constructor(hive: Hive) {
-    super(hive, prefix.respawnCell + "_" + hive.room.name);
+    super(hive, prefix.respawnCell);
   }
 
   private spawnEval(spawn: StructureSpawn) {
@@ -233,8 +233,7 @@ export class RespawnCell extends Cell {
       const ans = spawn.spawnCreep(setup.body, name, { memory });
 
       if (ans === OK) {
-        if (Apiary.logger)
-          Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
+        Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
         energyAvailable -= setup.cost;
         delete this.hive.spawOrders[order.ref];
       }

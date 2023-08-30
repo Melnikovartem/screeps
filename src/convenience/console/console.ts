@@ -430,9 +430,7 @@ export class CustomConsole {
   /** nice output of last crashes */
   public reportCrashes() {
     let reportLog = "LAST CRASHES:\n\n";
-    for (const [ref, crash] of Object.entries(
-      Memory.reportEvents.crashes || {}
-    )) {
+    for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
       reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${
         crash.message
       }${crash.stack ? "\nSTACK\n" + crash.stack : ""}\n\n`;
@@ -442,7 +440,7 @@ export class CustomConsole {
 
   /** cleans rashes report log */
   public cleanCrashes() {
-    Memory.reportEvents.crashes = {};
+    Memory.report.crashes = {};
   }
 
   /** recalcs time for resources

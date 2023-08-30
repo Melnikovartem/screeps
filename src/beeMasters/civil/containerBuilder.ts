@@ -73,7 +73,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
             const res = Object.keys(bee.store).filter(
               (r) => r !== RESOURCE_ENERGY
             )[0] as ResourceConstant | undefined;
-            if (res && bee.transfer(sCell.storage, res) === OK && Apiary.logger)
+            if (res && bee.transfer(sCell.storage, res) === OK)
               Apiary.logger.resourceTransfer(
                 this.roomName,
                 "pickup",
@@ -88,13 +88,13 @@ export class ContainerBuilderMaster extends SwarmMaster {
             !otherRes
           ) {
             bee.state = beeStates.work;
-            if (Apiary.logger)
-              Apiary.logger.resourceTransfer(
-                this.roomName,
-                "build",
-                sCell.storage.store,
-                bee.store
-              );
+
+            Apiary.logger.resourceTransfer(
+              this.roomName,
+              "build",
+              sCell.storage.store,
+              bee.store
+            );
             bee.goTo(target.pos);
             break;
           }

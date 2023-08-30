@@ -451,7 +451,7 @@ export class DefenseCell extends Cell {
         if (shouldAttack) {
           // let toAttack = healer ? healer : enemy;
           // healer = undefined;
-          if (tower.attack(enemy) === OK && Apiary.logger)
+          if (tower.attack(enemy) === OK)
             Apiary.logger.addResourceStat(
               this.roomName,
               "defense_dmg",
@@ -464,13 +464,13 @@ export class DefenseCell extends Cell {
         ) {
           if (healTarget && toHeal && tower.heal(healTarget) === OK) {
             toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
-            if (Apiary.logger)
-              Apiary.logger.addResourceStat(
-                this.roomName,
-                "defense_heal",
-                -10,
-                RESOURCE_ENERGY
-              );
+
+            Apiary.logger.addResourceStat(
+              this.roomName,
+              "defense_heal",
+              -10,
+              RESOURCE_ENERGY
+            );
           }
           if (
             tower.store.getUsedCapacity(RESOURCE_ENERGY) <=
@@ -526,13 +526,13 @@ export class DefenseCell extends Cell {
           return;
         if (healTarget && toHeal && tower.heal(healTarget) === OK) {
           toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
-          if (Apiary.logger)
-            Apiary.logger.addResourceStat(
-              this.roomName,
-              "defense_heal",
-              -10,
-              RESOURCE_ENERGY
-            );
+
+          Apiary.logger.addResourceStat(
+            this.roomName,
+            "defense_heal",
+            -10,
+            RESOURCE_ENERGY
+          );
         }
       });
     }

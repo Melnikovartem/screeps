@@ -81,7 +81,7 @@ export class PowerCell extends Cell {
       this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) >
         POWER_SPAWN_ENERGY_RATIO
     )
-      if (this.powerSpawn.processPower() === OK && Apiary.logger) {
+      if (this.powerSpawn.processPower() === OK) {
         Apiary.logger.addResourceStat(
           this.roomName,
           "power_upgrade",

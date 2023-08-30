@@ -54,7 +54,7 @@ export abstract class PowerMaster extends Master {
   public run() {
     if (!this.usedPower) {
       const ans = this.powerCreep.usePower(PWR_GENERATE_OPS);
-      if (ans === OK && Apiary.logger) {
+      if (ans === OK) {
         const pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
         if (pwrStats)
           Apiary.logger.addResourceStat(

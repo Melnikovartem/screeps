@@ -258,16 +258,16 @@ export class NKVDMaster extends PowerMaster {
       );
       if (ans === OK) {
         this.usedPower = true;
-        if (Apiary.logger) {
-          const pwrInfo = POWER_INFO[this.nextup.power];
-          if ("ops" in pwrInfo)
-            Apiary.logger.addResourceStat(
-              this.roomName,
-              "NKVD_" + POWER_NAMES[this.nextup.power],
-              -pwrInfo.ops,
-              RESOURCE_OPS
-            );
-        }
+
+        const pwrInfo = POWER_INFO[this.nextup.power];
+        if ("ops" in pwrInfo)
+          Apiary.logger.addResourceStat(
+            this.roomName,
+            "NKVD_" + POWER_NAMES[this.nextup.power],
+            -pwrInfo.ops,
+            RESOURCE_OPS
+          );
+
         this.nextup = undefined;
       } else if (
         ans === ERR_NOT_ENOUGH_RESOURCES &&
