@@ -86,6 +86,11 @@ export class _Apiary {
       this.requestRoomSightNextTick.push(roomName);
   }
 
+  /** internal clock time */
+  public get intTime() {
+    return Game.time - this.createTime;
+  }
+
   public wrap(
     func: () => void,
     ref: string,

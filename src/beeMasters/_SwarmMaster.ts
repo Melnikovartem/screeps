@@ -9,6 +9,8 @@ import { Master } from "./_Master";
 
 @profile
 export abstract class SwarmMaster extends Master {
+  // @todo replace with SwarmOrder that just holds a pos in cache
+  // flags are costly and can't be placed in uloaded rooms :/
   public readonly order: FlagOrder;
   private _maxSpawns: number = 1;
 

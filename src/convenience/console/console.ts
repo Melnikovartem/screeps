@@ -4,6 +4,8 @@ import { BASE_MODE_HIVE, SETTINGS_DEFAULT } from "static/constants";
 import { prefix } from "static/enums";
 import { makeId } from "static/utils";
 
+import { snapOldPlans } from "./console-hand-fix";
+
 export class CustomConsole {
   public lastActionRoomName: string;
 
@@ -534,6 +536,8 @@ export class CustomConsole {
 
     return "OK";
   }
+
+  public snapOldPlans = snapOldPlans;
 
   public formatRoom(roomName: string, text: string = roomName) {
     return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`;

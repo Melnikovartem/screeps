@@ -1,11 +1,9 @@
 /**
  * Import statements
  */
-import type { HiveCache } from "abstract/hiveMemory";
 import { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { CreepSetup } from "bees/creepSetups";
-import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
@@ -30,7 +28,12 @@ import {
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
-import { addAnex, markResources, updateDangerAnnex } from "./hive-mining";
+import {
+  addAnex,
+  addResourceCells,
+  markResources,
+  updateDangerAnnex,
+} from "./hive-mining";
 import { opt, updateCellData } from "./hive-utils";
 // Import various modules and types
 
@@ -114,15 +117,17 @@ export class Hive {
 
   /** How much of buildings and resources to recheck
    *
-   * 3
+   * 3 also mark resource in all annexes
    *
    * 2
    *
-   * 1
+   * 1 check buildings
    *
    * 0 nothing
    */
   public shouldRecalc: 0 | 1 | 2 | 3;
+  /** added all resources from cache */
+  private allResources = false;
   public bassboost: Hive | null = null;
 
   public structuresConst: BuildProject[] = [];
@@ -272,7 +277,6 @@ export class Hive {
 
   public addAnex = addAnex;
   private updateDangerAnnex = updateDangerAnnex;
-  private markResources = markResources;
 
   private updateCellData = updateCellData;
 
@@ -319,6 +323,9 @@ export class Hive {
 
     this.mastersResTarget = {};
 
+    if (!this.allResources && Apiary.intTime % 50 === 0)
+      this.allResources = addResourceCells(this);
+
     // ask for boost
     if (
       (this.state === hiveStates.nospawn ||
@@ -363,7 +370,7 @@ export class Hive {
         "structures_" + this.roomName,
         "update"
       );
-      if (this.shouldRecalc === 3) this.markResources();
+      if (this.shouldRecalc === 3) markResources(this);
       this.shouldRecalc = 0;
     }
     if (Game.time % 1500 === 29 || this.state === hiveStates.nospawn)

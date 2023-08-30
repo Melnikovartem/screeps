@@ -59,7 +59,9 @@ export class MinerMaster extends Master {
     let shouldSpawn =
       !this.hive.annexInDanger.includes(this.pos.roomName) &&
       (roomState === roomStates.reservedByMe ||
-        roomState === roomStates.noOwner);
+        roomState === roomStates.noOwner ||
+        roomState === roomStates.SKcentral ||
+        roomState === roomStates.SKfrontier);
 
     if (shouldSpawn)
       shouldSpawn =

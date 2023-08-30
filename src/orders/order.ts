@@ -769,30 +769,7 @@ export class FlagOrder {
         }
         break;
       case COLOR_YELLOW:
-        if (this.pos.getRoomRangeTo(this.hive) >= 6) {
-          this.delete();
-          break;
-        }
-        if (this.pos.roomName in Game.rooms) {
-          let resource: Source | Mineral | undefined;
-          switch (this.secondaryColor) {
-            case COLOR_YELLOW:
-              resource = this.pos.lookFor(LOOK_SOURCES)[0];
-              if (resource) {
-                this.hive.cells.excavation.addResource(resource);
-              } else this.delete();
-              break;
-            case COLOR_CYAN:
-              resource = this.pos.lookFor(LOOK_MINERALS)[0];
-              if (resource) {
-                this.hive.cells.excavation.addResource(resource);
-              } else this.delete();
-              break;
-            case COLOR_RED:
-              // do not mine the resource
-              break;
-          }
-        } else this.acted = false;
+        this.delete();
         break;
     }
   }

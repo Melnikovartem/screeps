@@ -34,33 +34,48 @@ export function updateDangerAnnex(this: Hive) {
 }
 
 // actually needs to be done only once, but well couple times each reboot is (not) worst scenario
-export function markResources(this: Hive) {
+export function markResources(hive: Hive) {
   const annexes = _.compact(
-    _.map(this.annexNames, (annexName) => {
+    _.map(hive.annexNames, (annexName) => {
       const annex = Game.rooms[annexName];
       return annex;
     })
   );
-  const rooms = [this.room].concat(annexes);
+  const rooms = [hive.room].concat(annexes);
 
   _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_SOURCES), (s) => {
       const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
-      if (!this.cache.cells[ref]) this.cache.cells[ref] = {};
+      if (!hive.cache.cells[ref]) hive.cache.cells[ref] = {};
     });
   });
 
   _.forEach(rooms, (room) => {
-    const roomState = Apiary.intel.getRoomState(this.pos);
+    const roomState = Apiary.intel.getRoomState(hive.pos);
     _.forEach(room.find(FIND_MINERALS), (s) => {
       if (
-        room.name === this.roomName ||
+        room.name === hive.roomName ||
         roomState === roomStates.SKcentral ||
         roomState === roomStates.SKfrontier
       ) {
         const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
-        if (!this.cache.cells[ref]) this.cache.cells[ref] = {};
+        if (!hive.cache.cells[ref]) hive.cache.cells[ref] = {};
       }
     });
   });
+}
+
+export function addResourceCells(hive: Hive) {
+  let foundAll = true;
+  _.forEach(Object.keys(hive.cache.cells), (cellRef) => {
+    if (cellRef.slice(0, prefix.resourceCells.length) === "res") {
+      // @RESORUCE_CELL_REF
+      const resource = Game.getObjectById(
+        cellRef.slice(prefix.resourceCells.length) as Id<Mineral | Source>
+      );
+      if (resource) hive.cells.excavation.addResource(resource);
+      else foundAll = false;
+    }
+  });
+  return foundAll;
 }
