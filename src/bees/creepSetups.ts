@@ -339,7 +339,7 @@ export const setups = {
   archer: new CreepSetup(
     setupsNames.archer,
     {
-      fixed: [HEAL, HEAL, HEAL, HEAL, HEAL, TOUGH, TOUGH],
+      fixed: [HEAL, HEAL, HEAL, HEAL, HEAL],
       pattern: [RANGED_ATTACK],
     },
     "best"

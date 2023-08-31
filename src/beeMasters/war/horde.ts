@@ -98,7 +98,8 @@ export class HordeMaster extends SwarmMaster {
       ];
     // fast to produce trio to stabilize room
     if (this.order.ref.includes("trio")) {
-      this.maxSpawns = Math.max(30, this.maxSpawns); // 10 trios : 48K energy : 12H harass on shard2
+      // more of a harass unit unless i rly try to code
+      this.maxSpawns = Math.max(60, this.maxSpawns); // 20 trios : 64K energy : 24H harass on shard2
       this.trio = (this.spawned % 3) + 1;
       this.targetBeeCount = 3;
     } else if (this.order.ref.includes("harass")) {
@@ -182,31 +183,41 @@ export class HordeMaster extends SwarmMaster {
           150 -
           this.hive.pos.getRoomRangeTo(this.pos) * 50
     ) {
-      let setup = this.setup;
       if (this.trio) {
-        switch (this.trio) {
-          case 1:
-            setup = setups.archer.copy();
-            setup.patternLimit = 5;
-            setup.fixed = []; // 5 ranged
-            break;
-          case 2:
-            setup = setups.knight.copy();
-            setup.patternLimit = 10;
-            setup.fixed = []; // 20 mele
-            break;
-          case 3:
-            setup = setups.healer.copy();
-            setup.patternLimit = 4;
-            setup.fixed = []; // 4 heal
-            break;
+        let setup = this.setup;
+        // lost one replace a full setup
+        // prob not best cost wise
+        for (let i = this.trio; i < 4; ++i) {
+          switch (this.trio) {
+            case 1:
+              setup = setups.archer.copy();
+              setup.patternLimit = 5;
+              setup.scheme = 2;
+              setup.fixed = []; // 5 ranged : 1000
+              break;
+            case 2:
+              setup = setups.knight.copy();
+              setup.patternLimit = 10;
+              setup.scheme = 2;
+              setup.fixed = []; // 10 mele : 1300
+              break;
+            case 3:
+              setup = setups.healer.copy();
+              setup.patternLimit = 5;
+              setup.fixed = []; // 3 heal : 900
+              break;
+          }
+          this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
+          this.wish({
+            setup,
+            priority: 4,
+          });
         }
-        this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
-      }
-      this.wish({
-        setup,
-        priority: 4,
-      });
+      } else
+        this.wish({
+          setup: this.setup,
+          priority: 4,
+        });
     }
   }
 
@@ -410,7 +421,9 @@ export class HordeMaster extends SwarmMaster {
     }
 
     // are we too close
-    let shouldFlee = rangeToTarget < targetedRange;
+    let shouldFlee =
+      rangeToTarget < targetedRange ||
+      (!beeStats.dmgRange && !beeStats.dmgClose);
     if (!shouldFlee && loosingBattle >= 0) {
       const enterance = bee.pos.enteranceToRoom;
       // try to stay in room if winning
@@ -544,7 +557,13 @@ export class HordeMaster extends SwarmMaster {
               bee.heal(healingTarget);
             bee.goRest(this.pos);
           } else this.beeAct(bee, enemy);
-          if (enemy || !bee.boosted || bee.ticksToLive > this.maxPath) break;
+          if (
+            !this.recycle ||
+            enemy ||
+            !bee.boosted ||
+            bee.ticksToLive > this.maxPath
+          )
+            break;
           // if no enemies we go unboost
           bee.state = beeStates.fflush;
           // fall through

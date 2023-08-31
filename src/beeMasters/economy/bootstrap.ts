@@ -90,7 +90,6 @@ export class BootstrapMaster extends Master {
       // amount of positions * bees can 1 position support
       const maxcycleByPos =
         openPos * (1 + cycleWithoutEnergy / (25 + cycleWithoutEnergy));
-      console.log(cell.print, maxCycleByEnergy, maxcycleByPos);
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 
