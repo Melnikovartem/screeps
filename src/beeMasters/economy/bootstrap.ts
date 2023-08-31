@@ -44,7 +44,7 @@ export class BootstrapMaster extends Master {
 
   public recalculateTargetBee() {
     this.targetBeeCount = 0;
-    this.minRoadTime = Infinity;
+    this.minRoadTime = 50;
     this.patternCount = Math.floor(
       this.hive.room.energyCapacityAvailable / 200
     );
@@ -59,8 +59,7 @@ export class BootstrapMaster extends Master {
       );
     this.patternCount = Math.max(this.patternCount, 1);
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
-      if (cell.resourceType !== RESOURCE_ENERGY || cell.restTime === Infinity)
-        return;
+      if (cell.resourceType !== RESOURCE_ENERGY) return;
       this.minRoadTime = Math.min(this.minRoadTime, cell.restTime);
       const cycleWithoutEnergy =
         (cell.roadTime - 2) * 2 +
@@ -91,6 +90,7 @@ export class BootstrapMaster extends Master {
       // amount of positions * bees can 1 position support
       const maxcycleByPos =
         openPos * (1 + cycleWithoutEnergy / (25 + cycleWithoutEnergy));
+      console.log(cell.print, maxCycleByEnergy, maxcycleByPos);
       this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 

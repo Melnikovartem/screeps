@@ -127,7 +127,7 @@ export class Hive {
    */
   public shouldRecalc: 0 | 1 | 2 | 3;
   /** added all resources from cache */
-  private allResources = false;
+  public allResources = false;
   public bassboost: Hive | null = null;
 
   public structuresConst: BuildProject[] = [];

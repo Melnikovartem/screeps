@@ -823,10 +823,23 @@ export class RoomPlanner {
   }
 
   public addResourceRoads(anchor: RoomPosition, fromMem = false) {
-    const futureResourceCells = _.filter(
-      Game.flags,
-      (f) => f.color === COLOR_YELLOW && f.memory.hive === anchor.roomName
-    );
+    const futureResourceCells: (Source | Mineral)[] = [];
+
+    const room = Game.rooms[anchor.roomName];
+    if (room)
+      _.forEach(room.find(FIND_SOURCES), (s) => futureResourceCells.push(s));
+
+    if (room)
+      _.forEach(room.find(FIND_MINERALS), (s) => futureResourceCells.push(s));
+
+    const hive = Apiary.hives[anchor.roomName];
+    if (hive)
+      _.forEach(hive.cells.excavation.resourceCells, (c) =>
+        !futureResourceCells.filter((rc) => rc.id === c.resource.id)
+          ? futureResourceCells.push(c.resource)
+          : 0
+      );
+
     futureResourceCells.sort((a, b) => {
       const ans =
         anchor.getRoomRangeTo(a, "path") - anchor.getRoomRangeTo(b, "path");
@@ -868,7 +881,7 @@ export class RoomPlanner {
           const ans = this.connectWithRoad(anchor, f.pos, true, { range: 1 });
           if (typeof ans === "number") return ans;
           const room = Game.rooms[f.pos.roomName];
-          if (f.secondaryColor === COLOR_YELLOW) {
+          if (f instanceof Source) {
             const existingContainer =
               room &&
               f.pos
@@ -935,7 +948,7 @@ export class RoomPlanner {
             });
             if (this.addToPlan(pos, anchor.roomName, STRUCTURE_LINK) !== OK)
               return ERR_FULL;
-          } else if (f.secondaryColor === COLOR_CYAN) {
+          } else if (f instanceof Mineral) {
             const existingContainer =
               room &&
               f.pos

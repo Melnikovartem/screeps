@@ -27,57 +27,65 @@ export class UpgraderMaster extends Master {
 
   private recalculateTargetBee() {
     const upgradeMode = this.hive.mode.upgrade; // polen
+
+    // booring bees when we just try to be stable
     if (
       upgradeMode === 0 ||
-      (upgradeMode === 1 && this.cell.controller.level === 8) ||
-      (upgradeMode >= 2 &&
-        this.hive.resState.energy >= UPGRADING_AFTER_8_ENERGY) ||
-      this.hive.state === hiveStates.nukealert // spawn even when nuke
-    ) {
+      (upgradeMode === 1 && this.cell.controller.level === 8) // spawn even when nuke
+    )
       this.boosts = undefined;
 
-      this.targetBeeCount =
-        this.cell.controller.ticksToDowngrade <
-          CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.75 ||
-        UPGRADING_AFTER_8_ENERGY
-          ? 1
-          : 0;
-      this.patternPerBee = 1;
-      return;
-    }
-
+    // boost upto 8 default mode (2)
     if (
       upgradeMode === 3 ||
-      (this.cell.controller.level < 8 && upgradeMode <= 2)
+      (this.cell.controller.level < 8 && upgradeMode > 0)
     )
       this.boosts = [
         { type: "upgrade", lvl: 2 },
         { type: "upgrade", lvl: 1 },
         { type: "upgrade", lvl: 0 },
       ];
+    else this.boosts = undefined;
 
     const storeAmount =
       this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
-    // ceil(desiredRate) > 80 @ ~602K aka ceil(desiredRate) > this.cell.maxRate almost everywhere
-    let desiredRate = Math.min(
-      this.cell.maxPossibleRate,
-      this.cell.maxRate,
-      Math.ceil(
-        2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) +
-          3.5 * Math.pow(10, -5) * storeAmount -
-          1
-      )
-    );
 
+    let desiredRate = 0;
     if (
       this.cell.controller.level < 7 &&
       this.hive.resState[RESOURCE_ENERGY] > 0 &&
       this.hive.room.terminal
     )
       desiredRate = this.cell.maxRate; // can always buy / ask for more
+    else if (this.cell.controller.level < 7)
+      desiredRate = Math.min(
+        this.cell.maxRate,
+        Math.ceil(
+          2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) +
+            3.5 * Math.pow(10, -5) * storeAmount -
+            1
+        ) // some math i pulled out of my ass ?? why tho
+      );
+    else if (
+      upgradeMode >= 2 &&
+      this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
+    )
+      desiredRate = this.cell.maxRate; // upgrade for GCL
 
-    // ceil(desiredRate) === 0 @ ~30K
-    const targetPrecise = desiredRate / this.cell.ratePerCreepMax;
+    // failsafe (kidna but no)
+    if (
+      !desiredRate &&
+      this.cell.controller.ticksToDowngrade <
+        CONTROLLER_DOWNGRADE[this.cell.controller.level] * 0.5
+    )
+      desiredRate = 2; // enought to fix anything
+
+    // we save smth for sure here
+    if (upgradeMode === 0) desiredRate = Math.min(desiredRate, 1);
+
+    const targetPrecise =
+      Math.min(desiredRate, this.cell.maxPossibleRate) /
+      this.cell.ratePerCreepMax;
     this.targetBeeCount = Math.min(Math.ceil(targetPrecise), this.cell.maxBees);
     this.patternPerBee = Math.round(
       (targetPrecise / this.targetBeeCount) * this.cell.workPerCreepMax
@@ -97,8 +105,11 @@ export class UpgraderMaster extends Master {
 
     if (this.checkBeesWithRecalc()) {
       let upgrader;
-      if (this.fastModePossible) upgrader = setups.upgrader.fast.copy();
-      else upgrader = setups.upgrader.manual.copy();
+      if (this.fastModePossible) {
+        upgrader = setups.upgrader.fast.copy();
+        if (this.cell.controller.level === 8 && this.hive.mode.upgrade >= 2)
+          upgrader.fixed = [CARRY, CARRY, CARRY]; // save some cpu on withdrawing
+      } else upgrader = setups.upgrader.manual.copy();
       upgrader.patternLimit = this.patternPerBee;
       this.wish({
         setup: upgrader,
@@ -143,8 +154,8 @@ export class UpgraderMaster extends Master {
         else bee.state = beeStates.fflush; // recycle boosts
       } else if (
         (this.fastModePossible &&
-          bee.store.getUsedCapacity(RESOURCE_ENERGY) < 50 &&
-          this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME) ||
+          bee.store.getUsedCapacity(RESOURCE_ENERGY) <= bee.workMax * 2 &&
+          this.cell.controller.ticksToDowngrade > CREEP_LIFE_TIME) || // failsafe for link network
         bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0
       ) {
         // let pos = target.pos.getOpenPositions(false).filter(p => p.getRangeTo(this.cell) <= 3)[0] || target;

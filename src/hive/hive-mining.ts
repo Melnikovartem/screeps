@@ -45,8 +45,9 @@ export function markResources(hive: Hive) {
 
   _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_SOURCES), (s) => {
-      const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
-      if (!hive.cache.cells[ref]) hive.cache.cells[ref] = {};
+      const ref = prefix.resourceCells + s.id;
+      if (!hive.cache.cells[ref]) hive.cache.cells[ref] = { poss: s.pos };
+      console.log(hive.cache.cells[ref], hive.print, ref);
     });
   });
 
@@ -58,11 +59,13 @@ export function markResources(hive: Hive) {
         roomState === roomStates.SKcentral ||
         roomState === roomStates.SKfrontier
       ) {
-        const ref = Cell.refToCacheName(prefix.resourceCells + s.id);
-        if (!hive.cache.cells[ref]) hive.cache.cells[ref] = {};
+        const ref = prefix.resourceCells + s.id;
+        if (!hive.cache.cells[ref]) hive.cache.cells[ref] = { poss: s.pos };
       }
     });
   });
+
+  hive.allResources = false;
 }
 
 export function addResourceCells(hive: Hive) {

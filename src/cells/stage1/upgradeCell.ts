@@ -106,6 +106,7 @@ export class UpgradeCell extends Cell {
   }
 
   public get maxPossibleRate() {
+    // @todo add power creep buff check
     return this.controller.level === 8 ? 15 : Infinity;
   }
 

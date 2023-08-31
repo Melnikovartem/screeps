@@ -16,7 +16,7 @@ export class ExcavationCell extends Cell {
   public fullContainer = CONTAINER_CAPACITY * 0.9;
 
   public constructor(hive: Hive) {
-    super(hive, prefix.excavationCell + "_" + hive.room.name);
+    super(hive, prefix.excavationCell);
     // @todo smth smarter for rest pos base
     const pos =
       this.hive.room.storage?.pos ||

@@ -10,7 +10,7 @@ export interface HiveCache {
     /** nothing / unboost / unboost */
     unboost: 0 | 1;
     saveCpu: 0 | 1;
-    /** do not boost, boost up to lvl 8, no boosted energy after lvl 8, boosted energy after lvl 8 */
+    /** do not boost, boost up to lvl 8, no boosted max energy after lvl 8, boosted max energy after lvl 8 */
     upgrade: 0 | 1 | 2 | 3;
     // do not, if any is needed, (up to some stockpile after if profitable) */
     lab: 0 | 1 | 2;

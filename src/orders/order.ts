@@ -202,9 +202,9 @@ export class FlagOrder {
             }
 
             if (!(this.pos.roomName in Game.rooms)) {
-              if (this.hive.cells.observe)
-                Apiary.requestSight(this.pos.roomName);
-              else if (
+              Apiary.requestSight(this.pos.roomName);
+              if (
+                !this.hive.cells.observe &&
                 !this.master &&
                 !Game.flags[prefix.puppet + this.pos.roomName]
               ) {

@@ -98,7 +98,7 @@ export class HordeMaster extends SwarmMaster {
       ];
     // fast to produce trio to stabilize room
     if (this.order.ref.includes("trio")) {
-      this.maxSpawns = 30; // 10 trios : 32K energy : 12H harass on shard2
+      this.maxSpawns = Math.max(30, this.maxSpawns); // 10 trios : 48K energy : 12H harass on shard2
       this.trio = (this.spawned % 3) + 1;
       this.targetBeeCount = 3;
     } else if (this.order.ref.includes("harass")) {
@@ -185,20 +185,20 @@ export class HordeMaster extends SwarmMaster {
       let setup = this.setup;
       if (this.trio) {
         switch (this.trio) {
-          case 0:
+          case 1:
             setup = setups.archer.copy();
             setup.patternLimit = 5;
-            setup.fixed = []; // 5 ranged 5 move
-            break;
-          case 1:
-            setup = setups.defender.destroyer.copy();
-            setup.patternLimit = 10;
-            setup.fixed = []; // 10 mele 10 move
+            setup.fixed = []; // 5 ranged
             break;
           case 2:
+            setup = setups.knight.copy();
+            setup.patternLimit = 10;
+            setup.fixed = []; // 20 mele
+            break;
+          case 3:
             setup = setups.healer.copy();
-            setup.patternLimit = 3;
-            setup.fixed = []; // 3 heal 3 move
+            setup.patternLimit = 4;
+            setup.fixed = []; // 4 heal
             break;
         }
         this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
@@ -387,7 +387,7 @@ export class HordeMaster extends SwarmMaster {
       !beeStats.dmgRange &&
       beeStats.heal &&
       bee.pos.roomName === this.roomName &&
-      loosingBattle >= 1
+      loosingBattle >= 0
     ) {
       // healer help with attack
       const moveTarget = this.activeBees
@@ -404,6 +404,7 @@ export class HordeMaster extends SwarmMaster {
           if (!diff) diff = a.hitsMax - b.hitsMax;
           return diff >= 0 ? a : b;
         });
+      console.log(bee.print, moveTarget && moveTarget.print, loosingBattle);
       if (moveTarget) bee.goTo(moveTarget, opt);
       return OK;
     }
