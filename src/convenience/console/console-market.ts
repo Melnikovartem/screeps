@@ -108,14 +108,14 @@ declare module "./console" {
 
     /**
      * Buys master's minerals for a hive.
-     * @param padding - Additional amount to consider while buying.
      * @param hiveName - Name of the hive to perform the transaction.
+     * @param padding - Additional amount to consider while buying.
      * @param mode - Transaction mode (fast/better price).
      * @returns Result message of the transactions.
      */
     buyMastersMinerals(
-      padding?: number,
       hiveName?: string,
+      padding?: number,
       mode?: boolean
     ): string;
 
@@ -148,14 +148,6 @@ declare module "./console" {
       sets?: number,
       hurry?: boolean
     ): string;
-
-    /**
-     * Handles the result of a market transaction and provides a formatted message.
-     * @param ans - Result code or message of the transaction.
-     * @param info - Additional information about the transaction.
-     * @returns Formatted result message.
-     */
-    marketReturn(ans: number | string, info: string): string;
   }
 }
 
@@ -329,7 +321,7 @@ CustomConsole.prototype.changeOrderPrice = function (
   orderId: string,
   newPrice: number
 ) {
-  return this.marketReturn(
+  return marketReturn(
     Game.market.changeOrderPrice(orderId, newPrice),
     "ORDER CHANGE TO " + newPrice
   );
@@ -341,7 +333,7 @@ CustomConsole.prototype.cancelOrdersHive = function (hiveName, active = false) {
   _.forEach(Game.market.orders, (o) => {
     if (o.roomName === hiveName && (!o.active || active))
       ans +=
-        this.marketReturn(
+        marketReturn(
           Apiary.broker.cancelOrder(o.id),
           `canceled ${o.resourceType}`
         ) + "\n";
@@ -350,7 +342,7 @@ CustomConsole.prototype.cancelOrdersHive = function (hiveName, active = false) {
 };
 
 CustomConsole.prototype.cancelOrder = function (orderId: string) {
-  return this.marketReturn(Apiary.broker.cancelOrder(orderId), "ORDER CANCEL");
+  return marketReturn(Apiary.broker.cancelOrder(orderId), "ORDER CANCEL");
 };
 
 CustomConsole.prototype.completeOrder = function (
@@ -420,7 +412,7 @@ CustomConsole.prototype.completeOrder = function (
     amount * order.price
   } \nENERGY: ${energy}`;
 
-  return this.marketReturn(ans, info);
+  return marketReturn(ans, info);
 };
 
 CustomConsole.prototype.getTerminal = function (
@@ -437,8 +429,8 @@ CustomConsole.prototype.getTerminal = function (
 };
 
 CustomConsole.prototype.buyMastersMinerals = function (
-  padding = 0,
   hiveName?: string,
+  padding = 0,
   fast = true
 ) {
   if (hiveName === undefined) hiveName = this.lastActionRoomName;
@@ -476,8 +468,8 @@ CustomConsole.prototype.buy = function (
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
+  Apiary.broker.updateRes(resource, 0);
+  return marketReturn(
     Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry),
     `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
   );
@@ -493,9 +485,29 @@ CustomConsole.prototype.sell = function (
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  Apiary.broker.update();
-  return this.marketReturn(
+  Apiary.broker.updateRes(resource, 0);
+  return marketReturn(
     Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry),
     `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
   );
 };
+
+/**
+ * Handles the result of a market transaction and provides a formatted message.
+ * @param ans - Result code or message of the transaction.
+ * @param info - Additional information about the transaction.
+ * @returns Formatted result message.
+ */
+function marketReturn(ans: number | string, info: string) {
+  switch (ans) {
+    case ERR_NOT_FOUND:
+      ans = "NO GOOD DEAL NEAR";
+      break;
+    case ERR_NOT_ENOUGH_RESOURCES:
+      ans = "NOT ENOUGH RESOURCES";
+      break;
+    case OK:
+      return "OK " + info;
+  }
+  return `${typeof ans === "number" ? "ERROR: " : ""}${ans} ` + info;
+}

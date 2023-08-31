@@ -29,18 +29,7 @@ export class HordeDefenseMaster extends HordeMaster {
     const shouldSpawn =
       Game.time >= roomInfo.safeModeEndTime - 250 && roomInfo.dangerlvlmax > 2;
 
-    if (
-      this.boosts &&
-      _.filter(this.bees, (b) => b.state === beeStates.boosting).length
-    )
-      _.forEach(this.boosts, (boost) =>
-        addResDict(
-          this.hive.mastersResTarget,
-          BOOST_MINERAL[boost.type][boost.lvl],
-          35 * this.targetBeeCount * LAB_BOOST_MINERAL
-        )
-      );
-    // 35 is not best number, but it is ok for what it is worth
+    this.secureBoostsHive();
 
     const isSKraid =
       (roomInfo.roomState === roomStates.SKfrontier ||
@@ -56,7 +45,7 @@ export class HordeDefenseMaster extends HordeMaster {
       if (
         !this.checkBees(
           this.hive.state !== hiveStates.battle ||
-            this.pos.roomName === this.roomName,
+            this.pos.roomName === this.hiveName,
           CREEP_LIFE_TIME / 2
         )
       )
@@ -246,7 +235,7 @@ export class HordeDefenseMaster extends HordeMaster {
         this.order.delete();
         return;
       }
-      if (this.pos.roomName !== this.roomName && !this.boosts)
+      if (this.pos.roomName !== this.hiveName && !this.boosts)
         order.priority = Math.max(4, order.priority) as 4 | 7;
       this.wish(order);
       return;

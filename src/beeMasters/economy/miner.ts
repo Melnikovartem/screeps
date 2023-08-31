@@ -84,7 +84,7 @@ export class MinerMaster extends Master {
       };
 
       if (this.resourceType === RESOURCE_ENERGY) {
-        if (this.pos.roomName !== this.roomName) order.priority = 5;
+        if (this.pos.roomName !== this.hiveName) order.priority = 5;
         order.setup = setups.miner.energy.copy();
         order.setup.patternLimit = Math.round(this.cell.ratePT / 2) + 1;
         if (this.cell.link) order.setup.fixed = [CARRY, CARRY, CARRY, CARRY];
@@ -108,7 +108,7 @@ export class MinerMaster extends Master {
     if (this.resourceType !== RESOURCE_ENERGY) return undefined;
     if (
       this.cell.container &&
-      (this.pos.roomName !== this.roomName || this.cell.link)
+      (this.pos.roomName !== this.hiveName || this.cell.link)
     )
       return undefined;
     if (!(this.pos.roomName in Game.rooms)) return undefined;
@@ -118,7 +118,7 @@ export class MinerMaster extends Master {
       .filter((c) => c.structureType === STRUCTURE_ROAD)[0];
     if (construction) return construction;
 
-    if (this.pos.roomName === this.roomName) {
+    if (this.pos.roomName === this.hiveName) {
       construction = this.cell.resource.pos
         .findInRange(FIND_CONSTRUCTION_SITES, 2)
         .filter((c) => c.structureType === STRUCTURE_LINK)[0];
@@ -252,13 +252,13 @@ export class MinerMaster extends Master {
       spend = Math.min(bee.workMax * 5, target.progressTotal - target.progress);
     spend = Math.min(bee.store.getUsedCapacity(RESOURCE_ENERGY));
     Apiary.logger.addResourceStat(
-      this.roomName,
+      this.hiveName,
       this.cell.loggerRef,
       spend,
       RESOURCE_ENERGY
     );
     Apiary.logger.addResourceStat(
-      this.roomName,
+      this.hiveName,
       this.cell.loggerUpkeepRef,
       -spend,
       RESOURCE_ENERGY

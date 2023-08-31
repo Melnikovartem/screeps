@@ -46,6 +46,8 @@ export class HelpTransferMaster extends SwarmMaster {
 
   public run() {
     this.preRunBoost();
+    this.secureBoostsHive();
+
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
       if (this.checkFlee(bee, this.hive)) return;
@@ -54,10 +56,10 @@ export class HelpTransferMaster extends SwarmMaster {
         bee.ticksToLive > 50 &&
         bee.pos.getRoomRangeTo(this.hive) === 1
       ) {
-        bee.fleeRoom(this.roomName, this.hive.opt);
+        bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
-      const old = bee.ticksToLive < 50 && bee.pos.roomName === this.roomName;
+      const old = bee.ticksToLive < 50 && bee.pos.roomName === this.hiveName;
       if (old) this.recycleBee(bee);
       else if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
         bee.goRest(this.hive.rest, this.hive.opt);

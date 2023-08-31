@@ -59,8 +59,8 @@ export abstract class PowerMaster extends Master {
         if (pwrStats)
           // failsafe
           Apiary.logger.addResourceStat(
-            this.roomName,
-            "PowerCreep",
+            this.hiveName,
+            this.powerCreep.ref,
             POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level],
             RESOURCE_OPS
           );

@@ -33,6 +33,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
 
   public update() {
     super.update();
+    this.secureBoostsHive();
 
     const controller = Game.rooms[this.pos.roomName].controller;
     if (

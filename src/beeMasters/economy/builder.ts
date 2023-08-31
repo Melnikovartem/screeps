@@ -61,7 +61,7 @@ export class BuilderMaster extends Master {
     const realBattle =
       this.hive.isBattle &&
       (this.hive.buildingCosts.hive.repair > 5_000 ||
-        Apiary.intel.getInfo(this.roomName, 20).dangerlvlmax >= 6);
+        Apiary.intel.getInfo(this.hiveName, 20).dangerlvlmax >= 6);
     const otherEmergency =
       this.hive.state === hiveStates.nukealert ||
       this.hive.buildingCosts.hive.build / 5 +
@@ -186,7 +186,7 @@ export class BuilderMaster extends Master {
 
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.roomName, this.hive.opt);
+        bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
 
@@ -259,7 +259,7 @@ export class BuilderMaster extends Master {
               Apiary.logger
             )
               Apiary.logger.resourceTransfer(
-                this.roomName,
+                this.hiveName,
                 "pickup",
                 bee.store,
                 this.sCell.storage.store,
@@ -286,7 +286,7 @@ export class BuilderMaster extends Master {
             bee.state = beeStates.work;
 
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               this.hive.state === hiveStates.nukealert
                 ? "defense_build"
                 : "build",
@@ -331,7 +331,7 @@ export class BuilderMaster extends Master {
               }
               if (
                 target &&
-                target.pos.roomName !== this.roomName &&
+                target.pos.roomName !== this.hiveName &&
                 this.hive.annexInDanger.includes(target.pos.roomName)
               ) {
                 target = undefined;
@@ -398,7 +398,7 @@ export class BuilderMaster extends Master {
             const ans = bee.transfer(this.sCell.storage, res);
             if (ans === OK)
               Apiary.logger.resourceTransfer(
-                this.roomName,
+                this.hiveName,
                 res === RESOURCE_ENERGY ? "build" : "pickup",
                 bee.store,
                 this.sCell.storage.store,

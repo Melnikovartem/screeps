@@ -12,7 +12,7 @@ import {
   removeBee,
   wish,
 } from "./_Master-beeManage";
-import { checkFlee, preRunBoost } from "./_Master-utils";
+import { checkFlee, preRunBoost, secureBoostsHive } from "./_Master-utils";
 
 export type Boosts = BoostRequest[];
 
@@ -66,7 +66,7 @@ export abstract class Master {
     this._boosts = value;
   }
 
-  public get roomName() {
+  public get hiveName() {
     return this.hive.roomName;
   }
 
@@ -110,6 +110,8 @@ export abstract class Master {
 
   /** sends to boos any bees with beeState, then frees them with chill status */
   public preRunBoost = preRunBoost;
+  /** sets mastersResTarget for hive so that we can afford bees for sure */
+  public secureBoostsHive = secureBoostsHive;
 
   /** recycles bees when they are not needed (unboost + energy recycle)
    *
@@ -139,7 +141,7 @@ export abstract class Master {
 
   public get print(): string {
     const firstBee = this.bees[Object.keys(this.bees)[0]];
-    let roomName = this.roomName;
+    let roomName = this.hiveName;
     if (firstBee && firstBee.pos) roomName = firstBee.pos.roomName;
     return `<a href=#!/room/${Game.shard.name}/${roomName}>["${this.ref}"]</a>`;
   }

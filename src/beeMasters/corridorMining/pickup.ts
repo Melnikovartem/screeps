@@ -161,7 +161,7 @@ export class DepositPickupMaster extends Master {
             bee.ticksToLive > 50 &&
             bee.pos.getRoomRangeTo(this.hive) === 1
           ) {
-            bee.fleeRoom(this.roomName);
+            bee.fleeRoom(this.hiveName);
             break;
           }
           if (

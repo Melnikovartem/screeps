@@ -89,7 +89,7 @@ export class PickupMaster extends SwarmMaster {
       if (!target) {
         const room = Game.rooms[this.pos.roomName];
         // what a lie this is STRUCTURE_POWER_BANK
-        if (this.pos.roomName !== this.roomName) {
+        if (this.pos.roomName !== this.hiveName) {
           if (!target)
             target = room
               .find(FIND_STRUCTURES)
@@ -147,14 +147,14 @@ export class PickupMaster extends SwarmMaster {
             bee.ticksToLive > 50 &&
             bee.pos.getRoomRangeTo(this.hive) === 1
           ) {
-            bee.fleeRoom(this.roomName);
+            bee.fleeRoom(this.hiveName);
             break;
           }
           const res = findOptimalResource(bee.store);
           const ans = bee.transfer(storage, res);
           if (ans === OK)
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               res === RESOURCE_POWER ? "power_mining" : "pickup",
               bee.store,
               storage.store,

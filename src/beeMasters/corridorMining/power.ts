@@ -265,7 +265,7 @@ export class PowerMaster extends SwarmMaster {
       COLOR_ORANGE,
       COLOR_GREEN
     );
-    if (typeof name === "string") Game.flags[name].memory.hive = this.roomName;
+    if (typeof name === "string") Game.flags[name].memory.hive = this.hiveName;
   }
 
   public run() {

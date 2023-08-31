@@ -21,7 +21,8 @@ export class ManagerMaster extends Master {
     super.update();
 
     this.activeBees.sort(
-      (a, b) => a.pos.getRangeTo(this.cell) - b.pos.getRangeTo(this.cell)
+      (a, b) =>
+        a.pos.getRangeTo(this.hive.pos) - b.pos.getRangeTo(this.hive.pos)
     );
 
     let refilling = 0;
@@ -139,7 +140,7 @@ export class ManagerMaster extends Master {
   public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.roomName, this.hive.opt);
+        bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
 

@@ -19,7 +19,8 @@ export class RespawnCell extends Cell {
 
   public priorityMap: { [id: string]: number } = {};
 
-  public recycleSpawn: Id<StructureSpawn> | "" = "";
+  private recycleSpawnId: Id<StructureSpawn> | "" = "";
+  private recycledPrev = false;
 
   public constructor(hive: Hive) {
     super(hive, prefix.respawnCell);
@@ -41,8 +42,26 @@ export class RespawnCell extends Cell {
     );
   }
 
+  private get recycleSpawn() {
+    return this.spawns[this.recycleSpawnId] || Object.values(this.spawns)[0];
+  }
+
   public update() {
     super.update(["extensions", "spawns"]);
+
+    if (this.recycledPrev) {
+      // here we only deal with energy
+      if (this.hive.cells.storage)
+        this.hive.cells.storage.requestToStorage(
+          this.recycleSpawn.pos
+            .findInRange(FIND_TOMBSTONES, 1)
+            .filter((tomb) => tomb.store.getUsedCapacity(RESOURCE_ENERGY)),
+          6,
+          RESOURCE_ENERGY
+        );
+      else if (this.hive.cells.dev) this.hive.cells.dev.shouldRecalc = true;
+      this.recycledPrev = false;
+    }
 
     const fastRefPos =
       !this.fastRef &&
@@ -105,6 +124,11 @@ export class RespawnCell extends Cell {
   }
 
   public bakePriority() {
+    this.recycleSpawnId = _.reduce(this.spawns, (prev: StructureSpawn, curr) =>
+      this.hive.pos.getRangeTo(prev) < this.hive.pos.getRangeTo(curr)
+        ? prev
+        : curr
+    )?.id;
     const poss: RoomPosition[] = _.map(this.spawns, (s) => s.pos).concat(
       _.map(this.extensions, (s) => s.pos)
     );
@@ -275,8 +299,7 @@ export class RespawnCell extends Cell {
    */
   public recycleBee(bee: Bee, opt?: TravelToOptions): ApiaryReturnCode {
     // get a spawn
-    const spawn =
-      this.spawns[this.recycleSpawn] || Object.values(this.spawns)[0];
+    const spawn = this.recycleSpawn;
     if (!spawn) return ERR_NOT_FOUND;
     if (!spawn.pos.isNearTo(bee)) {
       // need just to get close

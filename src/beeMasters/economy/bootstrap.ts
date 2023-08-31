@@ -258,7 +258,7 @@ export class BootstrapMaster extends Master {
         case beeStates.refill:
           if (!bee.creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "larva",
               bee.creep.store.getUsedCapacity(RESOURCE_ENERGY),
               RESOURCE_ENERGY
@@ -268,7 +268,7 @@ export class BootstrapMaster extends Master {
           }
           break;
         case beeStates.chill:
-          if (bee.pos.roomName === this.roomName) bee.state = beeStates.refill;
+          if (bee.pos.roomName === this.hiveName) bee.state = beeStates.refill;
           break;
       }
 
@@ -377,7 +377,7 @@ export class BootstrapMaster extends Master {
 
           if (
             this.hive.state !== hiveStates.battle ||
-            bee.pos.roomName !== this.roomName
+            bee.pos.roomName !== this.hiveName
           ) {
             if (this.checkFlee(bee, this.hive)) return;
           } else {
@@ -489,7 +489,7 @@ export class BootstrapMaster extends Master {
             workType = "upgrade";
           }
 
-          if (!target && bee.pos.roomName !== this.roomName) {
+          if (!target && bee.pos.roomName !== this.hiveName) {
             target = this.hive.getBuildTarget(bee, "ignoreRepair");
             if (target && target.pos.roomName !== bee.pos.roomName)
               target = null;
@@ -543,7 +543,7 @@ export class BootstrapMaster extends Master {
             target = this.hive.getBuildTarget(bee);
             if (
               target &&
-              target.pos.roomName !== this.roomName &&
+              target.pos.roomName !== this.hiveName &&
               bee.pos.getRoomRangeTo(target) > 1
             )
               target = null;
@@ -559,7 +559,7 @@ export class BootstrapMaster extends Master {
             ans = bee.repair(target as Structure, opt);
             if (ans === OK)
               Apiary.logger.addResourceStat(
-                this.roomName,
+                this.hiveName,
                 "build",
                 -1,
                 RESOURCE_ENERGY
@@ -568,7 +568,7 @@ export class BootstrapMaster extends Master {
             ans = bee.build(target as ConstructionSite, opt);
             if (ans === OK)
               Apiary.logger.addResourceStat(
-                this.roomName,
+                this.hiveName,
                 "build",
                 -1,
                 RESOURCE_ENERGY
@@ -584,7 +584,7 @@ export class BootstrapMaster extends Master {
             ans = bee.upgradeController(target as StructureController, opt);
             if (ans === OK)
               Apiary.logger.addResourceStat(
-                this.roomName,
+                this.hiveName,
                 "upgrade",
                 -bee.getActiveBodyParts(WORK),
                 RESOURCE_ENERGY

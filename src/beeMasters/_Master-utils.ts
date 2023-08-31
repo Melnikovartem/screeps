@@ -1,5 +1,7 @@
 import { ProtoBee } from "bees/protoBee";
+import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { beeStates, roomStates } from "static/enums";
+import { addResDict } from "static/utils";
 
 import { Master } from "./_Master";
 
@@ -9,6 +11,22 @@ export function preRunBoost(this: Master) {
       if (!this.hive.cells.lab || this.hive.cells.lab.boostBee(bee) === OK)
         bee.state = beeStates.chill;
   });
+}
+
+export function secureBoostsHive(this: Master) {
+  if (
+    this.boosts &&
+    (this.waitingForBees ||
+      _.filter(this.bees, (b) => b.state === beeStates.boosting).length)
+  )
+    _.forEach(this.boosts, (boost) =>
+      addResDict(
+        this.hive.mastersResTarget,
+        BOOST_MINERAL[boost.type][boost.lvl],
+        35 * this.targetBeeCount * LAB_BOOST_MINERAL // wont use all, but better then cal for each bee (?or not?)
+      )
+    );
+  // 35 is not best number, but it is ok for what it is worth
 }
 
 export function checkFlee(

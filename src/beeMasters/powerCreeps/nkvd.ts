@@ -86,14 +86,14 @@ export class NKVDMaster extends PowerMaster {
           this.targets[power] = _.filter(
             this.hive.cells.excavation.resourceCells,
             (r) =>
-              r.pos.roomName === this.roomName && r.resource instanceof Source
+              r.pos.roomName === this.hiveName && r.resource instanceof Source
           );
           break;
         case PWR_REGEN_MINERAL:
           this.targets[power] = _.filter(
             this.hive.cells.excavation.resourceCells,
             (r) =>
-              r.pos.roomName === this.roomName && r.resource instanceof Mineral
+              r.pos.roomName === this.hiveName && r.resource instanceof Mineral
           );
           break;
       }
@@ -190,7 +190,7 @@ export class NKVDMaster extends PowerMaster {
           break;
         case PWR_FORTIFY:
           if (this.hive.isBattle)
-            _.forEach(defenseWalls(this.roomName), (s) => andNextup(s, 0));
+            _.forEach(defenseWalls(this.hiveName), (s) => andNextup(s, 0));
           break;
         case PWR_OPERATE_TOWER:
           if (this.hive.isBattle)
@@ -259,7 +259,7 @@ export class NKVDMaster extends PowerMaster {
 
   public run() {
     if (this.hive.cells.defense.timeToLand < 50)
-      this.powerCreep.fleeRoom(this.roomName, this.hive.opt);
+      this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
       this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
@@ -276,7 +276,7 @@ export class NKVDMaster extends PowerMaster {
         const pwrInfo = POWER_INFO[this.nextup.power];
         if ("ops" in pwrInfo)
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "NKVD_" + POWER_NAMES[this.nextup.power],
             -pwrInfo.ops,
             RESOURCE_OPS

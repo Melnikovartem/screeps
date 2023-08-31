@@ -65,7 +65,8 @@ export class ContainerBuilderMaster extends SwarmMaster {
       switch (bee.state) {
         case beeStates.chill:
           bee.state = beeStates.refill;
-        case beeStates.refill:
+        // fall through
+        case beeStates.refill: {
           const otherRes =
             bee.store.getUsedCapacity() >
             bee.store.getUsedCapacity(RESOURCE_ENERGY);
@@ -75,7 +76,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
             )[0] as ResourceConstant | undefined;
             if (res && bee.transfer(sCell.storage, res) === OK)
               Apiary.logger.resourceTransfer(
-                this.roomName,
+                this.hiveName,
                 "pickup",
                 bee.store,
                 sCell.storage.store,
@@ -90,7 +91,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
             bee.state = beeStates.work;
 
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               "build",
               sCell.storage.store,
               bee.store
@@ -101,7 +102,8 @@ export class ContainerBuilderMaster extends SwarmMaster {
           const resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
           if (resource) bee.pickup(resource);
           break;
-        case beeStates.work:
+        }
+        case beeStates.work: {
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;
             bee.target = undefined;
@@ -116,6 +118,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
             if (resource) bee.pickup(resource);
           }
           break;
+        }
       }
       if (this.checkFlee(bee, this.hive)) return;
     });

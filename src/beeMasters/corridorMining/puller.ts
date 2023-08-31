@@ -183,7 +183,7 @@ export class PullerMaster extends Master {
             bee.ticksToLive > 50 &&
             bee.pos.getRoomRangeTo(this.hive) <= 1
           ) {
-            bee.fleeRoom(this.roomName);
+            bee.fleeRoom(this.hiveName);
             return;
           }
           bee.goRest(this.hive.rest, { offRoad: true, useFindRoute: true });

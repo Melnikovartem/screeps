@@ -33,7 +33,7 @@ export default {
     }),
     typescript({ tsconfig: "./tsconfig.json" }),
     execute([
-      "source ./screeps-backup/env/bin/activate; python3 screeps-backup/screepsbackup/backup.py backups",
+      "source ./screeps-tools/screeps-backup/env/bin/activate; python3 screeps-tools/screeps-backup/screepsbackup/backup.py screeps-tools/backups",
     ]),
     screeps({ config: cfg, dryRun: cfg == null }),
   ],

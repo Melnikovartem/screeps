@@ -33,10 +33,10 @@ export class SiegeMaster extends Master {
     super.update();
     this.boosts = undefined;
     if (this.hive.phase < 1) return;
-    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
     let shouldSpawn = roomInfo.dangerlvlmax >= 6;
     if (!shouldSpawn)
-      _.some(Game.map.describeExits(this.roomName), (exit) => {
+      _.some(Game.map.describeExits(this.hiveName), (exit) => {
         if (!exit) return;
         const roomInfoExit = Apiary.intel.getInfo(exit, 50);
         if (
@@ -65,7 +65,7 @@ export class SiegeMaster extends Master {
     }
     const enemy = Apiary.intel.getEnemy(this.hive.pos, 20);
     if (enemy) this.cell.reposessFlag(this.hive.pos, enemy);
-    const defSquad = Apiary.defenseSwarms[this.roomName];
+    const defSquad = Apiary.defenseSwarms[this.hiveName];
     if (
       defSquad &&
       enemy &&
@@ -122,11 +122,11 @@ export class SiegeMaster extends Master {
     let action2;
 
     const opt: TravelToOptions = { maxRooms: 1 };
-    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
     if (roomInfo.dangerlvlmax >= 5) {
       opt.stuckValue = 10;
       opt.roomCallback = (roomName, matrix) => {
-        if (roomName !== this.roomName) return;
+        if (roomName !== this.hiveName) return;
         const terrain = Game.map.getRoomTerrain(roomName);
         const enemies = Apiary.intel
           .getInfo(roomName, 20)

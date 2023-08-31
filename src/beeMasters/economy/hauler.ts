@@ -155,7 +155,7 @@ export class HaulerMaster extends Master {
   public run() {
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
-        bee.fleeRoom(this.roomName, this.hive.opt);
+        bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
 
@@ -264,13 +264,13 @@ export class HaulerMaster extends Master {
 
               if (this.roadUpkeepCost[bee.ref] > 0) {
                 Apiary.logger.addResourceStat(
-                  this.roomName,
+                  this.hiveName,
                   ref,
                   this.roadUpkeepCost[bee.ref],
                   RESOURCE_ENERGY
                 );
                 Apiary.logger.addResourceStat(
-                  this.roomName,
+                  this.hiveName,
                   sameRes
                     ? "upkeep_" + bee.target.slice(bee.target.length - 4)
                     : "build",
@@ -280,7 +280,7 @@ export class HaulerMaster extends Master {
                 this.roadUpkeepCost[bee.ref] = 0;
               }
               Apiary.logger.resourceTransfer(
-                this.roomName,
+                this.hiveName,
                 ref,
                 bee.store,
                 this.dropOff.store,
@@ -306,7 +306,7 @@ export class HaulerMaster extends Master {
               if (bee.target) {
                 const ref = "mining_" + bee.target.slice(bee.target.length - 4);
                 Apiary.logger.resourceTransfer(
-                  this.roomName,
+                  this.hiveName,
                   ref,
                   bee.store,
                   ss.store,

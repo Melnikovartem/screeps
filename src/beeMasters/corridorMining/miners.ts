@@ -55,7 +55,7 @@ export class DepositMinerMaster extends Master {
         bee.state = beeStates.work;
         if (bee.harvest(target) === OK)
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "deposit",
             this.parent.workAmount,
             target.depositType

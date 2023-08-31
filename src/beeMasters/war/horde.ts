@@ -171,7 +171,7 @@ export class HordeMaster extends SwarmMaster {
   public get emergency() {
     return (
       this.hive.state !== hiveStates.battle ||
-      this.pos.roomName === this.roomName
+      this.pos.roomName === this.hiveName
     );
   }
 
@@ -412,11 +412,13 @@ export class HordeMaster extends SwarmMaster {
       !beeStats.dmgClose &&
       !beeStats.dmgRange &&
       beeStats.heal &&
-      bee.pos.roomName === this.roomName
+      bee.pos.roomName === this.pos.roomName
     ) {
       // healer help with attack
       const moveTarget = this.activeBees
-        .filter((b) => b.pos.roomName === this.roomName && b.ref !== bee.ref)
+        .filter(
+          (b) => b.pos.roomName === this.pos.roomName && b.ref !== bee.ref
+        )
         .reduce((a, b) => {
           const statsA = Apiary.intel.getStats(a.creep).max;
           const statsB = Apiary.intel.getStats(b.creep).max;

@@ -105,7 +105,7 @@ export class Broker {
    * @param lag - Lag parameter for updating information.
    * @returns Updated resource information.
    */
-  private updateRes(res: ResourceConstant, lag: number = MARKET_LAG) {
+  public updateRes(res: ResourceConstant, lag: number = MARKET_LAG) {
     let info = this.info[res]!;
     if (info && info.lastUpdated + lag >= Game.time) return info;
 
@@ -371,6 +371,8 @@ export class Broker {
         priceToBuyLong * (1 + MARKET_FEE)) *
       amount;
 
+    console.log(res, hive.print, loss, okLoss, hurry);
+
     if (loss < okLoss) {
       const ans = this.buyShort(
         terminal,
@@ -378,6 +380,7 @@ export class Broker {
         amount,
         priceToBuyInstant + okLoss
       );
+      console.log(res, hive.print, ans);
       switch (ans) {
         case OK:
         case ERR_TIRED:

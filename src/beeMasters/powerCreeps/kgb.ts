@@ -13,7 +13,7 @@ export class KGBMaster extends PowerMaster {
 
   public run() {
     if (this.hive.cells.defense.timeToLand < 50)
-      this.powerCreep.fleeRoom(this.roomName, this.hive.opt);
+      this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
       this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
