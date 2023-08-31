@@ -139,7 +139,7 @@ export class NKVDMaster extends PowerMaster {
             (Object.keys(this.hive.spawOrders).length >= 3 &&
               !_.filter(
                 spawn.spawns,
-                (s) => !s.spawning || s.spawning.remainingTime <= 13 * 3
+                (s) => !s.spawning || s.spawning.remainingTime <= 10
               ).length)
           )
             // push some traffic

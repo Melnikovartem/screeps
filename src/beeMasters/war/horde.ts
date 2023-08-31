@@ -191,30 +191,32 @@ export class HordeMaster extends SwarmMaster {
           this.hive.pos.getRoomRangeTo(this.pos) * 50
     ) {
       if (this.trio) {
-        let setup = this.setup.copy();
         // lost one replace a full setup
         // prob not best cost wise
         for (let i = this.trio; i < 4; ++i) {
+          let setup;
           switch (this.trio) {
             case 1:
               setup = setups.archer.copy();
-              setup.patternLimit = 5;
-              setup.scheme = 2;
-              setup.fixed = []; // 5 ranged : 1000
+              setup.patternLimit = 3;
+              setup.fixed = []; // ranged * 200 : 600
               break;
             case 2:
               setup = setups.knight.copy();
               setup.patternLimit = 10;
+              setup.fixed = []; // mele * 130 : 1300
               setup.scheme = 2;
-              setup.fixed = []; // 10 mele : 1300
               break;
             case 3:
               setup = setups.healer.copy();
-              setup.patternLimit = 5;
-              setup.fixed = []; // 3 heal : 900
+              setup.patternLimit = 3;
+              setup.fixed = []; // heal * 300 : 900
               break;
+            default:
+              setup = this.setup.copy();
+              setup.patternLimit = 2;
+              setup.fixed = [HEAL];
           }
-          this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
           this.wish(
             {
               setup,
@@ -222,6 +224,8 @@ export class HordeMaster extends SwarmMaster {
             },
             this.ref + "_" + this.trio
           );
+          console.log(setup.name, this.ref + "_" + this.trio);
+          this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
         }
       } else
         this.wish({

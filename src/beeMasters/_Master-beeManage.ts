@@ -94,7 +94,7 @@ export function wish(
       this.hive.spawOrders[ref] = order;
       this.waitingForBees += 1;
     } else if (this.hive.bassboost.state === hiveStates.economy) {
-      order.priority = order.priority ? 9 : 5; // default order priority
+      order.priority = order.priority ? 9 : 5; // order priority when boosting (5 for essential / 9 for other)
       this.hive.bassboost.spawOrders[ref] = order;
       this.waitingForBees += 1;
     }
@@ -120,7 +120,7 @@ export function recycleBee(
     if (ans === OK || ans === ERR_NOT_IN_RANGE || ans === ERR_BUSY)
       return ERR_BUSY;
   }
-  if (!endCycle) ans = this.hive.cells.spawn.recycleBee(bee, opt);
+  if (endCycle) ans = this.hive.cells.spawn.recycleBee(bee, opt);
   if (ans === ERR_INVALID_ACTION || ans === ERR_NOT_FOUND) return OK;
   return ERR_BUSY;
 }

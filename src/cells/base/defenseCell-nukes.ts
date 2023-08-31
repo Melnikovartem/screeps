@@ -14,7 +14,7 @@ export function getNukeDefMap(
   const prevState = this.nukeCoverReady;
   this.nukeCoverReady = true;
   if (!Object.keys(this.nukes).length)
-    // || Game.flags[prefix.nukes + this.roomName])
+    // || Game.flags[prefix.nukes + this.hiveName])
     return [[], { ...ZERO_COSTS_BUILDING_HIVE.hive }];
   const map: { [id: number]: { [id: number]: number } } = {};
   const minLandTime = _.min(this.nukes, (n) => n.timeToLand).timeToLand;
@@ -67,7 +67,7 @@ export function getNukeDefMap(
   const energyCost = { ...ZERO_COSTS_BUILDING_HIVE.hive };
   for (const x in map)
     for (const y in map[x]) {
-      const pos = new RoomPosition(+x, +y, this.roomName);
+      const pos = new RoomPosition(+x, +y, this.hiveName);
       const structures = pos.lookFor(LOOK_STRUCTURES);
       if (
         structures.filter((s) => {

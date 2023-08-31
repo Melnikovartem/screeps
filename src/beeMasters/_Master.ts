@@ -111,7 +111,10 @@ export abstract class Master {
   /** sends to boos any bees with beeState, then frees them with chill status */
   public preRunBoost = preRunBoost;
 
-  /** recycles bees when they are not needed (unboost + energy recycle) */
+  /** recycles bees when they are not needed (unboost + energy recycle)
+   *
+   * recomended use to only recycle boosted bees
+   */
   public recycleBee = recycleBee;
 
   // second stage of decision making like where do i need to move

@@ -143,9 +143,9 @@ export class UpgraderMaster extends Master {
         bee.ticksToLive <=
         (bee.boosted
           ? this.cell.roadTime * 3 + 5
-          : carryPart === 1
+          : carryPart <= 3
           ? 2
-          : this.cell.roadTime + 2);
+          : this.cell.roadTime + 10);
 
       if (old) {
         // if any energy store it else go recycle yourself
