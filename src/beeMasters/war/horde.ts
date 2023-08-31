@@ -1,18 +1,15 @@
-import type { Bee } from "../../bees/bee";
-import { setups } from "../../bees/creepSetups";
-import type { FlagOrder } from "../../orders/order";
-import { profile } from "../../profiler/decorator";
-import { type CreepBattleInfo } from "../../spiderSense/intelligence";
-import {
-  beeStates,
-  enemyTypes,
-  hiveStates,
-  roomStates,
-} from "../../static/enums";
+import type { Bee } from "bees/bee";
+import { setups } from "bees/creepSetups";
+import type { FlagOrder } from "orders/order";
+import { profile } from "profiler/decorator";
+import { type CreepBattleInfo } from "spiderSense/intelligence";
+import { beeStates, enemyTypes, hiveStates } from "static/enums";
+
 import type { Boosts } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";
 
 const BOOST_LVL = 2;
+const FORGET_ENEMY_ENT = 2;
 
 // most basic of bitches a horde full of wasps
 @profile
@@ -24,6 +21,12 @@ export class HordeMaster extends SwarmMaster {
   public recycle = true;
   // 0 if no 1 - 2 - 3 for cycle
   public trio = 0;
+
+  private enemiesAtEnterance: {
+    lastSeen: number;
+    enemyId: Id<Creep>;
+    pos: RoomPosition;
+  }[] = [];
 
   public constructor(order: FlagOrder) {
     super(order);
@@ -175,6 +178,10 @@ export class HordeMaster extends SwarmMaster {
   public update() {
     super.update();
 
+    this.enemiesAtEnterance = this.enemiesAtEnterance.filter(
+      (e) => Game.time - e.lastSeen > FORGET_ENEMY_ENT
+    );
+
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (
       this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10) &&
@@ -184,7 +191,7 @@ export class HordeMaster extends SwarmMaster {
           this.hive.pos.getRoomRangeTo(this.pos) * 50
     ) {
       if (this.trio) {
-        let setup = this.setup;
+        let setup = this.setup.copy();
         // lost one replace a full setup
         // prob not best cost wise
         for (let i = this.trio; i < 4; ++i) {
@@ -208,10 +215,13 @@ export class HordeMaster extends SwarmMaster {
               break;
           }
           this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
-          this.wish({
-            setup,
-            priority: 4,
-          });
+          this.wish(
+            {
+              setup,
+              priority: 4,
+            },
+            this.ref + "_" + this.trio
+          );
         }
       } else
         this.wish({
@@ -376,9 +386,10 @@ export class HordeMaster extends SwarmMaster {
       } else if (beeStats.dmgRange) {
         if (enemyInfo.dmgClose)
           attackRange =
-            loosingBattle > 0 && enemyInfo.dmgClose > beeStats.heal ? 5 : 3;
-        else if (enemyInfo.dmgRange) attackRange = 4;
-        else attackRange = 2;
+            loosingBattle < 0 && enemyInfo.dmgClose > beeStats.heal ? 5 : 3;
+        else if (enemyInfo.dmgRange)
+          attackRange = 3; // enemyInfo.dmgRange > beeStats.heal  ? 4 : 3
+        else attackRange = 0;
       } else attackRange = 4;
 
       if (loosingBattle < 0)
@@ -397,8 +408,7 @@ export class HordeMaster extends SwarmMaster {
       !beeStats.dmgClose &&
       !beeStats.dmgRange &&
       beeStats.heal &&
-      bee.pos.roomName === this.roomName &&
-      loosingBattle >= 0
+      bee.pos.roomName === this.roomName
     ) {
       // healer help with attack
       const moveTarget = this.activeBees
@@ -415,20 +425,13 @@ export class HordeMaster extends SwarmMaster {
           if (!diff) diff = a.hitsMax - b.hitsMax;
           return diff >= 0 ? a : b;
         });
-      console.log(bee.print, moveTarget && moveTarget.print, loosingBattle);
       if (moveTarget) bee.goTo(moveTarget, opt);
       return OK;
     }
-
     // are we too close
-    let shouldFlee =
+    const shouldFlee =
       rangeToTarget < targetedRange ||
       (!beeStats.dmgRange && !beeStats.dmgClose);
-    if (!shouldFlee && loosingBattle >= 0) {
-      const enterance = bee.pos.enteranceToRoom;
-      // try to stay in room if winning
-      shouldFlee = !!enterance && enterance.roomName !== this.pos.roomName;
-    }
     // can we get help from towers inside hive
     const hiveTowers =
       Apiary.hives[bee.pos.roomName] &&
@@ -458,20 +461,42 @@ export class HordeMaster extends SwarmMaster {
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
       if (target && target.pos.getRangeTo(bee) <= 3) opt.movingTarget = true;
       // if we are winning stay in room or just go to him
-      bee.goTo(
-        (rangeToTarget <= 1 &&
-          bee.pos.enteranceToRoom &&
-          target.pos.getOpenPositions(false)[0]) ||
-          target,
-        opt
-      );
-      // stay in same room
+      bee.goTo(target, opt);
+
       if (
+        bee.targetPosition?.enteranceToRoom &&
+        bee.pos.roomName === this.pos.roomName
+      ) {
+        // try to stay in room if winning
+        // ingore Creeps Cause enemy will move anyway
+        let goPositions = bee.pos
+          .getOpenPositions(true)
+          .filter((p) => !p.enteranceToRoom && p.getRangeTo(bee) === 1);
+        if (goPositions.length) {
+          const noBees = goPositions.filter((p) => p.isFree(false));
+          if (noBees.length) goPositions = noBees;
+        }
+        if (goPositions.length) {
+          bee.goTo(goPositions[0]);
+          return OK;
+        }
+      }
+      // stay in same room if winning
+      if (
+        loosingBattle >= 0 &&
         bee.targetPosition &&
         bee.targetPosition.enteranceToRoom &&
         bee.pos.roomName === this.pos.roomName
-      )
-        bee.targetPosition = bee.pos;
+      ) {
+        let goPositions = bee.pos
+          .getOpenPositions(true)
+          .filter((p) => !p.enteranceToRoom && p.getRangeTo(bee) === 1);
+        if (goPositions.length) {
+          const noBees = goPositions.filter((p) => p.isFree(false));
+          if (noBees.length) goPositions = noBees;
+        }
+        if (goPositions.length) bee.targetPosition = goPositions[0];
+      }
     }
     // if (bee.targetPosition && this.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
@@ -555,7 +580,12 @@ export class HordeMaster extends SwarmMaster {
             )[0];
             if (healingTarget && bee.getActiveBodyParts(HEAL))
               bee.heal(healingTarget);
-            bee.goRest(this.pos);
+            // @todo finish dying creeps off
+            let restTarget = this.enemiesAtEnterance.reduce((prev, curr) =>
+              prev.pos.getRangeTo(bee) < curr.pos.getRangeTo(bee) ? prev : curr
+            )?.pos;
+            if (!restTarget) restTarget = this.pos;
+            bee.goRest(restTarget);
           } else this.beeAct(bee, enemy);
           if (
             !this.recycle ||

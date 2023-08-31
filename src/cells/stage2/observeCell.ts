@@ -37,7 +37,7 @@ export class ObserveCell extends Cell {
 
   public updateRoomsToCheck() {
     this.corridorRooms = [];
-    const [x, y, we, ns] = getRoomCoorinates(this.roomName);
+    const [x, y, we, ns] = getRoomCoorinates(this.hiveName);
     let closest = we + x + ns + y;
     const roundx = we + Math.round(x / 10) * 10 + ns + y;
     const roundy = we + x + ns + Math.round(y / 10) * 10;
@@ -87,7 +87,7 @@ export class ObserveCell extends Cell {
     this.roomsToCheck = [];
 
     if (this.hive.cells.defense.timeToLand < 75) {
-      const exits = Game.map.describeExits(this.roomName);
+      const exits = Game.map.describeExits(this.hiveName);
       const roomNames = Object.values(exits);
       for (const roomName of roomNames) {
         const roomInfoCheck = Apiary.intel.getInfo(roomName, 25);
@@ -171,7 +171,7 @@ export class ObserveCell extends Cell {
     if (flags) return;
     const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
     if (typeof name === "string") {
-      Game.flags[name].memory.hive = this.roomName;
+      Game.flags[name].memory.hive = this.hiveName;
       const order = new FlagOrder(Game.flags[name]);
       order.update();
     }

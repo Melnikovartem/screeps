@@ -40,7 +40,7 @@ import { opt, updateCellData } from "./hive-utils";
 // Define the SpawnOrder interface for creep spawning
 export interface SpawnOrder {
   setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // Priority of the creep
+  priority: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // Priority of the creep
   master: string;
   ref: string;
   createTime: number;
@@ -210,6 +210,8 @@ export class Hive {
       if (this.controller.level < 8) {
         // try to develop the hive
         this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
+        // to prottect
+        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
       } else {
         this.phase = 2;
         this.puller = new PullerMaster(this);

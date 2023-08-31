@@ -178,7 +178,7 @@ export function getCase(
       break;
     case STRUCTURE_ROAD:
     case STRUCTURE_CONTAINER:
-      if (controller.level > 0 && controller.level < 3) amount = 0;
+      if (controller.level === 1 || controller.level === 2) amount = 0;
       break;
     default:
   }

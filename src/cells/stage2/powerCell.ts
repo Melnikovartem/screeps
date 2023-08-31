@@ -21,7 +21,7 @@ export class PowerCell extends Cell {
 
   public poss: { x: number; y: number };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
   public _powerManager: string | null = this.cache("_powerManager");
@@ -83,13 +83,13 @@ export class PowerCell extends Cell {
     )
       if (this.powerSpawn.processPower() === OK) {
         Apiary.logger.addResourceStat(
-          this.roomName,
+          this.hiveName,
           "power_upgrade",
           -1,
           RESOURCE_POWER
         );
         Apiary.logger.addResourceStat(
-          this.roomName,
+          this.hiveName,
           "power_upgrade",
           -1 * POWER_SPAWN_ENERGY_RATIO,
           RESOURCE_ENERGY

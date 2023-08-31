@@ -98,7 +98,7 @@ export class ResourceCell extends Cell {
       (s) => s.structureType === STRUCTURE_CONTAINER
     )[0] as StructureContainer;
     if (this.resource instanceof Source) {
-      if (this.pos.roomName === this.roomName) {
+      if (this.pos.roomName === this.hiveName) {
         this.link = _.filter(
           this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
           (s) =>
@@ -209,7 +209,7 @@ export class ResourceCell extends Cell {
           const ans = this.link.transferEnergy(fastRefLink);
           if (ans === OK) {
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               this.loggerRef,
               this.link.store,
               fastRefLink.store,
@@ -236,7 +236,7 @@ export class ResourceCell extends Cell {
           const ans = this.link.transferEnergy(upgradeLink);
           if (ans === OK) {
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               this.loggerRef,
               this.link.store,
               upgradeLink.store,
@@ -258,7 +258,7 @@ export class ResourceCell extends Cell {
           const ans = this.link.transferEnergy(storageLink);
           if (ans === OK)
             Apiary.logger.resourceTransfer(
-              this.roomName,
+              this.hiveName,
               this.loggerRef,
               this.link.store,
               storageLink.store,

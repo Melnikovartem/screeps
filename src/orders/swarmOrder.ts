@@ -1,5 +1,7 @@
 // @todo
 
-export interface SwarmOrder {
-  pos: RoomPosition;
+export class SwarmOrder {
+  public get pos() {
+    return new RoomPosition(25, 25, "E19S39");
+  }
 }

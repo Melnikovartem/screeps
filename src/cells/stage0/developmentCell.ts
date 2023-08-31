@@ -29,7 +29,7 @@ export class DevelopmentCell extends Cell {
 
   public addResources() {
     this.handAddedResources = [];
-    _.forEach([this.roomName].concat(this.hive.annexNames), (miningRoom) => {
+    _.forEach([this.hiveName].concat(this.hive.annexNames), (miningRoom) => {
       const room = Game.rooms[miningRoom];
       if (!room) return;
 
@@ -65,7 +65,7 @@ export class DevelopmentCell extends Cell {
     const futureResourceCells = _.filter(
       Game.flags,
       (f) =>
-        f.memory.hive === this.roomName &&
+        f.memory.hive === this.hiveName &&
         f.color === COLOR_YELLOW &&
         f.secondaryColor === COLOR_YELLOW
     );
@@ -76,10 +76,10 @@ export class DevelopmentCell extends Cell {
       this.master.beesAmount
     ) {
       const addRouteTo = (pos: RoomPosition) => {
-        // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.roomName)
+        // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hiveName)
         const route = Traveler.findTravelPath(
           pos,
-          FastRefillCell.poss(this.roomName) || this.hive,
+          FastRefillCell.poss(this.hiveName) || this.hive,
           {
             offRoad: true,
             weightOffRoad: 5,

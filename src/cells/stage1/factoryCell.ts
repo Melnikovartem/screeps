@@ -84,6 +84,13 @@ type CommodityIngredient =
 
 const COOLDOWN_TARGET_FACTORY = 50;
 
+export const STOCKPILE_BASE_COMMODITIES = {
+  /** start compressing not locally but over the apiary */
+  alot: 16_000,
+  /** stop mining but this time only in the hive with big stockpile  */
+  toomuch: 32_000,
+};
+
 @profile
 export class FactoryCell extends Cell {
   public roomsToCheck: string[] = [];
@@ -195,11 +202,12 @@ export class FactoryCell extends Cell {
             const component = comp as CommodityConstant;
             if (COMMODITIES_TO_SELL.includes(component)) {
               let toUse = this.sCell.getUsedCapacity(component);
-              if (recipe.level)
-                toUse = Math.max(
-                  toUse,
-                  Apiary.network.resState[component] || 0
-                );
+              const networkAmount = Apiary.network.resState[component] || 0;
+              if (
+                recipe.level ||
+                networkAmount >= STOCKPILE_BASE_COMMODITIES.alot
+              )
+                toUse = Math.max(toUse, networkAmount);
               componentAmount.push(toUse / amountNeeded);
             }
           });
@@ -499,11 +507,11 @@ export class FactoryCell extends Cell {
         const amount = recipe.components[res];
         if (res in this.resTarget) this.resTarget[res]! -= amount;
 
-        Apiary.logger.addResourceStat(this.roomName, "factory", -amount, res);
+        Apiary.logger.addResourceStat(this.hiveName, "factory", -amount, res);
       }
 
       Apiary.logger.addResourceStat(
-        this.roomName,
+        this.hiveName,
         "factory",
         COMMODITIES[this.prod.res].amount,
         this.prod.res

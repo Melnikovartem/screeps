@@ -189,7 +189,7 @@ export class LaboratoryCell extends Cell {
     y: 25,
   };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
   public _labStates: { [id: string]: LabState } =
@@ -536,7 +536,7 @@ export class LaboratoryCell extends Cell {
         _.forEach(bee.body, (b) => {
           if (b.boost)
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "unboosting",
               LAB_BOOST_MINERAL * 0.5 * 0.9, // LAB_UNBOOST_MINERAL was undefined in .ts
               b.boost as ReactionConstant
@@ -648,13 +648,13 @@ export class LaboratoryCell extends Cell {
           if (ans === OK) {
             bee.boosted = true;
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "boosts",
               -r.amount * LAB_BOOST_MINERAL,
               r.res
             );
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "boosts",
               -r.amount * LAB_BOOST_ENERGY,
               RESOURCE_ENERGY
@@ -697,7 +697,7 @@ export class LaboratoryCell extends Cell {
 
         _.forEach(resources, (r) =>
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "unboost",
             r.amount,
             r.resourceType
@@ -918,9 +918,9 @@ export class LaboratoryCell extends Cell {
       this.synthesizeTarget.amount -= cc;
     this.prod.plan -= cc;
 
-    Apiary.logger.addResourceStat(this.roomName, "labs", cc, this.prod.res);
-    Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res1);
-    Apiary.logger.addResourceStat(this.roomName, "labs", -cc, this.prod.res2);
+    Apiary.logger.addResourceStat(this.hiveName, "labs", cc, this.prod.res);
+    Apiary.logger.addResourceStat(this.hiveName, "labs", -cc, this.prod.res1);
+    Apiary.logger.addResourceStat(this.hiveName, "labs", -cc, this.prod.res2);
 
     if (
       !labs.length &&

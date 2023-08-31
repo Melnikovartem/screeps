@@ -248,13 +248,20 @@ export class Network {
             const toSell =
               (hive.resState[compound] || 0) -
               (USEFUL_MINERAL_STOCKPILE[compound] || Infinity); // failsafe
-            if (toSell >= SELL_THRESHOLD.compound)
+            if (toSell >= SELL_THRESHOLD.compound) {
               ans = Apiary.broker.sellOff(
                 terminal,
                 compound,
                 Math.min(SELL_STEP_MAX, toSell),
                 stStore.getFreeCapacity() < FREE_CAPACITY // need to free some space
               );
+              console.log(
+                ans,
+                compound,
+                terminal.room.name,
+                stStore.getFreeCapacity()
+              );
+            }
           }
           if (ans === "short") continue;
 
@@ -262,13 +269,19 @@ export class Network {
           // @todo check all minerals and find most profitable
           const commoditiesToSellHive = _.filter(
             this.commoditiesToSell,
-            (c) => hive.resState[c] || 0 >= SELL_THRESHOLD.commodities
+            (c) => (hive.resState[c] || 0) >= SELL_THRESHOLD.commodities
           );
           for (const commodity of commoditiesToSellHive) {
             ans = Apiary.broker.sellOff(
               terminal,
               commodity,
               Math.min(SELL_STEP_MAX, hive.resState[commodity] || 0)
+            );
+            console.log(
+              ans,
+              commodity,
+              terminal.room.name,
+              stStore.getFreeCapacity()
             );
             if (ans === "short") continue;
           }
@@ -284,13 +297,12 @@ export class Network {
             hive.resState[curr]! > hive.resState[prev]! ? curr : prev
           );
           if (hive.resState[res]! < 0) break;
-          if (hive.mode.sellOff)
-            ans = Apiary.broker.sellOff(
-              terminal,
-              res,
-              Math.min(SELL_STEP_MAX, hive.resState[res]! * 0.8), // sell some of the resource
-              stStore.getFreeCapacity() < FULL_CAPACITY * 2 // getting close to no space (20_000)
-            );
+          ans = Apiary.broker.sellOff(
+            terminal,
+            res,
+            Math.min(SELL_STEP_MAX, hive.resState[res]! * 0.8), // sell some of the resource
+            stStore.getFreeCapacity() < FULL_CAPACITY * 2 // getting close to no space (20_000)
+          );
           break;
         }
         case 0:

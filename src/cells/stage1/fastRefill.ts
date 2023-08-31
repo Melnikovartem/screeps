@@ -106,7 +106,7 @@ export class FastRefillCell extends Cell {
           this.sCell.link.transferEnergy(this.link, amount) === OK
         )
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "upkeep",
             -amount * 0.03,
             RESOURCE_ENERGY

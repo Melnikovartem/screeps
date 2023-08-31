@@ -48,7 +48,7 @@ export class RespawnCell extends Cell {
       !this.fastRef &&
       this.hive.phase >= 1 &&
       this.hive.cells.storage &&
-      FastRefillCell.poss(this.roomName);
+      FastRefillCell.poss(this.hiveName);
     if (fastRefPos) {
       const link = fastRefPos
         .lookFor(LOOK_STRUCTURES)
@@ -293,7 +293,7 @@ export class RespawnCell extends Cell {
     // 0.9 to account for failed pickups
     if (ans === OK)
       Apiary.logger?.addResourceStat(
-        this.roomName,
+        this.hiveName,
         "recycle",
         ((_.sum(
           bee.body,

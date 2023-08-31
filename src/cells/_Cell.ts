@@ -30,7 +30,8 @@ export abstract class Cell {
     return this.hive.pos;
   }
 
-  public get roomName() {
+  /** aliast for hive.roomName */
+  public get hiveName() {
     return this.hive.roomName;
   }
 

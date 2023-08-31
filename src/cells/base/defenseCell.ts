@@ -41,7 +41,7 @@ export class DefenseCell extends Cell {
 
   public poss: { x: number; y: number };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
   public getNukeDefMap = getNukeDefMap;
@@ -73,7 +73,7 @@ export class DefenseCell extends Cell {
 
     const isWar = this.hive.isBattle;
     if (!isWar || Game.time % 10 === 0) {
-      const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
+      const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
       this.hive.stateChange(
         "battle",
         roomInfo.dangerlvlmax >= 5 &&
@@ -163,7 +163,7 @@ export class DefenseCell extends Cell {
       else canWin = false;
       if (ans === OK) {
         swarm.order.hive = this.hive;
-        swarm.order.flag.memory.hive = this.roomName;
+        swarm.order.flag.memory.hive = this.hiveName;
         delete Apiary.defenseSwarms[swarm.pos.roomName];
         Apiary.defenseSwarms[pos.roomName] = swarm;
         return OK;
@@ -332,7 +332,7 @@ export class DefenseCell extends Cell {
     let enemy = Apiary.intel.getEnemy(this)!;
     if (!enemy) return;
 
-    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
     _.forEach(roomInfo.enemies, (e) => {
       const statsE = Apiary.intel.getComplexStats(e.object).current;
       const statsEnemy = Apiary.intel.getComplexStats(enemy).current;
@@ -346,7 +346,7 @@ export class DefenseCell extends Cell {
   }
 
   public run() {
-    const roomInfo = Apiary.intel.getInfo(this.roomName, 10);
+    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
 
     let healTargets: (Creep | PowerCreep)[] = [];
     const prepareHeal = (
@@ -358,7 +358,7 @@ export class DefenseCell extends Cell {
         .filter(
           (b) =>
             b.hits < b.hitsMax &&
-            b.pos.roomName === this.roomName &&
+            b.pos.roomName === this.hiveName &&
             (nonclose || b.pos.getRangeTo(this) < 10)
         )
         .map((b) => b.creep);
@@ -369,7 +369,7 @@ export class DefenseCell extends Cell {
       if (
         powerManager &&
         powerManager.hits < powerManager.hitsMax &&
-        powerManager.pos.roomName === this.roomName
+        powerManager.pos.roomName === this.hiveName
       )
         healTargets = [powerManager.creep];
     }
@@ -453,7 +453,7 @@ export class DefenseCell extends Cell {
           // healer = undefined;
           if (tower.attack(enemy) === OK)
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "defense_dmg",
               -10,
               RESOURCE_ENERGY
@@ -466,7 +466,7 @@ export class DefenseCell extends Cell {
             toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
 
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "defense_heal",
               -10,
               RESOURCE_ENERGY
@@ -509,7 +509,7 @@ export class DefenseCell extends Cell {
             Apiary.logger
           )
             Apiary.logger.addResourceStat(
-              this.roomName,
+              this.hiveName,
               "defense_repair",
               -10,
               RESOURCE_ENERGY
@@ -528,7 +528,7 @@ export class DefenseCell extends Cell {
           toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
 
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "defense_heal",
             -10,
             RESOURCE_ENERGY

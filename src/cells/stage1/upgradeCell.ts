@@ -61,7 +61,7 @@ export class UpgradeCell extends Cell {
       (f) =>
         f.color === COLOR_YELLOW &&
         f.secondaryColor === COLOR_YELLOW &&
-        f.memory.hive === this.roomName
+        f.memory.hive === this.hiveName
     );
     this.maxRate = Math.max(1, futureResourceCells.length) * 10;
 
@@ -171,7 +171,7 @@ export class UpgradeCell extends Cell {
           this.sCell.link.transferEnergy(this.link, amount) === OK
         )
           Apiary.logger.addResourceStat(
-            this.roomName,
+            this.hiveName,
             "upgrade",
             -amount * 0.03,
             RESOURCE_ENERGY

@@ -846,6 +846,7 @@ export class RoomPlanner {
       if (ans === 0) return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;
     });
+    console.log(anchor, futureResourceCells);
 
     if (fromMem)
       _.forEach(futureResourceCells, (f) => {

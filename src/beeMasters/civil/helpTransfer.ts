@@ -63,7 +63,13 @@ export class HelpTransferMaster extends SwarmMaster {
         bee.goRest(this.hive.rest, this.hive.opt);
       else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
         const room = Game.rooms[this.pos.roomName];
-        const storage = room && room.storage;
+        const storage =
+          (room && room.storage) ||
+          (this.pos
+            .lookFor(LOOK_STRUCTURES)
+            .filter(
+              (s) => s.structureType === STRUCTURE_CONTAINER
+            )[0] as StructureContainer);
         if (storage)
           bee.transfer(
             storage,

@@ -16,8 +16,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
   public get boosts(): Boosts {
     return [
       { type: "upgrade", lvl: 2 },
-      { type: "upgrade", lvl: 1 },
-      { type: "upgrade", lvl: 0 },
+      { type: "fatigue", lvl: 2 },
     ];
   }
 
@@ -49,47 +48,57 @@ export class HelpUpgradeMaster extends SwarmMaster {
       Apiary.intel.getInfo(this.pos.roomName).safePlace &&
       this.hive.resState[RESOURCE_ENERGY] >= 0 &&
       controller.level < 8
-    )
+    ) {
+      const setup = setups.upgrader.fast.copy();
+      setup.patternLimit = Infinity;
+      setup.moveMax = 10; // boosted
+      setup.fixed = [CARRY, CARRY, CARRY, CARRY];
       this.wish({
-        setup: setups.upgrader.manual,
+        setup,
         priority: 8,
       });
+    }
   }
 
   public run() {
     this.preRunBoost();
-    const controller =
-      Game.rooms[this.pos.roomName] && Game.rooms[this.pos.roomName].controller;
+    const hiveToUpg = Apiary.hives[this.pos.roomName];
+    if (!hiveToUpg) return;
 
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
-      if (this.checkFlee(bee, this.hive)) return;
-      if (
-        this.hive.cells.defense.timeToLand < 50 &&
-        bee.ticksToLive > 50 &&
-        bee.pos.getRoomRangeTo(this.hive) === 1
-      ) {
-        bee.fleeRoom(this.roomName, this.hive.opt);
-        return;
-      }
-      const old = bee.ticksToLive < 50 && bee.pos.roomName === this.roomName;
-      if (old) this.recycleBee(bee, this.hive.opt);
-      else if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
+      if (this.checkFlee(bee, hiveToUpg)) return;
+      // remvoed some useless code for this master as nuke survivial/recyclyng
+      if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
         bee.goRest(this.hive.rest, this.hive.opt);
       else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        if (controller) bee.upgradeController(controller, this.hive.opt);
+        if (hiveToUpg.controller)
+          bee.upgradeController(hiveToUpg.controller, this.hive.opt);
         else bee.goRest(this.pos, this.hive.opt);
-      } else if (
-        this.hive.cells.storage &&
-        bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50
-      )
-        bee.withdraw(
-          this.hive.cells.storage.storage,
-          RESOURCE_ENERGY,
-          undefined,
-          this.hive.opt
-        );
-      else this.removeBee(bee);
+      } else if (bee.ticksToLive > 10) {
+        let storage: StructureStorage | StructureContainer | undefined =
+          hiveToUpg.cells.storage?.storage;
+        if (!storage) {
+          // fast ref pos for this flag
+          storage = this.pos
+            .findInRange(FIND_STRUCTURES, 2)
+            .filter(
+              (s) =>
+                s.structureType === STRUCTURE_CONTAINER &&
+                s.store.getUsedCapacity(RESOURCE_ENERGY)
+            )[0] as StructureContainer;
+        }
+        if (!storage) {
+          storage = _.compact(
+            _.map(hiveToUpg.cells.excavation.resourceCells, (r) =>
+              r.pos.roomName === hiveToUpg.roomName ? r.container : undefined
+            )
+          )[0];
+        }
+        if (storage)
+          bee.withdraw(storage, RESOURCE_ENERGY, undefined, hiveToUpg.opt);
+        else bee.goRest(hiveToUpg.rest);
+      } // else this.removeBee(bee);
     });
   }
 }

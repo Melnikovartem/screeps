@@ -81,6 +81,10 @@ export class DepositMaster extends SwarmMaster {
     } else this.decay = -Game.time;
   }
 
+  public get resource() {
+    return this.target?.depositType;
+  }
+
   public update() {
     super.update();
 

@@ -1,8 +1,9 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
+import { STOCKPILE_BASE_COMMODITIES } from "cells/stage1/factoryCell";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { beeStates, hiveStates, prefix } from "static/enums";
+import { beeStates, prefix } from "static/enums";
 
 import { Master } from "../_Master";
 import type { DepositMaster } from "./deposit";
@@ -11,7 +12,7 @@ import { PowerMaster } from "./power";
 
 @profile
 export class PullerMaster extends Master {
-  public movePriority = 4 as const;
+  public movePriority = 3 as const;
   private maxRoadTime: number = 0;
   public depositSites: DepositMaster[] = [];
   public powerSites: PowerMaster[] = [];
@@ -75,7 +76,13 @@ export class PullerMaster extends Master {
 
     let workingDeposits: DepositMaster[] = [];
     if (this.hive.mode.depositMining) {
-      workingDeposits = this.depositSites.filter((d) => d.operational);
+      workingDeposits = this.depositSites.filter(
+        (d) =>
+          d.operational &&
+          (!d.resource ||
+            (this.hive.resState[d.resource] || 0) <
+              STOCKPILE_BASE_COMMODITIES.toomuch)
+      );
       if (workingDeposits.length > 1) {
         const depositsWithBees = workingDeposits.filter(
           (d) => d.miners.beesAmount || d.pickup.beesAmount

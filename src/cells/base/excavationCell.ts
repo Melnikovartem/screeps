@@ -31,7 +31,7 @@ export class ExcavationCell extends Cell {
 
   public poss: { x: number; y: number };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.roomName);
+    return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
   public addResource(resource: Source | Mineral) {
@@ -79,7 +79,7 @@ export class ExcavationCell extends Cell {
           this.fullContainer
         ) {
           const roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 20);
-          if (roomInfo.safePlace || cell.pos.roomName === this.roomName)
+          if (roomInfo.safePlace || cell.pos.roomName === this.hiveName)
             this.quitefullCells.push(cell);
         }
       }

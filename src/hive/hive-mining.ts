@@ -47,7 +47,6 @@ export function markResources(hive: Hive) {
     _.forEach(room.find(FIND_SOURCES), (s) => {
       const ref = prefix.resourceCells + s.id;
       if (!hive.cache.cells[ref]) hive.cache.cells[ref] = { poss: s.pos };
-      console.log(hive.cache.cells[ref], hive.print, ref);
     });
   });
 

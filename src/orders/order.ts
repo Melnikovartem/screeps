@@ -1,4 +1,4 @@
-import type { SwarmMaster } from "beeMasters/_SwarmMaster";
+import { SwarmMaster } from "beeMasters/_SwarmMaster";
 import { AnnexMaster } from "beeMasters/civil/annexer";
 import { ClaimerMaster } from "beeMasters/civil/claimer";
 import { ClearMaster } from "beeMasters/civil/clear";
@@ -26,10 +26,12 @@ import { profile } from "profiler/decorator";
 import { hiveStates, prefix, roomStates } from "static/enums";
 import { findOptimalResource, makeId } from "static/utils";
 
+import { SwarmOrder } from "./swarmOrder";
+
 const PASSIVE_BUILD_COLORS: number[] = [COLOR_PURPLE, COLOR_RED, COLOR_BROWN];
 
 @profile
-export class FlagOrder {
+export class FlagOrder extends SwarmOrder {
   public flag: Flag;
   public master?: SwarmMaster;
   public hive: Hive;
@@ -41,6 +43,7 @@ export class FlagOrder {
   }
 
   public constructor(flag: Flag) {
+    super();
     this.flag = flag;
 
     if (this.memory.hive) {
@@ -704,7 +707,7 @@ export class FlagOrder {
               if (RESOURCES_ALL.includes(res)) {
                 if (Game.time === Apiary.createTime)
                   console.log(
-                    `@${this.hive.print} : ${mode} ${res} ${
+                    `@ ${this.hive.print} : ${mode} ${res} ${
                       fast ? "fast" : " "
                     } : ${low || avg} - ${high || avg}`
                   );

@@ -34,21 +34,34 @@ export function toActive(
   }
 
   const hiveName = anchor.roomName;
-  if (Memory.cache.hives[hiveName])
+  if (Memory.cache.hives[hiveName]) {
+    console.log(Memory.cache.hives[hiveName], hiveName);
     for (const cellType in Memory.cache.hives[hiveName].cells) {
       const cellCache = Memory.cache.hives[hiveName].cells[cellType];
-      const poss = cellCache?.poss as {
-        x: number;
-        y: number;
-        roomName?: string;
-      };
+      const poss = cellCache?.poss as
+        | {
+            x: number;
+            y: number;
+            roomName?: string;
+          }
+        | undefined;
+
+      console.log(
+        cellType,
+        JSON.stringify(poss),
+        poss && (poss.roomName === roomName || !poss.roomName),
+        roomName === hiveName
+      );
       if (
         poss &&
-        ((!poss.roomName && roomName === hiveName) ||
-          poss?.roomName === roomName)
-      )
+        (poss.roomName === roomName ||
+          (!poss.roomName && roomName === hiveName))
+      ) {
+        console.log(cellType, JSON.stringify(poss));
         this.activePlanning[roomName].cellsCache[cellType] = { poss };
+      }
     }
+  }
 }
 
 export function resetPlanner(
@@ -149,15 +162,15 @@ export function saveActive(this: RoomPlanner, roomName: string) {
     );
   }
 
-  const cellsCache = this.activePlanning[roomName].cellsCache;
+  const cellsCache = this.activePlanning[anchor.roomName].cellsCache;
   if (Object.keys(cellsCache).length) {
-    if (!Memory.cache.hives[roomName]) Hive.initMemory(roomName);
-    const mem = Memory.cache.hives[roomName];
+    if (!Memory.cache.hives[anchor.roomName]) Hive.initMemory(anchor.roomName);
+    const mem = Memory.cache.hives[anchor.roomName];
     for (const cellType in cellsCache) {
       const cellCache = cellsCache[cellType];
       if (!mem.cells[cellType]) mem.cells[cellType] = {};
       for (const key in cellCache)
-        mem.cells[cellType][key] = cellCache[key as keyof CellCache];
+        mem.cells[cellType][key] = cellCache[key as keyof CellCache]; // same format as before whit/whithout roomName
     }
   }
 }
