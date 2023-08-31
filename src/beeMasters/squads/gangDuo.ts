@@ -2,7 +2,7 @@ import { setups } from "../../bees/creepSetups";
 import type { Boosts } from "../_Master";
 import { FormationPositions, SquadMaster } from "./squad";
 
-const GANG = setups.knight.copy();
+const GANG = setups.archer.copy();
 
 const TOWER_NUM = 6; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;

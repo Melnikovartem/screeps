@@ -126,13 +126,14 @@ export enum setupsNames {
   // War
   downgrader = "Housefly" /** Downgrader setup name */,
   healer = "Luna moth" /** Healer setup name */,
-  knight = "European hornet" /** Knight setup name */,
-  tank = "Red paper wasp" /** Tank setup name */,
+  archer = "European hornet" /** Archer setup name */,
+  knight = "Red paper wasp" /** Knight setup name */,
   dismantler = "Assasin bug" /** Dismantler setup name */,
   defender = "Walking stick" /** Defender setup name */,
   destroyer = "Leaf insect" /** Destroyer setup name */,
   skdefender = "Orchid Mantis" /** Stronghold defender setup name */,
 }
 
+// Infantry
 // Lady bug / Carpenter ant / Earthworm / Black widow
 // Nomadic ants (new update)

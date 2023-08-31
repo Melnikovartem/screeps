@@ -547,7 +547,7 @@ export class SquadWarCrimesMaster extends Master {
           )
         );
 
-      if (!healingTarget.bee && !action1 && roomInfo.dangerlvlmax > 3)
+      if (!healingTarget.bee && !action1 && roomInfo.dangerlvlmax >= 4)
         healingTarget.bee = bee;
 
       const rangeToHealingTarget = healingTarget.bee
@@ -565,7 +565,10 @@ export class SquadWarCrimesMaster extends Master {
           const ans = bee.heal(healingTarget.bee!);
           return ans;
         };
-      } else if (rangeToHealingTarget <= 3 && beeStats.heal > beeStats.dmgRange)
+      } else if (
+        rangeToHealingTarget <= 3 &&
+        ((!action2 && !action1) || beeStats.heal > beeStats.dmgRange)
+      )
         action2 = () => bee.rangedHeal(healingTarget.bee!);
     }
 

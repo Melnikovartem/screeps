@@ -418,7 +418,10 @@ export abstract class SquadMaster extends SwarmMaster {
           const ans = bee.heal(healingTarget.bee!);
           return ans;
         };
-      } else if (rangeToHealingTarget <= 3 && beeStats.heal > beeStats.dmgRange)
+      } else if (
+        rangeToHealingTarget <= 3 &&
+        ((!action2 && !action1) || beeStats.heal > beeStats.dmgRange)
+      )
         action2 = () => bee.rangedHeal(healingTarget.bee!);
     }
 

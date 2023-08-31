@@ -633,7 +633,7 @@ export class WarcrimesModule {
   }
 
   private getLegionFormation(dmg: number) {
-    const formationBee = setups.knight.copy();
+    const formationBee = setups.archer.copy();
     const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
     const healNeeded =
       (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;
@@ -657,7 +657,7 @@ export class WarcrimesModule {
   }
 
   private getDuoFormation(dmg: number) {
-    const formationBee = setups.knight.copy();
+    const formationBee = setups.archer.copy();
     const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
     const healNeeded =
       (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;

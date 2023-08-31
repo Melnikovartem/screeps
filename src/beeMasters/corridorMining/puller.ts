@@ -181,7 +181,7 @@ export class PullerMaster extends Master {
           }
           bee.goRest(this.hive.rest, { offRoad: true, useFindRoute: true });
           break;
-        case beeStates.work:
+        case beeStates.work: {
           const beeToPull = (bee.target && Apiary.bees[bee.target]) as Bee;
           const depMaster =
             beeToPull &&
@@ -214,6 +214,7 @@ export class PullerMaster extends Master {
               pulled.push(beeToPull.ref);
             }
           }
+        }
       }
       this.checkFlee(bee, undefined, { movingTarget: true });
     });

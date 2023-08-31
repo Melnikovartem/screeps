@@ -91,12 +91,12 @@ printSetup(setups.builder, 1300)
 printSetup(setups.puppet)
 printSetup(setups.defender.normal)
 printSetup(setups.defender.sk)
-printSetup(setups.knight, 975)
+printSetup(setups.archer, 975)
 printSetup(setups.dismantler)
 printSetup(setups.healer, 1300)
 printSetup(setups.archer, undefined, 10);
 printSetup(setups.healer, undefined, 10);
-printSetup(setups.knight, undefined, 17);
+printSetup(setups.archer, undefined, 17);
 */
 
 // console .log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))

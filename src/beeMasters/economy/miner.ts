@@ -57,11 +57,12 @@ export class MinerMaster extends Master {
 
     const roomState = Apiary.intel.getRoomState(this.pos);
     let shouldSpawn =
-      !this.hive.annexInDanger.includes(this.pos.roomName) &&
-      (roomState === roomStates.reservedByMe ||
-        roomState === roomStates.noOwner ||
-        roomState === roomStates.SKcentral ||
-        roomState === roomStates.SKfrontier);
+      roomState === roomStates.ownedByMe ||
+      (!this.hive.annexInDanger.includes(this.pos.roomName) &&
+        (roomState === roomStates.reservedByMe ||
+          roomState === roomStates.noOwner ||
+          roomState === roomStates.SKcentral ||
+          roomState === roomStates.SKfrontier));
 
     if (shouldSpawn)
       shouldSpawn =

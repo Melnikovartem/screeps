@@ -1,9 +1,8 @@
 import type { Bee } from "../../bees/bee";
-// import { towerCoef } from "../../abstract/utils";
 import { setups } from "../../bees/creepSetups";
 import type { FlagOrder } from "../../orders/order";
 import { profile } from "../../profiler/decorator";
-import type { CreepBattleInfo } from "../../spiderSense/intelligence";
+import { type CreepBattleInfo } from "../../spiderSense/intelligence";
 import {
   beeStates,
   enemyTypes,
@@ -20,8 +19,11 @@ const BOOST_LVL = 2;
 export class HordeMaster extends SwarmMaster {
   // failsafe
   public movePriority = 4 as 3 | 4;
-  public setup = setups.knight.copy();
+  public setup = setups.archer.copy();
   public notify = false;
+  public recycle = true;
+  // 0 if no 1 - 2 - 3 for cycle
+  public trio = 0;
 
   public constructor(order: FlagOrder) {
     super(order);
@@ -79,6 +81,10 @@ export class HordeMaster extends SwarmMaster {
   }
 
   public init() {
+    if (!this.maxPath) this.maxPath = this.hive.pos.getTimeForPath(this);
+    if (this.order.ref.includes("keep")) this.maxSpawns = 30;
+    if (!this.order.ref.includes("recycle")) this.recycle = false;
+
     if (this.order.ref.includes("boost"))
       this.boosts = [
         { type: "rangedAttack", lvl: BOOST_LVL },
@@ -90,7 +96,12 @@ export class HordeMaster extends SwarmMaster {
         { type: "dismantle", lvl: 1 },
         { type: "dismantle", lvl: 0 },
       ];
-    if (this.order.ref.includes("harass")) {
+    // fast to produce trio to stabilize room
+    if (this.order.ref.includes("trio")) {
+      this.maxSpawns = 30; // 10 trios : 32K energy : 12H harass on shard2
+      this.trio = (this.spawned % 3) + 1;
+      this.targetBeeCount = 3;
+    } else if (this.order.ref.includes("harass")) {
       this.maxSpawns = 8; // ~ 10H of non stop low lvl harass max ~ 10K energy
       this.setup.fixed = [HEAL, ATTACK];
       this.setup.patternLimit = 3;
@@ -151,8 +162,6 @@ export class HordeMaster extends SwarmMaster {
       this.setup.patternLimit = 15;
       this.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL];
     }
-    if (this.order.ref.includes("keep")) this.maxSpawns = 30;
-    if (!this.maxPath) this.maxPath = this.hive.pos.getTimeForPath(this);
   }
 
   public get emergency() {
@@ -170,12 +179,32 @@ export class HordeMaster extends SwarmMaster {
       this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10) &&
       Game.time >=
         roomInfo.safeModeEndTime -
-          (roomInfo.roomState === roomStates.ownedByMe
-            ? 300
-            : 150 + this.hive.pos.getRoomRangeTo(this.pos) * 50)
+          150 -
+          this.hive.pos.getRoomRangeTo(this.pos) * 50
     ) {
+      let setup = this.setup;
+      if (this.trio) {
+        switch (this.trio) {
+          case 0:
+            setup = setups.archer.copy();
+            setup.patternLimit = 5;
+            setup.fixed = []; // 5 ranged 5 move
+            break;
+          case 1:
+            setup = setups.defender.destroyer.copy();
+            setup.patternLimit = 10;
+            setup.fixed = []; // 10 mele 10 move
+            break;
+          case 2:
+            setup = setups.healer.copy();
+            setup.patternLimit = 3;
+            setup.fixed = []; // 3 heal 3 move
+            break;
+        }
+        this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
+      }
       this.wish({
-        setup: this.setup,
+        setup,
         priority: 4,
       });
     }
@@ -291,7 +320,6 @@ export class HordeMaster extends SwarmMaster {
       let healingTarget: Creep | Bee | PowerCreep | null =
         bee.hits < bee.hitsMax ||
         (rangeToTarget <= 3 &&
-          beeStats.resist &&
           !this.activeBees.filter((b) => b.hits < b.hitsMax).length)
           ? bee
           : null;
@@ -302,7 +330,11 @@ export class HordeMaster extends SwarmMaster {
             (c) => c.hits < c.hitsMax
           )
         );
-      if (!healingTarget && roomInfo.dangerlvlmax > 3) healingTarget = bee;
+      if (!healingTarget && roomInfo.dangerlvlmax >= 4 && rangeToTarget <= 5)
+        healingTarget = this.activeBees.reduce((a, b) =>
+          a.pos.getRangeTo(target!) < b.pos.getRangeTo(target!) ? a : b
+        );
+      if (!healingTarget && roomInfo.dangerlvlmax >= 4) healingTarget = bee;
       const rangeToHealingTarget = healingTarget
         ? bee.pos.getRangeTo(healingTarget)
         : Infinity;
@@ -313,9 +345,7 @@ export class HordeMaster extends SwarmMaster {
         action1 = () => bee.heal(healingTarget!);
       } else if (
         rangeToHealingTarget <= 3 &&
-        beeStats.heal > beeStats.dmgRange &&
-        !action1 &&
-        !action2
+        ((!action2 && !action1) || beeStats.heal > beeStats.dmgRange)
       )
         action2 = () => bee.rangedHeal(healingTarget!);
     }
@@ -352,18 +382,49 @@ export class HordeMaster extends SwarmMaster {
 
     if (!target) return OK;
 
-    let shouldFlee = rangeToTarget < targetedRange;
-    if (!shouldFlee && loosingBattle) {
-      const enterance = bee.pos.enteranceToRoom;
-      shouldFlee = !!enterance && enterance.roomName === target.pos.roomName;
+    if (
+      !beeStats.dmgClose &&
+      !beeStats.dmgRange &&
+      beeStats.heal &&
+      bee.pos.roomName === this.roomName &&
+      loosingBattle >= 1
+    ) {
+      // healer help with attack
+      const moveTarget = this.activeBees
+        .filter((b) => b.pos.roomName === this.roomName && b.ref !== bee.ref)
+        .reduce((a, b) => {
+          const statsA = Apiary.intel.getStats(a.creep).max;
+          const statsB = Apiary.intel.getStats(b.creep).max;
+          // follow guy with attack
+          let diff = statsA.dmgClose - statsB.dmgClose;
+          if (!diff) diff = a.hitsMax - a.hits - (b.hitsMax - b.hits);
+          if (!diff) diff = b.pos.getRangeTo(bee) - a.pos.getRangeTo(bee);
+          if (!diff) diff = statsA.dmgRange - statsB.dmgRange;
+          if (!diff) diff = b.pos.getRangeTo(target) - a.pos.getRangeTo(target);
+          if (!diff) diff = a.hitsMax - b.hitsMax;
+          return diff >= 0 ? a : b;
+        });
+      if (moveTarget) bee.goTo(moveTarget, opt);
+      return OK;
     }
+
+    // are we too close
+    let shouldFlee = rangeToTarget < targetedRange;
+    if (!shouldFlee && loosingBattle >= 0) {
+      const enterance = bee.pos.enteranceToRoom;
+      // try to stay in room if winning
+      shouldFlee = !!enterance && enterance.roomName !== this.pos.roomName;
+    }
+    // can we get help from towers inside hive
     const hiveTowers =
       Apiary.hives[bee.pos.roomName] &&
       Object.keys(Apiary.hives[bee.pos.roomName].cells.defense.towers).length;
+    // flee if no help or if dmged
     if (shouldFlee && (!hiveTowers || bee.hits < bee.hitsMax)) {
       bee.flee(this.pos, opt, true); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
       return ERR_BUSY;
     }
+    // if losing find smaller creeps to bully
     if (loosingBattle <= 0 && bee.pos.roomName === this.pos.roomName) {
       const newEnemy = bee.pos.findClosest(
         roomInfo.enemies
@@ -379,15 +440,18 @@ export class HordeMaster extends SwarmMaster {
         return OK;
       }
     }
+    // be a bully if healthy
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
       if (target && target.pos.getRangeTo(bee) <= 3) opt.movingTarget = true;
+      // if we are winning stay in room or just go to him
       bee.goTo(
-        (bee.pos.enteranceToRoom &&
-          rangeToTarget <= 1 &&
+        (rangeToTarget <= 1 &&
+          bee.pos.enteranceToRoom &&
           target.pos.getOpenPositions(false)[0]) ||
           target,
         opt
       );
+      // stay in same room
       if (
         bee.targetPosition &&
         bee.targetPosition.enteranceToRoom &&
@@ -479,12 +543,7 @@ export class HordeMaster extends SwarmMaster {
               bee.heal(healingTarget);
             bee.goRest(this.pos);
           } else this.beeAct(bee, enemy);
-          if (
-            enemy ||
-            !bee.boosted ||
-            bee.ticksToLive > this.pos.getRoomRangeTo(this.hive) * 50 + 15
-          )
-            break;
+          if (enemy || !bee.boosted || bee.ticksToLive > this.maxPath) break;
           // if no enemies we go unboost
           bee.state = beeStates.fflush;
           // fall through

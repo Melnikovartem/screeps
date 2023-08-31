@@ -10,19 +10,19 @@ import { HordeMaster } from "./horde";
 
 @profile
 export class HordeDefenseMaster extends HordeMaster {
-  get maxSpawns() {
+  public get maxSpawns() {
     return this.targetBeeCount;
   }
 
-  set maxSpawns(_) {}
+  public set maxSpawns(_) {}
 
-  init() {
+  public init() {
     const defSwarm = Apiary.defenseSwarms[this.pos.roomName];
     if (defSwarm && defSwarm.ref !== this.order.ref) this.order.delete();
     else Apiary.defenseSwarms[this.pos.roomName] = this;
   }
 
-  update() {
+  public update() {
     SwarmMaster.prototype.update.call(this);
 
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
@@ -255,7 +255,7 @@ export class HordeDefenseMaster extends HordeMaster {
       this.order.delete();
   }
 
-  delete() {
+  public delete() {
     super.delete();
     if (Apiary.defenseSwarms[this.pos.roomName] === this)
       delete Apiary.defenseSwarms[this.pos.roomName];

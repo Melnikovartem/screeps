@@ -200,12 +200,28 @@ export class Bee extends ProtoBee<Creep> {
     opt: TravelToOptions
   ): ScreepsReturnCode {
     if (!this.pos.isNearTo(t)) {
+      // target eneterance
       const tEnt = t.pos.enteranceToRoom;
-      if (!tEnt || tEnt.roomName !== this.pos.roomName) {
+      // bee enterance
+      const bEnt = this.pos.enteranceToRoom;
+      if (
+        bEnt &&
+        tEnt &&
+        tEnt.roomName === this.pos.roomName &&
+        bEnt.roomName === t.pos.roomName
+      ) {
+        // wait for ma guy to come to me
+        const nonExit = this.pos
+          .getOpenPositions(true)
+          .filter((p) => !p.enteranceToRoom && p.getRangeTo(this) === 1)[0];
+        // fucks with traveler but it is what it is
+        if (nonExit) this.targetPosition = nonExit;
+      } else if (!tEnt || tEnt.roomName !== this.pos.roomName) {
         if (opt.obstacles) opt.obstacles.push({ pos: t.pos });
         else opt.obstacles = [{ pos: t.pos }];
         this.goTo(t, opt);
       }
+
       return ERR_TIRED;
     }
     this.goTo(this.pos.equal(pos) ? t.pos : pos, opt);
@@ -214,12 +230,16 @@ export class Bee extends ProtoBee<Creep> {
       this.targetPosition.roomName !== this.pos.roomName &&
       this.pos.enteranceToRoom
     ) {
+      // they need to be in the same room to be pulled
+      // needs proper test this but this fixed an issue with not pulling near border so yeah
       const anotherExit = this.pos
         .getOpenPositions(true)
         .filter((p) => p.enteranceToRoom && p.getRangeTo(this) === 1)[0];
+      // fucks with traveler but it is what it is
       if (anotherExit) this.targetPosition = anotherExit;
     }
-    const ans = this.creep.pull(t.creep) || t.creep.move(this.creep);
+    let ans: ScreepsReturnCode = this.creep.pull(t.creep);
+    if (ans === OK) ans = t.creep.move(this.creep);
     if (ans === OK) t.pulledPos = this.creep.pos;
     return ans;
   }

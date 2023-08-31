@@ -2,7 +2,7 @@ import { setups } from "../../bees/creepSetups";
 import type { Boosts } from "../_Master";
 import { FormationPositions, SquadMaster } from "./squad";
 
-// const GANG = setups.knight.copy();
+// const GANG = setups.archer.copy();
 
 const TOUGHT_AMOUNT = 10;
 
@@ -14,7 +14,7 @@ const HEAL_AMOUNT = Math.ceil(TOWER_DMG / (HEAL_POWER * BOOSTS.heal.XLHO2.heal) 
 
 GANG.fixed = Array(HEAL_AMOUNT).fill(HEAL).concat(Array(TOUGHT_AMOUNT).fill(TOUGH));*/
 
-const ARCHER = setups.knight.copy();
+const ARCHER = setups.archer.copy();
 ARCHER.fixed = [HEAL, HEAL].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
 
 const HEALER = setups.healer.copy();
@@ -52,7 +52,7 @@ export class GangQuad extends SquadMaster {
   }
 }
 
-/* const ARCHER = setups.knight.copy();
+/* const ARCHER = setups.archer.copy();
 ARCHER.fixed = [HEAL, HEAL].concat(Array(TOUGHT_AMOUNT).fill(TOUGH));
 
 const HEALER = setups.healer.copy();

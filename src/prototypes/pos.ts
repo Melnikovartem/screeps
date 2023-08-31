@@ -86,7 +86,7 @@ RoomPosition.prototype.getOpenPositions = function (
 };
 
 RoomPosition.prototype.isFree = function (ignoreCreeps?: boolean): boolean {
-  let ans = !_.filter(this.lookFor(LOOK_TERRAIN), (t) => t !== "wall").length;
+  let ans = !_.filter(this.lookFor(LOOK_TERRAIN), (t) => t === "wall").length;
 
   if (ans && this.roomName in Game.rooms) {
     ans = !_.filter(

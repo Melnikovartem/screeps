@@ -24,6 +24,12 @@ export class CreepSetup {
   public moveMax: number | "best";
   public ignoreCarry?: boolean;
   public ignoreMove?: boolean;
+  /** 0 - repeating scheme
+   *
+   * 1 - sorted to protect attack, while swapping one move to the end
+   *
+   * 2 - sorted to protect move
+   */
   public scheme: 0 | 1 | 2;
 
   public constructor(
@@ -324,6 +330,14 @@ export const setups = {
   },
   knight: new CreepSetup(
     setupsNames.knight,
+    {
+      pattern: [ATTACK],
+    },
+    "best",
+    2
+  ),
+  archer: new CreepSetup(
+    setupsNames.archer,
     {
       fixed: [HEAL, HEAL, HEAL, HEAL, HEAL, TOUGH, TOUGH],
       pattern: [RANGED_ATTACK],
