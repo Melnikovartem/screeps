@@ -87,8 +87,12 @@ export abstract class Master {
   public deleteBee(beeRef: string) {
     deleteBee(this, beeRef);
   }
+
+  /** this.wish should be used only after checkBees is called. So we check if it happened */
+  protected checkBeforeWish = false;
   /** checks if some of bees need replacement */
   public checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
+    this.checkBeforeWish = true;
     return checkBees(this, spawnExtreme, spawnCycle);
   }
 
@@ -99,6 +103,7 @@ export abstract class Master {
 
   // first stage of decision making like do i need to spawn new creeps
   public update(this: Master) {
+    this.checkBeforeWish = false;
     for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref]) this.deleteBee(ref);
     this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning);
@@ -130,13 +135,24 @@ export abstract class Master {
       this.bees[key].state = beeStates.idle;
       delete this.bees[key].target;
     }
-    for (const key in this.hive.spawOrders)
-      if (key.includes(this.ref)) delete this.hive.spawOrders[key];
 
-    if (this.hive.bassboost)
-      for (const key in this.hive.bassboost.spawOrders)
-        if (key.includes(this.ref)) delete this.hive.bassboost.spawOrders[key];
+    this.removeWishes();
+
     delete Apiary.masters[this.ref];
+  }
+
+  public removeWishes() {
+    this.removeFromQue(this.hive);
+    if (this.hive.bassboost) this.removeFromQue(this.hive.bassboost);
+  }
+
+  private removeFromQue(hive: Hive) {
+    const spawnQue = hive.cells.spawn.spawnQue;
+    for (let i = 0; i < spawnQue.length; )
+      if (spawnQue[i].master === this.ref) {
+        spawnQue.splice(i, 1);
+        --i;
+      }
   }
 
   public get print(): string {

@@ -1,5 +1,5 @@
 import { Bee } from "bees/bee";
-import { SpawnOrder } from "hive/hive";
+import { SpawnOrder } from "hive/hive-declarations";
 import { ERR_INVALID_ACTION } from "static/constants";
 import { beeStates, hiveStates } from "static/enums";
 
@@ -63,18 +63,22 @@ export function checkBees(
   );
 }
 
+// used to support chages before creep before it whent to production
 export function wish(
   this: Master,
-  template: { setup: SpawnOrder["setup"]; priority: SpawnOrder["priority"] },
-  ref: string = this.ref
+  template: { setup: SpawnOrder["setup"]; priority: SpawnOrder["priority"] }
 ) {
+  if (!this.checkBeforeWish) {
+    console.log(`ERR @${this.print}: DIDNT USE CHECKBEES BEFORE SPAWN`);
+    return;
+  }
   const order: SpawnOrder = {
     setup: template.setup.copy(),
     priority: template.priority,
     master: this.ref,
-    ref,
     createTime: Game.time,
   };
+  let hiveToSpawn = this.hive;
   if (this.hive.bassboost) {
     let localBodyMax = 0;
     if (this.hive.state !== hiveStates.nospawn) {
@@ -87,21 +91,17 @@ export function wish(
           .length;
     }
     if (
-      localBodyMax >=
-      order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable).body
-        .length
+      localBodyMax <
+        order.setup.getBody(this.hive.bassboost.room.energyCapacityAvailable)
+          .body.length &&
+      this.hive.bassboost.state === hiveStates.economy
     ) {
-      this.hive.spawOrders[ref] = order;
-      this.waitingForBees += 1;
-    } else if (this.hive.bassboost.state === hiveStates.economy) {
       order.priority = order.priority ? 9 : 5; // order priority when boosting (5 for essential / 9 for other)
-      this.hive.bassboost.spawOrders[ref] = order;
-      this.waitingForBees += 1;
+      hiveToSpawn = this.hive.bassboost;
     }
-  } else {
-    this.hive.spawOrders[ref] = order;
-    this.waitingForBees += 1;
   }
+  hiveToSpawn.cells.spawn.spawnQue.push(order);
+  this.waitingForBees += 1;
   // well he placed an order now just need to catch a creep after a spawn
 }
 

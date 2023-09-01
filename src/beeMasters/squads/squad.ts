@@ -150,13 +150,10 @@ export abstract class SquadMaster extends SwarmMaster {
     if (this.checkBees(this.emergency) && this.checkup) {
       for (let i = 0; i < this.formation.length; ++i) {
         if (!this.formationBees[i])
-          this.wish(
-            {
-              setup: this.formation[i][1],
-              priority: this.priority,
-            },
-            this.ref + "_" + i
-          );
+          this.wish({
+            setup: this.formation[i][1],
+            priority: this.priority,
+          });
       }
     } else if (_.some(this.bees, (b) => b.state === beeStates.boosting)) {
       this.checkup;

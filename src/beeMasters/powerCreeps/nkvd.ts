@@ -134,9 +134,8 @@ export class NKVDMaster extends PowerMaster {
           const spawn = targets as RespawnCell;
           if (
             (!spawn.freeSpawns.length &&
-              _.filter(this.hive.spawOrders, (b) => b.priority === 1).length >
-                0) || // spawnBattle screeps
-            (Object.keys(this.hive.spawOrders).length >= 3 &&
+              _.filter(spawn.spawnQue, (b) => b.priority === 1).length > 0) || // spawnBattle screeps
+            (Object.keys(spawn.spawnQue).length >= 3 &&
               !_.filter(
                 spawn.spawns,
                 (s) => !s.spawning || s.spawning.remainingTime <= 10

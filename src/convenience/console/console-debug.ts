@@ -30,10 +30,10 @@ CustomConsole.prototype.printSpawnOrders = function (hiveName) {
     _.filter(Apiary.hives, (h) => !hiveName || h.roomName === hiveName),
     (h) =>
       `${h.print}: \n${_.map(
-        _.map(h.spawOrders, (order, master) => {
-          return { order, master: master! };
-        }).sort((a, b) => a.order.priority - b.order.priority),
-        (o) => `${o.order.priority} ${o.master}: ${o.order.setup.name}`
+        _.map(h.cells.spawn.spawnQue, (o) => o).sort(
+          (a, b) => a.priority - b.priority
+        ),
+        (o) => `${o.priority} ${o.master}: ${o.setup.name}`
       ).join("\n")} \n`
   ).join("\n");
 };

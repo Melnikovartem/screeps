@@ -217,14 +217,10 @@ export class HordeMaster extends SwarmMaster {
               setup.patternLimit = 2;
               setup.fixed = [HEAL];
           }
-          this.wish(
-            {
-              setup,
-              priority: 4,
-            },
-            this.ref + "_" + this.trio
-          );
-          console.log(setup.name, this.ref + "_" + this.trio);
+          this.wish({
+            setup,
+            priority: 4,
+          });
           this.trio += this.trio === 3 ? -2 : 1; // cycle 1 - 2 - 3 - 1 - 2 -...
         }
       } else
@@ -431,6 +427,7 @@ export class HordeMaster extends SwarmMaster {
           if (!diff) diff = a.hitsMax - b.hitsMax;
           return diff >= 0 ? a : b;
         });
+      opt.movingTarget = true;
       if (moveTarget) bee.goTo(moveTarget, opt);
       return OK;
     }

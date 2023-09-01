@@ -35,7 +35,8 @@ const SKIP_SMALL_ORDER = {
 
 const MARKET_SETTINGS = {
   pocketChange: 100, // i do not care if i lose this amount on an order
-  okLossAmount: 10000, // i can pay this price to smooth things
+  okLossAmount: 10_000, // i can pay this price to smooth things
+
   reserveCredits: 1_000_000, // Maintain balance above this amount
   mineralCredits: 5_000_000, // Buy credits if above this amount
   boostCredits: 10_000_000, // Buy boosts directly if above this amount
@@ -97,7 +98,7 @@ export class Broker {
    * Energy price in the market
    * @param energyPrice - Current energy price in the market.
    */
-  private energyPrice: number = Infinity;
+  public energyPrice: number = Infinity;
 
   /**
    * Function to update resource information and orders
@@ -226,7 +227,7 @@ export class Broker {
       costToProduce += this.info[resource as ReactionConstant]!.avgPrice;
     }
     this.updateRes(compound, 100);
-    // from buying materials/selling product. Not all compound need to buy in so * 0.8
+    // from buy orders materials/selling product. Not all compound need to buy in so * 0.8
     // not always paying 1 energy so * 0.9
     // 0.8 * 0.9 = 0.72 ~ 0.7
     // @MARKETDANGER
@@ -252,9 +253,14 @@ export class Broker {
   public update() {
     this.updateRes(RESOURCE_ENERGY, MARKET_LAG * 100);
 
-    if ((Game.time - Apiary.createTime) % 1000 === 571) {
+    if (Apiary.intTime % 1571 === 0) {
       // later will be used to calc is it even profitable to sell something faraway
       this.energyPrice = this.weightedAvgPrice(RESOURCE_ENERGY);
+      console.log(
+        `${Game.shard.name} energy price is ${
+          Math.round(this.energyPrice * 1000) / 1000
+        }`
+      );
       this.checkIfAnyLabProfitable();
     }
 
@@ -339,8 +345,8 @@ export class Broker {
 
     let hurry;
     const speedUpBuy = hive.resState[res] || 0 <= 0;
-    if (tryFaster) hurry = speedUpBuy ? "RightNow" : "GoodPrice";
-    else hurry = speedUpBuy ? "AnyBuck" : "RightNow";
+    if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
+    else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
 
     let okLoss = 0;
     switch (hurry) {
@@ -365,13 +371,12 @@ export class Broker {
     )
       return "no money";
 
+    // credits_if_short - credits_if_long
     const loss =
       (priceToBuyInstant +
         this.energyPrice * 0.7 -
         priceToBuyLong * (1 + MARKET_FEE)) *
       amount;
-
-    console.log(res, hive.print, loss, okLoss, hurry);
 
     if (loss < okLoss) {
       const ans = this.buyShort(
@@ -380,7 +385,6 @@ export class Broker {
         amount,
         priceToBuyInstant + okLoss
       );
-      console.log(res, hive.print, ans);
       switch (ans) {
         case OK:
         case ERR_TIRED:
@@ -434,8 +438,8 @@ export class Broker {
     let hurry;
     const speedUpBuy =
       (hive.resState[res] || 0) > (hive.resState[res] || 0) + 1000;
-    if (tryFaster) hurry = speedUpBuy ? "RightNow" : "GoodPrice";
-    else hurry = speedUpBuy ? "AnyBuck" : "RightNow";
+    if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
+    else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
 
     let okLoss = 0;
     switch (hurry) {
@@ -464,10 +468,11 @@ export class Broker {
       return "long";
     }
 
+    // credits_if_long - credits_if_short
     const loss =
-      (priceToSellInstant +
+      (priceToSellLong * (1 + MARKET_FEE) +
         this.energyPrice * 0.7 -
-        priceToSellLong * (1 + MARKET_FEE)) *
+        priceToSellInstant) *
       amount;
     const okToShortSell =
       loss < okLoss || creditsToUse < MARKET_SETTINGS.reserveCredits;

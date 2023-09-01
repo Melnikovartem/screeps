@@ -355,9 +355,9 @@ export class Visuals {
       else
         ans.push([
           "spawn",
-          !Object.keys(hive.spawOrders).length
+          !hive.cells.spawn.spawnQue.length
             ? ""
-            : ` ${Object.keys(hive.spawOrders).length}`,
+            : ` ${hive.cells.spawn.spawnQue.length}`,
           this.getBeesAmount(cell.master),
         ]);
     }

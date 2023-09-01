@@ -1,10 +1,11 @@
 import { Bee } from "bees/bee";
+import type { Hive } from "hive/hive";
+import type { SpawnOrder } from "hive/hive-declarations";
+import { profile } from "profiler/decorator";
 import { ApiaryReturnCode } from "static/constants";
+import { beeStates, prefix, setupsNames } from "static/enums";
+import { makeId } from "static/utils";
 
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { beeStates, prefix, setupsNames } from "../../static/enums";
-import { makeId } from "../../static/utils";
 import { Cell } from "../_Cell";
 import { FastRefillCell } from "../stage1/fastRefill";
 
@@ -21,6 +22,9 @@ export class RespawnCell extends Cell {
 
   private recycleSpawnId: Id<StructureSpawn> | "" = "";
   private recycledPrev = false;
+
+  /** Dictionary of spawn orders */
+  public spawnQue: SpawnOrder[] = [];
 
   public constructor(hive: Hive) {
     super(hive, prefix.respawnCell);
@@ -180,20 +184,34 @@ export class RespawnCell extends Cell {
   public run() {
     // generate the queue and start spawning
     let energyAvailable = this.hive.room.energyAvailable;
-    let orders = _.map(this.hive.spawOrders, (o) => o);
+    // used to be dict to arr. now just silly, but need to be able to splice
 
-    for (let key = 0; key < orders.length && this.freeSpawns.length; ++key) {
-      const order = orders.reduce((prev, curr) => {
-        let priorityDiff = curr.priority - prev.priority;
-        if (priorityDiff === 0)
-          priorityDiff = curr.createTime - prev.createTime;
-        if (priorityDiff === 0) priorityDiff = Math.random() - 0.5;
-        return priorityDiff < 0 ? curr : prev;
-      });
+    // only problem is if something important to hive gets filled up with other orders
+    this.spawnQue.sort((a, b) => {
+      // lower priority first
+      let priorityDiff = a.priority - b.priority;
+      // time of addition to the que
+      // 1% chance to chose old ones instead of new ones
+      // so that in case of overfill
+      // we can also reach some important bees like upgrade
+      // activate if find any problems with this system
+      // maybe think about checking of how many bees per master is spawned this tick
+      if (priorityDiff === 0)
+        // || Math.random() < 0.01
+        priorityDiff = a.createTime - b.createTime;
+      // random ))
+      if (priorityDiff === 0) priorityDiff = Math.random() - 0.5;
+      return priorityDiff;
+    });
+
+    for (let i = 0; i < this.spawnQue.length && this.freeSpawns.length; ++i) {
       const spawn = this.freeSpawns.pop()!;
       let setup;
       // 1 - army emergency priority 4 - army long run priority (mostly cause pvp is not automated yet)
       let moveMax;
+      const order = this.spawnQue[i];
+
+      // boosted movement check
       if (order.setup.moveMax === "best" && this.hive.cells.lab) {
         const master = Apiary.masters[order.master];
         if (master && master.boosts) {
@@ -215,6 +233,7 @@ export class RespawnCell extends Cell {
                     toBoost = 10;
                     break;
                 }
+                // enough to boost bee to max
                 if (info.amount >= toBoost) {
                   moveMax = toBoost;
                   return true;
@@ -239,8 +258,6 @@ export class RespawnCell extends Cell {
         );
         if (!setup.body.length) {
           this.freeSpawns.push(spawn);
-          orders = orders.filter((o) => order.ref !== o.ref);
-          --key;
           continue;
         }
       }
@@ -259,13 +276,11 @@ export class RespawnCell extends Cell {
       if (ans === OK) {
         Apiary.logger.newSpawn(name, spawn, setup.cost, order.master);
         energyAvailable -= setup.cost;
-        delete this.hive.spawOrders[order.ref];
-      }
-      if (this.freeSpawns.length) {
-        orders = orders.filter((o) => order.ref !== o.ref);
-        --key;
+        this.spawnQue.splice(i, 1);
+        --i;
       }
     }
+
     if (this.hive.phase === 0)
       // renewing Boost creeps if they are better than we can spawn
       _.forEach(this.freeSpawns, (s) => {

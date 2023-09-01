@@ -1,6 +1,7 @@
 import { ManagerMaster } from "beeMasters/economy/manager";
 import { TransferRequest } from "bees/transferRequest";
-import type { Hive, ResTarget } from "hive/hive";
+import type { Hive } from "hive/hive";
+import { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 
@@ -13,13 +14,22 @@ export const ENERGY_FOR_REVERTING_TO_DEV_CELLS = 3000;
 const EXTREMLY_LOW_ENERGY = 10000;
 
 @profile
-export class TransferCell extends Cell {
+export class StorageCell extends Cell {
+  public linkState:
+    | { using: string; priority: 0 | 1; lastUpdated: number }
+    | undefined;
+  public master: ManagerMaster;
+
   public requests: { [id: string]: TransferRequest } = {};
+  public resTargetTerminal: { energy: number } & ResTarget = {
+    energy: TERMINAL_ENERGY,
+  };
 
   public usedCapacity: ResTarget = {};
 
   public constructor(hive: Hive) {
     super(hive, prefix.storageCell);
+    this.findLink();
     this.master = new ManagerMaster(this);
   }
 

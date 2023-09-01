@@ -86,10 +86,7 @@ CustomConsole.prototype.spawnDefender = function (
   this.lastActionRoomName = hive.roomName;
   const destroyer = setups.defender.destroyer.copy();
   destroyer.patternLimit = patternLimit;
-  hive.cells.defense.master.wish(
-    { setup: destroyer, priority: 1 },
-    "force_" + makeId(4)
-  );
+  hive.cells.defense.master.wish({ setup: destroyer, priority: 1 });
   return `DEFENDER SPAWNED @ ${this.formatRoom(hiveName)}`;
 };
 
@@ -105,7 +102,7 @@ CustomConsole.prototype.spawnBuilder = function (
   if (!hive.builder) return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
   const builder = setups.builder.copy();
   builder.patternLimit = patternLimit;
-  hive.builder.wish({ setup: builder, priority: 4 }, "force_" + makeId(4));
+  hive.builder.wish({ setup: builder, priority: 4 });
   return `BUILDER SPAWNED @ ${this.formatRoom(hiveName)}`;
 };
 
@@ -125,10 +122,7 @@ CustomConsole.prototype.spawnUpgrader = function (
     upgrader = setups.upgrader.fast.copy();
   else upgrader = setups.upgrader.manual.copy();
   upgrader.patternLimit = patternLimit;
-  hive.cells.upgrade.master.wish(
-    { setup: upgrader, priority: 4 },
-    "force_" + makeId(4)
-  );
+  hive.cells.upgrade.master.wish({ setup: upgrader, priority: 4 });
   return `UPGRADER SPAWNED @ ${this.formatRoom(hiveName)}`;
 };
 

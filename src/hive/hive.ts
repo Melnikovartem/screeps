@@ -3,7 +3,6 @@
  */
 import { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
-import type { CreepSetup } from "bees/creepSetups";
 import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
@@ -28,6 +27,7 @@ import {
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
+import { BuildProject, HiveCells, ResTarget } from "./hive-declarations";
 import {
   addAnex,
   addResourceCells,
@@ -36,43 +36,6 @@ import {
 } from "./hive-mining";
 import { opt, updateCellData } from "./hive-utils";
 // Import various modules and types
-
-// Define the SpawnOrder interface for creep spawning
-export interface SpawnOrder {
-  setup: CreepSetup;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // Priority of the creep
-  master: string;
-  ref: string;
-  createTime: number;
-}
-
-// Define the BuildProject interface for construction projects
-export interface BuildProject {
-  pos: RoomPosition;
-  sType: StructureConstant;
-  targetHits: number;
-  energyCost: number;
-  type: "repair" | "construction";
-}
-
-// Define the HiveCells interface for different cell types within a hive
-export interface HiveCells {
-  storage?: StorageCell;
-  defense: DefenseCell;
-  spawn: RespawnCell;
-  upgrade?: UpgradeCell;
-  excavation: ExcavationCell;
-  dev?: DevelopmentCell;
-  lab?: LaboratoryCell;
-  factory?: FactoryCell;
-  observe?: ObserveCell;
-  power?: PowerCell;
-}
-
-/** Define a target of amount for resource to keep in storage
- * Is not flushed tick to ticks
- */
-export type ResTarget = { [key in ResourceConstant]?: number };
 
 // Constant for a minimum amount of a certain mineral in the hive
 const HIVE_MINERAL = 5000;
@@ -95,9 +58,6 @@ export class Hive {
   public room: Room;
   /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
-
-  /** Dictionary of spawn orders */
-  public spawOrders: { [id: string]: SpawnOrder } = {};
 
   /** BuilderMaster instance for managing building-related tasks */
   public readonly builder?: BuilderMaster;

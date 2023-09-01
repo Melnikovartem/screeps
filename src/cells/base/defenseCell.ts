@@ -1,11 +1,12 @@
-import { HordeMaster } from "../../beeMasters/war/horde";
-import { SiegeMaster } from "../../beeMasters/war/siegeDefender";
-import type { Bee } from "../../bees/bee";
-import type { Hive } from "../../hive/hive";
-import { FlagOrder } from "../../orders/order";
-import { profile } from "../../profiler/decorator";
-import { beeStates, hiveStates, prefix } from "../../static/enums";
-import { makeId, towerCoef } from "../../static/utils";
+import { HordeMaster } from "beeMasters/war/horde";
+import { SiegeMaster } from "beeMasters/war/siegeDefender";
+import type { Bee } from "bees/bee";
+import type { Hive } from "hive/hive";
+import { FlagOrder } from "orders/order";
+import { profile } from "profiler/decorator";
+import { beeStates, hiveStates, prefix } from "static/enums";
+import { makeId, towerCoef } from "static/utils";
+
 import { Cell } from "../_Cell";
 import { getNukeDefMap, updateNukes } from "./defenseCell-nukes";
 

@@ -1,7 +1,9 @@
 import { buildingCostsHive } from "abstract/hiveMemory";
-import type { BuildProject, Hive } from "hive/hive";
 import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { getCase, makeId } from "static/utils";
+
+import type { Hive } from "./hive";
+import type { BuildProject } from "./hive-declarations";
 
 const RAMPART_BUFFER_ZONE = {
   aliveBees: 20_000, // 6_666 ticks

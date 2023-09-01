@@ -39,13 +39,10 @@ export class ContainerBuilderMaster extends SwarmMaster {
       setup.pattern = [WORK, CARRY, CARRY];
       setup.moveMax = 50 / 3;
       for (let i = 0; i < this.targetBeeCount - this.spawned; ++i)
-        this.wish(
-          {
-            setup,
-            priority: 5,
-          },
-          this.ref + "_" + makeId(4)
-        );
+        this.wish({
+          setup,
+          priority: 5,
+        });
     }
   }
 

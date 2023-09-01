@@ -131,7 +131,7 @@ export function actAnnex(order: FlagOrder) {
       }
 
       hiveToBoos.bassboost = order.hive;
-      hiveToBoos.spawOrders = {};
+      hiveToBoos.cells.spawn.spawnQue = [];
       _.forEach(Apiary.masters, (c) => {
         if (c.hive.roomName === order.pos.roomName) c.waitingForBees = 0;
       });

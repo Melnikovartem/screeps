@@ -1,11 +1,15 @@
 import { setups } from "bees/creepSetups";
 import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
-import type { ResTarget } from "hive/hive";
+import type { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { findOptimalResource } from "static/utils";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
+/** Just puts stuff on the ground when we have too much
+ *
+ * @todo impliment into managers
+ */
 @profile
 export class ClearMaster extends SwarmMaster {
   public get targetBeeCount() {

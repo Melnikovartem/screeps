@@ -5,7 +5,6 @@ import { GangQuad } from "beeMasters/squads/quadSquad";
 import { DowngradeMaster } from "beeMasters/war/downgrader";
 import { HordeMaster } from "beeMasters/war/horde";
 import { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
-import { WaiterMaster } from "beeMasters/war/waiter";
 import { prefix } from "static/enums";
 
 import { FlagOrder } from "./order";
@@ -16,16 +15,14 @@ export function actBattle(order: FlagOrder) {
       case COLOR_BLUE:
         order.master = new HordeDefenseMaster(order);
         break;
-      case COLOR_RED:
+      case COLOR_RED: {
         order.master = new HordeMaster(order);
         const regex = /^\d*/.exec(order.ref);
         if (regex && regex[0]) order.master.maxSpawns = +regex[0];
         break;
+      }
       case COLOR_PURPLE:
         order.master = new DowngradeMaster(order);
-        break;
-      case COLOR_GREEN:
-        order.master = new WaiterMaster(order);
         break;
       case COLOR_ORANGE:
         order.master = new GangDuo(order);

@@ -221,7 +221,7 @@ export class Logger extends EmptyLogger {
       mem = this.log.hives[hive.roomName];
     }
     mem.annexNames = hive.annexNames;
-    mem.spawOrders = Object.keys(hive.spawOrders).length;
+    mem.spawnQueLen = hive.cells.spawn.spawnQue.length;
     mem.construction = {
       numStruct: hive.structuresConst.length,
       costs: hive.buildingCosts,
@@ -409,7 +409,7 @@ export class Logger extends EmptyLogger {
         numStruct: 0,
         costs: _.cloneDeep(ZERO_COSTS_BUILDING_HIVE),
       },
-      spawOrders: 0,
+      spawnQueLen: 0,
 
       energy: {
         storage: 0,

@@ -1,6 +1,7 @@
 import { ManagerMaster } from "beeMasters/economy/manager";
 import { TransferRequest } from "bees/transferRequest";
-import type { Hive, ResTarget } from "hive/hive";
+import type { Hive } from "hive/hive";
+import { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 

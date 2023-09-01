@@ -37,7 +37,7 @@ export interface buildingCostsHive {
 export interface HiveLog {
   annexNames: string[];
   construction: { numStruct: number; costs: buildingCostsHive };
-  spawOrders: number;
+  spawnQueLen: number;
 
   energy: {
     storage: number;

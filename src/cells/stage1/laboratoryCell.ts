@@ -461,7 +461,8 @@ export class LaboratoryCell extends Cell {
     boostedSameType?: number
   ): BoostInfo | void {
     const res = BOOST_MINERAL[r.type][r.lvl];
-    let sum = this.sCell.getUsedCapacity(res);
+    let sum: number = this.sCell.getUsedCapacity(res);
+    // kindawhy bother with checking if compund is in prod but ok
     if (bee && this.prod && res === this.prod.res) {
       sum = this.sCell.storage.store.getUsedCapacity(res);
       const inBees = _.sum(this.sCell.master.activeBees, (b) =>

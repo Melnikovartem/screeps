@@ -1,8 +1,9 @@
-import { MinerMaster } from "../../beeMasters/economy/miner";
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix, roomStates } from "../../static/enums";
-import { Traveler } from "../../Traveler/TravelerModified";
+import { MinerMaster } from "beeMasters/economy/miner";
+import type { Hive } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { hiveStates, prefix, roomStates } from "static/enums";
+import { Traveler } from "Traveler/TravelerModified";
+
 import { Cell } from "../_Cell";
 import type { ExcavationCell } from "./excavationCell";
 

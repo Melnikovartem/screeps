@@ -269,13 +269,10 @@ export class SquadWarCrimesMaster extends Master {
     if (this.checkBees() && this.checkup) {
       for (let i = 0; i < this.setup.length; ++i) {
         if (!this.formationBees[i])
-          this.wish(
-            {
-              setup: this.setup[i],
-              priority: this.priority,
-            },
-            this.ref + "_" + i
-          );
+          this.wish({
+            setup: this.setup[i],
+            priority: this.priority,
+          });
       }
     } else if (_.some(this.bees, (b) => b.state === beeStates.boosting)) {
       this.checkup;

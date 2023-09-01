@@ -22,7 +22,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
 
   public get targetBeeCount() {
     if (!this.order) return 0;
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 5;
+    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 3;
     return this.order.memory.extraInfo as number;
   }
 

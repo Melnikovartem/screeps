@@ -1,4 +1,5 @@
 import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
+import { ResTarget } from "hive/hive-declarations";
 
 import {
   BASE_MINERALS,
@@ -6,7 +7,7 @@ import {
 } from "../cells/stage1/laboratoryCell";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 //  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
-import type { Hive, ResTarget } from "../hive/hive";
+import type { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { hiveStates } from "../static/enums";
 import { addResDict } from "../static/utils";

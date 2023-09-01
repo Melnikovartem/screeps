@@ -9,15 +9,12 @@ import { SwarmMaster } from "../_SwarmMaster";
 @profile
 export class HelpTransferMaster extends SwarmMaster {
   public get boosts(): Boosts {
-    return [
-      { type: "capacity", lvl: 2 },
-      { type: "capacity", lvl: 1 },
-      { type: "capacity", lvl: 0 },
-    ];
+    return [{ type: "capacity", lvl: 2 }];
   }
+
   public get targetBeeCount() {
-    if (!this.order) return 2;
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 2;
+    if (!this.order) return 10;
+    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 10;
     return this.order.memory.extraInfo as number;
   }
   public set targetBeeCount(value) {
@@ -25,7 +22,7 @@ export class HelpTransferMaster extends SwarmMaster {
       this.order.memory.extraInfo = value;
   }
   public get maxSpawns() {
-    return this.targetBeeCount;
+    return this.targetBeeCount; // Math.max(this.targetBeeCount, 30); // about 0.5M energy per flag
   }
   public set maxSpawns(_) {}
 
@@ -59,7 +56,8 @@ export class HelpTransferMaster extends SwarmMaster {
         bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
-      const old = bee.ticksToLive < 50 && bee.pos.roomName === this.hiveName;
+      // kinda should use TimeToTarget
+      const old = bee.ticksToLive < 150 && bee.pos.roomName === this.hiveName;
       if (old) this.recycleBee(bee);
       else if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
         bee.goRest(this.hive.rest, this.hive.opt);

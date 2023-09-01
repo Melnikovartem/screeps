@@ -468,10 +468,21 @@ CustomConsole.prototype.buy = function (
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  Apiary.broker.updateRes(resource, 0);
+  const amount = 5000 * sets;
+
+  const info = Apiary.broker.updateRes(resource, 0);
+  const priceToBuyLong = info.bestPriceSell || info.avgPrice;
+  const priceToBuyInstant = info.bestPriceBuy || info.avgPrice;
+  const loss =
+    (priceToBuyInstant +
+      Apiary.broker.energyPrice * 0.7 -
+      priceToBuyLong * (1 + 0.05)) *
+    amount;
   return marketReturn(
     Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    `: LOSS FOR SHORT ${loss} : ${resource.toUpperCase()} @ ${this.formatRoom(
+      hiveName
+    )}`
   );
 };
 
@@ -485,10 +496,22 @@ CustomConsole.prototype.sell = function (
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  Apiary.broker.updateRes(resource, 0);
+  const amount = 5000 * sets;
+
+  const info = Apiary.broker.updateRes(resource, 0);
+  const priceToSellLong = info.bestPriceBuy || info.avgPrice;
+  const priceToSellInstant = info.bestPriceSell || info.avgPrice;
+  const loss =
+    (priceToSellLong * (1 + 0.05) +
+      Apiary.broker.energyPrice * 0.7 -
+      priceToSellInstant) *
+    amount;
+
   return marketReturn(
-    Apiary.broker.sellOff(terminal, resource, 5000 * sets, hurry),
-    `${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
+    Apiary.broker.sellOff(terminal, resource, amount, hurry),
+    `: LOSS FOR SHORT ${loss} : ${resource.toUpperCase()} @ ${this.formatRoom(
+      hiveName
+    )}`
   );
 };
 

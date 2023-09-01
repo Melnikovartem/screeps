@@ -3,8 +3,9 @@ import { HIVE_ENERGY } from "cells/stage1/storageCell";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import type { BuildProject, Hive } from "./hive";
+import type { Hive } from "./hive";
 import { checkBuildings, checkMinWallHealth } from "./hive-checkbuild";
+import type { BuildProject } from "./hive-declarations";
 
 /**
  * Only the first thing in que will be build/repaired
@@ -24,6 +25,7 @@ const BUILDABLE_PRIORITY = {
   ],
 };
 
+/** add WALL_STEP to target wall health if energy surplus is more than this */
 export const HIVE_WALLS_UP = {
   [100_000]: 0,
   [5_000_000]: HIVE_ENERGY * 0.25, // +100_000 // prob can this easy
@@ -340,7 +342,8 @@ function nextWallTargetHealth(hive: Hive) {
 
   for (const [wallHealth, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
     if (currTarget > +wallHealth) continue;
-    if (hive.resState.energy < energySurplus) break;
+    // only if > surplus
+    if (hive.resState.energy <= energySurplus) break;
     const newWallTargetHealth = Math.min(
       Math.ceil(minHealth / WALLS_STEP + 1) * WALLS_STEP,
       +wallHealth

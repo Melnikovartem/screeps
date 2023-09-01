@@ -21,15 +21,15 @@ export const findRamp = (pos: RoomPosition) =>
 // most basic of bitches a horde full of wasps
 @profile
 export class SiegeMaster extends Master {
-  cell: DefenseCell;
-  patience: { [id: string]: number } = {};
+  private cell: DefenseCell;
+  private patience: { [id: string]: number } = {};
 
-  constructor(defenseCell: DefenseCell) {
+  public constructor(defenseCell: DefenseCell) {
     super(defenseCell.hive, defenseCell.ref);
     this.cell = defenseCell;
   }
 
-  update() {
+  public update() {
     super.update();
     this.boosts = undefined;
     if (this.hive.phase < 1) return;
@@ -55,12 +55,7 @@ export class SiegeMaster extends Master {
       !shouldSpawn ||
       (this.hive.controller.safeMode && this.hive.controller.safeMode > 100)
     ) {
-      if (this.waitingForBees) {
-        delete this.hive.spawOrders[this.ref];
-        if (this.hive.bassboost)
-          delete this.hive.bassboost.spawOrders[this.ref];
-        this.waitingForBees = 0;
-      }
+      if (this.waitingForBees) this.removeWishes();
       return;
     }
     const enemy = Apiary.intel.getEnemy(this.hive.pos, 20);
@@ -108,12 +103,12 @@ export class SiegeMaster extends Master {
     }
   }
 
-  newBee = (bee: Bee) => {
+  public newBee = (bee: Bee) => {
     super.newBee(bee);
     this.patience[bee.ref] = 0;
   };
 
-  beeAct(
+  private beeAct(
     bee: Bee,
     target: Creep | Structure | PowerCreep,
     posToStay: RoomPosition
@@ -300,7 +295,7 @@ export class SiegeMaster extends Master {
               ramps = ramps.filter(
                 (r) =>
                   !this.activeBees.filter(
-                    (b) => b.ref != bee.ref && b.target === r.pos.to_str
+                    (b) => b.ref !== bee.ref && b.target === r.pos.to_str
                   ).length
               );
               if (ramps.length)

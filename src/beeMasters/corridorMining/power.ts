@@ -231,21 +231,15 @@ export class PowerMaster extends SwarmMaster {
         this.healers.filter((b) => b.ticksToLive > this.roadTime * 2).length -
         this.knights.filter((b) => b.ticksToLive > this.roadTime * 2).length;
       if (balance <= 0)
-        this.wish(
-          {
-            setup: setups.miner.powerhealer,
-            priority: 7,
-          },
-          this.ref + "_healer"
-        );
+        this.wish({
+          setup: setups.miner.powerhealer,
+          priority: 7,
+        });
       if (balance >= 0)
-        this.wish(
-          {
-            setup: setups.miner.power,
-            priority: 7,
-          },
-          this.ref + "_miner"
-        );
+        this.wish({
+          setup: setups.miner.power,
+          priority: 7,
+        });
     }
   }
 
