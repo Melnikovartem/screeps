@@ -1,5 +1,3 @@
-import { invert } from "lodash";
-
 import { SquadWarCrimesMaster } from "../beeMasters/squads/squadWarcrimes";
 import { setups } from "../bees/creepSetups";
 import { profile } from "../profiler/decorator";

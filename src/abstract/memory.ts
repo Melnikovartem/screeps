@@ -14,7 +14,7 @@ export class Mem {
       if (!(room && room.controller && room && room.controller.my))
         delete Memory.flags[roomName];
     }
-
+    if (!Memory.report) Memory.report = {};
     // Memory log is not managed here as it can be undefined
   }
 

@@ -3,7 +3,7 @@ import {
   USEFUL_MINERAL_STOCKPILE,
 } from "cells/stage1/laboratoryCell";
 
-import { COMMODITIES_TO_SELL } from "../cells/stage1/factoryCell";
+import { COMPLEX_COMMODITIES } from "../cells/stage1/factoryCell";
 import { profile } from "../profiler/decorator";
 
 // @MARKETDANGER tag for strange/custom coefs bases on data from summer 2023
@@ -25,7 +25,7 @@ const MAX_DEVIATION_PRICE = 10;
 const ORDER_OFFSET = 0.001;
 const MARKET_FEE = 0.05;
 
-const COEF_GOOD_PRICE_COMMODITY = 0.97;
+const COEF_GOOD_PRICE_COMMODITY = 0.93;
 
 // @MARKETDANGER
 const SKIP_SMALL_ORDER = {
@@ -127,7 +127,7 @@ export class Broker {
     info.bestPriceSell = undefined;
 
     const orders = Game.market.getAllOrders({ resourceType: res });
-    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
+    const commodity = COMPLEX_COMMODITIES.includes(res as CommodityConstant);
 
     _.forEach(orders, (order) => {
       if (
@@ -202,7 +202,8 @@ export class Broker {
   private weightedAvgPrice(res: ResourceConstant, lastNDays = 10) {
     let volume = 0;
     let sumPriceWeighted = 0;
-    const transactions = Game.market.getHistory(res).slice(-lastNDays);
+    let transactions = Game.market.getHistory(res);
+    if (transactions.length) transactions = transactions.slice(-lastNDays);
     for (let i = 0; i < transactions.length; ++i) {
       const volumeWeighted = transactions[i].volume * (i / transactions.length);
       sumPriceWeighted += transactions[i].avgPrice * volumeWeighted;
@@ -459,7 +460,7 @@ export class Broker {
     const priceToSellInstant = info.bestPriceSell || info.avgPrice;
 
     // just wait for npc order
-    const commodity = COMMODITIES_TO_SELL.includes(res as CommodityConstant);
+    const commodity = COMPLEX_COMMODITIES.includes(res as CommodityConstant);
     if (
       commodity &&
       info.avgPrice * COEF_GOOD_PRICE_COMMODITY > priceToSellInstant
@@ -504,6 +505,9 @@ export class Broker {
         default:
       }
     }
+
+    // dont long sell commodities lmao
+    if (commodity) return "long";
 
     const orders = this.longOrders(roomName, res, ORDER_SELL);
     let myPrice = priceToSellLong - ORDER_OFFSET;

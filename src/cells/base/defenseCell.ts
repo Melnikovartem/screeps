@@ -394,9 +394,13 @@ export class DefenseCell extends Cell {
     }
 
     if (roomInfo.enemies.length && Game.time > roomInfo.safeModeEndTime) {
-      if (this.isBreached && Object.keys(this.hive.cells.spawn).length) {
+      const contr = this.hive.controller;
+      if (
+        this.isBreached &&
+        (Object.keys(this.hive.cells.spawn).length ||
+          contr.ticksToDowngrade < 1500) // last chance to survive
+      ) {
         // (this.hive.controller.level >= 6   || (Object.keys(this.hive.cells.spawn).length && _.filter(Apiary.hives, h => Object.keys(h.cells.spawn.spawns).length).length <= 1))
-        const contr = this.hive.controller;
         if (
           contr.safeModeAvailable &&
           !contr.safeModeCooldown &&

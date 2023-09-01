@@ -25,7 +25,7 @@ type FactoryResourceConstant =
   | MineralConstant
   | RESOURCE_GHODIUM
   | RESOURCE_ENERGY;
-export const COMMON_COMMODITIES: FactoryResourceConstant[] = [
+export const COMMON_COMMODITIES: CommodityConstant[] = [
   RESOURCE_COMPOSITE,
   RESOURCE_CRYSTAL,
   RESOURCE_LIQUID,
@@ -43,9 +43,7 @@ export const DEPOSIT_COMMODITIES: DepositConstant[] = [
 // demand driven production with a little overflow prot
 // so we only keep up to 1k each of pricy commodity
 const STOCKPILE_HIGH_COMMODITIES = 1000;
-export const COMMODITIES_TO_SELL = (
-  DEPOSIT_COMMODITIES as (FactoryResourceConstant | DepositConstant)[]
-).concat([
+export const COMPLEX_COMMODITIES: CommodityConstant[] = [
   "composite",
   "crystal",
   "liquid",
@@ -73,7 +71,7 @@ export const COMMODITIES_TO_SELL = (
   "spirit",
   "emanation",
   "essence",
-]);
+];
 
 type CommodityIngredient =
   | DepositConstant
@@ -174,7 +172,7 @@ export class FactoryCell extends Cell {
       const recipe = COMMODITIES[res];
       if (recipe.level && recipe.level !== this.factory.level) continue;
       let num = 0;
-      if (recipe.level || COMMODITIES_TO_SELL.includes(res)) {
+      if (recipe.level || (DEPOSIT_COMMODITIES as string[]).includes(res)) {
         // if it is from any of the chains of production
 
         const networkResAmount =
@@ -186,15 +184,15 @@ export class FactoryCell extends Cell {
         if (networkResAmount >= STOCKPILE_HIGH_COMMODITIES) continue;
 
         num = 40;
-        if (COMMON_COMMODITIES.includes(res)) {
+        if ((COMMON_COMMODITIES as string[]).includes(res)) {
           const amountInUse =
             Apiary.network.resState[res as CommodityConstant] || 0;
           if (amountInUse >= COMMON_COMMODITIES_STOCKPILE) num = 0;
         } else {
           const componentAmount: number[] = [];
           _.forEach(recipe.components, (amountNeeded, comp) => {
-            const component = comp as CommodityConstant;
-            if (COMMODITIES_TO_SELL.includes(component)) {
+            const component = comp as FactoryResourceConstant | DepositConstant;
+            if (!(COMMON_COMMODITIES as string[]).includes(component)) {
               let toUse = this.sCell.getUsedCapacity(component);
               const networkAmount = Apiary.network.resState[component] || 0;
               if (
@@ -232,12 +230,12 @@ export class FactoryCell extends Cell {
     if (!targets.length) return ERR_NOT_FOUND;
 
     const nonCommon = targets.filter(
-      (t) => !COMMON_COMMODITIES.includes(t.res)
+      (t) => !(COMMON_COMMODITIES as string[]).includes(t.res)
     );
     if (nonCommon.length) targets = nonCommon;
     this.patience = 0;
     const getlvlPriority = (cc: { res: FactoryResourceConstant }) =>
-      COMMON_COMMODITIES.includes(cc.res)
+      (COMMON_COMMODITIES as string[]).includes(cc.res)
         ? -2
         : COMMODITIES[cc.res].level ||
           (cc.res in COMPRESS_MAP
@@ -268,7 +266,9 @@ export class FactoryCell extends Cell {
       if (component === RESOURCE_ENERGY) amountNeeded += FACTORY_ENERGY;
       this.resTarget[component as CommodityIngredient] = Math.min(
         amountNeeded *
-          (COMMODITIES_TO_SELL.includes(component as CommodityConstant)
+          ((COMPLEX_COMMODITIES as string[]).includes(
+            component as CommodityIngredient
+          )
             ? 1
             : 2),
         10000
@@ -332,7 +332,7 @@ export class FactoryCell extends Cell {
         (recipe.level && recipe.level !== factoryLevel) ||
         (!recipe.level &&
           resource !== res &&
-          COMMODITIES_TO_SELL.includes(resource) &&
+          (DEPOSIT_COMMODITIES as string[]).includes(resource) &&
           (Apiary.network.resState[resource] || 0 >= amountOfIngredient))
       ) {
         addIngredient(resource, amountOfIngredient);

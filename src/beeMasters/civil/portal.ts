@@ -1,5 +1,5 @@
 import { setups } from "bees/creepSetups";
-import { COMMODITIES_TO_SELL } from "cells/stage1/factoryCell";
+import { COMPLEX_COMMODITIES } from "cells/stage1/factoryCell";
 import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
@@ -40,8 +40,8 @@ export class PortalMaster extends SwarmMaster {
       this.setup = setups.hauler.copy();
       const parsed = /transfer_(.*)/.exec(this.order.ref);
       if (parsed) this.res = parsed[1] as ResourceConstant;
-      this.commodities = COMMODITIES_TO_SELL.includes(
-        this.res as DepositConstant
+      this.commodities = COMPLEX_COMMODITIES.includes(
+        this.res as CommodityConstant
       );
       if (this.res && this.commodities) {
         this.setup.fixed = [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH];

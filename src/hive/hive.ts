@@ -142,7 +142,11 @@ export class Hive {
      *
      * 0 no need
      */
-    this.shouldRecalc = 2;
+    this.shouldRecalc = Object.keys(this.cache.cells).filter((c) =>
+      c.includes(prefix.resourceCells)
+    ).length
+      ? 2
+      : 3;
     this.phase = 0;
     if (!this.controller) return;
 

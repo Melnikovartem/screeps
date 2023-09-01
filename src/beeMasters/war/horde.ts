@@ -168,6 +168,8 @@ export class HordeMaster extends SwarmMaster {
     } else if (this.boosts && !this.order.ref.includes("full")) {
       this.setup.patternLimit = 15;
       this.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL];
+    } else if (this.boosts) {
+      this.setup.fixed = Array(6).fill(TOUGH).concat(Array(6).fill(HEAL));
     }
   }
 
@@ -190,7 +192,7 @@ export class HordeMaster extends SwarmMaster {
       this.checkBees(this.emergency, CREEP_LIFE_TIME - this.maxPath - 10) &&
       Game.time >=
         roomInfo.safeModeEndTime -
-          150 -
+          300 -
           this.hive.pos.getRoomRangeTo(this.pos) * 50
     ) {
       if (this.trio) {

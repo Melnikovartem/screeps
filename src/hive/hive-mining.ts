@@ -43,10 +43,14 @@ export function markResources(hive: Hive) {
   );
   const rooms = [hive.room].concat(annexes);
 
+  const formatPos = (p: RoomPosition) =>
+    p.roomName !== hive.roomName ? p : { x: p.x, y: p.y };
+
   _.forEach(rooms, (room) => {
     _.forEach(room.find(FIND_SOURCES), (s) => {
       const ref = prefix.resourceCells + s.id;
-      if (!hive.cache.cells[ref]) hive.cache.cells[ref] = { poss: s.pos };
+      if (!hive.cache.cells[ref])
+        hive.cache.cells[ref] = { poss: formatPos(s.pos) };
     });
   });
 
@@ -59,7 +63,8 @@ export function markResources(hive: Hive) {
         roomState === roomStates.SKfrontier
       ) {
         const ref = prefix.resourceCells + s.id;
-        if (!hive.cache.cells[ref]) hive.cache.cells[ref] = { poss: s.pos };
+        if (!hive.cache.cells[ref])
+          hive.cache.cells[ref] = { poss: formatPos(s.pos) };
       }
     });
   });

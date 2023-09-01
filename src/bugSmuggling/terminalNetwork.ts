@@ -6,7 +6,6 @@ import {
   USEFUL_MINERAL_STOCKPILE,
 } from "../cells/stage1/laboratoryCell";
 import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
-//  import { COMPRESS_MAP } from "../cells/stage1/factoryCell"; COMMODITIES_TO_SELL
 import type { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { hiveStates } from "../static/enums";
@@ -18,7 +17,7 @@ export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
 /** dump everything / stop drop until have 10_000 slots free */
 export const FULL_CAPACITY = STORAGE_CAPACITY * 0.01;
 /**  do not sell mare per transaction */
-const SELL_STEP_MAX = 8192;
+const SELL_STEP_MAX = 4096; // 8192 // careful about selling boosts
 /** sell for profit if more than this */
 const SELL_THRESHOLD = {
   compound: 4096,

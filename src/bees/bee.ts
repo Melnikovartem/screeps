@@ -58,7 +58,10 @@ export class Bee extends ProtoBee<Creep> {
   }
 
   public findMaster() {
-    if (this.ref.includes(setupsNames.hauler)) {
+    if (
+      this.ref.includes(setupsNames.hauler) ||
+      this.ref.includes(setupsNames.depositHauler)
+    ) {
       if (
         this.findClosestByHive(
           _.filter(Apiary.masters, (m) => m.ref.includes(prefix.excavationCell))

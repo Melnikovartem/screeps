@@ -10,9 +10,9 @@ export const SETTINGS_DEFAULT: Memory["settings"] = {
 export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
   intellegence: {},
   map: { rooms: {}, users: {} },
-  roomPlanner: Memory.cache.roomPlanner || {},
-  hives: Memory.cache.hives || {},
-  war: Memory.cache.war || { siedgeInfo: {}, squadsInfo: {} },
+  roomPlanner: (Memory.cache && Memory.cache.roomPlanner) || {},
+  hives: (Memory.cache && Memory.cache.hives) || {},
+  war: (Memory.cache && Memory.cache.war) || { siedgeInfo: {}, squadsInfo: {} },
 };
 
 export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {
@@ -38,7 +38,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   lab: 2,
   // @todo code smart buyIn (credits aval -> what can buy) and make 2 default
   buyIn: 1,
-  sellOff: 1,
+  sellOff: 2,
   buildBoost: 2,
 };
 

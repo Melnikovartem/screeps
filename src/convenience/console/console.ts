@@ -90,6 +90,20 @@ export class CustomConsole {
     let ans = "";
     modeInp = modeInp.toLowerCase();
     let hiveMode: (keyof HiveCache["do"])[] = [];
+    const allSettings: (keyof HiveCache["do"])[] = [
+      "buildBoost",
+      "buyIn",
+      "depositMining",
+      "depositRefining",
+      "lab",
+      "powerMining",
+      "upgrade",
+      "sellOff",
+      "war",
+      "unboost",
+      "saveCpu",
+      "powerRefining",
+    ];
     // aliases for modes
     switch (modeInp) {
       case "build":
@@ -133,6 +147,10 @@ export class CustomConsole {
       case "pm":
         hiveMode = ["powerMining"];
         break;
+      case "powerrefining":
+      case "pr":
+        hiveMode = ["powerRefining"];
+        break;
       case "upgrade":
       case "upg":
       case "u":
@@ -161,20 +179,9 @@ export class CustomConsole {
         value = value === undefined ? 1 : value;
         break;
       case "all":
-      default:
-        hiveMode = [
-          "buildBoost",
-          "buyIn",
-          "depositMining",
-          "depositRefining",
-          "lab",
-          "powerMining",
-          "upgrade",
-          "sellOff",
-          "war",
-          "unboost",
-          "saveCpu",
-        ];
+      case "default":
+      case "def":
+        hiveMode = allSettings;
         break;
     }
 
@@ -186,37 +193,93 @@ export class CustomConsole {
           dd[hm] = value === undefined ? BASE_MODE_HIVE[hm] : value;
         });
 
-        const describePowerMiningMode = (mode: number) =>
-          mode === 0 ? "NO POWER MINING" : "POWER MINING ACTIVE";
+        const describePowerMiningMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "No power mining";
+            case 1:
+              return "Power mining active";
+            default:
+              return "";
+          }
+        };
 
-        const describePowerRefiningMode = (mode: number) =>
-          mode === 0 ? "NO POWER REFINING" : "POWER REFINING ACTIVE";
+        const describePowerRefiningMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "No power refining";
+            case 1:
+              return "Power refining active";
+            default:
+              return "";
+          }
+        };
 
-        const describeDepositMiningMode = (mode: number) =>
-          mode === 0 ? "NO DEPOSIT MINING" : "DEPOSIT MINING ACTIVE";
+        const describeDepositMiningMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "No deposit mining";
+            case 1:
+              return "Deposit mining active";
+            default:
+              return "";
+          }
+        };
 
-        const describeDepositRefiningMode = (mode: number) =>
-          mode === 0 ? "NO DEPOSIT REFINING" : "DEPOSIT REFINING ACTIVE";
+        const describeDepositRefiningMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "No deposit refining";
+            case 1:
+              return "Deposit refining active";
+            default:
+              return "";
+          }
+        };
 
-        const describeWarMode = (mode: number) =>
-          mode === 0 ? "NOT SPAWNING ATTACK CREEPS" : "SPAWNING ATTACK CREEPS";
+        const describeWarMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "Not spawning attack creeps";
+            case 1:
+              return "Spawning attack creeps";
+            default:
+              return "";
+          }
+        };
 
-        const describeUnboostMode = (mode: number) =>
-          mode === 0 ? "NO UNBOOSTING" : "UNBOOSTING ACTIVE";
+        const describeUnboostMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "No unboosting";
+            case 1:
+              return "Unboosting active";
+            default:
+              return "";
+          }
+        };
 
-        const describeSaveCpuMode = (mode: number) =>
-          mode === 0 ? "SAVING CPU DISABLED" : "SAVING CPU ENABLED";
+        const describeSaveCpuMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "Saving CPU disabled";
+            case 1:
+              return "Saving CPU enabled";
+            default:
+              return "";
+          }
+        };
 
         const describeUpgradeMode = (mode: number) => {
           switch (mode) {
             case 0:
-              return "NO UPGRADES";
+              return "No upgrades";
             case 1:
-              return "BOOST UP TO LEVEL 8";
+              return "Boost up to level 8";
             case 2:
-              return "NO BOOSTED MAX ENERGY AFTER LEVEL 8";
+              return "No boosted max energy after level 8";
             case 3:
-              return "BOOSTED MAX ENERGY AFTER LEVEL 8";
+              return "Boosted max energy after level 8";
             default:
               return "";
           }
@@ -225,11 +288,11 @@ export class CustomConsole {
         const describeLabMode = (mode: number) => {
           switch (mode) {
             case 0:
-              return "NO LAB STRATEGY";
+              return "No lab strategy";
             case 1:
-              return "LAB MINERALS ONLY";
+              return "Lab minerals only";
             case 2:
-              return "LAB MINERALS + ENERGY + OPS";
+              return "Lab minerals + energy + ops";
             default:
               return "";
           }
@@ -238,13 +301,13 @@ export class CustomConsole {
         const describeBuyInMode = (mode: number) => {
           switch (mode) {
             case 0:
-              return "NO BUYING STRATEGY";
+              return "No buying strategy";
             case 1:
-              return "BUY MINERALS";
+              return "Buy minerals";
             case 2:
-              return "BUY MINERALS + ENERGY + OPS";
+              return "Buy minerals + energy + ops";
             case 3:
-              return "BUY ANYTHING";
+              return "Buy anything";
             default:
               return "";
           }
@@ -253,11 +316,11 @@ export class CustomConsole {
         const describeSellOffMode = (mode: number) => {
           switch (mode) {
             case 0:
-              return "NO SELL-OFF STRATEGY";
+              return "No sell-off strategy";
             case 1:
-              return "SELL-OFF FOR BALANCING";
+              return "Sell-off for balancing";
             case 2:
-              return "SELL-OFF FOR PROFIT (SCHEMES)";
+              return "Sell-off for profit (schemes)";
             default:
               return "";
           }
@@ -266,45 +329,69 @@ export class CustomConsole {
         const describeBuildBoostMode = (mode: number) => {
           switch (mode) {
             case 0:
-              return "NO BUILDING BOOSTING";
+              return "No building boosting";
             case 1:
-              return "BUILDING BOOST FOR WAR";
+              return "Building boost for war";
             case 2:
-              return "BUILDING BOOST IN ALL CASES";
+              return "Building boost in all cases";
             case 3:
-              return "BUILDING BOOST EVEN IN PEACEFUL TIMES";
+              return "Building boost even in peaceful times";
             default:
               return "";
           }
         };
 
+        const maxLen = _.max(_.map(Object.keys(dd), (a) => a.length));
         const addString = (hm: keyof HiveCache["do"], ref = hm) =>
-          ref.toUpperCase() + (dd[hm] === BASE_MODE_HIVE[hm] ? "" : "❗");
+          ref.toUpperCase() +
+          ":" +
+          Array(maxLen - ref.length)
+            .fill(" ")
+            .join("") +
+          "\t:\t" +
+          dd[hm] +
+          (dd[hm] === BASE_MODE_HIVE[hm] ? " " : "❗") +
+          "\t:\t";
 
-        ans +=
-          `@ ${h.print}:\n` +
-          `${addString("depositMining")}${describeDepositMiningMode(
-            h.mode.depositMining
-          )}\n` +
-          `${addString("depositRefining")}${describeDepositRefiningMode(
-            h.mode.depositRefining
-          )}\n` +
-          `${addString("powerMining")}${describePowerMiningMode(
-            h.mode.powerMining
-          )}\n` +
-          `${addString("powerRefining")}${describePowerRefiningMode(
-            h.mode.powerRefining
-          )}\n` +
-          `${addString("war")}${describeWarMode(h.mode.war)}\n` +
-          `${addString("lab")}${describeLabMode(h.mode.lab)}\n` +
-          `${addString("sellOff")}${describeSellOffMode(h.mode.sellOff)}\n` +
-          `${addString("buyIn")}${describeBuyInMode(h.mode.buyIn)}\n` +
-          `${addString("saveCpu")}${describeSaveCpuMode(h.mode.saveCpu)}\n` +
-          `${addString("unboost")}${describeUnboostMode(h.mode.unboost)}\n` +
-          `${addString("buildBoost")}${describeBuildBoostMode(
-            h.mode.buildBoost
-          )}\n` +
-          `${addString("upgrade")}${describeUpgradeMode(h.mode.upgrade)}\n\n`;
+        ans += `@ ${h.print}:\n`;
+        ans += `${addString("depositMining")}${describeDepositMiningMode(
+          h.mode.depositMining
+        )}\n`;
+        ans += `${addString("depositRefining")}${describeDepositRefiningMode(
+          h.mode.depositRefining
+        )}\n`;
+        ans += `${addString("powerMining")}${describePowerMiningMode(
+          h.mode.powerMining
+        )}\n`;
+        ans += `${addString("powerRefining")}${describePowerRefiningMode(
+          h.mode.powerRefining
+        )}\n`;
+        ans += `${addString("war")}${describeWarMode(h.mode.war)}\n`;
+        ans += `${addString("lab")}${describeLabMode(h.mode.lab)}\n`;
+        ans += `${addString("sellOff")}${describeSellOffMode(
+          h.mode.sellOff
+        )}\n`;
+        ans += `${addString("buyIn")}${describeBuyInMode(h.mode.buyIn)}\n`;
+        ans += `${addString("saveCpu")}${describeSaveCpuMode(
+          h.mode.saveCpu
+        )}\n`;
+        ans += `${addString("unboost")}${describeUnboostMode(
+          h.mode.unboost
+        )}\n`;
+        ans += `${addString("buildBoost")}${describeBuildBoostMode(
+          h.mode.buildBoost
+        )}\n`;
+        ans += `${addString("upgrade")}${describeUpgradeMode(
+          h.mode.upgrade
+        )}\n`;
+
+        ans += _.compact(
+          _.map(Object.keys(dd), (key: keyof HiveCache["do"]) =>
+            !allSettings.includes(key) ? addString(key) : undefined
+          )
+        ).join("\n");
+
+        ans += "\n\n";
       }
     );
     return ans;

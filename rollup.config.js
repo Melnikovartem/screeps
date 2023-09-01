@@ -32,9 +32,9 @@ export default {
       // namedExports: { 'node_modules/screeps-profiler/screeps-profiler.js': ['enable', 'wrap'] },
     }),
     typescript({ tsconfig: "./tsconfig.json" }),
-    execute([
-      "source ./screeps-tools/screeps-backup/env/bin/activate; python3 screeps-tools/screeps-backup/screepsbackup/backup.py screeps-tools/backups",
-    ]),
+    // execute([
+    //  "source ./screeps-tools/screeps-backup/env/bin/activate; python3 screeps-tools/screeps-backup/screepsbackup/backup.py screeps-tools/backups",
+    // ]),
     screeps({ config: cfg, dryRun: cfg == null }),
   ],
 };
