@@ -35,7 +35,7 @@ const SKIP_SMALL_ORDER = {
 
 const MARKET_SETTINGS = {
   pocketChange: 100, // i do not care if i lose this amount on an order
-  okLossAmount: 10_000, // i can pay this price to smooth things
+  okLossAmount: 100_000, // i can pay this price to smooth things
 
   reserveCredits: 1_000_000, // Maintain balance above this amount
   mineralCredits: 5_000_000, // Buy credits if above this amount
@@ -335,7 +335,8 @@ export class Broker {
     terminal: StructureTerminal,
     res: ResourceConstant,
     amount: number,
-    tryFaster: boolean = false
+    tryFaster: boolean = false,
+    okLoss = 0
   ): "no money" | "short" | "long" {
     const roomName = terminal.pos.roomName;
     const hive = Apiary.hives[roomName];
@@ -348,17 +349,17 @@ export class Broker {
     if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
     else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
 
-    let okLoss = 0;
-    switch (hurry) {
-      case "GoodPrice":
-        break;
-      case "RightNow":
-        okLoss = MARKET_SETTINGS.pocketChange;
-        break;
-      case "AnyBuck":
-        okLoss = MARKET_SETTINGS.okLossAmount;
-        break;
-    }
+    if (!okLoss)
+      switch (hurry) {
+        case "GoodPrice":
+          break;
+        case "RightNow":
+          okLoss = MARKET_SETTINGS.pocketChange;
+          break;
+        case "AnyBuck":
+          okLoss = MARKET_SETTINGS.okLossAmount;
+          break;
+      }
 
     const info = this.updateRes(res, MARKET_LAG);
     const priceToBuyLong = info.bestPriceSell || info.avgPrice;

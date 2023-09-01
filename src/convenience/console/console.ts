@@ -82,118 +82,229 @@ export class CustomConsole {
     return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
   }
 
-  public mode(mode = "", hiveName?: string, value?: number) {
+  public mode<T extends keyof HiveCache["do"]>(
+    modeInp = "",
+    hiveName?: string,
+    value?: HiveCache["do"][T]
+  ) {
     let ans = "";
-    mode = mode.toLowerCase();
-
-    switch (mode) {
-      case "upg":
-        mode = "upgrade";
-        break;
+    modeInp = modeInp.toLowerCase();
+    let hiveMode: (keyof HiveCache["do"])[] = [];
+    // aliases for modes
+    switch (modeInp) {
       case "build":
       case "buildboost":
-        mode = "buildBoost";
-        break;
-      case "sell":
-      case "selloff":
-        mode = "sellOff";
+      case "b":
+        hiveMode = ["buildBoost"];
         break;
       case "buy":
       case "buyin":
-        mode = "buyIn";
+      case "bu":
+        hiveMode = ["buyIn"];
+        break;
+      case "buyingstrategy":
+      case "bs":
+      case "broker":
+      case "market":
+        hiveMode = ["buyIn", "sellOff"];
         break;
       case "deposit":
-        mode = "depositmining";
+      case "depositcycle":
+      case "dep":
+      case "d":
+        hiveMode = ["depositMining", "depositRefining"];
+        break;
+      case "depositmining":
+      case "dm":
+        hiveMode = ["depositMining"];
+        break;
+      case "refining":
+      case "depositrefining":
+      case "dr":
+        hiveMode = ["depositRefining"];
+        break;
+      case "lab":
+      case "labstrat":
+      case "l":
+        hiveMode = ["lab"];
+        break;
+      case "power":
+      case "powermining":
+      case "pm":
+        hiveMode = ["powerMining"];
+        break;
+      case "upgrade":
+      case "upg":
+      case "u":
+        hiveMode = ["upgrade"];
+        break;
+      case "sell":
+      case "selloff":
+      case "so":
+        hiveMode = ["sellOff"];
+        break;
+      case "war":
+      case "w":
+        hiveMode = ["war"];
+        break;
+      case "unboost":
+      case "ub":
+        hiveMode = ["unboost"];
+        break;
+      case "savecpu":
+      case "sc":
+        hiveMode = ["saveCpu"];
+        break;
+      case "hibernate":
+      case "hib":
+        hiveMode = ["saveCpu", "unboost"];
+        value = value === undefined ? 1 : value;
+        break;
+      case "all":
+      default:
+        hiveMode = [
+          "buildBoost",
+          "buyIn",
+          "depositMining",
+          "depositRefining",
+          "lab",
+          "powerMining",
+          "upgrade",
+          "sellOff",
+          "war",
+          "unboost",
+          "saveCpu",
+        ];
+        break;
     }
-    let on: 0 | 1;
+
     _.forEach(
       _.filter(Apiary.hives, (h) => !hiveName || hiveName.includes(h.roomName)),
       (h) => {
         const dd = Memory.cache.hives[h.roomName].do;
-        switch (mode) {
-          case "power":
-            dd.powerMining =
-              value === 0 || value === 1 ? value : dd.powerMining ? 0 : 1;
-            if (dd.powerMining && value !== 0) dd.powerRefining = 1;
-            break;
-          case "powermining":
-            if (value === 0 || value === 1) dd.powerMining = value;
-            break;
-          case "depositmining":
-            dd.depositMining =
-              value === 0 || value === 1 ? value : dd.depositMining ? 0 : 1;
-            if (dd.depositMining) dd.depositRefining = 1;
-            break;
-          case "depositrefining":
-            if (value === 0 || value === 1) dd.depositRefining = value;
-            break;
-          case "upgrade":
-            if (value === undefined) value = dd[mode] ? 0 : 1;
-            if (value === 3 || value === 2 || value === 1 || value === 0) {
-              dd[mode] = value;
-              break;
-            }
-            break;
-          case "buildBoost":
-            if (value === 2) {
-              dd[mode] = value;
-              break;
-            }
-            dd[mode] = value === 0 || value === 1 ? value : dd[mode] ? 0 : 1;
-            break;
-          case "unboost" || "saveCpu" || "war" || "sellOff" || "buyIn":
-            dd[mode] = value === 0 || value === 1 ? value : dd[mode] ? 0 : 1;
-            break;
-          case "hib" || "hibernate":
-            on =
-              value === 0 || value === 1
-                ? value
-                : dd.unboost && dd.saveCpu
-                ? 0
-                : 1;
-            dd.unboost = on;
-            dd.saveCpu = on;
-            break;
-          case "def":
-          case "default":
-            Memory.cache.hives[h.roomName].do = { ...BASE_MODE_HIVE };
-            break;
-        }
-        const addString = (name: keyof HiveCache["do"], ref: string = name) =>
-          `${ref.toUpperCase()}${
-            h.mode[name] === BASE_MODE_HIVE[name] ? "" : "❗"
-          }: ${
-            !h.mode[name]
-              ? "OFF"
-              : "ON" + (h.mode[name] !== 1 ? " " + h.mode[name] : "")
-          } `;
-        let buyInMode = addString("buyIn").slice(0, -3);
-        switch (h.mode.buyIn) {
-          case 3:
-            buyInMode += "ANYTHING";
-            break;
-          case 2:
-            buyInMode += "ENERGY + MINERALS + OPS";
-            break;
-          case 1:
-            buyInMode += "MINERALS";
-            break;
-          case 0:
-            buyInMode += " OFF";
-            break;
-        }
+        _.forEach(hiveMode, (hm: T) => {
+          dd[hm] = value === undefined ? BASE_MODE_HIVE[hm] : value;
+        });
 
-        ans += `@ ${h.print}:\n${
-          addString("depositMining", "deposit") +
-          addString("depositRefining", "refining")
-        }\n${
-          addString("powerMining", "power") +
-          addString("powerRefining", "refining")
-        }\n${addString("war") + addString("lab")}\n${addString(
-          "sellOff"
-        )}\n${buyInMode}\n${
-          addString("saveCpu", "cpu") + addString("unboost")
-        }\n${addString("buildBoost") + addString("upgrade")}\n`;
+        const describePowerMiningMode = (mode: number) =>
+          mode === 0 ? "NO POWER MINING" : "POWER MINING ACTIVE";
+
+        const describePowerRefiningMode = (mode: number) =>
+          mode === 0 ? "NO POWER REFINING" : "POWER REFINING ACTIVE";
+
+        const describeDepositMiningMode = (mode: number) =>
+          mode === 0 ? "NO DEPOSIT MINING" : "DEPOSIT MINING ACTIVE";
+
+        const describeDepositRefiningMode = (mode: number) =>
+          mode === 0 ? "NO DEPOSIT REFINING" : "DEPOSIT REFINING ACTIVE";
+
+        const describeWarMode = (mode: number) =>
+          mode === 0 ? "NOT SPAWNING ATTACK CREEPS" : "SPAWNING ATTACK CREEPS";
+
+        const describeUnboostMode = (mode: number) =>
+          mode === 0 ? "NO UNBOOSTING" : "UNBOOSTING ACTIVE";
+
+        const describeSaveCpuMode = (mode: number) =>
+          mode === 0 ? "SAVING CPU DISABLED" : "SAVING CPU ENABLED";
+
+        const describeUpgradeMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "NO UPGRADES";
+            case 1:
+              return "BOOST UP TO LEVEL 8";
+            case 2:
+              return "NO BOOSTED MAX ENERGY AFTER LEVEL 8";
+            case 3:
+              return "BOOSTED MAX ENERGY AFTER LEVEL 8";
+            default:
+              return "";
+          }
+        };
+
+        const describeLabMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "NO LAB STRATEGY";
+            case 1:
+              return "LAB MINERALS ONLY";
+            case 2:
+              return "LAB MINERALS + ENERGY + OPS";
+            default:
+              return "";
+          }
+        };
+
+        const describeBuyInMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "NO BUYING STRATEGY";
+            case 1:
+              return "BUY MINERALS";
+            case 2:
+              return "BUY MINERALS + ENERGY + OPS";
+            case 3:
+              return "BUY ANYTHING";
+            default:
+              return "";
+          }
+        };
+
+        const describeSellOffMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "NO SELL-OFF STRATEGY";
+            case 1:
+              return "SELL-OFF FOR BALANCING";
+            case 2:
+              return "SELL-OFF FOR PROFIT (SCHEMES)";
+            default:
+              return "";
+          }
+        };
+
+        const describeBuildBoostMode = (mode: number) => {
+          switch (mode) {
+            case 0:
+              return "NO BUILDING BOOSTING";
+            case 1:
+              return "BUILDING BOOST FOR WAR";
+            case 2:
+              return "BUILDING BOOST IN ALL CASES";
+            case 3:
+              return "BUILDING BOOST EVEN IN PEACEFUL TIMES";
+            default:
+              return "";
+          }
+        };
+
+        const addString = (hm: keyof HiveCache["do"], ref = hm) =>
+          ref.toUpperCase() + (dd[hm] === BASE_MODE_HIVE[hm] ? "" : "❗");
+
+        ans +=
+          `@ ${h.print}:\n` +
+          `${addString("depositMining")}${describeDepositMiningMode(
+            h.mode.depositMining
+          )}\n` +
+          `${addString("depositRefining")}${describeDepositRefiningMode(
+            h.mode.depositRefining
+          )}\n` +
+          `${addString("powerMining")}${describePowerMiningMode(
+            h.mode.powerMining
+          )}\n` +
+          `${addString("powerRefining")}${describePowerRefiningMode(
+            h.mode.powerRefining
+          )}\n` +
+          `${addString("war")}${describeWarMode(h.mode.war)}\n` +
+          `${addString("lab")}${describeLabMode(h.mode.lab)}\n` +
+          `${addString("sellOff")}${describeSellOffMode(h.mode.sellOff)}\n` +
+          `${addString("buyIn")}${describeBuyInMode(h.mode.buyIn)}\n` +
+          `${addString("saveCpu")}${describeSaveCpuMode(h.mode.saveCpu)}\n` +
+          `${addString("unboost")}${describeUnboostMode(h.mode.unboost)}\n` +
+          `${addString("buildBoost")}${describeBuildBoostMode(
+            h.mode.buildBoost
+          )}\n` +
+          `${addString("upgrade")}${describeUpgradeMode(h.mode.upgrade)}\n\n`;
       }
     );
     return ans;
@@ -430,12 +541,15 @@ export class CustomConsole {
   }
 
   /** nice output of last crashes */
-  public reportCrashes() {
+  public reportCrashes = () => this.printCrashes();
+  public printCrashes() {
     let reportLog = "LAST CRASHES:\n\n";
     for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
+      const stackNew = crash.stack?.split("\n").slice(1, 3) || [];
+
       reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${
         crash.message
-      }${crash.stack ? "\nSTACK\n" + crash.stack : ""}\n\n`;
+      }${crash.stack ? "\nSTACK:\n" + stackNew.join("\n") : ""}\n\n`;
     }
     return reportLog;
   }

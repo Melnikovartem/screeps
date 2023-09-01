@@ -5,7 +5,11 @@ import { beeStates, hiveStates } from "static/enums";
 
 import { Master } from "./_Master";
 
+const BEE_QUE_PER_MASTER = 3;
+
 export function newBee(master: Master, bee: Bee) {
+  // 0.2 cost is a no from me
+  // bee.creep.notifyWhenAttacked(master.notify);
   bee.memory.refMaster = master.ref;
   if (bee.state === beeStates.idle)
     bee.state =
@@ -49,17 +53,20 @@ export function checkBees(
   spawnCycle: number = CREEP_LIFE_TIME - 10
 ): boolean {
   // in 4 ifs to be able to read...
-  if (master.waitingForBees || master.targetBeeCount === 0) return false;
+  if (master.waitingForBees > BEE_QUE_PER_MASTER || master.targetBeeCount === 0)
+    return false;
   if (!spawnExtreme && master.hive.state !== hiveStates.economy) return false;
   if (
     (master.hive.bassboost || master.hive).cells.defense.timeToLand <
     spawnCycle / 2
   )
     return false;
+  const beesAmountFuture = master.beesAmount + master.waitingForBees;
   return (
-    master.targetBeeCount > master.beesAmount ||
-    (master.beesAmount === master.targetBeeCount &&
-      Game.time >= master.oldestSpawn + spawnCycle)
+    beesAmountFuture < master.targetBeeCount ||
+    (beesAmountFuture === master.targetBeeCount &&
+      master.oldestSpawn + spawnCycle <= Game.time &&
+      !master.waitingForBees) // no more then one bee on cycle spawn que
   );
 }
 

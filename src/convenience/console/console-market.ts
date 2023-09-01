@@ -113,11 +113,7 @@ declare module "./console" {
      * @param mode - Transaction mode (fast/better price).
      * @returns Result message of the transactions.
      */
-    buyMastersMinerals(
-      hiveName?: string,
-      padding?: number,
-      mode?: boolean
-    ): string;
+    buyBoost(hiveName?: string, padding?: number, mode?: boolean): string;
 
     /**
      * Buys resources from the market using a terminal.
@@ -130,7 +126,7 @@ declare module "./console" {
     buy(
       resource: ResourceConstant,
       hiveName?: string,
-      sets?: number,
+      amount?: number,
       hurry?: boolean
     ): string;
 
@@ -145,7 +141,7 @@ declare module "./console" {
     sell(
       resource: ResourceConstant,
       hiveName?: string,
-      sets?: number,
+      amount?: number,
       hurry?: boolean
     ): string;
   }
@@ -428,32 +424,29 @@ CustomConsole.prototype.getTerminal = function (
   return terminal;
 };
 
-CustomConsole.prototype.buyMastersMinerals = function (
+CustomConsole.prototype.buyBoost = function (
   hiveName?: string,
-  padding = 0,
+  padding = 100,
   fast = true
 ) {
   if (hiveName === undefined) hiveName = this.lastActionRoomName;
   const hive = Apiary.hives[hiveName];
   if (!hive) return `NO VALID HIVE FOUND @ ${this.formatRoom(hiveName)}`;
-  const state = hive.mastersResTarget;
   let ans = `OK @ ${this.format(hiveName)}`;
   let skip = !hive.room.terminal || !!hive.room.terminal.cooldown;
-  _.forEach(state, (amount, r) => {
+  _.forEach(hive.resState, (amount, r) => {
     if (!amount || !r || r === RESOURCE_ENERGY) return;
     const res = r as ResourceConstant;
-    if (!(res in REACTION_MAP) || hive.resState[res]! > 0) return;
+    amount *= -1;
+    if (!(res in REACTION_MAP) || amount <= 0) return;
     if (skip) {
       ans += `\n${res}: skipped ${amount}`;
       return;
     }
-    const sets = Math.min(
-      Math.round(((amount + padding) / 5000) * 1000) / 1000,
-      1
-    );
-    const buyAns = this.buy(res, hiveName, sets, fast);
+    const amountStep = Math.min(amount + padding, 1000);
+    const buyAns = this.buy(res, hiveName, amountStep, fast);
     skip = buyAns.includes("short");
-    ans += `\n${res}: ${buyAns} ${sets * 5000}/${amount}`;
+    ans += `\n${res}: ${buyAns} ${amountStep}/${amount}`;
   });
   return ans;
 };
@@ -461,14 +454,13 @@ CustomConsole.prototype.buyMastersMinerals = function (
 CustomConsole.prototype.buy = function (
   resource: ResourceConstant,
   hiveName?: string,
-  sets: number = 1,
+  amount: number = 1000,
   hurry: boolean = true
 ) {
   if (hiveName === undefined) hiveName = this.lastActionRoomName;
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  const amount = 5000 * sets;
 
   const info = Apiary.broker.updateRes(resource, 0);
   const priceToBuyLong = info.bestPriceSell || info.avgPrice;
@@ -479,24 +471,23 @@ CustomConsole.prototype.buy = function (
       priceToBuyLong * (1 + 0.05)) *
     amount;
   return marketReturn(
-    Apiary.broker.buyIn(terminal, resource, 5000 * sets, hurry),
-    `: LOSS FOR SHORT ${loss} : ${resource.toUpperCase()} @ ${this.formatRoom(
-      hiveName
-    )}`
+    Apiary.broker.buyIn(terminal, resource, amount, hurry),
+    `: SPREAD ${
+      Math.ceil(loss * 100) / 100
+    } : ${resource.toUpperCase()} @ ${this.formatRoom(hiveName)}`
   );
 };
 
 CustomConsole.prototype.sell = function (
   resource: ResourceConstant,
   hiveName?: string,
-  sets: number = 1,
+  amount: number = 1000,
   hurry: boolean = true
 ) {
   if (hiveName === undefined) hiveName = this.lastActionRoomName;
   hiveName = hiveName.toUpperCase();
   const terminal = this.getTerminal(hiveName);
   if (typeof terminal === "string") return terminal;
-  const amount = 5000 * sets;
 
   const info = Apiary.broker.updateRes(resource, 0);
   const priceToSellLong = info.bestPriceBuy || info.avgPrice;

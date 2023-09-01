@@ -25,7 +25,7 @@ export class _Apiary {
   public destroyTime: number;
   public useBucket: boolean = false;
   public username: string = "";
-  public intel: Intel;
+  public intel: Intel = new Intel();
   public broker: Broker;
   public planner: RoomPlanner;
   public network: Network;
@@ -34,10 +34,10 @@ export class _Apiary {
   public visuals: Visuals = new Visuals();
   public maxFactoryLvl = 0;
 
-  public bees: { [id: string]: ProtoBee<Creep | PowerCreep> };
-  public hives: { [id: string]: Hive };
-  public masters: { [id: string]: Master };
-  public orders: { [fid: string]: FlagOrder };
+  public bees: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
+  public hives: { [id: string]: Hive } = {};
+  public masters: { [id: string]: Master } = {};
+  public orders: { [fid: string]: FlagOrder } = {};
 
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public requestRoomSight: string[] = [];
@@ -53,11 +53,6 @@ export class _Apiary {
     this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE) this.logger = new Logger();
     else this.logger = new EmptyLogger();
-
-    this.bees = {};
-    this.hives = {};
-    this.orders = {};
-    this.masters = {};
   }
 
   public init() {

@@ -66,13 +66,18 @@ export class ResourceCell extends Cell {
     this._fleeLairTime = this.cache("_fleeLairTime", value);
   }
 
-  public poss: { x: number; y: number; roomName: string };
+  public poss: { x: number; y: number; roomName?: string };
   public get pos(): RoomPosition {
-    return new RoomPosition(this.poss.x, this.poss.y, this.poss.roomName);
+    return new RoomPosition(
+      this.poss.x,
+      this.poss.y,
+      this.poss.roomName || this.hiveName
+    );
   }
   public set pos(value) {
-    this.poss = value;
-    this.cache("poss", value);
+    if (value.roomName !== this.hiveName) this.poss = value;
+    else this.poss = { x: value.x, y: value.y };
+    this.cache("poss", this.poss);
   }
 
   public get ratePT() {

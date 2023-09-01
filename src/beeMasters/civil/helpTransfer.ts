@@ -47,15 +47,8 @@ export class HelpTransferMaster extends SwarmMaster {
 
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
-      if (this.checkFlee(bee, this.hive)) return;
-      if (
-        this.hive.cells.defense.timeToLand < 50 &&
-        bee.ticksToLive > 50 &&
-        bee.pos.getRoomRangeTo(this.hive) === 1
-      ) {
-        bee.fleeRoom(this.hiveName, this.hive.opt);
+      if (this.checkFlee(bee, bee.store.getUsedCapacity() ? this : this.hive))
         return;
-      }
       // kinda should use TimeToTarget
       const old = bee.ticksToLive < 150 && bee.pos.roomName === this.hiveName;
       if (old) this.recycleBee(bee);
@@ -70,25 +63,41 @@ export class HelpTransferMaster extends SwarmMaster {
             .filter(
               (s) => s.structureType === STRUCTURE_CONTAINER
             )[0] as StructureContainer);
-        if (storage)
-          bee.transfer(
-            storage,
-            findOptimalResource(bee.store),
-            undefined,
-            this.hive.opt
-          );
-        else this.delete();
+        if (storage) {
+          const res = findOptimalResource(bee.store);
+          const ans = bee.transfer(storage, res, undefined, this.hive.opt);
+          if (ans === OK)
+            Apiary.logger.addResourceStat(
+              this.pos.roomName,
+              "local_import",
+              Math.min(
+                storage.store.getFreeCapacity(res),
+                bee.store.getUsedCapacity(res)
+              ),
+              res
+            );
+        } else bee.goRest(this.pos); // else this.delete() // a little overhead, but yeah
       } else if (
         this.hive.cells.storage &&
         bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50
-      )
-        bee.withdraw(
+      ) {
+        const ans = bee.withdraw(
           this.hive.cells.storage.storage,
           this.res,
           undefined,
           this.hive.opt
         );
-      else this.removeBee(bee);
+        if (ans === OK)
+          Apiary.logger.addResourceStat(
+            this.hiveName,
+            "local_export",
+            -Math.min(
+              this.hive.cells.storage.storage.store.getUsedCapacity(this.res),
+              bee.store.getFreeCapacity(this.res)
+            ),
+            this.res
+          );
+      } else this.removeBee(bee);
     });
   }
 }

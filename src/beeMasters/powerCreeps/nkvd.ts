@@ -136,10 +136,7 @@ export class NKVDMaster extends PowerMaster {
             (!spawn.freeSpawns.length &&
               _.filter(spawn.spawnQue, (b) => b.priority === 1).length > 0) || // spawnBattle screeps
             (Object.keys(spawn.spawnQue).length >= 3 &&
-              !_.filter(
-                spawn.spawns,
-                (s) => !s.spawning || s.spawning.remainingTime <= 10
-              ).length)
+              !_.filter(spawn.spawns, (s) => !s.spawning).length)
           )
             // push some traffic
             _.forEach(

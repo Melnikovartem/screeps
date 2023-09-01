@@ -46,6 +46,7 @@ export abstract class PowerMaster extends Master {
 
   public update() {
     super.update();
+    this.usedPower = false;
     if (!this.powerCreep.shard)
       this.powerCreep.creep.spawn(this.cell.powerSpawn);
     if (this.powerCreep.creep.spawnCooldownTime) this.delete();
@@ -60,13 +61,12 @@ export abstract class PowerMaster extends Master {
           // failsafe
           Apiary.logger.addResourceStat(
             this.hiveName,
-            this.powerCreep.ref,
-            POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level],
+            this.powerCreep.ref.split(" ").join("_"),
+            POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level - 1],
             RESOURCE_OPS
           );
       }
     }
-    this.usedPower = false;
     this.checkFlee(this.powerCreep);
   }
 

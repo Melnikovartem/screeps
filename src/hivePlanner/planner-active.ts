@@ -35,7 +35,6 @@ export function toActive(
 
   const hiveName = anchor.roomName;
   if (Memory.cache.hives[hiveName]) {
-    console.log(Memory.cache.hives[hiveName], hiveName);
     for (const cellType in Memory.cache.hives[hiveName].cells) {
       const cellCache = Memory.cache.hives[hiveName].cells[cellType];
       const poss = cellCache?.poss as
@@ -45,21 +44,12 @@ export function toActive(
             roomName?: string;
           }
         | undefined;
-
-      console.log(
-        cellType,
-        JSON.stringify(poss),
-        poss && (poss.roomName === roomName || !poss.roomName),
-        roomName === hiveName
-      );
       if (
         poss &&
         (poss.roomName === roomName ||
           (!poss.roomName && roomName === hiveName))
-      ) {
-        console.log(cellType, JSON.stringify(poss));
+      )
         this.activePlanning[roomName].cellsCache[cellType] = { poss };
-      }
     }
   }
 }

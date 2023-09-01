@@ -107,10 +107,6 @@ export abstract class Master {
     for (const ref in this.bees)
       if (!Apiary.bees[this.bees[ref].ref]) this.deleteBee(ref);
     this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning);
-    if (Game.time % 36 === 0)
-      _.forEach(this.activeBees, (b) =>
-        b.creep.notifyWhenAttacked(this.notify)
-      );
   }
 
   /** sends to boos any bees with beeState, then frees them with chill status */
@@ -148,7 +144,7 @@ export abstract class Master {
 
   private removeFromQue(hive: Hive) {
     const spawnQue = hive.cells.spawn.spawnQue;
-    for (let i = 0; i < spawnQue.length; )
+    for (let i = 0; i < spawnQue.length; ++i)
       if (spawnQue[i].master === this.ref) {
         spawnQue.splice(i, 1);
         --i;

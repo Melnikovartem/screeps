@@ -54,10 +54,14 @@ export class FlagOrder extends SwarmOrder {
           }
           filter = () => true;
           break;
-        case COLOR_YELLOW || COLOR_WHITE || COLOR_GREY || COLOR_BLUE:
+        case COLOR_WHITE:
+        case COLOR_YELLOW:
+        case COLOR_GREY:
+        case COLOR_BLUE:
           filter = () => true;
           break;
-        case COLOR_RED || COLOR_ORANGE:
+        case COLOR_RED:
+        case COLOR_ORANGE:
           parsed = /_room_([WE][0-9]+[NS][0-9]+)$/.exec(this.ref);
           if (parsed) filter = (h) => h.roomName === parsed![1];
           break;

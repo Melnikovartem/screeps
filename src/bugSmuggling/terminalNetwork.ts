@@ -173,7 +173,7 @@ export class Network {
             terminal,
             res,
             amount + PADDING_RESOURCE,
-            hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2
+            hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2 // 60
           );
           if (ans === "short") {
             usedTerminal = true;
@@ -256,12 +256,6 @@ export class Network {
                 Math.min(SELL_STEP_MAX, toSell),
                 stStore.getFreeCapacity() < FREE_CAPACITY // need to free some space
               );
-              console.log(
-                ans,
-                compound,
-                terminal.room.name,
-                stStore.getFreeCapacity()
-              );
             }
           }
           if (ans === "short") continue;
@@ -277,12 +271,6 @@ export class Network {
               terminal,
               commodity,
               Math.min(SELL_STEP_MAX, hive.resState[commodity] || 0)
-            );
-            console.log(
-              ans,
-              commodity,
-              terminal.room.name,
-              stStore.getFreeCapacity()
             );
             if (ans === "short") continue;
           }

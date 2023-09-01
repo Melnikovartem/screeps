@@ -47,7 +47,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
     if (
       this.checkBees() &&
       Apiary.intel.getInfo(this.pos.roomName).safePlace &&
-      this.hive.resState[RESOURCE_ENERGY] >= 0 &&
+      this.hive.resState[RESOURCE_ENERGY] > 0 &&
       controller.level < 8
     ) {
       const setup = setups.upgrader.fast.copy();
@@ -70,13 +70,31 @@ export class HelpUpgradeMaster extends SwarmMaster {
       if (bee.state === beeStates.boosting) return;
       if (this.checkFlee(bee, hiveToUpg)) return;
       // remvoed some useless code for this master as nuke survivial/recyclyng
-      if (!Apiary.intel.getInfo(this.pos.roomName, 20).safePlace)
-        bee.goRest(this.hive.rest, this.hive.opt);
-      else if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        if (hiveToUpg.controller)
-          bee.upgradeController(hiveToUpg.controller, this.hive.opt);
-        else bee.goRest(this.pos, this.hive.opt);
-      } else if (bee.ticksToLive > 10) {
+      if (
+        bee.store.getUsedCapacity(RESOURCE_ENERGY) >
+          Math.min(bee.workMax * 3, bee.store.getCapacity()) ||
+        bee.ticksToLive < 15
+      ) {
+        if (
+          hiveToUpg.controller &&
+          bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+        ) {
+          const ans = bee.upgradeController(
+            hiveToUpg.controller,
+            hiveToUpg.opt
+          );
+          if (ans === OK)
+            Apiary.logger.addResourceStat(
+              hiveToUpg.roomName,
+              "upgrade",
+              -Math.min(
+                bee.workMax,
+                bee.store.getUsedCapacity(RESOURCE_ENERGY)
+              ),
+              RESOURCE_ENERGY
+            );
+        } else bee.goRest(this.pos, hiveToUpg.opt);
+      } else {
         let storage: StructureStorage | StructureContainer | undefined =
           hiveToUpg.cells.storage?.storage;
         if (!storage) {
@@ -98,7 +116,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
         }
         if (storage)
           bee.withdraw(storage, RESOURCE_ENERGY, undefined, hiveToUpg.opt);
-        else bee.goRest(hiveToUpg.rest);
+        else bee.goRest(this.pos);
       } // else this.removeBee(bee);
     });
   }

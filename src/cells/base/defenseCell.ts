@@ -1,6 +1,8 @@
 import { HordeMaster } from "beeMasters/war/horde";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { Bee } from "bees/bee";
+import { PowerBee } from "bees/powerBee";
+import { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
 import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
@@ -351,7 +353,7 @@ export class DefenseCell extends Cell {
 
     let healTargets: (Creep | PowerCreep)[] = [];
     const prepareHeal = (
-      master: { activeBees: Bee[] } | undefined,
+      master: { activeBees: ProtoBee<Creep | PowerCreep>[] } | undefined,
       nonclose = roomInfo.dangerlvlmax >= 4
     ) => {
       if (healTargets.length || !master) return;
@@ -379,6 +381,8 @@ export class DefenseCell extends Cell {
     prepareHeal(this.hive.cells.excavation.master);
     prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master);
     prepareHeal(this.hive.puller);
+    // WARNING can be CPU heavy
+    prepareHeal({ activeBees: Object.values(Apiary.bees) });
 
     let healTarget: Creep | PowerCreep | undefined;
     let toHeal = 0;

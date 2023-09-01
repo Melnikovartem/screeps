@@ -23,10 +23,11 @@ export class HordeMaster extends SwarmMaster {
   public trio = 0;
 
   private enemiesAtEnterance: {
-    lastSeen: number;
-    enemyId: Id<Creep>;
-    pos: RoomPosition;
-  }[] = [];
+    [enemyId: Id<Creep | PowerCreep | Structure>]: {
+      lastSeen: number;
+      pos: RoomPosition;
+    };
+  } = {};
 
   public constructor(order: FlagOrder) {
     super(order);
@@ -105,11 +106,8 @@ export class HordeMaster extends SwarmMaster {
       this.maxSpawns = Math.max(60, this.maxSpawns); // 20 trios : 64K energy : 24H harass on shard2
       this.trio = (this.spawned % 3) + 1;
       this.targetBeeCount = 3;
-    } else if (this.order.ref.includes("harass")) {
-      this.maxSpawns = 8; // ~ 10H of non stop low lvl harass max ~ 10K energy
-      this.setup.fixed = [HEAL, ATTACK];
-      this.setup.patternLimit = 3;
-    } else if (this.order.ref.includes("dismantle"))
+    }
+    if (this.order.ref.includes("dismantle"))
       this.setup = setups.dismantler.copy();
     else if (this.order.ref.includes("guard")) {
       this.maxSpawns = 5;
@@ -124,6 +122,11 @@ export class HordeMaster extends SwarmMaster {
       this.setup.pattern = [ATTACK];
       this.setup.fixed = [TOUGH, TOUGH, TOUGH].concat(Array(12).fill(HEAL));
       this.maxSpawns = 100;
+    } else if (this.order.ref.includes("elc")) {
+      this.targetBeeCount = 1;
+      this.maxSpawns = 20;
+      this.setup.pattern = [RANGED_ATTACK];
+      this.setup.fixed = Array(17).fill(HEAL);
     } else if (this.order.ref.includes("6g3y_1")) {
       this.boosts = [
         { type: "rangedAttack", lvl: 2 },
@@ -178,9 +181,9 @@ export class HordeMaster extends SwarmMaster {
   public update() {
     super.update();
 
-    this.enemiesAtEnterance = this.enemiesAtEnterance.filter(
-      (e) => Game.time - e.lastSeen > FORGET_ENEMY_ENT
-    );
+    for (const [enemyId, info] of Object.entries(this.enemiesAtEnterance))
+      if (Game.time - info.lastSeen > FORGET_ENEMY_ENT)
+        delete this.enemiesAtEnterance[enemyId as Id<Creep>];
 
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (
@@ -460,6 +463,20 @@ export class HordeMaster extends SwarmMaster {
         return OK;
       }
     }
+
+    if (
+      target.pos.roomName === this.pos.roomName &&
+      loosingBattle >= 0 &&
+      (target.pos.x >= 48 ||
+        target.pos.y >= 48 ||
+        target.pos.x <= 1 ||
+        target.pos.y <= 1)
+    )
+      this.enemiesAtEnterance[target.id] = {
+        lastSeen: Game.time,
+        pos: target.pos,
+      };
+
     // be a bully if healthy
     if (rangeToTarget > targetedRange && bee.hits > bee.hitsMax * 0.75) {
       if (target && target.pos.getRangeTo(bee) <= 3) opt.movingTarget = true;
@@ -584,10 +601,15 @@ export class HordeMaster extends SwarmMaster {
             if (healingTarget && bee.getActiveBodyParts(HEAL))
               bee.heal(healingTarget);
             // @todo finish dying creeps off
-            let restTarget = this.enemiesAtEnterance.reduce((prev, curr) =>
-              prev.pos.getRangeTo(bee) < curr.pos.getRangeTo(bee) ? prev : curr
-            )?.pos;
-            if (!restTarget) restTarget = this.pos;
+            const restTarget = !Object.keys(this.enemiesAtEnterance).length
+              ? this.pos // no enemy go chill @ pos
+              : _.reduce(
+                  this.enemiesAtEnterance,
+                  (prev: { pos: RoomPosition }, curr) =>
+                    prev.pos.getRangeTo(bee) < curr.pos.getRangeTo(bee)
+                      ? prev
+                      : curr
+                ).pos; // wait for enemy
             bee.goRest(restTarget);
           } else this.beeAct(bee, enemy);
           if (

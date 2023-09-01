@@ -183,12 +183,6 @@ export class FactoryCell extends Cell {
           0;
         // no need to overproduce the amount of stuff (demand driven production)
         // but produce max of the latest lvl
-        /* console.log(
-          this.print,
-          res,
-          networkResAmount,
-          networkResAmount >= STOCKPILE_HIGH_COMMODITIES
-        ); */
         if (networkResAmount >= STOCKPILE_HIGH_COMMODITIES) continue;
 
         num = 40;

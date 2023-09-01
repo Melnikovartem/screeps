@@ -7,10 +7,6 @@ import { PowerMaster } from "../_PowerMaster";
 
 @profile
 export class KGBMaster extends PowerMaster {
-  public update() {
-    super.update();
-  }
-
   public run() {
     if (this.hive.cells.defense.timeToLand < 50)
       this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);

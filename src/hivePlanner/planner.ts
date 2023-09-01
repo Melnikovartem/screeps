@@ -833,12 +833,18 @@ export class RoomPlanner {
       _.forEach(room.find(FIND_MINERALS), (s) => futureResourceCells.push(s));
 
     const hive = Apiary.hives[anchor.roomName];
-    if (hive)
+    if (hive) {
       _.forEach(hive.cells.excavation.resourceCells, (c) =>
-        !futureResourceCells.filter((rc) => rc.id === c.resource.id)
+        !futureResourceCells.filter((rc) => rc.id === c.resource.id).length
           ? futureResourceCells.push(c.resource)
           : 0
       );
+      console.log(
+        anchor,
+        futureResourceCells,
+        Object.keys(hive.cells.excavation.resourceCells)
+      );
+    }
 
     futureResourceCells.sort((a, b) => {
       const ans =
@@ -846,7 +852,6 @@ export class RoomPlanner {
       if (ans === 0) return anchor.getTimeForPath(a) - anchor.getTimeForPath(b);
       return ans;
     });
-    console.log(anchor, futureResourceCells);
 
     if (fromMem)
       _.forEach(futureResourceCells, (f) => {
