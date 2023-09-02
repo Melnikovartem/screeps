@@ -64,8 +64,8 @@ export enum prefix {
   depositMining = "deposit_" /** Deposit mining prefix */,
 
   // deposit master
-  miner = "depositMiner_" /** Deposit miner prefix */,
-  pickup = "depositPickup_" /** Deposit pickup prefix */,
+  minerDep = "depositMiner_" /** Deposit miner prefix */,
+  pickupDep = "depositPickup_" /** Deposit pickup prefix */,
 
   // cells
   defenseCell = "defHive" /** Defense hive cell prefix */,
@@ -80,6 +80,7 @@ export enum prefix {
   observerCell = "observe" /** Observer cell prefix */,
   powerCell = "powerHive" /** Power hive cell prefix */,
   factoryCell = "factory" /** Factory cell prefix */,
+  corridorMiningCell = "corridor" /** CorridorMining cell prefix */,
 
   builder = "builder_" /** Builder prefix */,
   puller = "depositPuller_" /** Deposit puller prefix */,

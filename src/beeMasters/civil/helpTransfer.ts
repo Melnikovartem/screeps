@@ -89,7 +89,7 @@ export class HelpTransferMaster extends SwarmMaster<number> {
             ),
             this.res
           );
-      } else this.removeBee(bee);
+      } else this.recycleBee(bee);
     });
   }
 

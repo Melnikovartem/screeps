@@ -65,12 +65,11 @@ export abstract class Cell {
     if (this.master) this.master.delete();
   }
 
-  // first stage of decision making like do i a logistic transfer do i need more masters
   public update<K extends keyof this>(
     updateMapKey: K[] = [],
     nonforceMapKey: K[] = []
   ): void {
-    // updating structure object to actual data
+    // updating structure object to actual data :/
 
     _.forEach(Object.keys(this), (key: K) => {
       const data = this[key];

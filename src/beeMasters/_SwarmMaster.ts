@@ -46,11 +46,11 @@ export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
 
   // #region Public Accessors (2)
 
-  public get info() {
+  protected get info() {
     return this.parent.special;
   }
 
-  public set info(value) {
+  protected set info(value) {
     this.parent.special = value;
   }
 

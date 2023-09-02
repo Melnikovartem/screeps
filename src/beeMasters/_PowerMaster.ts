@@ -32,7 +32,7 @@ export const POWER_NAMES: { [id in PowerConstant]: string } = {
 export const HIVE_OPS = 5000;
 
 @profile
-export abstract class PowerMaster extends Master<PowerCell> {
+export abstract class PowerCreepMaster extends Master<PowerCell> {
   // #region Properties (3)
 
   protected usedPower = false;

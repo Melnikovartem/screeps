@@ -1,161 +1,51 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { STOCKPILE_BASE_COMMODITIES } from "cells/stage1/factoryCell";
-import type { Hive } from "hive/hive";
+import type { CorridorMiningCell } from "cells/stage1/corridorMining";
 import { profile } from "profiler/decorator";
-import { beeStates, prefix } from "static/enums";
+import { beeStates } from "static/enums";
 
 import { Master } from "../_Master";
-import type { DepositMaster } from "./deposit";
-import { DepositMinerMaster } from "./miners";
-import { PowerMaster } from "./power";
+import { DepositMinerMaster } from "./mineDep";
+
+const MAX_PULLERS_PER_HIVE = 4;
 
 @profile
-export class PullerMaster extends Master {
-  public movePriority = 3 as const;
-  private maxRoadTime: number = 0;
-  public depositSites: DepositMaster[] = [];
-  public powerSites: PowerMaster[] = [];
+export class PullerMaster extends Master<CorridorMiningCell> {
+  // #region Properties (2)
+
   private freePullers: Bee[] = [];
 
-  public sitesON: (DepositMaster | PowerMaster)[] = [];
+  public movePriority = 3 as const;
 
-  public constructor(hive: Hive) {
-    super(hive, prefix.puller + hive.roomName);
-  }
+  // #endregion Properties (2)
 
-  public removeFreePuller(roadTime: number) {
-    const puller = _.filter(
-      this.freePullers,
-      (b) => b.ticksToLive >= roadTime + b.pos.getRoomRangeTo(this.hive) * 50
-    )[0];
-    if (puller) {
-      this.freePullers.splice(this.freePullers.indexOf(puller));
-      return true;
-    }
-    return false;
-  }
+  // #region Public Accessors (1)
 
-  public update() {
-    super.update();
-
-    const workingPowerSites = this.powerSites.filter((p) => p.operational);
-    let inProgress = workingPowerSites.filter(
-      (p) => p.beesAmount || p.waitingForBees
-    );
-    if (
-      !inProgress.length &&
-      this.hive.mode.powerMining &&
-      workingPowerSites.length &&
-      this.hive.cells.storage &&
-      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <= 30000
-    )
-      inProgress = [
-        workingPowerSites.reduce((prev, curr) =>
-          prev.roadTime > curr.roadTime ? curr : prev
-        ),
-      ];
-    this.sitesON = inProgress;
-
-    if (workingPowerSites.length)
-      _.forEach(this.powerSites, (p) => {
-        if (!p.maxSpawns)
-          _.forEach(p.bees, (b) => {
-            const inNeed = workingPowerSites.filter(
-              (wp) => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1
-            );
-            const nextMaster = b.pos.findClosest(
-              inNeed.length ? inNeed : workingPowerSites
-            );
-            if (nextMaster) {
-              p.removeBee(b);
-              nextMaster.newBee(b);
-            }
-          });
-      });
-
-    let workingDeposits: DepositMaster[] = [];
-    if (this.hive.mode.depositMining) {
-      workingDeposits = this.depositSites.filter(
-        (d) =>
-          d.operational &&
-          (!d.resource ||
-            (this.hive.resState[d.resource] || 0) <
-              STOCKPILE_BASE_COMMODITIES.toomuch)
-      );
-      if (workingDeposits.length > 1) {
-        const depositsWithBees = workingDeposits.filter(
-          (d) => d.miners.beesAmount || d.pickup.beesAmount
-        );
-        if (depositsWithBees.length) workingDeposits = depositsWithBees;
-        else
-          workingDeposits = [
-            workingDeposits.reduce((prev, curr) => {
-              let ans = curr.roadTime - prev.roadTime;
-              if (Math.abs(ans) < 65)
-                ans = curr.lastCooldown - prev.lastCooldown;
-              return ans < 0 ? curr : prev;
-            }),
-          ];
-      }
-      this.sitesON = this.sitesON.concat(workingDeposits);
-    }
-
-    _.forEach(this.bees, (bee) => {
-      if (bee.state === beeStates.chill) {
-        const newTarget = this.minersToMove[0];
-        if (
-          newTarget &&
-          (bee.ticksToLive >=
-            (newTarget.master as DepositMinerMaster).parent.roadTime ||
-            !this.activeBees.filter((b) => b.target === newTarget.ref).length)
-        ) {
-          bee.target = newTarget.ref;
-          bee.state = beeStates.work;
-        }
-      }
-    });
-
-    if (this.hive.resState[RESOURCE_ENERGY] < 0 || this.hive.isBattle)
-      this.sitesON = this.sitesON.filter(
-        (m) => m instanceof PowerMaster && m.beesAmount
-      );
-
+  public override get targetBeeCount(): number {
     let possibleTargets = this.minersToMove.length;
-    this.maxRoadTime = 0;
 
     this.freePullers = _.filter(this.bees, (b) => b.state === beeStates.chill);
 
-    _.forEach(workingDeposits, (m) => {
-      this.maxRoadTime = Math.max(this.maxRoadTime, m.roadTime);
+    _.forEach(this.parent.depositsOn, (m) => {
+      if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
+        this.freePullers.pop();
       if (m.miners.waitingForBees || m.miners.checkBees())
         possibleTargets += Math.max(
           1,
           m.miners.targetBeeCount - m.miners.beesAmount
         );
-      if (m.miners.waitingForBees && !this.removeFreePuller(m.roadTime))
-        this.freePullers.pop();
     });
 
-    this.targetBeeCount = Math.min(possibleTargets, 4);
-
-    if (this.checkBees())
-      this.wish({
-        setup: setups.puller,
-        priority: 8,
-      });
+    return Math.min(possibleTargets, MAX_PULLERS_PER_HIVE);
   }
 
-  public checkBees = (): boolean => {
-    return (
-      super.checkBees(true, CREEP_LIFE_TIME - this.maxRoadTime) &&
-      !!this.maxRoadTime
-    );
-  };
+  // #endregion Public Accessors (1)
+
+  // #region Private Accessors (1)
 
   private get minersToMove() {
     let minersToMove: Bee[] = [];
-    _.forEach(this.depositSites, (m) => {
+    _.forEach(this.parent.depositSites, (m) => {
       const targets = _.filter(
         m.miners.bees,
         (b) =>
@@ -171,6 +61,22 @@ export class PullerMaster extends Master {
       minersToMove = minersToMove.concat(targets);
     });
     return minersToMove;
+  }
+
+  // #endregion Private Accessors (1)
+
+  // #region Public Methods (3)
+
+  public removeFreePuller(roadTime: number) {
+    const puller = _.filter(
+      this.freePullers,
+      (b) => b.ticksToLive >= roadTime + b.pos.getRoomRangeTo(this.hive) * 50
+    )[0];
+    if (puller) {
+      this.freePullers.splice(this.freePullers.indexOf(puller));
+      return true;
+    }
+    return false;
   }
 
   public run() {
@@ -226,4 +132,33 @@ export class PullerMaster extends Master {
       this.checkFlee(bee, undefined, { movingTarget: true });
     });
   }
+
+  public override update() {
+    super.update();
+
+    _.forEach(this.bees, (bee) => {
+      if (bee.state === beeStates.chill) {
+        const newTarget = this.minersToMove[0];
+        if (
+          newTarget &&
+          (bee.ticksToLive >=
+            (newTarget.master as DepositMinerMaster).parent.roadTime ||
+            !this.activeBees.filter((b) => b.target === newTarget.ref).length)
+        ) {
+          bee.target = newTarget.ref;
+          bee.state = beeStates.work;
+        }
+      }
+    });
+    const maxRoadTime =
+      _.max(_.map(this.parent.depositsOn, (d) => d.roadTime)) || 0;
+
+    if (this.checkBees(true, CREEP_LIFE_TIME - maxRoadTime))
+      this.wish({
+        setup: setups.puller,
+        priority: 8,
+      });
+  }
+
+  // #endregion Public Methods (3)
 }

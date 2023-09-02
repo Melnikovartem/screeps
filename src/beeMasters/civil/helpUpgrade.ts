@@ -90,7 +90,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
         if (storage)
           bee.withdraw(storage, RESOURCE_ENERGY, undefined, hiveToUpg.opt);
         else bee.goRest(this.pos);
-      } // else this.removeBee(bee);
+      }
     });
   }
 

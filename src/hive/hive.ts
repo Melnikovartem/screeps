@@ -1,13 +1,14 @@
 /**
  * Import statements
  */
-import { PullerMaster } from "beeMasters/corridorMining/puller";
+import type { PullerMaster } from "beeMasters/corridorMining/puller";
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { RespawnCell } from "cells/base/respawnCell";
 import { DevelopmentCell } from "cells/stage0/developmentCell";
+import { CorridorMiningCell } from "cells/stage1/corridorMining";
 import { FactoryCell } from "cells/stage1/factoryCell";
 import { BOOST_MINERAL, LaboratoryCell } from "cells/stage1/laboratoryCell";
 import {
@@ -27,7 +28,7 @@ import {
 import { hiveStates, prefix } from "static/enums";
 
 import { getBuildTarget, updateStructures } from "./hive-building";
-import { BuildProject, HiveCells, ResTarget } from "./hive-declarations";
+import type { BuildProject, HiveCells, ResTarget } from "./hive-declarations";
 import {
   addAnex,
   addResourceCells,
@@ -178,7 +179,6 @@ export class Hive {
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
       } else {
         this.phase = 2;
-        this.puller = new PullerMaster(this);
 
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
@@ -201,6 +201,7 @@ export class Hive {
         });
         if (obeserver) this.cells.observe = new ObserveCell(this, obeserver);
         if (powerSpawn) this.cells.power = new PowerCell(this, powerSpawn);
+        this.cells.corridorMining = new CorridorMiningCell(this);
         // @TODO cause i haven' reached yet
       }
     } else {

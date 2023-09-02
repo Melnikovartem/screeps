@@ -2,7 +2,6 @@ import { HaulerMaster } from "beeMasters/economy/hauler";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
-import { safeWrap } from "static/utils";
 
 import { Cell } from "../_Cell";
 import { ResourceCell } from "./resourceCell";
@@ -65,16 +64,14 @@ export class ExcavationCell extends Cell {
   }
 
   public run() {
-    _.forEach(this.resourceCells, (cell) => {
-      safeWrap(() => {
-        cell.run();
-      }, cell.print + " run");
-    });
+    _.forEach(this.resourceCells, (cell) =>
+      Apiary.wrap(() => cell.run(), cell.print, "run", 0)
+    );
   }
 
   public override update() {
     _.forEach(this.resourceCells, (cell) =>
-      safeWrap(() => cell.update(), cell.print + " update")
+      Apiary.wrap(() => cell.update(), cell.print, "update", 0)
     );
 
     if (!this.master)

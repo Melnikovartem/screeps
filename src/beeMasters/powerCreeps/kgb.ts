@@ -2,12 +2,12 @@
 // import { setups } from "bees/creepSetups";
 import { profile } from "profiler/decorator";
 
-import { PowerMaster } from "../_PowerMaster";
+import { PowerCreepMaster } from "../_PowerMaster";
 
 // kgb'shnik
 
 @profile
-export class KGBMaster extends PowerMaster {
+export class KGBMaster extends PowerCreepMaster {
   // #region Public Methods (1)
 
   public override run() {

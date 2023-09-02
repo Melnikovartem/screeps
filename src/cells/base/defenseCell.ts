@@ -229,7 +229,9 @@ export class DefenseCell extends Cell {
     prepareHeal(this.hive.builder, true);
     prepareHeal(this.hive.cells.excavation.master);
     prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master);
-    prepareHeal(this.hive.puller);
+    prepareHeal(
+      this.hive.cells.corridorMining && this.hive.cells.corridorMining.master
+    );
     // WARNING can be CPU heavy
     prepareHeal({ activeBees: Object.values(Apiary.bees) });
 

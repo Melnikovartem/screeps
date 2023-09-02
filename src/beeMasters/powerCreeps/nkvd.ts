@@ -11,11 +11,11 @@ import type { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
 import { hiveStates } from "static/enums";
 
-import { POWER_NAMES, PowerMaster } from "../_PowerMaster";
+import { POWER_NAMES, PowerCreepMaster } from "../_PowerMaster";
 import { defenseWalls } from "./nkvd-utils";
 
 @profile
-export class NKVDMaster extends PowerMaster {
+export class NKVDMaster extends PowerCreepMaster {
   // #region Properties (2)
 
   private nextup?: {

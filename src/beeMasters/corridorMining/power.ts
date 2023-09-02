@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { SwarmOrder } from "orders/swarmOrder";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
 import { makeId } from "static/utils";
@@ -10,17 +10,21 @@ import { SwarmMaster } from "../_SwarmMaster";
 interface PowerInfo {
   // #region Properties (4)
 
-  decay: number;
-  hits: number;
-  power: number;
-  roadTime: number;
+  dc: number;
+  // decay
+  ht: number;
+  // hits left
+  pw: number;
+  // power amount
+  rt: number;
 
   // #endregion Properties (4)
+  // roadTime
 }
 
 // first tandem btw
 @profile
-export class PowerMaster extends SwarmMaster<PowerInfo> {
+export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
   // #region Properties (9)
 
   private duplets: [Bee | undefined, Bee | undefined][] = [];
@@ -32,7 +36,7 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
   public override checkBees = () => {
     return (
       this.shouldSpawn &&
-      super.checkBees(true, CREEP_LIFE_TIME - this.info.roadTime - 30)
+      super.checkBees(true, CREEP_LIFE_TIME - this.roadTime - 30)
     );
   };
   public override deleteBee = (ref: string) => {
@@ -61,39 +65,63 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
 
   public constructor(order: SwarmOrder<PowerInfo>) {
     super(order);
-    this.corridorMining?.powerSites.push(this);
+    this.sitesAll.push(this);
     this.positions = this.pos.getOpenPositions(true).map((p) => {
       return { pos: p };
     });
-    if (this.pos.roomName in Game.rooms) this.updateTarget();
+    this.updateTarget();
   }
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (5)
+
+  public get decay() {
+    return this.info.dc;
+  }
+
+  public get hits() {
+    return this.info.ht;
+  }
 
   public get maxSpawns() {
-    return this.info.hits >= 0 ? Infinity : 0;
+    return this.hits >= 0 ? Infinity : 0;
   }
 
-  public get pickupTime() {
-    // spawn time (halfed + roadTime)
-    return (
-      Math.ceil(
-        (this.info.power / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) * 0.5
-      ) *
-        MAX_CREEP_SIZE *
-        CREEP_SPAWN_TIME +
-      this.info.roadTime
-    );
+  public get roadTime() {
+    return this.info.rt;
   }
 
-  public get shouldSpawn() {
+  public get targetBeeCount() {
+    return this.positions.length * 2;
+  }
+
+  // #endregion Public Accessors (5)
+
+  // #region Private Accessors (3)
+
+  private get shouldSpawn() {
     // already mined out
-    if (this.info.hits < 0) return false;
+    if (this.hits < 0) return false;
     // decision gods said no!
-    if (!this.corridorMining?.sitesON.includes(this)) return false;
+    if (!this.sitesOn.includes(this)) return false;
+    return this.canMineInTime();
+  }
 
+  private get sitesAll() {
+    // JS gods said i can push/splice this :/ and original will change
+    return this.hive.cells.corridorMining?.powerSites || [];
+  }
+
+  private get sitesOn() {
+    return this.hive.cells.corridorMining?.powerOn || [];
+  }
+
+  // #endregion Private Accessors (3)
+
+  // #region Public Methods (7)
+
+  public canMineInTime() {
     const dmgFuture =
       ATTACK_POWER *
       20 *
@@ -101,42 +129,22 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
         !dd[0]
           ? 0
           : Math.min(
-              this.info.decay,
-              dd[0].ticksToLive -
-                (dd[0].pos.isNearTo(this) ? 0 : this.info.roadTime)
+              this.decay,
+              dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)
             )
       );
     // already enough dmg to mine out
-    if (this.info.hits - dmgFuture <= 0) return false;
+    if (this.hits - dmgFuture <= 0) return false;
     // wont be in time for decay
-    if (
-      this.info.decay <
-      this.info.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME
-    )
+    if (this.decay < this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME)
       return false;
     const dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
     // do i have enough dmg to kill in time?
     return (
-      this.info.hits / dmgPerSecond <=
-      this.info.decay - (this.activeBees.length ? 0 : this.info.roadTime)
+      this.hits / dmgPerSecond <=
+      this.decay - (this.activeBees.length ? 0 : this.roadTime)
     );
   }
-
-  public get targetBeeCount() {
-    return this.positions.length * 2;
-  }
-
-  // #endregion Public Accessors (4)
-
-  // #region Private Accessors (1)
-
-  private get corridorMining() {
-    return this.hive.puller;
-  }
-
-  // #endregion Private Accessors (1)
-
-  // #region Public Methods (6)
 
   public createDuplet(knight: Bee) {
     let goodHealers;
@@ -145,11 +153,11 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
       goodHealers = this.healers.filter(
         (h) =>
           Math.abs(h.ticksToLive - knight.ticksToLive) <
-            Math.min(CREEP_LIFE_TIME / 2, this.info.roadTime * 3) &&
+            Math.min(CREEP_LIFE_TIME / 2, this.roadTime * 3) &&
           (!h.target || !this.bees[h.target])
       );
     const healer = knight.pos.findClosest(goodHealers) as Bee | undefined;
-    if (healer || knight.ticksToLive < this.info.roadTime || knight.target) {
+    if (healer || knight.ticksToLive < this.roadTime || knight.target) {
       knight.target = "None";
       if (healer) {
         healer.target = knight.ref;
@@ -167,19 +175,17 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
 
   public defaultInfo() {
     return {
-      roadTime: this.pos.getTimeForPath(this.hive),
-      hits: 0,
-      decay: Game.time,
-      power: 0,
+      rt: this.pos.getTimeForPath(this.hive),
+      ht: 0,
+      dc: Game.time,
+      pw: 0,
     };
   }
 
   public override delete() {
     super.delete();
-    if (this.corridorMining) {
-      const index = this.corridorMining.powerSites.indexOf(this);
-      if (index !== -1) this.corridorMining.powerSites.splice(index, 1);
-    }
+    const index = this.sitesAll.indexOf(this);
+    if (index && index !== -1) this.sitesAll.splice(index, 1);
   }
 
   public run() {
@@ -218,12 +224,12 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
       let chill = false;
       if (knight && knight.state === beeStates.work) {
         let target: Creep | PowerCreep | Structure | undefined;
-        if (knight.pos.roomName === this.pos.roomName && this.target)
+        if (knight.pos.roomName === this.roomName && this.target)
           target = this.target;
         const enemy = Apiary.intel.getEnemy(knight.pos, 20);
         if (
           (enemy && knight.pos.getRangeTo(enemy) < 3) ||
-          (knight.pos.roomName === this.pos.roomName && !target)
+          (knight.pos.roomName === this.roomName && !target)
         )
           target = enemy;
         if (target) {
@@ -319,24 +325,17 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
       if (healer) dup[1] = this.bees[healer.ref];
     }
 
-    if (this.pos.roomName in Game.rooms) this.updateTarget();
-    else {
-      this.target = undefined;
-      if (this.info.hits <= 0 && this.hive.cells.observe)
-        Apiary.requestSight(this.pos.roomName);
-    }
+    this.updateTarget();
 
-    if (this.info.decay < -100) {
+    if (this.decay < -100) {
       this.parent.delete();
       return;
     }
 
     if (this.checkBees()) {
       const balance =
-        this.healers.filter((b) => b.ticksToLive > this.info.roadTime * 2)
-          .length -
-        this.knights.filter((b) => b.ticksToLive > this.info.roadTime * 2)
-          .length;
+        this.healers.filter((b) => b.ticksToLive > this.roadTime * 2).length -
+        this.knights.filter((b) => b.ticksToLive > this.roadTime * 2).length;
       if (balance <= 0)
         this.wish({
           setup: setups.miner.powerhealer,
@@ -351,15 +350,22 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
   }
 
   public updateTarget() {
+    if (!(this.roomName in Game.rooms)) {
+      this.target = undefined;
+      if (this.hits <= 0 && this.hive.cells.observe)
+        Apiary.requestSight(this.roomName);
+      return;
+    }
+
     this.target = this.pos
       .lookFor(LOOK_STRUCTURES)
       .filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0] as
       | StructurePowerBank
       | undefined;
     if (this.target) {
-      this.info.hits = this.target.hits;
-      this.info.decay = this.target.ticksToDecay;
-      this.info.power = this.target.power;
+      this.info.ht = this.target.hits;
+      this.info.dc = this.target.ticksToDecay;
+      this.info.pw = this.target.power;
 
       const dmgCurrent =
         _.sum(this.duplets, (dd) =>
@@ -367,27 +373,29 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
         ) *
         ATTACK_POWER *
         20;
-      if (this.info.hits / dmgCurrent <= this.pickupTime) this.callPickUp();
+      if (this.target.hits / dmgCurrent <= this.pickupTime()) this.callPickUp();
       return;
     }
 
     const res = this.pos.lookFor(LOOK_RESOURCES)[0];
     if (res) {
-      this.info.power = res.amount;
+      this.info.pw = res.amount;
       this.callPickUp();
     }
-    this.info.hits = -1;
+    this.info.ht = -1;
     if (!this.pos.isFree(true))
-      this.parent.pos = new RoomPosition(
-        Math.floor(Math.random() * 50),
-        Math.floor(Math.random() * 50),
-        this.roomName
+      this.parent.setPosition(
+        new RoomPosition(
+          Math.floor(Math.random() * 50),
+          Math.floor(Math.random() * 50),
+          this.roomName
+        )
       );
   }
 
-  // #endregion Public Methods (6)
+  // #endregion Public Methods (7)
 
-  // #region Private Methods (1)
+  // #region Private Methods (2)
 
   private callPickUp() {
     if (
@@ -399,7 +407,7 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
     )
       return;
     const name = this.pos.createFlag(
-      Math.ceil(this.info.power / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) +
+      Math.ceil(this.info.pw / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) +
         "_pickup_" +
         makeId(4),
       COLOR_ORANGE,
@@ -408,5 +416,17 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
     if (typeof name === "string") Game.flags[name].memory.hive = this.hiveName;
   }
 
-  // #endregion Private Methods (1)
+  private pickupTime() {
+    // spawn time (halfed + roadTime)
+    return (
+      Math.ceil(
+        (this.info.pw / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) * 0.5
+      ) *
+        MAX_CREEP_SIZE *
+        CREEP_SPAWN_TIME +
+      this.roadTime
+    );
+  }
+
+  // #endregion Private Methods (2)
 }

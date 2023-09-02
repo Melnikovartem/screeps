@@ -1,9 +1,9 @@
 import { WarcrimesModule } from "abstract/warModule";
-import { Master, MasterParent } from "beeMasters/_Master";
+import type { Master, MasterParent } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
 import { Bee } from "bees/bee";
 import { PowerBee } from "bees/powerBee";
-import { ProtoBee } from "bees/protoBee";
+import type { ProtoBee } from "bees/protoBee";
 import { Broker } from "bugSmuggling/broker";
 import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
@@ -123,14 +123,13 @@ export class _Apiary {
     this.requestRoomSightNextTick = [];
 
     if (this.useBucket)
-      this.wrap(() => Apiary.planner.run(), "planner", "run", 1, false);
+      this.wrap(() => Apiary.planner.run(), "planner", "run", 1);
 
     this.wrap(
       () => this.visuals.run(),
       "visuals",
       "run",
-      Object.keys(this.hives).length,
-      false
+      Object.keys(this.hives).length
     );
     if (this.logger) this.logger.run();
   }
@@ -177,11 +176,10 @@ export class _Apiary {
     func: () => void,
     ref: string,
     mode: "update" | "run",
-    amount = 1,
-    safe = true
+    amount = 1
   ) {
     const cpu = Game.cpu.getUsed();
-    if (safe) safeWrap(func, ref + " " + mode);
+    if (Memory.settings.safeWrap) safeWrap(func, ref + " " + mode);
     else func();
     // if amount zero we skip the wrap (avoid double counting)
     if (amount)

@@ -8,39 +8,31 @@ import type { DepositMaster } from "./deposit";
 // no need to innit from memory as DepositMaster inits
 @profile
 export class DepositMinerMaster extends Master<DepositMaster> {
-  // implementation block
+  // #region Properties (1)
+
+  // extra overload block
   // they cant move :/
   public movePriority = 1 as const;
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
+
+  public constructor(parent: DepositMaster) {
+    super(parent, prefix.pickupDep + parent.parent.ref);
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
   public get targetBeeCount() {
     return this.parent.positions.length;
   }
-  // extra overload block
-  public checkBees = () => {
-    return (
-      this.parent.shouldSpawn &&
-      super.checkBees(true, CREEP_LIFE_TIME - this.parent.roadTime)
-    );
-  };
 
-  public constructor(parent: DepositMaster) {
-    super(parent, parent.ref + prefix.miner);
-  }
+  // #endregion Public Accessors (1)
 
-  // update - run
-  public update() {
-    super.update();
-
-    if (!this.hive.puller) return;
-
-    if (
-      this.checkBees() &&
-      this.hive.puller.removeFreePuller(this.parent.roadTime)
-    )
-      this.wish({
-        setup: setups.miner.deposit,
-        priority: 7,
-      });
-  }
+  // #region Public Methods (2)
 
   public run() {
     const target = this.parent.target!;
@@ -67,4 +59,24 @@ export class DepositMinerMaster extends Master<DepositMaster> {
       } else bee.state = beeStates.chill;
     });
   }
+
+  public override update() {
+    super.update();
+
+    if (!this.hive.cells.corridorMining) return;
+
+    if (
+      this.parent.shouldSpawn &&
+      this.checkBees(false, CREEP_LIFE_TIME - this.parent.roadTime) &&
+      this.hive.cells.corridorMining.master.removeFreePuller(
+        this.parent.roadTime
+      ) // reserve a puller
+    )
+      this.wish({
+        setup: setups.miner.deposit,
+        priority: 7,
+      });
+  }
+
+  // #endregion Public Methods (2)
 }

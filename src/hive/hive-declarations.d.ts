@@ -3,6 +3,7 @@ import type { DefenseCell } from "cells/base/defenseCell";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import type { RespawnCell } from "cells/base/respawnCell";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
+import type { CorridorMiningCell } from "cells/stage1/corridorMining";
 import type { FactoryCell } from "cells/stage1/factoryCell";
 import type { LaboratoryCell } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
@@ -38,6 +39,7 @@ export interface HiveCells {
   lab?: LaboratoryCell;
   factory?: FactoryCell;
   observe?: ObserveCell;
+  corridorMining?: CorridorMiningCell;
   power?: PowerCell;
 }
 

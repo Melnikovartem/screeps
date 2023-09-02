@@ -57,7 +57,11 @@ export function checkBees(
   // in case we recalc something there
   const targetBeeCount = this.targetBeeCount;
   // in 4 ifs to be able to read...
-  if (this.waitingForBees > BEE_QUE_PER_MASTER || targetBeeCount === 0)
+  if (
+    this.waitingForBees > BEE_QUE_PER_MASTER ||
+    targetBeeCount === 0 ||
+    spawnCycle < 0
+  )
     return false;
   if (!spawnWhenExtreme && this.hive.state !== hiveStates.economy) return false;
   if (
