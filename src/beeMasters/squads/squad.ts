@@ -26,46 +26,11 @@ export type FormationPositions = [Pos, CreepSetup][];
 // TODO remove old models
 @profile
 export abstract class SquadMaster extends SwarmMaster {
-  protected abstract formation: FormationPositions;
+  // #region Properties (7)
+
   private readonly formationBees: (Bee | undefined)[] = [];
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    const extraPos = this.order.flag.memory.extraPos;
-    if (
-      !extraPos ||
-      !("x" in extraPos) ||
-      !("y" in extraPos) ||
-      !("roomName" in extraPos)
-    )
-      this.order.flag.memory.extraPos = this.hive.isBattle
-        ? this.hive.pos
-        : this.hive.rest;
-    if (![TOP, BOTTOM, LEFT, RIGHT].includes(this.formationRotation))
-      this.formationRotation = TOP;
-  }
-
-  protected get formationCenter() {
-    const pos = this.order.flag.memory.extraPos!;
-    return new RoomPosition(pos.x, pos.y, pos.roomName);
-  }
-
-  protected set formationCenter(value) {
-    this.order.flag.memory.extraPos = value;
-  }
-
-  public get formationRotation() {
-    return this.order.flag.memory.extraInfo as TOP | BOTTOM | LEFT | RIGHT;
-  }
-
-  public set formationRotation(value: TOP | BOTTOM | LEFT | RIGHT) {
-    this.order.flag.memory.extraInfo = value;
-  }
-
-  public movePriority = 1 as const;
   private priority = 1 as const;
-  public stuckValue = 0;
-
   private stats: CreepAllBattleInfo = {
     max: {
       dmgClose: 0,
@@ -87,18 +52,9 @@ export abstract class SquadMaster extends SwarmMaster {
     },
   };
 
-  public get maxSpawns() {
-    return this.formation.length;
-  }
+  protected abstract formation: FormationPositions;
 
-  public set maxSpawns(_) {}
-
-  public get targetBeeCount() {
-    return this.formation.length;
-  }
-
-  public set targetBeeCount(_) {}
-
+  public movePriority = 1 as const;
   public newBee = (bee: Bee) => {
     super.newBee(bee);
     for (let i = 0; i < this.formation.length; ++i)
@@ -112,90 +68,39 @@ export abstract class SquadMaster extends SwarmMaster {
     if (this.spawned < Object.keys(this.bees).length)
       this.spawned = Object.keys(this.bees).length;
   };
+  public stuckValue = 0;
 
-  public update() {
-    super.update();
+  // #endregion Properties (7)
 
-    this.stats = {
-      max: {
-        dmgClose: 0,
-        dmgRange: 0,
-        dism: 0,
-        heal: 0,
-        hits: 0,
-        resist: 0,
-        move: 0,
-      },
-      current: {
-        dmgClose: 0,
-        dmgRange: 0,
-        dism: 0,
-        heal: 0,
-        hits: 0,
-        resist: 0,
-        move: 0,
-      },
-    };
+  // #region Constructors (1)
 
-    _.forEach(this.activeBees, (b) => {
-      if (b.ticksToLive < 5) return;
-      const stats = Apiary.intel.getStats(b.creep);
-      for (const i in stats.max) {
-        this.stats.max[i as keyof CreepBattleInfo] +=
-          stats.max[i as keyof CreepBattleInfo];
-        this.stats.current[i as keyof CreepBattleInfo] +=
-          stats.current[i as keyof CreepBattleInfo];
-      }
-    });
-    if (this.checkBees(this.emergency) && this.checkup) {
-      for (let i = 0; i < this.formation.length; ++i) {
-        if (!this.formationBees[i])
-          this.wish({
-            setup: this.formation[i][1],
-            priority: this.priority,
-          });
-      }
-    } else if (_.some(this.bees, (b) => b.state === beeStates.boosting)) {
-      this.checkup;
-    }
+  public constructor(order: FlagOrder) {
+    super(order);
+    const extraPos = this.order.flag.memory.extraPos;
+    if (
+      !extraPos ||
+      !("x" in extraPos) ||
+      !("y" in extraPos) ||
+      !("roomName" in extraPos)
+    )
+      this.order.flag.memory.extraPos = this.hive.isBattle
+        ? this.hive.pos
+        : this.hive.rest;
+    if (![TOP, BOTTOM, LEFT, RIGHT].includes(this.formationRotation))
+      this.formationRotation = TOP;
+  }
 
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (8)
+
+  public get desiredPoss() {
+    const ans = [];
     for (let i = 0; i < this.formationBees.length; ++i) {
       const bee = this.formationBees[i];
-      if (bee && !Object.keys(this.bees).includes(bee.ref))
-        this.formationBees[i] = undefined;
-    }
-  }
-
-  protected get checkup() {
-    return true;
-  }
-
-  protected checkMinerals(
-    body: BodyPartConstant[],
-    coef = this.formation.length
-  ) {
-    if (this.boosts === undefined) return true;
-    if (
-      !this.hive.cells.storage ||
-      (this.hive.cells.lab &&
-        !Object.keys(this.hive.cells.lab.laboratories).length &&
-        this.boosts.length)
-    )
-      return false;
-    let ans = true;
-    for (const b of this.boosts) {
-      const res = BOOST_MINERAL[b.type][b.lvl];
-      const amountNeeded =
-        LAB_BOOST_MINERAL *
-        _.sum(body, (bb) => (bb === BOOST_PARTS[b.type] ? 1 : 0)) *
-        coef;
-      if (
-        amountNeeded &&
-        this.hive.cells.storage.getUsedCapacity(res) < amountNeeded
-      ) {
-        addResDict(this.hive.mastersResTarget, res, amountNeeded);
-        ans = false;
-      }
+      if (!bee) continue;
+      const desiredPos = this.getDeisredPos(i);
+      if (desiredPos) ans.push({ pos: desiredPos });
     }
     return ans;
   }
@@ -208,86 +113,46 @@ export abstract class SquadMaster extends SwarmMaster {
     );
   }
 
-  public getDeisredPos(
-    i: number,
-    centerPos: RoomPosition = this.formationCenter
-  ) {
-    const p = this.formation[i][0];
-    let [x, y] = [centerPos.x, centerPos.y];
-    switch (this.formationRotation) {
-      case TOP:
-        x += p.x;
-        y += p.y;
-        break;
-      case BOTTOM:
-        x -= p.x;
-        y -= p.y;
-        break;
-      case LEFT:
-        y -= p.x;
-        x += p.y;
-        break;
-      case RIGHT:
-        y += p.x;
-        x -= p.y;
-        break;
-    }
-    if (x < 0 || y < 0 || x > 49 || y > 49) return null;
-    return new RoomPosition(x, y, centerPos.roomName);
+  public get formationRotation() {
+    return this.order.flag.memory.extraInfo as TOP | BOTTOM | LEFT | RIGHT;
   }
 
-  public validFormation() {
-    for (let i = 0; i < this.formation.length; ++i) {
-      const bee = this.formationBees[i];
-      if (!bee) continue;
-      const beePos = bee.pos;
-      const desiredPos = this.getDeisredPos(i);
-      if (!desiredPos || !beePos.equal(desiredPos)) return ERR_NOT_IN_RANGE;
-    }
-
-    return OK;
+  public set formationRotation(value: TOP | BOTTOM | LEFT | RIGHT) {
+    this.order.flag.memory.extraInfo = value;
   }
 
-  public getSquadMoveMentValue(
-    pos: RoomPosition,
-    centerRef: string,
-    ignoreEnemyCreeps = true
-  ) {
-    let sum = 0;
-    const terrain = Game.map.getRoomTerrain(pos.roomName);
-    for (let i = 0; i < this.formation.length; ++i) {
-      const bee = this.formationBees[i];
-      if (!bee) continue;
-      const desiredPos = this.getDeisredPos(i, pos);
-      if (
-        !desiredPos ||
-        terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_WALL
-      )
-        if (bee.ref === centerRef) return 255;
-        else sum += 30;
-      else if (desiredPos.enteranceToRoom) sum += 20;
-      else if (!desiredPos.isFree(true))
-        if (bee.ref === centerRef) return 255;
-        else sum += 30;
-      else if (
-        !ignoreEnemyCreeps &&
-        desiredPos.lookFor(LOOK_CREEPS).filter((c) => !c.my).length
-      )
-        sum += 20;
-      else if (
-        terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP &&
-        !(
-          desiredPos.roomName in Game.rooms &&
-          desiredPos
-            .lookFor(LOOK_STRUCTURES)
-            .filter((s) => s.structureType === STRUCTURE_ROAD).length
-        )
-      )
-        sum += 5;
-      else sum += 1;
-    }
-    return Math.ceil(sum / this.activeBees.length);
+  public get maxSpawns() {
+    return this.formation.length;
   }
+
+  public set maxSpawns(_) {}
+
+  public get targetBeeCount() {
+    return this.formation.length;
+  }
+
+  public set targetBeeCount(_) {}
+
+  // #endregion Public Accessors (8)
+
+  // #region Protected Accessors (3)
+
+  protected get checkup() {
+    return true;
+  }
+
+  protected get formationCenter() {
+    const pos = this.order.flag.memory.extraPos!;
+    return new RoomPosition(pos.x, pos.y, pos.roomName);
+  }
+
+  protected set formationCenter(value) {
+    this.order.flag.memory.extraPos = value;
+  }
+
+  // #endregion Protected Accessors (3)
+
+  // #region Public Methods (7)
 
   public beeAct(
     bee: Bee,
@@ -429,15 +294,32 @@ export abstract class SquadMaster extends SwarmMaster {
     return OK;
   }
 
-  public get desiredPoss() {
-    const ans = [];
-    for (let i = 0; i < this.formationBees.length; ++i) {
-      const bee = this.formationBees[i];
-      if (!bee) continue;
-      const desiredPos = this.getDeisredPos(i);
-      if (desiredPos) ans.push({ pos: desiredPos });
+  public getDeisredPos(
+    i: number,
+    centerPos: RoomPosition = this.formationCenter
+  ) {
+    const p = this.formation[i][0];
+    let [x, y] = [centerPos.x, centerPos.y];
+    switch (this.formationRotation) {
+      case TOP:
+        x += p.x;
+        y += p.y;
+        break;
+      case BOTTOM:
+        x -= p.x;
+        y -= p.y;
+        break;
+      case LEFT:
+        y -= p.x;
+        x += p.y;
+        break;
+      case RIGHT:
+        y += p.x;
+        x -= p.y;
+        break;
     }
-    return ans;
+    if (x < 0 || y < 0 || x > 49 || y > 49) return null;
+    return new RoomPosition(x, y, centerPos.roomName);
   }
 
   public getPathArgs(centerBeeRef: string): TravelToOptions {
@@ -462,137 +344,45 @@ export abstract class SquadMaster extends SwarmMaster {
     };
   }
 
-  private moveCenter(
-    bee: Bee,
-    enemy: Creep | Structure | PowerCreep | undefined | null
+  public getSquadMoveMentValue(
+    pos: RoomPosition,
+    centerRef: string,
+    ignoreEnemyCreeps = true
   ) {
-    let moveTarget = this.pos;
-    let opt = this.getPathArgs(bee.ref);
-    const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
-    let fatigue = 0;
-
-    if (
-      roomInfo.roomState === roomStates.ownedByEnemy ||
-      roomInfo.dangerlvlmax >= 8
-    ) {
-      _.forEach(this.activeBees, (b) => {
-        fatigue += b.creep.fatigue;
-      });
-      if (fatigue) {
-        bee.stop();
-        return;
-      }
-    }
-
-    let busy = false;
-    const notNearExit =
-      bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47;
-    if (enemy && bee.pos.roomName === this.pos.roomName) {
-      moveTarget =
-        this.stats.current.dism && this.pos.getRangeTo(this.formationCenter) > 3
-          ? moveTarget
-          : enemy.pos;
-      opt.movingTarget = true;
-      if (notNearExit && bee.pos.getRangeTo(enemy) < 10) {
-        const rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
-        if (rotate) {
-          bee.memory._trav.path = undefined;
-          busy = this.rotate(rotate);
-        }
-      }
-    }
-
-    if (!busy) {
-      bee.goTo(moveTarget, opt);
-      if (!bee.targetPosition && bee.pos.getRangeTo(this) === 1)
-        bee.goTo(this.pos);
-
-      if (
-        moveTarget.getRangeTo(bee) <= 3 &&
-        (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
-        this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
-      ) {
-        const poss = bee.pos.getOpenPositions(true);
-        if (poss.length) {
-          const newPos = poss.reduce((prev, curr) => {
-            let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
-            if (ans === 0)
-              ans =
-                this.getSquadMoveMentValue(curr, bee.ref, false) -
-                this.getSquadMoveMentValue(prev, bee.ref, false);
-            return ans < 0 ? curr : prev;
-          });
-          if (!newPos.equal(bee.pos)) bee.goTo(newPos, opt);
-        }
-      }
-
-      if (!roomInfo.safePlace && this.stats.current.heal) {
-        if (this.canBeOutDmged(bee.pos)) {
-          opt = bee.getFleeOpt(opt);
-          const exit = bee.pos.findClosest(
-            Game.rooms[bee.pos.roomName].find(FIND_EXIT)
-          );
-          bee.goTo(exit || this.pos, opt);
-        } else if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition))
-          bee.stop();
-        else if (
-          roomInfo.roomState === roomStates.ownedByEnemy &&
-          notNearExit
-        ) {
-          const formationBreak =
-            bee.targetPosition &&
-            this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
-          if (formationBreak) bee.stop();
-        }
-      }
-
-      this.formationCenter =
-        bee.targetPosition && bee.targetPosition.isFree(true)
-          ? bee.targetPosition
-          : bee.pos;
-    } else bee.goTo(this.formationCenter);
-  }
-
-  private canValidate() {
-    const terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
-    const poss = this.desiredPoss;
-    for (const desired of poss) {
-      if (
-        !desired.pos.isFree(true) ||
-        desired.pos.enteranceToRoom ||
-        terrain.get(desired.pos.x, desired.pos.y) === TERRAIN_MASK_SWAMP
-      )
-        return ERR_NO_PATH;
-    }
-    return OK;
-  }
-
-  private canBeOutDmged(pos: RoomPosition) {
+    let sum = 0;
+    const terrain = Game.map.getRoomTerrain(pos.roomName);
     for (let i = 0; i < this.formation.length; ++i) {
       const bee = this.formationBees[i];
       if (!bee) continue;
       const desiredPos = this.getDeisredPos(i, pos);
-      if (!desiredPos) continue;
-      const roomInfo = Apiary.intel.getInfo(pos.roomName);
-      let stats;
       if (
-        roomInfo.roomState === roomStates.SKfrontier ||
-        roomInfo.roomState === roomStates.SKcentral
+        !desiredPos ||
+        terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_WALL
       )
-        stats = Apiary.intel.getComplexStats(desiredPos).current;
-      else stats = Apiary.intel.getComplexStats(desiredPos).current; // , 3, 1
-      const creepDmg = stats.dmgClose + stats.dmgRange;
-      const towerDmg = Apiary.intel.getTowerAttack(desiredPos);
-      const beeStats = Apiary.intel.getStats(bee.creep);
-      const myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
-      const heal = Math.max(myStats.heal * 0.75, this.stats.current.heal); // 0.75 cause won't heal somtimes in a brawl
-      if (
-        towerDmg * 0.5 + creepDmg >
-        heal + Math.min(beeStats.current.resist, (heal * 0.7) / 0.3)
+        if (bee.ref === centerRef) return 255;
+        else sum += 30;
+      else if (desiredPos.enteranceToRoom) sum += 20;
+      else if (!desiredPos.isFree(true))
+        if (bee.ref === centerRef) return 255;
+        else sum += 30;
+      else if (
+        !ignoreEnemyCreeps &&
+        desiredPos.lookFor(LOOK_CREEPS).filter((c) => !c.my).length
       )
-        return true;
+        sum += 20;
+      else if (
+        terrain.get(desiredPos.x, desiredPos.y) === TERRAIN_MASK_SWAMP &&
+        !(
+          desiredPos.roomName in Game.rooms &&
+          desiredPos
+            .lookFor(LOOK_STRUCTURES)
+            .filter((s) => s.structureType === STRUCTURE_ROAD).length
+        )
+      )
+        sum += 5;
+      else sum += 1;
     }
-    return false;
+    return Math.ceil(sum / this.activeBees.length);
   }
 
   public run() {
@@ -697,6 +487,151 @@ export abstract class SquadMaster extends SwarmMaster {
           style
         );
       }
+  }
+
+  public update() {
+    super.update();
+
+    this.stats = {
+      max: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+        resist: 0,
+        move: 0,
+      },
+      current: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+        resist: 0,
+        move: 0,
+      },
+    };
+
+    _.forEach(this.activeBees, (b) => {
+      if (b.ticksToLive < 5) return;
+      const stats = Apiary.intel.getStats(b.creep);
+      for (const i in stats.max) {
+        this.stats.max[i as keyof CreepBattleInfo] +=
+          stats.max[i as keyof CreepBattleInfo];
+        this.stats.current[i as keyof CreepBattleInfo] +=
+          stats.current[i as keyof CreepBattleInfo];
+      }
+    });
+    if (this.checkBees(this.emergency) && this.checkup) {
+      for (let i = 0; i < this.formation.length; ++i) {
+        if (!this.formationBees[i])
+          this.wish({
+            setup: this.formation[i][1],
+            priority: this.priority,
+          });
+      }
+    } else if (_.some(this.bees, (b) => b.state === beeStates.boosting)) {
+      this.checkup;
+    }
+
+    for (let i = 0; i < this.formationBees.length; ++i) {
+      const bee = this.formationBees[i];
+      if (bee && !Object.keys(this.bees).includes(bee.ref))
+        this.formationBees[i] = undefined;
+    }
+  }
+
+  public validFormation() {
+    for (let i = 0; i < this.formation.length; ++i) {
+      const bee = this.formationBees[i];
+      if (!bee) continue;
+      const beePos = bee.pos;
+      const desiredPos = this.getDeisredPos(i);
+      if (!desiredPos || !beePos.equal(desiredPos)) return ERR_NOT_IN_RANGE;
+    }
+
+    return OK;
+  }
+
+  // #endregion Public Methods (7)
+
+  // #region Protected Methods (1)
+
+  protected checkMinerals(
+    body: BodyPartConstant[],
+    coef = this.formation.length
+  ) {
+    if (this.boosts === undefined) return true;
+    if (
+      !this.hive.cells.storage ||
+      (this.hive.cells.lab &&
+        !Object.keys(this.hive.cells.lab.laboratories).length &&
+        this.boosts.length)
+    )
+      return false;
+    let ans = true;
+    for (const b of this.boosts) {
+      const res = BOOST_MINERAL[b.type][b.lvl];
+      const amountNeeded =
+        LAB_BOOST_MINERAL *
+        _.sum(body, (bb) => (bb === BOOST_PARTS[b.type] ? 1 : 0)) *
+        coef;
+      if (
+        amountNeeded &&
+        this.hive.cells.storage.getUsedCapacity(res) < amountNeeded
+      ) {
+        addResDict(this.hive.mastersResTarget, res, amountNeeded);
+        ans = false;
+      }
+    }
+    return ans;
+  }
+
+  // #endregion Protected Methods (1)
+
+  // #region Private Methods (5)
+
+  private canBeOutDmged(pos: RoomPosition) {
+    for (let i = 0; i < this.formation.length; ++i) {
+      const bee = this.formationBees[i];
+      if (!bee) continue;
+      const desiredPos = this.getDeisredPos(i, pos);
+      if (!desiredPos) continue;
+      const roomInfo = Apiary.intel.getInfo(pos.roomName);
+      let stats;
+      if (
+        roomInfo.roomState === roomStates.SKfrontier ||
+        roomInfo.roomState === roomStates.SKcentral
+      )
+        stats = Apiary.intel.getComplexStats(desiredPos).current;
+      else stats = Apiary.intel.getComplexStats(desiredPos).current; // , 3, 1
+      const creepDmg = stats.dmgClose + stats.dmgRange;
+      const towerDmg = Apiary.intel.getTowerAttack(desiredPos);
+      const beeStats = Apiary.intel.getStats(bee.creep);
+      const myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
+      const heal = Math.max(myStats.heal * 0.75, this.stats.current.heal); // 0.75 cause won't heal somtimes in a brawl
+      if (
+        towerDmg * 0.5 + creepDmg >
+        heal + Math.min(beeStats.current.resist, (heal * 0.7) / 0.3)
+      )
+        return true;
+    }
+    return false;
+  }
+
+  private canValidate() {
+    const terrain = Game.map.getRoomTerrain(this.formationCenter.roomName);
+    const poss = this.desiredPoss;
+    for (const desired of poss) {
+      if (
+        !desired.pos.isFree(true) ||
+        desired.pos.enteranceToRoom ||
+        terrain.get(desired.pos.x, desired.pos.y) === TERRAIN_MASK_SWAMP
+      )
+        return ERR_NO_PATH;
+    }
+    return OK;
   }
 
   private checkRotation(direction: DirectionConstant) {
@@ -804,6 +739,97 @@ export abstract class SquadMaster extends SwarmMaster {
     return ans;
   }
 
+  private moveCenter(
+    bee: Bee,
+    enemy: Creep | Structure | PowerCreep | undefined | null
+  ) {
+    let moveTarget = this.pos;
+    let opt = this.getPathArgs(bee.ref);
+    const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
+    let fatigue = 0;
+
+    if (
+      roomInfo.roomState === roomStates.ownedByEnemy ||
+      roomInfo.dangerlvlmax >= 8
+    ) {
+      _.forEach(this.activeBees, (b) => {
+        fatigue += b.creep.fatigue;
+      });
+      if (fatigue) {
+        bee.stop();
+        return;
+      }
+    }
+
+    let busy = false;
+    const notNearExit =
+      bee.pos.x > 2 && bee.pos.x < 47 && bee.pos.y > 2 && bee.pos.y < 47;
+    if (enemy && bee.pos.roomName === this.pos.roomName) {
+      moveTarget =
+        this.stats.current.dism && this.pos.getRangeTo(this.formationCenter) > 3
+          ? moveTarget
+          : enemy.pos;
+      opt.movingTarget = true;
+      if (notNearExit && bee.pos.getRangeTo(enemy) < 10) {
+        const rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
+        if (rotate) {
+          bee.memory._trav.path = undefined;
+          busy = this.rotate(rotate);
+        }
+      }
+    }
+
+    if (!busy) {
+      bee.goTo(moveTarget, opt);
+      if (!bee.targetPosition && bee.pos.getRangeTo(this) === 1)
+        bee.goTo(this.pos);
+
+      if (
+        moveTarget.getRangeTo(bee) <= 3 &&
+        (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
+        this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
+      ) {
+        const poss = bee.pos.getOpenPositions(true);
+        if (poss.length) {
+          const newPos = poss.reduce((prev, curr) => {
+            let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
+            if (ans === 0)
+              ans =
+                this.getSquadMoveMentValue(curr, bee.ref, false) -
+                this.getSquadMoveMentValue(prev, bee.ref, false);
+            return ans < 0 ? curr : prev;
+          });
+          if (!newPos.equal(bee.pos)) bee.goTo(newPos, opt);
+        }
+      }
+
+      if (!roomInfo.safePlace && this.stats.current.heal) {
+        if (this.canBeOutDmged(bee.pos)) {
+          opt = bee.getFleeOpt(opt);
+          const exit = bee.pos.findClosest(
+            Game.rooms[bee.pos.roomName].find(FIND_EXIT)
+          );
+          bee.goTo(exit || this.pos, opt);
+        } else if (bee.targetPosition && this.canBeOutDmged(bee.targetPosition))
+          bee.stop();
+        else if (
+          roomInfo.roomState === roomStates.ownedByEnemy &&
+          notNearExit
+        ) {
+          const formationBreak =
+            bee.targetPosition &&
+            this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
+          if (formationBreak) bee.stop();
+        }
+      }
+
+      this.formationCenter =
+        bee.targetPosition && bee.targetPosition.isFree(true)
+          ? bee.targetPosition
+          : bee.pos;
+    } else bee.goTo(this.formationCenter);
+  }
+
   private rotate(direction: -1 | 1) {
     switch (this.formationRotation) {
       case TOP:
@@ -874,4 +900,6 @@ export abstract class SquadMaster extends SwarmMaster {
     }
     return false;
   }
+
+  // #endregion Private Methods (5)
 }

@@ -6,12 +6,22 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class DowngradeMaster extends SwarmMaster {
+  // #region Properties (1)
+
   public lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
 
   public constructor(order: FlagOrder) {
     super(order);
     this.maxSpawns = 100;
   }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
 
   public get oldestSpawn() {
     return this.order.memory.extraInfo as number;
@@ -19,6 +29,40 @@ export class DowngradeMaster extends SwarmMaster {
 
   public set oldestSpawn(value) {
     if (this.order) this.order.memory.extraInfo = value;
+  }
+
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (2)
+
+  public run() {
+    _.forEach(this.activeBees, (bee) => {
+      if (
+        this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE >
+          Game.time + bee.ticksToLive &&
+        bee.pos.roomName === this.pos.roomName
+      ) {
+        const room = Game.rooms[bee.pos.roomName];
+        const cc = bee.pos.findClosest(
+          room.find(FIND_HOSTILE_CONSTRUCTION_SITES).filter((c) => c.progress)
+        );
+        if (cc) bee.goTo(cc);
+      } else if (!bee.pos.isNearTo(this.pos)) bee.goTo(this.pos);
+      else if (
+        Game.time >=
+        this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE
+      ) {
+        const room = Game.rooms[this.pos.roomName];
+        if (room && room.controller) {
+          const ans = bee.attackController(room.controller);
+          if (ans === OK) {
+            bee.creep.signController(room.controller, signText.other);
+            bee.creep.say("💥");
+          }
+        }
+      }
+      this.checkFlee(bee, { pos: this.pos }, undefined, false);
+    });
   }
 
   public update() {
@@ -56,33 +100,5 @@ export class DowngradeMaster extends SwarmMaster {
       });
   }
 
-  public run() {
-    _.forEach(this.activeBees, (bee) => {
-      if (
-        this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE >
-          Game.time + bee.ticksToLive &&
-        bee.pos.roomName === this.pos.roomName
-      ) {
-        const room = Game.rooms[bee.pos.roomName];
-        const cc = bee.pos.findClosest(
-          room.find(FIND_HOSTILE_CONSTRUCTION_SITES).filter((c) => c.progress)
-        );
-        if (cc) bee.goTo(cc);
-      } else if (!bee.pos.isNearTo(this.pos)) bee.goTo(this.pos);
-      else if (
-        Game.time >=
-        this.lastAttacked + CONTROLLER_ATTACK_BLOCKED_UPGRADE
-      ) {
-        const room = Game.rooms[this.pos.roomName];
-        if (room && room.controller) {
-          const ans = bee.attackController(room.controller);
-          if (ans === OK) {
-            bee.creep.signController(room.controller, signText.other);
-            bee.creep.say("💥");
-          }
-        }
-      }
-      this.checkFlee(bee, { pos: this.pos }, undefined, false);
-    });
-  }
+  // #endregion Public Methods (2)
 }

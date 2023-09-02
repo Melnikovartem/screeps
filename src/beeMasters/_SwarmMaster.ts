@@ -1,73 +1,70 @@
 // new fancy war ai master
 // so i can check instanceof SwarmMaster aka my army
+import { SwarmOrder } from "orders/swarmOrder";
 
 import type { Bee } from "../bees/bee";
-import type { FlagOrder } from "../orders/order";
 import { profile } from "../profiler/decorator";
-import { prefix } from "../static/enums";
 import { Master } from "./_Master";
 
+// Master for just a job
+// can itself spawn masters if needed?
 @profile
-export abstract class SwarmMaster extends Master {
-  // @todo replace with SwarmOrder that just holds a pos in cache
-  // flags are costly and can't be placed in uloaded rooms :/
-  public readonly order: FlagOrder;
-  private _maxSpawns: number = 1;
-
-  public constructor(order: FlagOrder) {
-    super(order.hive, prefix.swarm + order.ref);
-    this.order = order;
-
-    if (this.order.flag.memory.info) this.spawned = this.order.flag.memory.info;
-  }
-
-  public get maxSpawns() {
-    return this._maxSpawns;
-  }
-
-  public set maxSpawns(value) {
-    this._maxSpawns = value;
-  }
+export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
+  // #region Properties (2)
 
   public checkBees = (spawnExtreme?: boolean, spawnCycle?: number) => {
-    return this.checkBeesSwarm() && super.checkBees(spawnExtreme, spawnCycle);
-  };
-
-  public checkBeesSwarm() {
     if (
-      this.spawned >= this.maxSpawns &&
+      this.parent.spawned >= this.maxSpawns &&
       !this.waitingForBees &&
       !this.beesAmount
-    )
-      this.order.delete();
-    return this.spawned < this.maxSpawns;
-  }
-
+    ) {
+      // master lived its all
+      this.parent.delete();
+      return false;
+    }
+    // we spawned max amount
+    if (this.parent.spawned >= this.maxSpawns) return false;
+    return super.checkBees(spawnExtreme, spawnCycle);
+  };
   public newBee = (bee: Bee) => {
     super.newBee(bee);
-    if (bee.creep.memory.born + 1 === Game.time) ++this.spawned;
-    this.order.flag.memory.info = this.spawned;
+    if (bee.creep.memory.born + 1 === Game.time) this.parent.newSpawn();
   };
 
-  public set spawned(value) {
-    this.order.flag.memory.info = value;
+  // #endregion Properties (2)
+
+  // #region Constructors (1)
+
+  // @todo replace with SwarmOrder that just holds a pos in cache
+  // flags are costly and can't be placed in uloaded rooms :/
+  public constructor(order: SwarmOrder<T>) {
+    super(order);
+    if (!this.info) this.parent.special = this.defaultInfo();
   }
 
-  public get spawned() {
-    if (this.order.flag.memory.info === undefined)
-      this.order.flag.memory.info = 0;
-    return this.order.flag.memory.info;
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get info() {
+    return this.parent.special;
   }
 
-  public get pos() {
-    return this.order.pos;
+  public set info(value) {
+    this.parent.special = value;
   }
 
-  public get print() {
-    /* let firstBee = this.bees[Object.keys(this.bees)[0]];
-    let roomName = this.pos.roomName;
-    if (firstBee && firstBee.pos)
-      roomName = firstBee.pos.roomName; */
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
-  }
+  // #endregion Public Accessors (2)
+
+  // #region Public Abstract Accessors (1)
+
+  public abstract get maxSpawns(): number;
+
+  // #endregion Public Abstract Accessors (1)
+
+  // #region Protected Abstract Methods (1)
+
+  protected abstract defaultInfo(): T;
+
+  // #endregion Protected Abstract Methods (1)
 }

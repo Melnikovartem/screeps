@@ -15,115 +15,122 @@ import {
 import { checkFlee, preRunBoost, secureBoostsHive } from "./_Master-utils";
 
 export type Boosts = BoostRequest[];
+export interface MasterParent {
+  // #region Properties (3)
 
-// i will need to do something so i can build up structure from memory
+  hive: Hive;
+  pos: RoomPosition;
+  ref: string;
+
+  // #endregion Properties (3)
+}
+
+// Master to keep working on some job
+// Init each reset from underlying object (if from cell / hive) / memory (if it is a swarm)
 @profile
-export abstract class Master {
-  public readonly hive: Hive;
+export abstract class Master<T extends MasterParent> {
+  // #region Properties (20)
+
+  /** this.wish should be used only after checkBees is called. So we check if it happened */
+  protected checkBeforeWish = false;
+  protected oldestSpawn: number = -Infinity;
+
   public readonly ref: string;
 
-  private _targetBeeCount: number = 1;
-  public waitingForBees: number = 0;
-  public notify = true;
-
-  private _oldestSpawn: number = -1;
-  public beesAmount: number = 0;
-  public bees: { [id: string]: Bee } = {};
-  public stcukEnterance: { [id: string]: number | undefined } = {};
   public activeBees: Bee[] = [];
-  private _boosts: undefined | Boosts;
-  public boostTier: 0 | 1 | 2 | 3 = 0;
-  public movePriority: 0 | 1 | 2 | 3 | 4 | 5 = 5;
+  public bees: { [id: string]: Bee } = {};
+  public beesAmount: number = 0;
+  /** checks if some of bees need replacement */
+  public checkBees = checkBees;
+  public checkFlee = checkFlee;
+  /** deletes bee from memory of master */
+  public deleteBee = deleteBee;
+  /** movePriority of bees that are part of this master */
+  public abstract movePriority: 0 | 1 | 2 | 3 | 4 | 5;
+  /** catch a bee after it has requested a master */
+  public newBee = newBee;
+  public notify = false;
+  public parent: T;
+  /** sends to boos any bees with beeState, then frees them with chill status */
+  public preRunBoost = preRunBoost;
+  /** recycles bees when they are not needed (unboost + energy recycle)
+   *
+   * recomended use to only recycle boosted bees
+   */
+  public recycleBee = recycleBee;
+  /** extension of just delete where bee is not dead yet */
+  public removeBee = removeBee;
+  /** sets mastersResTarget for hive so that we can afford bees for sure */
+  public secureBoostsHive = secureBoostsHive;
+  public stcukEnterance: { [id: string]: number | undefined } = {};
+  public waitingForBees: number = 0;
+  /** requests a bee from the hive */
+  public wish = wish;
 
-  public constructor(hive: Hive, ref: string) {
-    this.hive = hive;
-    this.ref = prefix.master + ref;
+  // #endregion Properties (20)
 
+  // #region Constructors (1)
+
+  public constructor(parent: T, ref?: string) {
+    // unpack parent object
+    this.parent = parent;
+
+    if (ref) this.ref = ref;
+    else this.ref = prefix.master + this.parent.ref;
+
+    // save in global dict for iteration
     Apiary.masters[this.ref] = this;
   }
 
-  public get targetBeeCount() {
-    return this._targetBeeCount;
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (7)
+
+  public get boosts(): BoostRequest[] {
+    return [];
   }
 
-  public set targetBeeCount(value) {
-    this._targetBeeCount = value;
-  }
-
-  public get oldestSpawn() {
-    return this._oldestSpawn;
-  }
-
-  public set oldestSpawn(value) {
-    this._oldestSpawn = value;
-  }
-
-  public get boosts() {
-    return this._boosts;
-  }
-
-  public set boosts(value) {
-    this._boosts = value;
+  public get hive() {
+    return this.parent.hive;
   }
 
   public get hiveName() {
     return this.hive.roomName;
   }
 
-  public _doUnboosting = false;
-  public get doUnboosting() {
-    return !!this.hive.mode.unboost && this._doUnboosting;
-  }
-  public set doUnboosting(value) {
-    this._doUnboosting = value;
+  public get pos() {
+    return this.parent.pos;
   }
 
-  // some idiot (me) overloads these 3 functions down the road so we make them methods
-  /** catch a bee after it has requested a master */
-  public newBee(bee: Bee) {
-    newBee(this, bee);
-  }
-  /** deletes bee from memory of master */
-  public deleteBee(beeRef: string) {
-    deleteBee(this, beeRef);
+  // nice way to print info about this master
+  public get print(): string {
+    /* const firstBee = this.bees[Object.keys(this.bees)[0]];
+    let roomName = this.hiveName;
+    if (firstBee && firstBee.pos) roomName = firstBee.pos.roomName; */
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 
-  /** this.wish should be used only after checkBees is called. So we check if it happened */
-  protected checkBeforeWish = false;
-  /** checks if some of bees need replacement */
-  public checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
-    this.checkBeforeWish = true;
-    return checkBees(this, spawnExtreme, spawnCycle);
+  // nice way to print bees of this master
+  public get printBees(): string {
+    let ans = this.print + ":\n";
+    _.forEach(this.bees, (bee) => (ans += "\n" + bee.print));
+    return ans;
   }
 
-  /** extension of just delete where bee is not dead yet */
-  public removeBee = removeBee;
-  /** requests a bee from the hive */
-  public wish = wish;
-
-  // first stage of decision making like do i need to spawn new creeps
-  public update(this: Master) {
-    this.checkBeforeWish = false;
-    for (const ref in this.bees)
-      if (!Apiary.bees[this.bees[ref].ref]) this.deleteBee(ref);
-    this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning);
+  public get roomName() {
+    return this.pos.roomName;
   }
 
-  /** sends to boos any bees with beeState, then frees them with chill status */
-  public preRunBoost = preRunBoost;
-  /** sets mastersResTarget for hive so that we can afford bees for sure */
-  public secureBoostsHive = secureBoostsHive;
+  // #endregion Public Accessors (7)
 
-  /** recycles bees when they are not needed (unboost + energy recycle)
-   *
-   * recomended use to only recycle boosted bees
-   */
-  public recycleBee = recycleBee;
+  // #region Public Abstract Accessors (1)
 
-  // second stage of decision making like where do i need to move
-  public abstract run(): void;
+  /** O(1) to get how many bees this master wants to have at each tick */
+  public abstract get targetBeeCount(): number;
 
-  public checkFlee = checkFlee;
+  // #endregion Public Abstract Accessors (1)
+
+  // #region Public Methods (3)
 
   public delete() {
     for (const key in this.bees) {
@@ -133,14 +140,33 @@ export abstract class Master {
     }
 
     this.removeWishes();
-
     delete Apiary.masters[this.ref];
   }
 
+  // remove all wishes for spawns that this master made
   public removeWishes() {
     this.removeFromQue(this.hive);
     if (this.hive.bassboost) this.removeFromQue(this.hive.bassboost);
   }
+
+  // first stage of decision making like do i need to spawn new creeps
+  public update() {
+    this.checkBeforeWish = false;
+    for (const ref in this.bees)
+      if (!Apiary.bees[this.bees[ref].ref]) this.deleteBee(ref);
+    this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning);
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Public Abstract Methods (1)
+
+  // second stage of decision making like where do i need to move
+  public abstract run(): void;
+
+  // #endregion Public Abstract Methods (1)
+
+  // #region Private Methods (1)
 
   private removeFromQue(hive: Hive) {
     const spawnQue = hive.cells.spawn.spawnQue;
@@ -151,16 +177,5 @@ export abstract class Master {
       }
   }
 
-  public get print(): string {
-    const firstBee = this.bees[Object.keys(this.bees)[0]];
-    let roomName = this.hiveName;
-    if (firstBee && firstBee.pos) roomName = firstBee.pos.roomName;
-    return `<a href=#!/room/${Game.shard.name}/${roomName}>["${this.ref}"]</a>`;
-  }
-
-  public get printBees(): string {
-    let ans = this.print + ":\n";
-    _.forEach(this.bees, (bee) => (ans += "\n" + bee.print));
-    return ans;
-  }
+  // #endregion Private Methods (1)
 }

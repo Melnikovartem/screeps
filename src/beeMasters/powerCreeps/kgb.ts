@@ -7,6 +7,8 @@ import { PowerMaster } from "../_PowerMaster";
 
 @profile
 export class KGBMaster extends PowerMaster {
+  // #region Public Methods (1)
+
   public run() {
     if (this.hive.cells.defense.timeToLand < 50)
       this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
@@ -17,6 +19,10 @@ export class KGBMaster extends PowerMaster {
     else this.chillMove();
     super.run();
   }
+
+  // #endregion Public Methods (1)
+
+  // #region Private Methods (1)
 
   private chillMove() {
     // keep 150ops to 80% fill of storage
@@ -43,4 +49,6 @@ export class KGBMaster extends PowerMaster {
       );
     } else this.powerCreep.goRest(this.cell.pos, this.hive.opt);
   }
+
+  // #endregion Private Methods (1)
 }

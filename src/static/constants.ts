@@ -5,6 +5,10 @@ export const SETTINGS_DEFAULT: Memory["settings"] = {
   generatePixel: Game.cpu.limit > 20,
   miningDist: 8,
   reportCPU: true,
+  richMovement: true,
+  loggingCycle: 100,
+  lifetimeApiary: 40000,
+  safeWrap: true,
 };
 
 export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {

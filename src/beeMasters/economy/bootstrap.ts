@@ -19,8 +19,13 @@ type workTypes =
 type extraTarget = Tombstone | Ruin | Resource | StructureStorage;
 
 @profile
-export class BootstrapMaster extends Master {
-  private cell: DevelopmentCell;
+export class BootstrapMaster extends Master<DevelopmentCell> {
+  // #region Properties (6)
+
+  private _targetBeeCount = 0;
+  private containerTargeting: {
+    [id: string]: { current: number; max: number };
+  } = {};
   private count: { [key in workTypes]: number } = {
     upgrade: 0,
     repair: 0,
@@ -30,20 +35,25 @@ export class BootstrapMaster extends Master {
     mining: 0,
     picking: 0,
   };
-  private patternCount = 0;
-  private containerTargeting: {
-    [id: string]: { current: number; max: number };
-  } = {};
   private minRoadTime = 0;
+  private patternCount = 0;
 
-  public constructor(developmentCell: DevelopmentCell) {
-    super(developmentCell.hive, developmentCell.ref);
+  public movePriority = 5 as const;
 
-    this.cell = developmentCell;
+  // #endregion Properties (6)
+
+  // #region Public Accessors (1)
+
+  public get targetBeeCount() {
+    return this._targetBeeCount;
   }
 
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (3)
+
   public recalculateTargetBee() {
-    this.targetBeeCount = 0;
+    this._targetBeeCount = 0;
     this.minRoadTime = 50;
     this.patternCount = Math.floor(
       this.hive.room.energyCapacityAvailable / 200
@@ -66,7 +76,7 @@ export class BootstrapMaster extends Master {
         (this.hive.sumCost ? 10 : this.hive.phase > 0 ? 0 : 50);
       // energy produce per tick / energy a bee takes
       let energyPerTick = 10;
-      const roomInfo = Apiary.intel.getInfo(this.cell.pos.roomName, 20);
+      const roomInfo = Apiary.intel.getInfo(this.parent.pos.roomName, 20);
       if (!roomInfo.currentOwner) energyPerTick = 5;
       else if (roomInfo.currentOwner !== Apiary.username) energyPerTick = 0;
       const openPos = (cell.resource || cell).pos.getOpenPositions(true).length;
@@ -77,7 +87,7 @@ export class BootstrapMaster extends Master {
           setups.miner.energy.patternLimit
         );
         if (miningPower < 0) return;
-        this.targetBeeCount +=
+        this._targetBeeCount +=
           Math.min(energyPerTick, miningPower * 2) /
           ((this.patternCount * CARRY_CAPACITY) / cycleWithoutEnergy);
         energyPerTick = Math.max(energyPerTick - miningPower * 2, 0);
@@ -90,64 +100,16 @@ export class BootstrapMaster extends Master {
       // amount of positions * bees can 1 position support
       const maxcycleByPos =
         openPos * (1 + cycleWithoutEnergy / (25 + cycleWithoutEnergy));
-      this.targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
+      this._targetBeeCount += Math.min(maxCycleByEnergy, maxcycleByPos);
     });
 
-    this.targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
+    this._targetBeeCount = Math.max(1, Math.ceil(this.targetBeeCount));
     if (this.hive.phase > 0 || this.hive.mode.saveCpu)
-      this.targetBeeCount = Math.min(this.targetBeeCount, 2);
+      this._targetBeeCount = Math.min(this.targetBeeCount, 2);
     if (this.minRoadTime === Infinity) this.minRoadTime = 0;
-    if (this.cell.shouldRecalc) {
-      this.cell.addResources();
-      this.cell.shouldRecalc = false;
-    }
-  }
-
-  private checkBeesWithRecalc() {
-    if (
-      this.count.chilling ||
-      (this.hive.phase > 0 && this.hive.state === hiveStates.economy)
-    )
-      return false;
-    const check = () =>
-      this.checkBees(
-        !this.hive.cells.defense.isBreached,
-        CREEP_LIFE_TIME - this.minRoadTime - 10
-      );
-    if (this.targetBeeCount && !check()) return false;
-    this.recalculateTargetBee();
-    return check();
-  }
-
-  public update() {
-    super.update();
-
-    if (this.cell.shouldRecalc) this.recalculateTargetBee();
-
-    this.beesAmount = Object.keys(this.bees).length;
-    const usefulBees = _.filter(
-      this.bees,
-      (b) => b.getActiveBodyParts(CARRY) >= this.patternCount
-    ).length;
-    this.beesAmount =
-      usefulBees +
-      Math.ceil(
-        (((this.beesAmount - usefulBees) *
-          Math.max(0.5, this.patternCount - 1)) /
-          this.patternCount) *
-          0.9
-      );
-
-    if (this.checkBeesWithRecalc()) {
-      this.wish({
-        setup: setups.bootstrap,
-        priority:
-          this.beesAmount < Math.min(3, this.targetBeeCount * 0.35)
-            ? 0
-            : this.beesAmount > Math.max(8, this.targetBeeCount * 0.35)
-            ? 8
-            : 5,
-      });
+    if (this.parent.shouldRecalc) {
+      this.parent.addResources();
+      this.parent.shouldRecalc = false;
     }
   }
 
@@ -184,8 +146,8 @@ export class BootstrapMaster extends Master {
       [id: string]: { current: number; max: number };
     } = {};
 
-    for (let i = 0; i < this.cell.handAddedResources.length; ++i) {
-      const pos = this.cell.handAddedResources[i];
+    for (let i = 0; i < this.parent.handAddedResources.length; ++i) {
+      const pos = this.parent.handAddedResources[i];
       if (!(pos.roomName in Game.rooms)) continue;
       let amount = 0;
       let target: extraTarget | undefined = pos
@@ -205,7 +167,7 @@ export class BootstrapMaster extends Master {
           .lookFor(LOOK_STRUCTURES)
           .filter((s) => (s as StructureStorage).store) as StructureStorage[];
         if (!structures.length) {
-          this.cell.handAddedResources.splice(i, 1);
+          this.parent.handAddedResources.splice(i, 1);
           --i;
         } else
           target = structures.filter(
@@ -479,13 +441,13 @@ export class BootstrapMaster extends Master {
 
           if (
             !target &&
-            !this.cell.controller.upgradeBlocked &&
-            this.cell.controller.ticksToDowngrade <=
-              CONTROLLER_DOWNGRADE[this.cell.controller.level] / 2 &&
+            !this.parent.controller.upgradeBlocked &&
+            this.parent.controller.ticksToDowngrade <=
+              CONTROLLER_DOWNGRADE[this.parent.controller.level] / 2 &&
             this.count.upgrade === 0 &&
-            !this.cell.controller.upgradeBlocked
+            !this.parent.controller.upgradeBlocked
           ) {
-            target = this.cell.controller;
+            target = this.parent.controller;
             workType = "upgrade";
           }
 
@@ -552,7 +514,7 @@ export class BootstrapMaster extends Master {
           }
 
           if (!target) {
-            target = this.cell.controller;
+            target = this.parent.controller;
             workType = "upgrade";
           }
           if (workType === "repair") {
@@ -605,4 +567,58 @@ export class BootstrapMaster extends Master {
     this.count = countCurrent;
     this.containerTargeting = containerTargetingCur;
   }
+
+  public update() {
+    super.update();
+
+    if (this.parent.shouldRecalc) this.recalculateTargetBee();
+
+    this.beesAmount = Object.keys(this.bees).length;
+    const usefulBees = _.filter(
+      this.bees,
+      (b) => b.getActiveBodyParts(CARRY) >= this.patternCount
+    ).length;
+    this.beesAmount =
+      usefulBees +
+      Math.ceil(
+        (((this.beesAmount - usefulBees) *
+          Math.max(0.5, this.patternCount - 1)) /
+          this.patternCount) *
+          0.9
+      );
+
+    if (this.checkBeesWithRecalc()) {
+      this.wish({
+        setup: setups.bootstrap,
+        priority:
+          this.beesAmount < Math.min(3, this.targetBeeCount * 0.35)
+            ? 0
+            : this.beesAmount > Math.max(8, this.targetBeeCount * 0.35)
+            ? 8
+            : 5,
+      });
+    }
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Private Methods (1)
+
+  private checkBeesWithRecalc() {
+    if (
+      this.count.chilling ||
+      (this.hive.phase > 0 && this.hive.state === hiveStates.economy)
+    )
+      return false;
+    const check = () =>
+      this.checkBees(
+        !this.hive.cells.defense.isBreached,
+        CREEP_LIFE_TIME - this.minRoadTime - 10
+      );
+    if (this.targetBeeCount && !check()) return false;
+    this.recalculateTargetBee();
+    return check();
+  }
+
+  // #endregion Private Methods (1)
 }

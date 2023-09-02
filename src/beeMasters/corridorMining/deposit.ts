@@ -1,84 +1,77 @@
 import { setups } from "bees/creepSetups";
 import type { FlagOrder } from "orders/order";
+import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 
 import { SwarmMaster } from "../_SwarmMaster";
 import { DepositMinerMaster } from "./miners";
 import { DepositPickupMaster } from "./pickup";
-import type { PullerMaster } from "./puller";
 
-// first tandem btw
+interface DepositInfo {
+  roadTime: number;
+  decay: number;
+  lastCooldown: number;
+}
+
+// this is just disfucntional master with no bees to spawn. So sad
+// holds 2 different masters
 @profile
-export class DepositMaster extends SwarmMaster {
-  public target: Deposit | undefined;
-
-  public miners: DepositMinerMaster;
-  // puller: DepositPullerMaster;
-  public pickup: DepositPickupMaster;
-  public positions: { pos: RoomPosition }[];
-  public operational: boolean = false;
-  public rate: number = 0;
-  public rest: RoomPosition;
-  public workAmount: number;
-
-  public parent: PullerMaster;
-
-  public constructor(order: FlagOrder, parent: PullerMaster) {
+export class DepositMaster extends SwarmMaster<DepositInfo> {
+  // constructor
+  public constructor(order: SwarmOrder<DepositInfo>) {
     super(order);
-    this.parent = parent;
-    this.maxSpawns = Infinity;
-    this.positions = this.pos.getOpenPositions(true).map((p) => {
-      return { pos: p };
-    });
+    // just calc this once
+    this.positions = this.pos.getOpenPositions(true);
+    // sub masters for mining and hauling
     this.miners = new DepositMinerMaster(this);
-    // this.puller = new DepositPullerMaster(this);
     this.pickup = new DepositPickupMaster(this);
-    this.rest = new RoomPosition(25, 25, this.pos.roomName).findClosest(
-      this.pos.getOpenPositions(true, 2).filter((p) => p.getRangeTo(this) > 1)
-    )!;
+
     this.workAmount = setups.miner.deposit
       .getBody(this.hive.room.energyCapacityAvailable)
       .body.filter((b) => b === WORK).length;
     if (this.hive.puller) this.hive.puller.depositSites.push(this);
-    if (!this.order.memory.extraInfo)
-      this.order.memory.extraInfo = {
-        roadTime: this.pos.getTimeForPath(this.hive),
-        decay: Game.time,
-        lastCooldown: 1,
-      };
     if (this.pos.roomName in Game.rooms) this.updateTarget();
   }
 
-  public get decay() {
-    return (this.order.memory.extraInfo.decay as number) - Game.time;
+  // implementation block
+  public movePriority = 5 as const;
+  public get targetBeeCount() {
+    return 0;
+  }
+  protected defaultInfo() {
+    return {
+      roadTime: this.pos.getTimeForPath(this.hive),
+      decay: Game.time,
+      lastCooldown: 1,
+    };
+  }
+  public get maxSpawns() {
+    // so that it doesn't get deleted
+    return 1;
   }
 
-  public set decay(value) {
-    this.order.memory.extraInfo.decay = Game.time + value;
-  }
+  public target: Deposit | undefined;
 
-  public get lastCooldown() {
-    return this.order.memory.extraInfo.lastCooldown as number;
-  }
+  public miners: DepositMinerMaster;
+  public pickup: DepositPickupMaster;
 
-  public set lastCooldown(value) {
-    this.order.memory.extraInfo.lastCooldown = value;
-  }
-
-  public get roadTime() {
-    return this.order.memory.extraInfo.roadTime as number;
-  }
+  public positions: RoomPosition[];
+  public operational: boolean = false;
+  public rate: number = 0;
+  public workAmount: number;
 
   public get shouldSpawn() {
-    return this.operational && this.parent.sitesON.includes(this);
+    // decision gods said no!
+    if (!this.corridorMining?.sitesON.includes(this)) return false;
+    return this.operational;
   }
 
   public updateTarget() {
     this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
     if (this.target) {
-      this.lastCooldown = this.target.lastCooldown;
-      this.decay = this.target.ticksToDecay;
-    } else this.decay = -Game.time;
+      this.info.lastCooldown = this.target.lastCooldown;
+      this.info.decay = this.target.ticksToDecay;
+    } else this.info.decay = -Game.time;
   }
 
   public get resource() {
@@ -95,16 +88,16 @@ export class DepositMaster extends SwarmMaster {
     if (this.pos.roomName in Game.rooms) this.updateTarget();
     else {
       this.target = undefined;
-      if (this.decay <= 0 && this.hive.cells.observe)
+      if (this.info.decay <= 0 && this.hive.cells.observe)
         Apiary.requestSight(this.pos.roomName);
     }
 
     this.operational =
-      this.lastCooldown <= CREEP_LIFE_TIME / 7.5 &&
-      this.decay > CREEP_LIFE_TIME;
+      this.info.lastCooldown <= CREEP_LIFE_TIME / 7.5 &&
+      this.info.decay > CREEP_LIFE_TIME;
     this.rate =
       (this.workAmount * this.positions.length) /
-      Math.max(30, this.lastCooldown);
+      Math.max(30, this.info.lastCooldown);
 
     if (
       !this.operational &&

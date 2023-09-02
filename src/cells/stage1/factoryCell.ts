@@ -91,24 +91,31 @@ export const STOCKPILE_BASE_COMMODITIES = {
 
 @profile
 export class FactoryCell extends Cell {
-  public roomsToCheck: string[] = [];
-  public master: undefined;
-  public factory: StructureFactory;
+  // #region Properties (11)
 
+  public _commodityTarget: {
+    res: FactoryResourceConstant;
+    amount: number;
+  } | null = this.cache("_commodityTarget");
   // @todo move bulk of calc in cache
   public commodityRes?: FactoryResourceConstant;
+  public factory: StructureFactory;
+  public level: number = 0;
+  public master: undefined;
+  public patience: number = 0;
+  public patienceProd: number = 0;
   public prod?: { res: FactoryResourceConstant; plan: number };
   public resTarget: { energy: number } & {
     [key in ResourceConstant]?: number;
   } = {
     energy: FACTORY_ENERGY,
   };
-  public patience: number = 0;
-  public patienceProd: number = 0;
-
-  public level: number = 0;
-
+  public roomsToCheck: string[] = [];
   public uncommon: boolean = false;
+
+  // #endregion Properties (11)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive, factory: StructureFactory) {
     super(hive, prefix.factoryCell);
@@ -117,19 +124,101 @@ export class FactoryCell extends Cell {
       Apiary.maxFactoryLvl = factory.level;
   }
 
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get commodityTarget() {
+    return this._commodityTarget;
+  }
+
+  public set commodityTarget(value) {
+    this._commodityTarget = this.cache("_commodityTarget", value);
+  }
+
+  // #endregion Public Accessors (2)
+
+  // #region Private Accessors (1)
+
   private get sCell() {
     return this.hive.cells.storage!;
   }
 
-  public _commodityTarget: {
-    res: FactoryResourceConstant;
-    amount: number;
-  } | null = this.cache("_commodityTarget");
-  public get commodityTarget() {
-    return this._commodityTarget;
-  }
-  public set commodityTarget(value) {
-    this._commodityTarget = this.cache("_commodityTarget", value);
+  // #endregion Private Accessors (1)
+
+  // #region Public Methods (4)
+
+  public getCreateQue(
+    res: FactoryResourceConstant,
+    amountToCreate: number,
+    factoryLevel = this.factory.level
+  ): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
+    // prob should precal for each resource
+    const ingredients: { [res in CommodityIngredient]?: number } = {};
+    const createQue: CommodityConstant[] = [];
+
+    const baseResource = res in COMPRESS_MAP;
+    const addIngredient = (
+      resource: CommodityIngredient,
+      amountToAdd: number
+    ) => {
+      if (!ingredients[resource]) ingredients[resource] = 0;
+      ingredients[resource]! += amountToAdd;
+    };
+    const dfs = (
+      resource: CommodityIngredient,
+      depth: number,
+      amountOfIngredient: number
+    ) => {
+      const recipe = COMMODITIES[resource as CommodityConstant];
+      if (
+        !recipe ||
+        (resource in COMPRESS_MAP && depth > 0) ||
+        (baseResource && depth > 0)
+      ) {
+        addIngredient(resource, amountOfIngredient);
+        return;
+      }
+      if (
+        (recipe.level && recipe.level !== factoryLevel) ||
+        (!recipe.level &&
+          resource !== res &&
+          (DEPOSIT_COMMODITIES as string[]).includes(resource) &&
+          (Apiary.network.resState[resource] || 0 >= amountOfIngredient))
+      ) {
+        addIngredient(resource, amountOfIngredient);
+        return;
+      }
+      if (
+        (!recipe.level || recipe.level === this.level) &&
+        (resource === res ||
+          this.sCell.getUsedCapacity(resource as CommodityConstant) <
+            amountOfIngredient)
+      ) {
+        if (
+          createQue.indexOf(resource as CommodityConstant) === -1 &&
+          !_.filter(
+            recipe.components,
+            (amountNeeded, component) =>
+              this.sCell.getUsedCapacity(component as CommodityIngredient) <
+              amountNeeded
+          ).length
+        )
+          createQue.push(resource as CommodityConstant);
+        for (const component in recipe.components)
+          dfs(
+            component as CommodityIngredient,
+            depth + 1,
+            (amountOfIngredient *
+              recipe.components[component as CommodityIngredient]) /
+              recipe.amount
+          );
+      }
+    };
+
+    dfs(res, 0, amountToCreate);
+
+    return [createQue, ingredients];
   }
 
   public newCommodity(res: FactoryResourceConstant, num: number): number {
@@ -149,6 +238,153 @@ export class FactoryCell extends Cell {
       };
     return num;
   }
+
+  public run() {
+    if (!this.prod || this.factory.cooldown) return;
+    const recipe = COMMODITIES[this.prod.res];
+    if (recipe.level && this.level !== recipe.level) {
+      if (Game.time % 50 === 0) this.prod = undefined; // the buff run out and new one didn't come
+      return;
+    }
+    for (const r in recipe.components) {
+      const res = r as CommodityConstant;
+      const balance =
+        recipe.components[res] - this.factory.store.getUsedCapacity(res);
+      if (balance > 0) return;
+    }
+    const ans = this.factory.produce(this.prod.res);
+    if (ans === OK) {
+      this.prod.plan -= recipe.amount;
+      if (this.commodityTarget && this.prod.res === this.commodityTarget.res)
+        this.commodityTarget.amount -= recipe.amount;
+      for (const r in recipe.components) {
+        const res = r as FactoryResourceConstant;
+        const amount = recipe.components[res];
+        if (res in this.resTarget) this.resTarget[res]! -= amount;
+
+        Apiary.logger.addResourceStat(this.hiveName, "factory", -amount, res);
+      }
+
+      Apiary.logger.addResourceStat(
+        this.hiveName,
+        "factory",
+        COMMODITIES[this.prod.res].amount,
+        this.prod.res
+      );
+    }
+  }
+
+  public update() {
+    super.update();
+    if (!this.factory) this.delete();
+
+    this.roomsToCheck = this.hive.annexNames;
+
+    this.level = 0;
+    if (this.factory.effects) {
+      const powerup = this.factory.effects.filter(
+        (e) =>
+          e.effect === PWR_OPERATE_FACTORY && e.level === this.factory.level
+      ).length;
+      if (powerup) this.level = this.factory.level!;
+    }
+
+    const balance =
+      this.factory.store.getUsedCapacity(RESOURCE_ENERGY) -
+      this.resTarget[RESOURCE_ENERGY];
+    if (balance < 0)
+      this.sCell.requestFromStorage(
+        [this.factory],
+        4,
+        RESOURCE_ENERGY,
+        -balance
+      );
+
+    if (this.hive.resState[RESOURCE_ENERGY] < STOP_PRODUCTION) {
+      if (this.prod && this.prod.res !== RESOURCE_ENERGY) {
+        this.prod = undefined;
+        this.commodityTarget = null;
+      }
+    }
+
+    if (!this.prod) this.stepToTarget();
+
+    if (!this.prod) {
+      for (const r in this.factory.store) {
+        if (r === RESOURCE_ENERGY) continue;
+        const res = r as ResourceConstant;
+        this.sCell.requestToStorage([this.factory], 5, res);
+      }
+      return;
+    }
+
+    const recipe = COMMODITIES[this.prod.res];
+    for (const r in this.factory.store) {
+      const res = r as ResourceConstant;
+      const amountToTransfer =
+        this.factory.store.getUsedCapacity(res) - (this.resTarget[res] || 0);
+      if (
+        this.prod.res === res || res === RESOURCE_ENERGY
+          ? amountToTransfer >= 1000
+          : !(res in recipe.components)
+      )
+        this.sCell.requestToStorage(
+          [this.factory],
+          this.factory.store.getFreeCapacity() < FACTORY_CAPACITY / 5 ? 3 : 5,
+          res,
+          amountToTransfer
+        );
+    }
+
+    let fact = this.prod.plan;
+    for (const r in recipe.components) {
+      const res = r as keyof typeof COMMODITIES.energy.components;
+      if (res === RESOURCE_ENERGY) continue;
+
+      const amount = recipe.components[res];
+      const balanceTopUp =
+        (this.prod.plan / recipe.amount) * amount -
+        this.factory.store.getUsedCapacity(res);
+      if (
+        this.factory.store.getUsedCapacity(res) <= amount * 2 &&
+        balanceTopUp > 0
+      )
+        this.sCell.requestFromStorage(
+          [this.factory],
+          4,
+          res,
+          Math.min(balanceTopUp, FACTORY_CAPACITY / 10) // 5k
+        );
+      fact = Math.min(
+        fact,
+        Math.floor(this.sCell.getUsedCapacity(res) / amount) * amount
+      );
+    }
+
+    if (this.factory.store.getFreeCapacity() < 1_000) {
+      const existing = this.sCell.requests[this.factory.id];
+      if (!existing || existing.to.id !== this.sCell.storage.id)
+        this.sCell.requestToStorage(
+          [this.factory],
+          3,
+          findOptimalResource(this.factory.store),
+          FACTORY_CAPACITY / 10
+        );
+    }
+    if (fact < this.prod.plan) {
+      if (this.patienceProd <= 10) ++this.patienceProd;
+      else {
+        this.prod.plan = fact;
+        this.patienceProd = 0;
+      }
+    }
+    if (this.prod.plan < recipe.amount || !this.commodityTarget)
+      this.prod = undefined;
+  }
+
+  // #endregion Public Methods (4)
+
+  // #region Private Methods (2)
 
   private newTarget() {
     // prev target is fine
@@ -297,219 +533,5 @@ export class FactoryCell extends Cell {
     }
   }
 
-  public getCreateQue(
-    res: FactoryResourceConstant,
-    amountToCreate: number,
-    factoryLevel = this.factory.level
-  ): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
-    // prob should precal for each resource
-    const ingredients: { [res in CommodityIngredient]?: number } = {};
-    const createQue: CommodityConstant[] = [];
-
-    const baseResource = res in COMPRESS_MAP;
-    const addIngredient = (
-      resource: CommodityIngredient,
-      amountToAdd: number
-    ) => {
-      if (!ingredients[resource]) ingredients[resource] = 0;
-      ingredients[resource]! += amountToAdd;
-    };
-    const dfs = (
-      resource: CommodityIngredient,
-      depth: number,
-      amountOfIngredient: number
-    ) => {
-      const recipe = COMMODITIES[resource as CommodityConstant];
-      if (
-        !recipe ||
-        (resource in COMPRESS_MAP && depth > 0) ||
-        (baseResource && depth > 0)
-      ) {
-        addIngredient(resource, amountOfIngredient);
-        return;
-      }
-      if (
-        (recipe.level && recipe.level !== factoryLevel) ||
-        (!recipe.level &&
-          resource !== res &&
-          (DEPOSIT_COMMODITIES as string[]).includes(resource) &&
-          (Apiary.network.resState[resource] || 0 >= amountOfIngredient))
-      ) {
-        addIngredient(resource, amountOfIngredient);
-        return;
-      }
-      if (
-        (!recipe.level || recipe.level === this.level) &&
-        (resource === res ||
-          this.sCell.getUsedCapacity(resource as CommodityConstant) <
-            amountOfIngredient)
-      ) {
-        if (
-          createQue.indexOf(resource as CommodityConstant) === -1 &&
-          !_.filter(
-            recipe.components,
-            (amountNeeded, component) =>
-              this.sCell.getUsedCapacity(component as CommodityIngredient) <
-              amountNeeded
-          ).length
-        )
-          createQue.push(resource as CommodityConstant);
-        for (const component in recipe.components)
-          dfs(
-            component as CommodityIngredient,
-            depth + 1,
-            (amountOfIngredient *
-              recipe.components[component as CommodityIngredient]) /
-              recipe.amount
-          );
-      }
-    };
-
-    dfs(res, 0, amountToCreate);
-
-    return [createQue, ingredients];
-  }
-
-  public update() {
-    super.update();
-    if (!this.factory) this.delete();
-
-    this.roomsToCheck = this.hive.annexNames;
-
-    this.level = 0;
-    if (this.factory.effects) {
-      const powerup = this.factory.effects.filter(
-        (e) =>
-          e.effect === PWR_OPERATE_FACTORY && e.level === this.factory.level
-      ).length;
-      if (powerup) this.level = this.factory.level!;
-    }
-
-    const balance =
-      this.factory.store.getUsedCapacity(RESOURCE_ENERGY) -
-      this.resTarget[RESOURCE_ENERGY];
-    if (balance < 0)
-      this.sCell.requestFromStorage(
-        [this.factory],
-        4,
-        RESOURCE_ENERGY,
-        -balance
-      );
-
-    if (this.hive.resState[RESOURCE_ENERGY] < STOP_PRODUCTION) {
-      if (this.prod && this.prod.res !== RESOURCE_ENERGY) {
-        this.prod = undefined;
-        this.commodityTarget = null;
-      }
-    }
-
-    if (!this.prod) this.stepToTarget();
-
-    if (!this.prod) {
-      for (const r in this.factory.store) {
-        if (r === RESOURCE_ENERGY) continue;
-        const res = r as ResourceConstant;
-        this.sCell.requestToStorage([this.factory], 5, res);
-      }
-      return;
-    }
-
-    const recipe = COMMODITIES[this.prod.res];
-    for (const r in this.factory.store) {
-      const res = r as ResourceConstant;
-      const amountToTransfer =
-        this.factory.store.getUsedCapacity(res) - (this.resTarget[res] || 0);
-      if (
-        this.prod.res === res || res === RESOURCE_ENERGY
-          ? amountToTransfer >= 1000
-          : !(res in recipe.components)
-      )
-        this.sCell.requestToStorage(
-          [this.factory],
-          this.factory.store.getFreeCapacity() < FACTORY_CAPACITY / 5 ? 3 : 5,
-          res,
-          amountToTransfer
-        );
-    }
-
-    let fact = this.prod.plan;
-    for (const r in recipe.components) {
-      const res = r as keyof typeof COMMODITIES.energy.components;
-      if (res === RESOURCE_ENERGY) continue;
-
-      const amount = recipe.components[res];
-      const balanceTopUp =
-        (this.prod.plan / recipe.amount) * amount -
-        this.factory.store.getUsedCapacity(res);
-      if (
-        this.factory.store.getUsedCapacity(res) <= amount * 2 &&
-        balanceTopUp > 0
-      )
-        this.sCell.requestFromStorage(
-          [this.factory],
-          4,
-          res,
-          Math.min(balanceTopUp, FACTORY_CAPACITY / 10) // 5k
-        );
-      fact = Math.min(
-        fact,
-        Math.floor(this.sCell.getUsedCapacity(res) / amount) * amount
-      );
-    }
-
-    if (this.factory.store.getFreeCapacity() < 1_000) {
-      const existing = this.sCell.requests[this.factory.id];
-      if (!existing || existing.to.id !== this.sCell.storage.id)
-        this.sCell.requestToStorage(
-          [this.factory],
-          3,
-          findOptimalResource(this.factory.store),
-          FACTORY_CAPACITY / 10
-        );
-    }
-    if (fact < this.prod.plan) {
-      if (this.patienceProd <= 10) ++this.patienceProd;
-      else {
-        this.prod.plan = fact;
-        this.patienceProd = 0;
-      }
-    }
-    if (this.prod.plan < recipe.amount || !this.commodityTarget)
-      this.prod = undefined;
-  }
-
-  public run() {
-    if (!this.prod || this.factory.cooldown) return;
-    const recipe = COMMODITIES[this.prod.res];
-    if (recipe.level && this.level !== recipe.level) {
-      if (Game.time % 50 === 0) this.prod = undefined; // the buff run out and new one didn't come
-      return;
-    }
-    for (const r in recipe.components) {
-      const res = r as CommodityConstant;
-      const balance =
-        recipe.components[res] - this.factory.store.getUsedCapacity(res);
-      if (balance > 0) return;
-    }
-    const ans = this.factory.produce(this.prod.res);
-    if (ans === OK) {
-      this.prod.plan -= recipe.amount;
-      if (this.commodityTarget && this.prod.res === this.commodityTarget.res)
-        this.commodityTarget.amount -= recipe.amount;
-      for (const r in recipe.components) {
-        const res = r as FactoryResourceConstant;
-        const amount = recipe.components[res];
-        if (res in this.resTarget) this.resTarget[res]! -= amount;
-
-        Apiary.logger.addResourceStat(this.hiveName, "factory", -amount, res);
-      }
-
-      Apiary.logger.addResourceStat(
-        this.hiveName,
-        "factory",
-        COMMODITIES[this.prod.res].amount,
-        this.prod.res
-      );
-    }
-  }
+  // #endregion Private Methods (2)
 }

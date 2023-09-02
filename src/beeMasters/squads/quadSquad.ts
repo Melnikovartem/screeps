@@ -24,6 +24,19 @@ HEALER.fixed = [RANGED_ATTACK, RANGED_ATTACK].concat(
 
 // my most powerfull weapon to date
 export class GangQuad extends SquadMaster {
+  // #region Properties (1)
+
+  public formation: FormationPositions = [
+    [{ x: 0, y: 0 }, ARCHER],
+    [{ x: 1, y: 0 }, ARCHER],
+    [{ x: 0, y: 1 }, HEALER],
+    [{ x: 1, y: 1 }, HEALER],
+  ];
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (2)
+
   public get boosts(): Boosts {
     return [
       { type: "fatigue", lvl: 2 },
@@ -32,12 +45,6 @@ export class GangQuad extends SquadMaster {
       { type: "damage", lvl: 2 },
     ];
   }
-  public formation: FormationPositions = [
-    [{ x: 0, y: 0 }, ARCHER],
-    [{ x: 1, y: 0 }, ARCHER],
-    [{ x: 0, y: 1 }, HEALER],
-    [{ x: 1, y: 1 }, HEALER],
-  ];
 
   public get checkup() {
     const healerMinerals = this.checkMinerals(
@@ -50,6 +57,8 @@ export class GangQuad extends SquadMaster {
     );
     return healerMinerals && archerMinerals;
   }
+
+  // #endregion Public Accessors (2)
 }
 
 /* const ARCHER = setups.archer.copy();

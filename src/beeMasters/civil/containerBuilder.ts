@@ -8,43 +8,17 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class ContainerBuilderMaster extends SwarmMaster {
+  // #region Constructors (1)
+
   public constructor(order: FlagOrder) {
     super(order);
     this.targetBeeCount = 3;
     this.maxSpawns = 3;
   }
 
-  public update() {
-    super.update();
-    const room = Game.rooms[this.pos.roomName];
-    if (
-      room &&
-      this.pos
-        .lookFor(LOOK_STRUCTURES)
-        .filter((s) => s.structureType === STRUCTURE_CONTAINER).length
-    ) {
-      const anotherContainer = room
-        .find(FIND_MY_CONSTRUCTION_SITES)
-        .filter((c) => c.structureType === STRUCTURE_CONTAINER)[0];
-      if (anotherContainer) this.order.flag.setPosition(anotherContainer.pos);
-      else this.order.delete();
-      return;
-    }
-    if (
-      this.checkBees() &&
-      Apiary.intel.getInfo(this.pos.roomName).safePlace &&
-      this.hive.cells.storage
-    ) {
-      const setup = setups.builder.copy();
-      setup.pattern = [WORK, CARRY, CARRY];
-      setup.moveMax = 50 / 3;
-      for (let i = 0; i < this.targetBeeCount - this.spawned; ++i)
-        this.wish({
-          setup,
-          priority: 5,
-        });
-    }
-  }
+  // #endregion Constructors (1)
+
+  // #region Public Methods (2)
 
   public run() {
     let target: { pos: RoomPosition } =
@@ -120,4 +94,38 @@ export class ContainerBuilderMaster extends SwarmMaster {
       if (this.checkFlee(bee, this.hive)) return;
     });
   }
+
+  public update() {
+    super.update();
+    const room = Game.rooms[this.pos.roomName];
+    if (
+      room &&
+      this.pos
+        .lookFor(LOOK_STRUCTURES)
+        .filter((s) => s.structureType === STRUCTURE_CONTAINER).length
+    ) {
+      const anotherContainer = room
+        .find(FIND_MY_CONSTRUCTION_SITES)
+        .filter((c) => c.structureType === STRUCTURE_CONTAINER)[0];
+      if (anotherContainer) this.order.flag.setPosition(anotherContainer.pos);
+      else this.order.delete();
+      return;
+    }
+    if (
+      this.checkBees() &&
+      Apiary.intel.getInfo(this.pos.roomName).safePlace &&
+      this.hive.cells.storage
+    ) {
+      const setup = setups.builder.copy();
+      setup.pattern = [WORK, CARRY, CARRY];
+      setup.moveMax = 50 / 3;
+      for (let i = 0; i < this.targetBeeCount - this.spawned; ++i)
+        this.wish({
+          setup,
+          priority: 5,
+        });
+    }
+  }
+
+  // #endregion Public Methods (2)
 }

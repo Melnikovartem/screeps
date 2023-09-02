@@ -7,10 +7,19 @@ import { Cell } from "../_Cell";
 
 @profile
 export class ObserveCell extends Cell {
-  public obeserver: StructureObserver;
-  private roomsToCheck: string[] = [];
+  // #region Properties (6)
+
   private doPowerCheck = false;
+  private roomsToCheck: string[] = [];
+
+  public _corridorRooms: string[] = this.cache("_corridorRooms") || [];
+  public _prevRoom: string = this.cache("_prevRoom") || "";
   public master: undefined;
+  public obeserver: StructureObserver;
+
+  // #endregion Properties (6)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive, obeserver: StructureObserver) {
     super(hive, prefix.observerCell);
@@ -19,62 +28,99 @@ export class ObserveCell extends Cell {
     if (!this.corridorRooms.length) this.updateRoomsToCheck();
   }
 
-  public _corridorRooms: string[] = this.cache("_corridorRooms") || [];
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (5)
+
   public get corridorRooms(): string[] {
     return this._corridorRooms;
   }
+
   public set corridorRooms(value) {
     this._corridorRooms = this.cache("_corridorRooms", value);
-  }
-
-  public _prevRoom: string = this.cache("_prevRoom") || "";
-  public get prevRoom() {
-    return this._prevRoom;
-  }
-  public set prevRoom(value) {
-    this._prevRoom = this.cache("_prevRoom", value);
-  }
-
-  public updateRoomsToCheck() {
-    this.corridorRooms = [];
-    const [x, y, we, ns] = getRoomCoorinates(this.hiveName);
-    let closest = we + x + ns + y;
-    const roundx = we + Math.round(x / 10) * 10 + ns + y;
-    const roundy = we + x + ns + Math.round(y / 10) * 10;
-    if (
-      this.pos.getRoomRangeTo(roundx, "path") <
-      this.pos.getRoomRangeTo(roundy, "path")
-    )
-      closest = roundx;
-    else closest = roundy;
-    this.dfs(
-      closest,
-      this.corridorRooms,
-      this.hive.pos.getRoomRangeTo(closest, "path")
-    );
-    this.prevRoom =
-      this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
   public get pos() {
     return this.obeserver.pos;
   }
 
-  private dfs(
-    roomName: string,
-    checked: string[],
-    depth: number = 0,
-    maxDepth: number = Memory.settings.miningDist
+  public get prevRoom() {
+    return this._prevRoom;
+  }
+
+  public set prevRoom(value) {
+    this._prevRoom = this.cache("_prevRoom", value);
+  }
+
+  // #endregion Public Accessors (5)
+
+  // #region Public Methods (6)
+
+  public createOrder(
+    pos: RoomPosition,
+    ref: string,
+    secondaryColor: ColorConstant
   ) {
-    if (depth > maxDepth) return;
-    checked.push(roomName);
-    const exits = Game.map.describeExits(roomName);
-    for (const num in exits) {
-      const exitName = exits[num as ExitKey]!;
-      if (checked.indexOf(exitName) !== -1) continue;
-      const [x, y] = getRoomCoorinates(exitName);
-      if (x % 10 === 0 || y % 10 === 0)
-        this.dfs(exitName, checked, depth + 1, maxDepth);
+    const flags = pos
+      .lookFor(LOOK_FLAGS)
+      .filter(
+        (f) => f.color === COLOR_ORANGE && f.secondaryColor === secondaryColor
+      ).length;
+    if (flags) return;
+    const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
+    if (typeof name === "string") {
+      Game.flags[name].memory.hive = this.hiveName;
+      const order = new FlagOrder(Game.flags[name]);
+      order.update();
+    }
+  }
+
+  public depositCheck(room: Room) {
+    _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
+      if (
+        deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 ||
+        deposit.ticksToDecay <= CREEP_LIFE_TIME
+      )
+        return;
+      this.createOrder(
+        deposit.pos,
+        prefix.depositMining + deposit.id,
+        COLOR_BLUE
+      );
+    });
+  }
+
+  public powerCheck(room: Room) {
+    _.forEach(
+      room.find(FIND_STRUCTURES, {
+        filter: { structureType: STRUCTURE_POWER_BANK },
+      }),
+      (power: StructurePowerBank) => {
+        const open = power.pos.getOpenPositions(true).length;
+        const dmgPerSecond = ATTACK_POWER * 20 * open;
+        if (
+          power.hits / dmgPerSecond >=
+          power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50
+        )
+          return;
+        this.createOrder(
+          power.pos,
+          prefix.powerMining + power.id,
+          COLOR_YELLOW
+        );
+      }
+    );
+  }
+
+  public run() {
+    let index = 0;
+    if (this.prevRoom) index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
+
+    if (index < 0 || index >= this.roomsToCheck.length) index = 0;
+
+    if (this.roomsToCheck.length > 0) {
+      this.prevRoom = this.roomsToCheck[index];
+      this.obeserver.observeRoom(this.prevRoom);
     }
   }
 
@@ -121,71 +167,48 @@ export class ObserveCell extends Cell {
     } else Apiary.intel.getInfo(this.prevRoom, 50);
   }
 
-  public depositCheck(room: Room) {
-    _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
-      if (
-        deposit.lastCooldown > CREEP_LIFE_TIME / 7.5 ||
-        deposit.ticksToDecay <= CREEP_LIFE_TIME
-      )
-        return;
-      this.createOrder(
-        deposit.pos,
-        prefix.depositMining + deposit.id,
-        COLOR_BLUE
-      );
-    });
-  }
-
-  public powerCheck(room: Room) {
-    _.forEach(
-      room.find(FIND_STRUCTURES, {
-        filter: { structureType: STRUCTURE_POWER_BANK },
-      }),
-      (power: StructurePowerBank) => {
-        const open = power.pos.getOpenPositions(true).length;
-        const dmgPerSecond = ATTACK_POWER * 20 * open;
-        if (
-          power.hits / dmgPerSecond >=
-          power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50
-        )
-          return;
-        this.createOrder(
-          power.pos,
-          prefix.powerMining + power.id,
-          COLOR_YELLOW
-        );
-      }
+  public updateRoomsToCheck() {
+    this.corridorRooms = [];
+    const [x, y, we, ns] = getRoomCoorinates(this.hiveName);
+    let closest = we + x + ns + y;
+    const roundx = we + Math.round(x / 10) * 10 + ns + y;
+    const roundy = we + x + ns + Math.round(y / 10) * 10;
+    if (
+      this.pos.getRoomRangeTo(roundx, "path") <
+      this.pos.getRoomRangeTo(roundy, "path")
+    )
+      closest = roundx;
+    else closest = roundy;
+    this.dfs(
+      closest,
+      this.corridorRooms,
+      this.hive.pos.getRoomRangeTo(closest, "path")
     );
+    this.prevRoom =
+      this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
-  public createOrder(
-    pos: RoomPosition,
-    ref: string,
-    secondaryColor: ColorConstant
+  // #endregion Public Methods (6)
+
+  // #region Private Methods (1)
+
+  private dfs(
+    roomName: string,
+    checked: string[],
+    depth: number = 0,
+    maxDepth: number = Memory.settings.miningDist
   ) {
-    const flags = pos
-      .lookFor(LOOK_FLAGS)
-      .filter(
-        (f) => f.color === COLOR_ORANGE && f.secondaryColor === secondaryColor
-      ).length;
-    if (flags) return;
-    const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
-    if (typeof name === "string") {
-      Game.flags[name].memory.hive = this.hiveName;
-      const order = new FlagOrder(Game.flags[name]);
-      order.update();
+    if (depth > maxDepth) return;
+    checked.push(roomName);
+    const exits = Game.map.describeExits(roomName);
+    for (const num in exits) {
+      const exitName = exits[num as ExitKey]!;
+      if (checked.indexOf(exitName) !== -1) continue;
+      const [x, y] = getRoomCoorinates(exitName);
+      if (x % 10 === 0 || y % 10 === 0)
+        this.dfs(exitName, checked, depth + 1, maxDepth);
     }
   }
 
-  public run() {
-    let index = 0;
-    if (this.prevRoom) index = this.roomsToCheck.indexOf(this.prevRoom) + 1;
-
-    if (index < 0 || index >= this.roomsToCheck.length) index = 0;
-
-    if (this.roomsToCheck.length > 0) {
-      this.prevRoom = this.roomsToCheck[index];
-      this.obeserver.observeRoom(this.prevRoom);
-    }
-  }
+  // #endregion Private Methods (1)
 }

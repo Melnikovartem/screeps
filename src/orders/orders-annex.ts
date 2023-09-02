@@ -1,4 +1,4 @@
-import { AnnexMaster } from "beeMasters/civil/annexer";
+import { AnnexMaster } from "beeMasters/economy/annexer";
 import { ClaimerMaster } from "beeMasters/civil/claimer";
 import { PuppetMaster } from "beeMasters/civil/puppet";
 import { SKMaster } from "beeMasters/war/safeSK";

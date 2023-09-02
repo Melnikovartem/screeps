@@ -5,17 +5,16 @@ import { beeStates, prefix } from "static/enums";
 import { Master } from "../_Master";
 import type { DepositMaster } from "./deposit";
 
+// no need to innit from memory as DepositMaster inits
 @profile
-export class DepositMinerMaster extends Master {
-  public parent: DepositMaster;
+export class DepositMinerMaster extends Master<DepositMaster> {
+  // implementation block
+  // they cant move :/
   public movePriority = 1 as const;
-
-  public constructor(parent: DepositMaster) {
-    super(parent.hive, parent.order.ref + prefix.miner);
-    this.parent = parent;
-    this.targetBeeCount = this.parent.positions.length;
+  public get targetBeeCount() {
+    return this.parent.positions.length;
   }
-
+  // extra overload block
   public checkBees = () => {
     return (
       this.parent.shouldSpawn &&
@@ -23,6 +22,11 @@ export class DepositMinerMaster extends Master {
     );
   };
 
+  public constructor(parent: DepositMaster) {
+    super(parent, parent.ref + prefix.miner);
+  }
+
+  // update - run
   public update() {
     super.update();
 

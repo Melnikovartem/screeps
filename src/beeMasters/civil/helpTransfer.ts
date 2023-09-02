@@ -8,38 +8,38 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class HelpTransferMaster extends SwarmMaster {
+  // #region Properties (1)
+
+  public res = RESOURCE_ENERGY;
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (5)
+
   public get boosts(): Boosts {
     return [{ type: "capacity", lvl: 2 }];
   }
+
+  public get maxSpawns() {
+    return this.targetBeeCount; // Math.max(this.targetBeeCount, 30); // about 0.5M energy per flag
+  }
+
+  public set maxSpawns(_) {}
 
   public get targetBeeCount() {
     if (!this.order) return 10;
     if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 10;
     return this.order.memory.extraInfo as number;
   }
+
   public set targetBeeCount(value) {
     if (this.order && this.order.memory.extraInfo)
       this.order.memory.extraInfo = value;
   }
-  public get maxSpawns() {
-    return this.targetBeeCount; // Math.max(this.targetBeeCount, 30); // about 0.5M energy per flag
-  }
-  public set maxSpawns(_) {}
 
-  public res = RESOURCE_ENERGY;
+  // #endregion Public Accessors (5)
 
-  public update() {
-    super.update();
-    if (
-      this.checkBees() &&
-      Apiary.intel.getInfo(this.pos.roomName, 20).safePlace &&
-      (this.hive.resState[this.res] || 0 > 0)
-    )
-      this.wish({
-        setup: setups.pickup,
-        priority: 8,
-      });
-  }
+  // #region Public Methods (2)
 
   public run() {
     this.preRunBoost();
@@ -100,4 +100,19 @@ export class HelpTransferMaster extends SwarmMaster {
       } else this.removeBee(bee);
     });
   }
+
+  public update() {
+    super.update();
+    if (
+      this.checkBees() &&
+      Apiary.intel.getInfo(this.pos.roomName, 20).safePlace &&
+      (this.hive.resState[this.res] || 0 > 0)
+    )
+      this.wish({
+        setup: setups.pickup,
+        priority: 8,
+      });
+  }
+
+  // #endregion Public Methods (2)
 }

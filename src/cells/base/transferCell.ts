@@ -15,23 +15,33 @@ const EXTREMLY_LOW_ENERGY = 10000;
 
 @profile
 export class StorageCell extends Cell {
+  // #region Properties (7)
+
+  public link: StructureLink | undefined | null;
+  public linkId: Id<StructureLink> | undefined | null;
   public linkState:
     | { using: string; priority: 0 | 1; lastUpdated: number }
     | undefined;
   public master: ManagerMaster;
-
   public requests: { [id: string]: TransferRequest } = {};
   public resTargetTerminal: { energy: number } & ResTarget = {
     energy: TERMINAL_ENERGY,
   };
-
   public usedCapacity: ResTarget = {};
+
+  // #endregion Properties (7)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive) {
     super(hive, prefix.storageCell);
     this.findLink();
     this.master = new ManagerMaster(this);
   }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
 
   /** used to support terminal storage, but not helpful and pain in ass */
   public get storage() {
@@ -42,8 +52,10 @@ export class StorageCell extends Cell {
     return this.hive.room.terminal;
   }
 
-  public link: StructureLink | undefined | null;
-  public linkId: Id<StructureLink> | undefined | null;
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (9)
+
   public findLink() {
     let link: typeof this.link =
       this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
@@ -54,6 +66,35 @@ export class StorageCell extends Cell {
         | StructureLink
         | undefined;
     this.link = link;
+  }
+
+  public getUsedCapacity(resource: ResourceConstant) {
+    return this.usedCapacity[resource] || 0;
+  }
+
+  public pickupResources() {
+    const resources = this.hive.room
+      .find(FIND_DROPPED_RESOURCES)
+      .filter((r) => r.resourceType !== RESOURCE_ENERGY || r.amount >= 100);
+    const tombstones = this.hive.room
+      .find(FIND_TOMBSTONES)
+      .filter((t) => t.store.getUsedCapacity() > 0);
+    const enemies = Apiary.intel
+      .getInfo(this.hiveName, 10)
+      .enemies.map((e) => e.object);
+    let rrs = (resources as (Resource | Tombstone)[]).concat(tombstones);
+    if (enemies.length)
+      rrs = rrs.filter((rr) => {
+        const enemy = rr.pos.findClosest(enemies)!;
+        if (
+          enemy.pos.getRangeTo(rr) > 4 &&
+          !this.hive.cells.defense.wasBreached(enemy.pos, rr.pos)
+        )
+          return true;
+        delete this.requests[rr.id];
+        return false;
+      });
+    return this.requestToStorage(rrs, 6, undefined, 1200, true);
   }
 
   public requestFromStorage(
@@ -135,29 +176,10 @@ export class StorageCell extends Cell {
     return sum;
   }
 
-  public pickupResources() {
-    const resources = this.hive.room
-      .find(FIND_DROPPED_RESOURCES)
-      .filter((r) => r.resourceType !== RESOURCE_ENERGY || r.amount >= 100);
-    const tombstones = this.hive.room
-      .find(FIND_TOMBSTONES)
-      .filter((t) => t.store.getUsedCapacity() > 0);
-    const enemies = Apiary.intel
-      .getInfo(this.hiveName, 10)
-      .enemies.map((e) => e.object);
-    let rrs = (resources as (Resource | Tombstone)[]).concat(tombstones);
-    if (enemies.length)
-      rrs = rrs.filter((rr) => {
-        const enemy = rr.pos.findClosest(enemies)!;
-        if (
-          enemy.pos.getRangeTo(rr) > 4 &&
-          !this.hive.cells.defense.wasBreached(enemy.pos, rr.pos)
-        )
-          return true;
-        delete this.requests[rr.id];
-        return false;
-      });
-    return this.requestToStorage(rrs, 6, undefined, 1200, true);
+  public run() {
+    for (const k in this.requests) {
+      if (!this.requests[k].isValid()) delete this.requests[k];
+    }
   }
 
   public update() {
@@ -260,12 +282,6 @@ export class StorageCell extends Cell {
     }
   }
 
-  public run() {
-    for (const k in this.requests) {
-      if (!this.requests[k].isValid()) delete this.requests[k];
-    }
-  }
-
   /** Used to check all resources in hive
    *
    * called in terminal update
@@ -307,7 +323,5 @@ export class StorageCell extends Cell {
     } */
   }
 
-  public getUsedCapacity(resource: ResourceConstant) {
-    return this.usedCapacity[resource] || 0;
-  }
+  // #endregion Public Methods (9)
 }

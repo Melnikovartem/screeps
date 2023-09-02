@@ -6,11 +6,18 @@ import type { RespawnCell } from "./../base/respawnCell";
 
 @profile
 export class FastRefillCell extends Cell {
-  public link: StructureLink;
+  // #region Properties (5)
+
+  private needEnergy = false;
   private parentCell: RespawnCell;
+
+  public link: StructureLink;
   public masters: FastRefillMaster[] = [];
   public refillTargets: (StructureSpawn | StructureExtension)[] = [];
-  private needEnergy = false;
+
+  // #endregion Properties (5)
+
+  // #region Constructors (1)
 
   public constructor(parent: RespawnCell, link: StructureLink) {
     super(parent.hive, prefix.fastRefillCell);
@@ -33,9 +40,29 @@ export class FastRefillCell extends Cell {
       }
   }
 
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get parent() {
+    return this.hive.cells.spawn;
+  }
+
+  public get pos(): RoomPosition {
+    return this.link.pos;
+  }
+
+  // #endregion Public Accessors (2)
+
+  // #region Private Accessors (1)
+
   private get sCell() {
     return this.hive.cells.storage!;
   }
+
+  // #endregion Private Accessors (1)
+
+  // #region Public Static Methods (1)
 
   public static poss(hiveName: string) {
     const cache = Memory.cache.hives[hiveName].cells[prefix.fastRefillCell];
@@ -46,18 +73,41 @@ export class FastRefillCell extends Cell {
     return undefined;
   }
 
-  public get parent() {
-    return this.hive.cells.spawn;
-  }
+  // #endregion Public Static Methods (1)
 
-  public get pos(): RoomPosition {
-    return this.link.pos;
-  }
+  // #region Public Methods (3)
 
   public delete() {
     super.delete();
     _.forEach(this.masters, (m) => m.delete());
     this.parentCell.fastRef = undefined;
+  }
+
+  public run() {
+    if (!this.needEnergy) return;
+    if (this.link && this.sCell.link) {
+      const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+      if (
+        freeCap >= LINK_CAPACITY * 0.75 &&
+        (freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) ||
+          freeCap >= LINK_CAPACITY * 0.9)
+      ) {
+        const amount = Math.min(
+          freeCap,
+          this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY)
+        );
+        if (
+          !this.sCell.link.cooldown &&
+          this.sCell.link.transferEnergy(this.link, amount) === OK
+        )
+          Apiary.logger.addResourceStat(
+            this.hiveName,
+            "upkeep",
+            -amount * 0.03,
+            RESOURCE_ENERGY
+          );
+      }
+    }
   }
 
   public update() {
@@ -88,30 +138,5 @@ export class FastRefillCell extends Cell {
     } else this.sCell.requestFromStorage(emptyContainers, 1, RESOURCE_ENERGY); // maybe 0 but for now 1
   }
 
-  public run() {
-    if (!this.needEnergy) return;
-    if (this.link && this.sCell.link) {
-      const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-      if (
-        freeCap >= LINK_CAPACITY * 0.75 &&
-        (freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) ||
-          freeCap >= LINK_CAPACITY * 0.9)
-      ) {
-        const amount = Math.min(
-          freeCap,
-          this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY)
-        );
-        if (
-          !this.sCell.link.cooldown &&
-          this.sCell.link.transferEnergy(this.link, amount) === OK
-        )
-          Apiary.logger.addResourceStat(
-            this.hiveName,
-            "upkeep",
-            -amount * 0.03,
-            RESOURCE_ENERGY
-          );
-      }
-    }
-  }
+  // #endregion Public Methods (3)
 }

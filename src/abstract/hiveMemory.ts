@@ -1,4 +1,6 @@
 export interface HiveCache {
+  // #region Properties (2)
+
   cells: { [id: string]: { [id: string]: any } };
   do: {
     powerMining: 0 | 1;
@@ -21,9 +23,13 @@ export interface HiveCache {
     /** no boosting / only war / all cases (nukes, walls etc) / even when peaceful */
     buildBoost: 0 | 1 | 2 | 3;
   };
+
+  // #endregion Properties (2)
 }
 
 export interface buildingCostsHive {
+  // #region Properties (2)
+
   annex: {
     build: number;
     repair: number;
@@ -32,21 +38,25 @@ export interface buildingCostsHive {
     build: number;
     repair: number;
   };
+
+  // #endregion Properties (2)
 }
 
 export interface HiveLog {
+  // #region Properties (8)
+
   annexNames: string[];
   construction: { numStruct: number; costs: buildingCostsHive };
-  spawnQueLen: number;
-
+  controller: { level: number; progress: number; progressTotal: number };
+  defenseHealth: { max: number; min: number; avg: number };
   energy: {
     storage: number;
     terminal: number;
     spawners: number;
   };
-  controller: { level: number; progress: number; progressTotal: number };
   nukes: { [id: string]: { [launchRoomName: string]: number } };
-  defenseHealth: { max: number; min: number; avg: number };
-
   resourceEvents: resourceEventLog;
+  spawnQueLen: number;
+
+  // #endregion Properties (8)
 }

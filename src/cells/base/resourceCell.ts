@@ -12,18 +12,27 @@ const MAX_MINING_DIST = 200;
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
 export class ResourceCell extends Cell {
-  public resource: Source | Mineral;
-  public resourceType: ResourceConstant = RESOURCE_ENERGY;
-  public link: StructureLink | undefined;
-  public container: StructureContainer | undefined;
-  public extractor: StructureExtractor | undefined;
-  public parentCell: ExcavationCell;
-  public master: MinerMaster;
+  // #region Properties (14)
 
   private updateTime: number;
-  public lair?: StructureKeeperLair;
 
+  public _fleeLairTime: number = this.cache("_fleeLairTime") || Infinity;
+  public _restTime: number = this.cache("_restTime") || Infinity;
+  public _roadTime: number = this.cache("_roadTime") || Infinity;
+  public container: StructureContainer | undefined;
+  public extractor: StructureExtractor | undefined;
+  public lair?: StructureKeeperLair;
+  public link: StructureLink | undefined;
+  public master: MinerMaster;
   public operational: boolean = false;
+  public parentCell: ExcavationCell;
+  public poss: { x: number; y: number; roomName?: string };
+  public resource: Source | Mineral;
+  public resourceType: ResourceConstant = RESOURCE_ENERGY;
+
+  // #endregion Properties (14)
+
+  // #region Constructors (1)
 
   public constructor(
     hive: Hive,
@@ -42,31 +51,26 @@ export class ResourceCell extends Cell {
     this.updateStructure();
   }
 
-  public _roadTime: number = this.cache("_roadTime") || Infinity;
-  public get roadTime() {
-    return this._roadTime;
-  }
-  public set roadTime(value) {
-    this._roadTime = this.cache("_roadTime", value);
-  }
+  // #endregion Constructors (1)
 
-  public _restTime: number = this.cache("_restTime") || Infinity;
-  public get restTime() {
-    return this._restTime;
-  }
-  public set restTime(value) {
-    this._restTime = this.cache("_restTime", value);
-  }
+  // #region Public Accessors (11)
 
-  public _fleeLairTime: number = this.cache("_fleeLairTime") || Infinity;
   public get fleeLairTime() {
     return this._fleeLairTime;
   }
+
   public set fleeLairTime(value) {
     this._fleeLairTime = this.cache("_fleeLairTime", value);
   }
 
-  public poss: { x: number; y: number; roomName?: string };
+  public get loggerRef() {
+    return "mining_" + this.resource.id.slice(this.resource.id.length - 4);
+  }
+
+  public get loggerUpkeepRef() {
+    return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
+  }
+
   public get pos(): RoomPosition {
     return new RoomPosition(
       this.poss.x,
@@ -74,6 +78,7 @@ export class ResourceCell extends Cell {
       this.poss.roomName || this.hiveName
     );
   }
+
   public set pos(value) {
     if (value.roomName !== this.hiveName) this.poss = value;
     else this.poss = { x: value.x, y: value.y };
@@ -96,72 +101,25 @@ export class ResourceCell extends Cell {
     return 0;
   }
 
-  private updateStructure() {
-    if (!(this.pos.roomName in Game.rooms)) return;
-
-    this.container = _.filter(
-      this.resource.pos.findInRange(FIND_STRUCTURES, 1),
-      (s) => s.structureType === STRUCTURE_CONTAINER
-    )[0] as StructureContainer;
-    if (this.resource instanceof Source) {
-      if (this.pos.roomName === this.hiveName) {
-        this.link = _.filter(
-          this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
-          (s) =>
-            s.structureType === STRUCTURE_LINK &&
-            s.isActive() &&
-            (!this.hive.cells.upgrade ||
-              !this.hive.cells.upgrade.link ||
-              this.hive.cells.upgrade.link.id !== s.id)
-        )[0] as StructureLink;
-        if (!(this.hive.cells.storage && this.hive.cells.storage.link))
-          this.link = undefined;
-      }
-      this.operational = !!(this.container || this.link);
-    } else if (this.resource instanceof Mineral) {
-      this.extractor = _.filter(
-        this.resource.pos.lookFor(LOOK_STRUCTURES),
-        (s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()
-      )[0] as StructureExtractor;
-      this.operational = !!(
-        this.extractor &&
-        this.container &&
-        !this.resource.ticksToRegeneration
-      );
-    }
-
-    if (this.container) this.pos = this.container.pos;
-    if (this.link) {
-      const poss = this.resource.pos.getOpenPositions(true);
-      const pos = this.link.pos
-        .getOpenPositions(true)
-        .filter((p) => poss.filter((pp) => p.equal(pp)).length)[0];
-      if (pos) this.pos = pos;
-    }
-
-    const roomState = Apiary.intel.getRoomState(this.pos);
-    if (roomState === roomStates.SKfrontier) {
-      this.lair = this.pos.findClosest(
-        this.pos
-          .findInRange(FIND_STRUCTURES, 5)
-          .filter((s) => s.structureType === STRUCTURE_KEEPER_LAIR)
-      ) as StructureKeeperLair | undefined;
-      if (this.fleeLairTime === Infinity) this.recalcLairFleeTime();
-    }
-
-    const storagePos = this.parentCell.master
-      ? this.parentCell.master.dropOff.pos
-      : this.hive.pos;
-    if (this.roadTime === Infinity || this.roadTime === null)
-      this.roadTime = this.pos.getTimeForPath(storagePos);
-    if (this.roadTime > MAX_MINING_DIST) this.operational = false;
-    if (this.restTime === Infinity || this.restTime === null)
-      this.restTime = this.pos.getTimeForPath(this.hive.rest);
-    if (this.operational) {
-      if (this.hive.cells.dev) this.hive.cells.dev.shouldRecalc = true;
-      this.parentCell.shouldRecalc = true;
-    }
+  public get restTime() {
+    return this._restTime;
   }
+
+  public set restTime(value) {
+    this._restTime = this.cache("_restTime", value);
+  }
+
+  public get roadTime() {
+    return this._roadTime;
+  }
+
+  public set roadTime(value) {
+    this._roadTime = this.cache("_roadTime", value);
+  }
+
+  // #endregion Public Accessors (11)
+
+  // #region Public Methods (3)
 
   public recalcLairFleeTime() {
     if (!this.lair) return;
@@ -174,29 +132,6 @@ export class ResourceCell extends Cell {
       )
         break;
     this.fleeLairTime = i + 2;
-  }
-
-  public get loggerRef() {
-    return "mining_" + this.resource.id.slice(this.resource.id.length - 4);
-  }
-
-  public get loggerUpkeepRef() {
-    return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
-  }
-
-  public update() {
-    super.update(undefined, ["resource"]);
-
-    if (this.operational) {
-      if (!this.container && !this.link) this.operational = false;
-      else if (
-        this.resourceType !== RESOURCE_ENERGY &&
-        this.resource.ticksToRegeneration
-      ) {
-        this.parentCell.shouldRecalc = true;
-        this.operational = false;
-      }
-    } else if (Game.time % this.updateTime === 0) this.updateStructure();
   }
 
   public run() {
@@ -276,4 +211,92 @@ export class ResourceCell extends Cell {
       }
     }
   }
+
+  public update() {
+    super.update(undefined, ["resource"]);
+
+    if (this.operational) {
+      if (!this.container && !this.link) this.operational = false;
+      else if (
+        this.resourceType !== RESOURCE_ENERGY &&
+        this.resource.ticksToRegeneration
+      ) {
+        this.parentCell.shouldRecalc = true;
+        this.operational = false;
+      }
+    } else if (Game.time % this.updateTime === 0) this.updateStructure();
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Private Methods (1)
+
+  private updateStructure() {
+    if (!(this.pos.roomName in Game.rooms)) return;
+
+    this.container = _.filter(
+      this.resource.pos.findInRange(FIND_STRUCTURES, 1),
+      (s) => s.structureType === STRUCTURE_CONTAINER
+    )[0] as StructureContainer;
+    if (this.resource instanceof Source) {
+      if (this.pos.roomName === this.hiveName) {
+        this.link = _.filter(
+          this.resource.pos.findInRange(FIND_MY_STRUCTURES, 2),
+          (s) =>
+            s.structureType === STRUCTURE_LINK &&
+            s.isActive() &&
+            (!this.hive.cells.upgrade ||
+              !this.hive.cells.upgrade.link ||
+              this.hive.cells.upgrade.link.id !== s.id)
+        )[0] as StructureLink;
+        if (!(this.hive.cells.storage && this.hive.cells.storage.link))
+          this.link = undefined;
+      }
+      this.operational = !!(this.container || this.link);
+    } else if (this.resource instanceof Mineral) {
+      this.extractor = _.filter(
+        this.resource.pos.lookFor(LOOK_STRUCTURES),
+        (s) => s.structureType === STRUCTURE_EXTRACTOR && s.isActive()
+      )[0] as StructureExtractor;
+      this.operational = !!(
+        this.extractor &&
+        this.container &&
+        !this.resource.ticksToRegeneration
+      );
+    }
+
+    if (this.container) this.pos = this.container.pos;
+    if (this.link) {
+      const poss = this.resource.pos.getOpenPositions(true);
+      const pos = this.link.pos
+        .getOpenPositions(true)
+        .filter((p) => poss.filter((pp) => p.equal(pp)).length)[0];
+      if (pos) this.pos = pos;
+    }
+
+    const roomState = Apiary.intel.getRoomState(this.pos);
+    if (roomState === roomStates.SKfrontier) {
+      this.lair = this.pos.findClosest(
+        this.pos
+          .findInRange(FIND_STRUCTURES, 5)
+          .filter((s) => s.structureType === STRUCTURE_KEEPER_LAIR)
+      ) as StructureKeeperLair | undefined;
+      if (this.fleeLairTime === Infinity) this.recalcLairFleeTime();
+    }
+
+    const storagePos = this.parentCell.master
+      ? this.parentCell.master.dropOff.pos
+      : this.hive.pos;
+    if (this.roadTime === Infinity || this.roadTime === null)
+      this.roadTime = this.pos.getTimeForPath(storagePos);
+    if (this.roadTime > MAX_MINING_DIST) this.operational = false;
+    if (this.restTime === Infinity || this.restTime === null)
+      this.restTime = this.pos.getTimeForPath(this.hive.rest);
+    if (this.operational) {
+      if (this.hive.cells.dev) this.hive.cells.dev.shouldRecalc = true;
+      this.parentCell.shouldRecalc = true;
+    }
+  }
+
+  // #endregion Private Methods (1)
 }

@@ -15,6 +15,8 @@ import { defenseWalls } from "./nkvd-utils";
 
 @profile
 export class NKVDMaster extends PowerMaster {
+  // #region Properties (2)
+
   private nextup?: {
     target: RoomObject;
     power: keyof NKVDMaster["targets"];
@@ -41,72 +43,93 @@ export class NKVDMaster extends PowerMaster {
     [PWR_REGEN_MINERAL]?: ResourceCell[];
   } = {};
 
+  // #endregion Properties (2)
+
+  // #region Constructors (1)
+
   public constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell, powerCreep);
     this.updateTargets();
     this.cell.powerManager = this.powerCreep.ref;
   }
 
-  private updateTargets() {
-    for (const powerId in this.powerCreep.powers) {
-      const power = +powerId as PowerConstant;
-      switch (power) {
-        case PWR_OPERATE_SPAWN:
-          this.targets[power] = this.hive.cells.spawn;
-          break;
-        case PWR_OPERATE_FACTORY:
-          this.targets[power] = this.hive.cells.factory;
-          break;
-        case PWR_OPERATE_LAB:
-          this.targets[power] = this.hive.cells.lab;
-          break;
-        case PWR_OPERATE_OBSERVER:
-          this.targets[power] = this.hive.cells.observe;
-          break;
+  // #endregion Constructors (1)
 
-        case PWR_OPERATE_EXTENSION:
-        case PWR_OPERATE_STORAGE:
-        case PWR_OPERATE_TERMINAL:
-          this.targets[power] = this.hive.cells.storage;
-          break;
+  // #region Public Methods (2)
 
-        case PWR_FORTIFY: // fortify doesn't need cell
-        case PWR_OPERATE_TOWER:
-          this.targets[power] = this.hive.cells.defense;
-          break;
+  public run() {
+    if (this.hive.cells.defense.timeToLand < 50)
+      this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
+    else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
+      this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
+    else if (!this.hive.controller.isPowerEnabled)
+      this.powerCreep.enableRoom(this.hive.controller, this.hive.opt);
+    else if (this.nextup && Game.time >= this.nextup.time) {
+      const ans = this.powerCreep.usePower(
+        this.nextup.power,
+        this.nextup.target,
+        this.hive.opt
+      );
+      if (ans === OK) {
+        this.usedPower = true;
 
-        case PWR_OPERATE_CONTROLLER:
-          this.targets[power] = this.hive.cells.upgrade;
-          break;
-        case PWR_OPERATE_POWER:
-          this.targets[power] = this.hive.cells.power;
-          break;
-
-        case PWR_REGEN_SOURCE:
-          this.targets[power] = _.filter(
-            this.hive.cells.excavation.resourceCells,
-            (r) =>
-              r.pos.roomName === this.hiveName && r.resource instanceof Source
+        const pwrInfo = POWER_INFO[this.nextup.power];
+        if ("ops" in pwrInfo)
+          Apiary.logger.addResourceStat(
+            this.hiveName,
+            "NKVD_" + POWER_NAMES[this.nextup.power],
+            -pwrInfo.ops,
+            RESOURCE_OPS
           );
-          break;
-        case PWR_REGEN_MINERAL:
-          this.targets[power] = _.filter(
-            this.hive.cells.excavation.resourceCells,
-            (r) =>
-              r.pos.roomName === this.hiveName && r.resource instanceof Mineral
-          );
-          break;
-      }
-    }
+
+        this.nextup = undefined;
+      } else if (
+        ans === ERR_NOT_ENOUGH_RESOURCES &&
+        this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_OPS) > 0
+      )
+        this.powerCreep.withdraw(this.cell.sCell.storage, RESOURCE_OPS);
+      else if (ans !== ERR_NOT_IN_RANGE) this.chillMove();
+    } else this.chillMove();
+    super.run();
   }
 
-  private getTimeToRegen(obj: RoomObject, pwr: PowerConstant) {
-    if (!obj.effects) return Game.time;
-    const powerEffect = obj.effects.filter((e) => e.effect === pwr)[0] as
-      | PowerEffect
-      | undefined;
-    if (powerEffect) return Game.time + powerEffect.ticksRemaining;
-    return Game.time;
+  public update() {
+    super.update();
+    if (!this.nextup || Game.time % 50 === 0) this.getNext();
+  }
+
+  // #endregion Public Methods (2)
+
+  // #region Private Methods (4)
+
+  private chillMove() {
+    // keep 150ops to 90% fill of storage
+    const upperBound = Math.max(
+      this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
+      150
+    );
+    const lowerBound = 150;
+    const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
+    const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
+    if (currOps < lowerBound) {
+      this.powerCreep.withdraw(
+        this.cell.sCell.storage,
+        RESOURCE_OPS,
+        targetBalance - currOps,
+        this.hive.opt
+      );
+      return;
+    }
+    if (currOps > upperBound) {
+      this.powerCreep.transfer(
+        this.cell.sCell.storage,
+        RESOURCE_OPS,
+        currOps - targetBalance,
+        this.hive.opt
+      );
+      return;
+    }
+    this.powerCreep.goRest(this.cell.pos, this.hive.opt);
   }
 
   private getNext() {
@@ -218,74 +241,67 @@ export class NKVDMaster extends PowerMaster {
     );
   }
 
-  public update() {
-    super.update();
-    if (!this.nextup || Game.time % 50 === 0) this.getNext();
+  private getTimeToRegen(obj: RoomObject, pwr: PowerConstant) {
+    if (!obj.effects) return Game.time;
+    const powerEffect = obj.effects.filter((e) => e.effect === pwr)[0] as
+      | PowerEffect
+      | undefined;
+    if (powerEffect) return Game.time + powerEffect.ticksRemaining;
+    return Game.time;
   }
 
-  private chillMove() {
-    // keep 150ops to 90% fill of storage
-    const upperBound = Math.max(
-      this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
-      150
-    );
-    const lowerBound = 150;
-    const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
-    const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
-    if (currOps < lowerBound) {
-      this.powerCreep.withdraw(
-        this.cell.sCell.storage,
-        RESOURCE_OPS,
-        targetBalance - currOps,
-        this.hive.opt
-      );
-      return;
-    }
-    if (currOps > upperBound) {
-      this.powerCreep.transfer(
-        this.cell.sCell.storage,
-        RESOURCE_OPS,
-        currOps - targetBalance,
-        this.hive.opt
-      );
-      return;
-    }
-    this.powerCreep.goRest(this.cell.pos, this.hive.opt);
-  }
+  private updateTargets() {
+    for (const powerId in this.powerCreep.powers) {
+      const power = +powerId as PowerConstant;
+      switch (power) {
+        case PWR_OPERATE_SPAWN:
+          this.targets[power] = this.hive.cells.spawn;
+          break;
+        case PWR_OPERATE_FACTORY:
+          this.targets[power] = this.hive.cells.factory;
+          break;
+        case PWR_OPERATE_LAB:
+          this.targets[power] = this.hive.cells.lab;
+          break;
+        case PWR_OPERATE_OBSERVER:
+          this.targets[power] = this.hive.cells.observe;
+          break;
 
-  public run() {
-    if (this.hive.cells.defense.timeToLand < 50)
-      this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
-    else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
-      this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
-    else if (!this.hive.controller.isPowerEnabled)
-      this.powerCreep.enableRoom(this.hive.controller, this.hive.opt);
-    else if (this.nextup && Game.time >= this.nextup.time) {
-      const ans = this.powerCreep.usePower(
-        this.nextup.power,
-        this.nextup.target,
-        this.hive.opt
-      );
-      if (ans === OK) {
-        this.usedPower = true;
+        case PWR_OPERATE_EXTENSION:
+        case PWR_OPERATE_STORAGE:
+        case PWR_OPERATE_TERMINAL:
+          this.targets[power] = this.hive.cells.storage;
+          break;
 
-        const pwrInfo = POWER_INFO[this.nextup.power];
-        if ("ops" in pwrInfo)
-          Apiary.logger.addResourceStat(
-            this.hiveName,
-            "NKVD_" + POWER_NAMES[this.nextup.power],
-            -pwrInfo.ops,
-            RESOURCE_OPS
+        case PWR_FORTIFY: // fortify doesn't need cell
+        case PWR_OPERATE_TOWER:
+          this.targets[power] = this.hive.cells.defense;
+          break;
+
+        case PWR_OPERATE_CONTROLLER:
+          this.targets[power] = this.hive.cells.upgrade;
+          break;
+        case PWR_OPERATE_POWER:
+          this.targets[power] = this.hive.cells.power;
+          break;
+
+        case PWR_REGEN_SOURCE:
+          this.targets[power] = _.filter(
+            this.hive.cells.excavation.resourceCells,
+            (r) =>
+              r.pos.roomName === this.hiveName && r.resource instanceof Source
           );
-
-        this.nextup = undefined;
-      } else if (
-        ans === ERR_NOT_ENOUGH_RESOURCES &&
-        this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_OPS) > 0
-      )
-        this.powerCreep.withdraw(this.cell.sCell.storage, RESOURCE_OPS);
-      else if (ans !== ERR_NOT_IN_RANGE) this.chillMove();
-    } else this.chillMove();
-    super.run();
+          break;
+        case PWR_REGEN_MINERAL:
+          this.targets[power] = _.filter(
+            this.hive.cells.excavation.resourceCells,
+            (r) =>
+              r.pos.roomName === this.hiveName && r.resource instanceof Mineral
+          );
+          break;
+      }
+    }
   }
+
+  // #endregion Private Methods (4)
 }

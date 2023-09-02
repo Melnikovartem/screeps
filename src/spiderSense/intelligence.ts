@@ -39,112 +39,73 @@ export const PEACE_PACTS: string[] = [
 export const NON_AGRESSION_PACKS: string[] = ["TgDgNU", "6g3y", "YoRHa"];
 
 export interface Enemy {
-  object: Creep | PowerCreep | Structure;
+  // #region Properties (3)
+
   dangerlvl: DangerLvl;
+  object: Creep | PowerCreep | Structure;
   type: enemyTypes;
+
+  // #endregion Properties (3)
 }
 
 interface RoomInfo {
-  enemies: Enemy[];
-  dangerlvlmax: DangerLvl;
-  towers: StructureTower[];
+  // #region Properties (8)
 
+  currentOwner: string | undefined;
+  dangerlvlmax: DangerLvl;
+  enemies: Enemy[];
   lastUpdated: number;
   roomState: roomStates;
-  currentOwner: string | undefined;
-  safePlace: boolean;
   safeModeEndTime: number;
+  safePlace: boolean;
+  towers: StructureTower[];
+
+  // #endregion Properties (8)
 }
 
 export interface CreepBattleInfo {
-  dmgClose: number; // in natral hits
-  dmgRange: number; // in natral hits
-  dism: number; // in natral hits
-  heal: number; // in natral hits
-  hits: number; // in natral hits
-  resist: number; // in natral hits
-  move: number; // pertick on plain
+  // #region Properties (7)
+
+  // in natral hits
+  dism: number;
+  dmgClose: number;
+  // in natral hits
+  dmgRange: number;
+  // in natral hits
+  heal: number;
+  // in natral hits
+  hits: number;
+  // in natral hits
+  move: number;
+  // in natral hits
+  resist: number;
+
+  // #endregion Properties (7)
+  // pertick on plain
 }
 
 export interface CreepAllBattleInfo {
-  max: CreepBattleInfo;
+  // #region Properties (2)
+
   current: CreepBattleInfo;
+  max: CreepBattleInfo;
+
+  // #endregion Properties (2)
 }
 
 @profile
 export class Intel {
+  // #region Properties (2)
+
   private roomInfo: { [id: string]: RoomInfo } = {};
   private stats: { [id: string]: CreepAllBattleInfo } = {};
 
-  public update() {
-    this.stats = {};
-    if (Game.time % 50 === 0) this.toCache();
-  }
+  // #endregion Properties (2)
 
-  public getEnemyStructure(pos: ProtoPos, lag?: number) {
-    return this.getEnemy(pos, lag, (es, ri) =>
-      es.filter(
-        (e) =>
-          (![7, 9].includes(ri.dangerlvlmax) ||
-            e.dangerlvl === ri.dangerlvlmax) &&
-          e.object instanceof Structure
-      )
-    ) as Structure | undefined;
-  }
+  // #region Public Methods (11)
 
-  public getEnemyCreep(pos: ProtoPos, lag?: number) {
-    return this.getEnemy(pos, lag, (es) =>
-      es.filter((e) => e.object instanceof Creep)
-    ) as Creep | undefined;
-  }
-
-  public getRoomState(protoName: { roomName: string } | string) {
-    const roomName: string =
-      typeof protoName === "string" ? protoName : protoName.roomName;
-    return this.getInfo(roomName, Infinity).roomState;
-  }
-
-  public getEnemy(
-    pos: ProtoPos,
-    lag?: number,
-    filter: (
-      enemies: Enemy[],
-      roomInfo: RoomInfo,
-      pos: RoomPosition
-    ) => Enemy[] = (es, ri, posInterest) =>
-      es.filter(
-        (e) =>
-          e.dangerlvl === ri.dangerlvlmax ||
-          (e.dangerlvl >= 4 && posInterest.getRangeTo(e.object) <= 5)
-      )
-  ) {
-    if (!(pos instanceof RoomPosition)) pos = pos.pos;
-
-    const roomInfo = this.getInfo(pos.roomName, lag);
-    const enemies = filter(roomInfo.enemies, roomInfo, pos);
-    if (!enemies.length) return;
-
-    return enemies.reduce((prev, curr) => {
-      let ans =
-        (pos as RoomPosition).getRangeTo(curr.object) -
-        (pos as RoomPosition).getRangeTo(prev.object);
-      if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
-      return ans < 0 ? curr : prev;
-    }).object;
-  }
-
-  public getTowerAttack(pos: RoomPosition, lag?: number) {
-    const roomInfo = this.getInfo(pos.roomName, lag);
-    let ans = 0;
-    _.forEach(roomInfo.towers, (t) => {
-      // 20 cause 1 shot (10) doesn't do shit
-      if (
-        (t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 20) ||
-        t.owner.username === "Invader"
-      )
-        ans += towerCoef(t, pos) * TOWER_POWER_ATTACK;
-    });
-    return ans;
+  public getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
+    return this.getComplexStats(pos, range, closePadding, FIND_MY_CREEPS);
   }
 
   public getComplexStats(
@@ -208,8 +169,57 @@ export class Intel {
     return ans;
   }
 
-  public getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
-    return this.getComplexStats(pos, range, closePadding, FIND_MY_CREEPS);
+  public getEnemy(
+    pos: ProtoPos,
+    lag?: number,
+    filter: (
+      enemies: Enemy[],
+      roomInfo: RoomInfo,
+      pos: RoomPosition
+    ) => Enemy[] = (es, ri, posInterest) =>
+      es.filter(
+        (e) =>
+          e.dangerlvl === ri.dangerlvlmax ||
+          (e.dangerlvl >= 4 && posInterest.getRangeTo(e.object) <= 5)
+      )
+  ) {
+    if (!(pos instanceof RoomPosition)) pos = pos.pos;
+
+    const roomInfo = this.getInfo(pos.roomName, lag);
+    const enemies = filter(roomInfo.enemies, roomInfo, pos);
+    if (!enemies.length) return;
+
+    return enemies.reduce((prev, curr) => {
+      let ans =
+        (pos as RoomPosition).getRangeTo(curr.object) -
+        (pos as RoomPosition).getRangeTo(prev.object);
+      if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
+      return ans < 0 ? curr : prev;
+    }).object;
+  }
+
+  public getEnemyCreep(pos: ProtoPos, lag?: number) {
+    return this.getEnemy(pos, lag, (es) =>
+      es.filter((e) => e.object instanceof Creep)
+    ) as Creep | undefined;
+  }
+
+  public getEnemyStructure(pos: ProtoPos, lag?: number) {
+    return this.getEnemy(pos, lag, (es, ri) =>
+      es.filter(
+        (e) =>
+          (![7, 9].includes(ri.dangerlvlmax) ||
+            e.dangerlvl === ri.dangerlvlmax) &&
+          e.object instanceof Structure
+      )
+    ) as Structure | undefined;
+  }
+
+  public getFleeDist(creep: Creep, padding = 0) {
+    const info = this.getStats(creep).current;
+    if (info.dmgRange > padding) return 4;
+    else if (info.dmgClose > padding) return 2;
+    else return 0;
   }
 
   public getInfo(roomName: string, lag: number = 0): RoomInfo {
@@ -327,6 +337,112 @@ export class Intel {
     return this.roomInfo[roomName];
   }
 
+  public getRoomState(protoName: { roomName: string } | string) {
+    const roomName: string =
+      typeof protoName === "string" ? protoName : protoName.roomName;
+    return this.getInfo(roomName, Infinity).roomState;
+  }
+
+  public getStats(creep: Creep) {
+    if (creep.id in this.stats) return this.stats[creep.id];
+    const ans: CreepAllBattleInfo = {
+      max: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+        resist: 0,
+        move: 0,
+      },
+      current: {
+        dmgClose: 0,
+        dmgRange: 0,
+        dism: 0,
+        heal: 0,
+        hits: 0,
+        resist: 0,
+        move: 0,
+      },
+    };
+
+    if (!creep) return ans;
+
+    ans.current.hits = creep.hits;
+    ans.max.hits = creep.hitsMax;
+    _.forEach(creep.body, (b) => {
+      let stat: number;
+      switch (b.type) {
+        case RANGED_ATTACK:
+          stat =
+            RANGED_ATTACK_POWER *
+            (b.boost ? BOOSTS.ranged_attack[b.boost].rangedAttack : 1);
+          ans.max.dmgRange += stat;
+          if (b.hits) ans.current.dmgRange += stat;
+          break;
+        case ATTACK:
+          stat = ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost].attack : 1);
+          ans.max.dmgClose += stat;
+          if (b.hits) ans.current.dmgClose += stat;
+          break;
+        case HEAL:
+          stat = HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost].heal : 1);
+          ans.max.heal += stat;
+          if (b.hits) ans.current.heal += stat;
+          break;
+        case WORK: {
+          const boost = b.boost && BOOSTS.work[b.boost];
+          stat =
+            DISMANTLE_POWER *
+            (boost && "dismantle" in boost ? boost.dismantle : 1);
+          ans.max.dism += stat;
+          if (b.hits) ans.current.dism += stat;
+          break;
+        }
+        case TOUGH:
+          stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 100;
+          ans.max.resist += stat;
+          if (b.hits) ans.current.resist += stat;
+          break;
+        case MOVE:
+      }
+    });
+    let rounding = (x: number) => Math.ceil(x);
+    if (creep.my) rounding = (x: number) => Math.floor(x);
+
+    ans.current.resist = rounding(ans.current.resist);
+    ans.max.resist = rounding(ans.max.resist);
+
+    ans.current.hits += ans.current.resist;
+    ans.max.hits += ans.max.resist;
+
+    this.stats[creep.id] = ans;
+    return ans;
+  }
+
+  public getTowerAttack(pos: RoomPosition, lag?: number) {
+    const roomInfo = this.getInfo(pos.roomName, lag);
+    let ans = 0;
+    _.forEach(roomInfo.towers, (t) => {
+      // 20 cause 1 shot (10) doesn't do shit
+      if (
+        (t.isActive() && t.store.getUsedCapacity(RESOURCE_ENERGY) >= 20) ||
+        t.owner.username === "Invader"
+      )
+        ans += towerCoef(t, pos) * TOWER_POWER_ATTACK;
+    });
+    return ans;
+  }
+
+  public update() {
+    this.stats = {};
+    if (Game.time % 50 === 0) this.toCache();
+  }
+
+  // #endregion Public Methods (11)
+
+  // #region Private Methods (3)
+
   // will *soon* remove in favor for lib
   private toCache() {
     for (const roomName in this.roomInfo) {
@@ -343,6 +459,18 @@ export class Intel {
         };
       else delete Memory.cache.intellegence[roomName];
     }
+  }
+
+  private updateDangerLvl(roomInfo: RoomInfo) {
+    if (roomInfo.enemies.length)
+      roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) =>
+        prev.dangerlvl < curr.dangerlvl ? curr : prev
+      ).dangerlvl;
+    else roomInfo.dangerlvlmax = 0;
+    roomInfo.safePlace =
+      roomInfo.dangerlvlmax < 4 ||
+      (roomInfo.safeModeEndTime > Game.time &&
+        roomInfo.roomState === roomStates.ownedByMe);
   }
 
   private updateEnemiesInRoom(room: Room) {
@@ -517,99 +645,5 @@ export class Intel {
     this.updateDangerLvl(roomInfo);
   }
 
-  private updateDangerLvl(roomInfo: RoomInfo) {
-    if (roomInfo.enemies.length)
-      roomInfo.dangerlvlmax = roomInfo.enemies.reduce((prev, curr) =>
-        prev.dangerlvl < curr.dangerlvl ? curr : prev
-      ).dangerlvl;
-    else roomInfo.dangerlvlmax = 0;
-    roomInfo.safePlace =
-      roomInfo.dangerlvlmax < 4 ||
-      (roomInfo.safeModeEndTime > Game.time &&
-        roomInfo.roomState === roomStates.ownedByMe);
-  }
-
-  public getFleeDist(creep: Creep, padding = 0) {
-    const info = this.getStats(creep).current;
-    if (info.dmgRange > padding) return 4;
-    else if (info.dmgClose > padding) return 2;
-    else return 0;
-  }
-
-  public getStats(creep: Creep) {
-    if (creep.id in this.stats) return this.stats[creep.id];
-    const ans: CreepAllBattleInfo = {
-      max: {
-        dmgClose: 0,
-        dmgRange: 0,
-        dism: 0,
-        heal: 0,
-        hits: 0,
-        resist: 0,
-        move: 0,
-      },
-      current: {
-        dmgClose: 0,
-        dmgRange: 0,
-        dism: 0,
-        heal: 0,
-        hits: 0,
-        resist: 0,
-        move: 0,
-      },
-    };
-
-    if (!creep) return ans;
-
-    ans.current.hits = creep.hits;
-    ans.max.hits = creep.hitsMax;
-    _.forEach(creep.body, (b) => {
-      let stat: number;
-      switch (b.type) {
-        case RANGED_ATTACK:
-          stat =
-            RANGED_ATTACK_POWER *
-            (b.boost ? BOOSTS.ranged_attack[b.boost].rangedAttack : 1);
-          ans.max.dmgRange += stat;
-          if (b.hits) ans.current.dmgRange += stat;
-          break;
-        case ATTACK:
-          stat = ATTACK_POWER * (b.boost ? BOOSTS.attack[b.boost].attack : 1);
-          ans.max.dmgClose += stat;
-          if (b.hits) ans.current.dmgClose += stat;
-          break;
-        case HEAL:
-          stat = HEAL_POWER * (b.boost ? BOOSTS.heal[b.boost].heal : 1);
-          ans.max.heal += stat;
-          if (b.hits) ans.current.heal += stat;
-          break;
-        case WORK: {
-          const boost = b.boost && BOOSTS.work[b.boost];
-          stat =
-            DISMANTLE_POWER *
-            (boost && "dismantle" in boost ? boost.dismantle : 1);
-          ans.max.dism += stat;
-          if (b.hits) ans.current.dism += stat;
-          break;
-        }
-        case TOUGH:
-          stat = 100 / (b.boost ? BOOSTS.tough[b.boost].damage : 1) - 100;
-          ans.max.resist += stat;
-          if (b.hits) ans.current.resist += stat;
-          break;
-        case MOVE:
-      }
-    });
-    let rounding = (x: number) => Math.ceil(x);
-    if (creep.my) rounding = (x: number) => Math.floor(x);
-
-    ans.current.resist = rounding(ans.current.resist);
-    ans.max.resist = rounding(ans.max.resist);
-
-    ans.current.hits += ans.current.resist;
-    ans.max.hits += ans.max.resist;
-
-    this.stats[creep.id] = ans;
-    return ans;
-  }
+  // #endregion Private Methods (3)
 }

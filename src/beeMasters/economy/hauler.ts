@@ -12,41 +12,71 @@ import { Master } from "../_Master";
 const STOP_HAULING_RESOURCES = FULL_CAPACITY;
 
 @profile
-export class HaulerMaster extends Master {
-  private cell: ExcavationCell;
-  private targetMap: { [id: string]: string | undefined } = {};
-  private roadUpkeepCost: { [id: string]: number } = {};
+export class HaulerMaster extends Master<ExcavationCell> {
+  // #region Properties (9)
+
+  private _targetBeeCount = 0;
   private accumRoadTime = 0;
   private minRoadTime: number = 0;
+  private roadUpkeepCost: { [id: string]: number } = {};
+  private targetMap: { [id: string]: string | undefined } = {};
 
-  public dropOff: StructureStorage; // | StructureContainer | StructureLink | StructureTerminal
-
-  public constructor(
-    excavationCell: ExcavationCell,
-    storage: StructureStorage
-  ) {
-    super(excavationCell.hive, excavationCell.ref);
-    this.cell = excavationCell;
-    this.dropOff = storage;
-    this.recalculateTargetBee();
-  }
-
+  public deleteBee = (ref: string) => {
+    super.deleteBee(ref);
+    delete this.roadUpkeepCost[ref];
+  };
+  public dropOff: StructureStorage;
+  public movePriority = 5 as const;
   public newBee = (bee: Bee) => {
     if (bee.state === beeStates.idle && bee.store.getUsedCapacity())
       bee.state = beeStates.work;
     super.newBee(bee);
   };
 
-  public deleteBee = (ref: string) => {
-    super.deleteBee(ref);
-    delete this.roadUpkeepCost[ref];
-  };
+  // #endregion Properties (9)
+
+  // #region Constructors (1)
+
+  // | StructureContainer | StructureLink | StructureTerminal
+  public constructor(
+    excavationCell: ExcavationCell,
+    storage: StructureStorage
+  ) {
+    super(excavationCell);
+    this.dropOff = storage;
+    this.recalculateTargetBee();
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
+  public get targetBeeCount() {
+    return this._targetBeeCount;
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (5)
+
+  public checkBeesWithRecalc() {
+    const check = () =>
+      this.checkBees(
+        hiveStates.battle !== this.hive.state || !this.beesAmount,
+        CREEP_LIFE_TIME - this.minRoadTime - 10
+      );
+    // double check to be sure
+    if (this.targetBeeCount && !check()) return false;
+    this.recalculateRoadTime();
+    this.recalculateTargetBee();
+    return check();
+  }
 
   public recalculateRoadTime() {
     this.accumRoadTime = 0; // roadTime * minePotential
     this.minRoadTime = Infinity;
     if (this.hive.cells.storage)
-      _.forEach(this.cell.resourceCells, (cell) => {
+      _.forEach(this.parent.resourceCells, (cell) => {
         if (
           cell.operational &&
           cell.roadTime !== Infinity &&
@@ -64,92 +94,23 @@ export class HaulerMaster extends Master {
         }
       });
     if (this.minRoadTime === Infinity) this.minRoadTime = 0;
-    this.cell.shouldRecalc = false;
+    this.parent.shouldRecalc = false;
   }
 
   public recalculateTargetBee() {
     const body = setups.hauler.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;
-    this.cell.fullContainer = Math.min(
+    this.parent.fullContainer = Math.min(
       CONTAINER_CAPACITY,
       body.filter((b) => b === CARRY).length * CARRY_CAPACITY
     );
     let rounding = (x: number) => Math.ceil(x - 0.15);
     if (this.hive.state === hiveStates.lowenergy)
       rounding = (x) => Math.floor(x + 0.15);
-    this.targetBeeCount = rounding(
-      this.accumRoadTime / this.cell.fullContainer
+    this._targetBeeCount = rounding(
+      this.accumRoadTime / this.parent.fullContainer
     );
-  }
-
-  public checkBeesWithRecalc() {
-    const check = () =>
-      this.checkBees(
-        hiveStates.battle !== this.hive.state || !this.beesAmount,
-        CREEP_LIFE_TIME - this.minRoadTime - 10
-      );
-    // double check to be sure
-    if (this.targetBeeCount && !check()) return false;
-    this.recalculateRoadTime();
-    this.recalculateTargetBee();
-    return check();
-  }
-
-  public update() {
-    super.update();
-
-    if (!this.accumRoadTime || this.cell.shouldRecalc) {
-      this.targetBeeCount = 0;
-      if (Game.time % 50 === 0 || this.cell.shouldRecalc) {
-        this.recalculateRoadTime();
-        if (!this.accumRoadTime) return;
-        this.recalculateTargetBee();
-      } else return;
-    }
-
-    // dont haul resources if we are already full
-    // failsafe
-    if (
-      this.dropOff.store.getFreeCapacity() <=
-      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
-    )
-      return;
-
-    if (this.cell.shouldRecalc) {
-      this.recalculateRoadTime();
-      this.recalculateTargetBee();
-    }
-
-    if (this.checkBeesWithRecalc())
-      this.wish({
-        setup: setups.hauler,
-        priority: this.beesAmount ? 5 : 3,
-      });
-
-    _.forEach(this.cell.quitefullCells, (cell) => {
-      const container = cell.container;
-      if (!container) return;
-
-      const target = this.targetMap[container.id];
-      const oldBee = target && this.bees[target];
-      if (oldBee && oldBee.target === container.id) return;
-
-      const bee = container.pos.findClosest(
-        _.filter(
-          this.activeBees,
-          (b) =>
-            b.state === beeStates.chill &&
-            b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell) + 15
-        )
-      );
-      if (bee) {
-        bee.state = beeStates.refill;
-        bee.target = container.id;
-        this.roadUpkeepCost[bee.ref] = 0;
-        this.targetMap[container.id] = bee.ref;
-      }
-    });
   }
 
   public run() {
@@ -337,4 +298,62 @@ export class HaulerMaster extends Master {
       }
     });
   }
+
+  public update() {
+    super.update();
+
+    if (!this.accumRoadTime || this.parent.shouldRecalc) {
+      this._targetBeeCount = 0;
+      if (Game.time % 50 === 0 || this.parent.shouldRecalc) {
+        this.recalculateRoadTime();
+        if (!this.accumRoadTime) return;
+        this.recalculateTargetBee();
+      } else return;
+    }
+
+    // dont haul resources if we are already full
+    // failsafe
+    if (
+      this.dropOff.store.getFreeCapacity() <=
+      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
+    )
+      return;
+
+    if (this.parent.shouldRecalc) {
+      this.recalculateRoadTime();
+      this.recalculateTargetBee();
+    }
+
+    if (this.checkBeesWithRecalc())
+      this.wish({
+        setup: setups.hauler,
+        priority: this.beesAmount ? 5 : 3,
+      });
+
+    _.forEach(this.parent.quitefullCells, (cell) => {
+      const container = cell.container;
+      if (!container) return;
+
+      const target = this.targetMap[container.id];
+      const oldBee = target && this.bees[target];
+      if (oldBee && oldBee.target === container.id) return;
+
+      const bee = container.pos.findClosest(
+        _.filter(
+          this.activeBees,
+          (b) =>
+            b.state === beeStates.chill &&
+            b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell) + 15
+        )
+      );
+      if (bee) {
+        bee.state = beeStates.refill;
+        bee.target = container.id;
+        this.roadUpkeepCost[bee.ref] = 0;
+        this.targetMap[container.id] = bee.ref;
+      }
+    });
+  }
+
+  // #endregion Public Methods (5)
 }

@@ -10,11 +10,23 @@ import { HordeMaster } from "./horde";
 
 @profile
 export class HordeDefenseMaster extends HordeMaster {
+  // #region Public Accessors (2)
+
   public get maxSpawns() {
     return this.targetBeeCount;
   }
 
   public set maxSpawns(_) {}
+
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (3)
+
+  public delete() {
+    super.delete();
+    if (Apiary.defenseSwarms[this.pos.roomName] === this)
+      delete Apiary.defenseSwarms[this.pos.roomName];
+  }
 
   public init() {
     const defSwarm = Apiary.defenseSwarms[this.pos.roomName];
@@ -243,9 +255,5 @@ export class HordeDefenseMaster extends HordeMaster {
     this.wish(order);
   }
 
-  public delete() {
-    super.delete();
-    if (Apiary.defenseSwarms[this.pos.roomName] === this)
-      delete Apiary.defenseSwarms[this.pos.roomName];
-  }
+  // #endregion Public Methods (3)
 }

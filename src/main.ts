@@ -15,14 +15,18 @@ import { Mem } from "abstract/memory";
 import { _Apiary } from "Apiary";
 import { CustomConsole } from "convenience/console/console";
 import profiler from "screeps-profiler";
-import { LOGGING_CYCLE, PROFILER } from "settings";
+import { PROFILER } from "settings";
 
 // Declare global namespace properties
 declare global {
   namespace NodeJS {
     interface Global {
-      Apiary?: _Apiary;
+      // #region Properties (2)
+
       A: CustomConsole;
+      Apiary?: _Apiary;
+
+      // #endregion Properties (2)
     }
   }
 }

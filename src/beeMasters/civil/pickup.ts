@@ -8,7 +8,14 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class PickupMaster extends SwarmMaster {
+  // #region Properties (1)
+
   private waitPos = this.pos.getOpenPositions(true, 3)[0];
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
+
   public constructor(order: FlagOrder) {
     super(order);
     this.boosts = [
@@ -17,21 +24,9 @@ export class PickupMaster extends SwarmMaster {
     ];
   }
 
-  public update() {
-    super.update();
-    if (this.checkBees(this.hive.state <= hiveStates.battle)) {
-      let setup = setups.pickup;
-      if (this.pos.getRoomRangeTo(this.hive) <= 1) {
-        setup = setup.copy();
-        setup.moveMax = 50 / 3;
-        this.boosts = undefined;
-      }
-      this.wish({
-        setup,
-        priority: 4,
-      });
-    }
-  }
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
 
   public get target() {
     if (!this.order.memory.extraInfo) this.order.memory.extraInfo = "";
@@ -48,6 +43,10 @@ export class PickupMaster extends SwarmMaster {
     if (value) this.order.memory.extraInfo = value.id;
     else this.order.memory.extraInfo = "";
   }
+
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (3)
 
   public getTarget() {
     let target:
@@ -168,4 +167,22 @@ export class PickupMaster extends SwarmMaster {
       this.checkFlee(bee);
     });
   }
+
+  public update() {
+    super.update();
+    if (this.checkBees(this.hive.state <= hiveStates.battle)) {
+      let setup = setups.pickup;
+      if (this.pos.getRoomRangeTo(this.hive) <= 1) {
+        setup = setup.copy();
+        setup.moveMax = 50 / 3;
+        this.boosts = undefined;
+      }
+      this.wish({
+        setup,
+        priority: 4,
+      });
+    }
+  }
+
+  // #endregion Public Methods (3)
 }

@@ -85,7 +85,7 @@ export enum prefix {
   puller = "depositPuller_" /** Deposit puller prefix */,
 
   // game constants
-  master = "master_" /** Master prefix */,
+  master = "m_" /** Master prefix */,
   swarm = "swarm_" /** Swarm prefix */,
 
   nkvd = "NKVD'shnik" /** NKVD prefix */,

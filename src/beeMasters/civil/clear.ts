@@ -12,29 +12,23 @@ import { SwarmMaster } from "../_SwarmMaster";
  */
 @profile
 export class ClearMaster extends SwarmMaster {
+  // #region Public Accessors (4)
+
+  public get maxSpawns() {
+    return 1;
+  }
+
+  public set maxSpawns(_) {}
+
   public get targetBeeCount() {
     return 1;
   }
 
   public set targetBeeCount(_) {}
 
-  public get maxSpawns() {
-    return 1;
-  }
-  public set maxSpawns(_) {}
+  // #endregion Public Accessors (4)
 
-  public update() {
-    super.update();
-    if (this.checkBees()) {
-      const setup = setups.managerQueen.copy();
-      setup.patternLimit = 4;
-      setup.moveMax = 1;
-      this.wish({
-        setup,
-        priority: 1,
-      });
-    }
-  }
+  // #region Public Methods (2)
 
   // @todo add functions to manager queen
   public run() {
@@ -55,4 +49,19 @@ export class ClearMaster extends SwarmMaster {
       }
     });
   }
+
+  public update() {
+    super.update();
+    if (this.checkBees()) {
+      const setup = setups.managerQueen.copy();
+      setup.patternLimit = 4;
+      setup.moveMax = 1;
+      this.wish({
+        setup,
+        priority: 1,
+      });
+    }
+  }
+
+  // #endregion Public Methods (2)
 }

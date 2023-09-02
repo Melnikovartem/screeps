@@ -6,9 +6,22 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class PuppetMaster extends SwarmMaster {
-  movePriority = 5 as const;
+  // #region Properties (1)
 
-  update() {
+  public movePriority = 5 as const;
+
+  // #endregion Properties (1)
+
+  // #region Public Methods (2)
+
+  public run() {
+    _.forEach(this.activeBees, (bee) => {
+      bee.goRest(this.pos, { offRoad: true });
+      this.checkFlee(bee, undefined, { offRoad: true }, false);
+    });
+  }
+
+  public update() {
     super.update();
     if (
       !(this.pos.roomName in Game.rooms) &&
@@ -23,10 +36,5 @@ export class PuppetMaster extends SwarmMaster {
     }
   }
 
-  run() {
-    _.forEach(this.activeBees, (bee) => {
-      bee.goRest(this.pos, { offRoad: true });
-      this.checkFlee(bee, undefined, { offRoad: true }, false);
-    });
-  }
+  // #endregion Public Methods (2)
 }

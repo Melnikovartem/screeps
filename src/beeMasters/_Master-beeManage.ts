@@ -3,44 +3,44 @@ import { SpawnOrder } from "hive/hive-declarations";
 import { ERR_INVALID_ACTION } from "static/constants";
 import { beeStates, hiveStates } from "static/enums";
 
-import { Master } from "./_Master";
+import { Master, MasterParent } from "./_Master";
 
 const BEE_QUE_PER_MASTER = 3;
 
-export function newBee(master: Master, bee: Bee) {
+export function newBee(this: Master<MasterParent>, bee: Bee) {
   // 0.2 cost is a no from me
-  // bee.creep.notifyWhenAttacked(master.notify);
-  bee.memory.refMaster = master.ref;
+  // bee.creep.notifyWhenAttacked(this.notify);
+  bee.memory.refMaster = this.ref;
   if (bee.state === beeStates.idle)
     bee.state =
-      master.boosts && master.hive.cells.lab && bee.ticksToLive > 1200
+      this.boosts && this.hive.cells.lab && bee.ticksToLive > 1200
         ? beeStates.boosting
         : beeStates.chill;
-  master.bees[bee.ref] = bee;
-  if (master.waitingForBees) master.waitingForBees -= 1;
+  this.bees[bee.ref] = bee;
+  if (this.waitingForBees) this.waitingForBees -= 1;
 
-  ++master.beesAmount;
-  master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
+  ++this.beesAmount;
+  this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) =>
     curr.creep.memory.born < prev.creep.memory.born ? curr : prev
   ).creep.memory.born;
 }
 
-export function deleteBee(master: Master, ref: string) {
-  delete master.bees[ref];
-  delete master.stcukEnterance[ref];
-  for (let i = 0; i < master.activeBees.length; ++i)
-    if (master.activeBees[i].ref === ref) {
-      master.activeBees.splice(i, 1);
+export function deleteBee(this: Master<MasterParent>, ref: string) {
+  delete this.bees[ref];
+  delete this.stcukEnterance[ref];
+  for (let i = 0; i < this.activeBees.length; ++i)
+    if (this.activeBees[i].ref === ref) {
+      this.activeBees.splice(i, 1);
       --i;
     }
-  master.beesAmount = Object.keys(master.bees).length;
-  if (master.beesAmount)
-    master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
+  this.beesAmount = Object.keys(this.bees).length;
+  if (this.beesAmount)
+    this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) =>
       curr.creep.memory.born < prev.creep.memory.born ? curr : prev
     ).creep.memory.born;
 }
 
-export function removeBee(this: Master, bee: Bee) {
+export function removeBee(this: Master<MasterParent>, bee: Bee) {
   bee.master = undefined;
   bee.memory.refMaster = "";
   bee.state = beeStates.chill;
@@ -48,31 +48,33 @@ export function removeBee(this: Master, bee: Bee) {
 }
 
 export function checkBees(
-  master: Master,
-  spawnExtreme: boolean = false,
+  this: Master<MasterParent>,
+  spawnWhenExtreme: boolean = false,
   spawnCycle: number = CREEP_LIFE_TIME - 10
 ): boolean {
+  // failsafe for spawning bees without checking
+  this.checkBeforeWish = true;
   // in 4 ifs to be able to read...
-  if (master.waitingForBees > BEE_QUE_PER_MASTER || master.targetBeeCount === 0)
+  if (this.waitingForBees > BEE_QUE_PER_MASTER || this.targetBeeCount === 0)
     return false;
-  if (!spawnExtreme && master.hive.state !== hiveStates.economy) return false;
+  if (!spawnWhenExtreme && this.hive.state !== hiveStates.economy) return false;
   if (
-    (master.hive.bassboost || master.hive).cells.defense.timeToLand <
+    (this.hive.bassboost || this.hive).cells.defense.timeToLand <
     spawnCycle / 2
   )
     return false;
-  const beesAmountFuture = master.beesAmount + master.waitingForBees;
+  const beesAmountFuture = this.beesAmount + this.waitingForBees;
   return (
-    beesAmountFuture < master.targetBeeCount ||
-    (beesAmountFuture === master.targetBeeCount &&
-      master.oldestSpawn + spawnCycle <= Game.time &&
-      !master.waitingForBees) // no more then one bee on cycle spawn que
+    beesAmountFuture < this.targetBeeCount ||
+    (beesAmountFuture === this.targetBeeCount &&
+      this.oldestSpawn + spawnCycle <= Game.time &&
+      !this.waitingForBees) // no more then one bee on cycle spawn que
   );
 }
 
 // used to support chages before creep before it whent to production
 export function wish(
-  this: Master,
+  this: Master<MasterParent>,
   template: { setup: SpawnOrder["setup"]; priority: SpawnOrder["priority"] }
 ) {
   if (!this.checkBeforeWish) {
@@ -116,7 +118,7 @@ export function wish(
  * @param endCycle there are nothing for bee to do so it may die. default is true
  */
 export function recycleBee(
-  this: Master,
+  this: Master<MasterParent>,
   bee: Bee,
   opt?: TravelToOptions,
   endCycle: boolean = true

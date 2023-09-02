@@ -14,7 +14,13 @@ export class DepositPickupMaster extends Master {
   public constructor(parent: DepositMaster) {
     super(parent.hive, parent.order.ref + "_" + prefix.pickup);
     this.parent = parent;
+
+    // where to wait for pickup
+    this.rest = new RoomPosition(25, 25, this.pos.roomName).findClosest(
+      this.pos.getOpenPositions(true, 2).filter((p) => p.getRangeTo(this) > 1)
+    )!;
   }
+  private rest: RoomPosition;
 
   private get setup() {
     const setup = setups.pickup.copy();

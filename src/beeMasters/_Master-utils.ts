@@ -3,9 +3,11 @@ import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { beeStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 
-import { Master } from "./_Master";
+import { Master, MasterParent } from "./_Master";
 
-export function preRunBoost(this: Master) {
+const FLEE_INTEL_LAG = 30;
+
+export function preRunBoost(this: Master<MasterParent>) {
   _.forEach(this.bees, (bee) => {
     if (bee.state === beeStates.boosting)
       if (!this.hive.cells.lab || this.hive.cells.lab.boostBee(bee) === OK)
@@ -13,29 +15,36 @@ export function preRunBoost(this: Master) {
   });
 }
 
-export function secureBoostsHive(this: Master) {
-  if (
-    this.boosts &&
-    (this.waitingForBees ||
-      _.filter(this.bees, (b) => b.state === beeStates.boosting).length)
-  )
-    _.forEach(this.boosts, (boost) =>
-      addResDict(
-        this.hive.mastersResTarget,
-        BOOST_MINERAL[boost.type][boost.lvl],
-        35 * this.targetBeeCount * LAB_BOOST_MINERAL // wont use all, but better then cal for each bee (?or not?)
-      )
-    );
+export function secureBoostsHive(this: Master<MasterParent>) {
+  if (!this.boosts.length) return;
+  const futureBees = Math.max(
+    0,
+    this.targetBeeCount - (this.beesAmount + this.waitingForBees)
+  );
+  const wantBoostRn = _.filter(
+    this.bees,
+    (b) => b.state === beeStates.boosting
+  ).length;
+  // we do not count bees that don't want to bee boosted but any future bees should have boosts
+  const amountToSecure = this.waitingForBees + wantBoostRn + futureBees;
+  if (amountToSecure < 0) return;
+  _.forEach(this.boosts, (boost) =>
+    addResDict(
+      this.hive.mastersResTarget,
+      BOOST_MINERAL[boost.type][boost.lvl],
+      35 * amountToSecure * LAB_BOOST_MINERAL // wont use all, but better then cal for each bee (?or not?)
+    )
+  );
   // 35 is not best number, but it is ok for what it is worth
 }
 
 export function checkFlee(
-  this: Master,
-  bee: ProtoBee<Creep | PowerCreep>,
-  fleePos?: { pos: RoomPosition },
-  opt?: TravelToOptions,
-  stop: boolean = true,
-  lag = 30
+  this: Master<MasterParent>,
+  bee: ProtoBee<Creep | PowerCreep>, // who looks if fleeing is needed
+  fleePos?: { pos: RoomPosition }, // where to flee
+  opt?: TravelToOptions, // custom opt
+  stop: boolean = true, // can stop or just run run run
+  lag = FLEE_INTEL_LAG
 ) {
   let pos = bee.pos;
   if (bee.targetPosition)

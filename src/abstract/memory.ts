@@ -5,9 +5,28 @@ import { profile } from "../profiler/decorator";
 
 @profile
 export class Mem {
+  // #region Public Static Methods (3)
+
+  public static clean() {
+    for (const name in Memory.creeps)
+      if (!(name in Game.creeps)) {
+        delete Memory.creeps[name];
+        if (Apiary.bees[name]) delete Apiary.bees[name];
+      }
+
+    for (const name in Memory.flags)
+      if (!(name in Game.flags)) {
+        delete Memory.flags[name];
+        if (Apiary.orders[name]) Apiary.orders[name].delete();
+      }
+
+    Apiary.logger.clean();
+  }
+
   public static init() {
-    if (!Memory.cache) Memory.cache = CACHE_EMPTY_DEFAULT;
     if (!Memory.settings) Memory.settings = SETTINGS_DEFAULT;
+
+    if (!Memory.cache) Memory.cache = CACHE_EMPTY_DEFAULT;
 
     for (const roomName in Memory.cache.hives) {
       const room = Game.rooms[roomName];
@@ -26,19 +45,5 @@ export class Mem {
     Logger.wipe();
   }
 
-  public static clean() {
-    for (const name in Memory.creeps)
-      if (!(name in Game.creeps)) {
-        delete Memory.creeps[name];
-        if (Apiary.bees[name]) delete Apiary.bees[name];
-      }
-
-    for (const name in Memory.flags)
-      if (!(name in Game.flags)) {
-        delete Memory.flags[name];
-        if (Apiary.orders[name]) Apiary.orders[name].delete();
-      }
-
-    Apiary.logger.clean();
-  }
+  // #endregion Public Static Methods (3)
 }

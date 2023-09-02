@@ -1,40 +1,27 @@
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
+import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { hiveStates, roomStates, signText } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class ClaimerMaster extends SwarmMaster {
+export class ClaimerMaster extends SwarmMaster<SwarmOrder> {
+  // #region Properties (1)
+
   public movePriority = 3 as const;
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.maxSpawns = 5;
+  // #endregion Properties (1)
+
+  // #region Public Accessors (1)
+
+  public get maxSpawns() {
+    return 5;
   }
 
-  public update() {
-    super.update();
+  // #endregion Public Accessors (1)
 
-    if (
-      this.checkBees(
-        this.hive.state <= hiveStates.battle,
-        CREEP_CLAIM_LIFE_TIME
-      )
-    ) {
-      const setup = setups.claimer.copy();
-      if (this.pos.getRoomRangeTo(this.hive, "path") >= 4)
-        setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
-      const roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
-      if (roomInfo.roomState >= roomStates.reservedByInvader)
-        setup.patternLimit = 5;
-      this.wish({
-        setup,
-        priority: 2,
-      });
-    }
-  }
+  // #region Public Methods (2)
 
   public run() {
     _.forEach(this.activeBees, (bee) => {
@@ -66,4 +53,28 @@ export class ClaimerMaster extends SwarmMaster {
       this.checkFlee(bee, undefined, { useFindRoute: true }, false);
     });
   }
+
+  public update() {
+    super.update();
+
+    if (
+      this.checkBees(
+        this.hive.state <= hiveStates.battle,
+        CREEP_CLAIM_LIFE_TIME
+      )
+    ) {
+      const setup = setups.claimer.copy();
+      if (this.pos.getRoomRangeTo(this.hive, "path") >= 4)
+        setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
+      const roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
+      if (roomInfo.roomState >= roomStates.reservedByInvader)
+        setup.patternLimit = 5;
+      this.wish({
+        setup,
+        priority: 2,
+      });
+    }
+  }
+
+  // #endregion Public Methods (2)
 }

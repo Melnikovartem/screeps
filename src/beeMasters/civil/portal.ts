@@ -12,11 +12,18 @@ const HAUL_PER_TRIP = 1_000;
 
 @profile
 export class PortalMaster extends SwarmMaster {
-  public setup = setups.puppet;
+  // #region Properties (5)
+
+  private commodities = false;
+
+  public cycle: number = CREEP_LIFE_TIME;
   public priority: 2 | 9 = 9;
   public res: ResourceConstant | undefined;
-  public cycle: number = CREEP_LIFE_TIME;
-  private commodities = false;
+  public setup = setups.puppet;
+
+  // #endregion Properties (5)
+
+  // #region Constructors (1)
 
   public constructor(order: FlagOrder) {
     super(order);
@@ -58,6 +65,39 @@ export class PortalMaster extends SwarmMaster {
       this.setup = setups.puppet;
       this.priority = 2; // well it IS cheap -_-
     }
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Methods (2)
+
+  public run() {
+    this.preRunBoost();
+    _.forEach(this.activeBees, (bee) => {
+      if (bee.state === beeStates.chill) {
+        if (
+          this.res &&
+          bee.store.getFreeCapacity(this.res) &&
+          this.hive.cells.storage &&
+          this.hive.cells.storage.storage.store.getUsedCapacity(this.res)
+        ) {
+          bee.withdraw(this.hive.cells.storage.storage, this.res);
+          return;
+        }
+        let pos = this.pos;
+        if (this.pos.roomName in Game.rooms) {
+          const portal = this.pos
+            .findInRange(FIND_STRUCTURES, 1)
+            .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
+          if (portal) pos = portal.pos;
+        }
+        bee.goTo(pos);
+        const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
+        if (roomInfo.dangerlvlmax >= 2 && bee.getActiveBodyParts(HEAL) > 0)
+          bee.heal(bee);
+        this.checkFlee(bee, undefined, undefined, false, 200);
+      }
+    });
   }
 
   public update() {
@@ -110,32 +150,5 @@ export class PortalMaster extends SwarmMaster {
     }
   }
 
-  public run() {
-    this.preRunBoost();
-    _.forEach(this.activeBees, (bee) => {
-      if (bee.state === beeStates.chill) {
-        if (
-          this.res &&
-          bee.store.getFreeCapacity(this.res) &&
-          this.hive.cells.storage &&
-          this.hive.cells.storage.storage.store.getUsedCapacity(this.res)
-        ) {
-          bee.withdraw(this.hive.cells.storage.storage, this.res);
-          return;
-        }
-        let pos = this.pos;
-        if (this.pos.roomName in Game.rooms) {
-          const portal = this.pos
-            .findInRange(FIND_STRUCTURES, 1)
-            .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
-          if (portal) pos = portal.pos;
-        }
-        bee.goTo(pos);
-        const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
-        if (roomInfo.dangerlvlmax >= 2 && bee.getActiveBodyParts(HEAL) > 0)
-          bee.heal(bee);
-        this.checkFlee(bee, undefined, undefined, false, 200);
-      }
-    });
-  }
+  // #endregion Public Methods (2)
 }

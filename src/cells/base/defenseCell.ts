@@ -14,14 +14,26 @@ import { getNukeDefMap, updateNukes } from "./defenseCell-nukes";
 
 @profile
 export class DefenseCell extends Cell {
-  public towers: { [id: string]: StructureTower } = {};
+  // #region Properties (14)
+
+  public dmgAtPos: { [id: string]: number } = {};
+  flag?: Flag
+  public getNukeDefMap = getNukeDefMap;
+  public isBreached = false;
+  ition
+  public master: SiegeMaster;
+  public nukeCoverReady: boolean = true;
   public nukes: { [id: string]: Nuke } = {};
   public nukesDefenseMap = {};
+  public poss: { x: number; y: number };
+  public setDefF
   public timeToLand: number = Infinity;
-  public nukeCoverReady: boolean = true;
-  public isBreached = false;
-  public master: SiegeMaster;
-  public dmgAtPos: { [id: string]: number } = {};
+  public towers: { [id: string]: StructureTower } = {};
+  public updateNukes = updateNukes;
+
+  // #endregion Properties (14)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive) {
     super(hive, prefix.defenseCell);
@@ -42,138 +54,46 @@ export class DefenseCell extends Cell {
     this.poss = poss;
   }
 
-  public poss: { x: number; y: number };
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get opt(): FindPathOpts {
+    return {
+      maxRooms: 1,
+      ignoreRoads: true,
+      ignoreCreeps: true,
+      ignoreDestructibleStructures: true,
+      swampCost: 1,
+      plainCost: 1,
+      costCallback: (roomName, matrix) => {
+        if (!(roomName in Game.rooms)) return matrix;
+        matrix = new PathFinder.CostMatrix();
+        const terrain = Game.map.getRoomTerrain(roomName);
+        for (let x = 0; x <= 49; ++x)
+          for (let y = 0; y <= 49; ++y)
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) matrix.set(x, y, 0xff);
+        const obstacles = Game.rooms[roomName]
+          .find(FIND_STRUCTURES)
+          .filter(
+            (s) =>
+              s.hits > 5000 &&
+              (s.structureType === STRUCTURE_WALL ||
+                s.structureType === STRUCTURE_RAMPART)
+          );
+        _.forEach(obstacles, (s) => matrix.set(s.pos.x, s.pos.y, 0xff));
+        return matrix;
+      },
+    };
+  }
+
   public get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
-  public getNukeDefMap = getNukeDefMap;
-  public updateNukes = updateNukes;
+  // #endregion Public Accessors (2)
 
-  public update() {
-    super.update(["towers", "nukes"]);
-    this.dmgAtPos = {};
-    if (
-      Game.time % 500 === 333 ||
-      this.timeToLand-- < 2 ||
-      (Object.keys(this.nukes).length &&
-        Game.time % 10 === 6 &&
-        this.nukeCoverReady)
-    ) {
-      this.updateNukes();
-      this.getNukeDefMap();
-    }
-
-    // cant't survive a nuke if your controller lvl is below 5
-    this.hive.stateChange(
-      "nukealert",
-      !!Object.keys(this.nukes).length &&
-        !this.nukeCoverReady &&
-        (!this.hive.cells.storage ||
-          this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
-            this.hive.resTarget[RESOURCE_ENERGY] / 8)
-    );
-
-    const isWar = this.hive.isBattle;
-    if (!isWar || Game.time % 10 === 0) {
-      const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
-      this.hive.stateChange(
-        "battle",
-        roomInfo.dangerlvlmax >= 5 &&
-          (!this.hive.controller.safeMode ||
-            this.hive.controller.safeMode < 600)
-      );
-
-      if (this.hive.isBattle) {
-        if (Game.time % 5 === 0) {
-          this.isBreached = false;
-          _.some(roomInfo.enemies, (enemy) => {
-            if (this.wasBreached(enemy.object.pos)) this.isBreached = true;
-            return this.isBreached;
-          });
-        }
-      } else this.isBreached = false;
-    }
-
-    // No more battles. Collect resources
-    if (
-      isWar &&
-      this.hive.state !== hiveStates.battle &&
-      this.hive.cells.storage
-    )
-      this.hive.cells.storage.pickupResources();
-
-    const storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      if (this.hive.isBattle)
-        storageCell.requestFromStorage(
-          _.filter(
-            this.towers,
-            (t) =>
-              t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1
-          ),
-          2,
-          RESOURCE_ENERGY
-        );
-      else
-        storageCell.requestFromStorage(
-          Object.values(this.towers),
-          4,
-          RESOURCE_ENERGY,
-          TOWER_CAPACITY,
-          true
-        );
-    }
-
-    if (Game.time % 10 === 8 && this.hive.cells.observe) {
-      _.some(this.hive.annexNames, (annexName) => {
-        if (
-          !(annexName in Game.rooms) &&
-          !Apiary.intel.getInfo(annexName, 50).safePlace
-        )
-          Apiary.requestSight(annexName); // to set / reposessFlag i need sight}
-      });
-    }
-    if (Game.time % 10 === 9 && this.timeToLand > 200) {
-      _.some(this.hive.annexNames, (annexName) =>
-        this.checkAndDefend(annexName)
-      );
-    }
-  }
-
-  public reposessFlag(pos: RoomPosition, enemy?: ProtoPos) {
-    if (!enemy) return OK;
-    if (!(pos.roomName in Game.rooms)) return ERR_BUSY;
-    const freeSwarms: HordeMaster[] = [];
-    let canWin = false;
-    const enemyInfo = Apiary.intel.getComplexStats(enemy).current;
-    for (const roomDefName in Apiary.defenseSwarms) {
-      if (roomDefName === pos.roomName) continue;
-      const master = Apiary.defenseSwarms[roomDefName];
-      if (master.beesAmount && master.loosingBattle(enemyInfo) > 0) {
-        canWin = true;
-        const roomInfoDef = Apiary.intel.getInfo(roomDefName, Infinity);
-        if (roomInfoDef.dangerlvlmax < 3) freeSwarms.push(master);
-      }
-    }
-    if (freeSwarms.length) {
-      const swarm = freeSwarms.reduce((prev, curr) =>
-        pos.getRoomRangeTo(curr) < pos.getRoomRangeTo(prev) ? curr : prev
-      );
-      let ans;
-      if (swarm.pos.getRoomRangeTo(pos.roomName, "path") <= 5)
-        ans = this.setDefFlag(pos, swarm.order.flag);
-      else canWin = false;
-      if (ans === OK) {
-        swarm.order.hive = this.hive;
-        swarm.order.flag.memory.hive = this.hiveName;
-        delete Apiary.defenseSwarms[swarm.pos.roomName];
-        Apiary.defenseSwarms[pos.roomName] = swarm;
-        return OK;
-      }
-    }
-    return canWin ? ERR_TIRED : ERR_NOT_FOUND;
-  }
+  // #region Public Methods (6)
 
   public checkAndDefend(roomName: string, lag = 20) {
     const roomInfo = Apiary.intel.getInfo(roomName, lag);
@@ -209,116 +129,6 @@ export class DefenseCell extends Cell {
     return false;
   }
 
-  public get opt(): FindPathOpts {
-    return {
-      maxRooms: 1,
-      ignoreRoads: true,
-      ignoreCreeps: true,
-      ignoreDestructibleStructures: true,
-      swampCost: 1,
-      plainCost: 1,
-      costCallback: (roomName, matrix) => {
-        if (!(roomName in Game.rooms)) return matrix;
-        matrix = new PathFinder.CostMatrix();
-        const terrain = Game.map.getRoomTerrain(roomName);
-        for (let x = 0; x <= 49; ++x)
-          for (let y = 0; y <= 49; ++y)
-            if (terrain.get(x, y) === TERRAIN_MASK_WALL) matrix.set(x, y, 0xff);
-        const obstacles = Game.rooms[roomName]
-          .find(FIND_STRUCTURES)
-          .filter(
-            (s) =>
-              s.hits > 5000 &&
-              (s.structureType === STRUCTURE_WALL ||
-                s.structureType === STRUCTURE_RAMPART)
-          );
-        _.forEach(obstacles, (s) => matrix.set(s.pos.x, s.pos.y, 0xff));
-        return matrix;
-      },
-    };
-  }
-
-  public wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
-    const path = pos.findPathTo(defPos, this.opt);
-    const firstStep = path.shift();
-    const lastStep = path.pop();
-    if (!firstStep || !lastStep)
-      return (
-        pos.isNearTo(defPos) &&
-        !pos
-          .lookFor(LOOK_STRUCTURES)
-          .filter(
-            (s) =>
-              s.hits > 5000 &&
-              (s.structureType === STRUCTURE_WALL ||
-                s.structureType === STRUCTURE_RAMPART)
-          ).length
-      );
-    const endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
-    const startOfPath = new RoomPosition(
-      firstStep.x,
-      firstStep.y,
-      pos.roomName
-    );
-    return (
-      startOfPath.isNearTo(pos) &&
-      endOfPath.isNearTo(defPos) &&
-      !endOfPath
-        .lookFor(LOOK_STRUCTURES)
-        .filter(
-          (s) =>
-            s.hits > 5000 &&
-            (s.structureType === STRUCTURE_WALL ||
-              s.structureType === STRUCTURE_RAMPART)
-        ).length
-    );
-  }
-
-  public setDefFlag(pos: RoomPosition, flag?: Flag) {
-    let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
-    const terrain = Game.map.getRoomTerrain(pos.roomName);
-    const centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(
-      true,
-      3
-    );
-    if (centerPoss.length) {
-      for (const center of centerPoss)
-        if (terrain.get(center.x, center.y) !== TERRAIN_MASK_SWAMP) {
-          pos = center;
-          break;
-        }
-      if (!pos) pos = centerPoss[0];
-    } else if (pos.enteranceToRoom) {
-      const poss = pos.getOpenPositions(true);
-      if (poss.length)
-        pos = poss.reduce((prev, curr) => (prev.enteranceToRoom ? curr : prev));
-    }
-
-    if (flag) {
-      return flag.setPosition(pos);
-    } else
-      ans = pos.createFlag(prefix.defSwarm + makeId(4), COLOR_RED, COLOR_BLUE);
-    if (typeof ans === "string") {
-      if (this.hive.phase)
-        Game.flags[ans].memory = {
-          hive: (this.hive.bassboost || this.hive).roomName,
-        };
-      const order = new FlagOrder(Game.flags[ans]);
-      order.update();
-    }
-    return ans;
-  }
-
-  public notDef(roomName: string) {
-    return (
-      !Apiary.defenseSwarms[roomName] &&
-      !_.filter(
-        Game.rooms[roomName].find(FIND_FLAGS),
-        (f) => f.color === COLOR_RED
-      ).length
-    );
-  }
-
   public getDmgAtPos(pos: RoomPosition) {
     const str = pos.to_str;
     if (this.dmgAtPos[str]) return this.dmgAtPos[str];
@@ -346,6 +156,50 @@ export class DefenseCell extends Cell {
         enemy = e.object;
     });
     return enemy;
+  }
+
+  public notDef(roomName: string) {
+    return (
+      !Apiary.defenseSwarms[roomName] &&
+      !_.filter(
+        Game.rooms[roomName].find(FIND_FLAGS),
+        (f) => f.color === COLOR_RED
+      ).length
+    );
+  }
+
+  public reposessFlag(pos: RoomPosition, enemy?: ProtoPos) {
+    if (!enemy) return OK;
+    if (!(pos.roomName in Game.rooms)) return ERR_BUSY;
+    const freeSwarms: HordeMaster[] = [];
+    let canWin = false;
+    const enemyInfo = Apiary.intel.getComplexStats(enemy).current;
+    for (const roomDefName in Apiary.defenseSwarms) {
+      if (roomDefName === pos.roomName) continue;
+      const master = Apiary.defenseSwarms[roomDefName];
+      if (master.beesAmount && master.loosingBattle(enemyInfo) > 0) {
+        canWin = true;
+        const roomInfoDef = Apiary.intel.getInfo(roomDefName, Infinity);
+        if (roomInfoDef.dangerlvlmax < 3) freeSwarms.push(master);
+      }
+    }
+    if (freeSwarms.length) {
+      const swarm = freeSwarms.reduce((prev, curr) =>
+        pos.getRoomRangeTo(curr) < pos.getRoomRangeTo(prev) ? curr : prev
+      );
+      let ans;
+      if (swarm.pos.getRoomRangeTo(pos.roomName, "path") <= 5)
+        ans = this.setDefFlag(pos, swarm.order.flag);
+      else canWin = false;
+      if (ans === OK) {
+        swarm.order.hive = this.hive;
+        swarm.order.flag.memory.hive = this.hiveName;
+        delete Apiary.defenseSwarms[swarm.pos.roomName];
+        Apiary.defenseSwarms[pos.roomName] = swarm;
+        return OK;
+      }
+    }
+    return canWin ? ERR_TIRED : ERR_NOT_FOUND;
   }
 
   public run() {
@@ -545,5 +399,168 @@ export class DefenseCell extends Cell {
         }
       });
     }
+  }
+
+  // #endregion Public Methods (6)
+) {
+    let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
+    const terrain = Game.map.getRoomTerrain(pos.roomName);
+    const centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(
+      true,
+      3
+    );
+    if (centerPoss.length) {
+      for (const center of centerPoss)
+        if (terrain.get(center.x, center.y) !== TERRAIN_MASK_SWAMP) {
+          pos = center;
+          break;
+        }
+      if (!pos) pos = centerPoss[0];
+    } else if (pos.enteranceToRoom) {
+      const poss = pos.getOpenPositions(true);
+      if (poss.length)
+        pos = poss.reduce((prev, curr) => (prev.enteranceToRoom ? curr : prev));
+    }
+
+    if (flag) {
+      return flag.setPosition(pos);
+    } else
+      ans = pos.createFlag(prefix.defSwarm + makeId(4), COLOR_RED, COLOR_BLUE);
+    if (typeof ans === "string") {
+      if (this.hive.phase)
+        Game.flags[ans].memory = {
+          hive: (this.hive.bassboost || this.hive).roomName,
+        };
+      const order = new FlagOrder(Game.flags[ans]);
+      order.update();
+    }
+    return ans;
+  }
+
+  public update() {
+    super.update(["towers", "nukes"]);
+    this.dmgAtPos = {};
+    if (
+      Game.time % 500 === 333 ||
+      this.timeToLand-- < 2 ||
+      (Object.keys(this.nukes).length &&
+        Game.time % 10 === 6 &&
+        this.nukeCoverReady)
+    ) {
+      this.updateNukes();
+      this.getNukeDefMap();
+    }
+
+    // cant't survive a nuke if your controller lvl is below 5
+    this.hive.stateChange(
+      "nukealert",
+      !!Object.keys(this.nukes).length &&
+        !this.nukeCoverReady &&
+        (!this.hive.cells.storage ||
+          this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
+            this.hive.resTarget[RESOURCE_ENERGY] / 8)
+    );
+
+    const isWar = this.hive.isBattle;
+    if (!isWar || Game.time % 10 === 0) {
+      const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
+      this.hive.stateChange(
+        "battle",
+        roomInfo.dangerlvlmax >= 5 &&
+          (!this.hive.controller.safeMode ||
+            this.hive.controller.safeMode < 600)
+      );
+
+      if (this.hive.isBattle) {
+        if (Game.time % 5 === 0) {
+          this.isBreached = false;
+          _.some(roomInfo.enemies, (enemy) => {
+            if (this.wasBreached(enemy.object.pos)) this.isBreached = true;
+            return this.isBreached;
+          });
+        }
+      } else this.isBreached = false;
+    }
+
+    // No more battles. Collect resources
+    if (
+      isWar &&
+      this.hive.state !== hiveStates.battle &&
+      this.hive.cells.storage
+    )
+      this.hive.cells.storage.pickupResources();
+
+    const storageCell = this.hive.cells.storage;
+    if (storageCell) {
+      if (this.hive.isBattle)
+        storageCell.requestFromStorage(
+          _.filter(
+            this.towers,
+            (t) =>
+              t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1
+          ),
+          2,
+          RESOURCE_ENERGY
+        );
+      else
+        storageCell.requestFromStorage(
+          Object.values(this.towers),
+          4,
+          RESOURCE_ENERGY,
+          TOWER_CAPACITY,
+          true
+        );
+    }
+
+    if (Game.time % 10 === 8 && this.hive.cells.observe) {
+      _.some(this.hive.annexNames, (annexName) => {
+        if (
+          !(annexName in Game.rooms) &&
+          !Apiary.intel.getInfo(annexName, 50).safePlace
+        )
+          Apiary.requestSight(annexName); // to set / reposessFlag i need sight}
+      });
+    }
+    if (Game.time % 10 === 9 && this.timeToLand > 200) {
+      _.some(this.hive.annexNames, (annexName) =>
+        this.checkAndDefend(annexName)
+      );
+    }
+  }
+
+  public wasBreached(pos: RoomPosition, defPos: RoomPosition = this.pos) {
+    const path = pos.findPathTo(defPos, this.opt);
+    const firstStep = path.shift();
+    const lastStep = path.pop();
+    if (!firstStep || !lastStep)
+      return (
+        pos.isNearTo(defPos) &&
+        !pos
+          .lookFor(LOOK_STRUCTURES)
+          .filter(
+            (s) =>
+              s.hits > 5000 &&
+              (s.structureType === STRUCTURE_WALL ||
+                s.structureType === STRUCTURE_RAMPART)
+          ).length
+      );
+    const endOfPath = new RoomPosition(lastStep.x, lastStep.y, pos.roomName);
+    const startOfPath = new RoomPosition(
+      firstStep.x,
+      firstStep.y,
+      pos.roomName
+    );
+    return (
+      startOfPath.isNearTo(pos) &&
+      endOfPath.isNearTo(defPos) &&
+      !endOfPath
+        .lookFor(LOOK_STRUCTURES)
+        .filter(
+          (s) =>
+            s.hits > 5000 &&
+            (s.structureType === STRUCTURE_WALL ||
+              s.structureType === STRUCTURE_RAMPART)
+        ).length
+    );
   }
 }

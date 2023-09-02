@@ -64,14 +64,12 @@ let printSetup = (s: CreepSetup, energy = Infinity, moveMax?: number) => {
   return setup.body;
 }
 
-
 printSetup(setups.defender.sk)
 
 /*
 printSetup(new CreepSetup("test bee", {
   pattern: [MOVE],
 }, 50), 10000)
-
 
 printSetup(setups.defender.destroyer, 650)
 printSetup(setups.hauler, 3000)

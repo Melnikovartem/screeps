@@ -17,6 +17,8 @@ HEALER.patternLimit =
 
 // my most powerfull weapon to date
 export class DismanleBoys extends SquadMaster {
+  // #region Public Accessors (1)
+
   public get boosts(): Boosts {
     return [
       { type: "rangedAttack", lvl: 1 },
@@ -25,6 +27,22 @@ export class DismanleBoys extends SquadMaster {
       { type: "damage", lvl: 2 },
       { type: "fatigue", lvl: 1 },
     ];
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Protected Accessors (2)
+
+  protected get checkup() {
+    const healerMinerals = this.checkMinerals(
+      HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
+      1
+    );
+    const archerMinerals = this.checkMinerals(
+      DISMANTLER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
+      2
+    );
+    return healerMinerals && archerMinerals;
   }
 
   protected get formation(): FormationPositions {
@@ -46,15 +64,5 @@ export class DismanleBoys extends SquadMaster {
     ];
   }
 
-  protected get checkup() {
-    const healerMinerals = this.checkMinerals(
-      HEALER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
-      1
-    );
-    const archerMinerals = this.checkMinerals(
-      DISMANTLER.getBody(this.hive.room.energyCapacityAvailable, 10).body,
-      2
-    );
-    return healerMinerals && archerMinerals;
-  }
+  // #endregion Protected Accessors (2)
 }

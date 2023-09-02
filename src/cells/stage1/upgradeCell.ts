@@ -7,13 +7,20 @@ import { Cell } from "../_Cell";
 
 @profile
 export class UpgradeCell extends Cell {
+  // #region Properties (8)
+
+  public link: StructureLink | undefined | null;
+  public linkId: Id<StructureLink> | null = null;
   public master: UpgraderMaster;
+  public maxBees = 10;
   public maxRate = 1;
   public ratePerCreepMax = 1;
-  public workPerCreepMax = 1;
-  public maxBees = 10;
-
   public roadTime: number;
+  public workPerCreepMax = 1;
+
+  // #endregion Properties (8)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive) {
     super(hive, prefix.upgradeCell);
@@ -28,19 +35,32 @@ export class UpgradeCell extends Cell {
     this.master = new UpgraderMaster(this);
   }
 
-  // shouldn't exist if this one is not real
-  public get sCell() {
-    return this.hive.cells.storage!;
-  }
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (4)
+
   public get controller() {
     return this.hive.controller;
   }
+
+  public get maxPossibleRate() {
+    // @todo add power creep buff check
+    return this.controller.level === 8 ? 15 : Infinity;
+  }
+
   public get pos() {
     return this.controller.pos;
   }
 
-  public link: StructureLink | undefined | null;
-  public linkId: Id<StructureLink> | null = null;
+  // shouldn't exist if this one is not real
+  public get sCell() {
+    return this.hive.cells.storage!;
+  }
+
+  // #endregion Public Accessors (4)
+
+  // #region Public Methods (3)
+
   public findLink() {
     let link: typeof this.link =
       this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
@@ -54,6 +74,80 @@ export class UpgradeCell extends Cell {
     }
     this.link = link;
   }
+
+  public run() {
+    if (!this.master.beesAmount) return;
+    if (
+      this.link &&
+      this.sCell.link &&
+      this.sCell.linkState &&
+      this.sCell.linkState.using === this.ref
+    ) {
+      const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+      if (freeCap < LINK_CAPACITY / 2) return;
+      if (
+        freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) ||
+        freeCap >= LINK_CAPACITY * 0.85
+      ) {
+        const amount = Math.min(
+          freeCap,
+          this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY)
+        );
+        if (
+          !this.sCell.link.cooldown &&
+          this.sCell.link.transferEnergy(this.link, amount) === OK
+        )
+          Apiary.logger.addResourceStat(
+            this.hiveName,
+            "upgrade",
+            -amount * 0.03,
+            RESOURCE_ENERGY
+          );
+      }
+    }
+  }
+
+  public update() {
+    super.update();
+
+    if (
+      this.hive.phase === 1 &&
+      this.controller.level === 8 &&
+      Apiary.useBucket
+    )
+      Apiary.destroyTime = Game.time;
+
+    if (Game.time === Apiary.createTime) this.recalculateRate();
+
+    if (!this.master.beesAmount) return;
+
+    const freeCap =
+      this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+    if (freeCap && freeCap >= LINK_CAPACITY / 2) {
+      if (this.sCell.link) {
+        if (
+          !this.sCell.master.activeBees.length ||
+          this.hive.state === hiveStates.lowenergy
+        )
+          return;
+        this.sCell.requestFromStorage(
+          [this.sCell.link],
+          freeCap >= LINK_CAPACITY - 100 ? 3 : 1,
+          RESOURCE_ENERGY
+        );
+        if (!this.sCell.linkState || this.sCell.linkState.priority >= 1)
+          this.sCell.linkState = {
+            using: this.ref,
+            priority: 1,
+            lastUpdated: Game.time,
+          };
+      }
+    }
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Private Methods (1)
 
   private recalculateRate() {
     const futureResourceCells = _.filter(
@@ -105,78 +199,5 @@ export class UpgradeCell extends Cell {
         .filter((p) => p.getRangeTo(this.controller) <= 3).length;
   }
 
-  public get maxPossibleRate() {
-    // @todo add power creep buff check
-    return this.controller.level === 8 ? 15 : Infinity;
-  }
-
-  public update() {
-    super.update();
-
-    if (
-      this.hive.phase === 1 &&
-      this.controller.level === 8 &&
-      Apiary.useBucket
-    )
-      Apiary.destroyTime = Game.time;
-
-    if (Game.time === Apiary.createTime) this.recalculateRate();
-
-    if (!this.master.beesAmount) return;
-
-    const freeCap =
-      this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-    if (freeCap && freeCap >= LINK_CAPACITY / 2) {
-      if (this.sCell.link) {
-        if (
-          !this.sCell.master.activeBees.length ||
-          this.hive.state === hiveStates.lowenergy
-        )
-          return;
-        this.sCell.requestFromStorage(
-          [this.sCell.link],
-          freeCap >= LINK_CAPACITY - 100 ? 3 : 1,
-          RESOURCE_ENERGY
-        );
-        if (!this.sCell.linkState || this.sCell.linkState.priority >= 1)
-          this.sCell.linkState = {
-            using: this.ref,
-            priority: 1,
-            lastUpdated: Game.time,
-          };
-      }
-    }
-  }
-
-  public run() {
-    if (!this.master.beesAmount) return;
-    if (
-      this.link &&
-      this.sCell.link &&
-      this.sCell.linkState &&
-      this.sCell.linkState.using === this.ref
-    ) {
-      const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
-      if (freeCap < LINK_CAPACITY / 2) return;
-      if (
-        freeCap <= this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY) ||
-        freeCap >= LINK_CAPACITY * 0.85
-      ) {
-        const amount = Math.min(
-          freeCap,
-          this.sCell.link.store.getUsedCapacity(RESOURCE_ENERGY)
-        );
-        if (
-          !this.sCell.link.cooldown &&
-          this.sCell.link.transferEnergy(this.link, amount) === OK
-        )
-          Apiary.logger.addResourceStat(
-            this.hiveName,
-            "upgrade",
-            -amount * 0.03,
-            RESOURCE_ENERGY
-          );
-      }
-    }
-  }
+  // #endregion Private Methods (1)
 }

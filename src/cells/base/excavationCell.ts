@@ -8,12 +8,20 @@ import { ResourceCell } from "./resourceCell";
 
 @profile
 export class ExcavationCell extends Cell {
-  public resourceCells: { [id: string]: ResourceCell } = {};
-  public quitefullCells: ResourceCell[] = [];
-  public shouldRecalc: boolean = true;
-  public master: HaulerMaster | undefined;
+  // #region Properties (7)
+
   private roomResources: { [id: string]: number } = {};
+
   public fullContainer = CONTAINER_CAPACITY * 0.9;
+  public master: HaulerMaster | undefined;
+  public poss: { x: number; y: number };
+  public quitefullCells: ResourceCell[] = [];
+  public resourceCells: { [id: string]: ResourceCell } = {};
+  public shouldRecalc: boolean = true;
+
+  // #endregion Properties (7)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive) {
     super(hive, prefix.excavationCell);
@@ -29,10 +37,17 @@ export class ExcavationCell extends Cell {
     };
   }
 
-  public poss: { x: number; y: number };
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
   public get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (3)
 
   public addResource(resource: Source | Mineral) {
     if (!this.resourceCells[resource.id]) {
@@ -46,6 +61,14 @@ export class ExcavationCell extends Cell {
       );
       this.shouldRecalc = true;
     }
+  }
+
+  public run() {
+    _.forEach(this.resourceCells, (cell) => {
+      safeWrap(() => {
+        cell.run();
+      }, cell.print + " run");
+    });
   }
 
   public update() {
@@ -91,11 +114,5 @@ export class ExcavationCell extends Cell {
     );
   }
 
-  public run() {
-    _.forEach(this.resourceCells, (cell) => {
-      safeWrap(() => {
-        cell.run();
-      }, cell.print + " run");
-    });
-  }
+  // #endregion Public Methods (3)
 }

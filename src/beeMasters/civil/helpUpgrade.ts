@@ -8,10 +8,16 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class HelpUpgradeMaster extends SwarmMaster {
+  // #region Constructors (1)
+
   public constructor(order: FlagOrder) {
     super(order);
     this.maxSpawns = 100;
   }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (3)
 
   public get boosts(): Boosts {
     return [
@@ -31,35 +37,9 @@ export class HelpUpgradeMaster extends SwarmMaster {
       this.order.memory.extraInfo = value;
   }
 
-  public update() {
-    super.update();
-    this.secureBoostsHive();
+  // #endregion Public Accessors (3)
 
-    const controller = Game.rooms[this.pos.roomName].controller;
-    if (
-      !controller ||
-      !controller.my ||
-      (controller.level === 8 && !this.beesAmount)
-    ) {
-      this.order.delete();
-      return;
-    }
-    if (
-      this.checkBees() &&
-      Apiary.intel.getInfo(this.pos.roomName).safePlace &&
-      this.hive.resState[RESOURCE_ENERGY] > 0 &&
-      controller.level < 8
-    ) {
-      const setup = setups.upgrader.fast.copy();
-      setup.patternLimit = Infinity;
-      setup.moveMax = 10; // boosted
-      setup.fixed = [CARRY, CARRY, CARRY, CARRY];
-      this.wish({
-        setup,
-        priority: 8,
-      });
-    }
-  }
+  // #region Public Methods (2)
 
   public run() {
     this.preRunBoost();
@@ -120,4 +100,36 @@ export class HelpUpgradeMaster extends SwarmMaster {
       } // else this.removeBee(bee);
     });
   }
+
+  public update() {
+    super.update();
+    this.secureBoostsHive();
+
+    const controller = Game.rooms[this.pos.roomName].controller;
+    if (
+      !controller ||
+      !controller.my ||
+      (controller.level === 8 && !this.beesAmount)
+    ) {
+      this.order.delete();
+      return;
+    }
+    if (
+      this.checkBees() &&
+      Apiary.intel.getInfo(this.pos.roomName).safePlace &&
+      this.hive.resState[RESOURCE_ENERGY] > 0 &&
+      controller.level < 8
+    ) {
+      const setup = setups.upgrader.fast.copy();
+      setup.patternLimit = Infinity;
+      setup.moveMax = 10; // boosted
+      setup.fixed = [CARRY, CARRY, CARRY, CARRY];
+      this.wish({
+        setup,
+        priority: 8,
+      });
+    }
+  }
+
+  // #endregion Public Methods (2)
 }

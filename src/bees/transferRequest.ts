@@ -15,25 +15,30 @@ type TransferTarget =
   | StructureContainer;
 
 export class TransferRequest {
-  ref: string;
-  to: TransferTarget;
-  toAmount: number;
-  from: TransferTarget | Tombstone | Ruin | Resource;
-  fromAmount: number;
-  resource: ResourceConstant | undefined;
-  inProcess = 0;
-  beeProcess = 0;
-  amount: number;
-  priority: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  // #region Properties (12)
+
+  public amount: number;
+  public beeProcess = 0;
+  public from: TransferTarget | Tombstone | Ruin | Resource;
+  public fromAmount: number;
+  public inProcess = 0;
+  public nextup: TransferRequest | undefined;
+  public priority: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  public ref: string;
+  public resource: ResourceConstant | undefined;
   // 0 - refill
   // 1 - mostly labs boosting
   // 2 - towers?
   // 4 - terminal
   // 5 - not important shit
   // 6 - pickup
-  stillExists: boolean;
+  public stillExists: boolean;
+  public to: TransferTarget;
+  public toAmount: number;
 
-  nextup: TransferRequest | undefined;
+  // #endregion Properties (12)
+
+  // #region Constructors (1)
 
   constructor(
     ref: string,
@@ -65,32 +70,11 @@ export class TransferRequest {
     this.stillExists = true;
   }
 
-  update() {
-    const from = Game.getObjectById(this.from.id) as
-      | TransferRequest["from"]
-      | null;
-    if (from) {
-      this.from = from;
-      if (from instanceof Resource) this.fromAmount = from.amount;
-      else
-        this.fromAmount = (
-          from.store as Store<ResourceConstant, false>
-        ).getUsedCapacity(this.resource);
-    } else if (this.from.pos.roomName in Game.rooms) this.stillExists = false;
+  // #endregion Constructors (1)
 
-    const to = Game.getObjectById(this.to.id) as TransferRequest["to"] | null;
-    if (to) {
-      this.to = to;
-      this.toAmount = (
-        to.store as Store<ResourceConstant, false>
-      ).getFreeCapacity(this.resource);
-    } else if (this.to.pos.roomName in Game.rooms) this.stillExists = false;
+  // #region Public Methods (4)
 
-    this.inProcess = 0;
-    this.beeProcess = 0;
-  }
-
-  isValid(inBee = 0) {
+  public isValid(inBee = 0) {
     if (!this.fromAmount && !this.inProcess && !inBee) return false;
     if (this.amount <= 0) return false;
     if (this.toAmount <= 0) return false;
@@ -98,7 +82,7 @@ export class TransferRequest {
     return true;
   }
 
-  preprocess(bee: Bee) {
+  public preprocess(bee: Bee) {
     this.inProcess += bee.store.getUsedCapacity(this.resource);
     ++this.beeProcess;
     if (bee.target !== this.ref) {
@@ -125,7 +109,7 @@ export class TransferRequest {
     }
   }
 
-  process(bee: Bee): boolean {
+  public process(bee: Bee): boolean {
     let amountBee = 0;
     let transfer = false;
     switch (bee.state) {
@@ -213,4 +197,31 @@ export class TransferRequest {
     }
     return transfer;
   }
+
+  public update() {
+    const from = Game.getObjectById(this.from.id) as
+      | TransferRequest["from"]
+      | null;
+    if (from) {
+      this.from = from;
+      if (from instanceof Resource) this.fromAmount = from.amount;
+      else
+        this.fromAmount = (
+          from.store as Store<ResourceConstant, false>
+        ).getUsedCapacity(this.resource);
+    } else if (this.from.pos.roomName in Game.rooms) this.stillExists = false;
+
+    const to = Game.getObjectById(this.to.id) as TransferRequest["to"] | null;
+    if (to) {
+      this.to = to;
+      this.toAmount = (
+        to.store as Store<ResourceConstant, false>
+      ).getFreeCapacity(this.resource);
+    } else if (this.to.pos.roomName in Game.rooms) this.stillExists = false;
+
+    this.inProcess = 0;
+    this.beeProcess = 0;
+  }
+
+  // #endregion Public Methods (4)
 }

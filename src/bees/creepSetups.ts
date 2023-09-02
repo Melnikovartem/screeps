@@ -4,9 +4,13 @@ import { profile } from "../profiler/decorator";
 import { setupsNames } from "../static/enums";
 
 interface BodySetup {
+  // #region Properties (3)
+
   fixed?: BodyPartConstant[];
   pattern: BodyPartConstant[];
   patternLimit?: number;
+
+  // #endregion Properties (3)
 }
 const partScheme = {
   normal: [TOUGH, WORK, CARRY, MOVE, CLAIM, RANGED_ATTACK, ATTACK, HEAL],
@@ -17,13 +21,15 @@ const ROUNDING_ERROR = 0.0001;
 
 @profile
 export class CreepSetup {
+  // #region Properties (8)
+
   public fixed: BodyPartConstant[];
+  public ignoreCarry?: boolean;
+  public ignoreMove?: boolean;
+  public moveMax: number | "best";
   public name: string;
   public pattern: BodyPartConstant[];
   public patternLimit: number;
-  public moveMax: number | "best";
-  public ignoreCarry?: boolean;
-  public ignoreMove?: boolean;
   /** 0 - repeating scheme
    *
    * 1 - sorted to protect attack, while swapping one move to the end
@@ -31,6 +37,10 @@ export class CreepSetup {
    * 2 - sorted to protect move
    */
   public scheme: 0 | 1 | 2;
+
+  // #endregion Properties (8)
+
+  // #region Constructors (1)
 
   public constructor(
     setupName: string,
@@ -53,6 +63,25 @@ export class CreepSetup {
     this.ignoreCarry = ignoreCarry;
     this.ignoreMove = ignoreMove;
     this.scheme = scheme;
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Methods (2)
+
+  public copy() {
+    return new CreepSetup(
+      this.name,
+      {
+        pattern: this.pattern,
+        fixed: this.fixed,
+        patternLimit: this.patternLimit,
+      },
+      this.moveMax,
+      this.scheme,
+      this.ignoreCarry,
+      this.ignoreMove
+    );
   }
 
   public getBody(
@@ -132,20 +161,7 @@ export class CreepSetup {
     };
   }
 
-  public copy() {
-    return new CreepSetup(
-      this.name,
-      {
-        pattern: this.pattern,
-        fixed: this.fixed,
-        patternLimit: this.patternLimit,
-      },
-      this.moveMax,
-      this.scheme,
-      this.ignoreCarry,
-      this.ignoreMove
-    );
-  }
+  // #endregion Public Methods (2)
 }
 
 export const setups = {

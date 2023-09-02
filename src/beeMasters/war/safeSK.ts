@@ -11,20 +11,22 @@ const ticksToSpawn = (x: StructureKeeperLair) =>
 
 @profile
 export class SKMaster extends HordeMaster {
+  // #region Properties (1)
+
   // failsafe
   private lairs: StructureKeeperLair[] = [];
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
 
   public constructor(order: FlagOrder) {
     super(order);
   }
 
-  public init() {}
+  // #endregion Constructors (1)
 
-  public get targetBeeCount() {
-    return 1;
-  }
-
-  public set targetBeeCount(_) {}
+  // #region Public Accessors (4)
 
   public get maxSpawns() {
     return Infinity;
@@ -32,90 +34,17 @@ export class SKMaster extends HordeMaster {
 
   public set maxSpawns(_) {}
 
-  public update() {
-    SwarmMaster.prototype.update.call(this);
-
-    if (this.pos.roomName in Game.rooms) {
-      if (!this.lairs.length) {
-        this.lairs = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, {
-          filter: { structureType: STRUCTURE_KEEPER_LAIR },
-        });
-        /* if (!this.lairs.length)
-          this.order.delete(); */
-      }
-
-      if (!this.maxPath && this.lairs.length) {
-        let max = 0;
-        _.forEach(this.lairs, (lair) => {
-          const time = this.hive.pos.getTimeForPath(lair);
-          if (max < time) max = time;
-        });
-        this.maxPath = max;
-      }
-
-      for (let i = 0; i < this.lairs.length; ++i)
-        this.lairs[i] = Game.getObjectById(
-          this.lairs[i].id
-        ) as StructureKeeperLair;
-    }
-
-    if (this.hive.bassboost) return;
-
-    if (
-      !this.hive.annexInDanger.includes(this.pos.roomName) &&
-      Apiary.intel.getInfo(this.pos.roomName, 100).dangerlvlmax < 8 &&
-      this.checkBees(
-        this.hive.state !== hiveStates.battle &&
-          this.hive.state !== hiveStates.lowenergy,
-        CREEP_LIFE_TIME - this.maxPath - 50
-      )
-    )
-      this.wish({
-        setup: setups.defender.sk,
-        priority: 4,
-      });
+  public get targetBeeCount() {
+    return 1;
   }
 
-  private useLair(bee: Bee, lair: StructureKeeperLair) {
-    if (ticksToSpawn(lair) < 1) {
-      const enemy = lair.pos.findClosest(
-        lair.pos
-          .findInRange(FIND_HOSTILE_CREEPS, 5)
-          .filter((e) => e.owner.username === "Source Keeper")
-      );
-      if (enemy) {
-        Apiary.intel.getInfo(bee.pos.roomName);
-        this.attackOrFleeSK(bee, enemy);
-        return;
-      }
-    }
-    const enemy = Apiary.intel.getEnemy(bee.pos, 10);
-    let ans: number = OK;
-    if (
-      enemy instanceof Creep &&
-      (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3)
-    ) {
-      ans = this.attackOrFleeSK(bee, enemy);
-      Apiary.intel.getInfo(bee.pos.roomName);
-    }
-    if (ans === OK) bee.goTo(lair, { range: 2 });
-    bee.target = lair.id;
-  }
+  public set targetBeeCount(_) {}
 
-  private attackOrFleeSK(bee: Bee, target: Creep) {
-    // worse version of beeAct
-    bee.target = target.id;
-    if (bee.pos.getRangeTo(target) <= 4 || bee.hits < bee.hitsMax)
-      bee.heal(bee);
-    const shouldFlee =
-      bee.pos.getRangeTo(target) < 3 ||
-      (bee.pos.getRangeTo(target) <= 4 && bee.hits <= bee.hitsMax * 0.65);
-    if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
-      bee.rangedAttack(target, { movingTarget: true });
-    if (shouldFlee)
-      return bee.flee(new RoomPosition(25, 25, this.pos.roomName));
-    return OK;
-  }
+  // #endregion Public Accessors (4)
+
+  // #region Public Methods (3)
+
+  public init() {}
 
   public run() {
     _.forEach(this.activeBees, (bee) => {
@@ -185,4 +114,95 @@ export class SKMaster extends HordeMaster {
       this.useLair(bee, lair);
     });
   }
+
+  public update() {
+    SwarmMaster.prototype.update.call(this);
+
+    if (this.pos.roomName in Game.rooms) {
+      if (!this.lairs.length) {
+        this.lairs = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, {
+          filter: { structureType: STRUCTURE_KEEPER_LAIR },
+        });
+        /* if (!this.lairs.length)
+          this.order.delete(); */
+      }
+
+      if (!this.maxPath && this.lairs.length) {
+        let max = 0;
+        _.forEach(this.lairs, (lair) => {
+          const time = this.hive.pos.getTimeForPath(lair);
+          if (max < time) max = time;
+        });
+        this.maxPath = max;
+      }
+
+      for (let i = 0; i < this.lairs.length; ++i)
+        this.lairs[i] = Game.getObjectById(
+          this.lairs[i].id
+        ) as StructureKeeperLair;
+    }
+
+    if (this.hive.bassboost) return;
+
+    if (
+      !this.hive.annexInDanger.includes(this.pos.roomName) &&
+      Apiary.intel.getInfo(this.pos.roomName, 100).dangerlvlmax < 8 &&
+      this.checkBees(
+        this.hive.state !== hiveStates.battle &&
+          this.hive.state !== hiveStates.lowenergy,
+        CREEP_LIFE_TIME - this.maxPath - 50
+      )
+    )
+      this.wish({
+        setup: setups.defender.sk,
+        priority: 4,
+      });
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Private Methods (2)
+
+  private attackOrFleeSK(bee: Bee, target: Creep) {
+    // worse version of beeAct
+    bee.target = target.id;
+    if (bee.pos.getRangeTo(target) <= 4 || bee.hits < bee.hitsMax)
+      bee.heal(bee);
+    const shouldFlee =
+      bee.pos.getRangeTo(target) < 3 ||
+      (bee.pos.getRangeTo(target) <= 4 && bee.hits <= bee.hitsMax * 0.65);
+    if (!shouldFlee || bee.pos.getRangeTo(target) <= 3)
+      bee.rangedAttack(target, { movingTarget: true });
+    if (shouldFlee)
+      return bee.flee(new RoomPosition(25, 25, this.pos.roomName));
+    return OK;
+  }
+
+  private useLair(bee: Bee, lair: StructureKeeperLair) {
+    if (ticksToSpawn(lair) < 1) {
+      const enemy = lair.pos.findClosest(
+        lair.pos
+          .findInRange(FIND_HOSTILE_CREEPS, 5)
+          .filter((e) => e.owner.username === "Source Keeper")
+      );
+      if (enemy) {
+        Apiary.intel.getInfo(bee.pos.roomName);
+        this.attackOrFleeSK(bee, enemy);
+        return;
+      }
+    }
+    const enemy = Apiary.intel.getEnemy(bee.pos, 10);
+    let ans: number = OK;
+    if (
+      enemy instanceof Creep &&
+      (enemy.pos.getRangeTo(lair) <= 5 || enemy.pos.getRangeTo(bee) <= 3)
+    ) {
+      ans = this.attackOrFleeSK(bee, enemy);
+      Apiary.intel.getInfo(bee.pos.roomName);
+    }
+    if (ans === OK) bee.goTo(lair, { range: 2 });
+    bee.target = lair.id;
+  }
+
+  // #endregion Private Methods (2)
 }

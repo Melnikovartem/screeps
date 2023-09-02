@@ -10,7 +10,142 @@ const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 
 @profile
 export class WarcrimesModule {
+  // #region Properties (1)
+
   public squads: { [id: string]: SquadWarCrimesMaster } = {};
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (1)
+
+  public get siedge() {
+    return Memory.cache.war.siedgeInfo;
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (6)
+
+  public getEasyEnemy(pos: RoomPosition): Enemy["object"] | undefined {
+    const roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
+    const enemiesPos = roomInfo.enemies
+      .filter((e) => {
+        if (e.object.pos.getRangeTo(pos) >= 20) return false;
+        if (
+          !(
+            e.object instanceof StructureWall ||
+            e.object instanceof StructureRampart
+          )
+        )
+          return false;
+        const stats = Apiary.intel.getComplexStats(e.object.pos, 3, 1).current;
+        const creepDmg = stats.dmgClose + stats.dmgRange;
+        return !creepDmg;
+      })
+      .map((e) => e.object);
+    if (!enemiesPos.length) return;
+    const enemy = enemiesPos.reduce((prev, curr) => {
+      const currS = Apiary.intel.getComplexStats(curr, 4, 2).current;
+      const prevS = Apiary.intel.getComplexStats(prev, 4, 2).current;
+      let ans =
+        currS.dmgClose + currS.dmgRange - prevS.dmgClose + prevS.dmgRange;
+      if (ans === 0) {
+        ans = curr.hits - prev.hits;
+        if (Math.abs(ans) <= 50000)
+          ans = pos.getRangeTo(curr) - pos.getRangeTo(prev);
+      }
+      return ans < 0 ? curr : prev;
+    });
+    const siedge = this.siedge[pos.roomName];
+    if (siedge) {
+      /* if (!siedge.breakIn.filter(b => b.x === enemy.pos.x && b.y === enemy.pos.y).length)
+        siedge.breakIn.push({
+          x: enemy.pos.x,
+          y: enemy.pos.y,
+          ent: pos.roomName,
+          state: 255,
+        }); */
+    }
+    return enemy;
+  }
+
+  public getEnemy(
+    pos: RoomPosition,
+    dismantle: boolean = false
+  ): Enemy["object"] | undefined {
+    let enemy: Enemy["object"] | undefined;
+    let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
+    const noRamp = (e: { object: { pos: RoomPosition } }) =>
+      !e.object.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.hits > 10000)
+        .length;
+    if (roomInfo.roomState === roomStates.ownedByEnemy)
+      roomInfo = Apiary.intel.getInfo(pos.roomName, 4);
+    const siedge = this.siedge[pos.roomName];
+
+    let enemies: Enemy[] = [];
+    if (!dismantle)
+      roomInfo.enemies.filter(
+        (e) => pos.getRangeTo(e.object) <= 4 && noRamp(e)
+      ); // havoc enemies
+    if (siedge && pos.roomName in Game.rooms) {
+      if (roomInfo.safeModeEndTime > 0)
+        siedge.attackTime = Math.max(
+          roomInfo.safeModeEndTime - 100,
+          siedge.attackTime || 0
+        );
+      for (let i = 0; i < siedge.freeTargets.length; ++i) {
+        const roomEnemies = new RoomPosition(
+          siedge.freeTargets[i].x,
+          siedge.freeTargets[i].y,
+          pos.roomName
+        ).lookFor(LOOK_STRUCTURES);
+        const enemy = roomEnemies.length
+          ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
+          : undefined;
+        if (enemy)
+          enemies.push({
+            object: enemy,
+            type: enemyTypes.static,
+            dangerlvl: 9,
+          });
+        else {
+          siedge.freeTargets.splice(i, 1);
+          --i;
+        }
+      }
+      for (let i = 0; i < siedge.breakIn.length; ++i) {
+        const roomEnemies = new RoomPosition(
+          siedge.breakIn[i].x,
+          siedge.breakIn[i].y,
+          pos.roomName
+        ).lookFor(LOOK_STRUCTURES);
+        const enemy = roomEnemies.length
+          ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
+          : undefined;
+        if (enemy)
+          enemies.push({
+            object: enemy,
+            type: enemyTypes.static,
+            dangerlvl: 9,
+          });
+        else {
+          siedge.breakIn.splice(i, 1);
+          --i;
+        }
+      }
+    }
+    if (!enemies.length)
+      enemies = roomInfo.enemies.filter(
+        (e) => e.dangerlvl === roomInfo.dangerlvlmax
+      );
+    if (enemies.length)
+      enemy = enemies.reduce((prev, curr) => {
+        let ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
+        if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
+        return ans < 0 ? curr : prev;
+      }).object;
+    return enemy;
+  }
 
   public init() {
     _.forEach(Memory.cache.war.squadsInfo, (info) => {
@@ -23,50 +158,24 @@ export class WarcrimesModule {
     });
   }
 
-  private getOpt(
-    obstacles: { pos: RoomPosition; perc: number }[],
-    existingPoints: { x: number; y: number }[]
-  ): TravelToOptions {
-    return {
-      maxRooms: 1,
-      offRoad: true,
-      ignoreCreeps: true,
-      ignoreStructures: true,
-      roomCallback: (roomName, matrix) => {
-        if (!(roomName in Game.rooms)) return matrix;
-        matrix = new PathFinder.CostMatrix();
-        const terrain = Game.map.getRoomTerrain(roomName);
-        for (let x = 0; x <= 49; ++x)
-          for (let y = 0; y <= 49; ++y)
-            if (terrain.get(x, y) === TERRAIN_MASK_WALL) matrix.set(x, y, 0xff);
-        _.forEach(obstacles, (o) =>
-          matrix.set(
-            o.pos.x,
-            o.pos.y,
-            Math.floor(
-              (o.pos.x <= 2 || o.pos.x >= 47 || o.pos.y <= 1 || o.pos.y >= 47
-                ? 0xba
-                : 0xa4) *
-                o.perc *
-                (existingPoints.filter(
-                  (e) =>
-                    o.pos.getRangeTo(new RoomPosition(e.x, e.y, roomName)) <= 4
-                ).length
-                  ? 2
-                  : 1)
-            )
-          )
-        );
-        _.forEach(existingPoints, (e) =>
-          matrix.set(e.x, e.y, existingPoints.length < 5 ? 0xba : 0x2c)
-        );
-        return matrix;
-      },
-    };
-  }
+  public run() {}
 
-  public get siedge() {
-    return Memory.cache.war.siedgeInfo;
+  public update() {
+    for (const roomName in this.siedge) {
+      this.updateRoom(roomName);
+      const attackTime =
+        this.siedge[roomName] && this.siedge[roomName].attackTime;
+      if (
+        attackTime !== null &&
+        attackTime <= Game.time &&
+        Object.keys(this.siedge[roomName].squadSlots).length &&
+        !_.filter(
+          this.squads,
+          (sq) => sq.pos.roomName === roomName && sq.spawned < sq.targetBeeCount
+        ).length
+      )
+        this.sendSquad(roomName);
+    }
   }
 
   public updateRoom(roomName: string, attackTime?: number | null) {
@@ -478,6 +587,10 @@ export class WarcrimesModule {
     }
   }
 
+  // #endregion Public Methods (6)
+
+  // #region Private Methods (6)
+
   private dfs(
     pos: RoomPosition,
     matrix: { [id: number]: { [id: number]: number } },
@@ -507,173 +620,6 @@ export class WarcrimesModule {
         this.dfs(p, matrix, depth, call + 1);
       });
     }
-  }
-
-  public getEasyEnemy(pos: RoomPosition): Enemy["object"] | undefined {
-    const roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
-    const enemiesPos = roomInfo.enemies
-      .filter((e) => {
-        if (e.object.pos.getRangeTo(pos) >= 20) return false;
-        if (
-          !(
-            e.object instanceof StructureWall ||
-            e.object instanceof StructureRampart
-          )
-        )
-          return false;
-        const stats = Apiary.intel.getComplexStats(e.object.pos, 3, 1).current;
-        const creepDmg = stats.dmgClose + stats.dmgRange;
-        return !creepDmg;
-      })
-      .map((e) => e.object);
-    if (!enemiesPos.length) return;
-    const enemy = enemiesPos.reduce((prev, curr) => {
-      const currS = Apiary.intel.getComplexStats(curr, 4, 2).current;
-      const prevS = Apiary.intel.getComplexStats(prev, 4, 2).current;
-      let ans =
-        currS.dmgClose + currS.dmgRange - prevS.dmgClose + prevS.dmgRange;
-      if (ans === 0) {
-        ans = curr.hits - prev.hits;
-        if (Math.abs(ans) <= 50000)
-          ans = pos.getRangeTo(curr) - pos.getRangeTo(prev);
-      }
-      return ans < 0 ? curr : prev;
-    });
-    const siedge = this.siedge[pos.roomName];
-    if (siedge) {
-      /* if (!siedge.breakIn.filter(b => b.x === enemy.pos.x && b.y === enemy.pos.y).length)
-        siedge.breakIn.push({
-          x: enemy.pos.x,
-          y: enemy.pos.y,
-          ent: pos.roomName,
-          state: 255,
-        }); */
-    }
-    return enemy;
-  }
-
-  public getEnemy(
-    pos: RoomPosition,
-    dismantle: boolean = false
-  ): Enemy["object"] | undefined {
-    let enemy: Enemy["object"] | undefined;
-    let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
-    const noRamp = (e: { object: { pos: RoomPosition } }) =>
-      !e.object.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.hits > 10000)
-        .length;
-    if (roomInfo.roomState === roomStates.ownedByEnemy)
-      roomInfo = Apiary.intel.getInfo(pos.roomName, 4);
-    const siedge = this.siedge[pos.roomName];
-
-    let enemies: Enemy[] = [];
-    if (!dismantle)
-      roomInfo.enemies.filter(
-        (e) => pos.getRangeTo(e.object) <= 4 && noRamp(e)
-      ); // havoc enemies
-    if (siedge && pos.roomName in Game.rooms) {
-      if (roomInfo.safeModeEndTime > 0)
-        siedge.attackTime = Math.max(
-          roomInfo.safeModeEndTime - 100,
-          siedge.attackTime || 0
-        );
-      for (let i = 0; i < siedge.freeTargets.length; ++i) {
-        const roomEnemies = new RoomPosition(
-          siedge.freeTargets[i].x,
-          siedge.freeTargets[i].y,
-          pos.roomName
-        ).lookFor(LOOK_STRUCTURES);
-        const enemy = roomEnemies.length
-          ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
-          : undefined;
-        if (enemy)
-          enemies.push({
-            object: enemy,
-            type: enemyTypes.static,
-            dangerlvl: 9,
-          });
-        else {
-          siedge.freeTargets.splice(i, 1);
-          --i;
-        }
-      }
-      for (let i = 0; i < siedge.breakIn.length; ++i) {
-        const roomEnemies = new RoomPosition(
-          siedge.breakIn[i].x,
-          siedge.breakIn[i].y,
-          pos.roomName
-        ).lookFor(LOOK_STRUCTURES);
-        const enemy = roomEnemies.length
-          ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
-          : undefined;
-        if (enemy)
-          enemies.push({
-            object: enemy,
-            type: enemyTypes.static,
-            dangerlvl: 9,
-          });
-        else {
-          siedge.breakIn.splice(i, 1);
-          --i;
-        }
-      }
-    }
-    if (!enemies.length)
-      enemies = roomInfo.enemies.filter(
-        (e) => e.dangerlvl === roomInfo.dangerlvlmax
-      );
-    if (enemies.length)
-      enemy = enemies.reduce((prev, curr) => {
-        let ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
-        if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
-        return ans < 0 ? curr : prev;
-      }).object;
-    return enemy;
-  }
-
-  private getLegionFormation(dmg: number) {
-    const formationBee = setups.archer.copy();
-    const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
-    const healNeeded =
-      (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;
-
-    const healPerBee = Math.ceil(healNeeded / 4);
-    const toughPerBee = Math.ceil(
-      Math.max(
-        dmgAfterTough,
-        (dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2
-      ) / 100
-    );
-    // toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
-
-    formationBee.fixed = Array(healPerBee)
-      .fill(HEAL)
-      .concat(Array(toughPerBee).fill(TOUGH));
-    formationBee.patternLimit = 50;
-
-    const formation = [formationBee, formationBee, formationBee, formationBee];
-    return formation;
-  }
-
-  private getDuoFormation(dmg: number) {
-    const formationBee = setups.archer.copy();
-    const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
-    const healNeeded =
-      (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;
-
-    const healPerBee = Math.ceil(healNeeded / 2);
-    const toughPerBee = Math.ceil(
-      Math.max(
-        dmgAfterTough,
-        (dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2
-      ) / 100
-    );
-
-    formationBee.fixed = Array(healPerBee)
-      .fill(HEAL)
-      .concat(Array(toughPerBee).fill(TOUGH));
-    formationBee.patternLimit = 50;
-    const formation = [formationBee, formationBee];
-    return formation;
   }
 
   private getBrigadeFormation(dmg: number) {
@@ -710,6 +656,94 @@ export class WarcrimesModule {
       formationHealerBee,
     ];
     return formation;
+  }
+
+  private getDuoFormation(dmg: number) {
+    const formationBee = setups.archer.copy();
+    const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
+    const healNeeded =
+      (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;
+
+    const healPerBee = Math.ceil(healNeeded / 2);
+    const toughPerBee = Math.ceil(
+      Math.max(
+        dmgAfterTough,
+        (dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2
+      ) / 100
+    );
+
+    formationBee.fixed = Array(healPerBee)
+      .fill(HEAL)
+      .concat(Array(toughPerBee).fill(TOUGH));
+    formationBee.patternLimit = 50;
+    const formation = [formationBee, formationBee];
+    return formation;
+  }
+
+  private getLegionFormation(dmg: number) {
+    const formationBee = setups.archer.copy();
+    const dmgAfterTough = dmg * BOOSTS.tough.XGHO2.damage;
+    const healNeeded =
+      (dmgAfterTough / HEAL_POWER / BOOSTS.heal.XLHO2.heal) * HEAL_COEF;
+
+    const healPerBee = Math.ceil(healNeeded / 4);
+    const toughPerBee = Math.ceil(
+      Math.max(
+        dmgAfterTough,
+        (dmgAfterTough - healPerBee * HEAL_POWER * BOOSTS.heal.XLHO2.heal) * 2
+      ) / 100
+    );
+    // toughPerBee = Math.ceil(dmgAfterTough * 2 / 100);
+
+    formationBee.fixed = Array(healPerBee)
+      .fill(HEAL)
+      .concat(Array(toughPerBee).fill(TOUGH));
+    formationBee.patternLimit = 50;
+
+    const formation = [formationBee, formationBee, formationBee, formationBee];
+    return formation;
+  }
+
+  private getOpt(
+    obstacles: { pos: RoomPosition; perc: number }[],
+    existingPoints: Pos[]
+  ): TravelToOptions {
+    return {
+      maxRooms: 1,
+      offRoad: true,
+      ignoreCreeps: true,
+      ignoreStructures: true,
+      roomCallback: (roomName, matrix) => {
+        if (!(roomName in Game.rooms)) return matrix;
+        matrix = new PathFinder.CostMatrix();
+        const terrain = Game.map.getRoomTerrain(roomName);
+        for (let x = 0; x <= 49; ++x)
+          for (let y = 0; y <= 49; ++y)
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) matrix.set(x, y, 0xff);
+        _.forEach(obstacles, (o) =>
+          matrix.set(
+            o.pos.x,
+            o.pos.y,
+            Math.floor(
+              (o.pos.x <= 2 || o.pos.x >= 47 || o.pos.y <= 1 || o.pos.y >= 47
+                ? 0xba
+                : 0xa4) *
+                o.perc *
+                (existingPoints.filter(
+                  (e) =>
+                    o.pos.getRangeTo(new RoomPosition(e.x, e.y, roomName)) <= 4
+                ).length
+                  ? 2
+                  : 1)
+            )
+          )
+        );
+        _.forEach(existingPoints, (e) =>
+          matrix.set(e.x, e.y, existingPoints.length < 5 ? 0xba : 0x2c)
+        );
+        return matrix;
+      },
+    };
   }
 
   private sendSquad(roomName: string) {
@@ -759,18 +793,6 @@ export class WarcrimesModule {
       target: { x: slot.breakIn.x, y: slot.breakIn.y, roomName },
       ent: slot.breakIn.ent,
       setup: formation,
-      poss: [
-        { x: 0, y: 0 },
-        { x: 1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 1, y: 1 },
-      ].slice(0, formation.length),
-      possEnt: [
-        { x: 0, y: 0 },
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: -2, y: 0 },
-      ].slice(0, formation.length),
     });
     // could use getTimeForPath, but this saves some cpu
     slot.lastSpawned = Game.time;
@@ -779,23 +801,5 @@ export class WarcrimesModule {
       CREEP_LIFE_TIME;
   }
 
-  public update() {
-    for (const roomName in this.siedge) {
-      this.updateRoom(roomName);
-      const attackTime =
-        this.siedge[roomName] && this.siedge[roomName].attackTime;
-      if (
-        attackTime !== null &&
-        attackTime <= Game.time &&
-        Object.keys(this.siedge[roomName].squadSlots).length &&
-        !_.filter(
-          this.squads,
-          (sq) => sq.pos.roomName === roomName && sq.spawned < sq.targetBeeCount
-        ).length
-      )
-        this.sendSquad(roomName);
-    }
-  }
-
-  run() {}
+  // #endregion Private Methods (6)
 }

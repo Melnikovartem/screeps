@@ -6,9 +6,16 @@ import { prefix } from "static/enums";
 
 @profile
 export abstract class Cell {
+  // #region Properties (3)
+
   public readonly hive: Hive;
   public readonly ref: string;
+
   public master: Master | undefined;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive, cellName: string) {
     this.hive = hive;
@@ -18,22 +25,38 @@ export abstract class Cell {
       this.master = Apiary.masters[prefix.master + this.ref];
   }
 
-  public static refToCacheName(ref: string) {
-    return ref.split("_")[2];
-  }
+  // #endregion Constructors (1)
 
-  public get refCache() {
-    return Cell.refToCacheName(this.ref);
+  // #region Public Accessors (4)
+
+  /** aliast for hive.roomName */
+  public get hiveName() {
+    return this.hive.roomName;
   }
 
   public get pos(): RoomPosition {
     return this.hive.pos;
   }
 
-  /** aliast for hive.roomName */
-  public get hiveName() {
-    return this.hive.roomName;
+  public get print(): string {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
+
+  public get refCache() {
+    return Cell.refToCacheName(this.ref);
+  }
+
+  // #endregion Public Accessors (4)
+
+  // #region Public Static Methods (1)
+
+  public static refToCacheName(ref: string) {
+    return ref.split("_")[2];
+  }
+
+  // #endregion Public Static Methods (1)
+
+  // #region Public Methods (2)
 
   public delete() {
     for (const cellType in this.hive.cells)
@@ -72,8 +95,16 @@ export abstract class Cell {
     });
   }
 
+  // #endregion Public Methods (2)
+
+  // #region Public Abstract Methods (1)
+
   // second stage of decision making like where do i need to spawn creeps or do i need
   public abstract run(): void;
+
+  // #endregion Public Abstract Methods (1)
+
+  // #region Protected Methods (3)
 
   /** access up in the cache of the class
    * caution when using undefined. prefered method is to set to null
@@ -100,7 +131,5 @@ export abstract class Cell {
     return (mem[key as string] as T | undefined) || null;
   }
 
-  public get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
-  }
+  // #endregion Protected Methods (3)
 }

@@ -19,6 +19,17 @@ GANG.fixed = Array(HEAL_AMOUNT)
 
 // boosted duo to take down
 export class GangDuo extends SquadMaster {
+  // #region Properties (1)
+
+  protected formation: FormationPositions = [
+    [{ x: 0, y: 0 }, GANG],
+    [{ x: 1, y: 0 }, GANG],
+  ];
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (1)
+
   public get boosts(): Boosts {
     return [
       { type: "fatigue", lvl: 2 },
@@ -27,14 +38,16 @@ export class GangDuo extends SquadMaster {
       { type: "damage", lvl: 2 },
     ];
   }
-  protected formation: FormationPositions = [
-    [{ x: 0, y: 0 }, GANG],
-    [{ x: 1, y: 0 }, GANG],
-  ];
+
+  // #endregion Public Accessors (1)
+
+  // #region Protected Accessors (1)
 
   protected get checkup() {
     return this.checkMinerals(
       GANG.getBody(this.hive.room.energyCapacityAvailable, 17).body
     );
   }
+
+  // #endregion Protected Accessors (1)
 }

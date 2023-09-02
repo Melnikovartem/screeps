@@ -10,22 +10,37 @@ import { Cell } from "../_Cell";
 
 @profile
 export class DevelopmentCell extends Cell {
+  // #region Properties (4)
+
+  public addedRooms: string[] = [];
+  public handAddedResources: RoomPosition[] = [];
   public master: BootstrapMaster;
   public shouldRecalc: boolean = true;
-  public handAddedResources: RoomPosition[] = [];
-  public addedRooms: string[] = [];
+
+  // #endregion Properties (4)
+
+  // #region Constructors (1)
+
   public constructor(hive: Hive) {
     super(hive, prefix.developmentCell);
     this.master = new BootstrapMaster(this);
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get controller() {
+    return this.hive.controller;
   }
 
   public get pos() {
     return this.hive.controller.pos;
   }
 
-  public get controller() {
-    return this.hive.controller;
-  }
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (3)
 
   public addResources() {
     this.handAddedResources = [];
@@ -50,6 +65,16 @@ export class DevelopmentCell extends Cell {
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
       if (cell.container) this.handAddedResources.push(cell.container.pos);
     });
+  }
+
+  public run() {
+    if (
+      !this.master.beesAmount &&
+      this.hive.phase > 0 &&
+      this.hive.state === hiveStates.economy &&
+      Apiary.useBucket
+    )
+      Apiary.destroyTime = Game.time;
   }
 
   public update() {
@@ -133,13 +158,5 @@ export class DevelopmentCell extends Cell {
     }
   }
 
-  public run() {
-    if (
-      !this.master.beesAmount &&
-      this.hive.phase > 0 &&
-      this.hive.state === hiveStates.economy &&
-      Apiary.useBucket
-    )
-      Apiary.destroyTime = Game.time;
-  }
+  // #endregion Public Methods (3)
 }

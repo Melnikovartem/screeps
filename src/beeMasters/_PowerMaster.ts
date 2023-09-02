@@ -31,14 +31,12 @@ export const POWER_NAMES: { [id in PowerConstant]: string } = {
 export const HIVE_OPS = 5000;
 
 @profile
-export abstract class PowerMaster extends Master {
+export abstract class PowerMaster extends Master<PowerCell> {
   public readonly powerCreep: PowerBee;
-  protected readonly cell: PowerCell;
   protected usedPower = false;
 
   public constructor(cell: PowerCell, powerCreep: PowerBee) {
-    super(cell.hive, powerCreep.ref);
-    this.cell = cell;
+    super(cell, powerCreep.ref);
     this.powerCreep = powerCreep;
     if (!this.hive.resTarget[RESOURCE_OPS])
       this.hive.resTarget[RESOURCE_OPS] = HIVE_OPS;
@@ -48,7 +46,7 @@ export abstract class PowerMaster extends Master {
     super.update();
     this.usedPower = false;
     if (!this.powerCreep.shard)
-      this.powerCreep.creep.spawn(this.cell.powerSpawn);
+      this.powerCreep.creep.spawn(this.parent.powerSpawn);
     if (this.powerCreep.creep.spawnCooldownTime) this.delete();
   }
 

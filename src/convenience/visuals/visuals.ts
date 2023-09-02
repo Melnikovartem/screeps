@@ -1,6 +1,6 @@
 import "./visluals-planning";
 
-import { AnnexMaster } from "../../beeMasters/civil/annexer";
+import { AnnexMaster } from "../../beeMasters/economy/annexer";
 import type { Hive } from "../../hive/hive";
 import { profile } from "../../profiler/decorator";
 import { hiveStates, prefix } from "../../static/enums";

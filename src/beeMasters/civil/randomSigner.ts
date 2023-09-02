@@ -7,25 +7,22 @@ import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
 export class SignerMaster extends SwarmMaster {
+  // #region Properties (1)
+
   public movePriority = 3 as const;
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
 
   public constructor(order: FlagOrder) {
     super(order);
     this.maxSpawns = 1;
   }
 
-  public update() {
-    super.update();
+  // #endregion Constructors (1)
 
-    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
-      const setup = setups.claimer.copy();
-      setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
-      this.wish({
-        setup,
-        priority: 8,
-      });
-    }
-  }
+  // #region Public Methods (2)
 
   public run() {
     _.forEach(this.activeBees, (bee) => {
@@ -63,4 +60,19 @@ export class SignerMaster extends SwarmMaster {
       );
     });
   }
+
+  public update() {
+    super.update();
+
+    if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
+      const setup = setups.claimer.copy();
+      setup.fixed = [TOUGH, TOUGH, HEAL, HEAL];
+      this.wish({
+        setup,
+        priority: 8,
+      });
+    }
+  }
+
+  // #endregion Public Methods (2)
 }

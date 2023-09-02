@@ -89,5 +89,9 @@ module.exports = {
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "no-underscore-dangle": ["warn", { "allowAfterThis": true }],
+      "@typescript-eslint/adjacent-overload-signatures": "error",
+      "no-dupe-class-members": "off",
+      "@typescript-eslint/no-dupe-class-members": "error",
+      "@typescript-eslint/no-extraneous-class": "error"
     }
   };

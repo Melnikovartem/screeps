@@ -1,11 +1,103 @@
 import type { _Apiary } from "Apiary";
+import { SiedgeInfo } from "beeMasters/squads/squadWarcrimes";
 import type { CreepSetup } from "bees/creepSetups";
 import type { CustomConsole } from "convenience/console/console";
 import type { RoomSetup } from "hivePlanner/planner";
-import type { CreepAllBattleInfo } from "spiderSense/intelligence";
+import { SwarmOrderInfo } from "orders/swarmOrder";
+import { CreepAllBattleInfo } from "spiderSense/intelligence";
 import type { beeStates, roomStates } from "static/enums";
 
 import type { HiveCache, HiveLog } from "./hiveMemory";
+
+interface MemorySettings {
+  // #region Properties (8)
+
+  framerate: number;
+  generatePixel: boolean;
+  lifetimeApiary: number;
+  loggingCycle: number;
+  /** mining distance for deposit */
+  miningDist: number;
+  reportCPU: boolean;
+  richMovement: boolean;
+  safeWrap: boolean;
+
+  // #endregion Properties (8)
+}
+
+interface IntelGlobal {
+  // #region Properties (2)
+
+  /** structure to keep roomInfo */
+  rooms: {
+    [oomName: string]: {
+      energyRes: number;
+      mineral: MineralConstant | undefined;
+      enemyInfo?: any;
+    };
+  };
+  users: {
+    [username: string]: {
+      rooms: string[];
+    };
+  };
+
+  // #endregion Properties (2)
+}
+
+interface IntelBattle {
+  // #region Public Indexers (1)
+
+  [roomName: string]: {
+    roomState: roomStates;
+    currentOwner: string | undefined;
+    safePlace: boolean;
+    safeModeEndTime: number;
+  };
+
+  // #endregion Public Indexers (1)
+}
+
+interface SquadInfo {
+  // #region Public Indexers (1)
+
+  [swarmOrderRef: string]: {
+    seidgeStuck: number;
+    center: { x: number; y: number; roomName: string }; // current center of squad
+    targetid: Id<_HasId> | ""; // targetId
+    lastUpdatedTarget: number; // when the target was last seen and updated
+    target: { x: number; y: number; roomName: string }; // target of the squad
+
+    rotation: TOP | BOTTOM | LEFT | RIGHT;
+    setup: CreepSetup[];
+    meetUpPos: Pos[]; // position where to group // prev poss
+    possEnt: Pos[]; // position to ener from
+    ent: string;
+  };
+
+  // #endregion Public Indexers (1)
+}
+
+interface LogInfo {
+  // #region Properties (8)
+
+  cpu: { bucket: number; used: number; limit: number };
+  /** logging reported cpu usage by each part of the system. Global per function and normilized by the amount of creeps/structures */
+  cpuUsage: {
+    update: { [ref: string]: { cpu: number; norm: number } };
+    run: { [ref: string]: { cpu: number; norm: number } };
+  };
+  gcl: { level: number; progress: number; progressTotal: number };
+  gpl: { level: number; progress: number; progressTotal: number };
+  hives: {
+    [id: string]: HiveLog;
+  };
+  market: { credits: number; resourceEvents: resourceEventLog };
+  pixels: number;
+  tick: { current: number; reset: number; create: number };
+
+  // #endregion Properties (8)
+}
 
 declare global {
   let Apiary: _Apiary;
@@ -25,23 +117,26 @@ declare global {
   };
 
   interface Pos {
+    // #region Properties (2)
+
     x: number;
     y: number;
+
+    // #endregion Properties (2)
   }
 
   interface RoomPosition {
-    getRoomRangeTo(
-      pos: ProtoPos | Room | string,
-      mode?: "path" | "manh" | "lin"
-    ): number;
-    getPositionsInRange(range: number): RoomPosition[];
-    getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
-    isFree(ignoreCreeps?: boolean): boolean;
-    getPosInDirection(direction: DirectionConstant): RoomPosition;
-    getTimeForPath(pos: ProtoPos): number;
-    getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
+    // #region Properties (3)
+
+    readonly enteranceToRoom: RoomPosition | null;
+    readonly print: string;
+    readonly to_str: string;
+
+    // #endregion Properties (3)
+
+    // #region Public Methods (11)
+
     equal(pos: ProtoPos): boolean;
-    oppositeDirection(pos: RoomPosition): DirectionConstant;
     findClosest<Obj extends ProtoPos>(
       objects: Obj[],
       calc?: (p: RoomPosition, obj: ProtoPos) => number
@@ -50,116 +145,78 @@ declare global {
       objects: Obj[],
       opt?: FindPathOpts
     ): Obj | null;
-    readonly to_str: string;
-    readonly print: string;
-    readonly enteranceToRoom: RoomPosition | null;
+    getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
+    getPosInDirection(direction: DirectionConstant): RoomPosition;
+    getPositionsInRange(range: number): RoomPosition[];
+    getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
+    getRoomRangeTo(
+      pos: ProtoPos | Room | string,
+      mode?: "path" | "manh" | "lin"
+    ): number;
+    getTimeForPath(pos: ProtoPos): number;
+    isFree(ignoreCreeps?: boolean): boolean;
+    oppositeDirection(pos: RoomPosition): DirectionConstant;
+
+    // #endregion Public Methods (11)
   }
 
   interface CreepMemory {
-    refMaster: string;
-    born: number;
-    state: beeStates;
-    target?: Id<_HasId>;
+    // #region Properties (6)
 
     // for TRAVELER
     _trav?: any;
     _travel?: any;
+    born: number;
+    refMaster: string;
+    state: beeStates;
+    target?: Id<_HasId>;
+
+    // #endregion Properties (6)
   }
 
   interface PowerCreepMemory {
+    // #region Properties (5)
+
+    // for TRAVELER
+    _trav?: any;
+    _travel?: any;
     born: number;
     state: beeStates;
     target?: string;
 
-    // for TRAVELER
-    _trav?: any;
-    _travel?: any;
+    // #endregion Properties (5)
   }
 
   interface FlagMemory {
-    hive: string;
-    info?: number; // for different tasks
+    // #region Properties (4)
 
-    extraPos?: RoomPosition;
     extraInfo?: any;
-  }
+    // for different tasks
+    extraPos?: RoomPosition;
+    hive: string;
+    info?: number;
 
-  interface IntelBattle {
-    roomState: roomStates;
-    currentOwner: string | undefined;
-    safePlace: boolean;
-    safeModeEndTime: number;
+    // #endregion Properties (4)
   }
 
   interface Memory {
+    // #region Properties (4)
+
     cache: {
-      intellegence: { [roomName: string]: IntelBattle };
-      map: {
-        /** structure to keep roomInfo */
-        rooms: {
-          [oomName: string]: {
-            energyRes: number;
-            mineral: MineralConstant | undefined;
-            enemyInfo?: any;
-          };
-        };
-        users: {
-          [username: string]: {
-            rooms: string[];
-          };
-        };
-      };
+      intellegence: IntelBattle;
+      map: IntelGlobal;
       roomPlanner: { [id: string]: RoomSetup };
       hives: {
         [id: string]: HiveCache;
       };
       war: {
-        siedgeInfo: {
-          [id: string]: {
-            lastUpdated: number;
-            breakIn: { x: number; y: number; ent: string; state: number }[];
-            freeTargets: { x: number; y: number }[];
-            towerDmgBreach: number;
-            attackTime: number | null;
-            threatLvl: 0 | 1 | 2;
-            squadSlots: {
-              [id: string]: {
-                lastSpawned: number;
-                type: "range" | "dism" | "duo";
-                breakIn: { x: number; y: number; ent: string; state: number };
-              };
-            };
-          };
-        };
-        squadsInfo: {
-          [id: string]: {
-            seidgeStuck: number;
-            center: { x: number; y: number; roomName: string };
-            target: { x: number; y: number; roomName: string };
-            spawned: number;
-            rotation: TOP | BOTTOM | LEFT | RIGHT;
-            setup: CreepSetup[];
-            poss: Pos[];
-            possEnt: Pos[];
-            hive: string;
-            ref: string;
-            targetid: Id<_HasId> | "";
-            lastUpdatedTarget: number;
-            ent: string;
-          };
-        };
+        siedgeInfo: { [ref: string]: SiedgeInfo };
+        squadsInfo: SquadInfo;
       };
+      orders: { [ref: string]: SwarmOrderInfo };
     };
-
-    // some setting that i wan't to be able to change dynamically
-    settings: {
-      framerate: number;
-      generatePixel: boolean;
-      /** mining distance for deposit */
-      miningDist: number;
-      reportCPU: boolean;
-    };
-
+    // my giant log
+    log: LogInfo | undefined;
     report: {
       orders?: {
         [id: string]: {
@@ -182,27 +239,9 @@ declare global {
         };
       };
     };
+    // some setting that i wan't to be able to change dynamically
+    settings: MemorySettings;
 
-    // my giant log
-    log: LogInfo | undefined;
+    // #endregion Properties (4)
   }
-}
-
-interface LogInfo {
-  tick: { current: number; reset: number; create: number };
-  gcl: { level: number; progress: number; progressTotal: number };
-  gpl: { level: number; progress: number; progressTotal: number };
-  cpu: { bucket: number; used: number; limit: number };
-  market: { credits: number; resourceEvents: resourceEventLog };
-  pixels: number;
-
-  /** logging reported cpu usage by each part of the system. Global per function and normilized by the amount of creeps/structures */
-  cpuUsage: {
-    update: { [ref: string]: { cpu: number; norm: number } };
-    run: { [ref: string]: { cpu: number; norm: number } };
-  };
-
-  hives: {
-    [id: string]: HiveLog;
-  };
 }

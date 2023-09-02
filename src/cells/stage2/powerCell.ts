@@ -6,8 +6,16 @@ import { Cell } from "../_Cell";
 
 @profile
 export class PowerCell extends Cell {
-  public powerSpawn: StructurePowerSpawn;
+  // #region Properties (4)
+
+  public _powerManager: string | null = this.cache("_powerManager");
   public master: undefined;
+  public poss: { x: number; y: number };
+  public powerSpawn: StructurePowerSpawn;
+
+  // #endregion Properties (4)
+
+  // #region Constructors (1)
 
   public constructor(hive: Hive, powerSpawn: StructurePowerSpawn) {
     super(hive, prefix.powerCell);
@@ -15,19 +23,18 @@ export class PowerCell extends Cell {
     this.poss = this.cache("poss") || this.powerSpawn.pos;
   }
 
-  public get sCell() {
-    return this.hive.cells.storage!;
-  }
+  // #endregion Constructors (1)
 
-  public poss: { x: number; y: number };
+  // #region Public Accessors (5)
+
   public get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
-  public _powerManager: string | null = this.cache("_powerManager");
   public get powerManager() {
     return this._powerManager;
   }
+
   public set powerManager(value) {
     this._powerManager = this.cache("_powerManager", value);
   }
@@ -36,6 +43,36 @@ export class PowerCell extends Cell {
     return (this.powerManager && Apiary.bees[this.powerManager]) as
       | PowerBee
       | undefined;
+  }
+
+  public get sCell() {
+    return this.hive.cells.storage!;
+  }
+
+  // #endregion Public Accessors (5)
+
+  // #region Public Methods (2)
+
+  public run() {
+    if (
+      this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) > 0 &&
+      this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) >
+        POWER_SPAWN_ENERGY_RATIO
+    )
+      if (this.powerSpawn.processPower() === OK) {
+        Apiary.logger.addResourceStat(
+          this.hiveName,
+          "power_upgrade",
+          -1,
+          RESOURCE_POWER
+        );
+        Apiary.logger.addResourceStat(
+          this.hiveName,
+          "power_upgrade",
+          -1 * POWER_SPAWN_ENERGY_RATIO,
+          RESOURCE_ENERGY
+        );
+      }
   }
 
   public update() {
@@ -75,25 +112,5 @@ export class PowerCell extends Cell {
     }
   }
 
-  public run() {
-    if (
-      this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) > 0 &&
-      this.powerSpawn.store.getUsedCapacity(RESOURCE_ENERGY) >
-        POWER_SPAWN_ENERGY_RATIO
-    )
-      if (this.powerSpawn.processPower() === OK) {
-        Apiary.logger.addResourceStat(
-          this.hiveName,
-          "power_upgrade",
-          -1,
-          RESOURCE_POWER
-        );
-        Apiary.logger.addResourceStat(
-          this.hiveName,
-          "power_upgrade",
-          -1 * POWER_SPAWN_ENERGY_RATIO,
-          RESOURCE_ENERGY
-        );
-      }
-  }
+  // #endregion Public Methods (2)
 }

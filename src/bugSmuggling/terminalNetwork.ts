@@ -26,7 +26,10 @@ const SELL_THRESHOLD = {
 
 @profile
 export class Network {
-  public nodes: Hive[] = [];
+  // #region Properties (4)
+
+  private commoditiesToSell: CommodityConstant[] = [];
+
   public aid: {
     [hiveNameFrom: string]: {
       to: string;
@@ -34,83 +37,82 @@ export class Network {
       amount: number;
       excess?: number;
     };
-  } = {}; // from -> to
+  } = {};
+  public nodes: Hive[] = [];
+  // from -> to
   public resState: ResTarget = {};
-  private commoditiesToSell: CommodityConstant[] = [];
 
-  public init() {
-    this.nodes = _.filter(
-      Apiary.hives,
-      (h) => h.cells.storage && h.cells.storage.terminal
-    );
-    _.forEach(this.nodes, (node) => {
-      Apiary.broker.shortOrdersSell[node.roomName] = {
-        orders: {},
-        lastUpdated: Game.time,
-      };
-    });
-    for (const [comm, commInfo] of Object.entries(COMMODITIES))
-      if (
-        commInfo.level === Apiary.maxFactoryLvl &&
-        !COMMON_COMMODITIES.includes(comm as CommodityConstant)
-      )
-        this.commoditiesToSell.push(comm as CommodityConstant);
-  }
+  // #endregion Properties (4)
 
-  public update() {
-    this.resState = {};
-    Apiary.wrap(
-      () => _.forEach(Apiary.hives, (hive) => this.updateState(hive)),
-      "network_updateState",
-      "update",
-      Object.keys(Apiary.hives).length
-    );
+  // #region Public Methods (7)
 
-    if (Game.time !== Apiary.createTime)
-      Apiary.wrap(
-        () => _.forEach(this.nodes, (node) => this.askAid(node)),
-        "network_askAid",
-        "update",
-        this.nodes.length
-      );
-
-    Apiary.wrap(
-      () => {
-        for (const hiveName in this.aid) {
-          const hive = Apiary.hives[hiveName];
-          const sCell = hive.cells.storage;
-          if (!sCell) continue;
-          const aid = this.aid[hiveName];
-          if (!aid.excess)
-            aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
-          if (
-            !this.hiveValidForAid(Apiary.hives[aid.to]) ||
-            aid.amount <= 0 ||
-            hive.state !== hiveStates.economy
-          ) {
-            delete this.aid[hiveName];
+  public askAid(hive: Hive) {
+    if (!this.hiveValidForAid(hive)) return;
+    hive.shortages = {};
+    for (const r in hive.resState) {
+      const res = r as ResourceConstant;
+      if (hive.resState[res]! < 0) {
+        let validHives = _.filter(
+          this.nodes,
+          (h) =>
+            h.roomName !== hive.roomName &&
+            h.state === hiveStates.economy &&
+            this.calcAmount(h.roomName, hive.roomName, res) > 0
+        ).map((h) => h.roomName);
+        const sendCost = (h: string) =>
+          Game.market.calcTransactionCost(100000, hive.roomName, h) / 100000;
+        if (res === RESOURCE_ENERGY)
+          validHives = validHives.filter((h) => sendCost(h) < 0.31); // 11 or less roomDist
+        if (validHives.length) {
+          const validHive = validHives.reduce((prev, curr) =>
+            hive.pos.getRoomRangeTo(curr, "lin") <
+            hive.pos.getRoomRangeTo(prev, "lin")
+              ? curr
+              : prev
+          );
+          const amount = this.calcAmount(validHive, hive.roomName, res);
+          if (this.aid[validHive] && this.aid[validHive].amount > amount)
             continue;
-          }
-          addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
-        }
-      },
-      "network_planAid",
-      "update",
-      Object.keys(this.aid).length
-    );
-  }
+          this.aid[validHive] = {
+            to: hive.roomName,
+            res,
+            amount,
+          };
+          break;
+        } else hive.shortages[res] = -hive.resState[res]!;
+      }
+    }
 
-  public hiveValidForAid(hive: Hive) {
-    const sCell = hive.cells.storage;
-    return (
-      sCell &&
-      sCell.terminal &&
-      !hive.cells.defense.isBreached &&
-      !(
-        sCell.terminal.effects &&
-        sCell.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL)
-      )
-    );
+    if (
+      hive.cells.storage &&
+      hive.cells.storage.storage.store.getFreeCapacity() < FREE_CAPACITY &&
+      !this.aid[hive.roomName]
+    ) {
+      const emptyHive = _.filter(
+        this.nodes,
+        (h) =>
+          h.roomName !== hive.roomName &&
+          h.cells.storage &&
+          h.cells.storage.storage.store.getFreeCapacity() >
+            FREE_CAPACITY * 1.5 &&
+          h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5
+      )[0];
+      if (emptyHive) {
+        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+        if (keys.length) {
+          const res = keys.reduce((prev, curr) =>
+            hive.resState[curr]! > hive.resState[prev]! ? curr : prev
+          );
+          if (hive.resState[res]! > 0)
+            this.aid[hive.roomName] = {
+              to: emptyHive.roomName,
+              res,
+              amount: FREE_CAPACITY * 0.1,
+              excess: 1,
+            };
+        }
+      }
+    }
   }
 
   public calcAmount(from: string, to: string, res: ResourceConstant) {
@@ -133,27 +135,36 @@ export class Network {
     return Math.max(Math.min(toState, fromState, 50000), 0);
   }
 
-  private canHiveBuy(hive: Hive, res: ResourceConstant) {
-    let canBuyIn = false;
-    switch (hive.mode.buyIn) {
-      case 3:
-        canBuyIn = true;
-        break;
-      case 2:
-        if (
-          res === RESOURCE_ENERGY ||
-          res === RESOURCE_OPS ||
-          BASE_MINERALS.includes(res)
-        )
-          canBuyIn = true;
-        break;
-      case 1:
-        if (BASE_MINERALS.includes(res)) canBuyIn = true;
-        break;
-      case 0:
-        break;
-    }
-    return canBuyIn;
+  public hiveValidForAid(hive: Hive) {
+    const sCell = hive.cells.storage;
+    return (
+      sCell &&
+      sCell.terminal &&
+      !hive.cells.defense.isBreached &&
+      !(
+        sCell.terminal.effects &&
+        sCell.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL)
+      )
+    );
+  }
+
+  public init() {
+    this.nodes = _.filter(
+      Apiary.hives,
+      (h) => h.cells.storage && h.cells.storage.terminal
+    );
+    _.forEach(this.nodes, (node) => {
+      Apiary.broker.shortOrdersSell[node.roomName] = {
+        orders: {},
+        lastUpdated: Game.time,
+      };
+    });
+    for (const [comm, commInfo] of Object.entries(COMMODITIES))
+      if (
+        commInfo.level === Apiary.maxFactoryLvl &&
+        !COMMON_COMMODITIES.includes(comm as CommodityConstant)
+      )
+        this.commoditiesToSell.push(comm as CommodityConstant);
   }
 
   public run() {
@@ -300,73 +311,47 @@ export class Network {
     }
   }
 
-  public askAid(hive: Hive) {
-    if (!this.hiveValidForAid(hive)) return;
-    hive.shortages = {};
-    for (const r in hive.resState) {
-      const res = r as ResourceConstant;
-      if (hive.resState[res]! < 0) {
-        let validHives = _.filter(
-          this.nodes,
-          (h) =>
-            h.roomName !== hive.roomName &&
-            h.state === hiveStates.economy &&
-            this.calcAmount(h.roomName, hive.roomName, res) > 0
-        ).map((h) => h.roomName);
-        const sendCost = (h: string) =>
-          Game.market.calcTransactionCost(100000, hive.roomName, h) / 100000;
-        if (res === RESOURCE_ENERGY)
-          validHives = validHives.filter((h) => sendCost(h) < 0.31); // 11 or less roomDist
-        if (validHives.length) {
-          const validHive = validHives.reduce((prev, curr) =>
-            hive.pos.getRoomRangeTo(curr, "lin") <
-            hive.pos.getRoomRangeTo(prev, "lin")
-              ? curr
-              : prev
-          );
-          const amount = this.calcAmount(validHive, hive.roomName, res);
-          if (this.aid[validHive] && this.aid[validHive].amount > amount)
-            continue;
-          this.aid[validHive] = {
-            to: hive.roomName,
-            res,
-            amount,
-          };
-          break;
-        } else hive.shortages[res] = -hive.resState[res]!;
-      }
-    }
+  public update() {
+    this.resState = {};
+    Apiary.wrap(
+      () => _.forEach(Apiary.hives, (hive) => this.updateState(hive)),
+      "network_updateState",
+      "update",
+      Object.keys(Apiary.hives).length
+    );
 
-    if (
-      hive.cells.storage &&
-      hive.cells.storage.storage.store.getFreeCapacity() < FREE_CAPACITY &&
-      !this.aid[hive.roomName]
-    ) {
-      const emptyHive = _.filter(
-        this.nodes,
-        (h) =>
-          h.roomName !== hive.roomName &&
-          h.cells.storage &&
-          h.cells.storage.storage.store.getFreeCapacity() >
-            FREE_CAPACITY * 1.5 &&
-          h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5
-      )[0];
-      if (emptyHive) {
-        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-        if (keys.length) {
-          const res = keys.reduce((prev, curr) =>
-            hive.resState[curr]! > hive.resState[prev]! ? curr : prev
-          );
-          if (hive.resState[res]! > 0)
-            this.aid[hive.roomName] = {
-              to: emptyHive.roomName,
-              res,
-              amount: FREE_CAPACITY * 0.1,
-              excess: 1,
-            };
+    if (Game.time !== Apiary.createTime)
+      Apiary.wrap(
+        () => _.forEach(this.nodes, (node) => this.askAid(node)),
+        "network_askAid",
+        "update",
+        this.nodes.length
+      );
+
+    Apiary.wrap(
+      () => {
+        for (const hiveName in this.aid) {
+          const hive = Apiary.hives[hiveName];
+          const sCell = hive.cells.storage;
+          if (!sCell) continue;
+          const aid = this.aid[hiveName];
+          if (!aid.excess)
+            aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
+          if (
+            !this.hiveValidForAid(Apiary.hives[aid.to]) ||
+            aid.amount <= 0 ||
+            hive.state !== hiveStates.economy
+          ) {
+            delete this.aid[hiveName];
+            continue;
+          }
+          addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
         }
-      }
-    }
+      },
+      "network_planAid",
+      "update",
+      Object.keys(this.aid).length
+    );
   }
 
   public updateState(hive: Hive) {
@@ -436,4 +421,33 @@ export class Network {
     for (const [res, amount] of Object.entries(hive.resState))
       addResDict(this.resState, res, amount);
   }
+
+  // #endregion Public Methods (7)
+
+  // #region Private Methods (1)
+
+  private canHiveBuy(hive: Hive, res: ResourceConstant) {
+    let canBuyIn = false;
+    switch (hive.mode.buyIn) {
+      case 3:
+        canBuyIn = true;
+        break;
+      case 2:
+        if (
+          res === RESOURCE_ENERGY ||
+          res === RESOURCE_OPS ||
+          BASE_MINERALS.includes(res)
+        )
+          canBuyIn = true;
+        break;
+      case 1:
+        if (BASE_MINERALS.includes(res)) canBuyIn = true;
+        break;
+      case 0:
+        break;
+    }
+    return canBuyIn;
+  }
+
+  // #endregion Private Methods (1)
 }
