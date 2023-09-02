@@ -1,6 +1,7 @@
-// import { beeStates, prefix } from "../../enums";
-// import { setups } from "../../bees/creepSetups";
-import { profile } from "../../profiler/decorator";
+// import { beeStates, prefix } from "enums";
+// import { setups } from "bees/creepSetups";
+import { profile } from "profiler/decorator";
+
 import { PowerMaster } from "../_PowerMaster";
 
 // kgb'shnik
@@ -9,11 +10,11 @@ import { PowerMaster } from "../_PowerMaster";
 export class KGBMaster extends PowerMaster {
   // #region Public Methods (1)
 
-  public run() {
+  public override run() {
     if (this.hive.cells.defense.timeToLand < 50)
       this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
-      this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
+      this.powerCreep.renew(this.parent.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
       this.powerCreep.enableRoom(this.hive.controller, this.hive.opt);
     else this.chillMove();
@@ -35,19 +36,19 @@ export class KGBMaster extends PowerMaster {
     const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
     if (currOps < lowerBound)
       this.powerCreep.withdraw(
-        this.cell.sCell.storage,
+        this.parent.sCell.storage,
         RESOURCE_OPS,
         targetBalance - currOps,
         this.hive.opt
       );
     if (currOps > upperBound) {
       this.powerCreep.transfer(
-        this.cell.sCell.storage,
+        this.parent.sCell.storage,
         RESOURCE_OPS,
         currOps - targetBalance,
         this.hive.opt
       );
-    } else this.powerCreep.goRest(this.cell.pos, this.hive.opt);
+    } else this.powerCreep.goRest(this.parent.pos, this.hive.opt);
   }
 
   // #endregion Private Methods (1)

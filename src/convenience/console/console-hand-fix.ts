@@ -2,8 +2,8 @@ import type { ReactionConstant } from "cells/stage1/laboratoryCell";
 import { REACTION_MAP } from "cells/stage1/laboratoryCell";
 import { roomStates, signText } from "static/enums";
 
-import { setups } from "../../bees/creepSetups";
-import { makeId } from "../../static/utils";
+import { setups } from "bees/creepSetups";
+import { makeId } from "static/utils";
 import { CustomConsole } from "./console";
 
 declare module "./console" {

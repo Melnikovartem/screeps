@@ -1,15 +1,16 @@
-import type { PowerBee } from "../../bees/powerBee";
-import type { DefenseCell } from "../../cells/base/defenseCell";
-import type { ResourceCell } from "../../cells/base/resourceCell";
-import type { RespawnCell } from "../../cells/base/respawnCell";
-import type { FactoryCell } from "../../cells/stage1/factoryCell";
-import type { LaboratoryCell } from "../../cells/stage1/laboratoryCell";
-import type { StorageCell } from "../../cells/stage1/storageCell";
-import type { UpgradeCell } from "../../cells/stage1/upgradeCell";
-import type { ObserveCell } from "../../cells/stage2/observeCell";
-import type { PowerCell } from "../../cells/stage2/powerCell";
-import { profile } from "../../profiler/decorator";
-import { hiveStates } from "../../static/enums";
+import type { PowerBee } from "bees/powerBee";
+import type { DefenseCell } from "cells/base/defenseCell";
+import type { ResourceCell } from "cells/base/resourceCell";
+import type { RespawnCell } from "cells/base/respawnCell";
+import type { FactoryCell } from "cells/stage1/factoryCell";
+import type { LaboratoryCell } from "cells/stage1/laboratoryCell";
+import type { StorageCell } from "cells/stage1/storageCell";
+import type { UpgradeCell } from "cells/stage1/upgradeCell";
+import type { ObserveCell } from "cells/stage2/observeCell";
+import type { PowerCell } from "cells/stage2/powerCell";
+import { profile } from "profiler/decorator";
+import { hiveStates } from "static/enums";
+
 import { POWER_NAMES, PowerMaster } from "../_PowerMaster";
 import { defenseWalls } from "./nkvd-utils";
 
@@ -50,18 +51,18 @@ export class NKVDMaster extends PowerMaster {
   public constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell, powerCreep);
     this.updateTargets();
-    this.cell.powerManager = this.powerCreep.ref;
+    this.parent.powerManager = this.powerCreep.ref;
   }
 
   // #endregion Constructors (1)
 
   // #region Public Methods (2)
 
-  public run() {
+  public override run() {
     if (this.hive.cells.defense.timeToLand < 50)
       this.powerCreep.fleeRoom(this.hiveName, this.hive.opt);
     else if (this.powerCreep.ticksToLive <= POWER_CREEP_LIFE_TIME / 5)
-      this.powerCreep.renew(this.cell.powerSpawn, this.hive.opt);
+      this.powerCreep.renew(this.parent.powerSpawn, this.hive.opt);
     else if (!this.hive.controller.isPowerEnabled)
       this.powerCreep.enableRoom(this.hive.controller, this.hive.opt);
     else if (this.nextup && Game.time >= this.nextup.time) {
@@ -85,15 +86,15 @@ export class NKVDMaster extends PowerMaster {
         this.nextup = undefined;
       } else if (
         ans === ERR_NOT_ENOUGH_RESOURCES &&
-        this.cell.sCell.storage.store.getUsedCapacity(RESOURCE_OPS) > 0
+        this.parent.sCell.storage.store.getUsedCapacity(RESOURCE_OPS) > 0
       )
-        this.powerCreep.withdraw(this.cell.sCell.storage, RESOURCE_OPS);
+        this.powerCreep.withdraw(this.parent.sCell.storage, RESOURCE_OPS);
       else if (ans !== ERR_NOT_IN_RANGE) this.chillMove();
     } else this.chillMove();
     super.run();
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.nextup || Game.time % 50 === 0) this.getNext();
   }
@@ -113,7 +114,7 @@ export class NKVDMaster extends PowerMaster {
     const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
     if (currOps < lowerBound) {
       this.powerCreep.withdraw(
-        this.cell.sCell.storage,
+        this.parent.sCell.storage,
         RESOURCE_OPS,
         targetBalance - currOps,
         this.hive.opt
@@ -122,14 +123,14 @@ export class NKVDMaster extends PowerMaster {
     }
     if (currOps > upperBound) {
       this.powerCreep.transfer(
-        this.cell.sCell.storage,
+        this.parent.sCell.storage,
         RESOURCE_OPS,
         currOps - targetBalance,
         this.hive.opt
       );
       return;
     }
-    this.powerCreep.goRest(this.cell.pos, this.hive.opt);
+    this.powerCreep.goRest(this.parent.pos, this.hive.opt);
   }
 
   private getNext() {

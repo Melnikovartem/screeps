@@ -1,9 +1,9 @@
-import { ProtoBee } from "bees/protoBee";
+import type { ProtoBee } from "bees/protoBee";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { beeStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 
-import { Master, MasterParent } from "./_Master";
+import type { Master, MasterParent } from "./_Master";
 
 const FLEE_INTEL_LAG = 30;
 

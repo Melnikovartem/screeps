@@ -568,7 +568,7 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
     this.containerTargeting = containerTargetingCur;
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     if (this.parent.shouldRecalc) this.recalculateTargetBee();

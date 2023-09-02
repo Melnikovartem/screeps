@@ -1,4 +1,4 @@
-import { setups } from "../../bees/creepSetups";
+import { setups } from "bees/creepSetups";
 import { FormationPositions, SquadMaster } from "./squad";
 
 const TEST_SUBJECT_ONE = setups.puppet.copy();

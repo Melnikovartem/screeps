@@ -1,8 +1,8 @@
-import { HordeMaster } from "beeMasters/war/horde";
+import type { HordeMaster } from "beeMasters/war/horde";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { Bee } from "bees/bee";
 import { PowerBee } from "bees/powerBee";
-import { ProtoBee } from "bees/protoBee";
+import type { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
 import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
@@ -14,24 +14,21 @@ import { getNukeDefMap, updateNukes } from "./defenseCell-nukes";
 
 @profile
 export class DefenseCell extends Cell {
-  // #region Properties (14)
+  // #region Properties (11)
 
   public dmgAtPos: { [id: string]: number } = {};
-  flag?: Flag
   public getNukeDefMap = getNukeDefMap;
   public isBreached = false;
-  ition
   public master: SiegeMaster;
   public nukeCoverReady: boolean = true;
   public nukes: { [id: string]: Nuke } = {};
   public nukesDefenseMap = {};
   public poss: { x: number; y: number };
-  public setDefF
   public timeToLand: number = Infinity;
   public towers: { [id: string]: StructureTower } = {};
   public updateNukes = updateNukes;
 
-  // #endregion Properties (14)
+  // #endregion Properties (11)
 
   // #region Constructors (1)
 
@@ -93,7 +90,7 @@ export class DefenseCell extends Cell {
 
   // #endregion Public Accessors (2)
 
-  // #region Public Methods (6)
+  // #region Public Methods (9)
 
   public checkAndDefend(roomName: string, lag = 20) {
     const roomInfo = Apiary.intel.getInfo(roomName, lag);
@@ -401,8 +398,7 @@ export class DefenseCell extends Cell {
     }
   }
 
-  // #endregion Public Methods (6)
-) {
+  public setDefFlag(pos: RoomPosition, flag?: Flag) {
     let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
     const terrain = Game.map.getRoomTerrain(pos.roomName);
     const centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(
@@ -563,4 +559,6 @@ export class DefenseCell extends Cell {
         ).length
     );
   }
+
+  // #endregion Public Methods (9)
 }

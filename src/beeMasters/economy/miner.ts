@@ -16,7 +16,7 @@ export class MinerMaster extends Master<ResourceCell> {
   // #region Properties (2)
 
   public movePriority = 4 as const;
-  public newBee = (bee: Bee) => {
+  public override newBee = (bee: Bee) => {
     super.newBee(bee);
     this.parent.parentCell.shouldRecalc = true;
   };
@@ -190,7 +190,7 @@ export class MinerMaster extends Master<ResourceCell> {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     const roomState = Apiary.intel.getRoomState(this.pos);

@@ -1,9 +1,9 @@
-import { Bee } from "bees/bee";
-import { SpawnOrder } from "hive/hive-declarations";
+import type { Bee } from "bees/bee";
+import type { SpawnOrder } from "hive/hive-declarations";
 import { ERR_INVALID_ACTION } from "static/constants";
 import { beeStates, hiveStates } from "static/enums";
 
-import { Master, MasterParent } from "./_Master";
+import type { Master, MasterParent } from "./_Master";
 
 const BEE_QUE_PER_MASTER = 3;
 
@@ -54,8 +54,10 @@ export function checkBees(
 ): boolean {
   // failsafe for spawning bees without checking
   this.checkBeforeWish = true;
+  // in case we recalc something there
+  const targetBeeCount = this.targetBeeCount;
   // in 4 ifs to be able to read...
-  if (this.waitingForBees > BEE_QUE_PER_MASTER || this.targetBeeCount === 0)
+  if (this.waitingForBees > BEE_QUE_PER_MASTER || targetBeeCount === 0)
     return false;
   if (!spawnWhenExtreme && this.hive.state !== hiveStates.economy) return false;
   if (
@@ -65,8 +67,8 @@ export function checkBees(
     return false;
   const beesAmountFuture = this.beesAmount + this.waitingForBees;
   return (
-    beesAmountFuture < this.targetBeeCount ||
-    (beesAmountFuture === this.targetBeeCount &&
+    beesAmountFuture < targetBeeCount ||
+    (beesAmountFuture === targetBeeCount &&
       this.oldestSpawn + spawnCycle <= Game.time &&
       !this.waitingForBees) // no more then one bee on cycle spawn que
   );

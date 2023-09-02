@@ -21,13 +21,13 @@ export class HaulerMaster extends Master<ExcavationCell> {
   private roadUpkeepCost: { [id: string]: number } = {};
   private targetMap: { [id: string]: string | undefined } = {};
 
-  public deleteBee = (ref: string) => {
+  public override deleteBee = (ref: string) => {
     super.deleteBee(ref);
     delete this.roadUpkeepCost[ref];
   };
   public dropOff: StructureStorage;
   public movePriority = 5 as const;
-  public newBee = (bee: Bee) => {
+  public override newBee = (bee: Bee) => {
     if (bee.state === beeStates.idle && bee.store.getUsedCapacity())
       bee.state = beeStates.work;
     super.newBee(bee);
@@ -299,7 +299,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     if (!this.accumRoadTime || this.parent.shouldRecalc) {

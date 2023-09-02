@@ -1,34 +1,27 @@
-import { setups } from "../../bees/creepSetups";
-import type { FlagOrder } from "../../orders/order";
-import { profile } from "../../profiler/decorator";
-import { signText } from "../../static/enums";
+import type { MovePriority } from "beeMasters/_Master";
+import { setups } from "bees/creepSetups";
+import { profile } from "profiler/decorator";
+import { signText } from "static/enums";
+
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class DowngradeMaster extends SwarmMaster {
-  // #region Properties (1)
+export class DowngradeMaster extends SwarmMaster<undefined> {
+  // #region Properties (2)
 
   public lastAttacked: number = Game.time - CONTROLLER_ATTACK_BLOCKED_UPGRADE;
+  public override movePriority: MovePriority = 5;
 
-  // #endregion Properties (1)
-
-  // #region Constructors (1)
-
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.maxSpawns = 100;
-  }
-
-  // #endregion Constructors (1)
+  // #endregion Properties (2)
 
   // #region Public Accessors (2)
 
-  public get oldestSpawn() {
-    return this.order.memory.extraInfo as number;
+  public override get maxSpawns(): number {
+    return 100;
   }
 
-  public set oldestSpawn(value) {
-    if (this.order) this.order.memory.extraInfo = value;
+  public override get targetBeeCount(): number {
+    return 1;
   }
 
   // #endregion Public Accessors (2)
@@ -65,12 +58,12 @@ export class DowngradeMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
     if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username) {
-      this.order.delete();
+      this.parent.delete();
       return;
     }
 
@@ -81,7 +74,7 @@ export class DowngradeMaster extends SwarmMaster {
         CONTROLLER_ATTACK_BLOCKED_UPGRADE +
         (room.controller.upgradeBlocked || 0);
       if (!room.controller.owner) {
-        this.order.delete();
+        this.parent.delete();
         return;
       }
       if (Game.time % 25 === 0)
@@ -101,4 +94,12 @@ export class DowngradeMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo() {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

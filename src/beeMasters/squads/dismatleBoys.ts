@@ -1,6 +1,8 @@
-import { setups } from "../../bees/creepSetups";
+import { setups } from "bees/creepSetups";
+
 import type { Boosts } from "../_Master";
-import { FormationPositions, SquadMaster } from "./squad";
+import type { FormationPositions } from "./squad";
+import { SquadMaster } from "./squad";
 
 const TOWER_NUM = 3; // 6;
 const TOWER_DMG = TOWER_NUM * TOWER_POWER_ATTACK * BOOSTS.tough.XGHO2.damage;

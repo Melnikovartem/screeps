@@ -14,7 +14,9 @@ import {
 } from "./_Master-beeManage";
 import { checkFlee, preRunBoost, secureBoostsHive } from "./_Master-utils";
 
+export type MovePriority = 0 | 1 | 2 | 3 | 4 | 5;
 export type Boosts = BoostRequest[];
+
 export interface MasterParent {
   // #region Properties (3)
 
@@ -46,7 +48,7 @@ export abstract class Master<T extends MasterParent> {
   /** deletes bee from memory of master */
   public deleteBee = deleteBee;
   /** movePriority of bees that are part of this master */
-  public abstract movePriority: 0 | 1 | 2 | 3 | 4 | 5;
+  public abstract movePriority: MovePriority;
   /** catch a bee after it has requested a master */
   public newBee = newBee;
   public notify = false;

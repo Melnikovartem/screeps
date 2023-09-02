@@ -8,54 +8,34 @@ import { makeId } from "static/utils";
 import { SwarmMaster } from "../_SwarmMaster";
 
 interface PowerInfo {
-  roadTime: number;
-  hits: number;
+  // #region Properties (4)
+
   decay: number;
+  hits: number;
   power: number;
+  roadTime: number;
+
+  // #endregion Properties (4)
 }
 
 // first tandem btw
 @profile
 export class PowerMaster extends SwarmMaster<PowerInfo> {
-  // constructor
-  public constructor(order: SwarmOrder<PowerInfo>) {
-    super(order);
-    this.corridorMining?.powerSites.push(this);
-    this.positions = this.pos.getOpenPositions(true).map((p) => {
-      return { pos: p };
-    });
-    if (this.pos.roomName in Game.rooms) this.updateTarget();
-  }
-  // implementation block
-  public movePriority = 1 as const;
-  public get targetBeeCount() {
-    return this.positions.length * 2;
-  }
-  public get maxSpawns() {
-    return this.info.hits >= 0 ? Infinity : 0;
-  }
-  public defaultInfo() {
-    return {
-      roadTime: this.pos.getTimeForPath(this.hive),
-      hits: 0,
-      decay: Game.time,
-      power: 0,
-    };
-  }
+  // #region Properties (9)
 
-  // extra overload block
-  public checkBees = () => {
+  private duplets: [Bee | undefined, Bee | undefined][] = [];
+  private healers: Bee[] = [];
+  private knights: Bee[] = [];
+  private positions: { pos: RoomPosition }[];
+  private target: StructurePowerBank | undefined;
+
+  public override checkBees = () => {
     return (
       this.shouldSpawn &&
       super.checkBees(true, CREEP_LIFE_TIME - this.info.roadTime - 30)
     );
   };
-  public newBee = (bee: Bee) => {
-    super.newBee(bee);
-    if (bee.creep.getBodyParts(HEAL)) this.healers.push(bee);
-    else this.knights.push(bee);
-  };
-  public deleteBee = (ref: string) => {
+  public override deleteBee = (ref: string) => {
     super.deleteBee(ref);
     for (let i = 0; i < this.healers.length; ++i)
       if (this.healers[i].ref === ref) {
@@ -68,23 +48,32 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
         --i;
       }
   };
-  public delete() {
-    super.delete();
-    if (this.corridorMining) {
-      const index = this.corridorMining.powerSites.indexOf(this);
-      if (index !== -1) this.corridorMining.powerSites.splice(index, 1);
-    }
+  public movePriority = 1 as const;
+  public override newBee = (bee: Bee) => {
+    super.newBee(bee);
+    if (bee.creep.getBodyParts(HEAL)) this.healers.push(bee);
+    else this.knights.push(bee);
+  };
+
+  // #endregion Properties (9)
+
+  // #region Constructors (1)
+
+  public constructor(order: SwarmOrder<PowerInfo>) {
+    super(order);
+    this.corridorMining?.powerSites.push(this);
+    this.positions = this.pos.getOpenPositions(true).map((p) => {
+      return { pos: p };
+    });
+    if (this.pos.roomName in Game.rooms) this.updateTarget();
   }
 
-  // methods/attributes to help with logic
-  private duplets: [Bee | undefined, Bee | undefined][] = [];
-  private healers: Bee[] = [];
-  private knights: Bee[] = [];
-  private target: StructurePowerBank | undefined;
-  private positions: { pos: RoomPosition }[];
+  // #endregion Constructors (1)
 
-  private get corridorMining() {
-    return this.hive.puller;
+  // #region Public Accessors (4)
+
+  public get maxSpawns() {
+    return this.info.hits >= 0 ? Infinity : 0;
   }
 
   public get pickupTime() {
@@ -133,40 +122,21 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
     );
   }
 
-  public updateTarget() {
-    this.target = this.pos
-      .lookFor(LOOK_STRUCTURES)
-      .filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0] as
-      | StructurePowerBank
-      | undefined;
-    if (this.target) {
-      this.info.hits = this.target.hits;
-      this.info.decay = this.target.ticksToDecay;
-      this.info.power = this.target.power;
-
-      const dmgCurrent =
-        _.sum(this.duplets, (dd) =>
-          dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0
-        ) *
-        ATTACK_POWER *
-        20;
-      if (this.info.hits / dmgCurrent <= this.pickupTime) this.callPickUp();
-      return;
-    }
-
-    const res = this.pos.lookFor(LOOK_RESOURCES)[0];
-    if (res) {
-      this.info.power = res.amount;
-      this.callPickUp();
-    }
-    this.info.hits = -1;
-    if (!this.pos.isFree(true))
-      this.parent.pos = new RoomPosition(
-        Math.floor(Math.random() * 50),
-        Math.floor(Math.random() * 50),
-        this.roomName
-      );
+  public get targetBeeCount() {
+    return this.positions.length * 2;
   }
+
+  // #endregion Public Accessors (4)
+
+  // #region Private Accessors (1)
+
+  private get corridorMining() {
+    return this.hive.puller;
+  }
+
+  // #endregion Private Accessors (1)
+
+  // #region Public Methods (6)
 
   public createDuplet(knight: Bee) {
     let goodHealers;
@@ -195,66 +165,20 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
     return false;
   }
 
-  private callPickUp() {
-    if (
-      this.pos
-        .lookFor(LOOK_FLAGS)
-        .filter(
-          (f) => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN
-        ).length
-    )
-      return;
-    const name = this.pos.createFlag(
-      Math.ceil(this.info.power / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) +
-        "_pickup_" +
-        makeId(4),
-      COLOR_ORANGE,
-      COLOR_GREEN
-    );
-    if (typeof name === "string") Game.flags[name].memory.hive = this.hiveName;
+  public defaultInfo() {
+    return {
+      roadTime: this.pos.getTimeForPath(this.hive),
+      hits: 0,
+      decay: Game.time,
+      power: 0,
+    };
   }
 
-  // update - run
-  public update() {
-    super.update();
-
-    for (let i = 0; i < this.knights.length; ++i)
-      if (this.createDuplet(this.knights[i])) --i;
-
-    for (const dup of this.duplets) {
-      const [knight, healer] = dup;
-      if (knight) dup[0] = this.bees[knight.ref];
-      if (healer) dup[1] = this.bees[healer.ref];
-    }
-
-    if (this.pos.roomName in Game.rooms) this.updateTarget();
-    else {
-      this.target = undefined;
-      if (this.info.hits <= 0 && this.hive.cells.observe)
-        Apiary.requestSight(this.pos.roomName);
-    }
-
-    if (this.info.decay < -100) {
-      this.parent.delete();
-      return;
-    }
-
-    if (this.checkBees()) {
-      const balance =
-        this.healers.filter((b) => b.ticksToLive > this.info.roadTime * 2)
-          .length -
-        this.knights.filter((b) => b.ticksToLive > this.info.roadTime * 2)
-          .length;
-      if (balance <= 0)
-        this.wish({
-          setup: setups.miner.powerhealer,
-          priority: 7,
-        });
-      if (balance >= 0)
-        this.wish({
-          setup: setups.miner.power,
-          priority: 7,
-        });
+  public override delete() {
+    super.delete();
+    if (this.corridorMining) {
+      const index = this.corridorMining.powerSites.indexOf(this);
+      if (index !== -1) this.corridorMining.powerSites.splice(index, 1);
     }
   }
 
@@ -381,4 +305,108 @@ export class PowerMaster extends SwarmMaster<PowerInfo> {
       }
     });
   }
+
+  // update - run
+  public override update() {
+    super.update();
+
+    for (let i = 0; i < this.knights.length; ++i)
+      if (this.createDuplet(this.knights[i])) --i;
+
+    for (const dup of this.duplets) {
+      const [knight, healer] = dup;
+      if (knight) dup[0] = this.bees[knight.ref];
+      if (healer) dup[1] = this.bees[healer.ref];
+    }
+
+    if (this.pos.roomName in Game.rooms) this.updateTarget();
+    else {
+      this.target = undefined;
+      if (this.info.hits <= 0 && this.hive.cells.observe)
+        Apiary.requestSight(this.pos.roomName);
+    }
+
+    if (this.info.decay < -100) {
+      this.parent.delete();
+      return;
+    }
+
+    if (this.checkBees()) {
+      const balance =
+        this.healers.filter((b) => b.ticksToLive > this.info.roadTime * 2)
+          .length -
+        this.knights.filter((b) => b.ticksToLive > this.info.roadTime * 2)
+          .length;
+      if (balance <= 0)
+        this.wish({
+          setup: setups.miner.powerhealer,
+          priority: 7,
+        });
+      if (balance >= 0)
+        this.wish({
+          setup: setups.miner.power,
+          priority: 7,
+        });
+    }
+  }
+
+  public updateTarget() {
+    this.target = this.pos
+      .lookFor(LOOK_STRUCTURES)
+      .filter((s) => s.structureType === STRUCTURE_POWER_BANK)[0] as
+      | StructurePowerBank
+      | undefined;
+    if (this.target) {
+      this.info.hits = this.target.hits;
+      this.info.decay = this.target.ticksToDecay;
+      this.info.power = this.target.power;
+
+      const dmgCurrent =
+        _.sum(this.duplets, (dd) =>
+          dd[0] && dd[0].pos.isNearTo(this) ? 1 : 0
+        ) *
+        ATTACK_POWER *
+        20;
+      if (this.info.hits / dmgCurrent <= this.pickupTime) this.callPickUp();
+      return;
+    }
+
+    const res = this.pos.lookFor(LOOK_RESOURCES)[0];
+    if (res) {
+      this.info.power = res.amount;
+      this.callPickUp();
+    }
+    this.info.hits = -1;
+    if (!this.pos.isFree(true))
+      this.parent.pos = new RoomPosition(
+        Math.floor(Math.random() * 50),
+        Math.floor(Math.random() * 50),
+        this.roomName
+      );
+  }
+
+  // #endregion Public Methods (6)
+
+  // #region Private Methods (1)
+
+  private callPickUp() {
+    if (
+      this.pos
+        .lookFor(LOOK_FLAGS)
+        .filter(
+          (f) => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN
+        ).length
+    )
+      return;
+    const name = this.pos.createFlag(
+      Math.ceil(this.info.power / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) +
+        "_pickup_" +
+        makeId(4),
+      COLOR_ORANGE,
+      COLOR_GREEN
+    );
+    if (typeof name === "string") Game.flags[name].memory.hive = this.hiveName;
+  }
+
+  // #endregion Private Methods (1)
 }

@@ -4,10 +4,10 @@ import {
   ERR_INVALID_ACTION,
 } from "static/constants";
 
-import type { Bee } from "../../bees/bee";
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix } from "../../static/enums";
+import type { Bee } from "bees/bee";
+import type { Hive } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { hiveStates, prefix } from "static/enums";
 import { Cell } from "../_Cell";
 
 export type ReactionConstant =

@@ -33,8 +33,7 @@ export class FastRefillMaster extends Master<FastRefillCell> {
 
   // #region Public Accessors (2)
 
-  // overload position
-  public get pos() {
+  public override get pos() {
     return this.posForBee;
   }
 
@@ -46,7 +45,7 @@ export class FastRefillMaster extends Master<FastRefillCell> {
 
   // #region Public Methods (3)
 
-  public delete() {
+  public override delete() {
     super.delete();
     const index = this.parent.masters.indexOf(this);
     if (index !== -1) this.parent.masters.splice(index);
@@ -89,7 +88,7 @@ export class FastRefillMaster extends Master<FastRefillCell> {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     this.container = Game.getObjectById(
       this.container.id

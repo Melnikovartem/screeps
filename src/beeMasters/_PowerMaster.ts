@@ -4,6 +4,7 @@
 import type { PowerBee } from "../bees/powerBee";
 import type { PowerCell } from "../cells/stage2/powerCell";
 import { profile } from "../profiler/decorator";
+import type { MovePriority } from "./_Master";
 import { Master } from "./_Master";
 
 export const POWER_NAMES: { [id in PowerConstant]: string } = {
@@ -32,8 +33,18 @@ export const HIVE_OPS = 5000;
 
 @profile
 export abstract class PowerMaster extends Master<PowerCell> {
-  public readonly powerCreep: PowerBee;
+  // #region Properties (3)
+
   protected usedPower = false;
+
+  public readonly powerCreep: PowerBee;
+
+  // very important guys
+  public override movePriority: MovePriority = 1;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
 
   public constructor(cell: PowerCell, powerCreep: PowerBee) {
     super(cell, powerCreep.ref);
@@ -42,12 +53,22 @@ export abstract class PowerMaster extends Master<PowerCell> {
       this.hive.resTarget[RESOURCE_OPS] = HIVE_OPS;
   }
 
-  public update() {
-    super.update();
-    this.usedPower = false;
-    if (!this.powerCreep.shard)
-      this.powerCreep.creep.spawn(this.parent.powerSpawn);
-    if (this.powerCreep.creep.spawnCooldownTime) this.delete();
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
+  // but they dont need bees
+  public override get targetBeeCount(): number {
+    return 0;
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (3)
+
+  public override delete() {
+    super.delete();
+    delete Apiary.bees[this.powerCreep.ref];
   }
 
   public run() {
@@ -68,8 +89,13 @@ export abstract class PowerMaster extends Master<PowerCell> {
     this.checkFlee(this.powerCreep);
   }
 
-  public delete() {
-    super.delete();
-    delete Apiary.bees[this.powerCreep.ref];
+  public override update() {
+    super.update();
+    this.usedPower = false;
+    if (!this.powerCreep.shard)
+      this.powerCreep.creep.spawn(this.parent.powerSpawn);
+    if (this.powerCreep.creep.spawnCooldownTime) this.delete();
   }
+
+  // #endregion Public Methods (3)
 }

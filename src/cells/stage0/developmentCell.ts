@@ -1,11 +1,11 @@
 import { FastRefillCell } from "cells/stage1/fastRefill";
 import { Traveler } from "Traveler/TravelerModified";
 
-import { BootstrapMaster } from "../../beeMasters/economy/bootstrap";
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix } from "../../static/enums";
-import { makeId } from "../../static/utils";
+import { BootstrapMaster } from "beeMasters/economy/bootstrap";
+import type { Hive } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { hiveStates, prefix } from "static/enums";
+import { makeId } from "static/utils";
 import { Cell } from "../_Cell";
 
 @profile

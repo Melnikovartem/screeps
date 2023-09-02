@@ -1,8 +1,8 @@
-import { UpgraderMaster } from "../../beeMasters/economy/upgrader";
-import { setups } from "../../bees/creepSetups";
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix } from "../../static/enums";
+import { UpgraderMaster } from "beeMasters/economy/upgrader";
+import { setups } from "bees/creepSetups";
+import type { Hive } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { hiveStates, prefix } from "static/enums";
 import { Cell } from "../_Cell";
 
 @profile

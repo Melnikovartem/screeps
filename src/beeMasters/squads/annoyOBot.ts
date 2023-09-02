@@ -1,4 +1,4 @@
-import { setups } from "../../bees/creepSetups";
+import { setups } from "bees/creepSetups";
 import type { Boosts } from "../_Master";
 import { FormationPositions, SquadMaster } from "./squad";
 

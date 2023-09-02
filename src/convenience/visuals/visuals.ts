@@ -1,10 +1,10 @@
 import "./visluals-planning";
 
-import { AnnexMaster } from "../../beeMasters/economy/annexer";
-import type { Hive } from "../../hive/hive";
-import { profile } from "../../profiler/decorator";
-import { hiveStates, prefix } from "../../static/enums";
-import { makeId } from "../../static/utils";
+import { AnnexMaster } from "beeMasters/economy/annexer";
+import type { Hive } from "hive/hive";
+import { profile } from "profiler/decorator";
+import { hiveStates, prefix } from "static/enums";
+import { makeId } from "static/utils";
 
 const TEXT_SIZE = 0.8;
 const TEXT_HEIGHT = TEXT_SIZE * 0.9;

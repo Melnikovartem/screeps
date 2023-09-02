@@ -1,8 +1,8 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import { type CreepBattleInfo } from "spiderSense/intelligence";
+import type { CreepBattleInfo } from "spiderSense/intelligence";
 import { beeStates, enemyTypes, hiveStates } from "static/enums";
 
 import type { Boosts } from "../_Master";
@@ -11,10 +11,19 @@ import { SwarmMaster } from "../_SwarmMaster";
 const BOOST_LVL = 2;
 const FORGET_ENEMY_ENT = 2;
 
+interface HordeInfo {
+  // #region Properties (1)
+
+  targetBeeCount: number;
+  boosts: Boosts;
+
+  // #endregion Properties (1)
+}
+
 // most basic of bitches a horde full of wasps
 @profile
-export class HordeMaster extends SwarmMaster {
-  // #region Properties (6)
+export class HordeMaster extends SwarmMaster<HordeInfo> {
+  // #region Properties (5)
 
   private enemiesAtEnterance: {
     [enemyId: Id<Creep | PowerCreep | Structure>]: {
@@ -23,22 +32,18 @@ export class HordeMaster extends SwarmMaster {
     };
   } = {};
 
-  // failsafe
   public movePriority = 4 as 3 | 4;
-  public notify = false;
   public recycle = true;
   public setup = setups.archer.copy();
   // 0 if no 1 - 2 - 3 for cycle
   public trio = 0;
 
-  // #endregion Properties (6)
+  // #endregion Properties (5)
 
   // #region Constructors (1)
 
-  public constructor(order: FlagOrder) {
+  public constructor(order: SwarmOrder<HordeInfo>) {
     super(order);
-    if (!this.order.memory.extraInfo)
-      this.order.memory.extraInfo = { targetBeeCount: 1, maxSpawns: 1 };
     this.init();
   }
 
@@ -46,15 +51,12 @@ export class HordeMaster extends SwarmMaster {
 
   // #region Public Accessors (9)
 
-  public get boosts() {
-    return (this.order &&
-      this.order.memory.extraInfo &&
-      this.order.memory.extraInfo.boosts) as Boosts | undefined;
+  public override get boosts() {
+    return this.info.boosts;
   }
 
-  public set boosts(value) {
-    if (this.order && this.order.memory.extraInfo)
-      this.order.memory.extraInfo.boosts = value;
+  public override set boosts(value) {
+    this.info.boosts = value;
   }
 
   public get emergency() {
@@ -396,10 +398,10 @@ export class HordeMaster extends SwarmMaster {
 
   public init() {
     if (!this.maxPath) this.maxPath = this.hive.pos.getTimeForPath(this);
-    if (this.order.ref.includes("keep")) this.maxSpawns = 30;
-    if (!this.order.ref.includes("recycle")) this.recycle = false;
+    if (this.ref.includes("keep")) this.maxSpawns = 30;
+    if (!this.ref.includes("recycle")) this.recycle = false;
 
-    if (this.order.ref.includes("boost"))
+    if (this.ref.includes("boost"))
       this.boosts = [
         { type: "rangedAttack", lvl: BOOST_LVL },
         { type: "attack", lvl: BOOST_LVL },
@@ -411,19 +413,18 @@ export class HordeMaster extends SwarmMaster {
         { type: "dismantle", lvl: 0 },
       ];
     // fast to produce trio to stabilize room
-    if (this.order.ref.includes("trio")) {
+    if (this.ref.includes("trio")) {
       // more of a harass unit unless i rly try to code
       this.maxSpawns = Math.max(60, this.maxSpawns); // 20 trios : 64K energy : 24H harass on shard2
-      this.trio = (this.spawned % 3) + 1;
+      this.trio = (this.parent.spawned % 3) + 1;
       this.targetBeeCount = 3;
     }
-    if (this.order.ref.includes("dismantle"))
-      this.setup = setups.dismantler.copy();
-    else if (this.order.ref.includes("guard")) {
+    if (this.ref.includes("dismantle")) this.setup = setups.dismantler.copy();
+    else if (this.ref.includes("guard")) {
       this.maxSpawns = 5;
       this.setup.patternLimit = 12;
       this.setup.fixed = [HEAL, HEAL, HEAL];
-    } else if (this.order.ref.includes("polar")) {
+    } else if (this.ref.includes("polar")) {
       this.boosts = [
         { type: "attack", lvl: 2 },
         { type: "damage", lvl: 2 },
@@ -432,12 +433,12 @@ export class HordeMaster extends SwarmMaster {
       this.setup.pattern = [ATTACK];
       this.setup.fixed = [TOUGH, TOUGH, TOUGH].concat(Array(12).fill(HEAL));
       this.maxSpawns = 100;
-    } else if (this.order.ref.includes("elc")) {
+    } else if (this.ref.includes("elc")) {
       this.targetBeeCount = 1;
       this.maxSpawns = 20;
       this.setup.pattern = [RANGED_ATTACK];
       this.setup.fixed = Array(17).fill(HEAL);
-    } else if (this.order.ref.includes("6g3y_1")) {
+    } else if (this.ref.includes("6g3y_1")) {
       this.boosts = [
         { type: "rangedAttack", lvl: 2 },
         { type: "attack", lvl: 2 },
@@ -450,7 +451,7 @@ export class HordeMaster extends SwarmMaster {
       this.setup.pattern = [ATTACK];
       // this.setup.patternLimit = 30;
       this.setup.fixed = Array(5).fill(TOUGH).concat(Array(10).fill(HEAL));
-    } else if (this.order.ref.includes("6g3y")) {
+    } else if (this.ref.includes("6g3y")) {
       this.boosts = [
         { type: "rangedAttack", lvl: 2 },
         { type: "attack", lvl: 2 },
@@ -475,7 +476,7 @@ export class HordeMaster extends SwarmMaster {
         HEAL,
         HEAL,
       ];
-    } else if (this.boosts && !this.order.ref.includes("full")) {
+    } else if (this.boosts && !this.ref.includes("full")) {
       this.setup.patternLimit = 15;
       this.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL];
     } else if (this.boosts) {
@@ -611,7 +612,7 @@ export class HordeMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     for (const [enemyId, info] of Object.entries(this.enemiesAtEnterance))

@@ -1,9 +1,10 @@
-import { setups } from "../../bees/creepSetups";
-import type { TransferRequest } from "../../bees/transferRequest";
-import type { StorageCell } from "../../cells/stage1/storageCell";
-import { profile } from "../../profiler/decorator";
-import { beeStates, hiveStates } from "../../static/enums";
-import { findOptimalResource } from "../../static/utils";
+import { setups } from "bees/creepSetups";
+import type { TransferRequest } from "bees/transferRequest";
+import type { StorageCell } from "cells/stage1/storageCell";
+import { profile } from "profiler/decorator";
+import { beeStates, hiveStates } from "static/enums";
+import { findOptimalResource } from "static/utils";
+
 import { Master } from "../_Master";
 
 @profile
@@ -71,7 +72,7 @@ export class ManagerMaster extends Master<StorageCell> {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     this.activeBees.sort(

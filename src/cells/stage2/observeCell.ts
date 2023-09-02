@@ -1,8 +1,8 @@
-import type { Hive } from "../../hive/hive";
-import { FlagOrder } from "../../orders/order";
-import { profile } from "../../profiler/decorator";
-import { prefix, roomStates } from "../../static/enums";
-import { getRoomCoorinates } from "../../static/utils";
+import type { Hive } from "hive/hive";
+import { FlagOrder } from "orders/order";
+import { profile } from "profiler/decorator";
+import { prefix, roomStates } from "static/enums";
+import { getRoomCoorinates } from "static/utils";
 import { Cell } from "../_Cell";
 
 @profile

@@ -92,6 +92,7 @@ module.exports = {
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "no-dupe-class-members": "off",
       "@typescript-eslint/no-dupe-class-members": "error",
-      "@typescript-eslint/no-extraneous-class": "error"
+      "@typescript-eslint/no-extraneous-class": "error",
+      "@typescript-eslint/consistent-type-imports": "error",
     }
   };
