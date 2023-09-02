@@ -3,41 +3,33 @@ import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
-import type { Boosts } from "../_Master";
+import type { Boosts, MovePriority } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class HelpTransferMaster extends SwarmMaster {
-  // #region Properties (1)
+export class HelpTransferMaster extends SwarmMaster<number> {
+  // #region Properties (2)
 
+  public override movePriority: MovePriority = 4;
   public res = RESOURCE_ENERGY;
 
-  // #endregion Properties (1)
+  // #endregion Properties (2)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (3)
 
-  public get boosts(): Boosts {
+  public override get boosts(): Boosts {
     return [{ type: "capacity", lvl: 2 }];
   }
 
   public get maxSpawns() {
-    return this.targetBeeCount; // Math.max(this.targetBeeCount, 30); // about 0.5M energy per flag
+    return this.targetBeeCount * 3; // 30 about 0.5M energy per order
   }
-
-  public set maxSpawns(_) {}
 
   public get targetBeeCount() {
-    if (!this.order) return 10;
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 10;
-    return this.order.memory.extraInfo as number;
+    return this.info;
   }
 
-  public set targetBeeCount(value) {
-    if (this.order && this.order.memory.extraInfo)
-      this.order.memory.extraInfo = value;
-  }
-
-  // #endregion Public Accessors (5)
+  // #endregion Public Accessors (3)
 
   // #region Public Methods (2)
 
@@ -101,7 +93,7 @@ export class HelpTransferMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (
       this.checkBees() &&
@@ -115,4 +107,12 @@ export class HelpTransferMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): number {
+    return 10;
+  }
+
+  // #endregion Protected Methods (1)
 }

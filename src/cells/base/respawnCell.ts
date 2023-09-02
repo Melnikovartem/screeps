@@ -1,8 +1,8 @@
-import { Bee } from "bees/bee";
+import type { Bee } from "bees/bee";
 import type { Hive } from "hive/hive";
 import type { SpawnOrder } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
-import { ApiaryReturnCode } from "static/constants";
+import type { ApiaryReturnCode } from "static/constants";
 import { beeStates, prefix, setupsNames } from "static/enums";
 import { makeId } from "static/utils";
 
@@ -19,7 +19,6 @@ export class RespawnCell extends Cell {
   public extensions: { [id: string]: StructureExtension } = {};
   public fastRef: FastRefillCell | undefined;
   public freeSpawns: StructureSpawn[] = [];
-  public master: undefined;
   public priorityMap: { [id: string]: number } = {};
   /** Dictionary of spawn orders */
   public spawnQue: SpawnOrder[] = [];
@@ -246,7 +245,7 @@ export class RespawnCell extends Cell {
     if (this.fastRef) this.fastRef.run();
   }
 
-  public update() {
+  public override update() {
     super.update(["extensions", "spawns"]);
 
     if (this.recycledPrev) {

@@ -1,7 +1,5 @@
 import type { HordeMaster } from "beeMasters/war/horde";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
-import type { Bee } from "bees/bee";
-import { PowerBee } from "bees/powerBee";
 import type { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
 import { FlagOrder } from "orders/order";
@@ -19,7 +17,7 @@ export class DefenseCell extends Cell {
   public dmgAtPos: { [id: string]: number } = {};
   public getNukeDefMap = getNukeDefMap;
   public isBreached = false;
-  public master: SiegeMaster;
+  public override master: SiegeMaster;
   public nukeCoverReady: boolean = true;
   public nukes: { [id: string]: Nuke } = {};
   public nukesDefenseMap = {};
@@ -84,7 +82,7 @@ export class DefenseCell extends Cell {
     };
   }
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
@@ -114,7 +112,7 @@ export class DefenseCell extends Cell {
           Apiary.defenseSwarms,
           (s) =>
             this.hive.pos.getRoomRangeTo(s.hive) <= 2 &&
-            (!s.spawned ||
+            (!s.parent.spawned ||
               s.waitingForBees ||
               _.filter(s.bees, (b) => b.state === beeStates.boosting).length)
         ).length
@@ -433,7 +431,7 @@ export class DefenseCell extends Cell {
     return ans;
   }
 
-  public update() {
+  public override update() {
     super.update(["towers", "nukes"]);
     this.dmgAtPos = {};
     if (

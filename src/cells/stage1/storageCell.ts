@@ -1,7 +1,7 @@
 import { ManagerMaster } from "beeMasters/economy/manager";
 import { TransferRequest } from "bees/transferRequest";
 import type { Hive } from "hive/hive";
-import { ResTarget } from "hive/hive-declarations";
+import type { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 
@@ -22,7 +22,7 @@ export class StorageCell extends Cell {
   public linkState:
     | { using: string; priority: 0 | 1; lastUpdated: number }
     | undefined;
-  public master: ManagerMaster;
+  public override master: ManagerMaster;
   public requests: { [id: string]: TransferRequest } = {};
   public resTargetTerminal: { energy: number } & ResTarget = {
     energy: TERMINAL_ENERGY,
@@ -182,7 +182,7 @@ export class StorageCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.storage && Apiary.useBucket) {
       Apiary.destroyTime = Game.time;

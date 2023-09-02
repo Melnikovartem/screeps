@@ -1,7 +1,6 @@
-import { SwarmMaster } from "beeMasters/_SwarmMaster";
-import { Hive } from "hive/hive";
+import type { Hive } from "hive/hive";
 
-import { SWARM_ORDER_TYPES } from "./swarmOrder-masters";
+import type { SWARM_ORDER_TYPES } from "./swarmOrder-masters";
 
 const CACHE_ORDER_POS = 0;
 const CACHE_ORDER_HIVE = 1;
@@ -18,10 +17,18 @@ export interface SwarmOrderInfo {
 }
 
 export class SwarmOrder<T> {
-  public readonly ref: string;
-  public readonly hive: Hive;
-  // private readonly master: SwarmMaster<SwarmOrder<T>>;
+  // #region Properties (3)
 
+  private _pos: RoomPosition;
+
+  public readonly hive: Hive;
+  public readonly ref: string;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
+
+  // private readonly master: SwarmMaster<SwarmOrder<T>>;
   public constructor(
     ref: string,
     hive: Hive,
@@ -43,37 +50,38 @@ export class SwarmOrder<T> {
     // this.master = new masterProto(this);
   }
 
-  private _pos: RoomPosition;
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (4)
+
   public get pos() {
     return this._pos;
-  }
-  public set pos(value) {
-    const toSave: SwarmOrderInfo[typeof CACHE_ORDER_POS] = [value.x, value.y];
-    if (value.roomName !== this.hive.roomName) toSave[2] = value.roomName;
-    Memory.cache.orders[this.ref][CACHE_ORDER_POS] = toSave;
-    this._pos = value;
   }
 
   // keep how many bees used up for this order
   public get spawned() {
     return 0;
   }
-  public newSpawn() {}
-
-  public delete() {
-    delete Memory.cache.orders[this.ref];
-  }
 
   public get special(): T {
     return this.cache[CACHE_ORDEC_SPECIAL] as T;
   }
+
   public set special(value) {
     this.cache[CACHE_ORDEC_SPECIAL] = value;
   }
 
+  // #endregion Public Accessors (4)
+
+  // #region Private Accessors (1)
+
   private get cache() {
     return Memory.cache.orders[this.ref];
   }
+
+  // #endregion Private Accessors (1)
+
+  // #region Public Static Methods (1)
 
   public static init() {
     // innit orders from cache
@@ -85,7 +93,8 @@ export class SwarmOrder<T> {
       const pos = cache[CACHE_ORDER_POS];
       const roomName = pos[2] || hive.roomName;
       // @todo add to Apiary?
-      const swarmOrder = new SwarmOrder<any>(
+      // const swarmOrder =
+      new SwarmOrder<any>(
         ref,
         hive,
         new RoomPosition(pos[0], pos[1], roomName),
@@ -93,4 +102,23 @@ export class SwarmOrder<T> {
       );
     });
   }
+
+  // #endregion Public Static Methods (1)
+
+  // #region Public Methods (3)
+
+  public delete() {
+    delete Memory.cache.orders[this.ref];
+  }
+
+  public newSpawn() {}
+
+  public setPosition(value: RoomPosition) {
+    const toSave: SwarmOrderInfo[typeof CACHE_ORDER_POS] = [value.x, value.y];
+    if (value.roomName !== this.hive.roomName) toSave[2] = value.roomName;
+    Memory.cache.orders[this.ref][CACHE_ORDER_POS] = toSave;
+    this._pos = value;
+  }
+
+  // #endregion Public Methods (3)
 }

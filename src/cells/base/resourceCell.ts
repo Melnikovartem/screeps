@@ -23,7 +23,7 @@ export class ResourceCell extends Cell {
   public extractor: StructureExtractor | undefined;
   public lair?: StructureKeeperLair;
   public link: StructureLink | undefined;
-  public master: MinerMaster;
+  public override master: MinerMaster;
   public operational: boolean = false;
   public parentCell: ExcavationCell;
   public poss: { x: number; y: number; roomName?: string };
@@ -71,7 +71,7 @@ export class ResourceCell extends Cell {
     return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
   }
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return new RoomPosition(
       this.poss.x,
       this.poss.y,
@@ -79,7 +79,7 @@ export class ResourceCell extends Cell {
     );
   }
 
-  public set pos(value) {
+  public override set pos(value) {
     if (value.roomName !== this.hiveName) this.poss = value;
     else this.poss = { x: value.x, y: value.y };
     this.cache("poss", this.poss);
@@ -212,7 +212,7 @@ export class ResourceCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update(undefined, ["resource"]);
 
     if (this.operational) {

@@ -1,43 +1,36 @@
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
 
-import type { Boosts } from "../_Master";
+import type { Boosts, MovePriority } from "../_Master";
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class HelpUpgradeMaster extends SwarmMaster {
-  // #region Constructors (1)
+export class HelpUpgradeMaster extends SwarmMaster<number> {
+  // #region Properties (1)
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.maxSpawns = 100;
-  }
+  public override movePriority: MovePriority = 4;
 
-  // #endregion Constructors (1)
+  // #endregion Properties (1)
 
-  // #region Public Accessors (3)
+  // #region Public Accessors (4)
 
-  public get boosts(): Boosts {
+  public override get boosts(): Boosts {
     return [
       { type: "upgrade", lvl: 2 },
       { type: "fatigue", lvl: 2 },
     ];
   }
 
+  public override get maxSpawns(): number {
+    return this.targetBeeCount * 10; // 30?
+  }
+
   public get targetBeeCount() {
-    if (!this.order) return 0;
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = 3;
-    return this.order.memory.extraInfo as number;
+    return this.info;
   }
 
-  public set targetBeeCount(value) {
-    if (this.order && this.order.memory.extraInfo)
-      this.order.memory.extraInfo = value;
-  }
-
-  // #endregion Public Accessors (3)
+  // #endregion Public Accessors (4)
 
   // #region Public Methods (2)
 
@@ -101,7 +94,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     this.secureBoostsHive();
 
@@ -111,7 +104,7 @@ export class HelpUpgradeMaster extends SwarmMaster {
       !controller.my ||
       (controller.level === 8 && !this.beesAmount)
     ) {
-      this.order.delete();
+      this.parent.delete();
       return;
     }
     if (
@@ -132,4 +125,12 @@ export class HelpUpgradeMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): number {
+    return 3;
+  }
+
+  // #endregion Protected Methods (1)
 }

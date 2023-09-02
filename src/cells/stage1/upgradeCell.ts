@@ -3,6 +3,7 @@ import { setups } from "bees/creepSetups";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
+
 import { Cell } from "../_Cell";
 
 @profile
@@ -11,7 +12,7 @@ export class UpgradeCell extends Cell {
 
   public link: StructureLink | undefined | null;
   public linkId: Id<StructureLink> | null = null;
-  public master: UpgraderMaster;
+  public override master: UpgraderMaster;
   public maxBees = 10;
   public maxRate = 1;
   public ratePerCreepMax = 1;
@@ -48,7 +49,7 @@ export class UpgradeCell extends Cell {
     return this.controller.level === 8 ? 15 : Infinity;
   }
 
-  public get pos() {
+  public override get pos() {
     return this.controller.pos;
   }
 
@@ -107,7 +108,7 @@ export class UpgradeCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     if (

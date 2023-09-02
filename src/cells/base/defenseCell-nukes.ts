@@ -1,9 +1,9 @@
-import { buildingCostsHive } from "abstract/hiveMemory";
+import type { buildingCostsHive } from "abstract/hiveMemory";
+import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import type { BuildProject } from "hive/hive-declarations";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 
-import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
-import { DefenseCell } from "./defenseCell";
+import type { DefenseCell } from "./defenseCell";
 
 // mini roomPlanner
 export function getNukeDefMap(

@@ -1,22 +1,29 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
-import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
-import { makeId } from "static/utils";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class ContainerBuilderMaster extends SwarmMaster {
-  // #region Constructors (1)
+export class ContainerBuilderMaster extends SwarmMaster<undefined> {
+  // #region Properties (1)
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.targetBeeCount = 3;
-    this.maxSpawns = 3;
+  public override movePriority: MovePriority = 5;
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (2)
+
+  public override get maxSpawns(): number {
+    return 3;
   }
 
-  // #endregion Constructors (1)
+  public override get targetBeeCount(): number {
+    return 3;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -95,7 +102,7 @@ export class ContainerBuilderMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     const room = Game.rooms[this.pos.roomName];
     if (
@@ -107,8 +114,8 @@ export class ContainerBuilderMaster extends SwarmMaster {
       const anotherContainer = room
         .find(FIND_MY_CONSTRUCTION_SITES)
         .filter((c) => c.structureType === STRUCTURE_CONTAINER)[0];
-      if (anotherContainer) this.order.flag.setPosition(anotherContainer.pos);
-      else this.order.delete();
+      if (anotherContainer) this.parent.setPosition(anotherContainer.pos);
+      else this.parent.delete();
       return;
     }
     if (
@@ -119,13 +126,20 @@ export class ContainerBuilderMaster extends SwarmMaster {
       const setup = setups.builder.copy();
       setup.pattern = [WORK, CARRY, CARRY];
       setup.moveMax = 50 / 3;
-      for (let i = 0; i < this.targetBeeCount - this.spawned; ++i)
-        this.wish({
-          setup,
-          priority: 5,
-        });
+      this.wish({
+        setup,
+        priority: 5,
+      });
     }
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

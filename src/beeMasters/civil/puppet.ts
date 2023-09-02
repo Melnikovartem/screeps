@@ -1,3 +1,4 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
 import { profile } from "profiler/decorator";
 import { hiveStates } from "static/enums";
@@ -5,12 +6,24 @@ import { hiveStates } from "static/enums";
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class PuppetMaster extends SwarmMaster {
+export class PuppetMaster extends SwarmMaster<undefined> {
   // #region Properties (1)
 
-  public movePriority = 5 as const;
+  public override movePriority: MovePriority = 5;
 
   // #endregion Properties (1)
+
+  // #region Public Accessors (2)
+
+  public override get maxSpawns(): number {
+    return 1;
+  }
+
+  public override get targetBeeCount(): number {
+    return 1;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -21,7 +34,7 @@ export class PuppetMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (
       !(this.pos.roomName in Game.rooms) &&
@@ -37,4 +50,12 @@ export class PuppetMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

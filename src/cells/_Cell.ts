@@ -1,5 +1,5 @@
-import { Master } from "beeMasters/_Master";
-import { Hive } from "hive/hive";
+import type { Master, MasterParent } from "beeMasters/_Master";
+import type { Hive } from "hive/hive";
 import type { HiveCells } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
@@ -11,7 +11,7 @@ export abstract class Cell {
   public readonly hive: Hive;
   public readonly ref: string;
 
-  public master: Master | undefined;
+  public master: Master<MasterParent> | undefined = undefined;
 
   // #endregion Properties (3)
 

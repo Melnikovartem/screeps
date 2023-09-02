@@ -1,61 +1,72 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
+import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
+type PickupTarget =
+  | Tombstone
+  | Ruin
+  | Resource
+  | StructureStorage
+  | StructureContainer;
+interface PickupInfo {
+  // #region Properties (2)
+
+  id: Id<PickupTarget> | undefined;
+  tc: number;
+
+  // #endregion Properties (2)
+  // targetBeeCount
+}
+
 @profile
-export class PickupMaster extends SwarmMaster {
-  // #region Properties (1)
+export class PickupMaster extends SwarmMaster<PickupInfo> {
+  // #region Properties (2)
 
   private waitPos = this.pos.getOpenPositions(true, 3)[0];
 
-  // #endregion Properties (1)
+  public override movePriority: MovePriority = 4;
 
-  // #region Constructors (1)
+  // #endregion Properties (2)
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.boosts = [
+  // #region Public Accessors (5)
+
+  public override get boosts(): BoostRequest[] {
+    if (this.pos.getRoomRangeTo(this.hive) <= 1) return [];
+    return [
       { type: "capacity", lvl: 0 },
       { type: "fatigue", lvl: 0 },
     ];
   }
 
-  // #endregion Constructors (1)
-
-  // #region Public Accessors (2)
+  public override get maxSpawns(): number {
+    return this.targetBeeCount;
+  }
 
   public get target() {
-    if (!this.order.memory.extraInfo) this.order.memory.extraInfo = "";
-    return Game.getObjectById(this.order.memory.extraInfo) as
-      | Tombstone
-      | Ruin
-      | Resource
-      | StructureStorage
-      | null
-      | undefined;
+    if (!this.info.id) return;
+    return Game.getObjectById(this.info.id);
   }
 
   public set target(value) {
-    if (value) this.order.memory.extraInfo = value.id;
-    else this.order.memory.extraInfo = "";
+    if (value) this.info.id = value.id;
+    else this.info.id = undefined;
   }
 
-  // #endregion Public Accessors (2)
+  public override get targetBeeCount(): number {
+    return this.info.tc;
+  }
+
+  // #endregion Public Accessors (5)
 
   // #region Public Methods (3)
 
   public getTarget() {
-    let target:
-      | Tombstone
-      | Ruin
-      | Resource
-      | StructureStorage
-      | null
-      | undefined;
+    let target: PickupTarget | undefined | null;
     if (this.pos.roomName in Game.rooms) {
       if (
         this.pos
@@ -63,7 +74,7 @@ export class PickupMaster extends SwarmMaster {
           .filter((s) => s.structureType === STRUCTURE_POWER_BANK).length
       )
         return target;
-      let targets: (Tombstone | Ruin | Resource | StructureStorage)[] = this.pos
+      let targets: PickupTarget[] = this.pos
         .findInRange(FIND_STRUCTURES, 3)
         .filter(
           (s) =>
@@ -96,7 +107,7 @@ export class PickupMaster extends SwarmMaster {
                 (s) =>
                   (s as StructureStorage).store &&
                   (s as StructureStorage).store.getUsedCapacity() > 0
-              )[0] as StructureStorage;
+              )[0] as StructureStorage | StructureContainer;
         }
         if (!target) target = room.find(FIND_DROPPED_RESOURCES)[0];
         if (!target)
@@ -107,8 +118,8 @@ export class PickupMaster extends SwarmMaster {
           target = room
             .find(FIND_RUINS)
             .filter((r) => r.store.getUsedCapacity() > 0)[0];
-        if (target) this.order.flag.setPosition(target.pos);
-        else this.order.delete();
+        if (target) this.parent.setPosition(target.pos);
+        else this.parent.delete();
       }
     }
     return target;
@@ -136,7 +147,8 @@ export class PickupMaster extends SwarmMaster {
           else if (bee.store.getUsedCapacity()) bee.state = beeStates.work;
           else bee.goRest(this.waitPos);
           if (bee.state !== beeStates.work) break;
-        case beeStates.work:
+        // fall through
+        case beeStates.work: {
           if (!bee.store.getUsedCapacity()) {
             bee.state = beeStates.chill;
             break;
@@ -161,6 +173,7 @@ export class PickupMaster extends SwarmMaster {
               1
             );
           break;
+        }
         case beeStates.boosting:
           break;
       }
@@ -168,14 +181,13 @@ export class PickupMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (this.checkBees(this.hive.state <= hiveStates.battle)) {
       let setup = setups.pickup;
       if (this.pos.getRoomRangeTo(this.hive) <= 1) {
         setup = setup.copy();
         setup.moveMax = 50 / 3;
-        this.boosts = undefined;
       }
       this.wish({
         setup,
@@ -185,4 +197,15 @@ export class PickupMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (3)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): PickupInfo {
+    return {
+      id: undefined,
+      tc: 1,
+    };
+  }
+
+  // #endregion Protected Methods (1)
 }

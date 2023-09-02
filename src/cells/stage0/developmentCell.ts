@@ -1,11 +1,11 @@
-import { FastRefillCell } from "cells/stage1/fastRefill";
-import { Traveler } from "Traveler/TravelerModified";
-
 import { BootstrapMaster } from "beeMasters/economy/bootstrap";
+import { FastRefillCell } from "cells/stage1/fastRefill";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
 import { makeId } from "static/utils";
+import { Traveler } from "Traveler/TravelerModified";
+
 import { Cell } from "../_Cell";
 
 @profile
@@ -14,7 +14,7 @@ export class DevelopmentCell extends Cell {
 
   public addedRooms: string[] = [];
   public handAddedResources: RoomPosition[] = [];
-  public master: BootstrapMaster;
+  public override master: BootstrapMaster;
   public shouldRecalc: boolean = true;
 
   // #endregion Properties (4)
@@ -34,7 +34,7 @@ export class DevelopmentCell extends Cell {
     return this.hive.controller;
   }
 
-  public get pos() {
+  public override get pos() {
     return this.hive.controller.pos;
   }
 
@@ -77,7 +77,7 @@ export class DevelopmentCell extends Cell {
       Apiary.destroyTime = Game.time;
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (
       this.hive.room.storage &&

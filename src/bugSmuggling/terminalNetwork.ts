@@ -1,5 +1,5 @@
 import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
-import { ResTarget } from "hive/hive-declarations";
+import type { ResTarget } from "hive/hive-declarations";
 
 import {
   BASE_MINERALS,

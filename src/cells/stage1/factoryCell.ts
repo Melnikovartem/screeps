@@ -101,7 +101,6 @@ export class FactoryCell extends Cell {
   public commodityRes?: FactoryResourceConstant;
   public factory: StructureFactory;
   public level: number = 0;
-  public master: undefined;
   public patience: number = 0;
   public patienceProd: number = 0;
   public prod?: { res: FactoryResourceConstant; plan: number };
@@ -274,7 +273,7 @@ export class FactoryCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.factory) this.delete();
 

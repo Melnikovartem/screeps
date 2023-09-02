@@ -1,6 +1,7 @@
 import { FastRefillMaster } from "beeMasters/economy/fastRefill";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
+
 import { Cell } from "../_Cell";
 import type { RespawnCell } from "./../base/respawnCell";
 
@@ -48,7 +49,7 @@ export class FastRefillCell extends Cell {
     return this.hive.cells.spawn;
   }
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return this.link.pos;
   }
 
@@ -77,7 +78,7 @@ export class FastRefillCell extends Cell {
 
   // #region Public Methods (3)
 
-  public delete() {
+  public override delete() {
     super.delete();
     _.forEach(this.masters, (m) => m.delete());
     this.parentCell.fastRef = undefined;
@@ -110,7 +111,7 @@ export class FastRefillCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.link) this.delete();
     const emptyContainers = this.masters

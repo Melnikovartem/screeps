@@ -2,6 +2,7 @@ import type { PowerBee } from "bees/powerBee";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
+
 import { Cell } from "../_Cell";
 
 @profile
@@ -9,7 +10,6 @@ export class PowerCell extends Cell {
   // #region Properties (4)
 
   public _powerManager: string | null = this.cache("_powerManager");
-  public master: undefined;
   public poss: { x: number; y: number };
   public powerSpawn: StructurePowerSpawn;
 
@@ -27,7 +27,7 @@ export class PowerCell extends Cell {
 
   // #region Public Accessors (5)
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
@@ -75,7 +75,7 @@ export class PowerCell extends Cell {
       }
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.powerSpawn) {
       this.delete();

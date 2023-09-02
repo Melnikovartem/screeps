@@ -1,33 +1,36 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
-import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { signText } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class SignerMaster extends SwarmMaster {
+export class SignerMaster extends SwarmMaster<undefined> {
   // #region Properties (1)
 
-  public movePriority = 3 as const;
+  public override movePriority: MovePriority = 3;
 
   // #endregion Properties (1)
 
-  // #region Constructors (1)
+  // #region Public Accessors (2)
 
-  public constructor(order: FlagOrder) {
-    super(order);
-    this.maxSpawns = 1;
+  public override get maxSpawns(): number {
+    return 1;
   }
 
-  // #endregion Constructors (1)
+  public override get targetBeeCount(): number {
+    return 1;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
   public run() {
     _.forEach(this.activeBees, (bee) => {
       if (!bee.target) {
-        const rooms = Memory.cache.roomsToSign;
+        const rooms: string[] = [];
         if (!rooms.length) {
           return;
         }
@@ -47,8 +50,8 @@ export class SignerMaster extends SwarmMaster {
         if (controller) {
           bee.creep.signController(controller, signText.my);
           bee.target = undefined;
-          const index = Memory.cache.roomsToSign.indexOf(bee.pos.roomName);
-          if (index !== -1) Memory.cache.roomsToSign.splice(index, 1);
+          // const index = Memory.cache.roomsToSign.indexOf(bee.pos.roomName);
+          // if (index !== -1) Memory.cache.roomsToSign.splice(index, 1);
         } else bee.target = undefined;
       }
       if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL)) bee.heal(bee);
@@ -61,7 +64,7 @@ export class SignerMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     if (this.checkBees(false, CREEP_CLAIM_LIFE_TIME)) {
@@ -75,4 +78,12 @@ export class SignerMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

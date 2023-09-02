@@ -1,7 +1,5 @@
-import {
-  ReactionConstant,
-  USEFUL_MINERAL_STOCKPILE,
-} from "cells/stage1/laboratoryCell";
+import type { ReactionConstant } from "cells/stage1/laboratoryCell";
+import { USEFUL_MINERAL_STOCKPILE } from "cells/stage1/laboratoryCell";
 
 import { COMPLEX_COMMODITIES } from "../cells/stage1/factoryCell";
 import { profile } from "../profiler/decorator";

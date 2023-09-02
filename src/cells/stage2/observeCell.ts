@@ -3,6 +3,7 @@ import { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { prefix, roomStates } from "static/enums";
 import { getRoomCoorinates } from "static/utils";
+
 import { Cell } from "../_Cell";
 
 @profile
@@ -14,7 +15,6 @@ export class ObserveCell extends Cell {
 
   public _corridorRooms: string[] = this.cache("_corridorRooms") || [];
   public _prevRoom: string = this.cache("_prevRoom") || "";
-  public master: undefined;
   public obeserver: StructureObserver;
 
   // #endregion Properties (6)
@@ -40,7 +40,7 @@ export class ObserveCell extends Cell {
     this._corridorRooms = this.cache("_corridorRooms", value);
   }
 
-  public get pos() {
+  public override get pos() {
     return this.obeserver.pos;
   }
 
@@ -124,7 +124,7 @@ export class ObserveCell extends Cell {
     }
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (!this.obeserver) {
       this.delete();

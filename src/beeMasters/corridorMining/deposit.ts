@@ -1,6 +1,5 @@
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
-import { SwarmOrder } from "orders/swarmOrder";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 
 import { SwarmMaster } from "../_SwarmMaster";
@@ -8,15 +7,35 @@ import { DepositMinerMaster } from "./miners";
 import { DepositPickupMaster } from "./pickup";
 
 interface DepositInfo {
-  roadTime: number;
+  // #region Properties (3)
+
   decay: number;
   lastCooldown: number;
+  roadTime: number;
+
+  // #endregion Properties (3)
 }
 
 // this is just disfucntional master with no bees to spawn. So sad
 // holds 2 different masters
 @profile
 export class DepositMaster extends SwarmMaster<DepositInfo> {
+  // #region Properties (8)
+
+  public miners: DepositMinerMaster;
+  // implementation block
+  public movePriority = 5 as const;
+  public operational: boolean = false;
+  public pickup: DepositPickupMaster;
+  public positions: RoomPosition[];
+  public rate: number = 0;
+  public target: Deposit | undefined;
+  public workAmount: number;
+
+  // #endregion Properties (8)
+
+  // #region Constructors (1)
+
   // constructor
   public constructor(order: SwarmOrder<DepositInfo>) {
     super(order);
@@ -33,32 +52,18 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     if (this.pos.roomName in Game.rooms) this.updateTarget();
   }
 
-  // implementation block
-  public movePriority = 5 as const;
-  public get targetBeeCount() {
-    return 0;
-  }
-  protected defaultInfo() {
-    return {
-      roadTime: this.pos.getTimeForPath(this.hive),
-      decay: Game.time,
-      lastCooldown: 1,
-    };
-  }
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (4)
+
   public get maxSpawns() {
     // so that it doesn't get deleted
     return 1;
   }
 
-  public target: Deposit | undefined;
-
-  public miners: DepositMinerMaster;
-  public pickup: DepositPickupMaster;
-
-  public positions: RoomPosition[];
-  public operational: boolean = false;
-  public rate: number = 0;
-  public workAmount: number;
+  public get resource() {
+    return this.target?.depositType;
+  }
 
   public get shouldSpawn() {
     // decision gods said no!
@@ -66,17 +71,25 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     return this.operational;
   }
 
-  public updateTarget() {
-    this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
-    if (this.target) {
-      this.info.lastCooldown = this.target.lastCooldown;
-      this.info.decay = this.target.ticksToDecay;
-    } else this.info.decay = -Game.time;
+  public get targetBeeCount() {
+    return 0;
   }
 
-  public get resource() {
-    return this.target?.depositType;
+  // #endregion Public Accessors (4)
+
+  // #region Public Methods (4)
+
+  public delete() {
+    super.delete();
+    this.miners.delete();
+    this.pickup.delete();
+    if (this.hive.puller) {
+      const index = this.hive.puller.depositSites.indexOf(this);
+      if (index !== -1) this.hive.puller.depositSites.splice(index, 1);
+    }
   }
+
+  public run() {}
 
   public update() {
     super.update();
@@ -108,15 +121,25 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
       this.hive.cells.defense.checkAndDefend(this.pos.roomName);
   }
 
-  public run() {}
-
-  public delete() {
-    super.delete();
-    this.miners.delete();
-    this.pickup.delete();
-    if (this.hive.puller) {
-      const index = this.hive.puller.depositSites.indexOf(this);
-      if (index !== -1) this.hive.puller.depositSites.splice(index, 1);
-    }
+  public updateTarget() {
+    this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
+    if (this.target) {
+      this.info.lastCooldown = this.target.lastCooldown;
+      this.info.decay = this.target.ticksToDecay;
+    } else this.info.decay = -Game.time;
   }
+
+  // #endregion Public Methods (4)
+
+  // #region Protected Methods (1)
+
+  protected defaultInfo() {
+    return {
+      roadTime: this.pos.getTimeForPath(this.hive),
+      decay: Game.time,
+      lastCooldown: 1,
+    };
+  }
+
+  // #endregion Protected Methods (1)
 }

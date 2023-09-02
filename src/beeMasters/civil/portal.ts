@@ -1,6 +1,7 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
 import { COMPLEX_COMMODITIES } from "cells/stage1/factoryCell";
-import type { FlagOrder } from "orders/order";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
 
@@ -11,41 +12,41 @@ import { SwarmMaster } from "../_SwarmMaster";
 const HAUL_PER_TRIP = 1_000;
 
 @profile
-export class PortalMaster extends SwarmMaster {
-  // #region Properties (5)
+export class PortalMaster extends SwarmMaster<undefined> {
+  // #region Properties (6)
 
   private commodities = false;
 
   public cycle: number = CREEP_LIFE_TIME;
+  public override movePriority: MovePriority = 4;
   public priority: 2 | 9 = 9;
   public res: ResourceConstant | undefined;
   public setup = setups.puppet;
 
-  // #endregion Properties (5)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
-  public constructor(order: FlagOrder) {
+  public constructor(order: SwarmOrder<undefined>) {
     super(order);
-    this.maxSpawns = Infinity;
-    if (this.order.ref.includes(prefix.boost)) {
+    if (this.parent.ref.includes(prefix.boost)) {
       this.setup = setups.bootstrap.copy();
       this.setup.patternLimit += 4;
-    } else if (this.order.ref.includes(prefix.claim)) {
+    } else if (this.parent.ref.includes(prefix.claim)) {
       this.setup = setups.claimer;
       this.cycle = CREEP_CLAIM_LIFE_TIME;
-    } else if (this.order.ref.includes(prefix.annex)) {
+    } else if (this.parent.ref.includes(prefix.annex)) {
       this.setup = setups.claimer.copy();
       this.setup.patternLimit += 2;
-    } else if (this.order.ref.includes("defense")) {
+    } else if (this.parent.ref.includes("defense")) {
       this.setup = setups.defender.destroyer.copy();
-    } else if (this.order.ref.includes("harass")) {
+    } else if (this.parent.ref.includes("harass")) {
       this.setup = setups.archer.copy();
       this.setup.fixed = [HEAL, ATTACK];
       this.setup.patternLimit = 3;
-    } else if (this.order.ref.includes("transfer")) {
+    } else if (this.parent.ref.includes("transfer")) {
       this.setup = setups.hauler.copy();
-      const parsed = /transfer_(.*)/.exec(this.order.ref);
+      const parsed = /transfer_(.*)/.exec(this.parent.ref);
       if (parsed) this.res = parsed[1] as ResourceConstant;
       this.commodities = COMPLEX_COMMODITIES.includes(
         this.res as CommodityConstant
@@ -68,6 +69,20 @@ export class PortalMaster extends SwarmMaster {
   }
 
   // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public override get maxSpawns(): number {
+    return Infinity;
+  }
+
+  public override get targetBeeCount(): number {
+    if (!this.res) return 1;
+    const inStore = this.hive.resState[this.res] || 0;
+    return inStore >= HAUL_PER_TRIP * 3 ? 2 : 1;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -100,20 +115,20 @@ export class PortalMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     let shouldSpawn = Game.time >= this.oldestSpawn + this.cycle - 100;
     if (!this.beesAmount && this.res) {
       if (!this.hive.cells.storage) {
-        this.order.delete();
+        this.parent.delete();
         return;
       }
       if (
         this.ref.includes("nokeep") &&
         !this.hive.cells.storage.getUsedCapacity(this.res)
       ) {
-        this.order.delete();
+        this.parent.delete();
         return;
       }
 
@@ -121,7 +136,6 @@ export class PortalMaster extends SwarmMaster {
         this.res
       );
       shouldSpawn = inStore >= HAUL_PER_TRIP;
-      this.targetBeeCount = inStore >= HAUL_PER_TRIP * 3 ? 2 : 1;
     }
 
     if (this.pos.roomName in Game.rooms) {
@@ -132,8 +146,8 @@ export class PortalMaster extends SwarmMaster {
         portal = Game.rooms[this.pos.roomName]
           .find(FIND_STRUCTURES)
           .filter((s) => s.structureType === STRUCTURE_PORTAL)[0];
-        if (portal) this.order.flag.setPosition(portal.pos.x, portal.pos.y);
-        else this.order.delete();
+        if (portal) this.parent.setPosition(portal.pos);
+        else this.parent.delete();
       }
     }
 
@@ -151,4 +165,12 @@ export class PortalMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

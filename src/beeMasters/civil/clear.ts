@@ -1,3 +1,4 @@
+import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
 import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ResTarget } from "hive/hive-declarations";
@@ -11,22 +12,24 @@ import { SwarmMaster } from "../_SwarmMaster";
  * @todo impliment into managers
  */
 @profile
-export class ClearMaster extends SwarmMaster {
-  // #region Public Accessors (4)
+export class ClearMaster extends SwarmMaster<undefined> {
+  // #region Properties (1)
+
+  public override movePriority: MovePriority = 5;
+
+  // #endregion Properties (1)
+
+  // #region Public Accessors (2)
 
   public get maxSpawns() {
     return 1;
   }
 
-  public set maxSpawns(_) {}
-
   public get targetBeeCount() {
     return 1;
   }
 
-  public set targetBeeCount(_) {}
-
-  // #endregion Public Accessors (4)
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -50,7 +53,7 @@ export class ClearMaster extends SwarmMaster {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
     if (this.checkBees()) {
       const setup = setups.managerQueen.copy();
@@ -64,4 +67,12 @@ export class ClearMaster extends SwarmMaster {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }

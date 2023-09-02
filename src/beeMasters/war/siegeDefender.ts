@@ -1,11 +1,13 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
 import type { DefenseCell } from "cells/base/defenseCell";
+import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 
+import type { MovePriority } from "../_Master";
 import { Master } from "../_Master";
 
 const rampFilter = (ss: Structure[]) =>
@@ -20,27 +22,42 @@ export const findRamp = (pos: RoomPosition) =>
 
 // most basic of bitches a horde full of wasps
 @profile
-export class SiegeMaster extends Master {
-  // #region Properties (3)
+export class SiegeMaster extends Master<DefenseCell> {
+  // #region Properties (4)
 
-  private cell: DefenseCell;
+  private boostDefender = false;
   private patience: { [id: string]: number } = {};
 
-  public newBee = (bee: Bee) => {
+  public override movePriority: MovePriority = 2;
+  public override newBee = (bee: Bee) => {
     super.newBee(bee);
     this.patience[bee.ref] = 0;
   };
 
-  // #endregion Properties (3)
+  // #endregion Properties (4)
 
-  // #region Constructors (1)
+  // #region Public Accessors (2)
 
-  public constructor(defenseCell: DefenseCell) {
-    super(defenseCell.hive, defenseCell.ref);
-    this.cell = defenseCell;
+  public override get boosts(): BoostRequest[] {
+    return [
+      { type: "fatigue", lvl: 2 },
+      { type: "fatigue", lvl: 1 },
+      { type: "fatigue", lvl: 0 },
+      { type: "attack", lvl: 2 },
+      { type: "attack", lvl: 1 },
+      { type: "attack", lvl: 1 },
+      { type: "attack", lvl: 0 },
+      { type: "damage", lvl: 2 },
+      { type: "damage", lvl: 1 },
+      { type: "damage", lvl: 0 },
+    ];
   }
 
-  // #endregion Constructors (1)
+  public override get targetBeeCount(): number {
+    return 1;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -79,7 +96,7 @@ export class SiegeMaster extends Master {
           }
 
           const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
-          if (!pos || pos.equal(this.cell)) {
+          if (!pos || pos.equal(this.parent)) {
             const enemy = Apiary.intel.getEnemy(bee, 20);
             if (!enemy) return;
 
@@ -121,14 +138,14 @@ export class SiegeMaster extends Master {
                       curr.pos.getRangeTo(enemy) - prev.pos.getRangeTo(enemy);
                   if (ans === 0)
                     ans =
-                      curr.pos.getRangeTo(this.cell) -
-                      prev.pos.getRangeTo(this.cell);
+                      curr.pos.getRangeTo(this.parent) -
+                      prev.pos.getRangeTo(this.parent);
                   return ans < 0 ? curr : prev;
                 }).pos;
             }
           }
 
-          if (!pos) pos = this.cell.pos;
+          if (!pos) pos = this.parent.pos;
           else {
             if (bee.target !== pos.to_str) this.patience[bee.ref] = 0;
             bee.target = pos.to_str;
@@ -174,7 +191,7 @@ export class SiegeMaster extends Master {
                 .length)
           ) {
             if (pos.equal(bee) && enemy && bee.pos.getRangeTo(enemy) > 3)
-              bee.goTo(this.cell.pos);
+              bee.goTo(this.parent.pos);
             bee.target = undefined;
           }
 
@@ -203,9 +220,9 @@ export class SiegeMaster extends Master {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
-    this.boosts = undefined;
+    this.boostDefender = false;
     if (this.hive.phase < 1) return;
     const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
     let shouldSpawn = roomInfo.dangerlvlmax >= 6;
@@ -233,7 +250,7 @@ export class SiegeMaster extends Master {
       return;
     }
     const enemy = Apiary.intel.getEnemy(this.hive.pos, 20);
-    if (enemy) this.cell.reposessFlag(this.hive.pos, enemy);
+    if (enemy) this.parent.reposessFlag(this.hive.pos, enemy);
     const defSquad = Apiary.defenseSwarms[this.hiveName];
     if (
       defSquad &&
@@ -241,18 +258,7 @@ export class SiegeMaster extends Master {
       defSquad.loosingBattle(Apiary.intel.getComplexStats(enemy).current) > 0
     )
       return;
-    this.boosts = [
-      { type: "fatigue", lvl: 2 },
-      { type: "fatigue", lvl: 1 },
-      { type: "fatigue", lvl: 0 },
-      { type: "attack", lvl: 2 },
-      { type: "attack", lvl: 1 },
-      { type: "attack", lvl: 1 },
-      { type: "attack", lvl: 0 },
-      { type: "damage", lvl: 2 },
-      { type: "damage", lvl: 1 },
-      { type: "damage", lvl: 0 },
-    ];
+    this.boostDefender = true;
     if (
       this.hive.cells.lab &&
       this.hive.cells.storage &&
@@ -357,7 +363,7 @@ export class SiegeMaster extends Master {
           ? 7
           : 4;
     const attackPower =
-      this.cell.getDmgAtPos(target.pos) +
+      this.parent.getDmgAtPos(target.pos) +
       (rangeToTarget > 1 ? beeStats.dmgClose : 0);
     const provoke =
       rangeToTarget <= 2 &&
@@ -372,7 +378,7 @@ export class SiegeMaster extends Master {
           rangeToTarget === 1 &&
           beeStats.hits * 0.9 > stats.dmgClose + stats.dmgRange));
     if (
-      this.cell.isBreached ||
+      this.parent.isBreached ||
       (provoke &&
         beeStats.hits >= allBeeStats.max.hits * 0.85 &&
         findRamp(bee.pos)) ||
@@ -407,12 +413,12 @@ export class SiegeMaster extends Master {
           rangeToTarget <= targetedRange - 2) ||
         (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.2 &&
           bee.targetPosition.getRangeTo(posToStay) > 1 &&
-          this.cell.wasBreached(target.pos, bee.targetPosition))
+          this.parent.wasBreached(target.pos, bee.targetPosition))
       )
         if (findRamp(bee.pos))
           // || (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.3 && !(bee.targetPosition.getOpenPositions(true).filter(p => findRamp(p))).length))
           bee.stop();
-        else bee.flee(this.cell.pos, opt);
+        else bee.flee(this.parent.pos, opt);
     }
     return OK;
   }

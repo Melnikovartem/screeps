@@ -1,13 +1,10 @@
-import {
-  ApiaryReturnCode,
-  ERR_COOLDOWN,
-  ERR_INVALID_ACTION,
-} from "static/constants";
-
 import type { Bee } from "bees/bee";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
+import type { ApiaryReturnCode } from "static/constants";
+import { ERR_COOLDOWN, ERR_INVALID_ACTION } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
+
 import { Cell } from "../_Cell";
 
 export type ReactionConstant =
@@ -191,8 +188,6 @@ export class LaboratoryCell extends Cell {
   public _synthesizeTarget: { res: ReactionConstant; amount: number } | null =
     this.cache("_synthesizeTarget") || null;
   public laboratories: { [id: string]: StructureLab } = {};
-  // inLab check for delivery system
-  public master: undefined;
   public poss: { x: number; y: number } = this.cache("poss") || {
     x: 25,
     y: 25,
@@ -237,7 +232,7 @@ export class LaboratoryCell extends Cell {
     this._labStates = this.cache("labStates", value);
   }
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
@@ -555,7 +550,7 @@ export class LaboratoryCell extends Cell {
     return ans;
   }
 
-  public update() {
+  public override update() {
     super.update(["laboratories"]);
     if (!Object.keys(this.laboratories).length) return;
 

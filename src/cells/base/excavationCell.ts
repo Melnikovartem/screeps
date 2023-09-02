@@ -3,6 +3,7 @@ import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 import { safeWrap } from "static/utils";
+
 import { Cell } from "../_Cell";
 import { ResourceCell } from "./resourceCell";
 
@@ -13,7 +14,7 @@ export class ExcavationCell extends Cell {
   private roomResources: { [id: string]: number } = {};
 
   public fullContainer = CONTAINER_CAPACITY * 0.9;
-  public master: HaulerMaster | undefined;
+  public override master: HaulerMaster | undefined;
   public poss: { x: number; y: number };
   public quitefullCells: ResourceCell[] = [];
   public resourceCells: { [id: string]: ResourceCell } = {};
@@ -41,7 +42,7 @@ export class ExcavationCell extends Cell {
 
   // #region Public Accessors (1)
 
-  public get pos(): RoomPosition {
+  public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
@@ -71,7 +72,7 @@ export class ExcavationCell extends Cell {
     });
   }
 
-  public update() {
+  public override update() {
     _.forEach(this.resourceCells, (cell) =>
       safeWrap(() => cell.update(), cell.print + " update")
     );

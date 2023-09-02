@@ -1,25 +1,28 @@
 import { setups } from "bees/creepSetups";
-import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { hiveStates, roomStates, signText } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
 @profile
-export class ClaimerMaster extends SwarmMaster<SwarmOrder> {
+export class ClaimerMaster extends SwarmMaster<undefined> {
   // #region Properties (1)
 
   public movePriority = 3 as const;
 
   // #endregion Properties (1)
 
-  // #region Public Accessors (1)
+  // #region Public Accessors (2)
 
   public get maxSpawns() {
     return 5;
   }
 
-  // #endregion Public Accessors (1)
+  public override get targetBeeCount(): number {
+    return 1;
+  }
+
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 
@@ -44,9 +47,9 @@ export class ClaimerMaster extends SwarmMaster<SwarmOrder> {
               if (bee.claimController(controller) !== OK) return;
               else Apiary.destroyTime = Game.time; // create new hive
             bee.creep.signController(controller, signText.my);
-            this.order.delete();
+            this.parent.delete();
           }
-        } else this.order.delete();
+        } else this.parent.delete();
         if (bee.hits < bee.hitsMax && bee.getActiveBodyParts(HEAL))
           bee.heal(bee);
       }
@@ -54,7 +57,7 @@ export class ClaimerMaster extends SwarmMaster<SwarmOrder> {
     });
   }
 
-  public update() {
+  public override update() {
     super.update();
 
     if (
@@ -77,4 +80,12 @@ export class ClaimerMaster extends SwarmMaster<SwarmOrder> {
   }
 
   // #endregion Public Methods (2)
+
+  // #region Protected Methods (1)
+
+  protected override defaultInfo(): undefined {
+    return undefined;
+  }
+
+  // #endregion Protected Methods (1)
 }
