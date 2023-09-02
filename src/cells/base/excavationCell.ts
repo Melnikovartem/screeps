@@ -69,7 +69,7 @@ export class ExcavationCell extends Cell {
     );
   }
 
-  public override update() {
+  public update() {
     _.forEach(this.resourceCells, (cell) =>
       Apiary.wrap(() => cell.update(), cell.print, "update", 0)
     );

@@ -433,8 +433,8 @@ export class DefenseCell extends Cell {
     return ans;
   }
 
-  public override update() {
-    super.update(["towers", "nukes"]);
+  public update() {
+    this.updateObject(["towers", "nukes"]);
     this.dmgAtPos = {};
     if (
       Game.time % 500 === 333 ||

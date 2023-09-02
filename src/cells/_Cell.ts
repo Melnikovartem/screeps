@@ -65,7 +65,9 @@ export abstract class Cell {
     if (this.master) this.master.delete();
   }
 
-  public update<K extends keyof this>(
+  /** updates instances for objects in Cell by Game.getObjectById */
+  /** do i even need this in newer versions? */
+  public updateObject<K extends keyof this>(
     updateMapKey: K[] = [],
     nonforceMapKey: K[] = []
   ): void {
@@ -96,12 +98,14 @@ export abstract class Cell {
 
   // #endregion Public Methods (2)
 
-  // #region Public Abstract Methods (1)
+  // #region Public Abstract Methods (2)
 
-  // second stage of decision making like where do i need to spawn creeps or do i need
+  /** second stage of decision making like where do i need to spawn creeps or do i need */
   public abstract run(): void;
+  /** first stage of decision making */
+  public abstract update(): void;
 
-  // #endregion Public Abstract Methods (1)
+  // #endregion Public Abstract Methods (2)
 
   // #region Protected Methods (3)
 

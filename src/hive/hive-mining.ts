@@ -1,8 +1,7 @@
-import { Cell } from "cells/_Cell";
 import { prefix, roomStates } from "static/enums";
 import { Traveler } from "Traveler/TravelerModified";
 
-import { Hive } from "./hive";
+import type { Hive } from "./hive";
 
 /**
  * Add an annex to the hive
@@ -11,7 +10,7 @@ import { Hive } from "./hive";
 export function addAnex(this: Hive, annexName: string) {
   if (!this.annexNames.includes(annexName)) this.annexNames.push(annexName);
   if (this.cells.dev) this.cells.dev.shouldRecalc = true;
-  if (this.shouldRecalc < 3) this.shouldRecalc = 3;
+  markResources(this);
 }
 
 export function updateDangerAnnex(this: Hive) {

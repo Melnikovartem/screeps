@@ -2,6 +2,7 @@ import type { CreepSetup } from "bees/creepSetups";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import type { RespawnCell } from "cells/base/respawnCell";
+import type { BuildCell } from "cells/building/buildCell";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
 import type { CorridorMiningCell } from "cells/stage1/corridorMining";
 import type { FactoryCell } from "cells/stage1/factoryCell";
@@ -19,20 +20,12 @@ export interface SpawnOrder {
   createTime: number;
 }
 
-// Define the BuildProject interface for construction projects
-export interface BuildProject {
-  pos: RoomPosition;
-  sType: StructureConstant;
-  targetHits: number;
-  energyCost: number;
-  type: "repair" | "construction";
-}
-
 // Define the HiveCells interface for different cell types within a hive
 export interface HiveCells {
   storage?: StorageCell;
   defense: DefenseCell;
   spawn: RespawnCell;
+  build?: BuildCell;
   upgrade?: UpgradeCell;
   excavation: ExcavationCell;
   dev?: DevelopmentCell;

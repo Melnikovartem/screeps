@@ -212,8 +212,8 @@ export class ResourceCell extends Cell {
     }
   }
 
-  public override update() {
-    super.update(undefined, ["resource"]);
+  public update() {
+    this.updateObject(undefined, ["resource"]);
 
     if (this.operational) {
       if (!this.container && !this.link) this.operational = false;

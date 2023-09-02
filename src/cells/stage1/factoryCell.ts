@@ -274,7 +274,6 @@ export class FactoryCell extends Cell {
   }
 
   public override update() {
-    super.update();
     if (!this.factory) this.delete();
 
     this.roomsToCheck = this.hive.annexNames;

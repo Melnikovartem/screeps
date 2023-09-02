@@ -245,8 +245,8 @@ export class RespawnCell extends Cell {
     if (this.fastRef) this.fastRef.run();
   }
 
-  public override update() {
-    super.update(["extensions", "spawns"]);
+  public update() {
+    this.updateObject(["extensions", "spawns"]);
 
     if (this.recycledPrev) {
       // here we only deal with energy

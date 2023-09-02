@@ -551,7 +551,7 @@ export class LaboratoryCell extends Cell {
   }
 
   public override update() {
-    super.update(["laboratories"]);
+    this.updateObject(["laboratories"]);
     if (!Object.keys(this.laboratories).length) return;
 
     let priority = 5 as 2 | 5;

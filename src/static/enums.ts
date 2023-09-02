@@ -81,6 +81,7 @@ export enum prefix {
   powerCell = "powerHive" /** Power hive cell prefix */,
   factoryCell = "factory" /** Factory cell prefix */,
   corridorMiningCell = "corridor" /** CorridorMining cell prefix */,
+  buildingCell = "build",
 
   builder = "builder_" /** Builder prefix */,
   puller = "depositPuller_" /** Deposit puller prefix */,

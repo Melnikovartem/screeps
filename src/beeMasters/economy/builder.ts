@@ -1,9 +1,11 @@
-import { buildingCostsHive } from "abstract/hiveMemory";
-import { CreepSetup, setups } from "bees/creepSetups";
-import { BOOST_MINERAL, BoostRequest } from "cells/stage1/laboratoryCell";
+import type { buildingCostsHive } from "abstract/hiveMemory";
+import type { CreepSetup } from "bees/creepSetups";
+import { setups } from "bees/creepSetups";
+import { wallMap } from "cells/building/hive-building";
+import type { BoostRequest } from "cells/stage1/laboratoryCell";
+import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import type { StorageCell } from "cells/stage1/storageCell";
 import type { Hive } from "hive/hive";
-import { wallMap } from "hive/hive-building";
 import { profile } from "profiler/decorator";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { beeStates, hiveStates, prefix } from "static/enums";
@@ -40,7 +42,7 @@ for (const boost of ["boost", "normal"] as B[])
       bakeBuildingCoefs(boost, mode, repair);
 
 @profile
-export class BuilderMaster extends Master {
+export class BuilderMaster extends Master<BuildCell> {
   // #region Properties (2)
 
   private patternPerBee = 0;

@@ -125,7 +125,7 @@ export class ObserveCell extends Cell {
   }
 
   public override update() {
-    super.update();
+    this.updateObject();
     if (!this.obeserver) {
       this.delete();
       return;

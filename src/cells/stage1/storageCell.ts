@@ -183,7 +183,7 @@ export class StorageCell extends Cell {
   }
 
   public override update() {
-    super.update();
+    this.updateObject();
     if (!this.storage && Apiary.useBucket) {
       Apiary.destroyTime = Game.time;
       return;

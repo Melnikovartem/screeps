@@ -1,8 +1,6 @@
 /**
  * Import statements
  */
-import type { PullerMaster } from "beeMasters/corridorMining/puller";
-import { BuilderMaster } from "beeMasters/economy/builder";
 import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
@@ -20,30 +18,15 @@ import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
-import {
-  BASE_MODE_HIVE,
-  WALLS_START,
-  ZERO_COSTS_BUILDING_HIVE,
-} from "static/constants";
+import { BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
-import { getBuildTarget, updateStructures } from "./hive-building";
-import type { BuildProject, HiveCells, ResTarget } from "./hive-declarations";
-import {
-  addAnex,
-  addResourceCells,
-  markResources,
-  updateDangerAnnex,
-} from "./hive-mining";
+import type { HiveCells, ResTarget } from "./hive-declarations";
+import { addAnex, addResourceCells, updateDangerAnnex } from "./hive-mining";
 import { opt, updateCellData } from "./hive-utils";
-// Import various modules and types
 
 // Constant for a minimum amount of a certain mineral in the hive
 const HIVE_MINERAL = 5000;
-
-// Constants for update intervals
-const UPDATE_STRUCTURES_BATTLE = 100;
-const UPDATE_STRUCTURES_NORMAL = 1500;
 
 // Decorator to profile class methods
 @profile
@@ -60,11 +43,6 @@ export class Hive {
   /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
 
-  /** BuilderMaster instance for managing building-related tasks */
-  public readonly builder?: BuilderMaster;
-  /** PullerMaster instance for managing resource transportation */
-  public readonly puller?: PullerMaster;
-
   /** Current development phase of the hive *
    *
    * 0 up to storage tech
@@ -76,28 +54,9 @@ export class Hive {
    * max */
   public readonly phase: 0 | 1 | 2;
 
-  /** How much of buildings and resources to recheck
-   *
-   * 3 also mark resource in all annexes
-   *
-   * 2
-   *
-   * 1 check buildings
-   *
-   * 0 nothing
-   */
-  public shouldRecalc: 0 | 1 | 2 | 3;
   /** added all resources from cache */
   public allResources = false;
   public bassboost: Hive | null = null;
-
-  public structuresConst: BuildProject[] = [];
-  /** sum of construction cost */
-  public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
-
-  /** current minium wall health */
-  private minCurWallHealth = 0;
-  public wallTargetHealth = WALLS_START;
 
   public state: hiveStates = hiveStates.economy;
 
@@ -166,7 +125,6 @@ export class Hive {
       this.cells.upgrade = new UpgradeCell(this);
       this.cells.lab = new LaboratoryCell(this);
 
-      this.builder = new BuilderMaster(this, sCell);
       let factory: StructureFactory | undefined;
       _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
         if (s.structureType === STRUCTURE_FACTORY) factory = s;
@@ -247,9 +205,6 @@ export class Hive {
 
   private updateCellData = updateCellData;
 
-  public getBuildTarget = getBuildTarget;
-  private updateStructures = updateStructures;
-
   /** central position of hive */
   public get pos() {
     return this.cells.defense.pos;
@@ -275,25 +230,21 @@ export class Hive {
     return Memory.cache.hives[this.roomName];
   }
 
-  public get sumCost() {
-    return (
-      this.buildingCosts.hive.build +
-      this.buildingCosts.hive.repair +
-      this.buildingCosts.annex.build +
-      this.buildingCosts.annex.repair
-    );
-  }
-
   public update() {
     // if failed the hive is doomed
     this.room = Game.rooms[this.roomName];
 
     this.mastersResTarget = {};
 
+    if (Apiary.intTime % 1500 === 1499 || this.state === hiveStates.nospawn)
+      this.updateCellData();
+
     if (!this.allResources && Apiary.intTime % 50 === 0)
       this.allResources = addResourceCells(this);
 
-    // ask for boost
+    if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
+
+    // ask for help
     if (
       (this.state === hiveStates.nospawn ||
         (this.state === hiveStates.lowenergy &&
@@ -320,28 +271,6 @@ export class Hive {
     _.forEach(this.cells, (cell: Cell) => {
       Apiary.wrap(() => cell.update(), cell.ref, "update");
     });
-
-    if (Game.time % 50 === 0) this.updateDangerAnnex();
-
-    if (
-      Game.time % UPDATE_STRUCTURES_NORMAL === 0 ||
-      (!this.structuresConst.length && this.sumCost) ||
-      (this.state >= hiveStates.battle &&
-        Game.time % UPDATE_STRUCTURES_BATTLE === 0)
-    )
-      this.shouldRecalc = Math.max(this.shouldRecalc, 1) as 1 | 2 | 3;
-
-    if (this.shouldRecalc) {
-      Apiary.wrap(
-        () => this.updateStructures(),
-        "structures_" + this.roomName,
-        "update"
-      );
-      if (this.shouldRecalc === 3) markResources(this);
-      this.shouldRecalc = 0;
-    }
-    if (Game.time % 1500 === 29 || this.state === hiveStates.nospawn)
-      this.updateCellData();
   }
 
   public run() {

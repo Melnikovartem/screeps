@@ -109,7 +109,7 @@ export class UpgradeCell extends Cell {
   }
 
   public override update() {
-    super.update();
+    this.updateObject();
 
     if (
       this.hive.phase === 1 &&

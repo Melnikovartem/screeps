@@ -34,8 +34,6 @@ export class CorridorMiningCell extends Cell {
   public run() {}
 
   public override update() {
-    super.update();
-
     // decide wich powerSites to mine
     const workingPowerSites = this.powerSites.filter((p) => p.canMineInTime());
     let inProgress = workingPowerSites.filter(

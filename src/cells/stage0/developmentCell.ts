@@ -1,4 +1,4 @@
-import { BootstrapMaster } from "beeMasters/economy/bootstrap";
+import type { BootstrapMaster } from "beeMasters/economy/bootstrap";
 import { FastRefillCell } from "cells/stage1/fastRefill";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
@@ -14,7 +14,7 @@ export class DevelopmentCell extends Cell {
 
   public addedRooms: string[] = [];
   public handAddedResources: RoomPosition[] = [];
-  public override master: BootstrapMaster;
+  // public override master: BootstrapMaster;
   public shouldRecalc: boolean = true;
 
   // #endregion Properties (4)
@@ -23,7 +23,7 @@ export class DevelopmentCell extends Cell {
 
   public constructor(hive: Hive) {
     super(hive, prefix.developmentCell);
-    this.master = new BootstrapMaster(this);
+    this.master; // = new BootstrapMaster(this);
   }
 
   // #endregion Constructors (1)
@@ -78,7 +78,6 @@ export class DevelopmentCell extends Cell {
   }
 
   public override update() {
-    super.update();
     if (
       this.hive.room.storage &&
       this.hive.room.storage.isActive() &&
@@ -154,7 +153,6 @@ export class DevelopmentCell extends Cell {
       };
       _.forEach(futureResourceCells, (f) => addRouteTo(f.pos));
       addRouteTo(this.hive.controller.pos);
-      this.hive.shouldRecalc = 2;
     }
   }
 
