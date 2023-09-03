@@ -1,6 +1,6 @@
-import type { Master } from "../beeMasters/_Master";
+import type { Master, MasterParent } from "../beeMasters/_Master";
 import { profile } from "../profiler/decorator";
-import { beeStates, prefix } from "../static/enums";
+import { beeStates } from "../static/enums";
 import {
   STATE_DEST_ROOMNAME,
   STATE_DEST_X,
@@ -34,7 +34,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   public actionPosition: RoomPosition | undefined;
   public creep: ProtoCreep;
   public abstract lifeTime: number;
-  public abstract master: Master | undefined;
+  public abstract master: Master<MasterParent> | undefined;
   public abstract memory: CreepMemory | PowerCreepMemory;
   public ref: string;
   // target caching and states to have some tools to work with in masters
@@ -138,8 +138,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
       },
       "beesMove_moveMap",
       "run",
-      Object.keys(Apiary.bees).length,
-      false
+      Object.keys(Apiary.bees).length
     );
     Apiary.wrap(
       () => {
@@ -152,8 +151,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
       },
       "beesMove_beeMove",
       "run",
-      Object.keys(moveMap).length,
-      false
+      Object.keys(moveMap).length
     );
   }
 
@@ -395,18 +393,18 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
           .filter((p) => !moveMap[p.to_str]);
         if (!open.length) return ERR_NOT_FOUND;
         const pp = open.reduce((prev, curr) => {
-          let ans =
+          let diff =
             (moveMap[curr.to_str] ? 1 : 0) - (moveMap[prev.to_str] ? 1 : 0);
-          if (ans === 0)
-            ans =
+          if (diff === 0)
+            diff =
               (chillMap[curr.to_str] ? 1 : 0) - (chillMap[prev.to_str] ? 1 : 0);
-          if (ans === 0)
-            ans = curr.getRangeTo(target) - prev.getRangeTo(target);
-          if (ans === 0)
-            ans =
+          if (diff === 0)
+            diff = curr.getRangeTo(target) - prev.getRangeTo(target);
+          if (diff === 0)
+            diff =
               Game.map.getRoomTerrain(curr.roomName).get(curr.x, curr.y) -
               Game.map.getRoomTerrain(prev.roomName).get(prev.x, prev.y);
-          return ans < 0 ? curr : prev;
+          return diff < 0 ? curr : prev;
         });
         moveMap[pp.to_str] = [
           {

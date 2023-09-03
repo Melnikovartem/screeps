@@ -1,5 +1,4 @@
 import type { HiveCache } from "abstract/hiveMemory";
-import type { RoomSetup } from "hivePlanner/planner";
 import { BASE_MODE_HIVE, SETTINGS_DEFAULT } from "static/constants";
 import { prefix } from "static/enums";
 import { makeId } from "static/utils";
@@ -7,7 +6,16 @@ import { makeId } from "static/utils";
 import { snapOldPlans } from "./console-hand-fix";
 
 export class CustomConsole {
+  // #region Properties (3)
+
   public lastActionRoomName: string;
+  /** nice output of last crashes */
+  public reportCrashes = () => this.printCrashes();
+  public snapOldPlans = snapOldPlans;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
 
   public constructor() {
     this.lastActionRoomName = _.map(Apiary.hives, (h) => h).reduce(
@@ -16,8 +24,81 @@ export class CustomConsole {
     ).roomName;
   }
 
+  // #endregion Constructors (1)
+
+  // #region Public Methods (23)
+
+  public addPowerManager(hiveName: string) {
+    if (Game.gpl.level) hiveName = this.format(hiveName);
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    if (!hive.cells.power)
+      return `ERROR: NO POWER CELL @ ${this.formatRoom(hiveName)}`;
+    _.filter(Game.powerCreeps, (c) => c.memory.born);
+    const name = prefix.nkvd + " " + makeId(4);
+    const ans = PowerCreep.create(name, "operator");
+    if (ans !== OK) return `ERROR: ${ans}`;
+    hive.cells.power.powerManager = name;
+    return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
+  }
+
+  /* public addStructureToPlan(
+    roomName: string = this.lastActionRoomName,
+    cache: RoomSetup
+  ) {
+    if (!(roomName in Game.rooms))
+      return `CANNOT ACCESS ${this.formatRoom(roomName)}`;
+    if (!Memory.cache.roomPlanner[roomName])
+      return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
+    if (!(roomName in Apiary.planner.activePlanning))
+      return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`;
+
+    for (const t in cache) {
+      let val: BuildableStructureConstant | null =
+        t as BuildableStructureConstant;
+      if (!(t in CONSTRUCTION_COST))
+        if (t === "null") val = null;
+        else continue;
+      for (const posBuilding of cache[t as BuildableStructureConstant]!.pos) {
+        Apiary.planner.addToPlan(posBuilding, roomName, val, true);
+      }
+    }
+    const contr =
+      Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
+    const pos =
+      contr &&
+      [
+        new RoomPosition(contr.x, contr.y + 1, roomName),
+        new RoomPosition(contr.x, contr.y - 1, roomName),
+      ].filter((p) => p.lookFor(LOOK_FLAGS).length === 0)[0];
+    if (pos)
+      pos.createFlag(
+        "change_" + roomName + "_" + makeId(4),
+        COLOR_WHITE,
+        COLOR_ORANGE
+      );
+    else return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
+
+    return "OK";
+  } */
+
+  /** cleans rashes report log */
+  public cleanCrashes() {
+    Memory.report.crashes = {};
+  }
+
   public defaultSettings() {
     Memory.settings = SETTINGS_DEFAULT;
+  }
+
+  public format(s: string) {
+    if (/\d/.exec(s) !== null) return s.toUpperCase();
+    else return s.toLowerCase();
+  }
+
+  public formatRoom(roomName: string, text: string = roomName) {
+    return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`;
   }
 
   public framerate(framerate?: number) {
@@ -40,25 +121,6 @@ export class CustomConsole {
     return `framerate: ${Memory.settings.framerate}`;
   }
 
-  public pixel(state?: boolean) {
-    if (
-      Memory.settings.generatePixel &&
-      Game.cpu.bucket < 500 &&
-      state === undefined
-    )
-      return `bucket is too low ${Game.cpu.bucket} wait untill it will be atleast 1000`;
-    Memory.settings.generatePixel = state
-      ? state
-      : !Memory.settings.generatePixel;
-    return `pixel generation is ${
-      Memory.settings.generatePixel ? "on" : "off"
-    }`;
-  }
-
-  public siedge(roomName: string, attack = 0) {
-    Apiary.warcrimes.updateRoom(roomName, attack ? Game.time : null);
-  }
-
   public h(hiveName: string = this.lastActionRoomName) {
     hiveName = this.format(hiveName);
     const hive = Apiary.hives[hiveName];
@@ -67,19 +129,11 @@ export class CustomConsole {
     return `active hive is ${this.lastActionRoomName}`;
   }
 
-  public addPowerManager(hiveName: string) {
-    if (Game.gpl.level) hiveName = this.format(hiveName);
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-    if (!hive.cells.power)
-      return `ERROR: NO POWER CELL @ ${this.formatRoom(hiveName)}`;
-    _.filter(Game.powerCreeps, (c) => c.memory.born);
-    const name = prefix.nkvd + " " + makeId(4);
-    const ans = PowerCreep.create(name, "operator");
-    if (ans !== OK) return `ERROR: ${ans}`;
-    hive.cells.power.powerManager = name;
-    return `OK: ${name} @ ${this.formatRoom(hiveName)}`;
+  public miningDist(value: number) {
+    Memory.settings.miningDist = value;
+    _.forEach(Apiary.hives, (h) => {
+      if (h.cells.observe) h.cells.observe.updateRoomsToCheck();
+    });
   }
 
   public mode<T extends keyof HiveCache["do"]>(
@@ -397,32 +451,87 @@ export class CustomConsole {
     return ans;
   }
 
-  public miningDist(value: number) {
-    Memory.settings.miningDist = value;
-    _.forEach(Apiary.hives, (h) => {
-      if (h.cells.observe) h.cells.observe.updateRoomsToCheck();
+  /** markes all dropped resources in a room for pickup */
+  public pickup(hiveName: string = this.lastActionRoomName) {
+    hiveName = this.format(hiveName);
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    if (!hive.cells.storage)
+      return `ERROR: NO STORAGE CELL @ ${this.formatRoom(hiveName)}`;
+    const ans = hive.cells.storage.pickupResources();
+    return `SCHEDULED ${ans} UNITS`;
+  }
+
+  public pixel(state?: boolean) {
+    if (
+      Memory.settings.generatePixel &&
+      Game.cpu.bucket < 500 &&
+      state === undefined
+    )
+      return `bucket is too low ${Game.cpu.bucket} wait untill it will be atleast 1000`;
+    Memory.settings.generatePixel = state
+      ? state
+      : !Memory.settings.generatePixel;
+    return `pixel generation is ${
+      Memory.settings.generatePixel ? "on" : "off"
+    }`;
+  }
+
+  public printCrashes() {
+    let reportLog = "LAST CRASHES:\n\n";
+    for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
+      const stackNew = crash.stack?.split("\n").slice(1, 3) || [];
+
+      reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${
+        crash.message
+      }${crash.stack ? "\nSTACK:\n" + stackNew.join("\n") : ""}\n\n`;
+    }
+    return reportLog;
+  }
+
+  /** recalcs time for resources
+   *
+   * need to be called from time to time
+   *
+   * TODO automate
+   */
+  public recalcResTime(hiveName?: string) {
+    let hives;
+    if (hiveName) {
+      this.lastActionRoomName = hiveName;
+      hives = [Apiary.hives[hiveName]];
+    } else hives = _.map(Apiary.hives, (h) => h);
+    _.forEach(hives, (h) => {
+      _.forEach(h.cells.excavation.resourceCells, (cell) => {
+        cell.roadTime = cell.pos.getTimeForPath(
+          cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos
+        );
+        cell.restTime = cell.pos.getTimeForPath(h.rest);
+        cell.recalcLairFleeTime();
+      });
+
+      h.cells.excavation.shouldRecalc = true;
     });
+    return "OK";
   }
 
-  public format(s: string) {
-    if (/\d/.exec(s) !== null) return s.toUpperCase();
-    else return s.toLowerCase();
-  }
-
-  public showMap(
-    roomName: string = this.lastActionRoomName,
-    keep: boolean,
-    visual: (x: number, y: number, vis: RoomVisual) => void
-  ) {
-    const terrain = Game.map.getRoomTerrain(roomName);
-    Apiary.visuals.changeAnchor(0, 0, roomName);
-    for (let x = 0; x <= 49; ++x)
-      for (let y = 0; y <= 49; ++y)
-        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
-          visual(x, y, Apiary.visuals.anchor.vis);
-
-    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
-    return `OK @ ${this.formatRoom(roomName)}`;
+  /** removes all empty construction sites of mine
+   *
+   * need to be called from time to time
+   *
+   * TODO automate
+   */
+  public removeConst() {
+    const saved: string[] = [];
+    _.forEach(Game.constructionSites, (c) => {
+      if (!c.progress) c.remove();
+      else if (saved.indexOf(c.pos.roomName) === -1) saved.push(c.pos.roomName);
+    });
+    return (
+      "non empty constructionSites in " +
+      saved.map((r) => this.formatRoom(r)).join(" ")
+    );
   }
 
   public showBreach(hiveName: string = this.lastActionRoomName, keep = false) {
@@ -445,6 +554,78 @@ export class CustomConsole {
         )
           vis.circle(x, y, { radius: 0.2, fill: "#E75050" });
       }
+    });
+  }
+
+  public showBuildMap(
+    hiveName: string = this.lastActionRoomName,
+    keep = false
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    const targets = hive.cells.build.structuresConst;
+    let ans = "";
+    let rooms = targets.map((c) => c.pos.roomName);
+    rooms = rooms.filter((r, i) => rooms.indexOf(r) === i);
+    _.forEach(rooms, (roomName) => {
+      ans +=
+        this.showMap(roomName, keep, (x, y, vis) => {
+          // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
+          for (const t of targets) {
+            if (t.pos.x === x && t.pos.y === y && t.pos.roomName === roomName) {
+              vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
+              break;
+            }
+          }
+        }) + "\n";
+    });
+    return ans;
+  }
+
+  public showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      const op = Math.pow(
+        (hive.cells.defense.getDmgAtPos(new RoomPosition(x, y, hiveName)) /
+          TOWER_POWER_ATTACK /
+          Object.keys(hive.cells.defense.towers).length) *
+          0.9,
+        3
+      );
+      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: op });
+    });
+  }
+
+  public showMap(
+    roomName: string = this.lastActionRoomName,
+    keep: boolean,
+    visual: (x: number, y: number, vis: RoomVisual) => void
+  ) {
+    const terrain = Game.map.getRoomTerrain(roomName);
+    Apiary.visuals.changeAnchor(0, 0, roomName);
+    for (let x = 0; x <= 49; ++x)
+      for (let y = 0; y <= 49; ++y)
+        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
+          visual(x, y, Apiary.visuals.anchor.vis);
+
+    Apiary.visuals.exportAnchor(keep ? Infinity : 20);
+    return `OK @ ${this.formatRoom(roomName)}`;
+  }
+
+  public showNukeDefMap(
+    hiveName: string = this.lastActionRoomName,
+    keep = false
+  ) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
+    this.lastActionRoomName = hive.roomName;
+    const defMap = hive.cells.defense.getNukeDefMap();
+    return this.showMap(hiveName, keep, (x, y, vis) => {
+      if (_.filter(defMap[0], (p) => p.pos.x === x && p.pos.y === y).length)
+        vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
     });
   }
 
@@ -559,188 +740,9 @@ export class CustomConsole {
     });
   }
 
-  public showBuildMap(
-    hiveName: string = this.lastActionRoomName,
-    keep = false
-  ) {
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-    const targets = hive.structuresConst;
-    let ans = "";
-    let rooms = targets.map((c) => c.pos.roomName);
-    rooms = rooms.filter((r, i) => rooms.indexOf(r) === i);
-    _.forEach(rooms, (roomName) => {
-      ans +=
-        this.showMap(roomName, keep, (x, y, vis) => {
-          // not best way around it but i am too lazy to rewrite my old visual code for this edge usecase
-          for (const t of targets) {
-            if (t.pos.x === x && t.pos.y === y && t.pos.roomName === roomName) {
-              vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
-              break;
-            }
-          }
-        }) + "\n";
-    });
-    return ans;
+  public siedge(roomName: string, attack = 0) {
+    Apiary.warcrimes.updateRoom(roomName, attack ? Game.time : null);
   }
 
-  public showDefMap(hiveName: string = this.lastActionRoomName, keep = false) {
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-    return this.showMap(hiveName, keep, (x, y, vis) => {
-      const op = Math.pow(
-        (hive.cells.defense.getDmgAtPos(new RoomPosition(x, y, hiveName)) /
-          TOWER_POWER_ATTACK /
-          Object.keys(hive.cells.defense.towers).length) *
-          0.9,
-        3
-      );
-      vis.circle(x, y, { radius: 0.2, fill: "#70E750", opacity: op });
-    });
-  }
-
-  public showNukeDefMap(
-    hiveName: string = this.lastActionRoomName,
-    keep = false
-  ) {
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-    const defMap = hive.cells.defense.getNukeDefMap();
-    return this.showMap(hiveName, keep, (x, y, vis) => {
-      if (_.filter(defMap[0], (p) => p.pos.x === x && p.pos.y === y).length)
-        vis.circle(x, y, { radius: 0.4, fill: "#70E750", opacity: 0.7 });
-    });
-  }
-
-  /** markes all dropped resources in a room for pickup */
-  public pickup(hiveName: string = this.lastActionRoomName) {
-    hiveName = this.format(hiveName);
-    const hive = Apiary.hives[hiveName];
-    if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
-    this.lastActionRoomName = hive.roomName;
-    if (!hive.cells.storage)
-      return `ERROR: NO STORAGE CELL @ ${this.formatRoom(hiveName)}`;
-    const ans = hive.cells.storage.pickupResources();
-    return `SCHEDULED ${ans} UNITS`;
-  }
-
-  /** nice output of last crashes */
-  public reportCrashes = () => this.printCrashes();
-  public printCrashes() {
-    let reportLog = "LAST CRASHES:\n\n";
-    for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
-      const stackNew = crash.stack?.split("\n").slice(1, 3) || [];
-
-      reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${
-        crash.message
-      }${crash.stack ? "\nSTACK:\n" + stackNew.join("\n") : ""}\n\n`;
-    }
-    return reportLog;
-  }
-
-  /** cleans rashes report log */
-  public cleanCrashes() {
-    Memory.report.crashes = {};
-  }
-
-  /** recalcs time for resources
-   *
-   * need to be called from time to time
-   *
-   * TODO automate
-   */
-  public recalcResTime(hiveName?: string) {
-    let hives;
-    if (hiveName) {
-      this.lastActionRoomName = hiveName;
-      hives = [Apiary.hives[hiveName]];
-    } else hives = _.map(Apiary.hives, (h) => h);
-    _.forEach(hives, (h) => {
-      _.forEach(h.cells.excavation.resourceCells, (cell) => {
-        cell.roadTime = cell.pos.getTimeForPath(
-          cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos
-        );
-        cell.restTime = cell.pos.getTimeForPath(h.rest);
-        cell.recalcLairFleeTime();
-      });
-      _.forEach(h.annexNames, (annexName) => {
-        const order = Apiary.orders[prefix.annex + annexName];
-        if (
-          order &&
-          order.flag.color === COLOR_PURPLE &&
-          order.flag.secondaryColor === COLOR_PURPLE
-        )
-          order.memory.extraInfo = 0; // h.pos.getTimeForPath(order)
-      });
-      h.cells.excavation.shouldRecalc = true;
-    });
-    return "OK";
-  }
-
-  /** removes all empty construction sites of mine
-   *
-   * need to be called from time to time
-   *
-   * TODO automate
-   */
-  public removeConst() {
-    const saved: string[] = [];
-    _.forEach(Game.constructionSites, (c) => {
-      if (!c.progress) c.remove();
-      else if (saved.indexOf(c.pos.roomName) === -1) saved.push(c.pos.roomName);
-    });
-    return (
-      "non empty constructionSites in " +
-      saved.map((r) => this.formatRoom(r)).join(" ")
-    );
-  }
-
-  public addStructureToPlan(
-    roomName: string = this.lastActionRoomName,
-    cache: RoomSetup
-  ) {
-    if (!(roomName in Game.rooms))
-      return `CANNOT ACCESS ${this.formatRoom(roomName)}`;
-    if (!Memory.cache.roomPlanner[roomName])
-      return `NO PREVIOUS CACHE FOUND @ ${this.formatRoom(roomName)}`;
-    if (!(roomName in Apiary.planner.activePlanning))
-      return `ACTIVATE ACTIVE PLANNING FIRST @ ${this.formatRoom(roomName)}`;
-
-    for (const t in cache) {
-      let val: BuildableStructureConstant | null =
-        t as BuildableStructureConstant;
-      if (!(t in CONSTRUCTION_COST))
-        if (t === "null") val = null;
-        else continue;
-      for (const posBuilding of cache[t as BuildableStructureConstant]!.pos) {
-        Apiary.planner.addToPlan(posBuilding, roomName, val, true);
-      }
-    }
-    const contr =
-      Game.rooms[roomName].controller && Game.rooms[roomName].controller!.pos;
-    const pos =
-      contr &&
-      [
-        new RoomPosition(contr.x, contr.y + 1, roomName),
-        new RoomPosition(contr.x, contr.y - 1, roomName),
-      ].filter((p) => p.lookFor(LOOK_FLAGS).length === 0)[0];
-    if (pos)
-      pos.createFlag(
-        "change_" + roomName + "_" + makeId(4),
-        COLOR_WHITE,
-        COLOR_ORANGE
-      );
-    else return `ERROR: TOO MUCH FLAGS @ ${this.formatRoom(roomName)}`;
-
-    return "OK";
-  }
-
-  public snapOldPlans = snapOldPlans;
-
-  public formatRoom(roomName: string, text: string = roomName) {
-    return `<a href=#!/room/${Game.shard.name}/${roomName}>${text}</a>`;
-  }
+  // #endregion Public Methods (23)
 }

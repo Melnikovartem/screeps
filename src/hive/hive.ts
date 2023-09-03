@@ -5,6 +5,7 @@ import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { RespawnCell } from "cells/base/respawnCell";
+import { BuildCell } from "cells/building/buildCell";
 import { DevelopmentCell } from "cells/stage0/developmentCell";
 import { CorridorMiningCell } from "cells/stage1/corridorMining";
 import { FactoryCell } from "cells/stage1/factoryCell";
@@ -90,6 +91,7 @@ export class Hive {
       spawn: new RespawnCell(this),
       defense: new DefenseCell(this),
       excavation: new ExcavationCell(this),
+      build: new BuildCell(this),
     };
 
     /** How much to check when rechecking buildings
@@ -102,11 +104,6 @@ export class Hive {
      *
      * 0 no need
      */
-    this.shouldRecalc = Object.keys(this.cache.cells).filter((c) =>
-      c.includes(prefix.resourceCells)
-    ).length
-      ? 2
-      : 3;
     this.phase = 0;
     if (!this.controller) return;
 
@@ -246,11 +243,10 @@ export class Hive {
 
     // ask for help
     if (
-      (this.state === hiveStates.nospawn ||
-        (this.state === hiveStates.lowenergy &&
-          (!this.cells.storage ||
-            this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 5000))) &&
-      !Apiary.orders[prefix.boost + this.roomName]
+      this.state === hiveStates.nospawn ||
+      (this.state === hiveStates.lowenergy &&
+        (!this.cells.storage ||
+          this.cells.storage.getUsedCapacity(RESOURCE_ENERGY) < 5000))
     ) {
       const validHives = _.filter(
         Apiary.hives,

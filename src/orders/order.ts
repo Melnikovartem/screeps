@@ -1,4 +1,4 @@
-import { SwarmMaster } from "beeMasters/_SwarmMaster";
+import type { SwarmMaster } from "beeMasters/_SwarmMaster";
 import { ContainerBuilderMaster } from "beeMasters/civil/containerBuilder";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";

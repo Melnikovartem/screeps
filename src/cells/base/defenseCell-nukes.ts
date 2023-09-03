@@ -1,6 +1,6 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
+import type { BuildProject } from "cells/building/buildCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
-import type { BuildProject } from "hive/hive-declarations";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 
 import type { DefenseCell } from "./defenseCell";

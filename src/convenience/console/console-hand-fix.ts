@@ -1,60 +1,13 @@
+import { setups } from "bees/creepSetups";
 import type { ReactionConstant } from "cells/stage1/laboratoryCell";
 import { REACTION_MAP } from "cells/stage1/laboratoryCell";
 import { roomStates, signText } from "static/enums";
 
-import { setups } from "bees/creepSetups";
-import { makeId } from "static/utils";
 import { CustomConsole } from "./console";
 
 declare module "./console" {
   export interface CustomConsole {
-    /**
-     * Spawns a defender creep in a hive.
-     * @param patternLimit - Maximum number of patterns for the defender.
-     * @param hiveName - Name of the hive to spawn the defender.
-     * @returns Result message of the spawning operation.
-     */
-    spawnDefender: (patternLimit: number, hiveName?: string) => string;
-
-    /**
-     * Spawns a builder creep in a hive.
-     * @param patternLimit - Maximum number of patterns for the builder.
-     * @param hiveName - Name of the hive to spawn the builder.
-     * @returns Result message of the spawning operation.
-     */
-    spawnBuilder: (patternLimit: number, hiveName?: string) => string;
-
-    /**
-     * Spawns an upgrader creep in a hive.
-     * @param patternLimit - Maximum number of patterns for the upgrader.
-     * @param hiveName - Name of the hive to spawn the upgrader.
-     * @returns Result message of the spawning operation.
-     */
-    spawnUpgrader: (patternLimit: number, hiveName?: string) => string;
-
-    /**
-     * Produces a resource using labs or factories in a hive.
-     * @param resource - The resource to produce.
-     * @param hiveName - Name of the hive to perform the production.
-     * @param amount - Amount of the resource to produce.
-     * @returns Result message of the production operation.
-     */
-    produce: (
-      resource: ReactionConstant | CommodityConstant,
-      hiveName?: string,
-      amount?: number
-    ) => string;
-
-    /**
-     * Signs controller rooms next to bees with claim.
-     * Need to be called from time to time.
-     * @param textMy - Text to sign controllers in your rooms.
-     * @param textAnnex - Text to sign controllers in annexed rooms.
-     * @param textOther - Text to sign controllers in other rooms.
-     * @returns Result message of the signing operation.
-     * @todo Automate this process.
-     */
-    sign: (textMy?: string, textAnnex?: string, textOther?: string) => string;
+    // #region Properties (6)
 
     /**
      * Cleans up outdated intelligence data in a specific quadrant.
@@ -72,6 +25,51 @@ declare module "./console" {
       ymin: number,
       ymax: number
     ) => void;
+    /**
+     * Produces a resource using labs or factories in a hive.
+     * @param resource - The resource to produce.
+     * @param hiveName - Name of the hive to perform the production.
+     * @param amount - Amount of the resource to produce.
+     * @returns Result message of the production operation.
+     */
+    produce: (
+      resource: ReactionConstant | CommodityConstant,
+      hiveName?: string,
+      amount?: number
+    ) => string;
+    /**
+     * Signs controller rooms next to bees with claim.
+     * Need to be called from time to time.
+     * @param textMy - Text to sign controllers in your rooms.
+     * @param textAnnex - Text to sign controllers in annexed rooms.
+     * @param textOther - Text to sign controllers in other rooms.
+     * @returns Result message of the signing operation.
+     * @todo Automate this process.
+     */
+    sign: (textMy?: string, textAnnex?: string, textOther?: string) => string;
+    /**
+     * Spawns a builder creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the builder.
+     * @param hiveName - Name of the hive to spawn the builder.
+     * @returns Result message of the spawning operation.
+     */
+    spawnBuilder: (patternLimit: number, hiveName?: string) => string;
+    /**
+     * Spawns a defender creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the defender.
+     * @param hiveName - Name of the hive to spawn the defender.
+     * @returns Result message of the spawning operation.
+     */
+    spawnDefender: (patternLimit: number, hiveName?: string) => string;
+    /**
+     * Spawns an upgrader creep in a hive.
+     * @param patternLimit - Maximum number of patterns for the upgrader.
+     * @param hiveName - Name of the hive to spawn the upgrader.
+     * @returns Result message of the spawning operation.
+     */
+    spawnUpgrader: (patternLimit: number, hiveName?: string) => string;
+
+    // #endregion Properties (6)
   }
 }
 
@@ -99,10 +97,11 @@ CustomConsole.prototype.spawnBuilder = function (
   const hive = Apiary.hives[hiveName];
   if (!hive) return `ERROR: NO HIVE @ ${this.formatRoom(hiveName)}`;
   this.lastActionRoomName = hive.roomName;
-  if (!hive.builder) return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
+  if (!hive.cells.build)
+    return `ERROR: NO BUILDER @ ${this.formatRoom(hiveName)}`;
   const builder = setups.builder.copy();
   builder.patternLimit = patternLimit;
-  hive.builder.wish({ setup: builder, priority: 4 });
+  // hive.cells.build.master.wish({ setup: builder, priority: 4 });
   return `BUILDER SPAWNED @ ${this.formatRoom(hiveName)}`;
 };
 

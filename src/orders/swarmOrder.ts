@@ -1,6 +1,7 @@
+import type { SwarmMaster } from "beeMasters/_SwarmMaster";
 import type { Hive } from "hive/hive";
 
-import type { SWARM_ORDER_TYPES } from "./swarmOrder-masters";
+import { SWARM_ORDER_TYPES } from "./swarmOrder-masters";
 
 const CACHE_ORDER_POS = 0;
 const CACHE_ORDER_HIVE = 1;
@@ -16,25 +17,29 @@ export interface SwarmOrderInfo {
   [CACHE_ORDEC_SPECIAL]?: any;
 }
 
+type MasterConstructor<T> = new (order: SwarmOrder<T>) => SwarmMaster<T>;
+
 export class SwarmOrder<T> {
-  // #region Properties (3)
+  // #region Properties (5)
 
   private _pos: RoomPosition;
 
   public readonly hive: Hive;
+  public readonly master: SwarmMaster<T>;
   public readonly ref: string;
+  public readonly type: keyof typeof SWARM_ORDER_TYPES;
 
-  // #endregion Properties (3)
+  // #endregion Properties (5)
 
   // #region Constructors (1)
 
-  // private readonly master: SwarmMaster<SwarmOrder<T>>;
   public constructor(
     ref: string,
     hive: Hive,
     pos: RoomPosition,
     type: keyof typeof SWARM_ORDER_TYPES
   ) {
+    // if we have an order with same name then prev one is invalidated
     this.ref = ref;
     if (!this.cache)
       Memory.cache.orders[this.ref] = {
@@ -44,10 +49,13 @@ export class SwarmOrder<T> {
         [CACHE_ORDER_TYPE]: type,
       };
     this.hive = hive;
+    this.type = type;
     this._pos = pos;
 
-    // const masterProto = SWARM_ORDER_TYPES[type];
-    // this.master = new masterProto(this);
+    const masterProto = SWARM_ORDER_TYPES[
+      type
+    ] as MasterConstructor<any> as MasterConstructor<T>;
+    this.master = new masterProto(this);
   }
 
   // #endregion Constructors (1)
@@ -109,6 +117,7 @@ export class SwarmOrder<T> {
 
   public delete() {
     delete Memory.cache.orders[this.ref];
+    this.master.delete();
   }
 
   public newSpawn() {}

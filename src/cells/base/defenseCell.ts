@@ -2,7 +2,8 @@ import type { HordeMaster } from "beeMasters/war/horde";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
-import { FlagOrder } from "orders/order";
+import { SwarmOrder } from "orders/swarmOrder";
+import { SWARM_MASTER } from "orders/swarmOrder-masters";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, prefix } from "static/enums";
 import { makeId, towerCoef } from "static/utils";
@@ -182,17 +183,10 @@ export class DefenseCell extends Cell {
       const swarm = freeSwarms.reduce((prev, curr) =>
         pos.getRoomRangeTo(curr) < pos.getRoomRangeTo(prev) ? curr : prev
       );
-      let ans;
-      if (swarm.pos.getRoomRangeTo(pos.roomName, "path") <= 5)
-        ans = this.setDefFlag(pos, swarm.order.flag);
-      else canWin = false;
-      if (ans === OK) {
-        swarm.order.hive = this.hive;
-        swarm.order.flag.memory.hive = this.hiveName;
-        delete Apiary.defenseSwarms[swarm.pos.roomName];
-        Apiary.defenseSwarms[pos.roomName] = swarm;
+      if (swarm.pos.getRoomRangeTo(pos.roomName, "path") <= 5) {
+        this.setDefFlag(pos, swarm.parent);
         return OK;
-      }
+      } else canWin = false;
     }
     return canWin ? ERR_TIRED : ERR_NOT_FOUND;
   }
@@ -201,10 +195,15 @@ export class DefenseCell extends Cell {
     const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
 
     let healTargets: (Creep | PowerCreep)[] = [];
+    interface WithBees {
+      activeBees: ProtoBee<Creep | PowerCreep>[];
+    }
     const prepareHeal = (
-      master: { activeBees: ProtoBee<Creep | PowerCreep>[] } | undefined,
+      master: { master: WithBees | undefined } | WithBees | undefined,
       nonclose = roomInfo.dangerlvlmax >= 4
     ) => {
+      if (master && !("activeBees" in master)) master = master.master;
+
       if (healTargets.length || !master) return;
       healTargets = master.activeBees
         .filter(
@@ -225,13 +224,11 @@ export class DefenseCell extends Cell {
       )
         healTargets = [powerManager.creep];
     }
-    prepareHeal(this.hive.cells.storage && this.hive.cells.storage.master);
-    prepareHeal(this.hive.builder, true);
-    prepareHeal(this.hive.cells.excavation.master);
-    prepareHeal(this.hive.cells.dev && this.hive.cells.dev.master);
-    prepareHeal(
-      this.hive.cells.corridorMining && this.hive.cells.corridorMining.master
-    );
+    prepareHeal(this.hive.cells.storage);
+    prepareHeal(this.hive.cells.build, true);
+    prepareHeal(this.hive.cells.excavation);
+    prepareHeal(this.hive.cells.dev);
+    prepareHeal(this.hive.cells.corridorMining);
     // WARNING can be CPU heavy
     prepareHeal({ activeBees: Object.values(Apiary.bees) });
 
@@ -332,6 +329,7 @@ export class DefenseCell extends Cell {
               RESOURCE_ENERGY
             );
           }
+          /**
           if (
             tower.store.getUsedCapacity(RESOURCE_ENERGY) <=
             tower.store.getCapacity(RESOURCE_ENERGY) * 0.75
@@ -361,6 +359,7 @@ export class DefenseCell extends Cell {
               ).length)
           )
             return;
+
           if (
             repairTarget &&
             tower.pos.getRangeTo(repairTarget) <= tower.pos.getRangeTo(enemy) &&
@@ -374,6 +373,7 @@ export class DefenseCell extends Cell {
               -10,
               RESOURCE_ENERGY
             );
+            */
         }
       });
       if (!workingTower) this.checkAndDefend(this.pos.roomName);
@@ -398,8 +398,7 @@ export class DefenseCell extends Cell {
     }
   }
 
-  public setDefFlag(pos: RoomPosition, flag?: Flag) {
-    let ans: string | ERR_NAME_EXISTS | ERR_INVALID_ARGS = ERR_INVALID_ARGS;
+  public setDefFlag(pos: RoomPosition, swOrder?: SwarmOrder<any>) {
     const terrain = Game.map.getRoomTerrain(pos.roomName);
     const centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(
       true,
@@ -418,19 +417,19 @@ export class DefenseCell extends Cell {
         pos = poss.reduce((prev, curr) => (prev.enteranceToRoom ? curr : prev));
     }
 
-    if (flag) {
-      return flag.setPosition(pos);
-    } else
-      ans = pos.createFlag(prefix.defSwarm + makeId(4), COLOR_RED, COLOR_BLUE);
-    if (typeof ans === "string") {
-      if (this.hive.phase)
-        Game.flags[ans].memory = {
-          hive: (this.hive.bassboost || this.hive).roomName,
-        };
-      const order = new FlagOrder(Game.flags[ans]);
-      order.update();
+    if (swOrder && swOrder.type === SWARM_MASTER.hordedefense) {
+      swOrder.setPosition(pos);
+      delete Apiary.defenseSwarms[swOrder.pos.roomName];
+      Apiary.defenseSwarms[pos.roomName] = swOrder.master as HordeMaster;
+      return swOrder.ref;
     }
-    return ans;
+    swOrder = new SwarmOrder(
+      prefix.defSwarm + makeId(4),
+      this.hive.bassboost || this.hive,
+      pos,
+      SWARM_MASTER.hordedefense
+    );
+    return swOrder.ref;
   }
 
   public update() {

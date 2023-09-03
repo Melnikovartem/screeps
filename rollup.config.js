@@ -3,7 +3,7 @@
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import clear from "rollup-plugin-clear";
-import execute from "rollup-plugin-execute";
+// import execute from "rollup-plugin-execute";
 import screeps from "rollup-plugin-screeps";
 import typescript from "rollup-plugin-typescript2";
 

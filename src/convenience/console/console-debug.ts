@@ -1,14 +1,13 @@
-import type { Master } from "beeMasters/_Master";
-import { TransferRequest } from "bees/transferRequest";
-import { prefix } from "static/enums";
+import type { Master, MasterParent } from "beeMasters/_Master";
+import type { TransferRequest } from "bees/transferRequest";
 
 import { CustomConsole } from "./console";
 
 declare module "./console" {
   export interface CustomConsole {
-    printSpawnOrders: (hiveName?: string) => string;
-    printStorageOrders: (hiveName?: string) => string;
-    printHives: () => string;
+    // #region Properties (8)
+
+    printBees: (ref?: string, byHives?: boolean) => string;
     printByHive: (
       obj: { print: string; hive: { roomName: string } }[]
     ) => string;
@@ -18,9 +17,13 @@ declare module "./console" {
         master?: { ref: string };
       }[]
     ) => string;
+    printHives: () => string;
     printMasters: (ref?: string) => string;
     printOrders: (ref?: string) => string;
-    printBees: (ref?: string, byHives?: boolean) => string;
+    printSpawnOrders: (hiveName?: string) => string;
+    printStorageOrders: (hiveName?: string) => string;
+
+    // #endregion Properties (8)
   }
 }
 
@@ -85,20 +88,22 @@ CustomConsole.prototype.printByMasters = function (
   }[]
 ) {
   return _.compact(
-    (_.map(Apiary.masters).concat([undefined]) as (Master | undefined)[]).map(
-      (m) => {
-        const objHive = _.map(
-          _.filter(
-            obj,
-            (o) =>
-              (!m && !o.master) || (m && o.master && o.master.ref === m.ref)
-          ),
-          (o) => o.print
-        );
-        if (!objHive.length) return;
-        return `${m ? m.print : "None"}:\n${objHive.join("\n")}\n----------`;
-      }
-    )
+    (
+      _.map(Apiary.masters).concat([undefined]) as (
+        | Master<MasterParent>
+        | undefined
+      )[]
+    ).map((m) => {
+      const objHive = _.map(
+        _.filter(
+          obj,
+          (o) => (!m && !o.master) || (m && o.master && o.master.ref === m.ref)
+        ),
+        (o) => o.print
+      );
+      if (!objHive.length) return;
+      return `${m ? m.print : "None"}:\n${objHive.join("\n")}\n----------`;
+    })
   ).join("\n");
 };
 
@@ -110,7 +115,7 @@ CustomConsole.prototype.printMasters = function (ref?: string) {
   return this.printByHive(obj);
 };
 
-CustomConsole.prototype.printOrders = function (ref?: string) {
+/* CustomConsole.prototype.printOrders = function (ref?: string) {
   const extraFilter = (rr: string) =>
     !rr.includes(prefix.annex) &&
     !rr.includes(prefix.mine) &&
@@ -122,7 +127,7 @@ CustomConsole.prototype.printOrders = function (ref?: string) {
       extraFilter(o.ref)
   );
   return this.printByHive(obj);
-};
+}; */
 
 CustomConsole.prototype.printBees = function (
   ref?: string,

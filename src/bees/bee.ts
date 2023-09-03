@@ -51,10 +51,6 @@ export class Bee extends ProtoBee<Creep> {
     return this.pulledPos || this.creep.pos;
   }
 
-  public override get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
-  }
-
   // #endregion Public Accessors (5)
 
   // #region Public Static Methods (1)
@@ -178,28 +174,16 @@ export class Bee extends ProtoBee<Creep> {
         )
       )
         return;
-    } else if (this.ref.includes(setupsNames.defender)) {
+    } else if (
+      this.ref.includes(setupsNames.defender) ||
+      this.ref.includes(setupsNames.knight) ||
+      this.ref.includes(setupsNames.archer)
+    ) {
       if (
         this.findClosestByHive(
           _.filter(
             Apiary.defenseSwarms,
-            (m) => !m.boosts || m.spawned === m.maxSpawns
-          )
-        )
-      )
-        return;
-    } else if (this.ref.includes(setupsNames.knight)) {
-      if (
-        this.findClosestByHive(
-          _.filter(Apiary.masters, (m) => m.ref.includes("harass"))
-        )
-      )
-        return;
-      if (
-        this.findClosestByHive(
-          _.filter(
-            Apiary.defenseSwarms,
-            (m) => !m.boosts || m.spawned === m.maxSpawns
+            (m) => !m.boosts || m.parent.spawned === m.maxSpawns
           )
         )
       )

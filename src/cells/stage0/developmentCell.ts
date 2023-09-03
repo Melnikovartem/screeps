@@ -69,7 +69,7 @@ export class DevelopmentCell extends Cell {
 
   public run() {
     if (
-      !this.master.beesAmount &&
+      !this.master?.beesAmount &&
       this.hive.phase > 0 &&
       this.hive.state === hiveStates.economy &&
       Apiary.useBucket
@@ -97,7 +97,7 @@ export class DevelopmentCell extends Cell {
       Game.time % 100 === 0 &&
       this.hive.controller.level > 1 &&
       this.hive.state === hiveStates.economy &&
-      this.master.beesAmount
+      this.master?.beesAmount
     ) {
       const addRouteTo = (pos: RoomPosition) => {
         // if (this.hive.room.energyCapacityAvailable < 400 && !this.hive.bassboost && f.pos.roomName !== this.hiveName)

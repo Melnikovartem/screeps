@@ -1,6 +1,6 @@
+import type { PowerCreepMaster } from "beeMasters/_PowerMaster";
 import { KGBMaster } from "beeMasters/powerCreeps/kgb";
 
-import type { Master } from "../beeMasters/_Master";
 import { NKVDMaster } from "../beeMasters/powerCreeps/nkvd";
 import { profile } from "../profiler/decorator";
 import { prefix } from "../static/enums";
@@ -11,7 +11,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
   // #region Properties (2)
 
   public lifeTime: number;
-  public master: Master | undefined;
+  public master: PowerCreepMaster | undefined;
 
   // #endregion Properties (2)
 
@@ -39,10 +39,6 @@ export class PowerBee extends ProtoBee<PowerCreep> {
 
   public get powers() {
     return this.creep.powers;
-  }
-
-  public get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 
   public get shard() {
@@ -74,7 +70,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
 
   public static makeMaster(
     pc: PowerCreep
-  ): ((pb: PowerBee) => Master) | undefined {
+  ): ((pb: PowerBee) => PowerCreepMaster) | undefined {
     let validCells = _.compact(_.map(Apiary.hives, (h) => h.cells.power!));
     if (pc.name.includes(prefix.nkvd)) {
       const validCellsExact = validCells.filter(
@@ -125,7 +121,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
     return ans === OK ? this.creep.renew(t) : ans;
   }
 
-  public update() {
+  public override update() {
     super.update();
     this.creep = Game.powerCreeps[this.ref];
   }

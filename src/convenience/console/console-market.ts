@@ -1,78 +1,42 @@
 import { REACTION_MAP } from "cells/stage1/laboratoryCell";
 import { TERMINAL_ENERGY } from "cells/stage1/storageCell";
+
 import { CustomConsole } from "./console";
 
 // PROB REMOVE ALL FUNCTIONS FROM THIS FILE AT SOME TIME
 
 declare module "./console" {
   export interface CustomConsole {
+    // #region Public Methods (12)
+
     /**
-     * Manages terminal resources by filling or emptying it.
-     * @param hiveName - Name of the hive to perform the operation.
-     * @param amount - Amount of resources to manage.
-     * @param resource - The resource type to manage.
-     * @param mode - The mode of operation (fill or empty).
-     * @returns Result message of the operation.
+     * Buys resources from the market using a terminal.
+     * @param resource - The resource to buy.
+     * @param hiveName - Name of the hive to perform the transaction.
+     * @param sets - Number of sets to buy.
+     * @param hurry - Whether to prioritize the transaction.
+     * @returns Result message of the transaction.
      */
-    terminal(
+    buy(
+      resource: ResourceConstant,
       hiveName?: string,
       amount?: number,
-      resource?: ResourceConstant,
-      mode?: "fill" | "empty"
+      hurry?: boolean
     ): string;
-
     /**
-     * Sends resources from one room to another.
-     * @param roomNameFrom - Name of the sending room.
-     * @param roomNameTo - Name of the receiving room.
-     * @param resource - The resource type to send.
-     * @param amount - Amount of resources to send.
-     * @returns Result message of the sending operation.
+     * Buys master's minerals for a hive.
+     * @param hiveName - Name of the hive to perform the transaction.
+     * @param padding - Additional amount to consider while buying.
+     * @param mode - Transaction mode (fast/better price).
+     * @returns Result message of the transactions.
      */
-    send(
-      roomNameFrom: string,
-      roomNameTo: string,
-      resource?: ResourceConstant,
-      amount?: number
-    ): string;
-
+    buyBoost(hiveName?: string, padding?: number, mode?: boolean): string;
     /**
-     * Sends resources from one room to another without checking balances.
-     * @param roomNameFrom - Name of the sending room.
-     * @param roomNameTo - Name of the receiving room.
-     * @param resource - The resource type to send.
-     * @param amount - Amount of resources to send.
-     * @returns Result message of the sending operation.
+     * Cancels a specific market order.
+     * @param orderId - ID of the order to cancel.
+     * @returns Result message of the order cancellation.
      */
-    sendBlind(
-      roomNameFrom: string,
-      roomNameTo: string,
-      resource: ResourceConstant,
-      amount?: number
-    ): string;
-
-    /**
-     * Transfers resources from one room to another using the terminal.
-     * @param roomNameFrom - Name of the sending room.
-     * @param roomNameTo - Name of the receiving room.
-     * @param res - The resource type to transfer.
-     * @param amount - Amount of resources to transfer.
-     */
-    transfer(
-      roomNameFrom: string,
-      roomNameTo: string,
-      res?: ResourceConstant,
-      amount?: number
-    ): void;
-
-    /**
-     * Changes the price of an existing market order.
-     * @param orderId - ID of the order to change.
-     * @param newPrice - New price for the order.
-     * @returns Result message of the order change.
-     */
-    changeOrderPrice(orderId: string, newPrice: number): string;
-
+    cancelOrder(orderId: string): string;
     /**
      * Cancels orders in a specific hive.
      * @param hiveName - Name of the hive to cancel orders in.
@@ -80,13 +44,13 @@ declare module "./console" {
      * @returns Result message of the cancellation.
      */
     cancelOrdersHive(hiveName?: string, active?: boolean): string;
-
     /**
-     * Cancels a specific market order.
-     * @param orderId - ID of the order to cancel.
-     * @returns Result message of the order cancellation.
+     * Changes the price of an existing market order.
+     * @param orderId - ID of the order to change.
+     * @param newPrice - New price for the order.
+     * @returns Result message of the order change.
      */
-    cancelOrder(orderId: string): string;
+    changeOrderPrice(orderId: string, newPrice: number): string;
     /**
      * Completes an order by buying or selling resources on the market.
      * @param orderId - ID of the order to complete.
@@ -105,31 +69,6 @@ declare module "./console" {
       roomName: string,
       checkCooldown?: boolean
     ): StructureTerminal | string;
-
-    /**
-     * Buys master's minerals for a hive.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param padding - Additional amount to consider while buying.
-     * @param mode - Transaction mode (fast/better price).
-     * @returns Result message of the transactions.
-     */
-    buyBoost(hiveName?: string, padding?: number, mode?: boolean): string;
-
-    /**
-     * Buys resources from the market using a terminal.
-     * @param resource - The resource to buy.
-     * @param hiveName - Name of the hive to perform the transaction.
-     * @param sets - Number of sets to buy.
-     * @param hurry - Whether to prioritize the transaction.
-     * @returns Result message of the transaction.
-     */
-    buy(
-      resource: ResourceConstant,
-      hiveName?: string,
-      amount?: number,
-      hurry?: boolean
-    ): string;
-
     /**
      * Sells resources to the market using a terminal.
      * @param resource - The resource to sell.
@@ -144,6 +83,63 @@ declare module "./console" {
       amount?: number,
       hurry?: boolean
     ): string;
+    /**
+     * Sends resources from one room to another.
+     * @param roomNameFrom - Name of the sending room.
+     * @param roomNameTo - Name of the receiving room.
+     * @param resource - The resource type to send.
+     * @param amount - Amount of resources to send.
+     * @returns Result message of the sending operation.
+     */
+    send(
+      roomNameFrom: string,
+      roomNameTo: string,
+      resource?: ResourceConstant,
+      amount?: number
+    ): string;
+    /**
+     * Sends resources from one room to another without checking balances.
+     * @param roomNameFrom - Name of the sending room.
+     * @param roomNameTo - Name of the receiving room.
+     * @param resource - The resource type to send.
+     * @param amount - Amount of resources to send.
+     * @returns Result message of the sending operation.
+     */
+    sendBlind(
+      roomNameFrom: string,
+      roomNameTo: string,
+      resource: ResourceConstant,
+      amount?: number
+    ): string;
+    /**
+     * Manages terminal resources by filling or emptying it.
+     * @param hiveName - Name of the hive to perform the operation.
+     * @param amount - Amount of resources to manage.
+     * @param resource - The resource type to manage.
+     * @param mode - The mode of operation (fill or empty).
+     * @returns Result message of the operation.
+     */
+    terminal(
+      hiveName?: string,
+      amount?: number,
+      resource?: ResourceConstant,
+      mode?: "fill" | "empty"
+    ): string;
+    /**
+     * Transfers resources from one room to another using the terminal.
+     * @param roomNameFrom - Name of the sending room.
+     * @param roomNameTo - Name of the receiving room.
+     * @param res - The resource type to transfer.
+     * @param amount - Amount of resources to transfer.
+     */
+    transfer(
+      roomNameFrom: string,
+      roomNameTo: string,
+      res?: ResourceConstant,
+      amount?: number
+    ): void;
+
+    // #endregion Public Methods (12)
   }
 }
 

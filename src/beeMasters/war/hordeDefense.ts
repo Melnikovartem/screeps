@@ -1,8 +1,7 @@
 import { setups } from "bees/creepSetups";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
-import { beeStates, hiveStates, roomStates } from "static/enums";
-import { addResDict } from "static/utils";
+import { hiveStates, roomStates } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 import { HordeMaster } from "./horde";
@@ -12,29 +11,27 @@ import { HordeMaster } from "./horde";
 export class HordeDefenseMaster extends HordeMaster {
   // #region Public Accessors (2)
 
-  public get maxSpawns() {
+  public override get maxSpawns() {
     return this.targetBeeCount;
   }
-
-  public set maxSpawns(_) {}
 
   // #endregion Public Accessors (2)
 
   // #region Public Methods (3)
 
-  public delete() {
+  public override delete() {
     super.delete();
     if (Apiary.defenseSwarms[this.pos.roomName] === this)
       delete Apiary.defenseSwarms[this.pos.roomName];
   }
 
-  public init() {
+  public override init() {
     const defSwarm = Apiary.defenseSwarms[this.pos.roomName];
-    if (defSwarm && defSwarm.ref !== this.order.ref) this.order.delete();
+    if (defSwarm && defSwarm.ref !== this.ref) this.parent.delete();
     else Apiary.defenseSwarms[this.pos.roomName] = this;
   }
 
-  public update() {
+  public override update() {
     SwarmMaster.prototype.update.call(this);
 
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, 20);
@@ -58,7 +55,7 @@ export class HordeDefenseMaster extends HordeMaster {
       !this.beesAmount &&
       Game.time - roomInfo.lastUpdated < 20
     ) {
-      this.order.delete();
+      this.parent.delete();
       return;
     }
 
@@ -94,7 +91,7 @@ export class HordeDefenseMaster extends HordeMaster {
         order.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL];
       } else {
         order.setup.patternLimit = Infinity;
-        order.setup.fixed = Array(10).fill(HEAL);
+        order.setup.fixed = Array(10).fill(HEAL) as BodyPartConstant[];
       }
     } else if (enemy instanceof Creep) {
       this.targetBeeCount = 1;
@@ -125,7 +122,7 @@ export class HordeDefenseMaster extends HordeMaster {
           healNeeded = Math.ceil((enemyInfo.dmgRange * 0.3) / HEAL_POWER / 4);
           order.setup.fixed = Array(
             Math.ceil((enemyInfo.dmgRange * 0.3) / 100)
-          ).fill(TOUGH);
+          ).fill(TOUGH) as BodyPartConstant[];
           this.boosts.push(
             { type: "heal", lvl: 2 },
             { type: "damage", lvl: 2 }
@@ -166,7 +163,6 @@ export class HordeDefenseMaster extends HordeMaster {
           order.setup.pattern = [ATTACK];
           this.targetBeeCount = Math.min(this.targetBeeCount, 2);
         }
-        if (!this.boosts.length) this.boosts = undefined;
       } else if (healNeeded) {
         healNeeded = Math.max(healNeeded);
         const healCost = BODYPART_COST[RANGED_ATTACK] + BODYPART_COST[MOVE];
@@ -247,7 +243,7 @@ export class HordeDefenseMaster extends HordeMaster {
     if (
       this.hive.cells.defense.reposessFlag(this.pos, enemy) !== ERR_NOT_FOUND
     ) {
-      this.order.delete();
+      this.parent.delete();
       return;
     }
     if (this.pos.roomName !== this.hiveName && !this.boosts)

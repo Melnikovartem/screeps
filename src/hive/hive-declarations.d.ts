@@ -25,7 +25,7 @@ export interface HiveCells {
   storage?: StorageCell;
   defense: DefenseCell;
   spawn: RespawnCell;
-  build?: BuildCell;
+  build: BuildCell;
   upgrade?: UpgradeCell;
   excavation: ExcavationCell;
   dev?: DevelopmentCell;

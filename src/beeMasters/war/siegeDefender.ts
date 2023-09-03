@@ -96,8 +96,9 @@ export class SiegeMaster extends Master<DefenseCell> {
           }
 
           const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 20);
+          let enemy: Structure | PowerCreep | Creep | undefined;
           if (!pos || pos.equal(this.parent)) {
-            const enemy = Apiary.intel.getEnemy(bee, 20);
+            enemy = Apiary.intel.getEnemy(bee, 20);
             if (!enemy) return;
 
             if (enemy) {
@@ -135,7 +136,7 @@ export class SiegeMaster extends Master<DefenseCell> {
                       );
                   else
                     ans =
-                      curr.pos.getRangeTo(enemy) - prev.pos.getRangeTo(enemy);
+                      curr.pos.getRangeTo(enemy!) - prev.pos.getRangeTo(enemy!);
                   if (ans === 0)
                     ans =
                       curr.pos.getRangeTo(this.parent) -
@@ -151,7 +152,7 @@ export class SiegeMaster extends Master<DefenseCell> {
             bee.target = pos.to_str;
           }
 
-          let enemy = Apiary.intel.getEnemy(bee, 20) as Creep | undefined;
+          enemy = Apiary.intel.getEnemy(bee, 20);
           if (enemy)
             _.forEach(roomInfo.enemies, (e) => {
               if (!(e.object instanceof Creep)) return;
@@ -402,24 +403,23 @@ export class SiegeMaster extends Master<DefenseCell> {
       bee.goTo(posToStay, opt);
 
     if (!bee.targetPosition) bee.targetPosition = bee.pos;
-    if (!findRamp(bee.targetPosition)) {
-      const stats = Apiary.intel.getComplexStats(
-        bee.targetPosition,
-        4,
-        2
-      ).current;
-      if (
-        (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.4 &&
-          rangeToTarget <= targetedRange - 2) ||
-        (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.2 &&
-          bee.targetPosition.getRangeTo(posToStay) > 1 &&
-          this.parent.wasBreached(target.pos, bee.targetPosition))
-      )
-        if (findRamp(bee.pos))
-          // || (stats.dmgClose + stats.dmgRange >= beeStats.hits * 0.3 && !(bee.targetPosition.getOpenPositions(true).filter(p => findRamp(p))).length))
-          bee.stop();
-        else bee.flee(this.parent.pos, opt);
-    }
+    if (findRamp(bee.targetPosition)) return OK;
+
+    // stats in position that bee wants to go
+    const statsEnemy = Apiary.intel.getComplexStats(
+      bee.targetPosition,
+      4,
+      2
+    ).current;
+    if (
+      (statsEnemy.dmgClose + statsEnemy.dmgRange >= beeStats.hits * 0.4 &&
+        rangeToTarget <= targetedRange - 2) ||
+      (statsEnemy.dmgClose + statsEnemy.dmgRange >= beeStats.hits * 0.2 &&
+        bee.targetPosition.getRangeTo(posToStay) > 1 &&
+        this.parent.wasBreached(target.pos, bee.targetPosition))
+    )
+      if (findRamp(bee.pos)) bee.stop();
+      else bee.flee(this.pos, opt);
     return OK;
   }
 

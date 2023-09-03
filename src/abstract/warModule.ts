@@ -1,10 +1,17 @@
-import { SquadWarCrimesMaster } from "../beeMasters/squads/squadWarcrimes";
+import { SwarmOrder } from "orders/swarmOrder";
+import { SWARM_MASTER } from "orders/swarmOrder-masters";
+
+import type {
+  SquadInfo,
+  SquadWarCrimesMaster,
+} from "../beeMasters/squads/squadWarcrimes";
 import { setups } from "../bees/creepSetups";
 import { profile } from "../profiler/decorator";
 import type { Enemy } from "../spiderSense/intelligence";
 import { enemyTypes, prefix, roomStates } from "../static/enums";
 import { getEnterances, makeId, towerCoef } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
+import type { SiedgeInfo } from "./declarations";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 
@@ -73,14 +80,13 @@ export class WarcrimesModule {
     pos: RoomPosition,
     dismantle: boolean = false
   ): Enemy["object"] | undefined {
-    let enemy: Enemy["object"] | undefined;
     let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
     const noRamp = (e: { object: { pos: RoomPosition } }) =>
       !e.object.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.hits > 10000)
         .length;
     if (roomInfo.roomState === roomStates.ownedByEnemy)
       roomInfo = Apiary.intel.getInfo(pos.roomName, 4);
-    const siedge = this.siedge[pos.roomName];
+    const siedge: SiedgeInfo | undefined = this.siedge[pos.roomName];
 
     let enemies: Enemy[] = [];
     if (!dismantle)
@@ -99,12 +105,12 @@ export class WarcrimesModule {
           siedge.freeTargets[i].y,
           pos.roomName
         ).lookFor(LOOK_STRUCTURES);
-        const enemy = roomEnemies.length
+        const enemyInRoom = roomEnemies.length
           ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
           : undefined;
-        if (enemy)
+        if (enemyInRoom)
           enemies.push({
-            object: enemy,
+            object: enemyInRoom,
             type: enemyTypes.static,
             dangerlvl: 9,
           });
@@ -119,12 +125,12 @@ export class WarcrimesModule {
           siedge.breakIn[i].y,
           pos.roomName
         ).lookFor(LOOK_STRUCTURES);
-        const enemy = roomEnemies.length
+        const enemyInRoom = roomEnemies.length
           ? roomEnemies.reduce((prev, curr) => ("owner" in curr ? curr : prev))
           : undefined;
-        if (enemy)
+        if (enemyInRoom)
           enemies.push({
-            object: enemy,
+            object: enemyInRoom,
             type: enemyTypes.static,
             dangerlvl: 9,
           });
@@ -138,6 +144,8 @@ export class WarcrimesModule {
       enemies = roomInfo.enemies.filter(
         (e) => e.dangerlvl === roomInfo.dangerlvlmax
       );
+
+    let enemy: Enemy["object"] | undefined;
     if (enemies.length)
       enemy = enemies.reduce((prev, curr) => {
         let ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
@@ -147,16 +155,7 @@ export class WarcrimesModule {
     return enemy;
   }
 
-  public init() {
-    _.forEach(Memory.cache.war.squadsInfo, (info) => {
-      if (!Apiary.hives[info.hive]) {
-        if (info.spawned === info.setup.length)
-          info.hive = Object.keys(Apiary.hives)[0];
-        else delete Memory.cache.war.squadsInfo[info.ref];
-      }
-      this.squads[info.ref] = new SquadWarCrimesMaster(this, info);
-    });
-  }
+  public init() {}
 
   public run() {}
 
@@ -171,7 +170,9 @@ export class WarcrimesModule {
         Object.keys(this.siedge[roomName].squadSlots).length &&
         !_.filter(
           this.squads,
-          (sq) => sq.pos.roomName === roomName && sq.spawned < sq.targetBeeCount
+          (sq) =>
+            sq.pos.roomName === roomName &&
+            sq.parent.spawned < sq.targetBeeCount
         ).length
       )
         this.sendSquad(roomName);
@@ -273,10 +274,9 @@ export class WarcrimesModule {
         switch (s.structureType) {
           case STRUCTURE_INVADER_CORE:
             labs += 1;
+          // fall through
           case STRUCTURE_SPAWN:
           case STRUCTURE_STORAGE:
-          case STRUCTURE_STORAGE:
-          case STRUCTURE_SPAWN:
           case STRUCTURE_TOWER:
             return true;
           case STRUCTURE_LAB:
@@ -286,6 +286,7 @@ export class WarcrimesModule {
           case STRUCTURE_RAMPART:
             if (s.hits > wallsHealthMax) wallsHealthMax = s.hits;
             obstacles.push(s);
+          // fall through
           default:
             return false;
         }
@@ -642,12 +643,14 @@ export class WarcrimesModule {
     );
     formationHealerBee.fixed = Array(rangedAttackHealer)
       .fill(RANGED_ATTACK)
-      .concat(Array(toughPerHealerBee).fill(TOUGH));
+      .concat(Array(toughPerHealerBee).fill(TOUGH)) as BodyPartConstant[];
     formationHealerBee.patternLimit = healPerBee;
 
     const formationDismantleBee = setups.dismantler.copy();
     const toughtPerDismantleBee = Math.ceil((dmgAfterTough * 2) / 100);
-    formationDismantleBee.fixed = Array(toughtPerDismantleBee).fill(TOUGH);
+    formationDismantleBee.fixed = Array(toughtPerDismantleBee).fill(
+      TOUGH
+    ) as BodyPartConstant[];
 
     const formation = [
       formationDismantleBee,
@@ -674,7 +677,7 @@ export class WarcrimesModule {
 
     formationBee.fixed = Array(healPerBee)
       .fill(HEAL)
-      .concat(Array(toughPerBee).fill(TOUGH));
+      .concat(Array(toughPerBee).fill(TOUGH)) as BodyPartConstant[];
     formationBee.patternLimit = 50;
     const formation = [formationBee, formationBee];
     return formation;
@@ -697,7 +700,7 @@ export class WarcrimesModule {
 
     formationBee.fixed = Array(healPerBee)
       .fill(HEAL)
-      .concat(Array(toughPerBee).fill(TOUGH));
+      .concat(Array(toughPerBee).fill(TOUGH)) as BodyPartConstant[];
     formationBee.patternLimit = 50;
 
     const formation = [formationBee, formationBee, formationBee, formationBee];
@@ -787,13 +790,16 @@ export class WarcrimesModule {
         formation = this.getDuoFormation(dmg);
     }
 
-    this.squads[ref] = new SquadWarCrimesMaster(this, {
+    const sqOrder = new SwarmOrder<SquadInfo>(
       ref,
-      hive: hive.roomName,
-      target: { x: slot.breakIn.x, y: slot.breakIn.y, roomName },
-      ent: slot.breakIn.ent,
-      setup: formation,
-    });
+      hive,
+      new RoomPosition(slot.breakIn.x, slot.breakIn.y, roomName),
+      SWARM_MASTER.squadwarcrimes
+    );
+
+    sqOrder.special.setup = formation;
+    sqOrder.special.ent = slot.breakIn.ent;
+
     // could use getTimeForPath, but this saves some cpu
     slot.lastSpawned = Game.time;
     siedge.attackTime =

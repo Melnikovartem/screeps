@@ -10,8 +10,6 @@ import { Logger } from "convenience/logger";
 import { EmptyLogger } from "convenience/logger-empty";
 import { Visuals } from "convenience/visuals/visuals";
 import { Hive } from "hive/hive";
-import { RoomPlanner } from "hivePlanner/planner";
-import { FlagOrder } from "orders/order";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
@@ -35,7 +33,6 @@ export class _Apiary {
   public masters: { [id: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
   public network: Network;
-  public planner: RoomPlanner;
   public requestRoomSight: string[] = [];
   public requestRoomSightNextTick: string[] = [];
   public useBucket: boolean = false;
@@ -52,7 +49,6 @@ export class _Apiary {
     this.destroyTime = this.createTime + APIARY_LIFETIME;
     this.intel = new Intel();
     this.broker = new Broker();
-    this.planner = new RoomPlanner();
     this.network = new Network();
     this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE) this.logger = new Logger();
@@ -122,9 +118,6 @@ export class _Apiary {
     this.requestRoomSight = this.requestRoomSightNextTick;
     this.requestRoomSightNextTick = [];
 
-    if (this.useBucket)
-      this.wrap(() => Apiary.planner.run(), "planner", "run", 1);
-
     this.wrap(
       () => this.visuals.run(),
       "visuals",
@@ -141,10 +134,7 @@ export class _Apiary {
 
     this.wrap(() => this.broker.update(), "broker", "update");
 
-    this.wrap(() => FlagOrder.checkFlags(), "checkFlags", "update");
-    _.forEach(Apiary.orders, (order) => {
-      if (order) this.wrap(() => order.update(), order.ref, "update");
-    });
+    // this.wrap(() => FlagOrder.checkFlags(), "checkFlags", "update");
 
     this.wrap(() => this.network.update(), "network", "update", 0);
 

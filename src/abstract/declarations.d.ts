@@ -1,10 +1,8 @@
 import type { _Apiary } from "Apiary";
-import { SiedgeInfo } from "beeMasters/squads/squadWarcrimes";
-import type { CreepSetup } from "bees/creepSetups";
 import type { CustomConsole } from "convenience/console/console";
 import type { RoomSetup } from "hivePlanner/planner";
-import { SwarmOrderInfo } from "orders/swarmOrder";
-import { CreepAllBattleInfo } from "spiderSense/intelligence";
+import type { SwarmOrderInfo } from "orders/swarmOrder";
+import type { CreepAllBattleInfo } from "spiderSense/intelligence";
 import type { beeStates, roomStates } from "static/enums";
 
 import type { HiveCache, HiveLog } from "./hiveMemory";
@@ -58,24 +56,24 @@ interface IntelBattle {
   // #endregion Public Indexers (1)
 }
 
-interface SquadInfo {
-  // #region Public Indexers (1)
+interface SiedgeInfo {
+  // #region Properties (7)
 
-  [swarmOrderRef: string]: {
-    seidgeStuck: number;
-    center: { x: number; y: number; roomName: string }; // current center of squad
-    targetid: Id<_HasId> | ""; // targetId
-    lastUpdatedTarget: number; // when the target was last seen and updated
-    target: { x: number; y: number; roomName: string }; // target of the squad
-
-    rotation: TOP | BOTTOM | LEFT | RIGHT;
-    setup: CreepSetup[];
-    meetUpPos: Pos[]; // position where to group // prev poss
-    possEnt: Pos[]; // position to ener from
-    ent: string;
+  attackTime: number | null;
+  breakIn: { x: number; y: number; ent: string; state: number }[];
+  freeTargets: { x: number; y: number }[];
+  lastUpdated: number;
+  squadSlots: {
+    [id: string]: {
+      lastSpawned: number;
+      type: "range" | "dism" | "duo";
+      breakIn: { x: number; y: number; ent: string; state: number };
+    };
   };
+  threatLvl: 0 | 1 | 2;
+  towerDmgBreach: number;
 
-  // #endregion Public Indexers (1)
+  // #endregion Properties (7)
 }
 
 interface LogInfo {
@@ -211,7 +209,6 @@ declare global {
       };
       war: {
         siedgeInfo: { [ref: string]: SiedgeInfo };
-        squadsInfo: SquadInfo;
       };
       orders: { [ref: string]: SwarmOrderInfo };
     };

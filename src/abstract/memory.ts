@@ -14,12 +14,6 @@ export class Mem {
         if (Apiary.bees[name]) delete Apiary.bees[name];
       }
 
-    for (const name in Memory.flags)
-      if (!(name in Game.flags)) {
-        delete Memory.flags[name];
-        if (Apiary.orders[name]) Apiary.orders[name].delete();
-      }
-
     Apiary.logger.clean();
   }
 

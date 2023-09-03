@@ -1,4 +1,4 @@
-import { buildingCostsHive, HiveCache } from "abstract/hiveMemory";
+import type { buildingCostsHive, HiveCache } from "abstract/hiveMemory";
 
 export const SETTINGS_DEFAULT: Memory["settings"] = {
   framerate: 10,
@@ -12,11 +12,14 @@ export const SETTINGS_DEFAULT: Memory["settings"] = {
 };
 
 export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
+  hives: (Memory.cache && Memory.cache.hives) || {},
+  orders: {},
+
   intellegence: {},
   map: { rooms: {}, users: {} },
-  roomPlanner: (Memory.cache && Memory.cache.roomPlanner) || {},
-  hives: (Memory.cache && Memory.cache.hives) || {},
+
   war: (Memory.cache && Memory.cache.war) || { siedgeInfo: {}, squadsInfo: {} },
+  roomPlanner: (Memory.cache && Memory.cache.roomPlanner) || {},
 };
 
 export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {

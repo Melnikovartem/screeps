@@ -26,6 +26,7 @@ export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
     if (this.parent.spawned >= this.maxSpawns) return false;
     return super.checkBees(spawnExtreme, spawnCycle);
   };
+
   public override newBee = (bee: Bee) => {
     super.newBee(bee);
     if (bee.creep.memory.born + 1 === Game.time) this.parent.newSpawn();

@@ -100,7 +100,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   // #region Private Accessors (3)
 
-  private get shouldSpawn() {
+  public get shouldSpawn() {
     // already mined out
     if (this.hits < 0) return false;
     // decision gods said no!

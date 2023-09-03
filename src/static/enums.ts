@@ -62,6 +62,7 @@ export enum prefix {
   downgrade = "downgrade_" /** Downgrade prefix */,
   powerMining = "power_" /** Power mining prefix */,
   depositMining = "deposit_" /** Deposit mining prefix */,
+  siedge = "_",
 
   // deposit master
   minerDep = "depositMiner_" /** Deposit miner prefix */,

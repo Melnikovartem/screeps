@@ -1,9 +1,8 @@
 import "./visluals-planning";
 
-import { AnnexMaster } from "beeMasters/economy/annexer";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { hiveStates, prefix } from "static/enums";
+import { hiveStates } from "static/enums";
 import { makeId } from "static/utils";
 
 const TEXT_SIZE = 0.8;
@@ -109,7 +108,7 @@ export class Visuals {
       this.global();
       this.exportAnchor();
     }
-    this.visualizePlanner();
+    // this.visualizePlanner();
 
     this.update();
   }
@@ -190,37 +189,40 @@ export class Visuals {
   public miningInfo() {
     const miningInfo: string[][] = [["mining sites"], ["", "🎯", "❓", "🐝"]];
     for (const hiveName in Apiary.hives) {
-      const puller = Apiary.hives[hiveName].puller;
-      if (puller) {
-        if (puller.powerSites.length || puller.depositSites.length)
-          miningInfo.push(["", hiveName, "", this.getBeesAmount(puller)]);
+      const corMine = Apiary.hives[hiveName].cells.corridorMining;
+      if (corMine) {
+        if (corMine.powerSites.length || corMine.depositSites.length)
+          miningInfo.push([
+            "",
+            hiveName,
+            "",
+            this.getBeesAmount(corMine.master),
+          ]);
         let extraDeposits = 0;
-        _.forEach(puller.depositSites, (m) => {
+        _.forEach(corMine.depositSites, (m) => {
           if (!m.miners.beesAmount && !m.pickup.beesAmount && !m.shouldSpawn) {
             ++extraDeposits;
             return;
           }
+          let ref = m.ref;
+          if (m.ref.indexOf("_") !== -1) ref = m.ref.split("_")[1];
           miningInfo.push([
-            (m.order.ref.indexOf("_") !== -1
-              ? m.order.ref.split("_")[1]
-              : m.order.ref
-            ).slice(0, 6),
+            ref.slice(0, 6),
             " " + m.pos.roomName,
             " ⛏️",
             this.getBeesAmount(m.miners) + " " + this.getBeesAmount(m.pickup),
           ]);
         });
         let extraPower = 0;
-        _.forEach(puller.powerSites, (m) => {
+        _.forEach(corMine.powerSites, (m) => {
           if (!m.beesAmount && !m.shouldSpawn) {
             ++extraPower;
             return;
           }
+          let ref = m.ref;
+          if (m.ref.indexOf("_") !== -1) ref = m.ref.split("_")[1];
           miningInfo.push([
-            (m.order.ref.indexOf("_") !== -1
-              ? m.order.ref.split("_")[1]
-              : m.order.ref
-            ).slice(0, 6),
+            ref.slice(0, 6),
             " " + m.pos.roomName,
             " 🔴",
             this.getBeesAmount(m),
@@ -249,7 +251,7 @@ export class Visuals {
       const roomInfo = Apiary.intel.getInfo(squad.pos.roomName, 500);
       const siedge = Apiary.warcrimes.siedge[squad.pos.roomName];
       battleInfo.push([
-        squad.info.ref.slice(0, 4) + " ",
+        squad.ref.slice(0, 4) + " ",
         " " + squad.pos.roomName,
         siedge ? "" + siedge.towerDmgBreach : "NaN",
         " " + roomInfo.enemies.length,
@@ -262,7 +264,7 @@ export class Visuals {
       );
   }
 
-  public visualizePlanner() {
+  /* public visualizePlanner() {
     for (const roomName in Apiary.planner.activePlanning) {
       if (
         this.caching[roomName] &&
@@ -319,7 +321,7 @@ export class Visuals {
       }
       this.exportAnchor(1);
     }
-  }
+  } */
 
   public statsHive(hive: Hive) {
     let hiveState = " ";
@@ -388,7 +390,7 @@ export class Visuals {
       ]);
     }
 
-    let stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
+    const stats = { waitingForBees: 0, beesAmount: 0, targetBeeCount: 0 };
     let operational = 0;
     let all = 0;
     _.forEach(hive.cells.excavation.resourceCells, (rcell) => {
@@ -411,7 +413,7 @@ export class Visuals {
       this.getBeesAmount(stats),
     ]);
 
-    const annexOrders = _.filter(
+    /* const annexOrders = _.filter(
       Apiary.orders,
       (o) =>
         o.hive === hive &&
@@ -448,9 +450,9 @@ export class Visuals {
       ]);
       if (statsPuppet.targetBeeCount > 0)
         ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
-    }
+    } */
 
-    if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
+    /* if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
       let sumCost: string | number = hive.sumCost;
       if (sumCost > 1_000_000)
         sumCost = Math.round((sumCost / 1_000_000) * 10) / 10 + "M";
@@ -463,7 +465,7 @@ export class Visuals {
         sumCost === 0 ? "" : ` ${sumCost}/${hive.structuresConst.length}`,
         this.getBeesAmount(hive.builder),
       ]);
-    }
+    } */
 
     ans.push([
       "upgrade",

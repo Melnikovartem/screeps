@@ -1,6 +1,5 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import type { FlagOrder } from "orders/order";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates } from "static/enums";
 
@@ -19,35 +18,23 @@ export class SKMaster extends HordeMaster {
 
   // #endregion Properties (1)
 
-  // #region Constructors (1)
+  // #region Public Accessors (2)
 
-  public constructor(order: FlagOrder) {
-    super(order);
-  }
-
-  // #endregion Constructors (1)
-
-  // #region Public Accessors (4)
-
-  public get maxSpawns() {
+  public override get maxSpawns() {
     return Infinity;
   }
 
-  public set maxSpawns(_) {}
-
-  public get targetBeeCount() {
+  public override get targetBeeCount() {
     return 1;
   }
 
-  public set targetBeeCount(_) {}
-
-  // #endregion Public Accessors (4)
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (3)
 
-  public init() {}
+  public override init() {}
 
-  public run() {
+  public override run() {
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
 
@@ -116,7 +103,7 @@ export class SKMaster extends HordeMaster {
     });
   }
 
-  public update() {
+  public override update() {
     SwarmMaster.prototype.update.call(this);
 
     if (this.pos.roomName in Game.rooms) {
@@ -128,13 +115,13 @@ export class SKMaster extends HordeMaster {
           this.order.delete(); */
       }
 
-      if (!this.maxPath && this.lairs.length) {
+      if (!this.info.maxPath && this.lairs.length) {
         let max = 0;
         _.forEach(this.lairs, (lair) => {
           const time = this.hive.pos.getTimeForPath(lair);
           if (max < time) max = time;
         });
-        this.maxPath = max;
+        this.info.maxPath = max;
       }
 
       for (let i = 0; i < this.lairs.length; ++i)
@@ -151,7 +138,7 @@ export class SKMaster extends HordeMaster {
       this.checkBees(
         this.hive.state !== hiveStates.battle &&
           this.hive.state !== hiveStates.lowenergy,
-        CREEP_LIFE_TIME - this.maxPath - 50
+        CREEP_LIFE_TIME - this.info.maxPath - 50
       )
     )
       this.wish({
@@ -180,8 +167,9 @@ export class SKMaster extends HordeMaster {
   }
 
   private useLair(bee: Bee, lair: StructureKeeperLair) {
+    let enemy;
     if (ticksToSpawn(lair) < 1) {
-      const enemy = lair.pos.findClosest(
+      enemy = lair.pos.findClosest(
         lair.pos
           .findInRange(FIND_HOSTILE_CREEPS, 5)
           .filter((e) => e.owner.username === "Source Keeper")
@@ -192,7 +180,7 @@ export class SKMaster extends HordeMaster {
         return;
       }
     }
-    const enemy = Apiary.intel.getEnemy(bee.pos, 10);
+    enemy = Apiary.intel.getEnemy(bee.pos, 10);
     let ans: number = OK;
     if (
       enemy instanceof Creep &&
