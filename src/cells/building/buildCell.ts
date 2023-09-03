@@ -78,4 +78,6 @@ export class BuildCell extends Cell {
       this.forceCheck = "";
     }
   }
+
+  // #endregion Public Methods (2)
 }

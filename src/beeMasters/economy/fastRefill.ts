@@ -1,5 +1,5 @@
 import { setups } from "bees/creepSetups";
-import type { FastRefillCell } from "cells/stage1/fastRefill";
+import type { FastRefillCell } from "cells/spawning/fastRefill";
 import { profile } from "profiler/decorator";
 
 import { Master } from "../_Master";

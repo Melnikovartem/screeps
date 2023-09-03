@@ -6,7 +6,7 @@ import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
-import { STOCKPILE_BASE_COMMODITIES } from "./factoryCell";
+import { STOCKPILE_BASE_COMMODITIES } from "../stage1/factoryCell";
 
 const MINING_POWER_STOCK = 30_000;
 @profile
@@ -44,7 +44,8 @@ export class CorridorMiningCell extends Cell {
       !inProgress.length &&
       this.hive.mode.powerMining &&
       workingPowerSites.length &&
-      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCK
+      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <=
+        MINING_POWER_STOCK
     )
       inProgress = [
         workingPowerSites.reduce((prev, curr) =>

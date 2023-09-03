@@ -34,10 +34,6 @@ export abstract class Cell {
     return this.hive.roomName;
   }
 
-  protected get sCell() {
-    return this.hive.cells.storage;
-  }
-
   public get pos(): RoomPosition {
     return this.hive.pos;
   }
@@ -51,6 +47,14 @@ export abstract class Cell {
   }
 
   // #endregion Public Accessors (4)
+
+  // #region Protected Accessors (1)
+
+  protected get sCell() {
+    return this.hive.cells.storage;
+  }
+
+  // #endregion Protected Accessors (1)
 
   // #region Public Static Methods (1)
 

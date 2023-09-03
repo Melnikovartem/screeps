@@ -13,7 +13,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
 
   // #endregion Properties (1)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (3)
 
   public override get boosts(): Boosts {
     return [
@@ -30,7 +30,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
     return this.info;
   }
 
-  // #endregion Public Accessors (4)
+  // #endregion Public Accessors (3)
 
   // #region Public Methods (2)
 

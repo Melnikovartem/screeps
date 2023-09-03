@@ -72,15 +72,44 @@ export class MinerMaster extends Master<ResourceCell> {
   }
 
   public get targetBeeCount() {
-    if (this.hive.controller.level > 2) return 1;
-    const workAmount = Math.floor(this.hive.room.energyCapacityAvailable / (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5));
-    const maxBees = Math.ceil(this.parent.ratePT / workAmount); // overhead is better ? 
-    return Math.floor(this.resource.pos.getOpenPositions(true).length);
+    if (this.hive.cells.dev)
+      return this.hive.cells.dev.minerBeeCount(this.resource);
+    return 1;
   }
 
   // #endregion Public Accessors (4)
 
   // #region Protected Accessors (1)
+
+  protected get shouldSpawn() {
+    if (!this.ownerOkForMining) return false;
+    if (
+      this.roomName !== this.hiveName &&
+      this.hive.annexInDanger.includes(this.roomName)
+    )
+      return false;
+
+    // can mine or build smth
+    return this.parent.operational || !!this.construction;
+  }
+
+  // #endregion Protected Accessors (1)
+
+  // #region Private Accessors (6)
+
+  private get container(): StructureContainer | undefined {
+    return this.parent.container;
+  }
+
+  private get cycleOffset() {
+    if (this.hive.controller.level > 2) return this.parent.roadTime + 10;
+    return this.parent.roadTime * 2 + 10;
+  }
+
+  private get link(): StructureLink | undefined {
+    return this.parent.link;
+  }
+
   private get ownerOkForMining() {
     const roomState = Apiary.intel.getRoomState(this.pos);
     switch (roomState) {
@@ -98,21 +127,6 @@ export class MinerMaster extends Master<ResourceCell> {
     }
     return false;
   }
-  protected get shouldSpawn() {
-    if (!this.ownerOkForMining) return false;
-    if (
-      this.roomName !== this.hiveName &&
-      this.hive.annexInDanger.includes(this.roomName)
-    )
-      return false;
-
-    // can mine or build smth
-    return this.parent.operational || !!this.construction;
-  }
-
-  // #endregion Protected Accessors (1)
-
-  // #region Private Accessors (1)
 
   private get resType() {
     return this.parent.resType;
@@ -122,15 +136,7 @@ export class MinerMaster extends Master<ResourceCell> {
     return this.parent.resource;
   }
 
-  private get container(): StructureContainer | undefined {
-    return this.parent.container;
-  }
-
-  private get link(): StructureLink | undefined {
-    return this.parent.link;
-  }
-
-  // #endregion Private Accessors (1)
+  // #endregion Private Accessors (6)
 
   // #region Public Methods (2)
 
@@ -237,11 +243,6 @@ export class MinerMaster extends Master<ResourceCell> {
           bee.drop(findOptimalResource(bee.store));
       }
     });
-  }
-
-  private get cycleOffset() {
-    if (this.hive.controller.level > 2) return this.parent.roadTime + 10
-    return this.parent.roadTime * 2 + 10
   }
 
   public override update() {

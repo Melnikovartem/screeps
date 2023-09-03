@@ -1,6 +1,6 @@
 import { setups } from "bees/creepSetups";
 import type { TransferRequest } from "bees/transferRequest";
-import type { StorageCell } from "cells/stage1/storageCell";
+import type { StorageCell } from "cells/management/storageCell";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates } from "static/enums";
 import { findOptimalResource } from "static/utils";
@@ -18,15 +18,19 @@ export class ManagerMaster extends Master<StorageCell> {
   // #region Public Accessors (1)
 
   public get targetBeeCount() {
-    if (this.hive.phase >= 1) return 2;
-    return 3;
+    if (this.hive.cells.dev) return this.hive.cells.dev.managerBeeCount;
+    return 2;
   }
+
+  // #endregion Public Accessors (1)
+
+  // #region Private Accessors (1)
 
   private get requests() {
     return this.parent.requests;
   }
 
-  // #endregion Public Accessors (1)
+  // #endregion Private Accessors (1)
 
   // #region Public Methods (2)
 

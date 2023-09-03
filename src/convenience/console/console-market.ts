@@ -1,5 +1,5 @@
+import { TERMINAL_ENERGY } from "cells/management/storageCell";
 import { REACTION_MAP } from "cells/stage1/laboratoryCell";
-import { TERMINAL_ENERGY } from "cells/stage1/storageCell";
 
 import { CustomConsole } from "./console";
 

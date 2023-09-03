@@ -8,10 +8,10 @@ import { Cell } from "../_Cell";
 
 @profile
 export class UpgradeCell extends Cell {
-  // #region Properties (8)
+  // #region Properties (9)
 
-  public link: StructureLink | undefined | null;
   public container: StructureContainer | undefined | null;
+  public link: StructureLink | undefined | null;
   public linkId: Id<StructureLink> | null = null;
   public override master: UpgraderMaster;
   public maxBees = 10;
@@ -20,7 +20,7 @@ export class UpgradeCell extends Cell {
   public roadTime: number;
   public workPerCreepMax = 1;
 
-  // #endregion Properties (8)
+  // #endregion Properties (9)
 
   // #region Constructors (1)
 
@@ -39,10 +39,14 @@ export class UpgradeCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (5)
 
   public get controller() {
     return this.hive.controller;
+  }
+
+  public get fastModePossible() {
+    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
   }
 
   public get maxPossibleRate() {
@@ -54,7 +58,13 @@ export class UpgradeCell extends Cell {
     return this.controller.pos;
   }
 
-  // #endregion Public Accessors (4)
+  public get suckerTarget() {
+    if (this.link && this.sCell.link) return this.link;
+    if (this.container) return this.container;
+    return this.hive.storage;
+  }
+
+  // #endregion Public Accessors (5)
 
   // #region Public Methods (3)
 
@@ -156,16 +166,6 @@ export class UpgradeCell extends Cell {
   // #endregion Public Methods (3)
 
   // #region Private Methods (1)
-
-  public get suckerTarget() {
-    if (this.link && this.sCell.link) return this.link;
-    if (this.container) return this.container;
-    return this.hive.storage;
-  }
-
-  public get fastModePossible() {
-    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
-  }
 
   private recalculateRate() {
     const futureResourceCells = _.filter(

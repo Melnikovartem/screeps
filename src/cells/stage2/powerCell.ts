@@ -7,13 +7,13 @@ import { Cell } from "../_Cell";
 
 @profile
 export class PowerCell extends Cell {
-  // #region Properties (4)
+  // #region Properties (3)
 
   public _powerManager: string | null = this.cache("_powerManager");
   public poss: { x: number; y: number };
   public powerSpawn: StructurePowerSpawn;
 
-  // #endregion Properties (4)
+  // #endregion Properties (3)
 
   // #region Constructors (1)
 
@@ -25,7 +25,7 @@ export class PowerCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (4)
 
   public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
@@ -45,7 +45,7 @@ export class PowerCell extends Cell {
       | undefined;
   }
 
-  // #endregion Public Accessors (5)
+  // #endregion Public Accessors (4)
 
   // #region Public Methods (2)
 

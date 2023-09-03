@@ -1,6 +1,6 @@
 import { setups } from "bees/creepSetups";
-import type { DevelopmentCell } from "cells/stage0/developmentCell";
 import { wallMap } from "cells/building/hive-building";
+import type { DevelopmentCell } from "cells/stage0/developmentCell";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, roomStates } from "static/enums";
 import { getCase } from "static/utils";
@@ -244,8 +244,7 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
           if (!bee.target) {
             source = bee.pos.findClosest(
               sources.filter(
-                (s) =>
-                  s.pos.getOpenPositions().length || s.pos.isNearTo(bee)
+                (s) => s.pos.getOpenPositions().length || s.pos.isNearTo(bee)
               )
             );
             if (source) bee.target = source.id;

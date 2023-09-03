@@ -9,7 +9,7 @@ import { Cell } from "../_Cell";
 
 @profile
 export class ObserveCell extends Cell {
-  // #region Properties (6)
+  // #region Properties (5)
 
   private doPowerCheck = false;
   private roomsToCheck: string[] = [];
@@ -18,7 +18,7 @@ export class ObserveCell extends Cell {
   public _prevRoom: string = this.cache("_prevRoom") || "";
   public obeserver: StructureObserver;
 
-  // #endregion Properties (6)
+  // #endregion Properties (5)
 
   // #region Constructors (1)
 
@@ -55,7 +55,7 @@ export class ObserveCell extends Cell {
 
   // #endregion Public Accessors (5)
 
-  // #region Public Methods (6)
+  // #region Public Methods (5)
 
   public depositCheck(room: Room) {
     _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
@@ -167,7 +167,7 @@ export class ObserveCell extends Cell {
       this.corridorRooms[Math.floor(Math.random() * this.corridorRooms.length)];
   }
 
-  // #endregion Public Methods (6)
+  // #endregion Public Methods (5)
 
   // #region Private Methods (1)
 

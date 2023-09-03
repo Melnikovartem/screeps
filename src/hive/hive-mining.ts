@@ -9,7 +9,6 @@ import type { Hive } from "./hive";
  */
 export function addAnex(this: Hive, annexName: string) {
   if (!this.annexNames.includes(annexName)) this.annexNames.push(annexName);
-  if (this.cells.dev) this.cells.dev.shouldRecalc = true;
   markResources(this);
 }
 

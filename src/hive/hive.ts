@@ -4,11 +4,11 @@
 import type { Cell } from "cells/_Cell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
-import { RespawnCell } from "cells/base/respawnCell";
 import { BuildCell } from "cells/building/buildCell";
+import { HIVE_ENERGY, StorageCell } from "cells/management/storageCell";
+import { UpgradeCell } from "cells/management/upgradeCell";
+import { RespawnCell } from "cells/spawning/respawnCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
-import { HIVE_ENERGY, StorageCell } from "cells/stage1/storageCell";
-import { UpgradeCell } from "cells/stage1/upgradeCell";
 import { profile } from "profiler/decorator";
 import { BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
@@ -160,7 +160,8 @@ export class Hive {
 
   /** central position of hive */
   public get pos() {
-    return this.cells.defense.pos;
+    if (this.cells) return this.cells.defense.pos;
+    return this.controller.pos;
   }
 
   public get print(): string {

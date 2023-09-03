@@ -75,7 +75,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
   public recalculateRoadTime() {
     this.accumRoadTime = 0; // roadTime * minePotential
     this.minRoadTime = Infinity;
-    if (this.hive.phase > 1) 
+    if (this.hive.phase > 1)
       _.forEach(this.parent.resourceCells, (cell) => {
         if (
           cell.operational &&

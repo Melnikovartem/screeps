@@ -1,7 +1,7 @@
 import { setups } from "bees/creepSetups";
+import { HIVE_ENERGY } from "cells/management/storageCell";
+import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { BoostRequest } from "cells/stage1/laboratoryCell";
-import { HIVE_ENERGY } from "cells/stage1/storageCell";
-import type { UpgradeCell } from "cells/stage1/upgradeCell";
 import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
 
@@ -20,7 +20,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
 
   // #endregion Properties (2)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (2)
 
   public override get boosts(): BoostRequest[] {
     const upgradeMode = this.hive.mode.upgrade; // polen
@@ -90,7 +90,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     return ans;
   }
 
-  // #endregion Public Accessors (4)
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (2)
 

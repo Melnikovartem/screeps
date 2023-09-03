@@ -1,11 +1,11 @@
 import type { PowerBee } from "bees/powerBee";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ResourceCell } from "cells/base/resourceCell";
-import type { RespawnCell } from "cells/base/respawnCell";
+import type { RespawnCell } from "cells/spawning/respawnCell";
+import type { StorageCell } from "cells/management/storageCell";
 import type { FactoryCell } from "cells/stage1/factoryCell";
 import type { LaboratoryCell } from "cells/stage1/laboratoryCell";
-import type { StorageCell } from "cells/stage1/storageCell";
-import type { UpgradeCell } from "cells/stage1/upgradeCell";
+import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { ObserveCell } from "cells/stage2/observeCell";
 import type { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";

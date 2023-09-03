@@ -7,11 +7,11 @@ import { beeStates, prefix, setupsNames } from "static/enums";
 import { makeId } from "static/utils";
 
 import { Cell } from "../_Cell";
-import { FastRefillCell } from "../stage1/fastRefill";
+import { FastRefillCell } from "./fastRefill";
 
 @profile
 export class RespawnCell extends Cell {
-  // #region Properties (9)
+  // #region Properties (8)
 
   private recycleSpawnId: Id<StructureSpawn> | "" = "";
   private recycledPrev = false;
@@ -24,7 +24,7 @@ export class RespawnCell extends Cell {
   public spawnQue: SpawnOrder[] = [];
   public spawns: { [id: string]: StructureSpawn } = {};
 
-  // #endregion Properties (9)
+  // #endregion Properties (8)
 
   // #region Constructors (1)
 
@@ -34,13 +34,13 @@ export class RespawnCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Private Accessors (1)
+  // #region Public Accessors (1)
 
   public get recycleSpawn(): StructureSpawn | undefined {
     return this.spawns[this.recycleSpawnId] || Object.values(this.spawns)[0];
   }
 
-  // #endregion Private Accessors (1)
+  // #endregion Public Accessors (1)
 
   // #region Public Methods (5)
 

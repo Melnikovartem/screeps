@@ -27,7 +27,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (4)
 
   public get fatigue() {
     return 0;
@@ -45,7 +45,7 @@ export class PowerBee extends ProtoBee<PowerCreep> {
     return this.creep.shard;
   }
 
-  // #endregion Public Accessors (5)
+  // #endregion Public Accessors (4)
 
   // #region Public Static Methods (2)
 

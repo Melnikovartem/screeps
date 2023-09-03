@@ -10,7 +10,11 @@ import { Cell } from "../_Cell";
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.2);
-const EXTREMLY_LOW_ENERGY = 10000;
+
+export const LOW_ENERGY = {
+  low: 5_000, // push red button (dev cell)
+  high: 20_000, // just be more frugal lmao
+};
 
 @profile
 export class StorageCell extends Cell {
@@ -225,8 +229,7 @@ export class StorageCell extends Cell {
     this.hive.stateChange(
       "lowenergy",
       !!this.storage &&
-        this.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
-          EXTREMLY_LOW_ENERGY
+        this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < LOW_ENERGY.high
     );
 
     // if (!Object.keys(this.requests).length)

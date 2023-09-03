@@ -1,17 +1,13 @@
 import { DevelopmentCell } from "cells/stage0/developmentCell";
-import { CorridorMiningCell } from "cells/stage1/corridorMining";
 import { FactoryCell } from "cells/stage1/factoryCell";
 import { LaboratoryCell } from "cells/stage1/laboratoryCell";
+import { CorridorMiningCell } from "cells/stage2/corridorMining";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { hiveStates } from "static/enums";
 
 import type { Hive } from "./hive";
-
-export const ENERGY_THRESHOLD_DEV_CELLS = {
-  low: 3000,
-  high: 10_000,
-};
+import { LOW_ENERGY } from "cells/management/storageCell";
 
 export function opt(hive: Hive) {
   const optHive: TravelToOptions = { useFindRoute: true };
@@ -99,11 +95,12 @@ export function updateCellData(this: Hive, bake = false) {
       if (
         this.room.storage &&
         this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
-          ENERGY_THRESHOLD_DEV_CELLS.low
+          LOW_ENERGY.low
       )
         this.cells.dev = new DevelopmentCell(this);
       break;
     case 0:
+      this.cells.dev = new DevelopmentCell(this);
       break;
   }
 

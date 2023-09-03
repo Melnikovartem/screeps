@@ -13,12 +13,12 @@ export type RoomSetup = {
 };
 
 interface Module {
-  // #region Properties (3)
+  // #region Properties (2)
 
   cellsCache: { [ref: string]: CellCache };
   setup: RoomSetup;
 
-  // #endregion Properties (3)
+  // #endregion Properties (2)
 }
 
 export const STAMP_LABS: Module = {

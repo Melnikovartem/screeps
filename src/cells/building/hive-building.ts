@@ -1,5 +1,5 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
-import { HIVE_ENERGY } from "cells/stage1/storageCell";
+import { HIVE_ENERGY } from "cells/management/storageCell";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 

@@ -31,7 +31,7 @@ export class Bee extends ProtoBee<Creep> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (4)
 
   public get body() {
     return this.creep.body;
@@ -51,7 +51,7 @@ export class Bee extends ProtoBee<Creep> {
     return this.pulledPos || this.creep.pos;
   }
 
-  // #endregion Public Accessors (5)
+  // #endregion Public Accessors (4)
 
   // #region Public Static Methods (1)
 

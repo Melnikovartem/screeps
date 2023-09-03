@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import type { CorridorMiningCell } from "cells/stage1/corridorMining";
+import type { CorridorMiningCell } from "cells/stage2/corridorMining";
 import { profile } from "profiler/decorator";
 import { beeStates } from "static/enums";
 

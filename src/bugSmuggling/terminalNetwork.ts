@@ -1,11 +1,11 @@
 import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
 import type { ResTarget } from "hive/hive-declarations";
 
+import { TERMINAL_ENERGY } from "../cells/management/storageCell";
 import {
   BASE_MINERALS,
   USEFUL_MINERAL_STOCKPILE,
 } from "../cells/stage1/laboratoryCell";
-import { TERMINAL_ENERGY } from "../cells/stage1/storageCell";
 import type { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { hiveStates } from "../static/enums";

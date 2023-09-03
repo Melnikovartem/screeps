@@ -3,7 +3,7 @@ import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
-import type { RespawnCell } from "./../base/respawnCell";
+import type { RespawnCell } from "./respawnCell";
 
 @profile
 export class FastRefillCell extends Cell {

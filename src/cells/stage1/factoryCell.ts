@@ -4,7 +4,7 @@ import { hiveStates, prefix } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
 import { Cell } from "../_Cell";
-import { HIVE_ENERGY } from "./storageCell";
+import { HIVE_ENERGY } from "../management/storageCell";
 
 export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16); // 8k
 export const COMPRESS_MAP = {

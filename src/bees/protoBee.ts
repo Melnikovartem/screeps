@@ -345,7 +345,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   }
 
   public transfer(
-    t: Structure | Creep | PowerCreep, //| ProtoBee<Creep | PowerCreep>,
+    t: Structure | Creep | PowerCreep, // | ProtoBee<Creep | PowerCreep>,
     resourceType: ResourceConstant,
     amount?: number,
     opt?: TravelToOptions

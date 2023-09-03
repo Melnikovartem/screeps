@@ -79,11 +79,7 @@ export class ResourceCell extends Cell {
     if (this.roadTime > MAX_MINING_DIST) return false;
     // energy source
     if (this.resType === RESOURCE_ENERGY)
-      return (
-        !!this.link ||
-        !!this.container ||
-        (this.pos.roomName === this.hiveName && this.hive.controller.level <= 2)
-      );
+      return !!this.link || !!this.container || !!this.hive.cells.dev;
     // mineral source
     return !!(
       (
@@ -142,7 +138,7 @@ export class ResourceCell extends Cell {
 
   // #endregion Public Accessors (13)
 
-  // #region Public Methods (3)
+  // #region Public Methods (4)
 
   public recalcLairFleeTime() {
     if (!this.lair) return;
@@ -209,9 +205,35 @@ export class ResourceCell extends Cell {
       this.updateStructure();
   }
 
-  // #endregion Public Methods (3)
+  // 0.1% chance to recalc time for road
+  // so 10K ticks for energy and 100K ticks for mineral avg
+  public updateRoadTime(force = Math.random() < 0.001) {
+    const storagePos = this.parentCell.master
+      ? this.parentCell.master.dropOff.pos
+      : this.hive.pos;
+    const roomState = Apiary.intel.getRoomState(this.pos);
 
-  // #region Private Methods (4)
+    const recalcRoadTime = force || this.roadTime === Infinity;
+    const recalcRestTime = force || this.restTime === Infinity;
+    const recalcLairTime =
+      roomState === roomStates.SKfrontier &&
+      (force || this.fleeLairTime === Infinity);
+
+    // will something change?
+    if (
+      this.operational &&
+      (recalcRoadTime || recalcRestTime || recalcLairTime)
+    )
+      this.parentCell.shouldRecalc = true;
+
+    if (recalcRoadTime) this.roadTime = this.pos.getTimeForPath(storagePos);
+    if (recalcRestTime) this.restTime = this.pos.getTimeForPath(this.hive.rest);
+    if (recalcLairTime) this.recalcLairFleeTime();
+  }
+
+  // #endregion Public Methods (4)
+
+  // #region Private Methods (3)
 
   private logLink(linkTo: StructureLink) {
     if (!this.link) return;
@@ -240,34 +262,6 @@ export class ResourceCell extends Cell {
         );
     }
     this.pos = pos;
-  }
-
-  // 0.1% chance to recalc time for road
-  // so 10K ticks for energy and 100K ticks for mineral avg
-  public updateRoadTime(force = Math.random() < 0.001) {
-    const storagePos = this.parentCell.master
-      ? this.parentCell.master.dropOff.pos
-      : this.hive.pos;
-    const roomState = Apiary.intel.getRoomState(this.pos);
-
-    const recalcRoadTime = force || this.roadTime === Infinity;
-    const recalcRestTime = force || this.restTime === Infinity;
-    const recalcLairTime =
-      roomState === roomStates.SKfrontier &&
-      (force || this.fleeLairTime === Infinity);
-
-    // will something change?
-    if (
-      this.operational &&
-      (recalcRoadTime || recalcRestTime || recalcLairTime)
-    ) {
-      if (this.hive.cells.dev) this.hive.cells.dev.shouldRecalc = true;
-      this.parentCell.shouldRecalc = true;
-    }
-
-    if (recalcRoadTime) this.roadTime = this.pos.getTimeForPath(storagePos);
-    if (recalcRestTime) this.restTime = this.pos.getTimeForPath(this.hive.rest);
-    if (recalcLairTime) this.recalcLairFleeTime();
   }
 
   private updateStructure() {
@@ -328,5 +322,5 @@ export class ResourceCell extends Cell {
     ) as StructureKeeperLair | undefined;
   }
 
-  // #endregion Private Methods (4)
+  // #endregion Private Methods (3)
 }

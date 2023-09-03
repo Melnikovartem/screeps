@@ -65,8 +65,12 @@
  */
 
 interface Point {
+  // #region Properties (2)
+
   x: number;
   y: number;
+
+  // #endregion Properties (2)
 }
 
 // the eight surrounding points of a tile
@@ -109,13 +113,40 @@ function surroundingPoints(p: Point): Point[] {
 }
 
 class Int32Queue {
-  private q: Int32Array;
+  // #region Properties (3)
+
   private h: number;
+  private q: Int32Array;
   private t: number;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
 
   public constructor(capacity: number) {
     this.q = new Int32Array(capacity);
     this.h = this.t = 0;
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
+  public get length(): number {
+    return (this.t - this.h + this.q.length) % this.q.length;
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Methods (4)
+
+  public clear() {
+    this.t = this.h = 0;
+  }
+
+  public push(v: number) {
+    this.q[this.t] = v;
+    this.t = (this.t + 1) % this.q.length;
   }
 
   public reset(arr: number[]) {
@@ -124,24 +155,13 @@ class Int32Queue {
     this.t = arr.length;
   }
 
-  public push(v: number) {
-    this.q[this.t] = v;
-    this.t = (this.t + 1) % this.q.length;
-  }
-
   public shift(): number {
     const v = this.q[this.h];
     this.h = (this.h + 1) % this.q.length;
     return v;
   }
 
-  public get length(): number {
-    return (this.t - this.h + this.q.length) % this.q.length;
-  }
-
-  public clear() {
-    this.t = this.h = 0;
-  }
+  // #endregion Public Methods (4)
 }
 
 const MAX_PT = 1 << 12;

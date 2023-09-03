@@ -27,9 +27,9 @@ export class TransferRequest {
   public ref: string;
   public resource: ResourceConstant | undefined;
   // 0 - refill
-  // 1 - mostly labs boosting
+  // 1 - mostly labs boosting / fastRefill
   // 2 - towers?
-  // 4 - terminal
+  // 4 - terminal / early stage mining
   // 5 - not important shit
   // 6 - pickup
   public stillExists: boolean;
@@ -40,7 +40,7 @@ export class TransferRequest {
 
   // #region Constructors (1)
 
-  constructor(
+  public constructor(
     ref: string,
     from: TransferRequest["from"],
     to: TransferRequest["to"],
@@ -53,7 +53,6 @@ export class TransferRequest {
     this.from = from;
 
     this.priority = priority;
-    amount = amount;
     if (from instanceof Resource) {
       this.resource = from.resourceType;
       this.fromAmount = from.amount;
@@ -138,7 +137,7 @@ export class TransferRequest {
     }
 
     switch (bee.state) {
-      case beeStates.refill:
+      case beeStates.refill: {
         amountBee = Math.min(
           bee.store.getFreeCapacity(this.resource),
           this.fromAmount
@@ -168,7 +167,7 @@ export class TransferRequest {
           } else bee.goTo(this.to);
         }
         break;
-
+      }
       case beeStates.work:
         amountBee = Math.min(
           this.amount,

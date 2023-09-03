@@ -1,14 +1,14 @@
 import type { CreepSetup } from "bees/creepSetups";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ExcavationCell } from "cells/base/excavationCell";
-import type { RespawnCell } from "cells/base/respawnCell";
+import type { RespawnCell } from "cells/spawning/respawnCell";
 import type { BuildCell } from "cells/building/buildCell";
+import type { StorageCell } from "cells/management/storageCell";
+import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { DevelopmentCell } from "cells/stage0/developmentCell";
-import type { CorridorMiningCell } from "cells/stage1/corridorMining";
+import type { CorridorMiningCell } from "cells/stage2/corridorMining";
 import type { FactoryCell } from "cells/stage1/factoryCell";
 import type { LaboratoryCell } from "cells/stage1/laboratoryCell";
-import type { StorageCell } from "cells/stage1/storageCell";
-import type { UpgradeCell } from "cells/stage1/upgradeCell";
 import type { ObserveCell } from "cells/stage2/observeCell";
 import type { PowerCell } from "cells/stage2/powerCell";
 
