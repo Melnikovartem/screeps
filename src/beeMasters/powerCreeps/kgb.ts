@@ -34,16 +34,22 @@ export class KGBMaster extends PowerCreepMaster {
     const lowerBound = 150;
     const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
     const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
-    if (currOps < lowerBound)
+    if (
+      currOps < lowerBound &&
+      this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
+    )
       this.powerCreep.withdraw(
-        this.parent.sCell.storage,
+        this.hive.storage,
         RESOURCE_OPS,
         targetBalance - currOps,
         this.hive.opt
       );
-    if (currOps > upperBound) {
+    if (
+      currOps > upperBound &&
+      this.hive.storage.store.getFreeCapacity(RESOURCE_OPS)
+    ) {
       this.powerCreep.transfer(
-        this.parent.sCell.storage,
+        this.hive.storage,
         RESOURCE_OPS,
         currOps - targetBalance,
         this.hive.opt

@@ -451,9 +451,8 @@ export class DefenseCell extends Cell {
       "nukealert",
       !!Object.keys(this.nukes).length &&
         !this.nukeCoverReady &&
-        (!this.hive.cells.storage ||
-          this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
-            this.hive.resTarget[RESOURCE_ENERGY] / 8)
+        this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
+          this.hive.resTarget[RESOURCE_ENERGY] / 8
     );
 
     const isWar = this.hive.isBattle;
@@ -478,34 +477,27 @@ export class DefenseCell extends Cell {
     }
 
     // No more battles. Collect resources
-    if (
-      isWar &&
-      this.hive.state !== hiveStates.battle &&
-      this.hive.cells.storage
-    )
+    if (isWar && this.hive.state !== hiveStates.battle)
       this.hive.cells.storage.pickupResources();
 
     const storageCell = this.hive.cells.storage;
-    if (storageCell) {
-      if (this.hive.isBattle)
-        storageCell.requestFromStorage(
-          _.filter(
-            this.towers,
-            (t) =>
-              t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1
-          ),
-          2,
-          RESOURCE_ENERGY
-        );
-      else
-        storageCell.requestFromStorage(
-          Object.values(this.towers),
-          4,
-          RESOURCE_ENERGY,
-          TOWER_CAPACITY,
-          true
-        );
-    }
+    if (this.hive.isBattle)
+      storageCell.requestFromStorage(
+        _.filter(
+          this.towers,
+          (t) => t.store.getFreeCapacity(RESOURCE_ENERGY) > TOWER_CAPACITY * 0.1
+        ),
+        2,
+        RESOURCE_ENERGY
+      );
+    else
+      storageCell.requestFromStorage(
+        Object.values(this.towers),
+        4,
+        RESOURCE_ENERGY,
+        TOWER_CAPACITY,
+        true
+      );
 
     if (Game.time % 10 === 8 && this.hive.cells.observe) {
       _.some(this.hive.annexNames, (annexName) => {

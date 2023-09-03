@@ -264,7 +264,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
                 }
               } else if (knight.hits > knight.hitsMax * 0.5)
                 knight.attack(target);
-              else if (!healer && !this.pos.getOpenPositions(false).length)
+              else if (!healer && !this.pos.getOpenPositions().length)
                 if (knight.getActiveBodyParts(ATTACK)) knight.attack(target);
                 else knight.creep.suicide();
           } else knight.attack(target);

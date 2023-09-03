@@ -42,17 +42,14 @@ export class UpgraderMaster extends Master<UpgradeCell> {
   }
 
   public get fastModePossible() {
-    return (
-      !!(this.parent.link && this.parent.sCell.link) ||
-      this.parent.pos.getRangeTo(this.parent.sCell.storage) < 4
-    );
+    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
   }
 
   public get targetBeeCount() {
     const upgradeMode = this.hive.mode.upgrade; // polen
 
     const storeAmount =
-      this.parent.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY);
+      this.hive.storage.store.getUsedCapacity(RESOURCE_ENERGY);
 
     let desiredRate = 0;
     if (
@@ -101,14 +98,12 @@ export class UpgraderMaster extends Master<UpgradeCell> {
 
   // #region Protected Accessors (1)
 
-  protected get suckerTarget(): StructureStorage | StructureLink | undefined {
-    if (this.parent.link) {
+  protected get suckerTarget() {
+    if (this.parent.link && this.hive.cells.storage.link) {
       if (this.parent.link.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
         return this.parent.link;
-    } else if (
-      this.parent.sCell.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 25000
-    )
-      return this.parent.sCell.storage;
+    } else if (this.hive.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000)
+      return this.hive.storage;
     return undefined;
   }
 
@@ -144,7 +139,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
           this.parent.controller.ticksToDowngrade > CREEP_LIFE_TIME) || // failsafe for link network
         bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0
       ) {
-        // let pos = target.pos.getOpenPositions(false).filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
+        // let pos = target.pos.getOpenPositions().filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
         if (suckerTarget) bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         bee.state = beeStates.work;
       }
@@ -162,7 +157,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
             // old so to keep resources transfer to storage
             if (
               bee.transfer(
-                this.parent.link || this.parent.sCell.storage,
+                this.parent.link || this.hive.storage,
                 RESOURCE_ENERGY
               ) === ERR_FULL &&
               bee.boosted

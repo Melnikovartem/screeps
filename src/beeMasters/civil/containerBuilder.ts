@@ -37,8 +37,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
       this.pos.createConstructionSite(STRUCTURE_CONTAINER);
       target = { pos: this.pos };
     }
-    const sCell = this.hive.cells.storage!;
-    if (!sCell) return;
+    if (this.hive.phase < 1) return;
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
         case beeStates.chill:
@@ -52,18 +51,19 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
             const res = Object.keys(bee.store).filter(
               (r) => r !== RESOURCE_ENERGY
             )[0] as ResourceConstant | undefined;
-            if (res && bee.transfer(sCell.storage, res) === OK)
+            if (res && bee.transfer(this.hive.storage, res) === OK)
               Apiary.logger.resourceTransfer(
                 this.hiveName,
                 "pickup",
                 bee.store,
-                sCell.storage.store,
+                this.hive.storage.store,
                 res,
                 1
               );
           }
           if (
-            bee.withdraw(sCell.storage, RESOURCE_ENERGY, undefined) === OK &&
+            bee.withdraw(this.hive.storage, RESOURCE_ENERGY, undefined) ===
+              OK &&
             !otherRes
           ) {
             bee.state = beeStates.work;
@@ -71,7 +71,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
             Apiary.logger.resourceTransfer(
               this.hiveName,
               "build",
-              sCell.storage.store,
+              this.hive.storage.store,
               bee.store
             );
             bee.goTo(target.pos);
@@ -121,7 +121,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
     if (
       this.checkBees() &&
       Apiary.intel.getInfo(this.pos.roomName).safePlace &&
-      this.hive.cells.storage
+      this.hive.phase >= 1
     ) {
       const setup = setups.builder.copy();
       setup.pattern = [WORK, CARRY, CARRY];

@@ -33,7 +33,7 @@ export class TransferRequest {
   // 5 - not important shit
   // 6 - pickup
   public stillExists: boolean;
-  public to: TransferTarget;
+  public to: TransferTarget | Creep | PowerCreep;
   public toAmount: number;
 
   // #endregion Properties (12)
@@ -79,6 +79,7 @@ export class TransferRequest {
     if (this.amount <= 0) return false;
     if (this.toAmount <= 0) return false;
     if (!this.stillExists) return false;
+    if (this.from.id === this.to.id) return false;
     return true;
   }
 

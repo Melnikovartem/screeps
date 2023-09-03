@@ -91,7 +91,7 @@ export const STOCKPILE_BASE_COMMODITIES = {
 
 @profile
 export class FactoryCell extends Cell {
-  // #region Properties (11)
+  // #region Properties (10)
 
   public _commodityTarget: {
     res: FactoryResourceConstant;
@@ -112,7 +112,7 @@ export class FactoryCell extends Cell {
   public roomsToCheck: string[] = [];
   public uncommon: boolean = false;
 
-  // #endregion Properties (11)
+  // #endregion Properties (10)
 
   // #region Constructors (1)
 
@@ -136,14 +136,6 @@ export class FactoryCell extends Cell {
   }
 
   // #endregion Public Accessors (2)
-
-  // #region Private Accessors (1)
-
-  private get sCell() {
-    return this.hive.cells.storage!;
-  }
-
-  // #endregion Private Accessors (1)
 
   // #region Public Methods (4)
 

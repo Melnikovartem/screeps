@@ -1,7 +1,7 @@
 import { Hive } from "hive/hive";
 import { getCase } from "static/utils";
 
-import type { CellCache, RoomPlanner } from "./planner";
+import type { CellCache, RoomPlanner } from "./planner-old";
 
 function anchorDist(
   anchor: RoomPosition,

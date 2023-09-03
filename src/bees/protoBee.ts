@@ -308,7 +308,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
       this.stop();
       if (this.pos.enteranceToRoom) {
         const notEnt = this.pos
-          .getOpenPositions(false)
+          .getOpenPositions()
           .filter((p) => !p.enteranceToRoom);
         if (notEnt.length)
           this.targetPosition = notEnt.reduce((prev, curr) =>
@@ -345,11 +345,12 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
   }
 
   public transfer(
-    t: Structure,
+    t: Structure | Creep | PowerCreep, //| ProtoBee<Creep | PowerCreep>,
     resourceType: ResourceConstant,
     amount?: number,
     opt?: TravelToOptions
   ): ScreepsReturnCode {
+    // if ("creep" in t) t = t.creep;
     const ans = this.actionCheck(t.pos, opt);
     return ans === OK ? this.creep.transfer(t, resourceType, amount) : ans;
   }

@@ -86,9 +86,9 @@ export class NKVDMaster extends PowerCreepMaster {
         this.nextup = undefined;
       } else if (
         ans === ERR_NOT_ENOUGH_RESOURCES &&
-        this.parent.sCell.storage.store.getUsedCapacity(RESOURCE_OPS) > 0
+        this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
       )
-        this.powerCreep.withdraw(this.parent.sCell.storage, RESOURCE_OPS);
+        this.powerCreep.withdraw(this.hive.storage, RESOURCE_OPS);
       else if (ans !== ERR_NOT_IN_RANGE) this.chillMove();
     } else this.chillMove();
     super.run();
@@ -104,7 +104,7 @@ export class NKVDMaster extends PowerCreepMaster {
   // #region Private Methods (4)
 
   private chillMove() {
-    // keep 150ops to 90% fill of storage
+    // keep 150ops to 80% fill of storage
     const upperBound = Math.max(
       this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
       150
@@ -112,25 +112,27 @@ export class NKVDMaster extends PowerCreepMaster {
     const lowerBound = 150;
     const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
     const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
-    if (currOps < lowerBound) {
+    if (
+      currOps < lowerBound &&
+      this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
+    )
       this.powerCreep.withdraw(
-        this.parent.sCell.storage,
+        this.hive.storage,
         RESOURCE_OPS,
         targetBalance - currOps,
         this.hive.opt
       );
-      return;
-    }
-    if (currOps > upperBound) {
+    if (
+      currOps > upperBound &&
+      this.hive.storage.store.getFreeCapacity(RESOURCE_OPS)
+    ) {
       this.powerCreep.transfer(
-        this.parent.sCell.storage,
+        this.hive.storage,
         RESOURCE_OPS,
         currOps - targetBalance,
         this.hive.opt
       );
-      return;
-    }
-    this.powerCreep.goRest(this.parent.pos, this.hive.opt);
+    } else this.powerCreep.goRest(this.parent.pos, this.hive.opt);
   }
 
   private getNext() {
@@ -201,7 +203,7 @@ export class NKVDMaster extends PowerCreepMaster {
           break;
         case PWR_OPERATE_EXTENSION:
         case PWR_OPERATE_STORAGE:
-          if ((targets as StorageCell).storage)
+          if ((targets as StorageCell).storage instanceof StructureStorage)
             andNextup((targets as StorageCell).storage);
           break;
         case PWR_OPERATE_TERMINAL:

@@ -73,15 +73,21 @@ export function markResources(hive: Hive) {
 
 export function addResourceCells(hive: Hive) {
   let foundAll = true;
+  let resourceCells = 0;
   _.forEach(Object.keys(hive.cache.cells), (cellRef) => {
     if (cellRef.slice(0, prefix.resourceCells.length) === "res") {
+      ++resourceCells;
       // @RESORUCE_CELL_REF
-      const resource = Game.getObjectById(
-        cellRef.slice(prefix.resourceCells.length) as Id<Mineral | Source>
-      );
+      const resId = cellRef.slice(prefix.resourceCells.length) as Id<
+        Mineral | Source
+      >;
+      if (hive.cells.excavation.resourceCells[resId]) return;
+      const resource = Game.getObjectById(resId);
       if (resource) hive.cells.excavation.addResource(resource);
       else foundAll = false;
     }
   });
+  // at least energy and 1 mineral :/
+  if (resourceCells < 2) markResources(hive);
   return foundAll;
 }

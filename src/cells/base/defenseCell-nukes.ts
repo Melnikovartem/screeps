@@ -52,13 +52,12 @@ export function getNukeDefMap(
   let coef = 1;
   if (this.hive.cells) {
     const storage = this.hive.cells.storage;
-    if (storage) {
-      const checkMineralLvl = (lvl: 0 | 1 | 2) =>
-        storage.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
-      if (checkMineralLvl(2)) coef = 2;
-      else if (checkMineralLvl(1)) coef = 1.8;
-      else if (checkMineralLvl(0)) coef = 1.5;
-    }
+
+    const checkMineralLvl = (lvl: 0 | 1 | 2) =>
+      storage.getUsedCapacity(BOOST_MINERAL.build[lvl]) >= 1000;
+    if (checkMineralLvl(2)) coef = 2;
+    else if (checkMineralLvl(1)) coef = 1.8;
+    else if (checkMineralLvl(0)) coef = 1.5;
 
     leaveOne(this.hive.cells.spawn.spawns);
     if (this.hive.cells.lab) leaveOne(this.hive.cells.lab.laboratories);

@@ -773,7 +773,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   private checkMinerals(body: BodyPartConstant[], coef = this.setup.length) {
     if (
-      !this.hive.cells.storage ||
+      !this.hive.cells.lab ||
       (this.hive.cells.lab &&
         !Object.keys(this.hive.cells.lab.laboratories).length &&
         this.boosts.length)

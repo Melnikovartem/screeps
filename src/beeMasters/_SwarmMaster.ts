@@ -12,7 +12,7 @@ import { Master } from "./_Master";
 export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
   // #region Properties (2)
 
-  public override checkBees = (spawnExtreme?: boolean, spawnCycle?: number) => {
+  public override checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
     if (
       this.parent.spawned >= this.maxSpawns &&
       !this.waitingForBees &&
@@ -25,7 +25,7 @@ export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
     // we spawned max amount
     if (this.parent.spawned >= this.maxSpawns) return false;
     return super.checkBees(spawnExtreme, spawnCycle);
-  };
+  }
 
   public override newBee = (bee: Bee) => {
     super.newBee(bee);

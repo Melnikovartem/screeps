@@ -41,7 +41,7 @@ export class ManagerMaster extends Master<StorageCell> {
       if (bee.state === beeStates.fflush)
         if (
           bee.creep.store.getUsedCapacity() > 0 &&
-          this.parent.storage.store.getFreeCapacity() > 0
+          this.parent.storageFreeCapacity() > 0
         )
           bee.transfer(this.parent.storage, findOptimalResource(bee.store));
         else if (transfer) bee.state = beeStates.refill;

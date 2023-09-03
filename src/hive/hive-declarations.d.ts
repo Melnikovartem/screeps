@@ -22,7 +22,7 @@ export interface SpawnOrder {
 
 // Define the HiveCells interface for different cell types within a hive
 export interface HiveCells {
-  storage?: StorageCell;
+  storage: StorageCell;
   defense: DefenseCell;
   spawn: RespawnCell;
   build: BuildCell;

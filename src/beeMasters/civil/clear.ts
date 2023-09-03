@@ -35,21 +35,20 @@ export class ClearMaster extends SwarmMaster<undefined> {
 
   // @todo add functions to manager queen
   public run() {
-    const storage = this.hive.cells.storage!.storage;
+    const storage = this.hive.storage;
+    if (!(storage instanceof StructureStorage)) return
     _.forEach(this.activeBees, (bee) => {
-      if (storage) {
         if (bee.store.getUsedCapacity() >= 0) {
           const res = findOptimalResource(bee.store);
           bee.drop(res);
         }
-        if (storage.store.getFreeCapacity() <= FULL_CAPACITY) {
+        if (this.hive.cells.storage.storageFreeCapacity() <= FULL_CAPACITY) {
           const keys = Object.keys(this.hive.resState) as (keyof ResTarget)[];
           const res = keys.reduce((prev, curr) =>
             this.hive.resState[curr]! > this.hive.resState[prev]! ? curr : prev
           );
           bee.withdraw(storage, res);
         }
-      }
     });
   }
 

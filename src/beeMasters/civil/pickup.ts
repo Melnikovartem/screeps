@@ -126,8 +126,8 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
   }
 
   public run() {
-    if (!this.hive.cells.storage) return;
-    const storage = this.hive.cells.storage.storage;
+    const storage = this.hive.storage;
+    if (storage instanceof StructureSpawn) return;
 
     let target = this.target;
     if (!target || ("store" in target && !target.store.getUsedCapacity())) {

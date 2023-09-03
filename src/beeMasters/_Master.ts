@@ -31,26 +31,20 @@ export interface MasterParent {
 // Init each reset from underlying object (if from cell / hive) / memory (if it is a swarm)
 @profile
 export abstract class Master<T extends MasterParent> {
-  // #region Properties (20)
+  // #region Properties (17)
 
   /** this.wish should be used only after checkBees is called. So we check if it happened */
   protected checkBeforeWish = false;
-  protected oldestSpawn: number = -Infinity;
+  public oldestSpawn: number = -Infinity;
 
   public readonly ref: string;
 
   public activeBees: Bee[] = [];
   public bees: { [id: string]: Bee } = {};
   public beesAmount: number = 0;
-  /** checks if some of bees need replacement */
-  public checkBees = checkBees;
   public checkFlee = checkFlee;
-  /** deletes bee from memory of master */
-  public deleteBee = deleteBee;
   /** movePriority of bees that are part of this master */
   public abstract movePriority: MovePriority;
-  /** catch a bee after it has requested a master */
-  public newBee = newBee;
   public notify = false;
   public parent: T;
   /** sends to boos any bees with beeState, then frees them with chill status */
@@ -69,7 +63,7 @@ export abstract class Master<T extends MasterParent> {
   /** requests a bee from the hive */
   public wish = wish;
 
-  // #endregion Properties (20)
+  // #endregion Properties (17)
 
   // #region Constructors (1)
 
@@ -132,7 +126,14 @@ export abstract class Master<T extends MasterParent> {
 
   // #endregion Public Abstract Accessors (1)
 
-  // #region Public Methods (3)
+  // #region Public Methods (6)
+
+  /** checks if some of bees need replacement */
+  public checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
+    // failsafe for spawning bees without checking
+    this.checkBeforeWish = true;
+    return checkBees(this, spawnExtreme, spawnCycle);
+  }
 
   public delete() {
     for (const key in this.bees) {
@@ -143,6 +144,16 @@ export abstract class Master<T extends MasterParent> {
 
     this.removeWishes();
     delete Apiary.masters[this.ref];
+  }
+
+  /** deletes bee from memory of master */
+  public deleteBee(beeRef: string) {
+    return deleteBee(this, beeRef);
+  }
+
+  /** catch a bee after it has requested a master */
+  public newBee(bee: Bee) {
+    return newBee(this, bee);
   }
 
   // remove all wishes for spawns that this master made
@@ -159,7 +170,7 @@ export abstract class Master<T extends MasterParent> {
     this.activeBees = _.filter(this.bees, (b) => !b.creep.spawning);
   }
 
-  // #endregion Public Methods (3)
+  // #endregion Public Methods (6)
 
   // #region Public Abstract Methods (1)
 

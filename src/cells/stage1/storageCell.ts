@@ -44,7 +44,7 @@ export class StorageCell extends Cell {
   // #region Public Accessors (2)
 
   /** used to support terminal storage, but not helpful and pain in ass */
-  public get storage() {
+  public get storage() : StructureStorage | StructureTerminal | StructureContainer | StructureSpawn {
     return this.hive.room.storage!;
   }
 
@@ -54,7 +54,7 @@ export class StorageCell extends Cell {
 
   // #endregion Public Accessors (2)
 
-  // #region Public Methods (9)
+  // #region Public Methods (11)
 
   public findLink() {
     let link: typeof this.link =
@@ -147,7 +147,7 @@ export class StorageCell extends Cell {
   ): number {
     let sum = 0;
     let prev: TransferRequest | undefined;
-    amount = Math.min(amount, this.storage.store.getFreeCapacity(res));
+    amount = Math.min(amount, this.storageFreeCapacity(res));
     for (const obj of objects) {
       const ref = obj.id;
       const existing = this.requests[ref];
@@ -180,6 +180,14 @@ export class StorageCell extends Cell {
     for (const k in this.requests) {
       if (!this.requests[k].isValid()) delete this.requests[k];
     }
+  }
+
+  public storageFreeCapacity(res?: ResourceConstant) {
+    return this.storage.store.getFreeCapacity(res) || 0;
+  }
+
+  public storageUsedCapacity(res?: ResourceConstant) {
+    return this.storage.store.getUsedCapacity(res) || 0;
   }
 
   public override update() {
@@ -323,5 +331,5 @@ export class StorageCell extends Cell {
     } */
   }
 
-  // #endregion Public Methods (9)
+  // #endregion Public Methods (11)
 }

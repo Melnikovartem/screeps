@@ -45,10 +45,6 @@ export class PowerCell extends Cell {
       | undefined;
   }
 
-  public get sCell() {
-    return this.hive.cells.storage!;
-  }
-
   // #endregion Public Accessors (5)
 
   // #region Public Methods (2)

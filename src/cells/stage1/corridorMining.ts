@@ -8,6 +8,7 @@ import { prefix } from "static/enums";
 import { Cell } from "../_Cell";
 import { STOCKPILE_BASE_COMMODITIES } from "./factoryCell";
 
+const MINING_POWER_STOCK = 30_000;
 @profile
 export class CorridorMiningCell extends Cell {
   // #region Properties (5)
@@ -43,8 +44,7 @@ export class CorridorMiningCell extends Cell {
       !inProgress.length &&
       this.hive.mode.powerMining &&
       workingPowerSites.length &&
-      this.hive.cells.storage &&
-      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <= 30000
+      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCK
     )
       inProgress = [
         workingPowerSites.reduce((prev, curr) =>

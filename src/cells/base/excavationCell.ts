@@ -17,6 +17,7 @@ export class ExcavationCell extends Cell {
   public poss: { x: number; y: number };
   public quitefullCells: ResourceCell[] = [];
   public resourceCells: { [id: string]: ResourceCell } = {};
+  /** recals the amount of haulers needed to bring stuff from sources */
   public shouldRecalc: boolean = true;
 
   // #endregion Properties (7)
@@ -50,17 +51,16 @@ export class ExcavationCell extends Cell {
   // #region Public Methods (3)
 
   public addResource(resource: Source | Mineral) {
-    if (!this.resourceCells[resource.id]) {
-      if (!this.roomResources[resource.pos.roomName])
-        this.roomResources[resource.pos.roomName] = 0;
-      ++this.roomResources[resource.pos.roomName];
-      this.resourceCells[resource.id] = new ResourceCell(
-        this.hive,
-        resource,
-        this
-      );
-      this.shouldRecalc = true;
-    }
+    if (this.resourceCells[resource.id]) return; // failsafe
+    if (!this.roomResources[resource.pos.roomName])
+      this.roomResources[resource.pos.roomName] = 0;
+    ++this.roomResources[resource.pos.roomName];
+    this.resourceCells[resource.id] = new ResourceCell(
+      this.hive,
+      resource,
+      this
+    );
+    this.shouldRecalc = true;
   }
 
   public run() {
@@ -75,8 +75,8 @@ export class ExcavationCell extends Cell {
     );
 
     if (!this.master)
-      if (this.hive.cells.storage)
-        this.master = new HaulerMaster(this, this.hive.cells.storage.storage);
+      if (this.hive.storage instanceof StructureStorage)
+        this.master = new HaulerMaster(this, this.hive.storage);
       else return;
     this.quitefullCells = [];
 

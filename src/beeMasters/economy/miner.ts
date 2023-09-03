@@ -33,34 +33,38 @@ export class MinerMaster extends Master<ResourceCell> {
       return work;
     });
     let beeRate = Math.max(0, ...beeRates);
-    if (this.resourceType === RESOURCE_ENERGY) beeRate *= 2;
+    if (this.resType === RESOURCE_ENERGY) beeRate *= 2;
     else beeRate /= 5;
     return beeRate;
   }
 
+  /** Gets contstruction site near the resource. Checks included */
   public get construction() {
-    if (this.resourceType !== RESOURCE_ENERGY) return undefined;
-    if (
-      this.parent.container &&
-      (this.pos.roomName !== this.hiveName || this.parent.link)
-    )
+    if (this.resType !== RESOURCE_ENERGY) return undefined;
+    if (this.roomName !== this.hiveName && this.container) return undefined;
+    if (this.roomName === this.hiveName && this.link && this.container)
       return undefined;
-    if (!(this.pos.roomName in Game.rooms)) return undefined;
+    if (!(this.roomName in Game.rooms)) return undefined;
 
-    let construction = this.parent.resource.pos
-      .findInRange(FIND_CONSTRUCTION_SITES, 3)
-      .filter((c) => c.structureType === STRUCTURE_ROAD)[0];
+    const sites = this.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 3);
+    let construction = sites.filter(
+      (c) => c.structureType === STRUCTURE_ROAD
+    )[0];
     if (construction) return construction;
 
-    if (this.pos.roomName === this.hiveName) {
-      construction = this.parent.resource.pos
-        .findInRange(FIND_CONSTRUCTION_SITES, 2)
-        .filter((c) => c.structureType === STRUCTURE_LINK)[0];
+    if (this.roomName === this.hiveName) {
+      construction = sites.filter(
+        (c) =>
+          c.structureType === STRUCTURE_LINK &&
+          c.pos.getRangeTo(this.resource) <= 2
+      )[0];
       if (construction) return construction;
     }
-    return this.parent.resource.pos
-      .findInRange(FIND_CONSTRUCTION_SITES, 1)
-      .filter((c) => c.structureType === STRUCTURE_CONTAINER)[0];
+    return sites.filter(
+      (c) =>
+        c.structureType === STRUCTURE_CONTAINER &&
+        c.pos.getRangeTo(this.resource) <= 1
+    )[0];
   }
 
   public get ratePT() {
@@ -68,15 +72,62 @@ export class MinerMaster extends Master<ResourceCell> {
   }
 
   public get targetBeeCount() {
-    return 1;
+    if (this.hive.controller.level > 2) return 1;
+    const workAmount = Math.floor(this.hive.room.energyCapacityAvailable / (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5));
+    const maxBees = Math.ceil(this.parent.ratePT / workAmount); // overhead is better ? 
+    return Math.floor(this.resource.pos.getOpenPositions(true).length);
   }
 
   // #endregion Public Accessors (4)
 
+  // #region Protected Accessors (1)
+  private get ownerOkForMining() {
+    const roomState = Apiary.intel.getRoomState(this.pos);
+    switch (roomState) {
+      case roomStates.ownedByMe:
+      case roomStates.reservedByMe:
+      case roomStates.SKcentral:
+      case roomStates.SKfrontier:
+      case roomStates.noOwner:
+        return true;
+      /* case roomStates.corridor:
+      case roomStates.reservedByInvader:
+      case roomStates.reservedByEnemy:
+      case roomStates.ownedByEnemy:
+        return false; */
+    }
+    return false;
+  }
+  protected get shouldSpawn() {
+    if (!this.ownerOkForMining) return false;
+    if (
+      this.roomName !== this.hiveName &&
+      this.hive.annexInDanger.includes(this.roomName)
+    )
+      return false;
+
+    // can mine or build smth
+    return this.parent.operational || !!this.construction;
+  }
+
+  // #endregion Protected Accessors (1)
+
   // #region Private Accessors (1)
 
-  private get resourceType() {
-    return this.parent.resourceType;
+  private get resType() {
+    return this.parent.resType;
+  }
+
+  private get resource() {
+    return this.parent.resource;
+  }
+
+  private get container(): StructureContainer | undefined {
+    return this.parent.container;
+  }
+
+  private get link(): StructureLink | undefined {
+    return this.parent.link;
   }
 
   // #endregion Private Accessors (1)
@@ -85,33 +136,31 @@ export class MinerMaster extends Master<ResourceCell> {
 
   public run() {
     // check if we need to run
-    const lairSoonSpawn =
-      this.parent.lair &&
-      (this.parent.lair.ticksToSpawn || 0) <=
-        (this.parent.fleeLairTime !== Infinity ? this.parent.fleeLairTime : 5) *
-          (this.resourceType === RESOURCE_ENERGY ? 1 : 2); // mineral miners run 2x times slower
+    const lairSoonSpawn = this.parent.lairSoonSpawn;
 
     // check if we need to work
     let sourceOff: boolean | undefined = !this.parent.operational;
-    if (this.pos.roomName in Game.rooms) {
+
+    if (this.roomName in Game.rooms) {
       const roomState = Apiary.intel.getRoomState(this.pos);
       sourceOff =
         (sourceOff && !this.construction) ||
-        (this.parent.resource instanceof Source &&
-          this.parent.resource.energy === 0) ||
-        (this.parent.extractor && this.parent.extractor.cooldown > 0) ||
-        (this.parent.container &&
-          !this.parent.link &&
-          !this.parent.container.store.getFreeCapacity(this.resourceType)) ||
-        (this.parent.link &&
-          !this.parent.link.store.getFreeCapacity(this.resourceType)) ||
-        roomState === roomStates.reservedByEnemy ||
-        roomState === roomStates.ownedByEnemy ||
-        (this.parent.container &&
-          !this.parent.link &&
-          this.parent.container.hits < this.parent.container.hitsMax * 0.2 &&
-          this.parent.container.store.getUsedCapacity(RESOURCE_ENERGY) > 25 &&
-          this.resourceType === RESOURCE_ENERGY);
+        (this.resource instanceof Source && this.resource.energy <= 0) || // mined out :/
+        (this.parent.extractor && this.parent.extractor.cooldown > 0) || // cooldown mineral
+        (this.resource instanceof Mineral &&
+          this.resource.mineralAmount <= 0) || // mined out :/
+        (this.container &&
+          !this.link &&
+          !this.container.store.getFreeCapacity(this.resType)) || // no place to store resource
+        (this.link && !this.link.store.getFreeCapacity(this.resType)) || // no place to store resource
+        roomState === roomStates.reservedByEnemy || // cant mine
+        roomState === roomStates.ownedByEnemy || // cant mine
+        roomState === roomStates.reservedByInvader || // cant mine
+        (this.container &&
+          !this.link &&
+          this.container.hits < this.container.hitsMax * 0.2 &&
+          this.container.store.getUsedCapacity(RESOURCE_ENERGY) > 25 &&
+          this.resType === RESOURCE_ENERGY); // fix container pls pls
     }
 
     _.forEach(this.activeBees, (bee) => {
@@ -136,17 +185,17 @@ export class MinerMaster extends Master<ResourceCell> {
 
       // transfer to link if valid
       if (
-        this.parent.link &&
-        bee.store.getFreeCapacity(this.resourceType) < bee.workMax * 4 &&
-        this.parent.link?.store.getFreeCapacity(this.resourceType)
+        this.link &&
+        bee.store.getFreeCapacity(this.resType) < bee.workMax * 4 &&
+        this.link?.store.getFreeCapacity(this.resType)
       )
-        bee.transfer(this.parent.link, this.resourceType);
+        bee.transfer(this.link, this.resType);
 
       // for container transfer we just stand on it
 
       // if we don't have container to stand on we create one
       if (
-        !this.parent.container &&
+        !this.container &&
         mode !== "busy" &&
         bee.store.getUsedCapacity(RESOURCE_ENERGY) >=
           Math.min(bee.workMax * 5, bee.store.getCapacity(RESOURCE_ENERGY))
@@ -159,18 +208,18 @@ export class MinerMaster extends Master<ResourceCell> {
       }
 
       if (!bee.pos.equal(this.pos) && mode !== "busy") {
-        if (bee.pos.isNearTo(this.parent.resource) && mode === "mine")
-          bee.harvest(this.parent.resource, this.hive.opt);
+        if (bee.pos.isNearTo(this.resource) && mode === "mine")
+          bee.harvest(this.resource, this.hive.opt);
         bee.goTo(this.pos, this.hive.opt);
       } else if (mode === "mine") {
-        bee.harvest(this.parent.resource, this.hive.opt);
+        bee.harvest(this.resource, this.hive.opt);
       } else if (
         mode === "chill" &&
         bee.goTo(this.pos) === OK &&
-        this.resourceType === RESOURCE_ENERGY
+        this.resType === RESOURCE_ENERGY
       ) {
         // repair container if nothing to do
-        const target = this.parent.container;
+        const target = this.container;
         if (target && target.hits < target.hitsMax) {
           if (bee.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
             this.logBuilding(bee.repair(target), bee, target);
@@ -190,30 +239,19 @@ export class MinerMaster extends Master<ResourceCell> {
     });
   }
 
+  private get cycleOffset() {
+    if (this.hive.controller.level > 2) return this.parent.roadTime + 10
+    return this.parent.roadTime * 2 + 10
+  }
+
   public override update() {
     super.update();
 
-    const roomState = Apiary.intel.getRoomState(this.pos);
-    let shouldSpawn =
-      roomState === roomStates.ownedByMe ||
-      (!this.hive.annexInDanger.includes(this.pos.roomName) &&
-        (roomState === roomStates.reservedByMe ||
-          roomState === roomStates.noOwner ||
-          roomState === roomStates.SKcentral ||
-          roomState === roomStates.SKfrontier));
-
-    if (shouldSpawn)
-      shouldSpawn =
-        this.parent.operational ||
-        (this.resourceType === RESOURCE_ENERGY &&
-          this.pos.roomName in Game.rooms &&
-          !!this.construction);
-
     if (
-      shouldSpawn &&
+      this.shouldSpawn &&
       this.checkBees(
-        this.resourceType === RESOURCE_ENERGY,
-        CREEP_LIFE_TIME - this.parent.roadTime - 10
+        this.resType === RESOURCE_ENERGY,
+        CREEP_LIFE_TIME - this.cycleOffset
       )
     ) {
       const order = {
@@ -221,16 +259,17 @@ export class MinerMaster extends Master<ResourceCell> {
         priority: 2 as 2 | 5 | 6,
       };
 
-      if (this.resourceType === RESOURCE_ENERGY) {
-        if (this.pos.roomName !== this.hiveName) order.priority = 5;
+      if (this.resType === RESOURCE_ENERGY) {
+        if (this.roomName !== this.hiveName) order.priority = 5;
         order.setup = setups.miner.energy.copy();
         order.setup.patternLimit = Math.round(this.parent.ratePT / 2) + 1;
-        if (this.parent.link) order.setup.fixed = [CARRY, CARRY, CARRY, CARRY];
+        if (this.link) order.setup.fixed = [CARRY, CARRY, CARRY, CARRY];
+        else if (this.hive.controller.level <= 2) order.setup.fixed = [];
       } else {
         // stop producting minerals
         if (
-          (this.hive.cells.storage &&
-            this.hive.cells.storage.storage.store.getFreeCapacity() <=
+          (this.hive.phase >= 1 &&
+            this.hive.cells.storage.storageFreeCapacity(this.resType) <=
               STOP_MINERAL_PROD) ||
           this.hive.resState[RESOURCE_ENERGY] < 0
         )

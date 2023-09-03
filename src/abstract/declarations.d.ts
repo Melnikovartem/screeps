@@ -1,6 +1,6 @@
 import type { _Apiary } from "Apiary";
 import type { CustomConsole } from "convenience/console/console";
-import type { RoomSetup } from "hivePlanner/planner";
+import type { RoomSetup } from "hivePlanner/planner-old";
 import type { SwarmOrderInfo } from "orders/swarmOrder";
 import type { CreepAllBattleInfo } from "spiderSense/intelligence";
 import type { beeStates, roomStates } from "static/enums";

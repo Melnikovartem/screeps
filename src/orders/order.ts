@@ -7,7 +7,6 @@ import { hiveStates } from "static/enums";
 import { actAnnex, deleteAnnex } from "./orders-annex";
 import { actBattle } from "./orders-battle";
 import { actCivil } from "./orders-civil";
-import { actPlanner, deletePlanner } from "./orders-planner";
 import { actUtilsActions, actUtilsPositions } from "./orders-utils";
 import { SwarmOrder } from "./swarmOrder";
 

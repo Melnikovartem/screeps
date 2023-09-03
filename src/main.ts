@@ -98,12 +98,11 @@ function main() {
   global.Apiary.update();
   global.Apiary.run();
 
-  // Periodic actions every 10000 ticks
-  if (Game.time % 10000 === 0) {
+  // Periodic actions every ~10K ticks
+  if (Math.random() < 0.001) {
     // for the time beeing. Change from A to another class
     global.A.sign();
     global.A.removeConst();
-    global.A.recalcResTime();
   }
 
   // Now it checks itself!! i am genius

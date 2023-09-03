@@ -57,7 +57,7 @@ CustomConsole.prototype.printStorageOrders = function (hiveName) {
             o.from instanceof Structure ? o.from.structureType : o.from
           } -> ${o.resource}${
             o.amount !== Infinity ? ": " + o.amount : ""
-          } -> ${o.to.structureType}${o.nextup ? " -> " + o.nextup.ref : ""}`
+          } -> ${o.to instanceof Structure ? o.to.structureType : o.to}${o.nextup ? " -> " + o.nextup.ref : ""}`
       ).join("\n")} \n`;
     }
   ).join("\n");

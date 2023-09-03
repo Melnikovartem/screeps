@@ -188,10 +188,7 @@ export class RespawnCell extends Cell {
         }
       }
 
-      if (
-        order.priority === 0 &&
-        (!this.hive.cells.storage || !this.hive.cells.storage.master.beesAmount)
-      ) {
+      if (order.priority === 0 && !this.hive.cells.storage.master.beesAmount) {
         setup = order.setup.getBody(energyAvailable, moveMax);
         if (!setup.body.length) break;
       } else {
@@ -262,19 +259,8 @@ export class RespawnCell extends Cell {
       this.recycledPrev = false;
     }
 
-    const fastRefPos =
-      !this.fastRef &&
-      this.hive.phase >= 1 &&
-      this.hive.cells.storage &&
-      FastRefillCell.poss(this.hiveName);
-    if (fastRefPos) {
-      const link = fastRefPos
-        .lookFor(LOOK_STRUCTURES)
-        .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
-        | StructureLink
-        | undefined;
-      if (link) this.fastRef = new FastRefillCell(this, link);
-    }
+    const fastRefPos = !this.fastRef && FastRefillCell.poss(this.hiveName);
+    if (fastRefPos) this.fastRef = new FastRefillCell(this);
 
     // find free spawners
     this.freeSpawns = _.filter(
@@ -284,9 +270,12 @@ export class RespawnCell extends Cell {
     this.freeSpawns.sort((a, b) => this.spawnEval(b) - this.spawnEval(a));
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    const storageCell = this.hive.cells.storage;
-    if (storageCell)
-      storageCell.requestFromStorage(this.getTargets(), 0, RESOURCE_ENERGY);
+    this.hive.cells.storage.requestFromStorage(
+      this.getTargets(),
+      0,
+      RESOURCE_ENERGY
+    );
+
     if (this.fastRef) this.fastRef.update();
   }
 
@@ -297,7 +286,7 @@ export class RespawnCell extends Cell {
   private checkTarget(s: StructureSpawn | StructureExtension) {
     if (
       s.store.getFreeCapacity(RESOURCE_ENERGY) <= 0 ||
-      (this.hive.cells.storage && this.hive.cells.storage.requests[s.id])
+      this.hive.cells.storage.requests[s.id]
     )
       return false;
     if (this.fastRef && this.fastRef.pos.getRangeTo(s) <= 2)

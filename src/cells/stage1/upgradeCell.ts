@@ -53,11 +53,6 @@ export class UpgradeCell extends Cell {
     return this.controller.pos;
   }
 
-  // shouldn't exist if this one is not real
-  public get sCell() {
-    return this.hive.cells.storage!;
-  }
-
   // #endregion Public Accessors (4)
 
   // #region Public Methods (3)

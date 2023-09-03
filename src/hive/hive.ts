@@ -168,6 +168,10 @@ export class Hive {
       this.cells.dev = new DevelopmentCell(this);
   }
 
+  public get storage() {
+    return this.cells.storage.storage;
+  }
+
   public static initMemory(roomName: string) {
     // @TODO power/deposit mining if on the edge
     Memory.cache.hives[roomName] = {
@@ -236,7 +240,7 @@ export class Hive {
     if (Apiary.intTime % 1500 === 1499 || this.state === hiveStates.nospawn)
       this.updateCellData();
 
-    if (!this.allResources && Apiary.intTime % 50 === 0)
+    if (!this.allResources && Apiary.intTime % 10 === 0)
       this.allResources = addResourceCells(this);
 
     if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();

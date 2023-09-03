@@ -7,37 +7,68 @@ import type { Master, MasterParent } from "./_Master";
 
 const BEE_QUE_PER_MASTER = 3;
 
-export function newBee(this: Master<MasterParent>, bee: Bee) {
+// some smartass (me) ovverrided next 3 functions down the road so we make them methods
+// 1 overrided to add extra actions when catching bee
+export function newBee(master: Master<MasterParent>, bee: Bee) {
   // 0.2 cost is a no from me
-  // bee.creep.notifyWhenAttacked(this.notify);
-  bee.memory.refMaster = this.ref;
+  bee.memory.refMaster = master.ref;
   if (bee.state === beeStates.idle)
     bee.state =
-      this.boosts && this.hive.cells.lab && bee.ticksToLive > 1200
+      master.boosts && master.hive.cells.lab && bee.ticksToLive > 1200
         ? beeStates.boosting
         : beeStates.chill;
-  this.bees[bee.ref] = bee;
-  if (this.waitingForBees) this.waitingForBees -= 1;
+  master.bees[bee.ref] = bee;
+  if (master.waitingForBees) master.waitingForBees -= 1;
 
-  ++this.beesAmount;
-  this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) =>
+  ++master.beesAmount;
+  master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
     curr.creep.memory.born < prev.creep.memory.born ? curr : prev
   ).creep.memory.born;
 }
-
-export function deleteBee(this: Master<MasterParent>, ref: string) {
-  delete this.bees[ref];
-  delete this.stcukEnterance[ref];
-  for (let i = 0; i < this.activeBees.length; ++i)
-    if (this.activeBees[i].ref === ref) {
-      this.activeBees.splice(i, 1);
+// 2 overrided to add extra actions when deleting bee
+export function deleteBee(master: Master<MasterParent>, ref: string) {
+  delete master.bees[ref];
+  delete master.stcukEnterance[ref];
+  for (let i = 0; i < master.activeBees.length; ++i)
+    if (master.activeBees[i].ref === ref) {
+      master.activeBees.splice(i, 1);
       --i;
     }
-  this.beesAmount = Object.keys(this.bees).length;
-  if (this.beesAmount)
-    this.oldestSpawn = _.reduce(this.bees, (prev: Bee, curr) =>
+  master.beesAmount = Object.keys(master.bees).length;
+  if (master.beesAmount)
+    master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
       curr.creep.memory.born < prev.creep.memory.born ? curr : prev
     ).creep.memory.born;
+}
+// 3 overrided for swarmOrder variant
+export function checkBees(
+  master: Master<MasterParent>,
+  spawnWhenExtreme: boolean = false,
+  spawnCycle: number = CREEP_LIFE_TIME - 10
+): boolean {
+  // in case we recalc something there
+  const targetBeeCount = master.targetBeeCount;
+  // in 4 ifs to be able to read...
+  if (
+    master.waitingForBees > BEE_QUE_PER_MASTER ||
+    targetBeeCount === 0 ||
+    spawnCycle < 0
+  )
+    return false;
+  if (!spawnWhenExtreme && master.hive.state !== hiveStates.economy)
+    return false;
+  if (
+    (master.hive.bassboost || master.hive).cells.defense.timeToLand <
+    spawnCycle / 2
+  )
+    return false;
+  const beesAmountFuture = master.beesAmount + master.waitingForBees;
+  return (
+    beesAmountFuture < targetBeeCount ||
+    (beesAmountFuture === targetBeeCount &&
+      master.oldestSpawn + spawnCycle <= Game.time &&
+      !master.waitingForBees) // no more then one bee on cycle spawn que
+  );
 }
 
 export function removeBee(this: Master<MasterParent>, bee: Bee) {
@@ -45,37 +76,6 @@ export function removeBee(this: Master<MasterParent>, bee: Bee) {
   bee.memory.refMaster = "";
   bee.state = beeStates.chill;
   this.deleteBee(bee.ref);
-}
-
-export function checkBees(
-  this: Master<MasterParent>,
-  spawnWhenExtreme: boolean = false,
-  spawnCycle: number = CREEP_LIFE_TIME - 10
-): boolean {
-  // failsafe for spawning bees without checking
-  this.checkBeforeWish = true;
-  // in case we recalc something there
-  const targetBeeCount = this.targetBeeCount;
-  // in 4 ifs to be able to read...
-  if (
-    this.waitingForBees > BEE_QUE_PER_MASTER ||
-    targetBeeCount === 0 ||
-    spawnCycle < 0
-  )
-    return false;
-  if (!spawnWhenExtreme && this.hive.state !== hiveStates.economy) return false;
-  if (
-    (this.hive.bassboost || this.hive).cells.defense.timeToLand <
-    spawnCycle / 2
-  )
-    return false;
-  const beesAmountFuture = this.beesAmount + this.waitingForBees;
-  return (
-    beesAmountFuture < targetBeeCount ||
-    (beesAmountFuture === targetBeeCount &&
-      this.oldestSpawn + spawnCycle <= Game.time &&
-      !this.waitingForBees) // no more then one bee on cycle spawn que
-  );
 }
 
 // used to support chages before creep before it whent to production

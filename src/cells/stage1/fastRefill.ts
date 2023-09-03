@@ -12,7 +12,7 @@ export class FastRefillCell extends Cell {
   private needEnergy = false;
   private parentCell: RespawnCell;
 
-  public link: StructureLink;
+  public link?: StructureLink;
   public masters: FastRefillMaster[] = [];
   public refillTargets: (StructureSpawn | StructureExtension)[] = [];
 
@@ -20,16 +20,15 @@ export class FastRefillCell extends Cell {
 
   // #region Constructors (1)
 
-  public constructor(parent: RespawnCell, link: StructureLink) {
+  public constructor(parent: RespawnCell) {
     super(parent.hive, prefix.fastRefillCell);
-    this.link = link;
     this.parentCell = this.hive.cells.spawn;
     for (let dx = -1; dx <= 1; dx += 2)
       for (let dy = -1; dy <= 1; dy += 2) {
         const pos = new RoomPosition(
-          link.pos.x + dx,
-          link.pos.y + dy,
-          link.pos.roomName
+          this.pos.x + dx,
+          this.pos.y + dy,
+          this.pos.roomName
         );
         const container = this.pos.findClosest(
           pos
@@ -39,6 +38,10 @@ export class FastRefillCell extends Cell {
         if (container)
           this.masters.push(new FastRefillMaster(this, container, pos));
       }
+
+    this.link = this.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_LINK)[0] as
+    | StructureLink
+    | undefined;
   }
 
   // #endregion Constructors (1)
@@ -50,18 +53,10 @@ export class FastRefillCell extends Cell {
   }
 
   public override get pos(): RoomPosition {
-    return this.link.pos;
+    return FastRefillCell.poss(this.hiveName) || this.link?.pos || this.hive.rest;
   }
 
   // #endregion Public Accessors (2)
-
-  // #region Private Accessors (1)
-
-  private get sCell() {
-    return this.hive.cells.storage!;
-  }
-
-  // #endregion Private Accessors (1)
 
   // #region Public Static Methods (1)
 

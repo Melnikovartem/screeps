@@ -9,6 +9,7 @@ import { Network } from "bugSmuggling/terminalNetwork";
 import { Logger } from "convenience/logger";
 import { EmptyLogger } from "convenience/logger-empty";
 import { Visuals } from "convenience/visuals/visuals";
+import { Engine } from "engine";
 import { Hive } from "hive/hive";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
@@ -20,13 +21,14 @@ const STARVE_HIM_OUT_CLAIMS = [""];
 
 @profile
 export class _Apiary {
-  // #region Properties (18)
+  // #region Properties (19)
 
   public bees: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
   public broker: Broker;
   public createTime: number;
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public destroyTime: number;
+  public engine: Engine = new Engine();
   public hives: { [id: string]: Hive } = {};
   public intel: Intel = new Intel();
   public logger: EmptyLogger;
@@ -41,7 +43,7 @@ export class _Apiary {
   public visuals: Visuals = new Visuals();
   public warcrimes: WarcrimesModule;
 
-  // #endregion Properties (18)
+  // #endregion Properties (19)
 
   // #region Constructors (1)
 
@@ -116,8 +118,7 @@ export class _Apiary {
     );
     this.wrap(() => this.warcrimes.run(), "warcrimes", "run", 1);
 
-    this.requestRoomSight = this.requestRoomSightNextTick;
-    this.requestRoomSightNextTick = [];
+    this.engine.run();
 
     this.wrap(
       () => this.visuals.run(),

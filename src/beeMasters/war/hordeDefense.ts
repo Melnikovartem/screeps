@@ -79,7 +79,7 @@ export class HordeDefenseMaster extends HordeMaster {
     if (isSKraid) {
       order.setup.scheme = 1;
       if (
-        this.hive.cells.storage &&
+        this.hive.cells.lab &&
         this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL.damage[2]) >=
           LAB_BOOST_MINERAL * 2 &&
         this.hive.cells.storage.getUsedCapacity(
@@ -112,11 +112,7 @@ export class HordeDefenseMaster extends HordeMaster {
         enemyInfo.hits / (RANGED_ATTACK_POWER * desiredTTK)
       );
 
-      if (
-        this.hive.cells.lab &&
-        this.hive.cells.storage &&
-        roomInfo.dangerlvlmax >= 6
-      ) {
+      if (this.hive.cells.lab && roomInfo.dangerlvlmax >= 6) {
         this.boosts = [];
         if (healNeeded > 5) {
           healNeeded = Math.ceil((enemyInfo.dmgRange * 0.3) / HEAL_POWER / 4);
@@ -189,12 +185,12 @@ export class HordeDefenseMaster extends HordeMaster {
           partAmount: number
         ) =>
           this.boosts &&
-          this.hive.cells.storage &&
+          this.hive.cells.lab &&
           this.boosts.filter((b) => b.type === type).length &&
           this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL[type][2]) >=
             LAB_BOOST_MINERAL * partAmount * beesToGo;
-        if (this.boosts && this.hive.cells.storage)
-          if (checkBoost("fatigue", 10)) moveMax = 10;
+
+        if (this.boosts && checkBoost("fatigue", 10)) moveMax = 10;
         const body = order.setup.getBody(
           (this.hive.bassboost &&
             this.hive.bassboost.room.energyCapacityAvailable) ||
@@ -206,21 +202,20 @@ export class HordeDefenseMaster extends HordeMaster {
         let closeAttack =
           body.filter((b) => b === ATTACK).length * ATTACK_POWER;
         let heal = body.filter((b) => b === HEAL).length * HEAL_POWER;
-        let tough = 0;
-        if (this.boosts && this.hive.cells.storage) {
-          if (checkBoost("rangedAttack", rangedAttack / RANGED_ATTACK_POWER))
-            rangedAttack *= 4;
-          if (checkBoost("attack", closeAttack / ATTACK_POWER))
-            closeAttack *= 4;
-          if (checkBoost("heal", heal / HEAL_POWER)) heal *= 4;
-          tough = body.filter((b) => b === TOUGH).length * 100;
-          if (
-            checkBoost("damage", tough / 100) &&
-            tough >= enemyInfo.dmgRange * 0.3
-          )
-            tough = (tough * 0.7) / 0.3;
-          else tough = 0;
-        }
+
+        if (checkBoost("rangedAttack", rangedAttack / RANGED_ATTACK_POWER))
+          rangedAttack *= 4;
+        if (checkBoost("attack", closeAttack / ATTACK_POWER)) closeAttack *= 4;
+        if (checkBoost("heal", heal / HEAL_POWER)) heal *= 4;
+
+        let tough = body.filter((b) => b === TOUGH).length * 100;
+        if (
+          checkBoost("damage", tough / 100) &&
+          tough >= enemyInfo.dmgRange * 0.3
+        )
+          tough = (tough * 0.7) / 0.3;
+        else tough = 0;
+
         rangedAttack *= this.targetBeeCount;
         closeAttack *= this.targetBeeCount;
         const loosingBattle = this.loosingBattle(enemyInfo, undefined, {

@@ -43,21 +43,11 @@ for (const boost of ["boost", "normal"] as B[])
 
 @profile
 export class BuilderMaster extends Master<BuildCell> {
-  // #region Properties (2)
+  // #region Properties (1)
 
   private patternPerBee = 0;
-  private sCell: StorageCell;
 
-  // #endregion Properties (2)
-
-  // #region Constructors (1)
-
-  public constructor(hive: Hive, sCell: StorageCell) {
-    super(hive, prefix.builder + hive.room.name);
-    this.sCell = sCell;
-  }
-
-  // #endregion Constructors (1)
+  // #endregion Properties (1)
 
   // #region Private Accessors (2)
 

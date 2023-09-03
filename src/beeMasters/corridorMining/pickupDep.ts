@@ -118,7 +118,7 @@ export class DepositPickupMaster extends Master<DepositMaster> {
           )[0];
           if (beeToPickUp) {
             if (bee.pos.isNearTo(beeToPickUp))
-              beeToPickUp.creep.transfer(
+              beeToPickUp.transfer(
                 bee.creep,
                 findOptimalResource(beeToPickUp.store)
               );
@@ -159,7 +159,7 @@ export class DepositPickupMaster extends Master<DepositMaster> {
           if (
             !bee.store.getUsedCapacity() ||
             (bee.transfer(
-              this.hive.cells.storage!.storage,
+              this.hive.storage,
               findOptimalResource(bee.store)
             ) === OK &&
               Object.keys(bee.store).length < 2)

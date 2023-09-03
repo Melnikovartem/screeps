@@ -116,7 +116,7 @@ export class PullerMaster extends Master<CorridorMiningCell> {
             if (bee.pos.roomName === pos.roomName)
               pos = bee.pos.isNearTo(depMaster)
                 ? bee.pos
-                : depMaster.pos.getOpenPositions(false)[0] || depMaster.pos;
+                : depMaster.pos.getOpenPositions()[0] || depMaster.pos;
             const range = pos.equal(depMaster.pos) ? 1 : 0;
             if (pos.getRangeTo(bee) > 3 || !range) {
               bee.pull(beeToPull, pos, {

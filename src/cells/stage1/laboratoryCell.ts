@@ -168,7 +168,7 @@ const COOLDOWN_TARGET_LAB = 1000;
 
 @profile
 export class LaboratoryCell extends Cell {
-  // #region Properties (16)
+  // #region Properties (15)
 
   private patience: number = 0;
   private patienceProd: number = 0;
@@ -196,7 +196,7 @@ export class LaboratoryCell extends Cell {
   public resTarget: { [key in ResourceConstant]?: number } = {};
   public synthesizeRes: SynthesizeRequest | undefined;
 
-  // #endregion Properties (16)
+  // #endregion Properties (15)
 
   // #region Constructors (1)
 
@@ -257,14 +257,6 @@ export class LaboratoryCell extends Cell {
   }
 
   // #endregion Public Accessors (10)
-
-  // #region Private Accessors (1)
-
-  private get sCell() {
-    return this.hive.cells.storage!;
-  }
-
-  // #endregion Private Accessors (1)
 
   // #region Public Methods (6)
 

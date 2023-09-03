@@ -3,7 +3,7 @@ import { BASE_MODE_HIVE, SETTINGS_DEFAULT } from "static/constants";
 import { prefix } from "static/enums";
 import { makeId } from "static/utils";
 
-import { snapOldPlans } from "./console-hand-fix";
+import { snapOldPlans } from "./console-utils";
 
 export class CustomConsole {
   // #region Properties (3)
@@ -503,14 +503,9 @@ export class CustomConsole {
       hives = [Apiary.hives[hiveName]];
     } else hives = _.map(Apiary.hives, (h) => h);
     _.forEach(hives, (h) => {
-      _.forEach(h.cells.excavation.resourceCells, (cell) => {
-        cell.roadTime = cell.pos.getTimeForPath(
-          cell.parentCell.master ? cell.parentCell.master.dropOff.pos : h.pos
-        );
-        cell.restTime = cell.pos.getTimeForPath(h.rest);
-        cell.recalcLairFleeTime();
-      });
-
+      _.forEach(h.cells.excavation.resourceCells, (cell) =>
+        cell.updateRoadTime(true)
+      );
       h.cells.excavation.shouldRecalc = true;
     });
     return "OK";

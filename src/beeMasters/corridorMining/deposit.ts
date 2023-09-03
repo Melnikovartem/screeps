@@ -130,7 +130,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
   public override update() {
     super.update();
 
-    if (!this.hive.cells.storage) {
+    if (this.hive.phase < 1) {
       // kinda overkill but yeah
       this.parent.delete();
       return;
