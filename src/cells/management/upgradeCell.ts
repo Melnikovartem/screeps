@@ -6,6 +6,10 @@ import { hiveStates, prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
 
+// 10 - 0.5 == 9.9. 0.5 for upkeep
+const APPROX_PROFIT_RESOURCE = 9.5;
+const ABSOLUTE_MAX_RATE_UPGRADE = 40 * 8;
+
 @profile
 export class UpgradeCell extends Cell {
   // #region Properties (9)
@@ -15,7 +19,10 @@ export class UpgradeCell extends Cell {
   public linkId: Id<StructureLink> | null = null;
   public override master: UpgraderMaster;
   public maxBees = 10;
-  public maxRate = 1;
+  public maxRate = {
+    import: 20,
+    hive: 10,
+  };
   public ratePerCreepMax = 1;
   public roadTime: number;
   public workPerCreepMax = 1;
@@ -59,6 +66,8 @@ export class UpgradeCell extends Cell {
   }
 
   public get suckerTarget() {
+    if (this.hive.storage && this.pos.getRangeTo(this.hive.storage) <= 3)
+      return this.hive.storage;
     if (this.link && this.sCell.link) return this.link;
     if (this.container) return this.container;
     return this.hive.storage;
@@ -138,16 +147,15 @@ export class UpgradeCell extends Cell {
       this.recalculateRate();
 
     if (!this.master.beesAmount) return;
+    if (
+      !this.sCell.master.activeBees.length ||
+      this.hive.state === hiveStates.lowenergy
+    )
+      return;
 
-    const freeCap =
-      this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
+    let freeCap = this.link && this.link.store.getFreeCapacity(RESOURCE_ENERGY);
     if (freeCap && freeCap >= LINK_CAPACITY / 2) {
       if (this.sCell.link) {
-        if (
-          !this.sCell.master.activeBees.length ||
-          this.hive.state === hiveStates.lowenergy
-        )
-          return;
         this.sCell.requestFromStorage(
           [this.sCell.link],
           freeCap >= LINK_CAPACITY - 100 ? 3 : 1,
@@ -161,6 +169,15 @@ export class UpgradeCell extends Cell {
           };
       }
     }
+    freeCap =
+      this.container && this.container.store.getFreeCapacity(RESOURCE_ENERGY);
+    if (freeCap && freeCap >= CONTAINER_CAPACITY / 2) {
+      this.sCell.requestFromStorage(
+        [this.container!],
+        freeCap >= CONTAINER_CAPACITY - 100 ? 3 : 1,
+        RESOURCE_ENERGY
+      );
+    }
   }
 
   // #endregion Public Methods (3)
@@ -168,42 +185,46 @@ export class UpgradeCell extends Cell {
   // #region Private Methods (1)
 
   private recalculateRate() {
-    const futureResourceCells = _.filter(
-      Game.flags,
-      (f) =>
-        f.color === COLOR_YELLOW &&
-        f.secondaryColor === COLOR_YELLOW &&
-        f.memory.hive === this.hiveName
+    const suckerTarget = this.suckerTarget;
+    this.maxRate.hive = 0;
+    this.maxRate.import = 0;
+    if (!suckerTarget) return;
+
+    this.maxRate.hive =
+      Math.max(
+        1,
+        _.filter(
+          this.hive.cells.excavation.resourceCells,
+          (s) => s.resType === RESOURCE_ENERGY
+        ).length
+      ) * APPROX_PROFIT_RESOURCE;
+    // to keep things civil with hauling
+    this.maxRate.import = 100;
+
+    const suckerTime = Math.max(
+      (this.controller.pos.getTimeForPath(suckerTarget) - 3) * 2,
+      0
     );
-    this.maxRate = Math.max(1, futureResourceCells.length) * 10;
 
     let setup;
     if (this.fastModePossible) setup = setups.upgrader.fast;
     else setup = setups.upgrader.manual;
 
-    let suckerTime = 0;
-    if (this.link && this.sCell.link) {
-      this.maxRate = Math.min(
-        800 / this.link.pos.getRangeTo(this.sCell.link),
-        this.maxRate
-      ); // how to get more in?
+    if (suckerTarget.id === this.link?.id && this.sCell.link) {
+      let linkLimit = LINK_CAPACITY / this.link.pos.getRangeTo(this.sCell.link);
       _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
         if (cell.link)
-          this.maxRate += Math.min(
-            800 / this.link!.pos.getRangeTo(cell.link),
-            cell.ratePT
+          linkLimit += Math.min(
+            LINK_CAPACITY / this.link!.pos.getRangeTo(cell.link),
+            APPROX_PROFIT_RESOURCE
           );
       });
-    } else {
-      const suckerTarget = this.suckerTarget;
-      if (suckerTarget)
-        suckerTime = Math.max(
-          this.controller.pos.getTimeForPath(suckerTarget) * 2 - 3,
-          0
-        );
-    }
+      this.maxRate.import = Math.max(this.maxRate.import, linkLimit);
+      this.maxRate.hive = Math.max(this.maxRate.hive, linkLimit);
+    } else if (suckerTarget instanceof StructureStorage)
+      this.maxRate.import = ABSOLUTE_MAX_RATE_UPGRADE; // boost the shit out of this hive
 
-    if (!setup) setup = setups.upgrader.manual;
+    this.maxRate.import = Math.max(this.maxRate.import, this.maxRate.hive);
 
     setup.patternLimit = Infinity;
     const body = setup.getBody(this.hive.room.energyCapacityAvailable).body;

@@ -1,6 +1,6 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
 import { HIVE_ENERGY } from "cells/management/storageCell";
-import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
 import type { BuildCell, BuildProject } from "./buildCell";
@@ -254,6 +254,10 @@ export function updateStructures(cell: BuildCell, forceAnnexCheck = false) {
         )
       )
     );
+
+  // get first measure of walls health
+  if (cell.wallTargetHealth === WALLS_START)
+    cell.wallTargetHealth = nextWallTargetHealth(cell);
 
   switch (cell.hive.state) {
     case hiveStates.nukealert:

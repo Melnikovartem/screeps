@@ -222,23 +222,21 @@ export class HaulerMaster extends Master<ExcavationCell> {
                 ? "mining_" + bee.target.slice(bee.target.length - 4)
                 : "pickup";
 
-              if (this.roadUpkeepCost[bee.ref] > 0) {
-                Apiary.logger.addResourceStat(
-                  this.hiveName,
-                  ref,
-                  this.roadUpkeepCost[bee.ref],
-                  RESOURCE_ENERGY
-                );
-                Apiary.logger.addResourceStat(
-                  this.hiveName,
-                  sameRes
-                    ? "upkeep_" + bee.target.slice(bee.target.length - 4)
-                    : "build",
-                  -this.roadUpkeepCost[bee.ref],
-                  RESOURCE_ENERGY
-                );
-                this.roadUpkeepCost[bee.ref] = 0;
-              }
+              Apiary.logger.addResourceStat(
+                this.hiveName,
+                ref,
+                this.roadUpkeepCost[bee.ref],
+                RESOURCE_ENERGY
+              );
+              Apiary.logger.addResourceStat(
+                this.hiveName,
+                sameRes
+                  ? "upkeep_" + bee.target.slice(bee.target.length - 4)
+                  : "build",
+                -this.roadUpkeepCost[bee.ref],
+                RESOURCE_ENERGY
+              );
+              this.roadUpkeepCost[bee.ref] = 0;
               Apiary.logger.resourceTransfer(
                 this.hiveName,
                 ref,

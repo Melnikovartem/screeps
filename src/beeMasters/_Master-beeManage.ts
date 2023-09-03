@@ -22,8 +22,8 @@ export function newBee(master: Master<MasterParent>, bee: Bee) {
 
   ++master.beesAmount;
   master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
-    curr.creep.memory.born < prev.creep.memory.born ? curr : prev
-  ).creep.memory.born;
+    curr.memory.born < prev.memory.born ? curr : prev
+  ).memory.born;
 }
 // 2 overrided to add extra actions when deleting bee
 export function deleteBee(master: Master<MasterParent>, ref: string) {
@@ -37,8 +37,8 @@ export function deleteBee(master: Master<MasterParent>, ref: string) {
   master.beesAmount = Object.keys(master.bees).length;
   if (master.beesAmount)
     master.oldestSpawn = _.reduce(master.bees, (prev: Bee, curr) =>
-      curr.creep.memory.born < prev.creep.memory.born ? curr : prev
-    ).creep.memory.born;
+      curr.memory.born < prev.memory.born ? curr : prev
+    ).memory.born;
 }
 // 3 overrided for swarmOrder variant
 export function checkBees(

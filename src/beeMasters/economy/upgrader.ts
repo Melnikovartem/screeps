@@ -44,30 +44,31 @@ export class UpgraderMaster extends Master<UpgradeCell> {
   public get targetBeeCount() {
     const upgradeMode = this.hive.mode.upgrade; // polen
 
-    const storeAmount =
-      this.hive.storage?.store.getUsedCapacity(RESOURCE_ENERGY) || 0;
-
     let desiredRate = 0;
     if (
       this.parent.controller.level < 7 &&
       this.hive.resState[RESOURCE_ENERGY] > 0 &&
       this.hive.room.terminal
     )
-      desiredRate = this.parent.maxRate; // can always buy / ask for more
-    else if (this.parent.controller.level < 7)
-      desiredRate = Math.min(
-        this.parent.maxRate,
-        Math.ceil(
-          2.7 * Math.pow(10, -16) * Math.pow(storeAmount, 3) +
-            3.5 * Math.pow(10, -5) * storeAmount -
-            1
-        ) // some math i pulled out of my ass ?? why tho
-      );
+      desiredRate = this.parent.maxRate.import; // can always buy / ask for more
     else if (
-      upgradeMode >= 2 &&
+      this.parent.controller.level < 7 &&
+      (this.hive.storage!.store.getUsedCapacity(RESOURCE_ENERGY) > 1000 ||
+        this.hive.controller.level < 2)
+    )
+      desiredRate = this.parent.maxRate.hive;
+    // just spend all produced energy on upgrading
+    else if (
+      upgradeMode === 2 &&
       this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
     )
-      desiredRate = this.parent.maxRate; // upgrade for GCL
+      desiredRate = this.parent.maxRate.hive;
+    // upgrade spend all produced energy on upgrading
+    else if (
+      upgradeMode === 3 &&
+      this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
+    )
+      desiredRate = this.parent.maxRate.import; // upgrade for GCL
 
     // failsafe (kidna but no)
     if (
@@ -100,8 +101,14 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     // do not use last of the energy
     if (
       suckerTarget &&
-      this.pos.getRangeTo(suckerTarget) > 3 &&
-      (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) < 1000
+      this.hive.storage?.id === suckerTarget.id &&
+      suckerTarget.structureType !== STRUCTURE_SPAWN &&
+      (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) <= 1000 // do not drain main storage
+    )
+      suckerTarget = undefined;
+    else if (
+      suckerTarget?.structureType === STRUCTURE_SPAWN &&
+      this.hive.room.energyAvailable <= 150 // keep last 150 energy free
     )
       suckerTarget = undefined;
 

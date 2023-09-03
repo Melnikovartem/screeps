@@ -1,3 +1,4 @@
+import { LOW_ENERGY } from "cells/management/storageCell";
 import { DevelopmentCell } from "cells/stage0/developmentCell";
 import { FactoryCell } from "cells/stage1/factoryCell";
 import { LaboratoryCell } from "cells/stage1/laboratoryCell";
@@ -7,7 +8,6 @@ import { PowerCell } from "cells/stage2/powerCell";
 import { hiveStates } from "static/enums";
 
 import type { Hive } from "./hive";
-import { LOW_ENERGY } from "cells/management/storageCell";
 
 export function opt(hive: Hive) {
   const optHive: TravelToOptions = { useFindRoute: true };

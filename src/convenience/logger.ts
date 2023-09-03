@@ -88,6 +88,7 @@ export class Logger extends EmptyLogger {
     amount: number,
     resource: ResourceConstant
   ) {
+    if (amount === 0) return ERR_NOT_ENOUGH_RESOURCES;
     if (!this.log.hives[hiveName]) return ERR_NOT_FOUND;
     if (!this.log.hives[hiveName].resourceEvents[resource])
       this.log.hives[hiveName].resourceEvents[resource] = {};

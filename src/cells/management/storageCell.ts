@@ -228,7 +228,7 @@ export class StorageCell extends Cell {
 
     this.hive.stateChange(
       "lowenergy",
-      !!this.storage &&
+      this.storage instanceof StructureStorage &&
         this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < LOW_ENERGY.high
     );
 

@@ -1,9 +1,13 @@
 import { setups } from "bees/creepSetups";
+import { TransferRequest } from "bees/transferRequest";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
+
+// just to failsafe cap
+const MAX_HAULERS_ON_TARGET = 8;
 
 /** takes over in case of emergencies
  * // no spawn
@@ -12,12 +16,14 @@ import { Cell } from "../_Cell";
  */
 @profile
 export class DevelopmentCell extends Cell {
-  // #region Properties (3)
+  // #region Properties (2)
+
+  private carryCapacity: number = CARRY_CAPACITY;
 
   // public override master: BootstrapMaster;
   public shouldRecalc: boolean = true;
 
-  // #endregion Properties (3)
+  // #endregion Properties (2)
 
   // #region Constructors (1)
 
@@ -27,40 +33,44 @@ export class DevelopmentCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (2)
+  // #region Public Accessors (4)
+
+  public get builderBeeCount() {
+    return 0;
+  }
 
   public get controller() {
     return this.hive.controller;
-  }
-
-  public override get pos() {
-    return this.hive.controller.pos;
   }
 
   public get managerBeeCount() {
     let accumRoadTime = 0;
 
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
-        const coef = cell.master.ratePT;
-        accumRoadTime +=
-          (cell.roadTime + Math.max(cell.restTime, cell.roadTime, 100)) * coef;
+      let coef = cell.master.ratePT;
+      if (!cell.container) --coef;
+      accumRoadTime +=
+        (cell.roadTime + Math.max(cell.restTime, cell.roadTime, 100)) * coef;
     });
 
     const body = setups.managerQueen.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;
-    const carryCapacity =
+    this.carryCapacity =
       body.filter((b) => b === CARRY).length * CARRY_CAPACITY;
 
     let rounding = (x: number) => Math.round(x - 0.15);
     if (this.controller.level <= 2) rounding = (x) => Math.round(x + 0.15);
-    console.log(
-      Apiary.intTime,
-      "managerTargetBeeCount",
-      rounding(accumRoadTime / carryCapacity)
-    );
-    return rounding(accumRoadTime / carryCapacity);
+    return rounding(accumRoadTime / this.carryCapacity);
   }
+
+  public override get pos() {
+    return this.hive.controller.pos;
+  }
+
+  // #endregion Public Accessors (4)
+
+  // #region Public Methods (3)
 
   public minerBeeCount(resource: Source | Mineral) {
     if (resource instanceof Mineral) return 0;
@@ -77,15 +87,20 @@ export class DevelopmentCell extends Cell {
     );
   }
 
-  public get builderBeeCount() {
-    return 0;
+  public run() {
+    if (this.hive.phase > 0 && this.hive.state === hiveStates.economy)
+      this.delete();
   }
 
-  // #endregion Public Accessors (2)
+  public override update() {
+    if (Apiary.intTime % 10 === 0) this.addResources();
+  }
 
-  // #region Public Methods (3)
+  // #endregion Public Methods (3)
 
-  public addResources() {
+  // #region Private Methods (2)
+
+  private addResources() {
     _.forEach([this.hiveName].concat(this.hive.annexNames), (miningRoom) => {
       const room = Game.rooms[miningRoom];
       if (!room) return;
@@ -96,8 +111,7 @@ export class DevelopmentCell extends Cell {
       });
 
       _.forEach(room.find(FIND_DROPPED_RESOURCES), (r) => {
-        if (r.resourceType === RESOURCE_ENERGY)
-          this.sCell.requestToStorage([r], 4, RESOURCE_ENERGY);
+        if (r.resourceType === RESOURCE_ENERGY) this.sendToStorage(r);
       });
 
       // use storage from own room cause it can be not active?
@@ -112,19 +126,45 @@ export class DevelopmentCell extends Cell {
             s.structureType !== STRUCTURE_CONTAINER
           )
             return;
-          this.sCell.requestToStorage([s], 4, RESOURCE_ENERGY);
+          this.sendToStorage(s);
         });
     });
   }
 
-  public run() {
-    if (this.hive.phase > 0 && this.hive.state === hiveStates.economy)
-      this.delete();
+  private sendToStorage(
+    target: Resource | StructureContainer | StructureStorage | StructureTerminal
+  ) {
+    if (!this.hive.storage) return;
+    let amount = 0;
+    if (target instanceof Resource) amount = target.amount;
+    else amount = target.store.getUsedCapacity(RESOURCE_ENERGY);
+    // ignore super small piles
+    if (amount <= CARRY_CAPACITY * 0.5) return;
+    let it = 0;
+    let ref = target.id + "_" + it;
+    const existing = this.sCell.requests[ref];
+    while (existing && it <= MAX_HAULERS_ON_TARGET) {
+      // already an unused order for this just update amount
+      if (!existing.beeProcess) {
+        existing.amount = amount;
+        return;
+      }
+      ref = target.id + "_" + ++it;
+    }
+    // reached cap
+    if (existing) return;
+    const request = new TransferRequest(
+      ref,
+      target,
+      this.hive.storage,
+      4,
+      RESOURCE_ENERGY,
+      amount
+    );
+    if (!request.isValid()) return;
+    this.sCell.requests[ref] = request;
+    return;
   }
 
-  public override update() {
-    if (Apiary.intTime % 10 === 0) this.addResources();
-  }
-
-  // #endregion Public Methods (3)
+  // #endregion Private Methods (2)
 }
