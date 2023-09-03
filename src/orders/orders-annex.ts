@@ -1,10 +1,10 @@
-import { AnnexMaster } from "beeMasters/economy/annexer";
 import { ClaimerMaster } from "beeMasters/civil/claimer";
 import { PuppetMaster } from "beeMasters/civil/puppet";
+import { AnnexMaster } from "beeMasters/economy/annexer";
 import { SKMaster } from "beeMasters/war/safeSK";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import { FlagOrder } from "./order";
+import type { FlagOrder } from "./order";
 
 export function actAnnex(order: FlagOrder) {
   switch (order.secondaryColor) {

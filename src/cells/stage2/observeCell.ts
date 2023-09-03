@@ -1,5 +1,6 @@
 import type { Hive } from "hive/hive";
-import { FlagOrder } from "orders/order";
+import { SwarmOrder } from "orders/swarmOrder";
+import { SWARM_MASTER } from "orders/swarmOrder-masters";
 import { profile } from "profiler/decorator";
 import { prefix, roomStates } from "static/enums";
 import { getRoomCoorinates } from "static/utils";
@@ -56,25 +57,6 @@ export class ObserveCell extends Cell {
 
   // #region Public Methods (6)
 
-  public createOrder(
-    pos: RoomPosition,
-    ref: string,
-    secondaryColor: ColorConstant
-  ) {
-    const flags = pos
-      .lookFor(LOOK_FLAGS)
-      .filter(
-        (f) => f.color === COLOR_ORANGE && f.secondaryColor === secondaryColor
-      ).length;
-    if (flags) return;
-    const name = pos.createFlag(ref, COLOR_ORANGE, secondaryColor);
-    if (typeof name === "string") {
-      Game.flags[name].memory.hive = this.hiveName;
-      const order = new FlagOrder(Game.flags[name]);
-      order.update();
-    }
-  }
-
   public depositCheck(room: Room) {
     _.forEach(room.find(FIND_DEPOSITS), (deposit) => {
       if (
@@ -82,11 +64,9 @@ export class ObserveCell extends Cell {
         deposit.ticksToDecay <= CREEP_LIFE_TIME
       )
         return;
-      this.createOrder(
-        deposit.pos,
-        prefix.depositMining + deposit.id,
-        COLOR_BLUE
-      );
+      const ref = prefix.depositMining + deposit.id;
+      if (Apiary.orders[ref]) return;
+      new SwarmOrder(ref, this.hive, deposit.pos, SWARM_MASTER.depositmining);
     });
   }
 
@@ -103,11 +83,10 @@ export class ObserveCell extends Cell {
           power.ticksToDecay + power.pos.getRoomRangeTo(this.hive, "lin") * 50
         )
           return;
-        this.createOrder(
-          power.pos,
-          prefix.powerMining + power.id,
-          COLOR_YELLOW
-        );
+
+        const ref = prefix.depositMining + power.id;
+        if (Apiary.orders[ref]) return;
+        new SwarmOrder(ref, this.hive, power.pos, SWARM_MASTER.depositmining);
       }
     );
   }

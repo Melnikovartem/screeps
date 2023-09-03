@@ -33,6 +33,7 @@ export class _Apiary {
   public masters: { [id: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
   public network: Network;
+  public orders: { [ref: string]: SwarmOrder<any> } = {};
   public requestRoomSight: string[] = [];
   public requestRoomSightNextTick: string[] = [];
   public useBucket: boolean = false;

@@ -6,7 +6,7 @@ import { DepositMaster } from "beeMasters/corridorMining/deposit";
 import { PowerMaster } from "beeMasters/corridorMining/power";
 import { findOptimalResource } from "static/utils";
 
-import { FlagOrder } from "./order";
+import type { FlagOrder } from "./order";
 
 export function actCivil(order: FlagOrder) {
   if (!order.hive.cells.storage) {

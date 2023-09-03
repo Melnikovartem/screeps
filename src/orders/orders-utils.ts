@@ -2,7 +2,7 @@ import { PortalMaster } from "beeMasters/civil/portal";
 import { PuppetMaster } from "beeMasters/civil/puppet";
 import { prefix } from "static/enums";
 
-import { FlagOrder } from "./order";
+import type { FlagOrder } from "./order";
 
 export function actUtilsActions(order: FlagOrder) {
   switch (order.secondaryColor) {

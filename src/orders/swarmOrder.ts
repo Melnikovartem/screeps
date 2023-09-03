@@ -19,6 +19,8 @@ export interface SwarmOrderInfo {
 
 type MasterConstructor<T> = new (order: SwarmOrder<T>) => SwarmMaster<T>;
 
+// should be created in update step
+// so that even during the tick of creation master can run its own update tick
 export class SwarmOrder<T> {
   // #region Properties (5)
 
@@ -48,6 +50,13 @@ export class SwarmOrder<T> {
         [CACHE_ORDER_SPAWNED]: 0,
         [CACHE_ORDER_TYPE]: type,
       };
+    else {
+      // hande same name or smth
+      const cache = Memory.cache.orders[this.ref];
+      cache[CACHE_ORDER_POS] = [pos.x, pos.y];
+      cache[CACHE_ORDER_HIVE] = hive.roomName;
+      cache[CACHE_ORDER_TYPE] = type;
+    }
     this.hive = hive;
     this.type = type;
     this._pos = pos;
@@ -56,6 +65,7 @@ export class SwarmOrder<T> {
       type
     ] as MasterConstructor<any> as MasterConstructor<T>;
     this.master = new masterProto(this);
+    Apiary.orders[this.ref] = this;
   }
 
   // #endregion Constructors (1)
@@ -116,7 +126,10 @@ export class SwarmOrder<T> {
   // #region Public Methods (3)
 
   public delete() {
-    delete Memory.cache.orders[this.ref];
+    if (Apiary.orders[this.ref] === this) {
+      delete Memory.cache.orders[this.ref];
+      delete Apiary.orders[this.ref];
+    }
     this.master.delete();
   }
 

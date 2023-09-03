@@ -1,9 +1,9 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
+import type { Hive } from "hive/hive";
 import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { getCase, makeId } from "static/utils";
 
 import type { BuildProject } from "./buildCell";
-import type { Hive } from "./hive";
 
 const RAMPART_BUFFER_ZONE = {
   aliveBees: 20_000, // 6_666 ticks
@@ -65,14 +65,14 @@ export function checkBuildings(
         if (sType === STRUCTURE_RAMPART)
           heal -= Math.min(
             heal * 0.5,
-            hive && hive.builder && hive.builder.activeBees.length
+            hive && hive.cells.build.master?.activeBees.length
               ? RAMPART_BUFFER_ZONE.aliveBees
               : RAMPART_BUFFER_ZONE.noBees
           );
         if (sType === STRUCTURE_ROAD)
           heal -= Math.min(
             heal * 0.5,
-            (hive && hive.builder && hive.builder.activeBees.length
+            (hive && hive.cells.build.master?.activeBees.length
               ? ROAD_BUFFER_ZONE.aliveBees
               : ROAD_BUFFER_ZONE.noBees) *
               (structure.hitsMax / ROAD_HITS) // coef for swamp / walls

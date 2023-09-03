@@ -1,30 +1,40 @@
-import { ProtoOrder } from "bugSmuggling/broker";
-import { FlagOrder } from "orders/order";
+import type { ProtoOrder } from "bugSmuggling/broker";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { prefix } from "static/enums";
 
 export class EmptyLogger {
+  // #region Properties (1)
+
   protected intentsThisTick = 0;
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
+
   public constructor() {
     Memory.log = undefined;
   }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
+  public get notAccountedMemory() {
+    return Game.cpu.getUsed();
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Public Static Methods (1)
 
   public static wipe() {
     Memory.log = undefined;
     Memory.report = { crashes: {}, enemies: {}, orders: {} };
   }
 
-  public update() {
-    this.intentsThisTick = 0;
-  }
-  public run() {}
+  // #endregion Public Static Methods (1)
 
-  public reportCPU(
-    ref: string,
-    mode: "run" | "update",
-    usedCPU: number,
-    amount: number,
-    reportSmall?: boolean
-  ) {}
+  // #region Public Methods (14)
 
   public addResourceStat(
     hiveName: string,
@@ -32,85 +42,6 @@ export class EmptyLogger {
     amount: number,
     resource: ResourceConstant
   ) {}
-
-  public resourceTransfer<R extends ResourceConstant>(
-    hiveName: string,
-    ref: string,
-    storeFrom: Store<R, false>,
-    storeTo: Store<R, false>,
-    resource?: R,
-    mode?: 1 | -1,
-    loss?: { ref: string; per: number }
-  ) {}
-
-  public newSpawn(
-    beeName: string,
-    spawn: StructureSpawn,
-    cost: number,
-    masterName: string
-  ) {}
-
-  public reportMarketCreation(
-    resource: MarketResourceConstant,
-    fee: number,
-    type: ORDER_BUY | ORDER_SELL
-  ) {}
-
-  public reportMarketFeeChange(
-    orderId: string,
-    resource: MarketResourceConstant,
-    fee: number,
-    type: ORDER_BUY | ORDER_SELL
-  ) {}
-
-  public marketShortRes(
-    order: Order | ProtoOrder,
-    amount: number,
-    hiveName: string
-  ) {}
-
-  public marketLongRes(order: Order) {}
-
-  public newTerminalTransfer(
-    terminalFrom: StructureTerminal,
-    terminalTo: StructureTerminal,
-    amount: number,
-    resource: ResourceConstant
-  ) {}
-
-  public get notAccountedMemory() {
-    return Game.cpu.getUsed();
-  }
-
-  public reportEnemy(creep: Creep) {
-    if (!Memory.report.enemies) Memory.report.enemies = {};
-    const stats = Apiary.intel.getStats(creep).max;
-    if (
-      stats.dism > 1250 ||
-      stats.dmgRange > 200 ||
-      stats.dmgClose > 750 ||
-      stats.heal > 300
-    )
-      Memory.report.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
-        time: Game.time,
-        owner: creep.owner.username,
-        ...stats,
-      };
-  }
-
-  public reportOrder(order: FlagOrder) {
-    if (!order.master) return;
-    if (!Memory.report.orders) Memory.report.orders = {};
-    if (
-      order.master &&
-      order.master.spawned &&
-      !order.ref.includes(prefix.defSwarm)
-    )
-      Memory.report.orders[order.ref] = {
-        time: Game.time,
-        pos: order.pos,
-      };
-  }
 
   public clean() {
     if (Memory.report.orders && Object.keys(Memory.report.orders).length > 50) {
@@ -145,4 +76,91 @@ export class EmptyLogger {
         delete Memory.report.enemies[sortedKeys[i]];
     }
   }
+
+  public marketLongRes(order: Order) {}
+
+  public marketShortRes(
+    order: Order | ProtoOrder,
+    amount: number,
+    hiveName: string
+  ) {}
+
+  public newSpawn(
+    beeName: string,
+    spawn: StructureSpawn,
+    cost: number,
+    masterName: string
+  ) {}
+
+  public newTerminalTransfer(
+    terminalFrom: StructureTerminal,
+    terminalTo: StructureTerminal,
+    amount: number,
+    resource: ResourceConstant
+  ) {}
+
+  public reportCPU(
+    ref: string,
+    mode: "run" | "update",
+    usedCPU: number,
+    amount: number,
+    reportSmall?: boolean
+  ) {}
+
+  public reportEnemy(creep: Creep) {
+    if (!Memory.report.enemies) Memory.report.enemies = {};
+    const stats = Apiary.intel.getStats(creep).max;
+    if (
+      stats.dism > 1250 ||
+      stats.dmgRange > 200 ||
+      stats.dmgClose > 750 ||
+      stats.heal > 300
+    )
+      Memory.report.enemies[creep.pos.roomName + "_" + creep.owner.username] = {
+        time: Game.time,
+        owner: creep.owner.username,
+        ...stats,
+      };
+  }
+
+  public reportMarketCreation(
+    resource: MarketResourceConstant,
+    fee: number,
+    type: ORDER_BUY | ORDER_SELL
+  ) {}
+
+  public reportMarketFeeChange(
+    orderId: string,
+    resource: MarketResourceConstant,
+    fee: number,
+    type: ORDER_BUY | ORDER_SELL
+  ) {}
+
+  public reportOrder(order: SwarmOrder<any>) {
+    if (!Memory.report.orders) Memory.report.orders = {};
+    if (!order.spawned) return;
+    if (!order.ref.includes(prefix.defSwarm)) return;
+    Memory.report.orders[order.ref] = {
+      time: Game.time,
+      pos: order.pos,
+    };
+  }
+
+  public resourceTransfer<R extends ResourceConstant>(
+    hiveName: string,
+    ref: string,
+    storeFrom: Store<R, false>,
+    storeTo: Store<R, false>,
+    resource?: R,
+    mode?: 1 | -1,
+    loss?: { ref: string; per: number }
+  ) {}
+
+  public run() {}
+
+  public update() {
+    this.intentsThisTick = 0;
+  }
+
+  // #endregion Public Methods (14)
 }
