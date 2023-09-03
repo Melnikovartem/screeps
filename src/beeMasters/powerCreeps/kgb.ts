@@ -22,40 +22,4 @@ export class KGBMaster extends PowerCreepMaster {
   }
 
   // #endregion Public Methods (1)
-
-  // #region Private Methods (1)
-
-  private chillMove() {
-    // keep 150ops to 80% fill of storage
-    const upperBound = Math.max(
-      this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
-      150
-    );
-    const lowerBound = 150;
-    const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
-    const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
-    if (
-      currOps < lowerBound &&
-      this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
-    )
-      this.powerCreep.withdraw(
-        this.hive.storage,
-        RESOURCE_OPS,
-        targetBalance - currOps,
-        this.hive.opt
-      );
-    if (
-      currOps > upperBound &&
-      this.hive.storage.store.getFreeCapacity(RESOURCE_OPS)
-    ) {
-      this.powerCreep.transfer(
-        this.hive.storage,
-        RESOURCE_OPS,
-        currOps - targetBalance,
-        this.hive.opt
-      );
-    } else this.powerCreep.goRest(this.parent.pos, this.hive.opt);
-  }
-
-  // #endregion Private Methods (1)
 }

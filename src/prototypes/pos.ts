@@ -2,7 +2,7 @@ import { getRoomCoorinates } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
 
 Object.defineProperty(RoomPosition.prototype, "to_str", {
-  get: function str() {
+  get: function str(this: RoomPosition) {
     return this.roomName + "_" + this.x + "_" + this.y;
   },
 });
@@ -14,7 +14,7 @@ Object.defineProperty(RoomPosition.prototype, "print", {
 });
 
 Object.defineProperty(RoomPosition.prototype, "enteranceToRoom", {
-  get: function str() {
+  get: function str(this: RoomPosition) {
     const exits = Game.map.describeExits(this.roomName);
     if (this.y === 0 && exits[FIND_EXIT_TOP])
       return new RoomPosition(this.x, 49, exits[FIND_EXIT_TOP]!);
@@ -44,16 +44,18 @@ RoomPosition.prototype.getRoomRangeTo = function (
   else if (typeof pos === "string") toRoom = pos;
   else toRoom = pos.pos.roomName;
   switch (mode) {
-    case "path":
+    case "path": {
       const ans = Traveler.findRoute(this.roomName, toRoom, {
         ignoreCurrent: true,
       });
       if (ans) return Object.keys(ans).length - 1;
       return Infinity;
-    case "manh":
+    }
+    case "manh": {
       const c1 = getRoomCoorinates(this.roomName, false);
       const c2 = getRoomCoorinates(toRoom, false);
       return Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]); // manhattan distance
+    }
     case "lin":
       return Game.map.getRoomLinearDistance(this.roomName, toRoom); // nathive linear
   }
@@ -219,7 +221,7 @@ RoomPosition.prototype.getRangeApprox = function (
   const pos = "pos" in obj ? (obj as { pos: RoomPosition }).pos : obj;
   let newDistance = 0;
   const route = Game.map.findRoute(this.roomName, pos.roomName);
-  let enterance: RoomPosition = this;
+  let enterance = new RoomPosition(this.x, this.y, this.roomName);
   let currentRoom = this.roomName;
 
   if (route === -2) newDistance = Infinity;

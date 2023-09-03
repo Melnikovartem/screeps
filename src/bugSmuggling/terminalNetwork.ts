@@ -49,6 +49,7 @@ export class Network {
   public askAid(hive: Hive) {
     if (!this.hiveValidForAid(hive)) return;
     hive.shortages = {};
+
     for (const r in hive.resState) {
       const res = r as ResourceConstant;
       if (hive.resState[res]! < 0) {
@@ -83,34 +84,31 @@ export class Network {
       }
     }
 
-    if (
-      hive.cells.storage &&
-      hive.cells.storage.storage.store.getFreeCapacity() < FREE_CAPACITY &&
-      !this.aid[hive.roomName]
-    ) {
-      const emptyHive = _.filter(
-        this.nodes,
-        (h) =>
-          h.roomName !== hive.roomName &&
-          h.cells.storage &&
-          h.cells.storage.storage.store.getFreeCapacity() >
-            FREE_CAPACITY * 1.5 &&
-          h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5
-      )[0];
-      if (emptyHive) {
-        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-        if (keys.length) {
-          const res = keys.reduce((prev, curr) =>
-            hive.resState[curr]! > hive.resState[prev]! ? curr : prev
-          );
-          if (hive.resState[res]! > 0)
-            this.aid[hive.roomName] = {
-              to: emptyHive.roomName,
-              res,
-              amount: FREE_CAPACITY * 0.1,
-              excess: 1,
-            };
-        }
+    if (!hive.cells.storage.terminal) return;
+    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY) return;
+    if (!this.aid[hive.roomName]) return;
+
+    // store shit somewhere else
+    const emptyHive = _.filter(
+      this.nodes,
+      (h) =>
+        h.roomName !== hive.roomName &&
+        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY * 1.5 &&
+        h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5
+    )[0];
+    if (emptyHive) {
+      const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+      if (keys.length) {
+        const res = keys.reduce((prev, curr) =>
+          hive.resState[curr]! > hive.resState[prev]! ? curr : prev
+        );
+        if (hive.resState[res]! > 0)
+          this.aid[hive.roomName] = {
+            to: emptyHive.roomName,
+            res,
+            amount: FREE_CAPACITY * 0.1,
+            excess: 1,
+          };
       }
     }
   }
@@ -247,7 +245,7 @@ export class Network {
       }
       if (usedTerminal) continue;
 
-      const stStore = hive.cells.storage.storage.store;
+      const stFree = hive.cells.storage.storageFreeCapacity();
       switch (hive.mode.sellOff) {
         case 2: {
           // sell for profit
@@ -264,7 +262,7 @@ export class Network {
                 terminal,
                 compound,
                 Math.min(SELL_STEP_MAX, toSell),
-                stStore.getFreeCapacity() < FREE_CAPACITY // need to free some space
+                stFree < FREE_CAPACITY // need to free some space
               );
             }
           }
@@ -289,7 +287,7 @@ export class Network {
         case 1: {
           // sell for free space
           // thought about storing best resources somewhere in the Apiary but rly too much trouble
-          if (stStore.getFreeCapacity() > FREE_CAPACITY) break;
+          if (stFree > FREE_CAPACITY) break;
           const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
           if (!keys.length) continue;
           const res = keys.reduce((prev, curr) =>
@@ -300,7 +298,7 @@ export class Network {
             terminal,
             res,
             Math.min(SELL_STEP_MAX, hive.resState[res]! * 0.8), // sell some of the resource
-            stStore.getFreeCapacity() < FULL_CAPACITY * 2 // getting close to no space (20_000)
+            stFree < FULL_CAPACITY * 2 // getting close to no space (20_000)
           );
           break;
         }

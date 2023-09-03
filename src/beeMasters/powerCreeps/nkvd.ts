@@ -86,6 +86,7 @@ export class NKVDMaster extends PowerCreepMaster {
         this.nextup = undefined;
       } else if (
         ans === ERR_NOT_ENOUGH_RESOURCES &&
+        this.hive.storage &&
         this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
       )
         this.powerCreep.withdraw(this.hive.storage, RESOURCE_OPS);
@@ -102,38 +103,6 @@ export class NKVDMaster extends PowerCreepMaster {
   // #endregion Public Methods (2)
 
   // #region Private Methods (4)
-
-  private chillMove() {
-    // keep 150ops to 80% fill of storage
-    const upperBound = Math.max(
-      this.powerCreep.store.getCapacity(RESOURCE_OPS) * 0.9,
-      150
-    );
-    const lowerBound = 150;
-    const currOps = this.powerCreep.store.getUsedCapacity(RESOURCE_OPS);
-    const targetBalance = Math.round(upperBound * 0.7 + lowerBound * 0.3);
-    if (
-      currOps < lowerBound &&
-      this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
-    )
-      this.powerCreep.withdraw(
-        this.hive.storage,
-        RESOURCE_OPS,
-        targetBalance - currOps,
-        this.hive.opt
-      );
-    if (
-      currOps > upperBound &&
-      this.hive.storage.store.getFreeCapacity(RESOURCE_OPS)
-    ) {
-      this.powerCreep.transfer(
-        this.hive.storage,
-        RESOURCE_OPS,
-        currOps - targetBalance,
-        this.hive.opt
-      );
-    } else this.powerCreep.goRest(this.parent.pos, this.hive.opt);
-  }
 
   private getNext() {
     this.nextup = undefined;
@@ -204,7 +173,7 @@ export class NKVDMaster extends PowerCreepMaster {
         case PWR_OPERATE_EXTENSION:
         case PWR_OPERATE_STORAGE:
           if ((targets as StorageCell).storage instanceof StructureStorage)
-            andNextup((targets as StorageCell).storage);
+            andNextup((targets as StorageCell).storage as StructureStorage);
           break;
         case PWR_OPERATE_TERMINAL:
           if ((targets as StorageCell).terminal)

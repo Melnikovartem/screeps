@@ -37,6 +37,8 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
       this.pos.createConstructionSite(STRUCTURE_CONTAINER);
       target = { pos: this.pos };
     }
+    if (!this.hive.storage) return;
+    const mainHiveStorage = this.hive.storage;
     if (this.hive.phase < 1) return;
     _.forEach(this.activeBees, (bee) => {
       switch (bee.state) {
@@ -51,19 +53,18 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
             const res = Object.keys(bee.store).filter(
               (r) => r !== RESOURCE_ENERGY
             )[0] as ResourceConstant | undefined;
-            if (res && bee.transfer(this.hive.storage, res) === OK)
+            if (res && bee.transfer(mainHiveStorage, res) === OK)
               Apiary.logger.resourceTransfer(
                 this.hiveName,
                 "pickup",
                 bee.store,
-                this.hive.storage.store,
+                mainHiveStorage.store,
                 res,
                 1
               );
           }
           if (
-            bee.withdraw(this.hive.storage, RESOURCE_ENERGY, undefined) ===
-              OK &&
+            bee.withdraw(mainHiveStorage, RESOURCE_ENERGY, undefined) === OK &&
             !otherRes
           ) {
             bee.state = beeStates.work;
@@ -71,7 +72,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
             Apiary.logger.resourceTransfer(
               this.hiveName,
               "build",
-              this.hive.storage.store,
+              mainHiveStorage.store,
               bee.store
             );
             bee.goTo(target.pos);
@@ -81,6 +82,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
           if (resource) bee.pickup(resource);
           break;
         }
+
         case beeStates.work: {
           if (bee.creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
             bee.state = beeStates.refill;

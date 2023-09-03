@@ -93,6 +93,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
         if (
           this.res &&
           bee.store.getFreeCapacity(this.res) &&
+          this.hive.storage &&
           this.hive.storage.store.getUsedCapacity(this.res)
         ) {
           bee.withdraw(this.hive.storage, this.res);
@@ -119,7 +120,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
 
     let shouldSpawn = Game.time >= this.oldestSpawn + this.cycle - 100;
     if (!this.beesAmount && this.res) {
-      if (this.hive.phase < 1) {
+      if (this.hive.phase < 1 || !this.hive.storage) {
         this.parent.delete();
         return;
       }
@@ -131,9 +132,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
         return;
       }
 
-      const inStore = this.hive.cells.storage.storageUsedCapacity(
-        this.res
-      );
+      const inStore = this.hive.cells.storage.storageUsedCapacity(this.res);
       shouldSpawn = inStore >= HAUL_PER_TRIP;
     }
 

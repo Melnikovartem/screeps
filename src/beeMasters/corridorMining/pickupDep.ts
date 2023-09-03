@@ -77,7 +77,7 @@ export class DepositPickupMaster extends Master<DepositMaster> {
           if (!bee.store.getFreeCapacity()) {
             // go home
             bee.state = beeStates.work;
-            bee.goTo(this.hive.cells.storage!);
+            bee.goTo(this.hive.cells.storage);
             break;
           }
 
@@ -156,12 +156,11 @@ export class DepositPickupMaster extends Master<DepositMaster> {
             bee.fleeRoom(this.hiveName);
             break;
           }
+          if (!this.hive.storage) break;
           if (
             !bee.store.getUsedCapacity() ||
-            (bee.transfer(
-              this.hive.storage,
-              findOptimalResource(bee.store)
-            ) === OK &&
+            (bee.transfer(this.hive.storage, findOptimalResource(bee.store)) ===
+              OK &&
               Object.keys(bee.store).length < 2)
           ) {
             // emptied storage can go back

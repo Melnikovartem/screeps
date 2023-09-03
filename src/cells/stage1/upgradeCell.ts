@@ -11,6 +11,7 @@ export class UpgradeCell extends Cell {
   // #region Properties (8)
 
   public link: StructureLink | undefined | null;
+  public container: StructureContainer | undefined | null;
   public linkId: Id<StructureLink> | null = null;
   public override master: UpgraderMaster;
   public maxBees = 10;
@@ -25,7 +26,7 @@ export class UpgradeCell extends Cell {
 
   public constructor(hive: Hive) {
     super(hive, prefix.upgradeCell);
-    this.findLink();
+    this.findStructures();
     let roadTime = this.cache("roadTime");
     if (roadTime === null) {
       roadTime = this.hive.pos.getTimeForPath(this);
@@ -57,18 +58,31 @@ export class UpgradeCell extends Cell {
 
   // #region Public Methods (3)
 
-  public findLink() {
+  public findStructures() {
     let link: typeof this.link =
       this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
     if (!link) {
-      link = this.pos
+      const links = this.pos
         .findInRange(FIND_MY_STRUCTURES, 3)
-        .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
-        | StructureLink
-        | undefined;
+        .filter((s) => s.structureType === STRUCTURE_LINK);
+      if (links.length)
+        link = links.reduce((prev, curr) =>
+          this.pos.getRangeTo(prev) <= this.pos.getRangeTo(curr) ? prev : curr
+        ) as StructureLink;
       if (link) this.cache("linkId", link.id);
     }
     this.link = link;
+
+    if (!link) {
+      this.container = undefined;
+      const containers = this.pos
+        .findInRange(FIND_STRUCTURES, 3)
+        .filter((s) => s.structureType === STRUCTURE_CONTAINER);
+      if (containers.length)
+        this.container = containers.reduce((prev, curr) =>
+          this.pos.getRangeTo(prev) <= this.pos.getRangeTo(curr) ? prev : curr
+        ) as StructureContainer;
+    }
   }
 
   public run() {
@@ -106,14 +120,12 @@ export class UpgradeCell extends Cell {
   public override update() {
     this.updateObject();
 
+    // at creation time or while room is small each 2K ticks
     if (
-      this.hive.phase === 1 &&
-      this.controller.level === 8 &&
-      Apiary.useBucket
+      Apiary.intTime === 0 ||
+      (this.controller.level < 8 && Math.random() < 0.0005)
     )
-      Apiary.destroyTime = Game.time;
-
-    if (Game.time === Apiary.createTime) this.recalculateRate();
+      this.recalculateRate();
 
     if (!this.master.beesAmount) return;
 
@@ -145,6 +157,16 @@ export class UpgradeCell extends Cell {
 
   // #region Private Methods (1)
 
+  public get suckerTarget() {
+    if (this.link && this.sCell.link) return this.link;
+    if (this.container) return this.container;
+    return this.hive.storage;
+  }
+
+  public get fastModePossible() {
+    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
+  }
+
   private recalculateRate() {
     const futureResourceCells = _.filter(
       Game.flags,
@@ -156,8 +178,10 @@ export class UpgradeCell extends Cell {
     this.maxRate = Math.max(1, futureResourceCells.length) * 10;
 
     let setup;
-    let suckerTime = 0;
+    if (this.fastModePossible) setup = setups.upgrader.fast;
+    else setup = setups.upgrader.manual;
 
+    let suckerTime = 0;
     if (this.link && this.sCell.link) {
       this.maxRate = Math.min(
         800 / this.link.pos.getRangeTo(this.sCell.link),
@@ -170,16 +194,16 @@ export class UpgradeCell extends Cell {
             cell.ratePT
           );
       });
-      setup = setups.upgrader.fast;
     } else {
-      suckerTime = Math.max(
-        this.sCell.storage.pos.getTimeForPath(this.controller) * 2 - 3,
-        0
-      );
-      if (this.controller.pos.getRangeTo(this.sCell.storage) < 4)
-        setup = setups.upgrader.fast;
-      else setup = setups.upgrader.manual;
+      const suckerTarget = this.suckerTarget;
+      if (suckerTarget)
+        suckerTime = Math.max(
+          this.controller.pos.getTimeForPath(suckerTarget) * 2 - 3,
+          0
+        );
     }
+
+    if (!setup) setup = setups.upgrader.manual;
 
     setup.patternLimit = Infinity;
     const body = setup.getBody(this.hive.room.energyCapacityAvailable).body;
@@ -193,6 +217,11 @@ export class UpgradeCell extends Cell {
       this.maxBees = this.link.pos
         .getOpenPositions(true)
         .filter((p) => p.getRangeTo(this.controller) <= 3).length;
+    else if (this.container)
+      this.maxBees =
+        this.container.pos
+          .getOpenPositions(true)
+          .filter((p) => p.getRangeTo(this.controller) <= 3).length - 1; // max 8
   }
 
   // #endregion Private Methods (1)

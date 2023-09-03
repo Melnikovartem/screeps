@@ -39,9 +39,11 @@ export class FastRefillCell extends Cell {
           this.masters.push(new FastRefillMaster(this, container, pos));
       }
 
-    this.link = this.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_LINK)[0] as
-    | StructureLink
-    | undefined;
+    this.link = this.pos
+      .lookFor(LOOK_STRUCTURES)
+      .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
+      | StructureLink
+      | undefined;
   }
 
   // #endregion Constructors (1)
@@ -53,7 +55,9 @@ export class FastRefillCell extends Cell {
   }
 
   public override get pos(): RoomPosition {
-    return FastRefillCell.poss(this.hiveName) || this.link?.pos || this.hive.rest;
+    return (
+      FastRefillCell.poss(this.hiveName) || this.link?.pos || this.hive.rest
+    );
   }
 
   // #endregion Public Accessors (2)
@@ -120,7 +124,7 @@ export class FastRefillCell extends Cell {
       .map((m) => m.container);
     this.needEnergy = !!emptyContainers.length;
     if (!this.needEnergy) return;
-    if (this.sCell.link) {
+    if (this.link && this.sCell.link) {
       if (
         this.link.store.getFreeCapacity(RESOURCE_ENERGY) >=
         LINK_CAPACITY * 0.75

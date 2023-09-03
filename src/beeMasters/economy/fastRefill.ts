@@ -60,7 +60,8 @@ export class FastRefillMaster extends Master<FastRefillCell> {
         bee.goTo(this.pos, { range: 0 });
       else if (bee.ticksToLive < 3) {
         bee.transfer(
-          this.container.store.getFreeCapacity(RESOURCE_ENERGY)
+          this.container.store.getFreeCapacity(RESOURCE_ENERGY) ||
+            !this.parent.link
             ? this.container
             : this.parent.link,
           RESOURCE_ENERGY
@@ -73,7 +74,10 @@ export class FastRefillMaster extends Master<FastRefillCell> {
           let suckerTarget: StructureContainer | StructureLink;
           if (this.container.store.getUsedCapacity(RESOURCE_ENERGY) && target)
             suckerTarget = this.container;
-          else if (this.parent.link.store.getUsedCapacity(RESOURCE_ENERGY))
+          else if (
+            this.parent.link &&
+            this.parent.link.store.getUsedCapacity(RESOURCE_ENERGY)
+          )
             suckerTarget = this.parent.link;
           else return;
           bee.withdraw(suckerTarget, RESOURCE_ENERGY);

@@ -377,7 +377,7 @@ CustomConsole.prototype.completeOrder = function (
           ? curr
           : prev
       );
-      terminal = hive.cells.storage!.terminal!;
+      terminal = hive.cells.storage.terminal!;
     }
 
     if (typeof terminal === "string") return terminal;

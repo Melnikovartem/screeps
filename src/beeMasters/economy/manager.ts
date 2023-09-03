@@ -18,7 +18,12 @@ export class ManagerMaster extends Master<StorageCell> {
   // #region Public Accessors (1)
 
   public get targetBeeCount() {
-    return 2;
+    if (this.hive.phase >= 1) return 2;
+    return 3;
+  }
+
+  private get requests() {
+    return this.parent.requests;
   }
 
   // #endregion Public Accessors (1)
@@ -26,24 +31,26 @@ export class ManagerMaster extends Master<StorageCell> {
   // #region Public Methods (2)
 
   public run() {
+    if (!this.hive.storage) return;
+    const mainHiveStorage = this.hive.storage;
+
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
         bee.fleeRoom(this.hiveName, this.hive.opt);
         return;
       }
 
-      if (bee.pos.roomName !== this.parent.pos.roomName)
-        bee.state = beeStates.chill;
+      if (bee.pos.roomName !== this.pos.roomName) bee.state = beeStates.chill;
       if (bee.ticksToLive < 10) bee.state = beeStates.fflush;
 
-      const transfer = bee.target && this.parent.requests[bee.target];
+      const transfer = bee.target && this.requests[bee.target];
 
       if (bee.state === beeStates.fflush)
         if (
-          bee.creep.store.getUsedCapacity() > 0 &&
-          this.parent.storageFreeCapacity() > 0
+          bee.creep.store.getUsedCapacity() &&
+          mainHiveStorage.store.getFreeCapacity()
         )
-          bee.transfer(this.parent.storage, findOptimalResource(bee.store));
+          bee.transfer(mainHiveStorage, findOptimalResource(bee.store));
         else if (transfer) bee.state = beeStates.refill;
         else bee.state = beeStates.chill;
 
@@ -67,13 +74,16 @@ export class ManagerMaster extends Master<StorageCell> {
       } else if (bee.creep.store.getUsedCapacity() > 0)
         bee.state = beeStates.fflush;
 
-      if (bee.state === beeStates.chill) bee.goRest(this.parent.pos);
+      if (bee.state === beeStates.chill) bee.goRest(this.pos);
       this.checkFlee(bee, this.hive, undefined, false);
     });
   }
 
   public override update() {
     super.update();
+
+    if (!this.hive.storage) return;
+    const mainHiveStorage = this.hive.storage;
 
     this.activeBees.sort(
       (a, b) =>
@@ -83,7 +93,7 @@ export class ManagerMaster extends Master<StorageCell> {
     let refilling = 0;
     let pickingup = 0;
     _.forEach(this.activeBees, (bee) => {
-      const transfer = bee.target && this.parent.requests[bee.target];
+      const transfer = bee.target && this.requests[bee.target];
       if (transfer && !transfer.beeProcess) {
         transfer.preprocess(bee);
         if (transfer.priority === 0 && transfer.isValid()) ++refilling;
@@ -91,14 +101,14 @@ export class ManagerMaster extends Master<StorageCell> {
       } else bee.target = undefined;
     });
 
-    let requests = _.map(this.parent.requests, (r) => r);
+    let requests = _.map(this.requests, (r) => r);
     if (this.hive.state === hiveStates.lowenergy)
       requests = _.filter(
         requests,
         (r) =>
           r.resource !== RESOURCE_ENERGY ||
           r.priority <= 1 ||
-          r.to.id === this.parent.storage.id
+          r.to.id === mainHiveStorage.id
       );
 
     let nonRefillNeeded = false;
@@ -111,16 +121,14 @@ export class ManagerMaster extends Master<StorageCell> {
 
       if (nonRefillNeeded) {
         this.activeBees.sort(
-          (a, b) =>
-            a.pos.getRangeTo(this.parent.pos) -
-            b.pos.getRangeTo(this.parent.pos)
+          (a, b) => a.pos.getRangeTo(this.pos) - b.pos.getRangeTo(this.pos)
         );
         requests = nonRefillRequests;
       }
     }
 
     _.forEach(this.activeBees, (bee) => {
-      const transfer = bee.target && this.parent.requests[bee.target];
+      const transfer = bee.target && this.requests[bee.target];
       if (
         !transfer ||
         !transfer.isValid() ||
@@ -147,11 +155,11 @@ export class ManagerMaster extends Master<StorageCell> {
                 const refPoint =
                   bee.store.getUsedCapacity(curr.resource) >= curr.amount
                     ? bee.pos
-                    : this.parent.storage.pos;
+                    : mainHiveStorage.pos;
                 const nonStoragePrev =
-                  prev.to.id === this.parent.storage.id ? prev.from : prev.to;
+                  prev.to.id === mainHiveStorage.id ? prev.from : prev.to;
                 const nonStorageCurr =
-                  curr.to.id === this.parent.storage.id ? curr.from : curr.to;
+                  curr.to.id === mainHiveStorage.id ? curr.from : curr.to;
                 ans =
                   refPoint.getRangeTo(nonStorageCurr) -
                   refPoint.getRangeTo(nonStoragePrev);
@@ -166,7 +174,7 @@ export class ManagerMaster extends Master<StorageCell> {
           newTransfer.preprocess(bee);
           if (transfer && transfer.priority === 0) {
             --refilling;
-            requests = _.map(this.parent.requests, (r) => r);
+            requests = _.map(this.requests, (r) => r);
             nonRefillNeeded = false;
           }
           if (newTransfer.priority === 6) ++pickingup;
@@ -181,7 +189,7 @@ export class ManagerMaster extends Master<StorageCell> {
 
       setup.patternLimit = Math.round(
         -0.004 * Math.pow(lvl, 3) + 1.8 * lvl + 8
-      );
+      ); // math out of my ass again
 
       if (this.hive.state === hiveStates.lowenergy)
         setup.patternLimit = Math.ceil(setup.patternLimit / 2);

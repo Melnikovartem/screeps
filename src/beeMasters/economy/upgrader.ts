@@ -20,7 +20,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
 
   // #endregion Properties (2)
 
-  // #region Public Accessors (3)
+  // #region Public Accessors (4)
 
   public override get boosts(): BoostRequest[] {
     const upgradeMode = this.hive.mode.upgrade; // polen
@@ -41,15 +41,11 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     ];
   }
 
-  public get fastModePossible() {
-    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
-  }
-
   public get targetBeeCount() {
     const upgradeMode = this.hive.mode.upgrade; // polen
 
     const storeAmount =
-      this.hive.storage.store.getUsedCapacity(RESOURCE_ENERGY);
+      this.hive.storage?.store.getUsedCapacity(RESOURCE_ENERGY) || 0;
 
     let desiredRate = 0;
     if (
@@ -94,25 +90,20 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     return ans;
   }
 
-  // #endregion Public Accessors (3)
-
-  // #region Protected Accessors (1)
-
-  protected get suckerTarget() {
-    if (this.parent.link && this.hive.cells.storage.link) {
-      if (this.parent.link.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
-        return this.parent.link;
-    } else if (this.hive.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000)
-      return this.hive.storage;
-    return undefined;
-  }
-
-  // #endregion Protected Accessors (1)
+  // #endregion Public Accessors (4)
 
   // #region Public Methods (2)
 
   public run() {
-    const suckerTarget = this.suckerTarget;
+    let suckerTarget = this.parent.suckerTarget;
+
+    // do not use last of the energy
+    if (
+      suckerTarget &&
+      this.pos.getRangeTo(suckerTarget) > 3 &&
+      (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) < 1000
+    )
+      suckerTarget = undefined;
 
     this.preRunBoost();
 
@@ -134,15 +125,17 @@ export class UpgraderMaster extends Master<UpgradeCell> {
           bee.state = beeStates.chill; // now save energy normal way
         else bee.state = beeStates.fflush; // recycle boosts
       } else if (
-        (this.fastModePossible &&
+        (this.parent.fastModePossible &&
           bee.store.getUsedCapacity(RESOURCE_ENERGY) <= bee.workMax * 2 &&
           this.parent.controller.ticksToDowngrade > CREEP_LIFE_TIME) || // failsafe for link network
         bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0
       ) {
         // let pos = target.pos.getOpenPositions().filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
-        if (suckerTarget) bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        if (suckerTarget && suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY))
+          bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         bee.state = beeStates.work;
       }
+
       switch (bee.state) {
         case beeStates.fflush: {
           this.recycleBee(bee, this.hive.opt);
@@ -153,13 +146,10 @@ export class UpgraderMaster extends Master<UpgradeCell> {
             bee.goRest(this.parent.pos, this.hive.opt);
             break;
           }
-          if (old) {
+          if (old && suckerTarget) {
             // old so to keep resources transfer to storage
             if (
-              bee.transfer(
-                this.parent.link || this.hive.storage,
-                RESOURCE_ENERGY
-              ) === ERR_FULL &&
+              bee.transfer(suckerTarget, RESOURCE_ENERGY) === ERR_FULL &&
               bee.boosted
             )
               bee.drop(RESOURCE_ENERGY);
@@ -193,11 +183,11 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     if (
       this.checkBees(
         this.parent.controller.ticksToDowngrade <
-          CONTROLLER_DOWNGRADE[this.parent.controller.level] * 0.5
+          CONTROLLER_DOWNGRADE[this.parent.controller.level] * 0.3
       )
     ) {
       let upgrader;
-      if (this.fastModePossible) {
+      if (this.parent.fastModePossible) {
         upgrader = setups.upgrader.fast.copy();
         if (this.parent.controller.level === 8 && this.hive.mode.upgrade >= 2)
           upgrader.fixed = [CARRY, CARRY, CARRY]; // save some cpu on withdrawing

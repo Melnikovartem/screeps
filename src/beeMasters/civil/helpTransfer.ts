@@ -70,7 +70,8 @@ export class HelpTransferMaster extends SwarmMaster<number> {
             );
         } else bee.goRest(this.pos); // else this.delete() // a little overhead, but yeah
       } else if (
-        bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50
+        bee.ticksToLive > this.pos.getRoomRangeTo(this.hive.pos, "lin") * 50 &&
+        this.hive.storage
       ) {
         const ans = bee.withdraw(
           this.hive.storage,

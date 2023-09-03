@@ -1,16 +1,24 @@
+import { DevelopmentCell } from "cells/stage0/developmentCell";
+import { CorridorMiningCell } from "cells/stage1/corridorMining";
 import { FactoryCell } from "cells/stage1/factoryCell";
+import { LaboratoryCell } from "cells/stage1/laboratoryCell";
 import { ObserveCell } from "cells/stage2/observeCell";
 import { PowerCell } from "cells/stage2/powerCell";
 import { hiveStates } from "static/enums";
 
 import type { Hive } from "./hive";
 
+export const ENERGY_THRESHOLD_DEV_CELLS = {
+  low: 3000,
+  high: 10_000,
+};
+
 export function opt(hive: Hive) {
-  const opt: TravelToOptions = { useFindRoute: true };
+  const optHive: TravelToOptions = { useFindRoute: true };
   if (hive.state >= hiveStates.battle) {
-    opt.stuckValue = 1;
+    optHive.stuckValue = 1;
     const terrain = Game.map.getRoomTerrain(hive.roomName);
-    opt.roomCallback = (roomName, matrix) => {
+    optHive.roomCallback = (roomName, matrix) => {
       if (roomName !== hive.roomName) return;
       const enemies = Apiary.intel
         .getInfo(roomName, 10)
@@ -46,11 +54,12 @@ export function opt(hive: Hive) {
       return matrix;
     };
   }
-  return opt;
+  return optHive;
 }
 
 export function updateCellData(this: Hive, bake = false) {
   _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
+    if (!s.isActive()) return;
     switch (s.structureType) {
       case STRUCTURE_EXTENSION:
         this.cells.spawn.extensions[s.id] = s;
@@ -62,30 +71,44 @@ export function updateCellData(this: Hive, bake = false) {
         this.cells.defense.towers[s.id] = s;
         break;
       case STRUCTURE_LAB:
-        if (!this.cells.lab) return;
+        // creating cell even from one lab so that we can boost
+        if (!this.cells.lab) this.cells.lab = new LaboratoryCell(this);
         this.cells.lab.laboratories[s.id] = s;
         break;
-      case STRUCTURE_STORAGE:
-        if (!this.cells.storage && s.isActive() && Apiary.useBucket)
-          Apiary.destroyTime = Game.time;
-        break;
       case STRUCTURE_FACTORY:
-        if (!this.cells.factory && this.cells.storage)
-          this.cells.factory = new FactoryCell(this, s);
+        if (!this.cells.factory) this.cells.factory = new FactoryCell(this, s);
         break;
       case STRUCTURE_POWER_SPAWN:
-        if (!this.cells.power && this.cells.storage)
-          this.cells.power = new PowerCell(this, s);
+        if (!this.cells.power) this.cells.power = new PowerCell(this, s);
         break;
       case STRUCTURE_OBSERVER:
         if (!this.cells.observe) this.cells.observe = new ObserveCell(this, s);
         break;
+      case STRUCTURE_STORAGE:
       case STRUCTURE_TERMINAL:
-        if (!this.cells.storage && s.isActive() && Apiary.useBucket)
-          if (Apiary.useBucket) Apiary.destroyTime = Game.time;
         break;
     }
   });
+
+  switch (this.phase) {
+    case 2:
+      this.cells.corridorMining = new CorridorMiningCell(this);
+    // @TODO nukes
+    // fall through
+    case 1:
+      if (
+        this.room.storage &&
+        this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
+          ENERGY_THRESHOLD_DEV_CELLS.low
+      )
+        this.cells.dev = new DevelopmentCell(this);
+      break;
+    case 0:
+      break;
+  }
+
+  if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
+    this.cells.dev = new DevelopmentCell(this);
 
   if (this.phase > 0 && bake) {
     this.cells.spawn.bakePriority();

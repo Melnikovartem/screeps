@@ -117,7 +117,7 @@ CustomConsole.prototype.spawnUpgrader = function (
   if (!hive.cells.upgrade)
     return `ERROR: NO UPGRADE CELL @ ${this.formatRoom(hiveName)}`;
   let upgrader;
-  if (hive.cells.upgrade.master.fastModePossible)
+  if (hive.cells.upgrade.fastModePossible)
     upgrader = setups.upgrader.fast.copy();
   else upgrader = setups.upgrader.manual.copy();
   upgrader.patternLimit = patternLimit;

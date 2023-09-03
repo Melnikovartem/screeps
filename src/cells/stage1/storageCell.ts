@@ -10,7 +10,6 @@ import { Cell } from "../_Cell";
 export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.2);
-export const ENERGY_FOR_REVERTING_TO_DEV_CELLS = 3000;
 const EXTREMLY_LOW_ENERGY = 10000;
 
 @profile
@@ -44,8 +43,19 @@ export class StorageCell extends Cell {
   // #region Public Accessors (2)
 
   /** used to support terminal storage, but not helpful and pain in ass */
-  public get storage() : StructureStorage | StructureTerminal | StructureContainer | StructureSpawn {
-    return this.hive.room.storage!;
+  public get storage():
+    | StructureStorage
+    | StructureTerminal
+    | StructureContainer
+    | StructureSpawn
+    | undefined {
+    const room = this.hive.room;
+    if (room.storage) return room.storage;
+    if (room.terminal) return room.terminal;
+    const spCell = this.hive.cells.spawn;
+    if (spCell.fastRef?.masters.length)
+      return spCell.fastRef.masters[0].container;
+    return spCell.recycleSpawn;
   }
 
   public get terminal() {
@@ -104,6 +114,7 @@ export class StorageCell extends Cell {
     amount: number = Infinity,
     fitStore = false
   ): number {
+    if (!this.storage) return 0;
     let sum = 0;
     let prev: TransferRequest | undefined;
     for (const obj of objects) {
@@ -145,6 +156,7 @@ export class StorageCell extends Cell {
     amount: number = Infinity,
     fitStore = false
   ): number {
+    if (!this.storage) return 0;
     let sum = 0;
     let prev: TransferRequest | undefined;
     amount = Math.min(amount, this.storageFreeCapacity(res));
@@ -183,19 +195,15 @@ export class StorageCell extends Cell {
   }
 
   public storageFreeCapacity(res?: ResourceConstant) {
-    return this.storage.store.getFreeCapacity(res) || 0;
+    return this.storage?.store.getFreeCapacity(res) || 0;
   }
 
   public storageUsedCapacity(res?: ResourceConstant) {
-    return this.storage.store.getUsedCapacity(res) || 0;
+    return this.storage?.store.getUsedCapacity(res) || 0;
   }
 
   public override update() {
     this.updateObject();
-    if (!this.storage && Apiary.useBucket) {
-      Apiary.destroyTime = Game.time;
-      return;
-    }
 
     if (!this.link && this.hive.controller.level >= 5) this.findLink();
 
@@ -216,28 +224,18 @@ export class StorageCell extends Cell {
 
     this.hive.stateChange(
       "lowenergy",
-      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < EXTREMLY_LOW_ENERGY
+      !!this.storage &&
+        this.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
+          EXTREMLY_LOW_ENERGY
     );
-    if (
-      this.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
-        ENERGY_FOR_REVERTING_TO_DEV_CELLS &&
-      !this.hive.cells.dev &&
-      Apiary.useBucket
-    )
-      Apiary.destroyTime = Game.time;
 
     // if (!Object.keys(this.requests).length)
     if (this.storage instanceof StructureStorage) this.updateTerminal();
-    else if (this.hive.room.storage) Apiary.destroyTime = Game.time;
   }
 
   public updateTerminal() {
     if (Game.time % 4 !== 0) return;
-    if (!this.terminal) {
-      if (this.hive.room.terminal && Apiary.useBucket)
-        Apiary.destroyTime = Game.time;
-      return;
-    }
+    if (!this.terminal || !this.storage) return;
 
     for (const r in this.terminal.store) {
       const res = r as ResourceConstant;
@@ -259,6 +257,7 @@ export class StorageCell extends Cell {
       }
     }
 
+    // how much to store in terminal
     for (const r in this.resTargetTerminal) {
       const res = r as ResourceConstant;
       const balance =
@@ -305,11 +304,12 @@ export class StorageCell extends Cell {
       }
     };
 
-    addFromStore(this.storage);
+    if (this.storage) addFromStore(this.storage);
     if (this.terminal) {
+      const effects = this.terminal.effects;
       const disrupted =
-        this.terminal.effects &&
-        this.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL);
+        effects &&
+        effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL).length;
       if (!disrupted) {
         addFromStore(this.terminal);
         addFromStore({ store: this.resTargetTerminal }, -1);

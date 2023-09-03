@@ -353,7 +353,7 @@ export class FactoryCell extends Cell {
 
     if (this.factory.store.getFreeCapacity() < 1_000) {
       const existing = this.sCell.requests[this.factory.id];
-      if (!existing || existing.to.id !== this.sCell.storage.id)
+      if (!existing || existing.to.id !== this.sCell.storage?.id)
         this.sCell.requestToStorage(
           [this.factory],
           3,

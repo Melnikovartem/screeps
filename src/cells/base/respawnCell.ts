@@ -36,7 +36,7 @@ export class RespawnCell extends Cell {
 
   // #region Private Accessors (1)
 
-  private get recycleSpawn() {
+  public get recycleSpawn(): StructureSpawn | undefined {
     return this.spawns[this.recycleSpawnId] || Object.values(this.spawns)[0];
   }
 
@@ -245,17 +245,15 @@ export class RespawnCell extends Cell {
   public update() {
     this.updateObject(["extensions", "spawns"]);
 
-    if (this.recycledPrev) {
+    if (this.recycledPrev && this.recycleSpawn) {
       // here we only deal with energy
-      if (this.hive.cells.storage)
-        this.hive.cells.storage.requestToStorage(
-          this.recycleSpawn.pos
-            .findInRange(FIND_TOMBSTONES, 1)
-            .filter((tomb) => tomb.store.getUsedCapacity(RESOURCE_ENERGY)),
-          6,
-          RESOURCE_ENERGY
-        );
-      else if (this.hive.cells.dev) this.hive.cells.dev.shouldRecalc = true;
+      this.hive.cells.storage.requestToStorage(
+        this.recycleSpawn.pos
+          .findInRange(FIND_TOMBSTONES, 1)
+          .filter((tomb) => tomb.store.getUsedCapacity(RESOURCE_ENERGY)),
+        6,
+        RESOURCE_ENERGY
+      );
       this.recycledPrev = false;
     }
 

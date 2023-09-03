@@ -6,18 +6,9 @@ import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { RespawnCell } from "cells/base/respawnCell";
 import { BuildCell } from "cells/building/buildCell";
-import { DevelopmentCell } from "cells/stage0/developmentCell";
-import { CorridorMiningCell } from "cells/stage1/corridorMining";
-import { FactoryCell } from "cells/stage1/factoryCell";
-import { BOOST_MINERAL, LaboratoryCell } from "cells/stage1/laboratoryCell";
-import {
-  ENERGY_FOR_REVERTING_TO_DEV_CELLS,
-  HIVE_ENERGY,
-  StorageCell,
-} from "cells/stage1/storageCell";
+import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
+import { HIVE_ENERGY, StorageCell } from "cells/stage1/storageCell";
 import { UpgradeCell } from "cells/stage1/upgradeCell";
-import { ObserveCell } from "cells/stage2/observeCell";
-import { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
 import { BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
@@ -32,35 +23,26 @@ const HIVE_MINERAL = 5000;
 // Decorator to profile class methods
 @profile
 export class Hive {
-  /** Hive room name */
-  public readonly roomName: string;
-  /** List of annex names */
-  public annexNames: string[] = [];
-  /** List of annexes in danger */
-  public annexInDanger: string[] = [];
+  // #region Properties (15)
 
-  /** The main room controlled by the hive */
-  public room: Room;
+  private updateCellData = updateCellData;
+  private updateDangerAnnex = updateDangerAnnex;
+
   /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
+  /** Hive room name */
+  public readonly roomName: string;
 
-  /** Current development phase of the hive *
-   *
-   * 0 up to storage tech
-   *
-   * 1 storage to 7lvl
-   *
-   * 2 end game aka 8lvl
-   *
-   * max */
-  public readonly phase: 0 | 1 | 2;
-
+  public addAnex = addAnex;
   /** added all resources from cache */
   public allResources = false;
+  /** List of annexes in danger */
+  public annexInDanger: string[] = [];
+  /** List of annex names */
+  public annexNames: string[] = [];
   public bassboost: Hive | null = null;
-
-  public state: hiveStates = hiveStates.economy;
-
+  public mastersResTarget: ResTarget = {};
+  public resState: { energy: number } & ResTarget = { energy: 0 };
   public resTarget: { energy: number } & ResTarget = {
     // energy
     [RESOURCE_ENERGY]: HIVE_ENERGY,
@@ -72,9 +54,14 @@ export class Hive {
     // [BOOST_MINERAL.damage[1]]: HIVE_MINERAL,
     // [BOOST_MINERAL.attack[1]]: HIVE_MINERAL,
   };
-  public resState: { energy: number } & ResTarget = { energy: 0 };
-  public mastersResTarget: ResTarget = {};
+  /** The main room controlled by the hive */
+  public room: Room;
   public shortages: ResTarget = {};
+  public state: hiveStates = hiveStates.economy;
+
+  // #endregion Properties (15)
+
+  // #region Constructors (1)
 
   /**
    * Constructor for the Hive class
@@ -92,49 +79,14 @@ export class Hive {
       defense: new DefenseCell(this),
       excavation: new ExcavationCell(this),
       build: new BuildCell(this),
+      storage: new StorageCell(this),
+      upgrade: new UpgradeCell(this),
     };
 
-    /** How much to check when rechecking buildings
-     *
-     * 3 deep recalc with resources check
-     *
-     * 2 main room + annexes
-     *
-     * 1 main room
-     *
-     * 0 no need
-     */
-    this.phase = 0;
     if (!this.controller) return;
 
-    const activeStorage = this.room.storage && this.room.storage.isActive();
-    if (activeStorage) {
-      // no extra checks about sCell, so careful
-      this.phase = 1;
-      if (
-        this.room.storage &&
-        this.room.storage.store.getUsedCapacity(RESOURCE_ENERGY) <
-          ENERGY_FOR_REVERTING_TO_DEV_CELLS * 1.5
-      )
-        this.cells.dev = new DevelopmentCell(this);
-      const sCell = new StorageCell(this);
-      this.cells.storage = sCell;
-      this.cells.upgrade = new UpgradeCell(this);
-      this.cells.lab = new LaboratoryCell(this);
-
-      let factory: StructureFactory | undefined;
-      _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
-        if (s.structureType === STRUCTURE_FACTORY) factory = s;
-      });
-      if (factory) this.cells.factory = new FactoryCell(this, factory);
-      if (this.controller.level < 8) {
-        // try to develop the hive
-        this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
-        // to prottect
-        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
-      } else {
-        this.phase = 2;
-
+    switch (this.phase) {
+      case 2:
         // hihgh lvl minerals to protect my hive
         this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
         // protect expansions with boost creeps + more attack
@@ -147,30 +99,86 @@ export class Hive {
 
         // save energy for a bad day
         this.resTarget[RESOURCE_BATTERY] = 5000;
-
-        let obeserver: StructureObserver | undefined;
-        let powerSpawn: StructurePowerSpawn | undefined;
-        _.forEach(this.room.find(FIND_MY_STRUCTURES), (s) => {
-          if (s.structureType === STRUCTURE_OBSERVER) obeserver = s;
-          else if (s.structureType === STRUCTURE_POWER_SPAWN) powerSpawn = s;
-        });
-        if (obeserver) this.cells.observe = new ObserveCell(this, obeserver);
-        if (powerSpawn) this.cells.power = new PowerCell(this, powerSpawn);
-        this.cells.corridorMining = new CorridorMiningCell(this);
-        // @TODO cause i haven' reached yet
-      }
-    } else {
-      this.cells.dev = new DevelopmentCell(this);
+        break;
+      case 1:
+        // try to develop the hive
+        this.resTarget[BOOST_MINERAL.upgrade[2]] = HIVE_MINERAL;
+        // to prottect
+        this.resTarget[BOOST_MINERAL.attack[2]] = HIVE_MINERAL;
+        break;
+      case 0:
+        break;
     }
 
+    // creates all optional cells based on objectives
     this.updateCellData(true);
-    if (!this.cells.dev && !Object.keys(this.cells.spawn.spawns).length)
-      this.cells.dev = new DevelopmentCell(this);
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (10)
+
+  /** fast way to get to cache */
+  public get cache() {
+    return Memory.cache.hives[this.roomName];
+  }
+
+  /** controller of the room */
+  public get controller() {
+    return this.room.controller!;
+  }
+
+  public get isBattle() {
+    return this.state >= hiveStates.battle;
+  }
+
+  /** Interface for settings of hive */
+  public get mode() {
+    return this.cache.do;
+  }
+
+  /** custom pathing during battle to aviod enemies */
+  public get opt() {
+    return opt(this);
+  }
+
+  /** Current development phase of the hive *
+   *
+   * 0 up to storage tech
+   *
+   * 1 storage to 7lvl
+   *
+   * 2 end game aka 8lvl
+   *
+   * max */
+  public get phase(): 0 | 1 | 2 {
+    const activeStorage = this.room.storage && this.room.storage.isActive();
+    if (!activeStorage) return 0;
+    if (this.controller.level < 8) return 1;
+    return 2;
+  }
+
+  /** central position of hive */
+  public get pos() {
+    return this.cells.defense.pos;
+  }
+
+  public get print(): string {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.roomName}"]</a>`;
+  }
+
+  /** pos to rest and wait in this hive */
+  public get rest() {
+    return this.cells.excavation.pos;
   }
 
   public get storage() {
     return this.cells.storage.storage;
   }
+
+  // #endregion Public Accessors (10)
+
+  // #region Public Static Methods (1)
 
   public static initMemory(roomName: string) {
     // @TODO power/deposit mining if on the edge
@@ -180,9 +188,14 @@ export class Hive {
     };
   }
 
-  /** Interface for settings of hive */
-  public get mode() {
-    return this.cache.do;
+  // #endregion Public Static Methods (1)
+
+  // #region Public Methods (3)
+
+  public run() {
+    _.forEach(this.cells, (cell: Cell) => {
+      Apiary.wrap(() => cell.run(), cell.ref, "run");
+    });
   }
 
   /**
@@ -195,40 +208,6 @@ export class Hive {
     if (trigger) {
       if (st > this.state) this.state = st;
     } else if (this.state === st) this.state = hiveStates.economy;
-  }
-
-  public get isBattle() {
-    return this.state >= hiveStates.battle;
-  }
-
-  public addAnex = addAnex;
-  private updateDangerAnnex = updateDangerAnnex;
-
-  private updateCellData = updateCellData;
-
-  /** central position of hive */
-  public get pos() {
-    return this.cells.defense.pos;
-  }
-
-  /** pos to rest and wait in this hive */
-  public get rest() {
-    return this.cells.excavation.pos;
-  }
-
-  /** controller of the room */
-  public get controller() {
-    return this.room.controller!;
-  }
-
-  /** custom pathing during battle to aviod enemies */
-  public get opt() {
-    return opt(this);
-  }
-
-  /** fast way to get to cache */
-  public get cache() {
-    return Memory.cache.hives[this.roomName];
   }
 
   public update() {
@@ -273,13 +252,5 @@ export class Hive {
     });
   }
 
-  public run() {
-    _.forEach(this.cells, (cell: Cell) => {
-      Apiary.wrap(() => cell.run(), cell.ref, "run");
-    });
-  }
-
-  public get print(): string {
-    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.roomName}"]</a>`;
-  }
+  // #endregion Public Methods (3)
 }

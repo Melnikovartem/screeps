@@ -408,7 +408,7 @@ export class LaboratoryCell extends Cell {
     let sum: number = this.sCell.getUsedCapacity(res);
     // kindawhy bother with checking if compund is in prod but ok
     if (bee && this.prod && res === this.prod.res) {
-      sum = this.sCell.storage.store.getUsedCapacity(res);
+      sum = this.sCell.storageUsedCapacity(res);
       const inBees = _.sum(this.sCell.master.activeBees, (b) =>
         b.store.getUsedCapacity(res)
       );
@@ -571,7 +571,7 @@ export class LaboratoryCell extends Cell {
     let prev;
     for (const id in this.laboratories) {
       const curr = this.sCell.requests[id];
-      if (curr && curr.to.id === this.sCell.storage.id) {
+      if (curr && this.sCell.storage && curr.to.id === this.sCell.storage.id) {
         curr.nextup = prev;
         prev = curr;
       }

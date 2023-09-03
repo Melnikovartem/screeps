@@ -68,8 +68,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
             );
         } else bee.goRest(this.pos, hiveToUpg.opt);
       } else {
-        let storage: StructureStorage | StructureContainer | undefined =
-          hiveToUpg.cells.storage?.storage;
+        let storage = hiveToUpg.cells.storage.storage;
         if (!storage) {
           // fast ref pos for this flag
           storage = this.pos
