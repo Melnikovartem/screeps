@@ -24,9 +24,10 @@ export class Mem {
 
     for (const roomName in Memory.cache.hives) {
       const room = Game.rooms[roomName];
-      if (!(room && room.controller && room && room.controller.my))
-        delete Memory.flags[roomName];
+      if (!room || !room.controller || !room.controller.my)
+        delete Memory.cache.hives[roomName];
     }
+
     if (!Memory.report) Memory.report = {};
     // Memory log is not managed here as it can be undefined
   }

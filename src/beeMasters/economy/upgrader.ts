@@ -9,6 +9,8 @@ import type { MovePriority } from "../_Master";
 import { Master } from "../_Master";
 
 const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgrading
+const SPAWN_SAVE_ENERGY = 250; // when taking from spawn to upgrade leave 250 for miner to spawn
+const MAIN_STORAGE_SAVE_ENERGY = 1000; // leave 1000 if taking from other places
 
 @profile
 export class UpgraderMaster extends Master<UpgradeCell> {
@@ -84,10 +86,12 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     const targetPrecise =
       Math.min(desiredRate, this.parent.maxPossibleRate) /
       this.parent.ratePerCreepMax;
-    const ans = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
+    let ans = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
     this.patternPerBee = Math.round(
       (targetPrecise / ans) * this.parent.workPerCreepMax
     );
+    if (this.hive.cells.dev)
+      ans = Math.min(ans, this.hive.cells.dev.upgraderBeeCount);
     return ans;
   }
 
@@ -103,12 +107,13 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       suckerTarget &&
       this.hive.storage?.id === suckerTarget.id &&
       suckerTarget.structureType !== STRUCTURE_SPAWN &&
-      (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) <= 1000 // do not drain main storage
+      (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) <=
+        MAIN_STORAGE_SAVE_ENERGY // do not drain main storage
     )
       suckerTarget = undefined;
     else if (
       suckerTarget?.structureType === STRUCTURE_SPAWN &&
-      this.hive.room.energyAvailable <= 150 // keep last 150 energy free
+      this.hive.room.energyAvailable <= SPAWN_SAVE_ENERGY // keep last 150 energy free
     )
       suckerTarget = undefined;
 
@@ -193,15 +198,15 @@ export class UpgraderMaster extends Master<UpgradeCell> {
           CONTROLLER_DOWNGRADE[this.parent.controller.level] * 0.3
       )
     ) {
-      let upgrader;
+      let setup;
       if (this.parent.fastModePossible) {
-        upgrader = setups.upgrader.fast.copy();
+        setup = setups.upgrader.fast.copy();
         if (this.parent.controller.level === 8 && this.hive.mode.upgrade >= 2)
-          upgrader.fixed = [CARRY, CARRY, CARRY]; // save some cpu on withdrawing
-      } else upgrader = setups.upgrader.manual.copy();
-      upgrader.patternLimit = this.patternPerBee;
+          setup.fixed = [CARRY, CARRY, CARRY]; // save some cpu on withdrawing
+      } else setup = setups.upgrader.manual.copy();
+      setup.patternLimit = this.patternPerBee;
       this.wish({
-        setup: upgrader,
+        setup,
         priority:
           this.parent.controller.level === 8 || this.beesAmount >= 2 ? 8 : 6,
       });

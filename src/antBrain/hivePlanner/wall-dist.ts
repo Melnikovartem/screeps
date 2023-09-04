@@ -1,18 +1,16 @@
-const roomDimensions = 50;
+export const ROOM_DIMENTIONS = 50;
 
 /**
  * This is good for anything that isn't a diagonal, as searches all adjacent tiles when finding distance
  */
-Room.prototype.distanceTransform = function (
-  initialCM,
-  enableVisuals,
+export function distanceTransform(
+  initialCM: CostMatrix,
+  roomVisual?: RoomVisual,
   x1 = 0,
   y1 = 0,
-  x2 = roomDimensions - 1,
-  y2 = roomDimensions - 1
+  x2 = ROOM_DIMENTIONS - 1,
+  y2 = ROOM_DIMENTIONS - 1
 ) {
-  const room = this;
-
   // Use a costMatrix to record distances
 
   const distanceCM = new PathFinder.CostMatrix();
@@ -22,12 +20,12 @@ Room.prototype.distanceTransform = function (
 
   for (
     x = Math.max(x1 - 1, 0);
-    x < Math.min(x2 + 1, roomDimensions - 1);
+    x < Math.min(x2 + 1, ROOM_DIMENTIONS - 1);
     x += 1
   ) {
     for (
       y = Math.max(y1 - 1, 0);
-      y < Math.min(y2 + 1, roomDimensions - 1);
+      y < Math.min(y2 + 1, ROOM_DIMENTIONS - 1);
       y += 1
     ) {
       distanceCM.set(x, y, initialCM.get(x, y) === 255 ? 0 : 255);
@@ -86,12 +84,12 @@ Room.prototype.distanceTransform = function (
     }
   }
 
-  if (enableVisuals) {
+  if (roomVisual) {
     // Loop through the xs and ys inside the bounds
 
     for (x = x1; x <= x2; x += 1) {
       for (y = y1; y <= y2; y += 1) {
-        room.visual.rect(x - 0.5, y - 0.5, 1, 1, {
+        roomVisual.rect(x - 0.5, y - 0.5, 1, 1, {
           fill: `hsl(${200}${distanceCM.get(x, y) * 10}, 100%, 60%)`,
           opacity: 0.4,
         });
@@ -100,21 +98,19 @@ Room.prototype.distanceTransform = function (
   }
 
   return distanceCM;
-};
+}
 
 /**
  * This is good for finding open diamond-shaped areas, as it voids adjacent diagonal tiles when finding distance
  */
-Room.prototype.diagonalDistanceTransform = function (
-  initialCM,
-  enableVisuals,
+export function diagonalDistanceTransform(
+  initialCM: CostMatrix,
+  roomVisual?: RoomVisual,
   x1 = 0,
   y1 = 0,
-  x2 = roomDimensions - 1,
-  y2 = roomDimensions - 1
+  x2 = ROOM_DIMENTIONS - 1,
+  y2 = ROOM_DIMENTIONS - 1
 ) {
-  const room = this;
-
   // Use a costMatrix to record distances
 
   const distanceCM = new PathFinder.CostMatrix();
@@ -164,12 +160,12 @@ Room.prototype.diagonalDistanceTransform = function (
     }
   }
 
-  if (enableVisuals) {
+  if (roomVisual) {
     // Loop through the xs and ys inside the bounds
 
     for (x = x1; x <= x2; x += 1) {
       for (y = y1; y <= y2; y += 1) {
-        room.visual.rect(x - 0.5, y - 0.5, 1, 1, {
+        roomVisual.rect(x - 0.5, y - 0.5, 1, 1, {
           fill: `hsl(${200}${distanceCM.get(x, y) * 10}, 100%, 60%)`,
           opacity: 0.4,
         });
@@ -178,4 +174,4 @@ Room.prototype.diagonalDistanceTransform = function (
   }
 
   return distanceCM;
-};
+}

@@ -48,10 +48,17 @@ export class DevelopmentCell extends Cell {
 
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
       let coef = cell.master.ratePT;
-      if (!cell.container) --coef;
+      if (!cell.container)
+        coef = Math.max(coef - this.minerBeeCount(cell.resource), 0);
       accumRoadTime +=
         (cell.roadTime + Math.max(cell.restTime, cell.roadTime, 100)) * coef;
     });
+
+    if (this.controller.level > 2) {
+      const upgCell = this.hive.cells.upgrade;
+      accumRoadTime += upgCell.maxRate.hive * upgCell.roadTime * 1.6;
+      //  * 2 * 0.8 : 2 for trips, 0.8 for overhead
+    }
 
     const body = setups.managerQueen.getBody(
       this.hive.room.energyCapacityAvailable
@@ -59,9 +66,16 @@ export class DevelopmentCell extends Cell {
     this.carryCapacity =
       body.filter((b) => b === CARRY).length * CARRY_CAPACITY;
 
-    let rounding = (x: number) => Math.round(x - 0.15);
-    if (this.controller.level <= 2) rounding = (x) => Math.round(x + 0.15);
+    let rounding = (x: number) => Math.round(x + 0.1);
+    if (this.controller.level <= 2) rounding = (x) => Math.round(x);
     return rounding(accumRoadTime / this.carryCapacity);
+  }
+
+  // upper bound on upgraders
+  public get upgraderBeeCount() {
+    return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
+      ? 25
+      : 0;
   }
 
   public override get pos() {
@@ -74,12 +88,13 @@ export class DevelopmentCell extends Cell {
 
   public minerBeeCount(resource: Source | Mineral) {
     if (resource instanceof Mineral) return 0;
-    const workAmount = Math.floor(
-      this.hive.room.energyCapacityAvailable /
-        (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5)
-    );
+    const harvestAmount =
+      Math.floor(
+        this.hive.room.energyCapacityAvailable /
+          (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5)
+      ) * HARVEST_POWER;
     const maxBees = Math.round(
-      resource.energyCapacity / ENERGY_REGEN_TIME / workAmount
+      resource.energyCapacity / ENERGY_REGEN_TIME / harvestAmount
     );
     return Math.max(
       Math.min(Math.floor(resource.pos.getOpenPositions(true).length), maxBees),

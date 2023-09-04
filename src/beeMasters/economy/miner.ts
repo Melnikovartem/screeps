@@ -33,8 +33,8 @@ export class MinerMaster extends Master<ResourceCell> {
       return work;
     });
     let beeRate = Math.max(0, ...beeRates);
-    if (this.resType === RESOURCE_ENERGY) beeRate *= 2;
-    else beeRate /= 5;
+    if (this.resType === RESOURCE_ENERGY) beeRate *= HARVEST_POWER;
+    else beeRate = beeRate * HARVEST_MINERAL_POWER / 6; // 1 tick harves + 5 cooldown 
     return beeRate;
   }
 
@@ -204,7 +204,8 @@ export class MinerMaster extends Master<ResourceCell> {
         !this.container &&
         mode !== "busy" &&
         bee.store.getUsedCapacity(RESOURCE_ENERGY) >=
-          Math.min(bee.workMax * 5, bee.store.getCapacity(RESOURCE_ENERGY))
+          Math.min(bee.workMax * 5, bee.store.getCapacity(RESOURCE_ENERGY)) &&
+        bee.store.getUsedCapacity(RESOURCE_ENERGY)
       ) {
         const construction = this.construction;
         if (construction) {

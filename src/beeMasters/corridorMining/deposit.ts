@@ -55,7 +55,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     // how much can we mine
     this.workAmount = setups.miner.deposit
       .getBody(this.hive.room.energyCapacityAvailable)
-      .body.filter((b) => b === WORK).length;
+      .body.filter((b) => b === WORK).length * HARVEST_DEPOSIT_POWER;
     this.updateTarget();
   }
 

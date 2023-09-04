@@ -143,8 +143,12 @@ export class TransferRequest {
           this.fromAmount
         );
         let ans;
-        if (this.from instanceof Resource) ans = bee.pickup(this.from);
-        else {
+        if (this.from instanceof Resource) {
+          ans = bee.pickup(this.from);
+          // if some more resources dropped @ location we record that
+          this.amount = Math.max(this.amount, this.from.amount);
+          this.toAmount = this.to.store.getFreeCapacity(this.resource) || 0;
+        } else {
           const res = this.resource || findOptimalResource(this.from.store, -1);
           if (this.resource === undefined)
             amountBee = Math.min(

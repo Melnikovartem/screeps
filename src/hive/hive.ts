@@ -221,7 +221,7 @@ export class Hive {
       this.updateCellData();
 
     if (!this.allResources && Apiary.intTime % 10 === 0)
-      this.allResources = addResourceCells(this);
+      addResourceCells(this);
 
     if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
 

@@ -1,6 +1,6 @@
+import type { RoomPlannerHiveCache } from "antBrain/hivePlanner/plannerActive";
 import type { _Apiary } from "Apiary";
 import type { CustomConsole } from "convenience/console/console";
-import type { RoomSetup } from "hivePlanner/planner-old";
 import type { SwarmOrderInfo } from "orders/swarmOrder";
 import type { CreepAllBattleInfo } from "spiderSense/intelligence";
 import type { beeStates, roomStates } from "static/enums";
@@ -185,25 +185,13 @@ declare global {
     // #endregion Properties (5)
   }
 
-  interface FlagMemory {
-    // #region Properties (4)
-
-    extraInfo?: any;
-    // for different tasks
-    extraPos?: RoomPosition;
-    hive: string;
-    info?: number;
-
-    // #endregion Properties (4)
-  }
-
   interface Memory {
     // #region Properties (4)
 
+    /** important!! operational info, but Apiary could keep on living */
     cache: {
       intellegence: IntelBattle;
       map: IntelGlobal;
-      roomPlanner: { [id: string]: RoomSetup };
       hives: {
         [id: string]: HiveCache;
       };
@@ -211,6 +199,10 @@ declare global {
         siedgeInfo: { [ref: string]: SiedgeInfo };
       };
       orders: { [ref: string]: SwarmOrderInfo };
+    };
+    /** part of the memory that we don't wipe */
+    longterm: {
+      roomPlanner: { [hiveName: string]: RoomPlannerHiveCache };
     };
     // my giant log
     log: LogInfo | undefined;

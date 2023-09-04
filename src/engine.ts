@@ -1,4 +1,4 @@
-type Fn = () => void;
+type Fn = () => void | Fn;
 
 interface Task {
   // #region Properties (3)
@@ -41,11 +41,11 @@ export class Engine {
 
   // #region Public Methods (3)
 
-  public addTask(ref: string, func: Fn) {
+  public addTask(ref: string, func: Fn, time = Game.time) {
     this.que.push({
       ref,
       func,
-      time: Game.time,
+      time,
     });
   }
 
@@ -58,7 +58,11 @@ export class Engine {
   }
 
   public runTask(task: Task) {
-    Apiary.wrap(task.func, task.ref, "run", 1);
+    const wrapFunc = () => {
+      const nextUp = task.func();
+      if (nextUp) this.addTask(task.ref, nextUp, task.time);
+    };
+    Apiary.wrap(wrapFunc, task.ref, "run", 1);
   }
 
   // #endregion Public Methods (3)

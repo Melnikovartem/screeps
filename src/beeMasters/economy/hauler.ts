@@ -301,7 +301,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
 
     if (!this.accumRoadTime || this.parent.shouldRecalc) {
       this._targetBeeCount = 0;
-      if (Game.time % 50 === 0 || this.parent.shouldRecalc) {
+      if (Apiary.intTime % 190 === 0 || this.parent.shouldRecalc) {
         this.recalculateRoadTime();
         if (!this.accumRoadTime) return;
         this.recalculateTargetBee();

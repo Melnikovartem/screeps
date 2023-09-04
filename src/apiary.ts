@@ -1,4 +1,5 @@
-import { WarcrimesModule } from "abstract/warModule";
+import { ColonyBrianModule } from "antBrain/colonyModule";
+import { WarcrimesModule } from "antBrain/warModule";
 import type { Master, MasterParent } from "beeMasters/_Master";
 import type { HordeMaster } from "beeMasters/war/horde";
 import { Bee } from "bees/bee";
@@ -23,8 +24,10 @@ const STARVE_HIM_OUT_CLAIMS = [""];
 export class _Apiary {
   // #region Properties (19)
 
+  private requestRoomSightNextTick: string[] = [];
+
   public bees: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
-  public broker: Broker;
+  public broker: Broker = new Broker();
   public createTime: number;
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public destroyTime: number;
@@ -34,14 +37,14 @@ export class _Apiary {
   public logger: EmptyLogger;
   public masters: { [id: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
-  public network: Network;
+  public network: Network = new Network();
   public orders: { [ref: string]: SwarmOrder<any> } = {};
   public requestRoomSight: string[] = [];
-  public requestRoomSightNextTick: string[] = [];
   public useBucket: boolean = false;
   public username: string = "";
   public visuals: Visuals = new Visuals();
-  public warcrimes: WarcrimesModule;
+  public warcrimes: WarcrimesModule = new WarcrimesModule();
+  public colonybrain: ColonyBrianModule = new ColonyBrianModule();
 
   // #endregion Properties (19)
 
@@ -50,10 +53,6 @@ export class _Apiary {
   public constructor() {
     this.createTime = Game.time;
     this.destroyTime = this.createTime + APIARY_LIFETIME;
-    this.intel = new Intel();
-    this.broker = new Broker();
-    this.network = new Network();
-    this.warcrimes = new WarcrimesModule();
     if (LOGGING_CYCLE) this.logger = new Logger();
     else this.logger = new EmptyLogger();
   }
@@ -117,6 +116,7 @@ export class _Apiary {
       this.network.nodes.length
     );
     this.wrap(() => this.warcrimes.run(), "warcrimes", "run", 1);
+    this.wrap(() => this.colonybrain.run(), "colonybrain", "run", 1);
 
     this.engine.run();
 
@@ -126,6 +126,8 @@ export class _Apiary {
       "run",
       Object.keys(this.hives).length
     );
+    this.updateRoomSight();
+
     if (this.logger) this.logger.run();
   }
 
@@ -179,4 +181,20 @@ export class _Apiary {
   }
 
   // #endregion Public Methods (5)
+
+  // #region Private Methods (1)
+
+  private updateRoomSight() {
+    // 80% chance to keep each request
+    _.forEach(this.requestRoomSight, (roomName) =>
+      this.requestRoomSightNextTick.indexOf(roomName) === -1 &&
+      Math.random() < 0.8
+        ? this.requestRoomSight.push(roomName)
+        : undefined
+    );
+    this.requestRoomSight = this.requestRoomSightNextTick;
+    this.requestRoomSightNextTick = [];
+  }
+
+  // #endregion Private Methods (1)
 }

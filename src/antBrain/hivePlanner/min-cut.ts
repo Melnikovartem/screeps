@@ -190,7 +190,7 @@ export function minCutToExit(sources: Point[], costMap: CostMatrix): Point[] {
       [49 - i, 49],
       [0, 49 - i],
     ]) {
-      if (costMap.get(x, y) == 255) {
+      if (costMap.get(x, y) === 255) {
         continue;
       }
       exit[calcIdx(x, y)] = 1;
@@ -458,7 +458,7 @@ export function minCutToExit(sources: Point[], costMap: CostMatrix): Point[] {
     const didx = sidx | D_NODE;
     const p = calcPt(sidx);
 
-    if (last[sidx] != -2 && last[didx] == -2) {
+    if (last[sidx] !== -2 && last[didx] === -2) {
       ret.push(p);
     }
 
@@ -484,7 +484,7 @@ export function minCutToExit(sources: Point[], costMap: CostMatrix): Point[] {
   return ret;
 }
 
-function USAGE() {
+/* function USAGE() {
   const assert = require("assert");
 
   const cm = new PathFinder.CostMatrix();
@@ -519,4 +519,5 @@ function USAGE() {
   console.log("Yes!");
 }
 
-USAGE();
+USAGE(); 
+*/

@@ -8,8 +8,10 @@ import type { Hive } from "./hive";
  * @param {string} annexName - The name of the annex to add
  */
 export function addAnex(this: Hive, annexName: string) {
-  if (!this.annexNames.includes(annexName)) this.annexNames.push(annexName);
-  markResources(this);
+  if (!this.annexNames.includes(annexName)) {
+    this.annexNames.push(annexName);
+    markResources(this);
+  }
 }
 
 export function updateDangerAnnex(this: Hive) {
@@ -71,7 +73,7 @@ export function markResources(hive: Hive) {
 }
 
 export function addResourceCells(hive: Hive) {
-  let foundAll = true;
+  hive.allResources = true;
   let resourceCells = 0;
   _.forEach(Object.keys(hive.cache.cells), (cellRef) => {
     if (cellRef.slice(0, prefix.resourceCells.length) === "res") {
@@ -83,10 +85,9 @@ export function addResourceCells(hive: Hive) {
       if (hive.cells.excavation.resourceCells[resId]) return;
       const resource = Game.getObjectById(resId);
       if (resource) hive.cells.excavation.addResource(resource);
-      else foundAll = false;
+      else hive.allResources = false;
     }
   });
   // at least energy and 1 mineral :/
   if (resourceCells < 2) markResources(hive);
-  return foundAll;
 }

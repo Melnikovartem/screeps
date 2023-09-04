@@ -1,6 +1,7 @@
 import { SwarmOrder } from "orders/swarmOrder";
 import { SWARM_MASTER } from "orders/swarmOrder-masters";
 
+import type { SiedgeInfo } from "../abstract/declarations";
 import type {
   SquadInfo,
   SquadWarCrimesMaster,
@@ -11,7 +12,6 @@ import type { Enemy } from "../spiderSense/intelligence";
 import { enemyTypes, prefix, roomStates } from "../static/enums";
 import { getEnterances, makeId, towerCoef } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
-import type { SiedgeInfo } from "./declarations";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
 

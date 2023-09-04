@@ -1,6 +1,11 @@
 const roomDimensions = 50;
 
-findPositionsInsideRect = function (rect) {
+function findPositionsInsideRect(rect: {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}) {
   const positions = [];
 
   for (let x = rect.x1; x <= rect.x2; x++) {
@@ -17,28 +22,32 @@ findPositionsInsideRect = function (rect) {
   }
 
   return positions;
-};
+}
 
-Room.prototype.floodFill = function (seeds) {
-  const room = this;
-
+export function floodFill(
+  initialCM: CostMatrix,
+  seeds: Pos[],
+  roomVisual?: RoomVisual
+) {
   // Construct a cost matrix for the flood
 
   const floodCM = new PathFinder.CostMatrix();
 
-        // Get the terrain cost matrix
+  // Get the terrain cost matrix
 
-        const terrain = room.getTerrain();
+  const terrain = initialCM;
 
-        // Construct a cost matrix for visited tiles and add seeds to it
+  // Construct a cost matrix for visited tiles and add seeds to it
 
-        const visitedCM = new PathFinder.CostMatrix()
+  const visitedCM = new PathFinder.CostMatrix();
 
   // Construct values for the flood
 
-  let depth = 0,
-    thisGeneration = seeds,
-    nextGeneration = [];
+  let depth = 0;
+
+  let thisGeneration = seeds;
+
+  let nextGeneration = [];
 
   // Loop through positions of seeds
 
@@ -60,10 +69,10 @@ Room.prototype.floodFill = function (seeds) {
     for (const pos of thisGeneration) {
       // If the depth isn't 0
 
-      if (depth != 0) {
+      if (depth !== 0) {
         // Iterate if the terrain is a wall
 
-        if (terrain.get(pos.x, pos.y) == TERRAIN_MASK_WALL) continue;
+        if (terrain.get(pos.x, pos.y) === 255) continue;
 
         // Otherwise so long as the pos isn't a wall record its depth in the flood cost matrix
 
@@ -71,8 +80,8 @@ Room.prototype.floodFill = function (seeds) {
 
         // If visuals are enabled, show the depth on the pos
 
-        if (Memory.roomVisuals)
-          room.visual.rect(pos.x - 0.5, pos.y - 0.5, 1, 1, {
+        if (roomVisual)
+          roomVisual.rect(pos.x - 0.5, pos.y - 0.5, 1, 1, {
             fill: "hsl(" + 200 + depth * 2 + ", 100%, 60%)",
             opacity: 0.4,
           });
@@ -81,18 +90,19 @@ Room.prototype.floodFill = function (seeds) {
       // Construct a rect and get the positions in a range of 1
 
       const rect = {
-          x1: pos.x - 1,
-          y1: pos.y - 1,
-          x2: pos.x + 1,
-          y2: pos.y + 1;
-                const adjacentPositions = findPositionsInsideRect(rect)
+        x1: pos.x - 1,
+        y1: pos.y - 1,
+        x2: pos.x + 1,
+        y2: pos.y + 1,
+      };
+      const adjacentPositions = findPositionsInsideRect(rect);
 
       // Loop through adjacent positions
 
       for (const adjacentPos of adjacentPositions) {
         // Iterate if the adjacent pos has been visited or isn't a tile
 
-        if (visitedCM.get(adjacentPos.x, adjacentPos.y) == 1) continue;
+        if (visitedCM.get(adjacentPos.x, adjacentPos.y) === 1) continue;
 
         // Otherwise record that it has been visited
 
@@ -114,4 +124,4 @@ Room.prototype.floodFill = function (seeds) {
   }
 
   return floodCM;
-};
+}
