@@ -1,4 +1,5 @@
 import type { HiveLog } from "abstract/hiveMemory";
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
 import { setups } from "bees/creepSetups";
 import type { ProtoOrder } from "bugSmuggling/broker";
 import type { Hive } from "hive/hive";
@@ -397,7 +398,7 @@ export class Logger extends EmptyLogger {
 
     if (Game.time % 5 === 0) {
       mem.defenseHealth = { max: 0, min: 0, avg: 0 };
-      const plan = Memory.cache.roomPlanner[hive.roomName];
+      const plan = Memory.longterm.roomPlanner[hive.roomName];
       if (plan) {
         let sumHits = 0;
         let nStruct = 1;
@@ -405,17 +406,21 @@ export class Logger extends EmptyLogger {
         let minHits = -1;
 
         _.forEach([STRUCTURE_WALL, STRUCTURE_RAMPART], (defense) => {
-          _.forEach((plan[defense] || { pos: [] }).pos, (p) => {
-            const pos = new RoomPosition(p.x, p.y, hive.roomName);
-            const ss = pos
-              .lookFor(LOOK_STRUCTURES)
-              .filter((s) => s.structureType === defense)[0];
-            const hits = (ss && ss.hits) || 0;
-            sumHits += hits;
-            nStruct += 1;
-            if (hits > maxHits) maxHits = hits;
-            if (hits < minHits || minHits === -1) minHits = hits;
-          });
+          const defPlan =
+            plan.rooms[hive.roomName][defense as BuildableStructureConstant];
+          if (defPlan)
+            _.forEach(defPlan, (p) => {
+              if (p === PLANNER_STAMP_STOP) return;
+              const pos = new RoomPosition(p[0], p[1], hive.roomName);
+              const ss = pos
+                .lookFor(LOOK_STRUCTURES)
+                .filter((s) => s.structureType === defense)[0];
+              const hits = (ss && ss.hits) || 0;
+              sumHits += hits;
+              nStruct += 1;
+              if (hits > maxHits) maxHits = hits;
+              if (hits < minHits || minHits === -1) minHits = hits;
+            });
         });
         mem.defenseHealth = {
           max: maxHits,

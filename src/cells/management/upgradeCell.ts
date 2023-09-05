@@ -21,7 +21,7 @@ export class UpgradeCell extends Cell {
   public maxBees = 10;
   public maxRate = {
     import: 20,
-    hive: 10,
+    local: 10,
   };
   public ratePerCreepMax = 1;
   public roadTime: number;
@@ -186,11 +186,11 @@ export class UpgradeCell extends Cell {
 
   private recalculateRate() {
     const suckerTarget = this.suckerTarget;
-    this.maxRate.hive = 0;
+    this.maxRate.local = 0;
     this.maxRate.import = 0;
     if (!suckerTarget) return;
 
-    this.maxRate.hive =
+    this.maxRate.local =
       Math.max(
         1,
         _.filter(
@@ -220,11 +220,11 @@ export class UpgradeCell extends Cell {
           );
       });
       this.maxRate.import = Math.max(this.maxRate.import, linkLimit);
-      this.maxRate.hive = Math.max(this.maxRate.hive, linkLimit);
+      this.maxRate.local = Math.max(this.maxRate.local, linkLimit);
     } else if (suckerTarget instanceof StructureStorage)
       this.maxRate.import = ABSOLUTE_MAX_RATE_UPGRADE; // boost the shit out of this hive
 
-    this.maxRate.import = Math.max(this.maxRate.import, this.maxRate.hive);
+    this.maxRate.import = Math.max(this.maxRate.import, this.maxRate.local);
 
     setup.patternLimit = Infinity;
     const body = setup.getBody(this.hive.room.energyCapacityAvailable).body;

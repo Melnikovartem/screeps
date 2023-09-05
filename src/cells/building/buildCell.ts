@@ -1,11 +1,11 @@
-import { BuilderMaster } from "beeMasters/economy/builder";
+// import { BuilderMaster } from "beeMasters/economy/builder";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
-import { updateStructures } from "./hive-building";
+// import { updateStructures } from "./hive-building";
 
 // Define the BuildProject interface for construction projects
 export interface BuildProject {
@@ -41,7 +41,7 @@ export class BuildCell extends Cell {
 
   public constructor(hive: Hive) {
     super(hive, prefix.buildingCell);
-    this.master; // new BuilderMaster(this);
+    // this.master = new BuilderMaster(this);
   }
 
   // #endregion Constructors (1)
@@ -70,11 +70,11 @@ export class BuildCell extends Cell {
       (this.hive.isBattle && Game.time % UPDATE_STRUCTURES_BATTLE === 0) ||
       this.forceCheck
     ) {
-      Apiary.wrap(
+      /* Apiary.wrap(
         () => updateStructures(this, this.forceCheck === "annex"),
         "structures_" + this.hiveName,
         "update"
-      );
+      ); */
       this.forceCheck = "";
     }
   }

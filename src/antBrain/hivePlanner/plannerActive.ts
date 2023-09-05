@@ -1,5 +1,8 @@
 import type { RoomPlanner } from "./roomPlanner";
 
+export const PLANNER_STAMP_STOP = "#";
+
+type CompressedStructures = ([number, number] | typeof PLANNER_STAMP_STOP)[];
 export interface ActivePlan {
   // #region Properties (5)
 
@@ -8,16 +11,18 @@ export interface ActivePlan {
   // correct: "ok" | "fail" | "work";
   // resources to add to plan
 
-  controller: RoomPosition[];
-  resources: RoomPosition[];
-  moveMent: {
+  futureHiveName: string;
+  controller: RoomPosition;
+  sources: RoomPosition[];
+  minerals: RoomPosition[];
+  movement: {
     [roomName: string]: CostMatrix;
   };
-  posCache: { [ref: number]: [number, number, string?] };
+  posCell: { [ref: string]: [number, number, string?] };
   compressed: {
     [roomName: string]: {
-      [tt in BuildableStructureConstant]: {
-        que: ([number, number] | "#")[];
+      [tt in BuildableStructureConstant]?: {
+        que: CompressedStructures;
         len: number;
       };
     };
@@ -27,10 +32,18 @@ export interface ActivePlan {
   // controller of room
 }
 
-export interface RoomPlannerHiveCache {}
+export interface RoomPlannerHiveCache {
+  posCell: ActivePlan["posCell"];
+  rooms: {
+    [roomName: string]: {
+      [tt in BuildableStructureConstant]?: CompressedStructures;
+    };
+  };
+}
 
 export function saveActive(this: RoomPlanner) {
   if (!this.activePlanning) return ERR_NOT_FOUND;
 
-  Memory.longterm.roomPlanner[this];
+  Memory.longterm.roomPlanner;
+  return OK;
 }

@@ -1,17 +1,22 @@
-export function defenseWalls(roomName: string) {
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
+
+export function defenseWalls(hiveName: string) {
   const ans: (StructureWall | StructureRampart)[] = [];
-  const planner = Memory.cache.roomPlanner[roomName];
-  const walls = (planner.constructedWall && planner.constructedWall.pos) || [];
-  const ramps = (planner.rampart && planner.rampart.pos) || [];
+  const planner = Memory.longterm.roomPlanner[hiveName]?.rooms[hiveName];
+  if (!planner) return [];
+  const walls = (planner.constructedWall && planner.constructedWall) || [];
+  const ramps = (planner.rampart && planner.rampart) || [];
   _.forEach(walls, (p) => {
-    const pos = new RoomPosition(p.x, p.y, roomName);
+    if (p === PLANNER_STAMP_STOP) return;
+    const pos = new RoomPosition(p[0], p[1], hiveName);
     const s = pos
       .lookFor(LOOK_STRUCTURES)
       .filter((isW) => isW.structureType === STRUCTURE_WALL)[0];
     if (s) ans.push(s as StructureWall);
   });
   _.forEach(ramps, (p) => {
-    const pos = new RoomPosition(p.x, p.y, roomName);
+    if (p === PLANNER_STAMP_STOP) return;
+    const pos = new RoomPosition(p[0], p[1], hiveName);
     const s = pos
       .lookFor(LOOK_STRUCTURES)
       .filter((isR) => isR.structureType === STRUCTURE_RAMPART)[0];

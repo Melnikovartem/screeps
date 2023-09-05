@@ -185,6 +185,10 @@ declare global {
     // #endregion Properties (5)
   }
 
+  interface FlagMemory {
+    hive: string;
+  }
+
   interface Memory {
     // #region Properties (4)
 

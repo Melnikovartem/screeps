@@ -58,13 +58,13 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       (this.hive.storage!.store.getUsedCapacity(RESOURCE_ENERGY) > 1000 ||
         this.hive.controller.level < 2)
     )
-      desiredRate = this.parent.maxRate.hive;
+      desiredRate = this.parent.maxRate.local;
     // just spend all produced energy on upgrading
     else if (
       upgradeMode === 2 &&
       this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
     )
-      desiredRate = this.parent.maxRate.hive;
+      desiredRate = this.parent.maxRate.local;
     // upgrade spend all produced energy on upgrading
     else if (
       upgradeMode === 3 &&

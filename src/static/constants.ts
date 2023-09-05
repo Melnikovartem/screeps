@@ -11,28 +11,6 @@ export const SETTINGS_DEFAULT: Memory["settings"] = {
   safeWrap: true,
 };
 
-export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
-  hives: (Memory.cache && Memory.cache.hives) || {},
-  orders: {},
-
-  intellegence: {},
-  map: { rooms: {}, users: {} },
-
-  war: (Memory.cache && Memory.cache.war) || { siedgeInfo: {}, squadsInfo: {} },
-  roomPlanner: (Memory.cache && Memory.cache.roomPlanner) || {},
-};
-
-export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {
-  annex: {
-    build: 0,
-    repair: 0,
-  },
-  hive: {
-    build: 0,
-    repair: 0,
-  },
-};
-
 export const BASE_MODE_HIVE: HiveCache["do"] = {
   powerMining: 0,
   powerRefining: 1,
@@ -56,3 +34,28 @@ export type ApiaryReturnCode = ScreepsReturnCode | -101 | -102 | -200;
 export const ERR_COOLDOWN = -101;
 export const ERR_INVALID_ACTION = -102;
 export const ERR_NO_VISION = -200;
+
+export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
+  hives: (Memory.cache && Memory.cache.hives) || {},
+  orders: {},
+
+  intellegence: {},
+  map: { rooms: {}, users: {} },
+
+  war: (Memory.cache && Memory.cache.war) || { siedgeInfo: {}, squadsInfo: {} },
+};
+
+export const LONGTERM_EMPTY_DEFAULT: Memory["longterm"] = {
+  roomPlanner: (Memory.longterm && Memory.longterm.roomPlanner) || {},
+};
+
+export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {
+  annex: {
+    build: 0,
+    repair: 0,
+  },
+  hive: {
+    build: 0,
+    repair: 0,
+  },
+};

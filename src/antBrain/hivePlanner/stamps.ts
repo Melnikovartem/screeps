@@ -1,28 +1,22 @@
 import { prefix } from "static/enums";
 
-export interface CellCache {
-  // #region Properties (1)
-
-  poss: Pos;
-
-  // #endregion Properties (1)
-}
+import type { ActivePlan } from "./plannerActive";
 
 export type RoomSetup = {
   [key in BuildableStructureConstant]?: { x: number; y: number }[];
 };
 
-interface Module {
+export interface Stamp {
   // #region Properties (2)
 
-  cellsCache: { [ref: string]: CellCache };
+  posCell: ActivePlan["posCell"];
   setup: RoomSetup;
 
   // #endregion Properties (2)
 }
 
-export const STAMP_LABS: Module = {
-  cellsCache: { [prefix.laboratoryCell]: { poss: { x: 25, y: 25 } } },
+export const STAMP_LABS: Stamp = {
+  posCell: { [prefix.laboratoryCell]: [25, 25] },
   setup: {
     road: [
       { x: 24, y: 24 },
@@ -45,8 +39,8 @@ export const STAMP_LABS: Module = {
   },
 };
 
-export const STAMP_FAST_REFILL: Module = {
-  cellsCache: { [prefix.fastRefillCell]: { poss: { x: 25, y: 25 } } },
+export const STAMP_FAST_REFILL: Stamp = {
+  posCell: { [prefix.fastRefillCell]: [25, 25] },
   setup: {
     link: [{ x: 25, y: 25 }],
     spawn: [
@@ -100,8 +94,8 @@ export const STAMP_FAST_REFILL: Module = {
   },
 };
 
-export const STAMP_EXTENSION_BLOCK: Module = {
-  cellsCache: {},
+export const STAMP_EXTENSION_BLOCK: Stamp = {
+  posCell: {},
   setup: {
     road: [
       { x: 25, y: 23 },
@@ -123,9 +117,9 @@ export const STAMP_EXTENSION_BLOCK: Module = {
   },
 };
 
-export const STAMP_CORE: Module = {
-  cellsCache: {
-    [prefix.defenseCell]: { poss: { x: 25, y: 25 } },
+export const STAMP_CORE: Stamp = {
+  posCell: {
+    [prefix.defenseCell]: [25, 25],
   },
   setup: {
     road: [

@@ -1,17 +1,22 @@
-import { roomStates } from "static/enums";
-
 import type { CustomConsole } from "./console";
 
 export function snapOldPlans(this: CustomConsole) {
-  for (const ref of Object.keys(Memory.cache.roomPlanner)) {
-    const state = Apiary.intel.getRoomState(ref);
-    if (
-      state !== roomStates.ownedByMe &&
-      state !== roomStates.reservedByMe &&
-      !_.filter(Apiary.hives, (h) => h.annexNames.includes(ref)).length // most important prob
-    ) {
-      delete Memory.cache.roomPlanner[ref];
-      console.log(`REMOVED OLD ROOMPLANS @${this.formatRoom(ref)}`);
+  for (const hiveName of Object.keys(Memory.longterm.roomPlanner)) {
+    const hive = Apiary.hives[hiveName];
+    if (!hive) {
+      delete Memory.longterm.roomPlanner[hiveName];
+      console.log(`REMOVED OLD PLANS FOR HIVE @${this.formatRoom(hiveName)}`);
+      continue;
     }
+    const hivePlans = Memory.longterm.roomPlanner[hiveName];
+    for (const roomName in hivePlans.rooms)
+      if (!hive.annexNames.includes(roomName)) {
+        delete hivePlans.rooms[roomName];
+        console.log(
+          `REMOVED OLD PLANS FOR ANNEX @${this.formatRoom(
+            roomName
+          )} OF HIVE @${this.formatRoom(hiveName)}`
+        );
+      }
   }
 }

@@ -56,7 +56,7 @@ export class DevelopmentCell extends Cell {
 
     if (this.controller.level > 2) {
       const upgCell = this.hive.cells.upgrade;
-      accumRoadTime += upgCell.maxRate.hive * upgCell.roadTime * 1.6;
+      accumRoadTime += upgCell.maxRate.local * upgCell.roadTime * 1.6;
       //  * 2 * 0.8 : 2 for trips, 0.8 for overhead
     }
 

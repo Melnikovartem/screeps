@@ -1,8 +1,9 @@
 import "./visluals-planning";
 
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { hiveStates } from "static/enums";
+import { hiveStates, prefix } from "static/enums";
 import { makeId } from "static/utils";
 
 const TEXT_SIZE = 0.8;
@@ -108,7 +109,7 @@ export class Visuals {
       this.global();
       this.exportAnchor();
     }
-    // this.visualizePlanner();
+    this.visualizePlanner();
 
     this.update();
   }
@@ -264,14 +265,57 @@ export class Visuals {
       );
   }
 
-  /* public visualizePlanner() {
-    for (const roomName in Apiary.planner.activePlanning) {
+  public visualizePlanner() {
+    const activePlanning = Apiary.colonybrain.planner.activePlanning;
+    if (!activePlanning) return;
+
+    // add info about cells
+    for (const [cellRef, value] of Object.entries(activePlanning.posCell)) {
+      const style: LineStyle = {};
+      switch (cellRef) {
+        case prefix.laboratoryCell:
+          style.color = "#91EFD8";
+          break;
+        case prefix.excavationCell:
+          style.color = "#FAD439";
+          break;
+        case prefix.defenseCell:
+          style.color = "#FBF7E9";
+          break;
+        case prefix.powerCell:
+          style.color = "#EE4610";
+          break;
+        case prefix.fastRefillCell:
+          style.color = "#6FDA44";
+          break;
+      }
+      const SIZE = 0.3;
+      this.changeAnchor(0, 0, value[2] || activePlanning.futureHiveName, true);
+      const pos = { x: value[0], y: value[1] };
+      this.anchor.vis.line(
+        pos.x - SIZE,
+        pos.y - SIZE,
+        pos.x + SIZE,
+        pos.y + SIZE,
+        style
+      );
+      this.anchor.vis.line(
+        pos.x + SIZE,
+        pos.y - SIZE,
+        pos.x - SIZE,
+        pos.y + SIZE,
+        style
+      );
+    }
+
+    // add structures
+    for (const roomName in activePlanning.compressed) {
       if (
         this.caching[roomName] &&
         this.caching[roomName].lastRecalc > Game.time
       )
         continue;
-      const ActivePlan = Apiary.planner.activePlanning[roomName].plan;
+      const plan = activePlanning.compressed[roomName];
       this.changeAnchor(0, 0, roomName, true);
       const vis = this.anchor.vis;
       const hive = Apiary.hives[roomName];
@@ -282,46 +326,17 @@ export class Visuals {
         );
       }
 
-      for (const x in ActivePlan)
-        for (const y in ActivePlan[+x]) {
-          const info = ActivePlan[+x][+y];
-          if (info.s) vis.structure(+x, +y, info.s);
-          if (info.r) vis.structure(+x, +y, STRUCTURE_RAMPART);
+      for (const sType in plan) {
+        const structureType = sType as BuildableStructureConstant;
+        for (const value of plan[structureType]!.que) {
+          if (value !== PLANNER_STAMP_STOP)
+            vis.structure(value[0], value[1], structureType);
         }
-      vis.connectRoads();
-
-      for (const cellType in Apiary.planner.activePlanning[roomName]
-        .cellsCache) {
-        const cellCache =
-          Apiary.planner.activePlanning[roomName].cellsCache[cellType];
-        const style: LineStyle = {
-          opacity: 0.8,
-        };
-        switch (cellType) {
-          case prefix.laboratoryCell:
-            style.color = "#91EFD8";
-            break;
-          case prefix.excavationCell:
-            style.color = "#FAD439";
-            break;
-          case prefix.defenseCell:
-            style.color = "#FBF7E9";
-            break;
-          case prefix.powerCell:
-            style.color = "#EE4610";
-            break;
-          case prefix.fastRefillCell:
-            style.color = "#6FDA44";
-            break;
-        }
-        const SIZE = 0.3;
-        const pos = cellCache.poss;
-        vis.line(pos.x - SIZE, pos.y - SIZE, pos.x + SIZE, pos.y + SIZE, style);
-        vis.line(pos.x + SIZE, pos.y - SIZE, pos.x - SIZE, pos.y + SIZE, style);
       }
+      vis.connectRoads();
       this.exportAnchor(1);
     }
-  } */
+  }
 
   public statsHive(hive: Hive) {
     let hiveState = " ";

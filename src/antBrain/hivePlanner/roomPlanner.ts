@@ -1,8 +1,10 @@
 import { ERR_NO_VISION } from "static/constants";
 
+import { addStamp, canAddStamp } from "./addStamps";
 import { floodFill } from "./flood-fill";
 import { minCutToExit } from "./min-cut";
 import type { ActivePlan } from "./plannerActive";
+import { STAMP_CORE } from "./stamps";
 import { distanceTransform, ROOM_DIMENTIONS } from "./wall-dist";
 
 const DIST_FROM_WALL = {
@@ -10,14 +12,33 @@ const DIST_FROM_WALL = {
   idealLow: 8,
   nonidealBelowMaxInRoom: -2,
 };
+
+export const PLANNER_COST = {
+  road: 1,
+  plain: 2,
+  swamp: 10,
+  structure: 255, // not rly an option
+  wall: 255, // not rly an option
+};
 const TAKE_N_BEST = 16;
 
+/* chain startingPos -> {
+  for goodPosition
+    addCore
+    addLabs
+    addControllerRoads
+    addResRoads
+}
+*/
 export class RoomPlanner {
-  // #region Properties (1)
+  // #region Properties (2)
 
-  protected activePlanning: ActivePlan | undefined;
+  private addStamp = addStamp;
+  private canAddStamp = canAddStamp;
 
-  // #endregion Properties (1)
+  public activePlanning: ActivePlan | undefined;
+
+  // #endregion Properties (2)
 
   // #region Public Methods (1)
 
@@ -35,37 +56,30 @@ export class RoomPlanner {
 
     // add postion to check / road to exit to corridor ?
 
-    Apiary.engine.addTask("planner test", () => {
-      this.startingPos(room.name, posInterest);
+    Apiary.engine.addTask("planner " + roomName, () => {
+      const positions = this.startingPos(roomName, posInterest);
+      if (!positions) return;
+      if (!this.activePlanning)
+        this.activePlanning = {
+          futureHiveName: roomName,
+          controller: posCont,
+          sources: resourcesPos,
+          minerals: mineralsPos,
+          movement: {},
+          posCell: {},
+          compressed: {},
+        };
+      if (!this.canAddStamp(positions[0], STAMP_CORE)) return;
+      this.addStamp(positions[0], STAMP_CORE);
     });
     return OK;
   }
 
   // #endregion Public Methods (1)
 
-  // #region Private Methods (4)
+  // #region Protected Methods (1)
 
-  private generateWalls(roomName: string) {
-    const costMatrix = this.getTerrainCostMatrix(roomName);
-
-    const basePos = new RoomPosition(25, 25, roomName);
-    const posCont = Game.rooms[roomName]?.controller?.pos || basePos;
-    const resources = Game.rooms[roomName].find(FIND_SOURCES).map((r) => r.pos);
-    const minerals = Game.rooms[roomName].find(FIND_MINERALS).map((r) => r.pos);
-
-    costMatrix.set(posCont.x, posCont.y, 1);
-
-    const posToProtect: Pos[] = [posCont].concat(resources).concat(minerals);
-
-    const ramps = minCutToExit(posToProtect, costMatrix);
-    const vis = () => {
-      const rv = new RoomVisual(roomName);
-      _.forEach(ramps, (r) => rv.structure(r.x, r.y, STRUCTURE_RAMPART));
-    };
-    return this.keep(vis);
-  }
-
-  private getTerrainCostMatrix(roomName: string) {
+  protected getTerrainCostMatrix(roomName: string) {
     const costMatrix = new PathFinder.CostMatrix();
     const terrain = Game.map.getRoomTerrain(roomName);
     // set terrain
@@ -84,6 +98,29 @@ export class RoomPlanner {
         costMatrix.set(x, y, val);
       }
     return costMatrix;
+  }
+
+  // #endregion Protected Methods (1)
+
+  // #region Private Methods (3)
+
+  private generateWalls(roomName: string) {
+    const costMatrix = this.getTerrainCostMatrix(roomName);
+
+    const basePos = new RoomPosition(25, 25, roomName);
+    const posCont = Game.rooms[roomName]?.controller?.pos || basePos;
+    const resources = Game.rooms[roomName].find(FIND_SOURCES).map((r) => r.pos);
+    const minerals = Game.rooms[roomName].find(FIND_MINERALS).map((r) => r.pos);
+
+    costMatrix.set(posCont.x, posCont.y, 1);
+
+    const posToProtect: Pos[] = [posCont].concat(resources).concat(minerals);
+
+    const ramps = minCutToExit(posToProtect, costMatrix);
+    const vis = () => {
+      const rv = new RoomVisual(roomName);
+      _.forEach(ramps, (r) => rv.structure(r.x, r.y, STRUCTURE_RAMPART));
+    };
   }
 
   /** Keeps function in engine. Maybe move to engine */
@@ -135,8 +172,8 @@ export class RoomPlanner {
       return diff;
     });
     positions.splice(TAKE_N_BEST);
-    return positions;
+    return _.map(positions, (p) => new RoomPosition(p[0].x, p[0].y, roomName));
   }
 
-  // #endregion Private Methods (4)
+  // #endregion Private Methods (3)
 }

@@ -1,4 +1,8 @@
-import { CACHE_EMPTY_DEFAULT, SETTINGS_DEFAULT } from "static/constants";
+import {
+  CACHE_EMPTY_DEFAULT,
+  LONGTERM_EMPTY_DEFAULT,
+  SETTINGS_DEFAULT,
+} from "static/constants";
 
 import { Logger } from "../convenience/logger";
 import { profile } from "../profiler/decorator";
@@ -21,6 +25,8 @@ export class Mem {
     if (!Memory.settings) Memory.settings = SETTINGS_DEFAULT;
 
     if (!Memory.cache) Memory.cache = CACHE_EMPTY_DEFAULT;
+
+    if (!Memory.longterm) Memory.longterm = LONGTERM_EMPTY_DEFAULT;
 
     for (const roomName in Memory.cache.hives) {
       const room = Game.rooms[roomName];
