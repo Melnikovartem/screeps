@@ -66,7 +66,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
   public constructor(order: SwarmOrder<PowerInfo>) {
     super(order);
     this.sitesAll.push(this);
-    this.positions = this.pos.getOpenPositions(true).map((p) => {
+    this.positions = this.pos.getOpenPositions().map((p) => {
       return { pos: p };
     });
     this.updateTarget();
@@ -264,7 +264,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
                 }
               } else if (knight.hits > knight.hitsMax * 0.5)
                 knight.attack(target);
-              else if (!healer && !this.pos.getOpenPositions().length)
+              else if (!healer && !this.pos.getOpenPositions(true).length)
                 if (knight.getActiveBodyParts(ATTACK)) knight.attack(target);
                 else knight.creep.suicide();
           } else knight.attack(target);
@@ -297,7 +297,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
             else if (knight.pos.isNearTo(this)) {
               let poss;
               if (healer.pos.isNearTo(this))
-                poss = knight.pos.getOpenPositions(true);
+                poss = knight.pos.getOpenPositions();
               if (poss && poss.length)
                 healer.goTo(
                   poss.reduce((prev, curr) =>
@@ -383,7 +383,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
       this.callPickUp();
     }
     this.info.ht = -1;
-    if (!this.pos.isFree(true))
+    if (!this.pos.isFree())
       this.parent.setPosition(
         new RoomPosition(
           Math.floor(Math.random() * 50),

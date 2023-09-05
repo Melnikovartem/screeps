@@ -79,7 +79,7 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
       const roomInfo = Apiary.intel.getInfo(this.parent.pos.roomName, 20);
       if (!roomInfo.currentOwner) energyPerTick = 5;
       else if (roomInfo.currentOwner !== Apiary.username) energyPerTick = 0;
-      const openPos = (cell.resource || cell).pos.getOpenPositions(true).length;
+      const openPos = (cell.resource || cell).pos.getOpenPositions().length;
 
       if (cell.operational) {
         const miningPower = Math.min(
@@ -244,7 +244,7 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
           if (!bee.target) {
             source = bee.pos.findClosest(
               sources.filter(
-                (s) => s.pos.getOpenPositions().length || s.pos.isNearTo(bee)
+                (s) => s.pos.getOpenPositions(true).length || s.pos.isNearTo(bee)
               )
             );
             if (source) bee.target = source.id;
@@ -294,7 +294,7 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
             else {
               if (bee.pos.isNearTo(source)) bee.harvest(source);
               else {
-                const pos = source.pos.getOpenPositions()[0];
+                const pos = source.pos.getOpenPositions(true)[0];
                 if (pos) {
                   opt.range = 0;
                   bee.goTo(pos, opt);

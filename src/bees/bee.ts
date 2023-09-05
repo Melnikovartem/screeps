@@ -267,7 +267,7 @@ export class Bee extends ProtoBee<Creep> {
       ) {
         // wait for ma guy to come to me
         const nonExit = this.pos
-          .getOpenPositions(true)
+          .getOpenPositions()
           .filter((p) => !p.enteranceToRoom && p.getRangeTo(this) === 1)[0];
         // fucks with traveler but it is what it is
         if (nonExit) this.targetPosition = nonExit;
@@ -288,7 +288,7 @@ export class Bee extends ProtoBee<Creep> {
       // they need to be in the same room to be pulled
       // needs proper test this but this fixed an issue with not pulling near border so yeah
       const anotherExit = this.pos
-        .getOpenPositions(true)
+        .getOpenPositions()
         .filter((p) => p.enteranceToRoom && p.getRangeTo(this) === 1)[0];
       // fucks with traveler but it is what it is
       if (anotherExit) this.targetPosition = anotherExit;

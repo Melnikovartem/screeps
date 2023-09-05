@@ -252,9 +252,9 @@ export class ResourceCell extends Cell {
     let pos: RoomPosition = this.pos;
     if (this.container) pos = this.container.pos;
     if (this.link) {
-      const poss = this.resource.pos.getOpenPositions(true);
+      const poss = this.resource.pos.getOpenPositions();
       const posNearLink = this.link.pos
-        .getOpenPositions(true)
+        .getOpenPositions()
         .filter((p) => poss.filter((pp) => p.equal(pp)).length);
       if (posNearLink.length)
         pos = posNearLink.reduce((prev, curr) =>

@@ -56,7 +56,7 @@ export class FastRefillMaster extends Master<FastRefillCell> {
       this.container.store.getUsedCapacity(RESOURCE_ENERGY) <=
       CONTAINER_CAPACITY * 0.7;
     _.forEach(this.activeBees, (bee) => {
-      if (!this.pos.equal(bee.pos) && this.pos.isFree(false))
+      if (!this.pos.equal(bee.pos) && this.pos.isFree(true))
         bee.goTo(this.pos, { range: 0 });
       else if (bee.ticksToLive < 3) {
         bee.transfer(

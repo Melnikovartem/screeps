@@ -1,5 +1,3 @@
-import { addResDict } from "static/utils";
-
 import type { Bee } from "bees/bee";
 import type { CreepSetup } from "bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "cells/stage1/laboratoryCell";
@@ -11,12 +9,9 @@ import type {
   CreepBattleInfo,
   Enemy,
 } from "spiderSense/intelligence";
-import {
-  beeStates,
-  enemyTypes,
-  hiveStates,
-  roomStates,
-} from "static/enums";
+import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
+import { addResDict } from "static/utils";
+
 import { SwarmMaster } from "../_SwarmMaster";
 
 export type FormationPositions = [Pos, CreepSetup][];
@@ -362,7 +357,7 @@ export abstract class SquadMaster extends SwarmMaster {
         if (bee.ref === centerRef) return 255;
         else sum += 30;
       else if (desiredPos.enteranceToRoom) sum += 20;
-      else if (!desiredPos.isFree(true))
+      else if (!desiredPos.isFree())
         if (bee.ref === centerRef) return 255;
         else sum += 30;
       else if (
@@ -453,7 +448,7 @@ export abstract class SquadMaster extends SwarmMaster {
       const bee = this.formationBees[i];
       if (!bee) continue;
       const desiredPos = this.getDeisredPos(i);
-      if (!desiredPos || !desiredPos.isFree(true)) {
+      if (!desiredPos || !desiredPos.isFree()) {
         if (
           centerBee.targetPosition &&
           !centerBee.targetPosition.equal(centerBee.pos)
@@ -625,7 +620,7 @@ export abstract class SquadMaster extends SwarmMaster {
     const poss = this.desiredPoss;
     for (const desired of poss) {
       if (
-        !desired.pos.isFree(true) ||
+        !desired.pos.isFree() ||
         desired.pos.enteranceToRoom ||
         terrain.get(desired.pos.x, desired.pos.y) === TERRAIN_MASK_SWAMP
       )
@@ -789,7 +784,7 @@ export abstract class SquadMaster extends SwarmMaster {
         (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
         this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
       ) {
-        const poss = bee.pos.getOpenPositions(true);
+        const poss = bee.pos.getOpenPositions();
         if (poss.length) {
           const newPos = poss.reduce((prev, curr) => {
             let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
@@ -824,7 +819,7 @@ export abstract class SquadMaster extends SwarmMaster {
       }
 
       this.formationCenter =
-        bee.targetPosition && bee.targetPosition.isFree(true)
+        bee.targetPosition && bee.targetPosition.isFree()
           ? bee.targetPosition
           : bee.pos;
     } else bee.goTo(this.formationCenter);

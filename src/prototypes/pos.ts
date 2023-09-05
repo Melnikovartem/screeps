@@ -79,15 +79,17 @@ RoomPosition.prototype.getPositionsInRange = function (
 };
 
 RoomPosition.prototype.getOpenPositions = function (
-  ignoreCreeps?: boolean,
+  countCreeps: boolean = false,
   range: number = 1
 ): RoomPosition[] {
   return _.filter(this.getPositionsInRange(range), (pos) =>
-    pos.isFree(ignoreCreeps)
+    pos.isFree(countCreeps)
   );
 };
 
-RoomPosition.prototype.isFree = function (ignoreCreeps?: boolean): boolean {
+RoomPosition.prototype.isFree = function (
+  countCreeps: boolean = false
+): boolean {
   let ans = !_.filter(this.lookFor(LOOK_TERRAIN), (t) => t === "wall").length;
 
   if (ans && this.roomName in Game.rooms) {
@@ -101,8 +103,8 @@ RoomPosition.prototype.isFree = function (ignoreCreeps?: boolean): boolean {
         s.structureType !== STRUCTURE_CONTAINER
     ).length;
 
-    if (ans && !ignoreCreeps) ans = !this.lookFor(LOOK_CREEPS).length;
-    if (ans && !ignoreCreeps) ans = !this.lookFor(LOOK_POWER_CREEPS).length;
+    if (ans && countCreeps) ans = !this.lookFor(LOOK_CREEPS).length;
+    if (ans && countCreeps) ans = !this.lookFor(LOOK_POWER_CREEPS).length;
   }
 
   return ans;
@@ -229,8 +231,8 @@ RoomPosition.prototype.getRangeApprox = function (
     _.forEach(route, (routeStep) => {
       // not best in terms of calculations(cause can get better for same O(n)), but best that i can manage rn
       const exit: RoomPosition = new RoomPosition(
-        Math.min(Math.max(enterance.x, 5), 44),
-        Math.min(Math.max(enterance.y, 5), 44),
+        Math.min(Math.max(enterance.x, 10), 39),
+        Math.min(Math.max(enterance.y, 10), 39),
         currentRoom
       );
       switch (routeStep.exit) {

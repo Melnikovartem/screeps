@@ -143,7 +143,12 @@ declare global {
       objects: Obj[],
       opt?: FindPathOpts
     ): Obj | null;
-    getOpenPositions(ignoreCreeps?: boolean, range?: number): RoomPosition[];
+    /**
+     * @param countCreeps do we need to check for creeps. default is **false**
+     * @param range range of free positions. default is **1**
+     * @returns array of free positions
+     */
+    getOpenPositions(countCreeps?: boolean, range?: number): RoomPosition[];
     getPosInDirection(direction: DirectionConstant): RoomPosition;
     getPositionsInRange(range: number): RoomPosition[];
     getRangeApprox(obj: ProtoPos, calcType?: "linear"): number;
@@ -152,6 +157,12 @@ declare global {
       mode?: "path" | "manh" | "lin"
     ): number;
     getTimeForPath(pos: ProtoPos): number;
+    /**
+     * checks if pos is free of structures/terrain/creeps (creeps is optional)
+     * @param countCreeps do we need to check for creeps. default is **false**
+     * @param range range of free positions. default is **1**
+     * @returns boolean
+     */
     isFree(ignoreCreeps?: boolean): boolean;
     oppositeDirection(pos: RoomPosition): DirectionConstant;
 

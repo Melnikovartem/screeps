@@ -142,7 +142,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
           this.parent.controller.ticksToDowngrade > CREEP_LIFE_TIME) || // failsafe for link network
         bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0
       ) {
-        // let pos = target.pos.getOpenPositions().filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
+        // let pos = target.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
         if (suckerTarget && suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY))
           bee.withdraw(suckerTarget, RESOURCE_ENERGY);
         bee.state = beeStates.work;

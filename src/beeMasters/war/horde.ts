@@ -321,10 +321,10 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
         // try to stay in room if winning
         // ingore Creeps Cause enemy will move anyway
         let goPositions = bee.pos
-          .getOpenPositions(true)
+          .getOpenPositions()
           .filter((p) => !p.enteranceToRoom && p.getRangeTo(bee) === 1);
         if (goPositions.length) {
-          const noBees = goPositions.filter((p) => p.isFree(false));
+          const noBees = goPositions.filter((p) => p.isFree(true));
           if (noBees.length) goPositions = noBees;
         }
         if (goPositions.length) {
@@ -340,10 +340,10 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
         bee.pos.roomName === this.pos.roomName
       ) {
         let goPositions = bee.pos
-          .getOpenPositions(true)
+          .getOpenPositions()
           .filter((p) => !p.enteranceToRoom && p.getRangeTo(bee) === 1);
         if (goPositions.length) {
-          const noBees = goPositions.filter((p) => p.isFree(false));
+          const noBees = goPositions.filter((p) => p.isFree(true));
           if (noBees.length) goPositions = noBees;
         }
         if (goPositions.length) bee.targetPosition = goPositions[0];

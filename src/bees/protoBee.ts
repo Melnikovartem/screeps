@@ -192,7 +192,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     opt: TravelToOptions = {},
     doExit: boolean = false
   ) {
-    const poss = this.pos.getOpenPositions(true);
+    const poss = this.pos.getOpenPositions();
     if (!poss.length) return ERR_NOT_FOUND;
 
     if (!posToFlee || (this.pos.roomName === posToFlee.roomName && doExit)) {
@@ -303,12 +303,12 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     if (
       this.targetPosition &&
       pos.getRangeTo(this) <= 2 &&
-      !this.targetPosition.isFree(false)
+      !this.targetPosition.isFree(true)
     ) {
       this.stop();
       if (this.pos.enteranceToRoom) {
         const notEnt = this.pos
-          .getOpenPositions()
+          .getOpenPositions(true)
           .filter((p) => !p.enteranceToRoom);
         if (notEnt.length)
           this.targetPosition = notEnt.reduce((prev, curr) =>
@@ -390,7 +390,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
         if (bee.ref === beeIn.ref) return ERR_FULL;
         const target = beeIn.actionPosition ? beeIn.actionPosition : bee.pos;
         const open = beeIn.pos
-          .getOpenPositions(true)
+          .getOpenPositions()
           .filter((p) => !moveMap[p.to_str]);
         if (!open.length) return ERR_NOT_FOUND;
         const pp = open.reduce((prev, curr) => {

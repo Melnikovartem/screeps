@@ -1,10 +1,8 @@
 import { ERR_INVALID_ACTION } from "static/constants";
 
-import { PLANNER_COST } from "./addRoads";
 import { surroundingPoints } from "./min-cut";
 import type { RoomCellsPlanner, RoomPlannerMatrix } from "./planner-active";
-import { PLANNER_STAMP_STOP } from "./planner-active";
-import { addStructure } from "./planner-utils";
+import { addStructure, PLANNER_COST } from "./planner-utils";
 import type { Stamp } from "./stamps";
 
 const MAX_ATTEMPTS_TO_ADD = 10000;
@@ -12,7 +10,7 @@ const MAX_ATTEMPTS_TO_ADD = 10000;
 export function addStampSomewhere(
   prevCenters: Pos[],
   stamp: Stamp,
-  ap: RoomPlannerMatrix,
+  roomMatrix: RoomPlannerMatrix,
   cells: RoomCellsPlanner
 ) {
   const strCheck = (p: Pos) => p.x + "_" + p.y;
@@ -20,7 +18,7 @@ export function addStampSomewhere(
   const checkQue: Pos[] = [];
   // O(max(2500 * 2500, 2500 * stamp))
   const addPos = (p: Pos) => {
-    if (ap.building.get(p.x, p.y) === PLANNER_COST.wall) return;
+    if (roomMatrix.building.get(p.x, p.y) === PLANNER_COST.wall) return;
     if (visited.has(strCheck(p))) return;
     checkQue.push(p);
     visited.add(strCheck(p));
@@ -33,8 +31,8 @@ export function addStampSomewhere(
   for (let i = 0; i < MAX_ATTEMPTS_TO_ADD; ++i) {
     const pos = checkQue.shift();
     if (!pos) break;
-    if (canAddStamp(pos, stamp, ap) === OK) {
-      addStamp(pos, stamp, ap);
+    if (canAddStamp(pos, stamp, roomMatrix) === OK) {
+      addStamp(pos, stamp, roomMatrix);
       for (const [ref, val] of Object.entries(stamp.posCell)) cells[ref] = val;
       return pos;
     }
@@ -46,11 +44,11 @@ export function addStampSomewhere(
 export function addStamp(
   centerOfStamp: Pos,
   stamp: Stamp,
-  ap: RoomPlannerMatrix
+  roomMatrix: RoomPlannerMatrix
 ) {
-  const costMatrix = ap.building;
+  const costMatrix = roomMatrix.building;
+  const compressed = roomMatrix.compressed;
 
-  const compressed = ap.compressed;
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
     const structureType = sType as BuildableStructureConstant;
 
@@ -59,8 +57,6 @@ export function addStamp(
         que: [],
         len: 0,
       };
-
-    let addedStructures = addPositions.length;
 
     for (const packedPos of addPositions) {
       const pos = unpackCoords(centerOfStamp, packedPos);
@@ -73,17 +69,8 @@ export function addStamp(
       )
         posStructureType = STRUCTURE_RAMPART;
 
-      addStructure(pos, posStructureType, ap);
-
-      // if added not original structure (rampart instead of wall) record it
-      if (structureType !== posStructureType) {
-        compressed[posStructureType]!.que.push(PLANNER_STAMP_STOP);
-        compressed[posStructureType]!.len += 1;
-        --addedStructures;
-      }
+      addStructure(pos, posStructureType, roomMatrix);
     }
-    compressed[structureType]!.que.push(PLANNER_STAMP_STOP);
-    compressed[structureType]!.len += addedStructures;
   }
   return OK;
 }
@@ -91,7 +78,7 @@ export function addStamp(
 export function canAddStamp(
   centerOfStamp: Pos,
   stamp: Stamp,
-  ap: RoomPlannerMatrix
+  roomMatrix: RoomPlannerMatrix
 ) {
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
     const structureType = sType as BuildableStructureConstant;
@@ -100,7 +87,7 @@ export function canAddStamp(
       if (pos.x <= 0 || pos.y <= 0 || pos.x >= 49 || pos.y >= 49)
         return ERR_INVALID_ACTION;
 
-      const costOfMove = ap.building.get(pos.x, pos.y);
+      const costOfMove = roomMatrix.building.get(pos.x, pos.y);
       switch (costOfMove) {
         case PLANNER_COST.structure:
           if (isDefense(structureType)) break;

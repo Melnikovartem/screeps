@@ -488,7 +488,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         if (bee.ref === centerRef) return 255;
         else sum += 100;
       else if (desiredPos.enteranceToRoom) sum += 20;
-      else if (!desiredPos.isFree(true))
+      else if (!desiredPos.isFree())
         if (bee.ref === centerRef) return 255;
         else sum += 100;
       else if (
@@ -593,7 +593,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       const bee = this.formationBees[i];
       if (!bee) continue;
       const desiredPos = this.getDeisredPos(i);
-      if (!desiredPos || !desiredPos.isFree(true)) {
+      if (!desiredPos || !desiredPos.isFree()) {
         if (
           centerBee.targetPosition &&
           !centerBee.targetPosition.equal(centerBee.pos)
@@ -762,7 +762,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     const poss = this.desiredPoss;
     for (const desired of poss) {
       if (
-        !desired.pos.isFree(true) ||
+        !desired.pos.isFree() ||
         desired.pos.enteranceToRoom ||
         terrain.get(desired.pos.x, desired.pos.y) === TERRAIN_MASK_SWAMP
       )
@@ -1050,7 +1050,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
         this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
       ) {
-        const poss = bee.pos.getOpenPositions(true);
+        const poss = bee.pos.getOpenPositions();
         if (poss.length) {
           const newPos = poss.reduce((prev, curr) => {
             let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
@@ -1103,7 +1103,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       }
 
       let newCenter =
-        bee.targetPosition && bee.targetPosition.isFree(true)
+        bee.targetPosition && bee.targetPosition.isFree()
           ? bee.targetPosition
           : bee.pos;
       if (
@@ -1113,7 +1113,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       )
         newCenter =
           bee.pos
-            .getOpenPositions(true)
+            .getOpenPositions()
             .filter((p) => !p.enteranceToRoom)
             .sort((a, b) => bee.pos.getRangeTo(a) - bee.pos.getRangeTo(b))[0] ||
           newCenter;

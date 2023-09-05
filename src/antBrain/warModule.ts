@@ -422,7 +422,7 @@ export class WarcrimesModule {
           siedge.attackTime || 0
         );
       /* if (target instanceof StructureController
-        && target.pos.getOpenPositions(true).filter(p => matrix[p.x][p.y] <= 1
+        && target.pos.getOpenPositions().filter(p => matrix[p.x][p.y] <= 1
           && !p.lookFor(LOOK_STRUCTURES).filter(s => s.structureType !== STRUCTURE_ROAD).length).length)
         siedge.attackTime = null; */
 

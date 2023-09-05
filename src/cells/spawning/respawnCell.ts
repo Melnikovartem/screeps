@@ -322,7 +322,7 @@ export class RespawnCell extends Cell {
         .sort((a, b) => b.getRangeTo(this) - a.getRangeTo(this)),
       (pp) => {
         if (
-          pp.isFree(true) &&
+          pp.isFree() &&
           pp
             .lookFor(LOOK_STRUCTURES)
             .filter((s) => s.structureType === STRUCTURE_ROAD).length

@@ -1,6 +1,6 @@
 import "./visluals-planning";
 
-import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-active";
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-utils";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
@@ -109,7 +109,7 @@ export class Visuals {
       this.global();
       this.exportAnchor();
     }
-    this.visualizePlanner();
+    // this.visualizePlanner();
 
     this.update();
   }

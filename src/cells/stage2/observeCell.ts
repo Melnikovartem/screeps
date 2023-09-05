@@ -76,7 +76,7 @@ export class ObserveCell extends Cell {
         filter: { structureType: STRUCTURE_POWER_BANK },
       }),
       (power: StructurePowerBank) => {
-        const open = power.pos.getOpenPositions(true).length;
+        const open = power.pos.getOpenPositions().length;
         const dmgPerSecond = ATTACK_POWER * 20 * open;
         if (
           power.hits / dmgPerSecond >=

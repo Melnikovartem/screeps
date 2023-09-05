@@ -2,15 +2,9 @@ import { ROOM_DIMENTIONS } from "static/constants";
 
 import { surroundingPoints } from "./min-cut";
 import type { ActivePlan, RoomPlannerMatrix } from "./planner-active";
-import { addStructure } from "./planner-utils";
+import { addStructure, PLANNER_COST } from "./planner-utils";
 
-export const PLANNER_COST = {
-  road: 1,
-  plain: 2,
-  swamp: 10,
-  structure: 255, // not rly an option
-  wall: 255, // not rly an option
-};
+const PLANNER_MAX_ROOMS = 10;
 
 export function addRoad(
   from: RoomPosition,
@@ -25,7 +19,7 @@ export function addRoad(
     from,
     { pos: target, range },
     {
-      maxRooms: 5,
+      maxRooms: PLANNER_MAX_ROOMS,
       plainCost: PLANNER_COST.plain,
       swampCost: PLANNER_COST.swamp,
       roomCallback: (roomName) => {
@@ -34,22 +28,12 @@ export function addRoad(
       },
     }
   );
-  const roomAdded: { [roomName: string]: number } = {};
   _.forEach(path.path, (pos) => {
     const roads = ap.rooms[pos.roomName]?.compressed[STRUCTURE_ROAD]?.que || [];
     if (_.filter(roads, (r) => r[0] === pos.x && r[1] === pos.y).length) return;
-    if (!roomAdded[pos.roomName]) roomAdded[pos.roomName] = 0;
     addStructure(pos, STRUCTURE_ROAD, ap.rooms[pos.roomName]);
-    roomAdded[pos.roomName] += 1;
   });
-  for (const [roomName, amount] of Object.entries(roomAdded)) {
-    const roads = ap.rooms[roomName]?.compressed[STRUCTURE_ROAD];
-    if (!roads) continue;
-    roads.que.push("#");
-    roads.len += amount;
-  }
-  if (path.incomplete) console.log(from, JSON.stringify(to));
-  return path.incomplete;
+  return path.incomplete ? ERR_NOT_IN_RANGE : OK;
 }
 
 export function initMatrix(roomName: string): RoomPlannerMatrix {

@@ -104,7 +104,7 @@ export class DefenseCell extends Cell {
       const enemy = roomInfo.enemies[0].object;
       if (!this.notDef(roomName)) return;
       let pos = enemy.pos
-        .getOpenPositions(true)
+        .getOpenPositions()
         .filter((p) => !p.enteranceToRoom)[0];
       if (!pos) pos = enemy.pos;
       if (
@@ -412,7 +412,7 @@ export class DefenseCell extends Cell {
         }
       if (!pos) pos = centerPoss[0];
     } else if (pos.enteranceToRoom) {
-      const poss = pos.getOpenPositions(true);
+      const poss = pos.getOpenPositions();
       if (poss.length)
         pos = poss.reduce((prev, curr) => (prev.enteranceToRoom ? curr : prev));
     }

@@ -396,7 +396,7 @@ export class SiegeMaster extends Master<DefenseCell> {
       !(
         rangeToTarget === 1 &&
         provoke &&
-        bee.pos.getOpenPositions(true).filter((p) => findRamp(p)).length
+        bee.pos.getOpenPositions().filter((p) => findRamp(p)).length
       )
     )
       bee.goTo(posToStay, opt);

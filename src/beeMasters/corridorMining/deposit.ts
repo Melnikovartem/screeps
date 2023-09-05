@@ -45,7 +45,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     super(order);
     this.sitesAll.push(this);
     // just calc this once (format for obstacles in opt traveler)
-    this.positions = _.map(this.pos.getOpenPositions(true), (p) => {
+    this.positions = _.map(this.pos.getOpenPositions(), (p) => {
       return { pos: p };
     });
     // sub masters for mining and hauling
@@ -53,9 +53,10 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     this.pickup = new DepositPickupMaster(this);
 
     // how much can we mine
-    this.workAmount = setups.miner.deposit
-      .getBody(this.hive.room.energyCapacityAvailable)
-      .body.filter((b) => b === WORK).length * HARVEST_DEPOSIT_POWER;
+    this.workAmount =
+      setups.miner.deposit
+        .getBody(this.hive.room.energyCapacityAvailable)
+        .body.filter((b) => b === WORK).length * HARVEST_DEPOSIT_POWER;
     this.updateTarget();
   }
 

@@ -97,7 +97,7 @@ export class DevelopmentCell extends Cell {
       resource.energyCapacity / ENERGY_REGEN_TIME / harvestAmount
     );
     return Math.max(
-      Math.min(Math.floor(resource.pos.getOpenPositions(true).length), maxBees),
+      Math.min(Math.floor(resource.pos.getOpenPositions().length), maxBees),
       1
     );
   }

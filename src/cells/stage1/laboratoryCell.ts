@@ -263,7 +263,7 @@ export class LaboratoryCell extends Cell {
   public bakeMap() {
     this.positions = [];
     _.forEach(this.laboratories, (l) => {
-      _.forEach(l.pos.getOpenPositions(true), (p) => {
+      _.forEach(l.pos.getOpenPositions(), (p) => {
         if (!this.positions.filter((pp) => pp.x === p.x && pp.y === p.y).length)
           this.positions.push(p);
       });
@@ -365,7 +365,7 @@ export class LaboratoryCell extends Cell {
           r.amount * LAB_BOOST_ENERGY &&
         !this.usedBoost.includes(lab.id)
       ) {
-        const pos = lab.pos.getOpenPositions(true)[0];
+        const pos = lab.pos.getOpenPositions()[0];
         if (bee.pos.isNearTo(lab)) {
           const ans = lab.boostCreep(bee.creep, r.amount);
           this.usedBoost.push(lab.id);

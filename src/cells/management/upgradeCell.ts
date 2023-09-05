@@ -236,12 +236,12 @@ export class UpgradeCell extends Cell {
     this.maxBees = 10;
     if (this.link)
       this.maxBees = this.link.pos
-        .getOpenPositions(true)
+        .getOpenPositions()
         .filter((p) => p.getRangeTo(this.controller) <= 3).length;
     else if (this.container)
       this.maxBees =
         this.container.pos
-          .getOpenPositions(true)
+          .getOpenPositions()
           .filter((p) => p.getRangeTo(this.controller) <= 3).length - 1; // max 8
   }
 

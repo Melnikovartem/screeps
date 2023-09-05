@@ -1,11 +1,17 @@
 import { ERR_NO_VISION, ROOM_DIMENTIONS } from "static/constants";
 import { findCoordsInsideRect } from "static/utils";
 
-import { addRoad, initMatrix, PLANNER_COST } from "./addRoads";
+import { addRoad, initMatrix } from "./addRoads";
 import { addStamp, addStampSomewhere, canAddStamp } from "./addStamps";
 import { floodFill } from "./flood-fill";
 import { minCutToExit } from "./min-cut";
 import type { ActivePlan } from "./planner-active";
+import {
+  addContainer,
+  addStructure,
+  endBlock,
+  PLANNER_COST,
+} from "./planner-utils";
 import type { Stamp } from "./stamps";
 import { STAMP_CORE, STAMP_FAST_REFILL, STAMP_LABS } from "./stamps";
 import { distanceTransform } from "./wall-dist";
@@ -143,38 +149,51 @@ export class RoomPlanner {
     });
 
     const pos = new RoomPosition(posIter[0].x, posIter[0].y, roomName);
-    const roomMatrix = this.checking.active.rooms[roomName];
-    const cellPos = this.checking.active.posCell;
+    const ap = this.checking.active;
+    const roomMatrix = ap.rooms[roomName];
 
     // add main stamp - core
     if (canAddStamp(pos, STAMP_CORE, roomMatrix) !== OK) return rFunc;
     addStamp(pos, STAMP_CORE, roomMatrix);
 
     // add stamp lab
-    const lab = addStampSomewhere([pos], STAMP_LABS, roomMatrix, cellPos);
+    const lab = addStampSomewhere([pos], STAMP_LABS, roomMatrix, ap.posCell);
     if (lab === ERR_NOT_FOUND) return rFunc;
     // add stamp fastrefill
     const fastRef = addStampSomewhere(
       [pos, lab],
       STAMP_FAST_REFILL,
       roomMatrix,
-      cellPos
+      ap.posCell
     );
     if (fastRef === ERR_NOT_FOUND) return rFunc;
-    addRoad(pos, lab, this.checking.active);
-    addRoad(pos, fastRef, this.checking.active, 3);
-    addRoad(
-      new RoomPosition(lab.x, lab.y, roomName),
-      fastRef,
-      this.checking.active,
-      3
-    );
 
-    for (const resPos of this.checking.sources)
-      addRoad(pos, resPos, this.checking.active);
+    addRoad(pos, lab, ap);
+    addRoad(pos, fastRef, ap, 3);
+    addRoad(new RoomPosition(lab.x, lab.y, roomName), fastRef, ap, 3);
 
-    for (const resPos of this.checking.minerals)
-      addRoad(pos, resPos, this.checking.active);
+    endBlock(ap);
+
+    const resources = this.checking.sources;
+    resources.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
+    for (const resPos of resources) {
+      if (addRoad(pos, resPos, ap) !== OK) return rFunc;
+      if (addContainer(resPos, ap.rooms[resPos.roomName], pos) !== OK)
+        return rFunc;
+      endBlock(ap, STRUCTURE_ROAD);
+    }
+    endBlock(ap, STRUCTURE_CONTAINER);
+
+    const minerals = this.checking.sources;
+    minerals.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
+    for (const resPos of this.checking.minerals) {
+      if (addRoad(pos, resPos, ap) !== OK) return rFunc;
+      if (addContainer(resPos, ap.rooms[resPos.roomName], pos) !== OK)
+        return rFunc;
+      if (roomName === resPos.roomName)
+        addStructure(resPos, STRUCTURE_EXTRACTOR, roomMatrix);
+      endBlock(ap);
+    }
 
     this.checking.best = this.checking.active;
     return () => console.log("OK"); // rFunc;
@@ -194,14 +213,6 @@ export class RoomPlanner {
 
     const ramps = minCutToExit(posToProtect, costMatrix);
     return { posCell: {}, setup: { [STRUCTURE_RAMPART]: ramps } };
-  }
-
-  /** Keeps function in engine. Maybe move to engine */
-  private keep(func: () => any) {
-    return () => {
-      func();
-      return func;
-    };
   }
 
   private startingPos(roomName: string, posInterest: Pos[]) {
@@ -251,3 +262,16 @@ export class RoomPlanner {
 
   // #endregion Private Methods (4)
 }
+
+/** 
+ * 
+ * A.showMap(roomName, true, (x, y, vis) => {
+      vis.rect(x - 0.5, y - 0.5, 1, 1, {
+        fill:
+          "hsl(" +
+          Apiary.colony.planner.checking!.active.rooms[roomName].building.get(x, y) +
+          ", 100%, 60%)",
+        opacity: 0.4,
+      });
+    });
+*/

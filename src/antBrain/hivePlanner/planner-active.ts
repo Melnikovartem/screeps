@@ -1,6 +1,5 @@
+import type { PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
-
-export const PLANNER_STAMP_STOP = "#";
 
 type CompressedStructures = ([number, number] | typeof PLANNER_STAMP_STOP)[];
 export interface RoomPlannerMatrix {
