@@ -26,8 +26,12 @@ export function addStructure(
     };
   ap.compressed[structureType]!.que.push([pos.x, pos.y]);
 
-  // add new movement cost
-  if (structureType !== STRUCTURE_RAMPART) {
+  // if non walkable structure
+  if (
+    structureType !== STRUCTURE_RAMPART &&
+    structureType !== STRUCTURE_CONTAINER
+  ) {
+    // add new movement cost
     ap.movement.set(pos.x, pos.y, costOfMove);
     if (ap.building.get(pos.x, pos.y) !== PLANNER_COST.structure)
       ap.building.set(pos.x, pos.y, costOfMove);
@@ -43,7 +47,7 @@ export function addContainer(
     resPos.getOpenPositions(),
     (p) => ap.movement.get(p.x, p.y) !== PLANNER_COST.structure
   );
-  if (!points) return ERR_NOT_FOUND;
+  if (!points.length) return ERR_NOT_FOUND;
   const pointsWithR = _.filter(
     points,
     (p) => ap.movement.get(p.x, p.y) === PLANNER_COST.road
@@ -70,6 +74,27 @@ export function addContainer(
   return OK;
 }
 
+export function addLink(
+  resPos: RoomPosition,
+  ap: RoomPlannerMatrix,
+  distTo: RoomPosition
+) {
+  const points = _.filter(
+    resPos.getOpenPositions(false, 2),
+    (p) =>
+      resPos.getRangeTo(p) === 2 &&
+      ap.building.get(p.x, p.y) === PLANNER_COST.plain &&
+      ap.building.get(p.x, p.y) === PLANNER_COST.swamp
+  );
+  if (!points.length) return ERR_NOT_FOUND;
+  // replace one road with link
+  const pos = points.reduce((a, b) =>
+    distTo.getRangeApprox(a) < distTo.getRangeApprox(b) ? a : b
+  );
+  addStructure(pos, STRUCTURE_LAB, ap);
+  return OK;
+}
+
 export function endBlock(ap: ActivePlan, sType?: BuildableStructureConstant) {
   for (const roomName of Object.keys(ap.rooms)) {
     endBlockRoom(ap.rooms[roomName], sType);
@@ -84,7 +109,12 @@ function endBlockRoom(
     const structureType = sTypeIter as BuildableStructureConstant;
     if (sType && sType !== structureType) continue;
     const que = ap.compressed[structureType]!.que;
+    let toAdd = 0;
+    for (let i = que.length - 1; i >= 0; --i)
+      if (que[i] === PLANNER_STAMP_STOP) break;
+      else ++toAdd;
     if (que[que.length - 1] !== PLANNER_STAMP_STOP)
       que.push(PLANNER_STAMP_STOP);
+    ap.compressed[structureType]!.len += toAdd;
   }
 }

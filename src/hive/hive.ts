@@ -25,6 +25,8 @@ const HIVE_MINERAL = 5000;
 export class Hive {
   // #region Properties (15)
 
+  /** List of annex names */
+  private _annexNames: string[];
   private updateCellData = updateCellData;
   private updateDangerAnnex = updateDangerAnnex;
 
@@ -38,8 +40,6 @@ export class Hive {
   public allResources = false;
   /** List of annexes in danger */
   public annexInDanger: string[] = [];
-  /** List of annex names */
-  public annexNames: string[] = [];
   public bassboost: Hive | null = null;
   public mastersResTarget: ResTarget = {};
   public resState: { energy: number } & ResTarget = { energy: 0 };
@@ -70,6 +70,7 @@ export class Hive {
   public constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
+    this._annexNames = this.cache.annex;
 
     if (!this.cache) Hive.initMemory(this.roomName);
 
@@ -116,7 +117,16 @@ export class Hive {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (10)
+  // #region Public Accessors (12)
+
+  public get annexNames() {
+    return this._annexNames;
+  }
+
+  public set annexNames(value) {
+    this._annexNames = value;
+    this.cache.annex = value;
+  }
 
   /** fast way to get to cache */
   public get cache() {
@@ -177,13 +187,14 @@ export class Hive {
     return this.cells.storage.storage;
   }
 
-  // #endregion Public Accessors (10)
+  // #endregion Public Accessors (12)
 
   // #region Public Static Methods (1)
 
   public static initMemory(roomName: string) {
     // @TODO power/deposit mining if on the edge
     Memory.cache.hives[roomName] = {
+      annex: [],
       cells: {},
       do: { ...BASE_MODE_HIVE },
     };
@@ -220,8 +231,7 @@ export class Hive {
     if (Apiary.intTime % 1500 === 1499 || this.state === hiveStates.nospawn)
       this.updateCellData();
 
-    if (!this.allResources && Apiary.intTime % 10 === 0)
-      addResourceCells(this);
+    if (!this.allResources && Apiary.intTime % 10 === 0) addResourceCells(this);
 
     if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
 

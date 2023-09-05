@@ -109,7 +109,7 @@ export class Visuals {
       this.global();
       this.exportAnchor();
     }
-    // this.visualizePlanner();
+    this.visualizePlanner();
 
     this.update();
   }

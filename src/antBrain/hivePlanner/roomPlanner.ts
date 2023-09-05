@@ -5,9 +5,10 @@ import { addRoad, initMatrix } from "./addRoads";
 import { addStamp, addStampSomewhere, canAddStamp } from "./addStamps";
 import { floodFill } from "./flood-fill";
 import { minCutToExit } from "./min-cut";
-import type { ActivePlan } from "./planner-active";
+import type { ActivePlan, RoomPlannerMatrix } from "./planner-active";
 import {
   addContainer,
+  addLink,
   addStructure,
   endBlock,
   PLANNER_COST,
@@ -174,15 +175,24 @@ export class RoomPlanner {
 
     endBlock(ap);
 
+    // @todo add extensions
+
+    this.generateWalls(roomName, roomMatrix);
+
     const resources = this.checking.sources;
     resources.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
     for (const resPos of resources) {
       if (addRoad(pos, resPos, ap) !== OK) return rFunc;
       if (addContainer(resPos, ap.rooms[resPos.roomName], pos) !== OK)
         return rFunc;
+      if (
+        roomName === resPos.roomName &&
+        addLink(resPos, roomMatrix, pos) !== OK
+      )
+        return rFunc;
       endBlock(ap, STRUCTURE_ROAD);
     }
-    endBlock(ap, STRUCTURE_CONTAINER);
+    endBlock(ap);
 
     const minerals = this.checking.sources;
     minerals.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
@@ -199,14 +209,17 @@ export class RoomPlanner {
     return () => console.log("OK"); // rFunc;
   }
 
-  private generateWalls(roomName: string, ap: ActivePlan): Stamp {
+  private generateWalls(
+    roomName: string,
+    roomMatrix: RoomPlannerMatrix
+  ): Stamp {
     const costMatrix = initMatrix(roomName).building;
 
     const posToProtect: Pos[] = [];
     for (let x = 0; x < 50; ++x)
       for (let y = 0; y < 50; ++y)
         if (
-          ap.rooms[roomName].building.get(x, y) === PLANNER_COST.structure &&
+          roomMatrix.building.get(x, y) === PLANNER_COST.structure &&
           costMatrix.get(x, y) !== PLANNER_COST.structure
         )
           posToProtect.push({ x, y });

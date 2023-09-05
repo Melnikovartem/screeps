@@ -2,6 +2,7 @@ export interface HiveCache {
   // #region Properties (2)
 
   cells: { [id: string]: { [id: string]: any } };
+  annex: string[];
   do: {
     powerMining: 0 | 1;
     powerRefining: 0 | 1;
