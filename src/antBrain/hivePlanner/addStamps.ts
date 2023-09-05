@@ -1,22 +1,56 @@
 import { ERR_INVALID_ACTION } from "static/constants";
 
-import { PLANNER_STAMP_STOP } from "./plannerActive";
-import { PLANNER_COST, type RoomPlanner } from "./roomPlanner";
+import { PLANNER_COST } from "./addRoads";
+import { surroundingPoints } from "./min-cut";
+import type { RoomCellsPlanner, RoomPlannerMatrix } from "./planner-active";
+import { PLANNER_STAMP_STOP } from "./planner-active";
+import { addStructure } from "./planner-utils";
 import type { Stamp } from "./stamps";
 
-export function addStamp(
-  this: RoomPlanner,
-  centerOfStamp: RoomPosition,
-  stamp: Stamp
+const MAX_ATTEMPTS_TO_ADD = 10000;
+
+export function addStampSomewhere(
+  prevCenters: Pos[],
+  stamp: Stamp,
+  ap: RoomPlannerMatrix,
+  cells: RoomCellsPlanner
 ) {
-  if (!this.activePlanning) return ERR_NOT_FOUND;
-  const roomName = centerOfStamp.roomName;
-  const ap = this.activePlanning;
-  if (!ap.compressed[roomName]) ap.compressed[roomName] = {};
-  if (!ap.movement[roomName])
-    ap.movement[roomName] = this.getTerrainCostMatrix(roomName);
-  const compressed = ap.compressed[roomName];
-  const costMatrix = ap.movement[roomName];
+  const strCheck = (p: Pos) => p.x + "_" + p.y;
+  const visited: Set<string> = new Set(_.map(prevCenters, strCheck));
+  const checkQue: Pos[] = [];
+  // O(max(2500 * 2500, 2500 * stamp))
+  const addPos = (p: Pos) => {
+    if (ap.building.get(p.x, p.y) === PLANNER_COST.wall) return;
+    if (visited.has(strCheck(p))) return;
+    checkQue.push(p);
+    visited.add(strCheck(p));
+  };
+
+  _.forEach(prevCenters, (pCenter) =>
+    _.forEach(surroundingPoints(pCenter), addPos)
+  );
+
+  for (let i = 0; i < MAX_ATTEMPTS_TO_ADD; ++i) {
+    const pos = checkQue.shift();
+    if (!pos) break;
+    if (canAddStamp(pos, stamp, ap) === OK) {
+      addStamp(pos, stamp, ap);
+      for (const [ref, val] of Object.entries(stamp.posCell)) cells[ref] = val;
+      return pos;
+    }
+    _.forEach(surroundingPoints(pos), (p) => addPos(p));
+  }
+  return ERR_NOT_FOUND;
+}
+
+export function addStamp(
+  centerOfStamp: Pos,
+  stamp: Stamp,
+  ap: RoomPlannerMatrix
+) {
+  const costMatrix = ap.building;
+
+  const compressed = ap.compressed;
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
     const structureType = sType as BuildableStructureConstant;
 
@@ -26,8 +60,6 @@ export function addStamp(
         len: 0,
       };
 
-    let costOfMove = PLANNER_COST.structure;
-    if (structureType === STRUCTURE_ROAD) costOfMove = PLANNER_COST.road;
     let addedStructures = addPositions.length;
 
     for (const packedPos of addPositions) {
@@ -41,20 +73,7 @@ export function addStamp(
       )
         posStructureType = STRUCTURE_RAMPART;
 
-      if (!compressed[posStructureType])
-        compressed[posStructureType] = {
-          que: [],
-          len: 0,
-        };
-      compressed[posStructureType]!.que.push([pos.x, pos.y]);
-
-      // add new movement cost
-      if (posStructureType !== STRUCTURE_RAMPART)
-        this.activePlanning.movement[centerOfStamp.roomName].set(
-          pos.x,
-          pos.y,
-          costOfMove
-        );
+      addStructure(pos, posStructureType, ap);
 
       // if added not original structure (rampart instead of wall) record it
       if (structureType !== posStructureType) {
@@ -70,21 +89,18 @@ export function addStamp(
 }
 
 export function canAddStamp(
-  this: RoomPlanner,
-  centerOfStamp: RoomPosition,
-  stamp: Stamp
+  centerOfStamp: Pos,
+  stamp: Stamp,
+  ap: RoomPlannerMatrix
 ) {
-  if (!this.activePlanning) return ERR_NOT_FOUND;
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
     const structureType = sType as BuildableStructureConstant;
     for (const packedPos of addPositions) {
       const pos = unpackCoords(centerOfStamp, packedPos);
+      if (pos.x <= 0 || pos.y <= 0 || pos.x >= 49 || pos.y >= 49)
+        return ERR_INVALID_ACTION;
 
-      const roomName = centerOfStamp.roomName;
-      const apM = this.activePlanning.movement;
-      if (!apM[roomName]) apM[roomName] = this.getTerrainCostMatrix(roomName);
-
-      const costOfMove = apM[roomName].get(pos.x, pos.y);
+      const costOfMove = ap.building.get(pos.x, pos.y);
       switch (costOfMove) {
         case PLANNER_COST.structure:
           if (isDefense(structureType)) break;
@@ -111,7 +127,7 @@ function isDefense(structureType: BuildableStructureConstant) {
 }
 
 function unpackCoords(
-  centerOfStamp: RoomPosition,
+  centerOfStamp: Pos,
   pos: Pos,
   direction: 0 | 1 | 2 | 3 = 0, // rotation of center doesn't matter in the grad side of things?
   shiftY: number = 0,

@@ -1,26 +1,28 @@
-import { ERR_NO_VISION } from "static/constants";
+import { ERR_NO_VISION, ROOM_DIMENTIONS } from "static/constants";
+import { findCoordsInsideRect } from "static/utils";
 
-import { addStamp, canAddStamp } from "./addStamps";
+import { addRoad, initMatrix, PLANNER_COST } from "./addRoads";
+import { addStamp, addStampSomewhere, canAddStamp } from "./addStamps";
 import { floodFill } from "./flood-fill";
 import { minCutToExit } from "./min-cut";
-import type { ActivePlan } from "./plannerActive";
-import { STAMP_CORE } from "./stamps";
-import { distanceTransform, ROOM_DIMENTIONS } from "./wall-dist";
+import type { ActivePlan } from "./planner-active";
+import type { Stamp } from "./stamps";
+import { STAMP_CORE, STAMP_FAST_REFILL, STAMP_LABS } from "./stamps";
+import { distanceTransform } from "./wall-dist";
 
 const DIST_FROM_WALL = {
   idealHigh: 12,
   idealLow: 8,
   nonidealBelowMaxInRoom: -2,
+  absoluteLow: 4,
 };
 
-export const PLANNER_COST = {
-  road: 1,
-  plain: 2,
-  swamp: 10,
-  structure: 255, // not rly an option
-  wall: 255, // not rly an option
+const PLANNER_PADDING = {
+  resource: 1,
+  controller: 2,
 };
-const TAKE_N_BEST = 16;
+
+const TAKE_N_BEST = 10;
 
 /* chain startingPos -> {
   for goodPosition
@@ -31,14 +33,23 @@ const TAKE_N_BEST = 16;
 }
 */
 export class RoomPlanner {
-  // #region Properties (2)
+  // #region Properties (1)
 
-  private addStamp = addStamp;
-  private canAddStamp = canAddStamp;
+  public checking:
+    | {
+        roomName: string;
+        controller: RoomPosition;
+        sources: RoomPosition[];
+        minerals: RoomPosition[];
 
-  public activePlanning: ActivePlan | undefined;
+        bestMetric: number;
+        best: ActivePlan;
+        active: ActivePlan;
+        positions: [Pos, number][];
+      }
+    | undefined;
 
-  // #endregion Properties (2)
+  // #endregion Properties (1)
 
   // #region Public Methods (1)
 
@@ -48,79 +59,141 @@ export class RoomPlanner {
     const posCont = room.controller?.pos;
     if (!posCont) return ERR_INVALID_TARGET;
 
-    const resourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
+    const sourcesPos = room
+      .find(FIND_SOURCES)
+      .map((r) => r.pos)
+      .concat([new RoomPosition(24, 35, "W5N7")]);
     const mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
-    const posInterest: Pos[] = [posCont]
-      .concat(resourcesPos)
-      .concat(mineralsPos);
 
     // add postion to check / road to exit to corridor ?
 
     Apiary.engine.addTask("planner " + roomName, () => {
+      const posInterest: Pos[] = [posCont]
+        .concat(sourcesPos)
+        .concat(mineralsPos);
       const positions = this.startingPos(roomName, posInterest);
       if (!positions) return;
-      if (!this.activePlanning)
-        this.activePlanning = {
-          futureHiveName: roomName,
-          controller: posCont,
-          sources: resourcesPos,
-          minerals: mineralsPos,
-          movement: {},
+      this.checking = {
+        roomName,
+        controller: posCont,
+        sources: sourcesPos,
+        minerals: mineralsPos,
+        bestMetric: Infinity,
+        best: {
           posCell: {},
-          compressed: {},
-        };
-      if (!this.canAddStamp(positions[0], STAMP_CORE)) return;
-      this.addStamp(positions[0], STAMP_CORE);
+          rooms: {},
+        },
+        active: {
+          posCell: {},
+          rooms: {},
+        },
+        positions,
+      };
+      return () => this.checkPosition(roomName);
     });
     return OK;
   }
 
   // #endregion Public Methods (1)
 
-  // #region Protected Methods (1)
+  // #region Private Methods (4)
 
-  protected getTerrainCostMatrix(roomName: string) {
-    const costMatrix = new PathFinder.CostMatrix();
-    const terrain = Game.map.getRoomTerrain(roomName);
-    // set terrain
-    for (let x = 0; x < 50; ++x)
-      for (let y = 0; y < 50; ++y) {
-        let val = 1;
-        switch (terrain.get(x, y)) {
-          case TERRAIN_MASK_WALL:
-            val = 255;
-            break;
-          case TERRAIN_MASK_SWAMP:
-          case 0:
-            val = 1;
-            break;
-        }
-        costMatrix.set(x, y, val);
-      }
-    return costMatrix;
+  private checkPosition(roomName: string) {
+    if (!this.checking) return;
+    const posIter = this.checking.positions.shift();
+    if (!posIter) return; // save best result
+
+    const rFunc = () => console.log("ERROR"); // () => this.checkPosition(roomName);
+
+    this.checking.active = {
+      posCell: {},
+      rooms: { [roomName]: initMatrix(roomName) },
+    };
+
+    _.forEach(
+      findCoordsInsideRect(
+        this.checking.controller.x - PLANNER_PADDING.controller,
+        this.checking.controller.y - PLANNER_PADDING.controller,
+        this.checking.controller.x + PLANNER_PADDING.controller,
+        this.checking.controller.y + PLANNER_PADDING.controller
+      ),
+      (p) =>
+        this.checking!.active.rooms[roomName].building.set(
+          p.x,
+          p.y,
+          PLANNER_COST.wall
+        )
+    );
+
+    _.forEach(this.checking.sources.concat(this.checking.minerals), (res) => {
+      _.forEach(
+        findCoordsInsideRect(
+          res.x - PLANNER_PADDING.resource,
+          res.y - PLANNER_PADDING.resource,
+          res.x + PLANNER_PADDING.resource,
+          res.y + PLANNER_PADDING.resource
+        ),
+        (p) =>
+          this.checking!.active.rooms[roomName].building.set(
+            p.x,
+            p.y,
+            PLANNER_COST.wall
+          )
+      );
+    });
+
+    const pos = new RoomPosition(posIter[0].x, posIter[0].y, roomName);
+    const roomMatrix = this.checking.active.rooms[roomName];
+    const cellPos = this.checking.active.posCell;
+
+    // add main stamp - core
+    if (canAddStamp(pos, STAMP_CORE, roomMatrix) !== OK) return rFunc;
+    addStamp(pos, STAMP_CORE, roomMatrix);
+
+    // add stamp lab
+    const lab = addStampSomewhere([pos], STAMP_LABS, roomMatrix, cellPos);
+    if (lab === ERR_NOT_FOUND) return rFunc;
+    // add stamp fastrefill
+    const fastRef = addStampSomewhere(
+      [pos, lab],
+      STAMP_FAST_REFILL,
+      roomMatrix,
+      cellPos
+    );
+    if (fastRef === ERR_NOT_FOUND) return rFunc;
+    addRoad(pos, lab, this.checking.active);
+    addRoad(pos, fastRef, this.checking.active, 3);
+    addRoad(
+      new RoomPosition(lab.x, lab.y, roomName),
+      fastRef,
+      this.checking.active,
+      3
+    );
+
+    for (const resPos of this.checking.sources)
+      addRoad(pos, resPos, this.checking.active);
+
+    for (const resPos of this.checking.minerals)
+      addRoad(pos, resPos, this.checking.active);
+
+    this.checking.best = this.checking.active;
+    return () => console.log("OK"); // rFunc;
   }
 
-  // #endregion Protected Methods (1)
+  private generateWalls(roomName: string, ap: ActivePlan): Stamp {
+    const costMatrix = initMatrix(roomName).building;
 
-  // #region Private Methods (3)
-
-  private generateWalls(roomName: string) {
-    const costMatrix = this.getTerrainCostMatrix(roomName);
-
-    const basePos = new RoomPosition(25, 25, roomName);
-    const posCont = Game.rooms[roomName]?.controller?.pos || basePos;
-    const resources = Game.rooms[roomName].find(FIND_SOURCES).map((r) => r.pos);
-    const minerals = Game.rooms[roomName].find(FIND_MINERALS).map((r) => r.pos);
-
-    costMatrix.set(posCont.x, posCont.y, 1);
-
-    const posToProtect: Pos[] = [posCont].concat(resources).concat(minerals);
+    const posToProtect: Pos[] = [];
+    for (let x = 0; x < 50; ++x)
+      for (let y = 0; y < 50; ++y)
+        if (
+          ap.rooms[roomName].building.get(x, y) === PLANNER_COST.structure &&
+          costMatrix.get(x, y) !== PLANNER_COST.structure
+        )
+          posToProtect.push({ x, y });
 
     const ramps = minCutToExit(posToProtect, costMatrix);
-    const vis = () => {
-      const rv = new RoomVisual(roomName);
-      _.forEach(ramps, (r) => rv.structure(r.x, r.y, STRUCTURE_RAMPART));
-    };
+    return { posCell: {}, setup: { [STRUCTURE_RAMPART]: ramps } };
   }
 
   /** Keeps function in engine. Maybe move to engine */
@@ -132,15 +205,16 @@ export class RoomPlanner {
   }
 
   private startingPos(roomName: string, posInterest: Pos[]) {
-    const costMatrix = this.getTerrainCostMatrix(roomName);
+    const costMatrix = initMatrix(roomName).movement;
 
     const distanceMap = distanceTransform(costMatrix);
     let positions: [Pos, number][] = [];
     for (let x = 0; x < ROOM_DIMENTIONS; ++x)
       for (let y = 0; y < ROOM_DIMENTIONS; ++y)
-        if (distanceMap.get(x, y) > 0)
+        if (distanceMap.get(x, y) < PLANNER_COST.wall)
           positions.push([{ x, y }, distanceMap.get(x, y)]);
 
+    positions = _.filter(positions, (p) => p[1] >= DIST_FROM_WALL.absoluteLow);
     // room is literal block of walls
     if (!positions) return;
 
@@ -172,8 +246,8 @@ export class RoomPlanner {
       return diff;
     });
     positions.splice(TAKE_N_BEST);
-    return _.map(positions, (p) => new RoomPosition(p[0].x, p[0].y, roomName));
+    return positions;
   }
 
-  // #endregion Private Methods (3)
+  // #endregion Private Methods (4)
 }

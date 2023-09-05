@@ -102,7 +102,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   public constructor(order: SwarmOrder<SquadInfo>) {
     super(order);
-    Apiary.warcrimes.squads[this.ref] = this;
+    Apiary.war.squads[this.ref] = this;
   }
 
   // #region Public Accessors (19)
@@ -377,7 +377,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   public override delete() {
     super.delete();
-    delete Apiary.warcrimes.squads[this.ref];
+    delete Apiary.war.squads[this.ref];
   }
 
   /** based on formation get position where the bee should be */
@@ -523,7 +523,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
           this.stats.current.dism >
         0
       ) {
-        const enemy = Apiary.warcrimes.getEnemy(
+        const enemy = Apiary.war.getEnemy(
           this.info.targetLastUpdated === -1 ? this.pos : this.formationCenter,
           this.stats.current.dism > 0
         );
@@ -965,7 +965,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
           (this.stats.current.dism ||
             this.stats.current.dmgClose ||
             this.stuckSiedge > 40) &&
-          Apiary.warcrimes.getEasyEnemy(bee.pos);
+          Apiary.war.getEasyEnemy(bee.pos);
         if (newEnemy) {
           enemy = newEnemy;
           if (enemy.pos.isNearTo(bee)) this.stuckSiedge = 0;

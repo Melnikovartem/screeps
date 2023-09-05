@@ -108,7 +108,7 @@ function pointAdd(a: Point, b: Point): Point {
   return { x: a.x + b.x, y: a.y + b.y };
 }
 
-function surroundingPoints(p: Point): Point[] {
+export function surroundingPoints(p: Point): Point[] {
   return EIGHT_DELTA.map((d) => pointAdd(p, d)).filter(isPointInRoom);
 }
 

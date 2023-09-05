@@ -35,6 +35,8 @@ export const ERR_COOLDOWN = -101;
 export const ERR_INVALID_ACTION = -102;
 export const ERR_NO_VISION = -200;
 
+export const ROOM_DIMENTIONS = 50;
+
 export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
   hives: (Memory.cache && Memory.cache.hives) || {},
   orders: {},

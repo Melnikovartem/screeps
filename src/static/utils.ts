@@ -1,6 +1,7 @@
 import type { ResTarget } from "hive/hive-declarations";
 
 import { DEVELOPING, LOGGING_CYCLE, SAFE_DEV } from "../settings";
+import { ROOM_DIMENTIONS } from "./constants";
 
 export function makeId(length: number): string {
   let result = "";
@@ -184,4 +185,31 @@ export function getCase(
   }
 
   return { amount: amount || 0, heal: hitsMax };
+}
+
+/**
+ * Takes a rectange and returns the positions inside of it in an array
+ */
+export function findCoordsInsideRect(
+  xlow: number,
+  ylow: number,
+  xhigh: number,
+  yhigh: number
+) {
+  const positions: Coord[] = [];
+
+  for (let x = xlow; x <= xhigh; x += 1) {
+    for (let y = ylow; y <= yhigh; y += 1) {
+      // Iterate if the pos doesn't map onto a room
+
+      if (x < 0 || x >= ROOM_DIMENTIONS || y < 0 || y >= ROOM_DIMENTIONS)
+        continue;
+
+      // Otherwise pass the x and y to positions
+
+      positions.push({ x, y });
+    }
+  }
+
+  return positions;
 }

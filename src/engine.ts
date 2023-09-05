@@ -52,8 +52,13 @@ export class Engine {
   public run() {
     while (this.canRun) {
       const task = this.que.shift();
-      if (task) this.runTask(task);
-      else break;
+      if (!task) break;
+      if (task.time === Game.time) {
+        // throttle for debug a little bit
+        this.que.push(task);
+        return;
+      }
+      this.runTask(task);
     }
   }
 

@@ -43,8 +43,8 @@ export class _Apiary {
   public useBucket: boolean = false;
   public username: string = "";
   public visuals: Visuals = new Visuals();
-  public warcrimes: WarcrimesModule = new WarcrimesModule();
-  public colonybrain: ColonyBrianModule = new ColonyBrianModule();
+  public war: WarcrimesModule = new WarcrimesModule();
+  public colony: ColonyBrianModule = new ColonyBrianModule();
 
   // #endregion Properties (19)
 
@@ -88,7 +88,7 @@ export class _Apiary {
       this.logger = new EmptyLogger(); // failsafe
     }
     this.network.init();
-    this.warcrimes.init();
+    this.war.init();
     SwarmOrder.init();
   }
 
@@ -115,8 +115,8 @@ export class _Apiary {
       "run",
       this.network.nodes.length
     );
-    this.wrap(() => this.warcrimes.run(), "warcrimes", "run", 1);
-    this.wrap(() => this.colonybrain.run(), "colonybrain", "run", 1);
+    this.wrap(() => this.war.run(), "warcrimes", "run", 1);
+    this.wrap(() => this.colony.run(), "colonybrain", "run", 1);
 
     this.engine.run();
 
@@ -142,7 +142,7 @@ export class _Apiary {
 
     this.wrap(() => this.network.update(), "network", "update", 0);
 
-    this.wrap(() => this.warcrimes.update(), "warcrimes", "update");
+    this.wrap(() => this.war.update(), "warcrimes", "update");
 
     // loses about 0.05 per hive of cpu log, but more detailed
     _.forEach(this.hives, (hive) => {

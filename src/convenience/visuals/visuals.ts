@@ -1,6 +1,6 @@
 import "./visluals-planning";
 
-import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-active";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
@@ -248,9 +248,9 @@ export class Visuals {
       ["siedge squads"],
       ["", "🎯", " ☠️❗", "💀", "🐝"],
     ];
-    _.forEach(Apiary.warcrimes.squads, (squad) => {
+    _.forEach(Apiary.war.squads, (squad) => {
       const roomInfo = Apiary.intel.getInfo(squad.pos.roomName, 500);
-      const siedge = Apiary.warcrimes.siedge[squad.pos.roomName];
+      const siedge = Apiary.war.siedge[squad.pos.roomName];
       battleInfo.push([
         squad.ref.slice(0, 4) + " ",
         " " + squad.pos.roomName,
@@ -266,8 +266,9 @@ export class Visuals {
   }
 
   public visualizePlanner() {
-    const activePlanning = Apiary.colonybrain.planner.activePlanning;
+    const activePlanning = Apiary.colony.planner.checking?.active;
     if (!activePlanning) return;
+    const hiveName = Apiary.colony.planner.checking!.roomName;
 
     // add info about cells
     for (const [cellRef, value] of Object.entries(activePlanning.posCell)) {
@@ -290,7 +291,7 @@ export class Visuals {
           break;
       }
       const SIZE = 0.3;
-      this.changeAnchor(0, 0, value[2] || activePlanning.futureHiveName, true);
+      this.changeAnchor(0, 0, value[2] || hiveName, true);
       const pos = { x: value[0], y: value[1] };
       this.anchor.vis.line(
         pos.x - SIZE,
@@ -309,13 +310,13 @@ export class Visuals {
     }
 
     // add structures
-    for (const roomName in activePlanning.compressed) {
+    for (const roomName in activePlanning.rooms) {
       if (
         this.caching[roomName] &&
         this.caching[roomName].lastRecalc > Game.time
       )
         continue;
-      const plan = activePlanning.compressed[roomName];
+      const plan = activePlanning.rooms[roomName].compressed;
       this.changeAnchor(0, 0, roomName, true);
       const vis = this.anchor.vis;
       const hive = Apiary.hives[roomName];

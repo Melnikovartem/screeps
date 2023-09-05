@@ -1,16 +1,12 @@
 import { prefix } from "static/enums";
 
-import type { ActivePlan } from "./plannerActive";
-
-export type RoomSetup = {
-  [key in BuildableStructureConstant]?: { x: number; y: number }[];
-};
+import type { ActivePlan } from "./planner-active";
 
 export interface Stamp {
   // #region Properties (2)
 
   posCell: ActivePlan["posCell"];
-  setup: RoomSetup;
+  setup: { [key in BuildableStructureConstant]?: { x: number; y: number }[] };
 
   // #endregion Properties (2)
 }

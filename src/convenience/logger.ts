@@ -1,5 +1,5 @@
 import type { HiveLog } from "abstract/hiveMemory";
-import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-active";
 import { setups } from "bees/creepSetups";
 import type { ProtoOrder } from "bugSmuggling/broker";
 import type { Hive } from "hive/hive";

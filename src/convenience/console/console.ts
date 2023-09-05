@@ -625,7 +625,7 @@ export class CustomConsole {
   }
 
   public showSiedge(roomName: string, keep = false) {
-    const siedge = Apiary.warcrimes.siedge[roomName];
+    const siedge = Apiary.war.siedge[roomName];
     if (!siedge) return "ERROR: NO SIEDGE INFO @ " + this.formatRoom(roomName);
     const minslot = _.min(siedge.squadSlots, (s) => s.lastSpawned);
     const exits = Game.map.describeExits(roomName);
@@ -736,7 +736,7 @@ export class CustomConsole {
   }
 
   public siedge(roomName: string, attack = 0) {
-    Apiary.warcrimes.updateRoom(roomName, attack ? Game.time : null);
+    Apiary.war.updateRoom(roomName, attack ? Game.time : null);
   }
 
   // #endregion Public Methods (23)

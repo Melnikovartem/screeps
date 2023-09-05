@@ -1,4 +1,4 @@
-import type { RoomPlannerHiveCache } from "antBrain/hivePlanner/plannerActive";
+import type { RoomPlannerHiveCache } from "antBrain/hivePlanner/planner-active";
 import type { _Apiary } from "Apiary";
 import type { CustomConsole } from "convenience/console/console";
 import type { SwarmOrderInfo } from "orders/swarmOrder";

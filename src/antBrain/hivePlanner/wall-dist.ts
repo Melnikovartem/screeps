@@ -1,4 +1,4 @@
-export const ROOM_DIMENTIONS = 50;
+import { ROOM_DIMENTIONS } from "static/constants";
 
 /**
  * This is good for anything that isn't a diagonal, as searches all adjacent tiles when finding distance

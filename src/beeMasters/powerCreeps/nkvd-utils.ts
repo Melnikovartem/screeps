@@ -1,4 +1,4 @@
-import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/plannerActive";
+import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-active";
 
 export function defenseWalls(hiveName: string) {
   const ans: (StructureWall | StructureRampart)[] = [];
