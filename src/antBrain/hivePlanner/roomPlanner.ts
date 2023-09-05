@@ -13,8 +13,12 @@ import {
   endBlock,
   PLANNER_COST,
 } from "./planner-utils";
-import type { Stamp } from "./stamps";
-import { STAMP_CORE, STAMP_FAST_REFILL, STAMP_LABS } from "./stamps";
+import {
+  STAMP_CORE,
+  STAMP_EXTENSION_BLOCK,
+  STAMP_FAST_REFILL,
+  STAMP_LABS,
+} from "./stamps";
 import { distanceTransform } from "./wall-dist";
 
 const DIST_FROM_WALL = {
@@ -106,6 +110,7 @@ export class RoomPlanner {
   // #region Private Methods (4)
 
   private checkPosition(roomName: string) {
+    const cpu = Game.cpu.getUsed();
     if (!this.checking) return;
     const posIter = this.checking.positions.shift();
     if (!posIter) return; // save best result
@@ -116,6 +121,8 @@ export class RoomPlanner {
       posCell: {},
       rooms: { [roomName]: initMatrix(roomName) },
     };
+
+    const ap = this.checking.active;
 
     _.forEach(
       findCoordsInsideRect(
@@ -131,7 +138,6 @@ export class RoomPlanner {
           PLANNER_COST.wall
         )
     );
-
     _.forEach(this.checking.sources.concat(this.checking.minerals), (res) => {
       _.forEach(
         findCoordsInsideRect(
@@ -140,17 +146,15 @@ export class RoomPlanner {
           res.x + PLANNER_PADDING.resource,
           res.y + PLANNER_PADDING.resource
         ),
-        (p) =>
-          this.checking!.active.rooms[roomName].building.set(
-            p.x,
-            p.y,
-            PLANNER_COST.wall
-          )
+        (p) => {
+          if (!ap.rooms[res.roomName])
+            ap.rooms[res.roomName] = initMatrix(res.roomName);
+          ap.rooms[res.roomName].building.set(p.x, p.y, PLANNER_COST.wall);
+        }
       );
     });
 
     const pos = new RoomPosition(posIter[0].x, posIter[0].y, roomName);
-    const ap = this.checking.active;
     const roomMatrix = ap.rooms[roomName];
 
     // add main stamp - core
@@ -175,19 +179,48 @@ export class RoomPlanner {
 
     endBlock(ap);
 
-    // @todo add extensions
+    const ceneters = [pos, lab, fastRef];
+    // (60 - 14) / 5 = 8.8
+    for (let i = 0; i < 12; ++i) {
+      const extentionPos = addStampSomewhere(
+        ceneters,
+        STAMP_EXTENSION_BLOCK,
+        roomMatrix,
+        ap.posCell
+      );
+      if (extentionPos === ERR_NOT_FOUND) return rFunc;
+      addRoad(pos, extentionPos, ap);
+      // endBlock(ap);
+    }
 
-    this.generateWalls(roomName, roomMatrix);
+    // todo add powerspawn and oberver
+
+    // adding walls themselves
+    _.forEach(this.generateWalls(roomName, roomMatrix), (ramp) => {
+      addStructure(
+        new RoomPosition(ramp.x, ramp.y, roomName),
+        STRUCTURE_RAMPART,
+        roomMatrix
+      );
+      // should add roads to walls?
+    });
+
+    // adding controller stuff
+    const posContrLink = addLink(this.checking.controller, roomMatrix, pos);
+    if (posContrLink === ERR_NOT_FOUND) return rFunc;
+    if (addRoad(pos, posContrLink, ap) === ERR_NOT_IN_RANGE) return rFunc;
+
+    endBlock(ap);
 
     const resources = this.checking.sources;
     resources.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
     for (const resPos of resources) {
       if (addRoad(pos, resPos, ap) !== OK) return rFunc;
-      if (addContainer(resPos, ap.rooms[resPos.roomName], pos) !== OK)
-        return rFunc;
+      const containerPos = addContainer(resPos, ap.rooms[resPos.roomName], pos);
+      if (containerPos === ERR_NOT_FOUND) return rFunc;
       if (
         roomName === resPos.roomName &&
-        addLink(resPos, roomMatrix, pos) !== OK
+        addLink(containerPos, roomMatrix, pos, 1) === ERR_NOT_FOUND
       )
         return rFunc;
       endBlock(ap, STRUCTURE_ROAD);
@@ -198,34 +231,41 @@ export class RoomPlanner {
     minerals.sort((a, b) => pos.getRangeApprox(a) - pos.getRangeApprox(b));
     for (const resPos of this.checking.minerals) {
       if (addRoad(pos, resPos, ap) !== OK) return rFunc;
-      if (addContainer(resPos, ap.rooms[resPos.roomName], pos) !== OK)
-        return rFunc;
+      const containerPos = addContainer(resPos, ap.rooms[resPos.roomName], pos);
+      if (containerPos === ERR_NOT_FOUND) return rFunc;
       if (roomName === resPos.roomName)
         addStructure(resPos, STRUCTURE_EXTRACTOR, roomMatrix);
       endBlock(ap);
     }
 
     this.checking.best = this.checking.active;
+    console.log("CPU used:", Game.cpu.getUsed() - cpu);
     return () => console.log("OK"); // rFunc;
   }
 
-  private generateWalls(
-    roomName: string,
-    roomMatrix: RoomPlannerMatrix
-  ): Stamp {
-    const costMatrix = initMatrix(roomName).building;
+  private generateWalls(roomName: string, roomMatrix: RoomPlannerMatrix) {
+    const costMatrix = initMatrix(roomName).movement;
 
     const posToProtect: Pos[] = [];
+    const addedPos: Set<string> = new Set();
     for (let x = 0; x < 50; ++x)
       for (let y = 0; y < 50; ++y)
         if (
-          roomMatrix.building.get(x, y) === PLANNER_COST.structure &&
+          roomMatrix.movement.get(x, y) === PLANNER_COST.structure &&
           costMatrix.get(x, y) !== PLANNER_COST.structure
         )
-          posToProtect.push({ x, y });
+          _.forEach(
+            new RoomPosition(x, y, roomName).getOpenPositions(false, 3),
+            (p) => {
+              if (!addedPos.has(p.to_str)) {
+                addedPos.add(p.to_str);
+                posToProtect.push(p);
+              }
+            }
+          );
 
     const ramps = minCutToExit(posToProtect, costMatrix);
-    return { posCell: {}, setup: { [STRUCTURE_RAMPART]: ramps } };
+    return ramps;
   }
 
   private startingPos(roomName: string, posInterest: Pos[]) {
@@ -278,7 +318,8 @@ export class RoomPlanner {
 
 /** 
  * 
- * A.showMap(roomName, true, (x, y, vis) => {
+ * 
+    A.showMap(roomName, true, (x, y, vis) => {
       vis.rect(x - 0.5, y - 0.5, 1, 1, {
         fill:
           "hsl(" +
@@ -286,5 +327,7 @@ export class RoomPlanner {
           ", 100%, 60%)",
         opacity: 0.4,
       });
+      if (ramps.filter((p) => p.x === x && p.y === y).length)
+        vis.text("x", x, y, { color: "black" });
     });
 */

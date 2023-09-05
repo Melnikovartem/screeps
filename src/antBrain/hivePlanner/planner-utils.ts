@@ -16,14 +16,18 @@ export function addStructure(
   structureType: BuildableStructureConstant,
   ap: RoomPlannerMatrix
 ) {
-  let costOfMove = PLANNER_COST.structure;
-  if (structureType === STRUCTURE_ROAD) costOfMove = PLANNER_COST.road;
-
   if (!ap.compressed[structureType])
     ap.compressed[structureType] = {
       que: [],
       len: 0,
     };
+  if (
+    ap.compressed[structureType]!.len >= CONTROLLER_STRUCTURES[structureType][8]
+  )
+    return ERR_FULL;
+
+  let costOfMove = PLANNER_COST.structure;
+  if (structureType === STRUCTURE_ROAD) costOfMove = PLANNER_COST.road;
   ap.compressed[structureType]!.que.push([pos.x, pos.y]);
 
   // if non walkable structure
@@ -36,6 +40,7 @@ export function addStructure(
     if (ap.building.get(pos.x, pos.y) !== PLANNER_COST.structure)
       ap.building.set(pos.x, pos.y, costOfMove);
   }
+  return OK;
 }
 
 export function addContainer(
@@ -71,28 +76,29 @@ export function addContainer(
     ap.compressed[STRUCTURE_ROAD].len -= removed;
   }
   addStructure(pos, STRUCTURE_CONTAINER, ap);
-  return OK;
+  return pos;
 }
 
 export function addLink(
   resPos: RoomPosition,
   ap: RoomPlannerMatrix,
-  distTo: RoomPosition
+  distTo: RoomPosition,
+  range = 2
 ) {
   const points = _.filter(
-    resPos.getOpenPositions(false, 2),
+    resPos.getOpenPositions(false, range),
     (p) =>
-      resPos.getRangeTo(p) === 2 &&
-      ap.building.get(p.x, p.y) === PLANNER_COST.plain &&
-      ap.building.get(p.x, p.y) === PLANNER_COST.swamp
+      resPos.getRangeTo(p) === range &&
+      (ap.movement.get(p.x, p.y) === PLANNER_COST.plain ||
+        ap.movement.get(p.x, p.y) === PLANNER_COST.swamp)
   );
   if (!points.length) return ERR_NOT_FOUND;
   // replace one road with link
   const pos = points.reduce((a, b) =>
     distTo.getRangeApprox(a) < distTo.getRangeApprox(b) ? a : b
   );
-  addStructure(pos, STRUCTURE_LAB, ap);
-  return OK;
+  addStructure(pos, STRUCTURE_LINK, ap);
+  return pos;
 }
 
 export function endBlock(ap: ActivePlan, sType?: BuildableStructureConstant) {

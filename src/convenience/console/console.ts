@@ -6,14 +6,15 @@ import { makeId } from "static/utils";
 import { snapOldPlans } from "./console-utils";
 
 export class CustomConsole {
-  // #region Properties (3)
+  // #region Properties (5)
 
+  public clearCrashes = () => this.cleanCrashes();
   public lastActionRoomName: string;
-  /** nice output of last crashes */
+  public removeCrashes = () => this.cleanCrashes();
   public reportCrashes = () => this.printCrashes();
   public snapOldPlans = snapOldPlans;
 
-  // #endregion Properties (3)
+  // #endregion Properties (5)
 
   // #region Constructors (1)
 
@@ -26,7 +27,7 @@ export class CustomConsole {
 
   // #endregion Constructors (1)
 
-  // #region Public Methods (23)
+  // #region Public Methods (22)
 
   public addPowerManager(hiveName: string) {
     if (Game.gpl.level) hiveName = this.format(hiveName);
@@ -478,6 +479,7 @@ export class CustomConsole {
     }`;
   }
 
+  /** nice output of last crashes */
   public printCrashes() {
     let reportLog = "LAST CRASHES:\n\n";
     for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
@@ -739,5 +741,5 @@ export class CustomConsole {
     Apiary.war.updateRoom(roomName, attack ? Game.time : null);
   }
 
-  // #endregion Public Methods (23)
+  // #endregion Public Methods (22)
 }
