@@ -612,6 +612,11 @@ export class CustomConsole {
     return `OK @ ${this.formatRoom(roomName)}`;
   }
 
+  public hideMap(roomName: string = this.lastActionRoomName) {
+    Apiary.visuals.changeAnchor(0, 0, roomName);
+    Apiary.visuals.exportAnchor(0);
+  }
+
   public showNukeDefMap(
     hiveName: string = this.lastActionRoomName,
     keep = false

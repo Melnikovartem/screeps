@@ -55,13 +55,13 @@ export function findOptimalResource(
 }
 
 export function towerCoef(
-  tower: StructureTower,
+  tower: { pos: RoomPosition } | StructureTower,
   pos: ProtoPos,
   ignoreBuff = false
 ) {
   if (!(pos instanceof RoomPosition)) pos = pos.pos;
   let coef = 1;
-  if (tower.effects && !ignoreBuff) {
+  if ("effects" in tower && tower.effects && !ignoreBuff) {
     const powerup = tower.effects.filter(
       (e) => e.effect === PWR_OPERATE_TOWER
     )[0] as PowerEffect;

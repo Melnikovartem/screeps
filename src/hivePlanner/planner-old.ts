@@ -590,29 +590,6 @@ export class RoomPlanner {
     return path[path.length - 1];
   }
 
-  public dfs(
-    pos: RoomPosition,
-    matrix: { [id: number]: { [id: number]: number } },
-    depth: number = 1
-  ) {
-    const plan = this.activePlanning[pos.roomName].plan;
-    if (depth < 4) {
-      const s = plan[pos.x] && plan[pos.x][pos.y];
-      if (s && (s.s === STRUCTURE_WALL || s.r)) ++depth;
-      else if (depth > 1) ++depth;
-    }
-    matrix[pos.x][pos.y] = depth;
-    if (depth < 4) {
-      const terrain = Game.map.getRoomTerrain(pos.roomName);
-      _.forEach(pos.getPositionsInRange(1), (p) => {
-        if (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL) return;
-        const curr = matrix[p.x][p.y];
-        if (curr <= depth) return;
-        this.dfs(p, matrix, depth);
-      });
-    }
-  }
-
   public filterNet(
     anchor: RoomPosition,
     closest: RoomPosition,
@@ -944,7 +921,6 @@ export class RoomPlanner {
           matrix[x] = {};
           for (let y = 0; y <= 49; ++y) matrix[x][y] = 0xff;
         }
-        _.forEach(enterances, (ent) => this.dfs(ent, matrix));
 
         const plan = this.activePlanning[roomName].plan;
 

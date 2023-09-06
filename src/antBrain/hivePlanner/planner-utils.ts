@@ -29,6 +29,7 @@ export function addStructure(
   let costOfMove = PLANNER_COST.structure;
   if (structureType === STRUCTURE_ROAD) costOfMove = PLANNER_COST.road;
   ap.compressed[structureType]!.que.push([pos.x, pos.y]);
+  ++ap.compressed[structureType]!.len;
 
   // if non walkable structure
   if (
@@ -115,12 +116,7 @@ function endBlockRoom(
     const structureType = sTypeIter as BuildableStructureConstant;
     if (sType && sType !== structureType) continue;
     const que = ap.compressed[structureType]!.que;
-    let toAdd = 0;
-    for (let i = que.length - 1; i >= 0; --i)
-      if (que[i] === PLANNER_STAMP_STOP) break;
-      else ++toAdd;
     if (que[que.length - 1] !== PLANNER_STAMP_STOP)
       que.push(PLANNER_STAMP_STOP);
-    ap.compressed[structureType]!.len += toAdd;
   }
 }

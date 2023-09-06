@@ -157,3 +157,8 @@ export const STAMP_CORE: Stamp = {
     nuker: [{ x: 26, y: 25 }],
   },
 };
+
+export const STAMP_TOWER: Stamp = {
+  posCell: {},
+  setup: { [STRUCTURE_TOWER]: [{ x: 25, y: 25 }] },
+};

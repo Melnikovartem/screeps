@@ -1,4 +1,4 @@
-import { ResourceColors } from "./visluals-planning";
+import type { ResourceColors } from "./visluals-planning";
 
 // neural net generated so be careful
 

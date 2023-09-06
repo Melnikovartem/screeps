@@ -104,7 +104,7 @@ export class RoomPlanner {
     let ans: OK | ERR_FULL = OK;
     const desc = () =>
       console.log(
-        `PLANNER STEP ${
+        `\tPLANNER STEP ${
           this.checking
             ? PLANNER_STEPS[this.checking.activeStep].name
             : "NOCKECKING"
@@ -126,14 +126,16 @@ export class RoomPlanner {
 
     if (ans === ERR_FULL) {
       // error go next position
+      console.log(" ");
       return undefined; // rFunc;
     }
 
-    this.checking.activeStep++;
+    ++this.checking.activeStep;
     if (this.checking.activeStep >= PLANNER_STEPS.length) {
       // finished full position
       // 110 + CPU final product
       this.checking.activeStep = 0;
+      console.log(" ");
       return undefined; // rFunc;
     }
 

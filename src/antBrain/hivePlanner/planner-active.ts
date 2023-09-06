@@ -16,7 +16,7 @@ export interface RoomPlannerMatrix {
 }
 
 export interface RoomCellsPlanner {
-  [ref: string]: [number, number, string?];
+  [ref: string]: [number, number];
 }
 
 export interface ActivePlan {

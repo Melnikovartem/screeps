@@ -11,11 +11,13 @@ export function addStampSomewhere(
   prevCenters: Pos[],
   stamp: Stamp,
   roomMatrix: RoomPlannerMatrix,
-  cells: RoomCellsPlanner
+  cells: RoomCellsPlanner,
+  checkPrev = false
 ) {
   const strCheck = (p: Pos) => p.x + "_" + p.y;
   const visited: Set<string> = new Set(_.map(prevCenters, strCheck));
-  const checkQue: Pos[] = [];
+  let checkQue: Pos[] = [];
+  if (checkPrev) checkQue = prevCenters.slice();
   // O(max(2500 * 2500, 2500 * stamp))
   const addPos = (p: Pos) => {
     if (roomMatrix.building.get(p.x, p.y) === PLANNER_COST.wall) return;
@@ -33,7 +35,10 @@ export function addStampSomewhere(
     if (!pos) break;
     if (canAddStamp(pos, stamp, roomMatrix) === OK) {
       addStamp(pos, stamp, roomMatrix);
-      for (const [ref, val] of Object.entries(stamp.posCell)) cells[ref] = val;
+      for (const [ref, val] of Object.entries(stamp.posCell)) {
+        const coords = unpackCoords(pos, { x: val[0], y: val[1] });
+        cells[ref] = [coords.x, coords.y];
+      }
       return pos;
     }
     _.forEach(surroundingPoints(pos), (p) => addPos(p));
@@ -41,7 +46,7 @@ export function addStampSomewhere(
   return ERR_NOT_FOUND;
 }
 
-export function addStamp(
+function addStamp(
   centerOfStamp: Pos,
   stamp: Stamp,
   roomMatrix: RoomPlannerMatrix

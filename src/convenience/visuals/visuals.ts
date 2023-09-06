@@ -34,6 +34,13 @@ export class Visuals {
   };
   public usedAnchors: { [roomName: string]: VisInfo } = {};
 
+  /**
+   * @param x x value of new anchor
+   * @param y y value of new anchor
+   * @param roomName new roomName. by default anchor is kept within a tick
+   * @param newAnchor should we wipe prev anchor for this room
+   * @returns new anchor to stack visuals on
+   */
   public changeAnchor(
     x?: number,
     y?: number,
@@ -41,15 +48,20 @@ export class Visuals {
     newAnchor = false
   ) {
     if (x !== undefined) this.anchor.x = x;
-    this.anchor.y = y === undefined ? this.anchor.y + SPACING : y;
+    if (y !== undefined) this.anchor.y = y;
+    else this.anchor.y = this.anchor.y + SPACING;
 
     if (roomName) {
       this.usedAnchors[this.anchor.ref] = this.anchor;
       if (!newAnchor && roomName in this.usedAnchors)
         this.anchor = this.usedAnchors[roomName];
       else {
-        this.anchor.vis = new RoomVisual(makeId(8));
-        this.anchor.ref = roomName;
+        this.anchor = {
+          vis: new RoomVisual(makeId(8)),
+          ref: roomName,
+          x: this.anchor.x,
+          y: this.anchor.y,
+        };
       }
     }
 
@@ -60,6 +72,11 @@ export class Visuals {
     this.anchor.y = info.y + SPACING;
   }
 
+  /** saves the anchor
+   *
+   * @param offset how long to keep visual around
+   * @param ref refernce to anchor (by default it is roomLocal)
+   */
   public exportAnchor(offset = 0, ref = this.anchor.ref) {
     this.caching[ref] = {
       data: this.anchor.vis.export() || "",
@@ -270,45 +287,6 @@ export class Visuals {
     if (!activePlanning) return;
     const hiveName = Apiary.colony.planner.checking!.roomName;
 
-    // add info about cells
-    for (const [cellRef, value] of Object.entries(activePlanning.posCell)) {
-      const style: LineStyle = {};
-      switch (cellRef) {
-        case prefix.laboratoryCell:
-          style.color = "#91EFD8";
-          break;
-        case prefix.excavationCell:
-          style.color = "#FAD439";
-          break;
-        case prefix.defenseCell:
-          style.color = "#FBF7E9";
-          break;
-        case prefix.powerCell:
-          style.color = "#EE4610";
-          break;
-        case prefix.fastRefillCell:
-          style.color = "#6FDA44";
-          break;
-      }
-      const SIZE = 0.3;
-      this.changeAnchor(0, 0, value[2] || hiveName, true);
-      const pos = { x: value[0], y: value[1] };
-      this.anchor.vis.line(
-        pos.x - SIZE,
-        pos.y - SIZE,
-        pos.x + SIZE,
-        pos.y + SIZE,
-        style
-      );
-      this.anchor.vis.line(
-        pos.x + SIZE,
-        pos.y - SIZE,
-        pos.x - SIZE,
-        pos.y + SIZE,
-        style
-      );
-    }
-
     // add structures
     for (const roomName in activePlanning.rooms) {
       if (
@@ -335,6 +313,49 @@ export class Visuals {
         }
       }
       vis.connectRoads();
+      this.exportAnchor(1);
+    }
+
+    if (this.caching[hiveName] && this.caching[hiveName].lastRecalc > Game.time)
+      return;
+
+    // add info about cells
+    for (const [cellRef, value] of Object.entries(activePlanning.posCell)) {
+      const style: LineStyle = {};
+      switch (cellRef) {
+        case prefix.laboratoryCell:
+          style.color = "#91EFD8";
+          break;
+        case prefix.excavationCell:
+          style.color = "#FAD439";
+          break;
+        case prefix.defenseCell:
+          style.color = "#FBF7E9";
+          break;
+        case prefix.powerCell:
+          style.color = "#EE4610";
+          break;
+        case prefix.fastRefillCell:
+          style.color = "#6FDA44";
+          break;
+      }
+      const SIZE = 0.3;
+      this.changeAnchor(0, 0, hiveName);
+      const pos = { x: value[0], y: value[1] };
+      this.anchor.vis.line(
+        pos.x - SIZE,
+        pos.y - SIZE,
+        pos.x + SIZE,
+        pos.y + SIZE,
+        style
+      );
+      this.anchor.vis.line(
+        pos.x + SIZE,
+        pos.y - SIZE,
+        pos.x - SIZE,
+        pos.y + SIZE,
+        style
+      );
       this.exportAnchor(1);
     }
   }
