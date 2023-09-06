@@ -1,9 +1,9 @@
-type Fn = () => void | Fn;
+export type FnEngine = () => void | FnEngine;
 
 interface Task {
   // #region Properties (3)
 
-  func: Fn;
+  func: FnEngine;
   ref: string;
   time: number;
 
@@ -41,7 +41,7 @@ export class Engine {
 
   // #region Public Methods (3)
 
-  public addTask(ref: string, func: Fn, time = Game.time) {
+  public addTask(ref: string, func: FnEngine, time = Game.time) {
     this.que.push({
       ref,
       func,

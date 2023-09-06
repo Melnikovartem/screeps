@@ -50,9 +50,11 @@ export function addStamp(
   const compressed = roomMatrix.compressed;
 
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
-    const structureType = sType as BuildableStructureConstant;
+    const structureType = sType as keyof Stamp["setup"];
 
-    if (!compressed[structureType])
+    const isNull = structureType === "null";
+
+    if (!isNull && !compressed[structureType])
       compressed[structureType] = {
         que: [],
         len: 0,
@@ -60,6 +62,13 @@ export function addStamp(
 
     for (const packedPos of addPositions) {
       const pos = unpackCoords(centerOfStamp, packedPos);
+
+      if (isNull) {
+        roomMatrix.building.set(pos.x, pos.y, PLANNER_COST.road);
+        roomMatrix.movement.set(pos.x, pos.y, PLANNER_COST.road);
+        continue;
+      }
+
       let posStructureType = structureType;
       // add rampart instead of wall if on structure
       if (
@@ -81,7 +90,7 @@ export function canAddStamp(
   roomMatrix: RoomPlannerMatrix
 ) {
   for (const [sType, addPositions] of Object.entries(stamp.setup)) {
-    const structureType = sType as BuildableStructureConstant;
+    const structureType = sType as keyof Stamp["setup"];
     for (const packedPos of addPositions) {
       const pos = unpackCoords(centerOfStamp, packedPos);
       if (pos.x <= 0 || pos.y <= 0 || pos.x >= 49 || pos.y >= 49)
@@ -107,7 +116,7 @@ export function canAddStamp(
   return OK;
 }
 
-function isDefense(structureType: BuildableStructureConstant) {
+function isDefense(structureType: keyof Stamp["setup"]) {
   return (
     structureType === STRUCTURE_WALL || structureType === STRUCTURE_CONTAINER
   );

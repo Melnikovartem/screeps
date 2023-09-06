@@ -70,9 +70,9 @@ export class Hive {
   public constructor(roomName: string) {
     this.roomName = roomName;
     this.room = Game.rooms[roomName];
-    this._annexNames = this.cache.annex;
 
     if (!this.cache) Hive.initMemory(this.roomName);
+    this._annexNames = this.cache.annex;
 
     // create your own fun hive with this cool brand new cells
     this.cells = {

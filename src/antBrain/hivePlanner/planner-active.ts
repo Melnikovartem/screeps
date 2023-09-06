@@ -31,6 +31,7 @@ export interface ActivePlan {
   rooms: {
     [id: string]: RoomPlannerMatrix;
   };
+  centers: Pos[]; // first is always pos
 
   // #endregion Properties (5)
   // controller of room
