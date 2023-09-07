@@ -10,7 +10,7 @@ import { UpgradeCell } from "cells/management/upgradeCell";
 import { RespawnCell } from "cells/spawning/respawnCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
-import { BASE_MODE_HIVE } from "static/constants";
+import { APPROX_PROFIT_RESOURCE, BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import type { HiveCells, ResTarget } from "./hive-declarations";
@@ -185,6 +185,18 @@ export class Hive {
 
   public get storage() {
     return this.cells.storage.storage;
+  }
+
+  public get approxIncome() {
+    return (
+      Math.max(
+        1,
+        _.filter(
+          this.cells.excavation.resourceCells,
+          (s) => s.resType === RESOURCE_ENERGY
+        ).length
+      ) * APPROX_PROFIT_RESOURCE
+    );
   }
 
   // #endregion Public Accessors (12)

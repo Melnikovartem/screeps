@@ -99,20 +99,20 @@ export function savePlan(this: RoomPlanner) {
     });
   });
 
-  // updateActual hive
+  // update actual hive
   const hiveMemory = Memory.cache.hives[hiveName];
   const hive = Apiary.hives[hiveName] as Hive | undefined;
   for (const [refString, possPlan] of Object.entries(bp.posCell)) {
     const ref = refString as keyof HiveCells;
     const poss = { x: possPlan[0], y: possPlan[1] };
-    if (!hiveMemory.cells[ref]) hiveMemory.cells[ref] = {};
-
-    hiveMemory.cells[ref].poss = poss;
     const cell = hive && hive.cells[ref];
     if (cell && "poss" in cell) cell.poss = poss;
   }
-  for (const [ref, poss] of Object.entries(bp.posCell))
-    hiveMemory.cells[ref] = { x: poss[0], y: poss[1] };
+  // update memory
+  for (const [ref, poss] of Object.entries(bp.posCell)) {
+    if (!hiveMemory.cells[ref] || true) hiveMemory.cells[ref] = {};
+    hiveMemory.cells[ref].poss = { x: poss[0], y: poss[1] };
+  }
   return OK;
 }
 

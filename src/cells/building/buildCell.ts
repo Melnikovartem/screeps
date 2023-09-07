@@ -1,4 +1,4 @@
-// import { BuilderMaster } from "beeMasters/economy/builder";
+import { BuilderMaster } from "beeMasters/economy/builder";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
@@ -6,7 +6,6 @@ import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
 import { getBuildTarget, updateStructures } from "./hive-building";
-// import { updateStructures } from "./hive-building";
 
 // Define the BuildProject interface for construction projects
 export interface BuildProject {
@@ -27,7 +26,7 @@ const UPDATE_STRUCTURES_NORMAL = 1500;
 
 @profile
 export class BuildCell extends Cell {
-  // #region Properties (6)
+  // #region Properties (7)
 
   private updateStructures = updateStructures;
 
@@ -35,17 +34,18 @@ export class BuildCell extends Cell {
   public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
   public forceCheck: "" | "mainroom" | "annex" = "";
   public getBuildTarget = getBuildTarget;
+  public override master: BuilderMaster;
   public structuresConst: BuildProject[] = [];
   /** current minium wall health */
   public wallTargetHealth: number = WALLS_START;
 
-  // #endregion Properties (6)
+  // #endregion Properties (7)
 
   // #region Constructors (1)
 
   public constructor(hive: Hive) {
     super(hive, prefix.buildingCell);
-    // this.master = new BuilderMaster(this);
+    this.master = new BuilderMaster(this);
   }
 
   // #endregion Constructors (1)

@@ -27,6 +27,9 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   buildBoost: 2,
 };
 
+// 10 - 0.5 == 9.9. 0.5 for upkeep
+export const APPROX_PROFIT_RESOURCE = 9.5;
+
 export const WALLS_START = 10_000;
 
 export type ApiaryReturnCode = ScreepsReturnCode | -101 | -102 | -200;

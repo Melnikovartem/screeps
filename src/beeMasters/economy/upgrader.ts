@@ -91,7 +91,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       (targetPrecise / ans) * this.parent.workPerCreepMax
     );
     if (this.hive.cells.dev)
-      ans = Math.min(ans, this.hive.cells.dev.upgraderBeeCount);
+      ans = Math.min(ans, this.hive.cells.dev.maxUpgraderBeeCount);
     return ans;
   }
 

@@ -12,7 +12,8 @@ export function addStampSomewhere(
   stamp: Stamp,
   roomMatrix: RoomPlannerMatrix,
   cells: RoomCellsPlanner,
-  checkPrev = false
+  checkPrev = false,
+  reducer?: (a: Pos, b: Pos) => Pos
 ) {
   const strCheck = (p: Pos) => p.x + "_" + p.y;
   const visited: Set<string> = new Set(_.map(prevCenters, strCheck));
@@ -31,7 +32,13 @@ export function addStampSomewhere(
   );
 
   for (let i = 0; i < MAX_ATTEMPTS_TO_ADD; ++i) {
-    const pos = checkQue.shift();
+    let pos: Pos | undefined;
+    if (reducer && checkQue.length) {
+      pos = checkQue.reduce(reducer);
+      const index = checkQue.indexOf(pos);
+      if (index !== -1) checkQue.splice(index, 1);
+      else console.log("err??");
+    } else pos = checkQue.shift();
     if (!pos) break;
     if (canAddStamp(pos, stamp, roomMatrix) === OK) {
       addStamp(pos, stamp, roomMatrix);

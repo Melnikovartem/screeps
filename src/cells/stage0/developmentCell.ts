@@ -1,3 +1,5 @@
+import type { Master, MasterParent } from "beeMasters/_Master";
+import { BUILDING_PER_PATTERN } from "beeMasters/economy/builder";
 import { setups } from "bees/creepSetups";
 import { TransferRequest } from "bees/transferRequest";
 import type { Hive } from "hive/hive";
@@ -35,10 +37,6 @@ export class DevelopmentCell extends Cell {
 
   // #region Public Accessors (4)
 
-  public get builderBeeCount() {
-    return 0;
-  }
-
   public get controller() {
     return this.hive.controller;
   }
@@ -47,9 +45,13 @@ export class DevelopmentCell extends Cell {
     let accumRoadTime = 0;
 
     _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
-      let coef = cell.master.ratePT;
+      let coef = Math.min(
+        cell.ratePT,
+        cell.master.ratePT * cell.master.beesAmount
+      );
       if (!cell.container)
         coef = Math.max(coef - this.minerBeeCount(cell.resource), 0);
+
       accumRoadTime +=
         (cell.roadTime + Math.max(cell.restTime, cell.roadTime, 100)) * coef;
     });
@@ -72,14 +74,42 @@ export class DevelopmentCell extends Cell {
   }
 
   // upper bound on upgraders
-  public get upgraderBeeCount() {
+  public get maxUpgraderBeeCount() {
+    const energyPerBee = this.hive.cells.upgrade.ratePerCreepMax;
+
     return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
-      ? 25
+      ? Math.round(this.hive.approxIncome / energyPerBee) + 1
+      : 0;
+  }
+
+  // upper bound on builders
+  public get maxBuilderBeeCount() {
+    const energyPerBee =
+      (BUILDING_PER_PATTERN.normal.hive.build *
+        Math.max(
+          this.hive.cells.build.master.maxPatternBee,
+          setups.builder.patternLimit
+        )) /
+      CREEP_LIFE_TIME;
+
+    // send all energy instead of upgrading to building
+    return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
+      ? Math.round(this.hive.approxIncome / energyPerBee) + 1
       : 0;
   }
 
   public override get pos() {
     return this.hive.controller.pos;
+  }
+
+  private swapBees(
+    master1: Master<MasterParent>,
+    master2: Master<MasterParent>
+  ) {
+    _.forEach(master1.activeBees, (bee) => {
+      master1.removeBee(bee);
+      master2.newBee(bee);
+    });
   }
 
   // #endregion Public Accessors (4)
@@ -105,10 +135,19 @@ export class DevelopmentCell extends Cell {
   public run() {
     if (this.hive.phase > 0 && this.hive.state === hiveStates.economy)
       this.delete();
+    if (Apiary.intTime % 10 !== 0) return;
+    // here cause need to check for bees
+    this.addResources();
   }
 
   public override update() {
-    if (Apiary.intTime % 10 === 0) this.addResources();
+    if (Apiary.intTime % 10 !== 0) return;
+    const builder = this.hive.cells.build.master;
+    const upgrader = this.hive.cells.upgrade.master;
+    const upgTarget = upgrader.targetBeeCount;
+    const buildTarget = builder.targetBeeCount;
+    if (!upgTarget && buildTarget) this.swapBees(upgrader, builder);
+    else if (!buildTarget) this.swapBees(builder, upgrader);
   }
 
   // #endregion Public Methods (3)
@@ -157,14 +196,19 @@ export class DevelopmentCell extends Cell {
     if (amount <= CARRY_CAPACITY * 0.5) return;
     let it = 0;
     let ref = target.id + "_" + it;
-    const existing = this.sCell.requests[ref];
+    let existing = this.sCell.requests[ref];
     while (existing && it <= MAX_HAULERS_ON_TARGET) {
       // already an unused order for this just update amount
       if (!existing.beeProcess) {
         existing.amount = amount;
         return;
+      } else if (!(target instanceof Resource)) {
+        // some of the resource will be hauled out
+        amount -= this.carryCapacity;
+        if (amount <= CARRY_CAPACITY * 0.5) return;
       }
       ref = target.id + "_" + ++it;
+      existing = this.sCell.requests[ref];
     }
     // reached cap
     if (existing) return;

@@ -248,17 +248,34 @@ function checkStructureBuild(
         pos.lookFor(LOOK_STRUCTURES),
         (s) =>
           s.structureType !== STRUCTURE_RAMPART || !(s as StructureRampart).my
-      )[0];
+      )[0] as Structure | undefined;
 
-      if (!place && (!nukeAlert || !pos.findInRange(FIND_NUKES, 1).length))
+      // we do not need to add more cause already have enough
+      const onlySpawn =
+        sType === STRUCTURE_SPAWN &&
+        hive &&
+        Object.keys(hive.cells.spawn.spawns).length === 1 &&
+        getCase({
+          structureType: STRUCTURE_SPAWN,
+          pos: { roomName: pos.roomName },
+          hitsMax: 0,
+        }).amount === 1;
+
+      if (
+        !place &&
+        (!nukeAlert || !pos.findInRange(FIND_NUKES, 2).length) &&
+        !onlySpawn // do not add spawns if we have only one
+      ) {
         toadd.push(pos);
-      else if (hive) {
+      } else if (hive && place) {
+        // our only spawn there
         if (
-          sType !== STRUCTURE_SPAWN ||
-          Object.keys(hive.cells.spawn).length > 1
+          place.structureType === STRUCTURE_SPAWN &&
+          Object.keys(hive.cells.spawn.spawns).length === 1
         )
-          // remove if i can and (should?)
-          place.destroy();
+          type = "structure";
+        // remove if i can and (should?)
+        else place.destroy();
       } else {
         // @todo demolish whatever was there
       }

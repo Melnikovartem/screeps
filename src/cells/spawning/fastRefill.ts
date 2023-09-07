@@ -113,7 +113,6 @@ export class FastRefillCell extends Cell {
   public override update() {
     // do i even need it here. we do not perform any actions FROM this cell
     this.updateObject();
-    if (!this.link) this.delete();
     const emptyContainers = this.masters
       .filter(
         (m) =>

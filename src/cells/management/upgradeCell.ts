@@ -2,12 +2,11 @@ import { UpgraderMaster } from "beeMasters/economy/upgrader";
 import { setups } from "bees/creepSetups";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
+import { APPROX_PROFIT_RESOURCE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
 
-// 10 - 0.5 == 9.9. 0.5 for upkeep
-const APPROX_PROFIT_RESOURCE = 9.5;
 const ABSOLUTE_MAX_RATE_UPGRADE = 40 * 8;
 
 @profile
@@ -206,14 +205,7 @@ export class UpgradeCell extends Cell {
     this.maxRate.import = 0;
     if (!suckerTarget) return;
 
-    this.maxRate.local =
-      Math.max(
-        1,
-        _.filter(
-          this.hive.cells.excavation.resourceCells,
-          (s) => s.resType === RESOURCE_ENERGY
-        ).length
-      ) * APPROX_PROFIT_RESOURCE;
+    this.maxRate.local = this.hive.approxIncome;
     // to keep things civil with hauling
     this.maxRate.import = 100;
 

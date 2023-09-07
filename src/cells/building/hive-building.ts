@@ -250,17 +250,16 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
     toCheck: (keyof typeof BUILDABLE_PRIORITY)[],
     fearNukes = false
   ) =>
-    _.forEach(toCheck, (type) =>
-      addCC(
-        checkBuildings(
-          this.hiveName,
-          this.hiveName,
-          BUILDABLE_PRIORITY[type],
-          fearNukes,
-          type === "defense" ? wallMap(this) : undefined
-        )
-      )
-    );
+    _.forEach(toCheck, (type) => {
+      const ans = checkBuildings(
+        this.hiveName,
+        this.hiveName,
+        BUILDABLE_PRIORITY[type],
+        fearNukes,
+        type === "defense" ? wallMap(this) : undefined
+      );
+      addCC(ans);
+    });
 
   // get first measure of walls health
   if (this.wallTargetHealth === WALLS_START)

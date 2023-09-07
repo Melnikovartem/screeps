@@ -34,7 +34,7 @@ export class MinerMaster extends Master<ResourceCell> {
     });
     let beeRate = Math.max(0, ...beeRates);
     if (this.resType === RESOURCE_ENERGY) beeRate *= HARVEST_POWER;
-    else beeRate = beeRate * HARVEST_MINERAL_POWER / 6; // 1 tick harves + 5 cooldown 
+    else beeRate = (beeRate * HARVEST_MINERAL_POWER) / 6; // 1 tick harves + 5 cooldown
     return beeRate;
   }
 

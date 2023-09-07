@@ -162,3 +162,22 @@ export const STAMP_TOWER: Stamp = {
   posCell: {},
   setup: { [STRUCTURE_TOWER]: [{ x: 25, y: 25 }] },
 };
+
+export const STAMP_REST: Stamp = {
+  posCell: {
+    [prefix.excavationCell]: [25, 25],
+  },
+  setup: {
+    null: [
+      { x: 24, y: 24 },
+      { x: 24, y: 25 },
+      { x: 24, y: 26 },
+      { x: 25, y: 24 },
+      { x: 25, y: 25 },
+      { x: 25, y: 26 },
+      { x: 26, y: 24 },
+      { x: 26, y: 25 },
+      { x: 26, y: 26 },
+    ],
+  },
+};

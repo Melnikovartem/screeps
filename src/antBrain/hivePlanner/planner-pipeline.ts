@@ -21,6 +21,7 @@ import {
   STAMP_LABS,
   STAMP_OBSERVE,
   STAMP_POWER,
+  STAMP_REST,
 } from "./stamps";
 
 type plannerStep = (ch: PlannerChecking) => OK | ERR_FULL;
@@ -34,6 +35,12 @@ export const PLANNER_EXTENSION = Math.ceil(
   CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] / 5 - 3
 );
 
+const PLANNER_REST_COEF = {
+  annex: 0.2,
+  minerals: 2,
+  center: 4,
+};
+
 export const PLANNER_STEPS: plannerStep[] = [
   innitActive,
   addMainStamps,
@@ -43,6 +50,7 @@ export const PLANNER_STEPS: plannerStep[] = [
   addController,
   addResources,
   addTowers,
+  addRestPos,
   finalDefenses,
 ];
 
@@ -274,6 +282,51 @@ function addResources(ch: PlannerChecking) {
     if (ch.roomName === resPos.roomName)
       addStructure(resPos, STRUCTURE_EXTRACTOR, roomMatrix);
     endBlock(ch.active);
+  }
+  return OK;
+}
+
+function addRestPos(ch: PlannerChecking) {
+  const roomMatrix = ch.active.rooms[ch.roomName];
+  const distResources = (p: Pos) => {
+    const pos = new RoomPosition(p.x, p.y, ch.roomName);
+    let dist = pos.getRangeApprox(pos) * PLANNER_REST_COEF.center;
+    _.forEach(ch.sources, (r) => {
+      dist +=
+        r.getRangeApprox(pos) *
+        (r.roomName === ch.roomName ? 1 : PLANNER_REST_COEF.annex);
+    });
+    _.forEach(ch.minerals, (r) => {
+      dist +=
+        r.getRangeApprox(pos) *
+        PLANNER_REST_COEF.minerals *
+        (r.roomName === ch.roomName ? 1 : PLANNER_REST_COEF.annex);
+    });
+    return dist;
+  };
+  const restPos = addStampSomewhere(
+    ch.active.centers,
+    STAMP_REST,
+    roomMatrix,
+    ch.active.posCell,
+    false,
+    (a, b) => (distResources(a) <= distResources(b) ? a : b)
+  );
+  if (restPos === ERR_NOT_FOUND) {
+    const lastCenter = ch.active.centers.slice(-1)[0];
+    let lastPos = new RoomPosition(lastCenter.x, lastCenter.y, ch.roomName);
+    const freePos = lastPos
+      .getPositionsInRange(6)
+      .filter(
+        (p) =>
+          roomMatrix.movement.get(p.x, p.y) !== PLANNER_COST.wall &&
+          roomMatrix.movement.get(p.x, p.y) !== PLANNER_COST.structure
+      );
+    if (freePos.length)
+      lastPos = freePos.reduce((a, b) =>
+        a.getOpenPositions().length >= b.getOpenPositions().length ? a : b
+      );
+    ch.active.posCell[prefix.excavationCell] = [lastPos.x, lastPos.y];
   }
   return OK;
 }
