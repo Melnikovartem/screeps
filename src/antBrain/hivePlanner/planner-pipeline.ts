@@ -4,7 +4,7 @@ import { findCoordsInsideRect } from "static/utils";
 import { addRoad, initMatrix } from "./addRoads";
 import { addStampSomewhere, canAddStamp } from "./addStamps";
 import { minCutToExit, surroundingPoints } from "./min-cut";
-import { addTower } from "./planner-towers";
+import { addTowers, PLANNER_FREE_MATRIX } from "./planner-towers";
 import {
   addContainer,
   addLink,
@@ -29,6 +29,10 @@ const PLANNER_PADDING = {
   controller: 2,
 };
 
+export const PLANNER_EXTENSION = Math.ceil(
+  CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] / 5 - 3
+);
+
 export const PLANNER_STEPS: plannerStep[] = [
   innitActive,
   addMainStamps,
@@ -37,7 +41,8 @@ export const PLANNER_STEPS: plannerStep[] = [
   addWalls,
   addController,
   addResources,
-  addTower,
+  addTowers,
+  finalDefenses,
 ];
 
 function innitActive(ch: PlannerChecking) {
@@ -45,9 +50,10 @@ function innitActive(ch: PlannerChecking) {
   if (!posIter) return ERR_FULL;
   const pos = new RoomPosition(posIter[0].x, posIter[0].y, ch.roomName);
   ch.active = {
+    centers: [pos],
     posCell: {},
     rooms: { [ch.roomName]: initMatrix(ch.roomName) },
-    centers: [pos],
+    metrics: {},
   };
 
   const ap = ch.active;
@@ -109,8 +115,8 @@ function addMainStamps(ch: PlannerChecking) {
   );
   if (fastRef === ERR_NOT_FOUND) return ERR_FULL;
 
-  addRoad(pos, lab, ch.active);
-  addRoad(pos, fastRef, ch.active, 3);
+  ch.active.metrics.roadLabs = addRoad(pos, lab, ch.active)[1];
+  ch.active.metrics.roadFastRef = addRoad(pos, fastRef, ch.active, 3)[1];
   addRoad(new RoomPosition(lab.x, lab.y, ch.roomName), fastRef, ch.active, 3);
 
   ch.active.centers.push(lab);
@@ -120,8 +126,8 @@ function addMainStamps(ch: PlannerChecking) {
 
 function addExtentions(ch: PlannerChecking) {
   const pos = getPos(ch);
-  // (60 - 14) / 5 = 8.8
-  for (let i = 0; i < 9; ++i) {
+  ch.active.metrics.sumRoadExt = 0;
+  for (let i = 0; i < PLANNER_EXTENSION; ++i) {
     const extentionPos = addStampSomewhere(
       ch.active.centers,
       STAMP_EXTENSION_BLOCK,
@@ -130,7 +136,7 @@ function addExtentions(ch: PlannerChecking) {
     );
     if (extentionPos === ERR_NOT_FOUND) return ERR_FULL;
     ch.active.centers.push(extentionPos);
-    addRoad(pos, extentionPos, ch.active);
+    ch.active.metrics.sumRoadExt += addRoad(pos, extentionPos, ch.active)[1];
   }
   return OK;
 }
@@ -178,7 +184,7 @@ function addPowerObserve(ch: PlannerChecking) {
 }
 
 function addWalls(ch: PlannerChecking) {
-  const costMatrix = initMatrix(ch.roomName).movement;
+  const costMatrix = initMatrix(ch.roomName);
   const roomMatrix = ch.active.rooms[ch.roomName];
 
   const posToProtect: Pos[] = [];
@@ -187,19 +193,21 @@ function addWalls(ch: PlannerChecking) {
     for (let y = 0; y < 50; ++y)
       if (
         roomMatrix.movement.get(x, y) === PLANNER_COST.structure &&
-        costMatrix.get(x, y) !== PLANNER_COST.structure
+        costMatrix.movement.get(x, y) !== PLANNER_COST.structure
       )
         _.forEach(
-          new RoomPosition(x, y, ch.roomName).getOpenPositions(false, 3),
+          findCoordsInsideRect(x - 3, y - 3, x + 3, y + 3).filter(
+            (p) => costMatrix.building.get(p.x, p.y) !== PLANNER_COST.wall
+          ),
           (p) => {
-            if (!addedPos.has(p.to_str)) {
-              addedPos.add(p.to_str);
+            if (!addedPos.has(p.x + "_" + p.y)) {
+              addedPos.add(p.x + "_" + p.y);
               posToProtect.push(p);
             }
           }
         );
 
-  const ramps = minCutToExit(posToProtect, costMatrix);
+  const ramps = minCutToExit(posToProtect, costMatrix.movement);
 
   // adding walls themselves
   _.forEach(ramps, (ramp) => {
@@ -210,6 +218,7 @@ function addWalls(ch: PlannerChecking) {
     );
     // should add roads to walls?
   });
+  ch.active.metrics.ramps = ramps.length;
   return OK;
 }
 
@@ -221,7 +230,7 @@ function addController(ch: PlannerChecking) {
     pos
   );
   if (posContrLink === ERR_NOT_FOUND) return ERR_FULL;
-  if (addRoad(pos, posContrLink, ch.active) === ERR_NOT_IN_RANGE)
+  if (addRoad(pos, posContrLink, ch.active)[1] === ERR_NOT_IN_RANGE)
     return ERR_FULL;
   return OK;
 }
@@ -229,9 +238,12 @@ function addController(ch: PlannerChecking) {
 function addResources(ch: PlannerChecking) {
   const pos = getPos(ch);
   const roomMatrix = ch.active.rooms[ch.roomName];
+  ch.active.metrics.sumRoadRes = 0;
 
   for (const resPos of ch.sources) {
-    if (addRoad(pos, resPos, ch.active) !== OK) return ERR_FULL;
+    const [ans, time] = addRoad(pos, resPos, ch.active);
+    if (ans !== OK) return ERR_FULL;
+    if (resPos.roomName === ch.roomName) ch.active.metrics.sumRoadRes += time;
     const containerPos = addContainer(
       resPos,
       ch.active.rooms[resPos.roomName],
@@ -240,7 +252,7 @@ function addResources(ch: PlannerChecking) {
     if (containerPos === ERR_NOT_FOUND) return ERR_FULL;
     if (
       ch.roomName === resPos.roomName &&
-      addLink(containerPos, roomMatrix, pos, 1) === ERR_NOT_FOUND
+      addLink(containerPos, roomMatrix, pos, 1, false) === ERR_NOT_FOUND
     )
       return ERR_FULL;
     endBlock(ch.active, STRUCTURE_ROAD);
@@ -248,7 +260,9 @@ function addResources(ch: PlannerChecking) {
   endBlock(ch.active);
 
   for (const resPos of ch.minerals) {
-    if (addRoad(pos, resPos, ch.active) !== OK) return ERR_FULL;
+    const [ans, time] = addRoad(pos, resPos, ch.active);
+    if (ans !== OK) return ERR_FULL;
+    if (resPos.roomName === ch.roomName) ch.active.metrics.sumRoadRes += time;
     const containerPos = addContainer(
       resPos,
       ch.active.rooms[resPos.roomName],
@@ -259,5 +273,17 @@ function addResources(ch: PlannerChecking) {
       addStructure(resPos, STRUCTURE_EXTRACTOR, roomMatrix);
     endBlock(ch.active);
   }
+  return OK;
+}
+
+function finalDefenses(ch: PlannerChecking) {
+  // add RAMPART to storage/links/terminal??
+  const roomMatrix = ch.active.rooms[ch.roomName];
+  _.forEach(
+    surroundingPoints(ch.controller).filter(
+      (p) => roomMatrix.free.get(p.x, p.y) === PLANNER_FREE_MATRIX.outside
+    ),
+    (p) => addStructure(p, STRUCTURE_RAMPART, roomMatrix)
+  );
   return OK;
 }

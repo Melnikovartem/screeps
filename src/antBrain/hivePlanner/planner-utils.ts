@@ -32,11 +32,10 @@ export function addStructure(
   ++ap.compressed[structureType]!.len;
 
   // if non walkable structure
-  if (
-    structureType !== STRUCTURE_RAMPART &&
-    structureType !== STRUCTURE_CONTAINER
-  ) {
+  if (structureType !== STRUCTURE_RAMPART) {
     // add new movement cost
+    // dont want to build on containers:
+    // if (structureType !== STRUCTURE_CONTAINER)
     ap.movement.set(pos.x, pos.y, costOfMove);
     if (ap.building.get(pos.x, pos.y) !== PLANNER_COST.structure)
       ap.building.set(pos.x, pos.y, costOfMove);
@@ -84,7 +83,8 @@ export function addLink(
   resPos: RoomPosition,
   ap: RoomPlannerMatrix,
   distTo: RoomPosition,
-  range = 2
+  range = 2,
+  maxFree = true
 ) {
   const points = _.filter(
     resPos.getOpenPositions(false, range),
@@ -95,9 +95,13 @@ export function addLink(
   );
   if (!points.length) return ERR_NOT_FOUND;
   // replace one road with link
-  const pos = points.reduce((a, b) =>
-    distTo.getRangeApprox(a) < distTo.getRangeApprox(b) ? a : b
-  );
+  const pos = points.reduce((a, b) => {
+    let diff = maxFree
+      ? b.getOpenPositions().length - a.getOpenPositions().length
+      : 0;
+    if (diff === 0) diff = distTo.getRangeApprox(a) - distTo.getRangeApprox(b);
+    return diff <= 0 ? a : b;
+  });
   addStructure(pos, STRUCTURE_LINK, ap);
   return pos;
 }

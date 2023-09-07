@@ -3,8 +3,13 @@ import { ERR_NO_VISION, ROOM_DIMENTIONS } from "static/constants";
 
 import { initMatrix } from "./addRoads";
 import { floodFill } from "./flood-fill";
-import type { ActivePlan } from "./planner-active";
-import { PLANNER_STEPS } from "./planner-pipeline";
+import {
+  type ActivePlan,
+  PLANNER_EMPTY_METRICS,
+  savePlan,
+} from "./planner-active";
+import { PLANNER_EXTENSION, PLANNER_STEPS } from "./planner-pipeline";
+import { PLANNER_TOWERS } from "./planner-towers";
 import { endBlock, PLANNER_COST } from "./planner-utils";
 import { distanceTransform } from "./wall-dist";
 
@@ -18,16 +23,19 @@ const DIST_FROM_WALL = {
 const TAKE_N_BEST = 10;
 
 export interface PlannerChecking {
-  roomName: string;
-  controller: RoomPosition;
-  sources: RoomPosition[];
-  minerals: RoomPosition[];
+  // #region Properties (9)
 
-  bestMetric: number;
-  best: ActivePlan;
   active: ActivePlan;
   activeStep: number;
+  best: ActivePlan;
+  bestMetric: number;
+  controller: RoomPosition;
+  minerals: RoomPosition[];
   positions: [Pos, number][];
+  roomName: string;
+  sources: RoomPosition[];
+
+  // #endregion Properties (9)
 }
 
 /* chain startingPos -> {
@@ -39,24 +47,22 @@ export interface PlannerChecking {
 }
 */
 export class RoomPlanner {
-  // #region Properties (1)
+  // #region Properties (2)
 
   public checking: PlannerChecking | undefined;
+  public savePlan = savePlan;
 
-  // #endregion Properties (1)
+  // #endregion Properties (2)
 
   // #region Public Methods (1)
 
-  public createPlan(roomName: string) {
+  public createPlan(roomName: string, addPositions = true) {
     const room = Game.rooms[roomName];
     if (!room) return ERR_NO_VISION;
     const posCont = room.controller?.pos;
     if (!posCont) return ERR_INVALID_TARGET;
 
-    const sourcesPos = room
-      .find(FIND_SOURCES)
-      .map((r) => r.pos)
-      .concat([new RoomPosition(24, 35, "W5N7")]);
+    const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
     const mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
 
     // add postion to check / road to exit to corridor ?
@@ -65,8 +71,11 @@ export class RoomPlanner {
       const posInterest: Pos[] = [posCont]
         .concat(sourcesPos)
         .concat(mineralsPos);
-      const positions = this.startingPos(roomName, posInterest);
-      if (!positions) return;
+      let positions: [Pos, number][] = [];
+      if (addPositions) {
+        positions = this.startingPos(roomName, posInterest);
+        if (!positions.length) return;
+      }
       this.checking = {
         roomName,
         activeStep: 0,
@@ -78,14 +87,17 @@ export class RoomPlanner {
           centers: [],
           posCell: {},
           rooms: {},
+          metrics: { ...PLANNER_EMPTY_METRICS },
         },
         active: {
           centers: [],
           posCell: {},
           rooms: {},
+          metrics: { ...PLANNER_EMPTY_METRICS },
         },
         positions,
       };
+      if (!addPositions) return undefined;
       return () => this.checkPosition(roomName);
     });
     return OK;
@@ -93,7 +105,30 @@ export class RoomPlanner {
 
   // #endregion Public Methods (1)
 
-  // #region Private Methods (4)
+  // #region Private Methods (3)
+
+  private calcMetric() {
+    if (!this.checking) return -Infinity;
+    let metric = 0;
+    const me = this.checking.active.metrics; // this comment style -> expecteed range
+    // can tollerate no more then 80 ramps
+    metric += (1 - (me.ramps || 0) / 80) * 60; // 0 -> 60
+    // baseline is 3 towers full bunker
+    metric += ((me.minDmg || 0) / (TOWER_POWER_ATTACK * 3)) * 40; // 0 -> 40
+    const addRoadMetric = (roadTime?: number, avg = 1) => {
+      // 0 -> 5
+      metric += (1 - (roadTime || 0) / avg / ROOM_DIMENTIONS) * 5;
+    };
+    // at all 0 -> 30 for roads
+    addRoadMetric(me.sumRoadRes, PLANNER_TOWERS);
+    // twice the weight
+    addRoadMetric(me.sumRoadExt, PLANNER_EXTENSION / 2);
+    addRoadMetric(me.sumRoadRes, 3); // energy 2x + mineral
+    addRoadMetric(me.roadLabs);
+    addRoadMetric(me.roadFastRef);
+    metric += me.final = Math.round(metric * 1000) / 1000;
+    return metric;
+  }
 
   private checkPosition(roomName: string): FnEngine | void {
     if (!this.checking) return;
@@ -101,42 +136,58 @@ export class RoomPlanner {
     const rFunc = () => this.checkPosition(roomName);
 
     const cpu = Game.cpu.getUsed();
-    let ans: OK | ERR_FULL = OK;
+    let ans: OK | ERR_FULL | ERR_NOT_FOUND = OK;
     const desc = () =>
-      console.log(
-        `\tPLANNER STEP ${
-          this.checking
-            ? PLANNER_STEPS[this.checking.activeStep].name
-            : "NOCKECKING"
-        } ${ans === OK ? "FINISHED" : "FAILED!!!"} IN: ${
-          Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000
-        }`
-      );
+      ans !== OK
+        ? console.log(
+            `\tPLANNER STEP ${
+              this.checking
+                ? PLANNER_STEPS[this.checking.activeStep].name
+                : "NOCKECKING"
+            } ${"FAILED!!!"} IN ${
+              // ans === OK ? "FINISHED" : "FAILED!!!"
+              Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000
+            }`
+          )
+        : undefined;
 
     ans = PLANNER_STEPS[this.checking.activeStep](this.checking);
     endBlock(this.checking.active);
-    desc();
 
     if (ans === ERR_FULL && !this.checking.activeStep) {
       // finished all positions
+      ans = this.savePlan();
       this.checking = undefined;
-      // @todo save best
-      return undefined;
+      return () =>
+        console.log(
+          `PLANNER SAVING ${ans === OK ? "DONE" : "FAILED"} @${roomName}`
+        );
     }
+
+    desc();
 
     if (ans === ERR_FULL) {
       // error go next position
-      console.log(" ");
-      return undefined; // rFunc;
+      console.log(`-FAILED ATTEMPT @${this.checking.active.centers[0]}`);
+      this.checking.activeStep = 0;
+      return rFunc;
     }
 
     ++this.checking.activeStep;
     if (this.checking.activeStep >= PLANNER_STEPS.length) {
       // finished full position
-      // 110 + CPU final product
+      // 100+ CPU final product
       this.checking.activeStep = 0;
-      console.log(" ");
-      return undefined; // rFunc;
+      this.calcMetric();
+      if (
+        (this.checking.active.metrics.final || 0) >
+        (this.checking.best.metrics.final || 0)
+      )
+        this.checking.best = this.checking.active;
+      console.log(
+        `+SUCCESSFUL ATTEMPT @${this.checking.active.centers[0]} SCORE: ${this.checking.active.metrics.final}`
+      );
+      return rFunc;
     }
 
     // go do next step
@@ -155,7 +206,7 @@ export class RoomPlanner {
 
     positions = _.filter(positions, (p) => p[1] >= DIST_FROM_WALL.absoluteLow);
     // room is literal block of walls
-    if (!positions) return;
+    if (!positions) return [];
 
     const idealPositions = _.filter(
       positions,
@@ -188,7 +239,7 @@ export class RoomPlanner {
     return positions;
   }
 
-  // #endregion Private Methods (4)
+  // #endregion Private Methods (3)
 }
 
 /** 

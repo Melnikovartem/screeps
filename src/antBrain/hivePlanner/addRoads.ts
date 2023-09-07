@@ -11,7 +11,7 @@ export function addRoad(
   to: RoomPosition | Pos,
   ap: ActivePlan,
   range = 1
-) {
+): [OK | ERR_NOT_IN_RANGE, number] {
   let target: RoomPosition;
   if ("roomName" in to) target = to;
   else target = new RoomPosition(to.x, to.y, from.roomName);
@@ -33,7 +33,7 @@ export function addRoad(
     if (_.filter(roads, (r) => r[0] === pos.x && r[1] === pos.y).length) return;
     addStructure(pos, STRUCTURE_ROAD, ap.rooms[pos.roomName]);
   });
-  return path.incomplete ? ERR_NOT_IN_RANGE : OK;
+  return [path.incomplete ? ERR_NOT_IN_RANGE : OK, path.path.length];
 }
 
 export function initMatrix(roomName: string): RoomPlannerMatrix {
@@ -42,6 +42,7 @@ export function initMatrix(roomName: string): RoomPlannerMatrix {
     compressed: {},
     building: withExits,
     movement: noExits,
+    free: new PathFinder.CostMatrix(),
   };
 }
 

@@ -283,18 +283,21 @@ export class Visuals {
   }
 
   public visualizePlanner() {
-    const activePlanning = Apiary.colony.planner.checking?.active;
-    if (!activePlanning) return;
-    const hiveName = Apiary.colony.planner.checking!.roomName;
+    const ch = Apiary.colony.planner.checking;
+    if (!ch) return;
+    const hiveName = ch.roomName;
+
+    if (this.caching[hiveName] && this.caching[hiveName].lastRecalc > Game.time)
+      return;
 
     // add structures
-    for (const roomName in activePlanning.rooms) {
+    for (const roomName in ch.best.rooms) {
       if (
         this.caching[roomName] &&
         this.caching[roomName].lastRecalc > Game.time
       )
         continue;
-      const plan = activePlanning.rooms[roomName].compressed;
+      const plan = ch.best.rooms[roomName].compressed;
       this.changeAnchor(0, 0, roomName, true);
       const vis = this.anchor.vis;
       const hive = Apiary.hives[roomName];
@@ -316,11 +319,34 @@ export class Visuals {
       this.exportAnchor(1);
     }
 
-    if (this.caching[hiveName] && this.caching[hiveName].lastRecalc > Game.time)
-      return;
+    this.changeAnchor(0, 0, hiveName);
+    for (const pos of ch.positions) {
+      this.anchor.vis.circle(pos[0].x, pos[0].y, {
+        fill: "#FFC82A",
+        opacity: 0.5,
+        stroke: "#FFA600",
+        strokeWidth: 1,
+      });
+    }
+
+    this.table(
+      [["", "current", "best", "      "]].concat(
+        _.map(
+          ch.active.metrics,
+          (value, ref) =>
+            [
+              ref || "NaN",
+              "" + value,
+              ch.best.metrics[ref as "ramps"] || "NaN",
+            ] as string[]
+        )
+      ),
+      this.anchor
+    );
+    this.exportAnchor(1);
 
     // add info about cells
-    for (const [cellRef, value] of Object.entries(activePlanning.posCell)) {
+    for (const [cellRef, value] of Object.entries(ch.best.posCell)) {
       const style: LineStyle = {};
       switch (cellRef) {
         case prefix.laboratoryCell:
