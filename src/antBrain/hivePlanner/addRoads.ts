@@ -67,7 +67,7 @@ function getTerrainCostMatrix(roomName: string): [CostMatrix, CostMatrix] {
     }
   const noExits = costMatrix.clone();
   const addExit = (x: number, y: number) => {
-    if (terrain.get(x, y) === PLANNER_COST.wall) return;
+    if (terrain.get(x, y) === TERRAIN_MASK_WALL) return;
     _.forEach(surroundingPoints({ x, y }), (p) =>
       costMatrix.set(p.x, p.y, PLANNER_COST.wall)
     );

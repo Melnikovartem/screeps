@@ -599,13 +599,14 @@ export class CustomConsole {
   public showMap(
     roomName: string = this.lastActionRoomName,
     keep: boolean,
-    visual: (x: number, y: number, vis: RoomVisual) => void
+    visual: (x: number, y: number, vis: RoomVisual) => void,
+    ignoreTerrain = false
   ) {
     const terrain = Game.map.getRoomTerrain(roomName);
     Apiary.visuals.changeAnchor(0, 0, roomName);
     for (let x = 0; x <= 49; ++x)
       for (let y = 0; y <= 49; ++y)
-        if (terrain.get(x, y) !== TERRAIN_MASK_WALL)
+        if (ignoreTerrain || terrain.get(x, y) !== TERRAIN_MASK_WALL)
           visual(x, y, Apiary.visuals.anchor.vis);
 
     Apiary.visuals.exportAnchor(keep ? Infinity : 20);
