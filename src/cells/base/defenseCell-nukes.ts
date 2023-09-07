@@ -1,5 +1,5 @@
-import type { buildingCostsHive } from "abstract/hiveMemory";
 import type { BuildProject } from "cells/building/buildCell";
+import type { checkBuildingsReturn } from "cells/building/hive-checkbuild";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 
@@ -9,7 +9,7 @@ import type { DefenseCell } from "./defenseCell";
 export function getNukeDefMap(
   this: DefenseCell,
   oneAtATime = false
-): [BuildProject[], buildingCostsHive["hive"]] {
+): checkBuildingsReturn {
   // i should think what to do if my defenses are under strike
   const prevState = this.nukeCoverReady;
   this.nukeCoverReady = true;

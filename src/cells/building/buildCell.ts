@@ -5,6 +5,7 @@ import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
+import { getBuildTarget, updateStructures } from "./hive-building";
 // import { updateStructures } from "./hive-building";
 
 // Define the BuildProject interface for construction projects
@@ -26,16 +27,19 @@ const UPDATE_STRUCTURES_NORMAL = 1500;
 
 @profile
 export class BuildCell extends Cell {
-  // #region Properties (4)
+  // #region Properties (6)
+
+  private updateStructures = updateStructures;
 
   /** sum of construction cost */
   public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
   public forceCheck: "" | "mainroom" | "annex" = "";
+  public getBuildTarget = getBuildTarget;
   public structuresConst: BuildProject[] = [];
   /** current minium wall health */
   public wallTargetHealth: number = WALLS_START;
 
-  // #endregion Properties (4)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
@@ -70,11 +74,11 @@ export class BuildCell extends Cell {
       (this.hive.isBattle && Game.time % UPDATE_STRUCTURES_BATTLE === 0) ||
       this.forceCheck
     ) {
-      /* Apiary.wrap(
-        () => updateStructures(this, this.forceCheck === "annex"),
+      Apiary.wrap(
+        () => this.updateStructures(this.forceCheck === "annex"),
         "structures_" + this.hiveName,
         "update"
-      ); */
+      );
       this.forceCheck = "";
     }
   }

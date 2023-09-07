@@ -175,11 +175,17 @@ export function getCase(
     case STRUCTURE_RAMPART:
     case STRUCTURE_WALL:
       hitsMax = wallsHealth;
+      // dont even try before
       if (controller.level < 4) amount = 0;
       break;
     case STRUCTURE_ROAD:
+      if (controller.level === 2 || controller.level === 1) amount = 0;
+      break;
     case STRUCTURE_CONTAINER:
-      if (controller.level === 1 || controller.level === 2) amount = 0;
+      if (controller.level >= 6) amount = perType[controller.level];
+      else if (controller.level >= 3) amount = 4; // sources and fastRef
+      else if (controller.level === 2) amount = 2; // only fastRef
+      else if (controller.level === 1) amount = 0;
       break;
     default:
   }

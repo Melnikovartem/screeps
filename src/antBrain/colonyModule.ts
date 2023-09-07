@@ -9,7 +9,7 @@ export class ColonyBrianModule {
 
   // #region Public Methods (1)
 
-  private test = true;
+  private test = false;
   public run() {
     if (this.test) this.planner.createPlan(Object.keys(Apiary.hives)[0]);
     this.test = false;

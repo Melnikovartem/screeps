@@ -188,7 +188,7 @@ export class LaboratoryCell extends Cell {
   public _synthesizeTarget: { res: ReactionConstant; amount: number } | null =
     this.cache("_synthesizeTarget") || null;
   public laboratories: { [id: string]: StructureLab } = {};
-  public poss: { x: number; y: number } = this.cache("poss") || {
+  public poss: Pos = this.cache("poss") || {
     x: 25,
     y: 25,
   };

@@ -332,7 +332,7 @@ export class Visuals {
     this.table(
       [["", "current", "best", "      "]].concat(
         _.map(
-          ch.active.metrics,
+          ch.active.metrics as unknown as { [ref: string]: number },
           (value, ref) =>
             [
               ref || "NaN",
@@ -515,8 +515,8 @@ export class Visuals {
         ans.push(["pups", "", this.getBeesAmount(statsPuppet)]);
     } */
 
-    /* if (hive.sumCost || (hive.builder && hive.builder.beesAmount)) {
-      let sumCost: string | number = hive.sumCost;
+    let sumCost: string | number = hive.cells.build.sumCost;
+    if (sumCost || hive.cells.build.master?.beesAmount) {
       if (sumCost > 1_000_000)
         sumCost = Math.round((sumCost / 1_000_000) * 10) / 10 + "M";
       else if (sumCost > 5_000) sumCost = Math.round(sumCost / 1_000) + "K";
@@ -525,10 +525,12 @@ export class Visuals {
 
       ans.push([
         "build",
-        sumCost === 0 ? "" : ` ${sumCost}/${hive.structuresConst.length}`,
-        this.getBeesAmount(hive.builder),
+        sumCost === 0
+          ? ""
+          : ` ${sumCost}/${hive.cells.build.structuresConst.length}`,
+        this.getBeesAmount(hive.cells.build.master),
       ]);
-    } */
+    }
 
     ans.push([
       "upgrade",

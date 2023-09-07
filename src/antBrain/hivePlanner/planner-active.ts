@@ -1,3 +1,6 @@
+import type { Hive } from "hive/hive";
+import type { HiveCells } from "hive/hive-declarations";
+
 import { PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
 
@@ -88,12 +91,28 @@ export function savePlan(this: RoomPlanner) {
     const ref = roomName || "NaN";
     mem[hiveName].rooms[ref] = {};
     _.forEach(schematic.compressed, (buildInfo, sType) => {
+      // should be always with PLANNER_STAMP_STOP
       const lastBlockEnd =
         buildInfo.que[buildInfo.que.length - 1] === PLANNER_STAMP_STOP ? 1 : 0;
       mem[hiveName].rooms[ref][sType as BuildableStructureConstant] =
         buildInfo.que.slice(0, buildInfo.que.length - lastBlockEnd);
     });
   });
+
+  // updateActual hive
+  const hiveMemory = Memory.cache.hives[hiveName];
+  const hive = Apiary.hives[hiveName] as Hive | undefined;
+  for (const [refString, possPlan] of Object.entries(bp.posCell)) {
+    const ref = refString as keyof HiveCells;
+    const poss = { x: possPlan[0], y: possPlan[1] };
+    if (!hiveMemory.cells[ref]) hiveMemory.cells[ref] = {};
+
+    hiveMemory.cells[ref].poss = poss;
+    const cell = hive && hive.cells[ref];
+    if (cell && "poss" in cell) cell.poss = poss;
+  }
+  for (const [ref, poss] of Object.entries(bp.posCell))
+    hiveMemory.cells[ref] = { x: poss[0], y: poss[1] };
   return OK;
 }
 

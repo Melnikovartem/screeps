@@ -16,13 +16,13 @@ export class UpgradeCell extends Cell {
 
   public container: StructureContainer | undefined | null;
   public link: StructureLink | undefined | null;
-  public linkId: Id<StructureLink> | null = null;
   public override master: UpgraderMaster;
   public maxBees = 10;
   public maxRate = {
     import: 20,
     local: 10,
   };
+  public poss: RoomPosition;
   public ratePerCreepMax = 1;
   public roadTime: number;
   public workPerCreepMax = 1;
@@ -33,7 +33,21 @@ export class UpgradeCell extends Cell {
 
   public constructor(hive: Hive) {
     super(hive, prefix.upgradeCell);
+    let poss = this.cache("poss");
+    if (!poss) {
+      const openPositions = this.controller.pos
+        .getOpenPositions(true, 2)
+        .filter((p) => this.controller.pos.getRangeTo(p) === 2);
+      if (openPositions.length)
+        poss = openPositions.reduce((a, b) =>
+          a.getOpenPositions().length >= b.getOpenPositions().length ? a : b
+        );
+      else poss = this.controller.pos;
+    }
+    this.poss = new RoomPosition(poss.x, poss.y, this.hiveName);
+
     this.findStructures();
+
     let roadTime = this.cache("roadTime");
     if (roadTime === null) {
       roadTime = this.hive.pos.getTimeForPath(this);
@@ -78,8 +92,11 @@ export class UpgradeCell extends Cell {
   // #region Public Methods (3)
 
   public findStructures() {
-    let link: typeof this.link =
-      this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
+    let link = this.poss
+      .lookFor(LOOK_STRUCTURES)
+      .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
+      | StructureLink
+      | undefined;
     if (!link) {
       const links = this.pos
         .findInRange(FIND_MY_STRUCTURES, 3)
@@ -88,7 +105,6 @@ export class UpgradeCell extends Cell {
         link = links.reduce((prev, curr) =>
           this.pos.getRangeTo(prev) <= this.pos.getRangeTo(curr) ? prev : curr
         ) as StructureLink;
-      if (link) this.cache("linkId", link.id);
     }
     this.link = link;
 

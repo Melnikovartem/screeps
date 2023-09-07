@@ -112,12 +112,12 @@ export class RoomPlanner {
     let metric = 0;
     const me = this.checking.active.metrics; // this comment style -> expecteed range
     // can tollerate no more then 80 ramps
-    metric += (1 - (me.ramps || 0) / 80) * 60; // 0 -> 60
+    metric += (1 - me.ramps / 80) * 60; // 0 -> 60
     // baseline is 3 towers full bunker
-    metric += ((me.minDmg || 0) / (TOWER_POWER_ATTACK * 3)) * 40; // 0 -> 40
-    const addRoadMetric = (roadTime?: number, avg = 1) => {
+    metric += (me.minDmg / (TOWER_POWER_ATTACK * 3)) * 40; // 0 -> 40
+    const addRoadMetric = (roadTime: number, avg = 1) => {
       // 0 -> 5
-      metric += (1 - (roadTime || 0) / avg / ROOM_DIMENTIONS) * 5;
+      metric += (1 - roadTime / avg / ROOM_DIMENTIONS) * 5;
     };
     // at all 0 -> 30 for roads
     addRoadMetric(me.sumRoadRes, PLANNER_TOWERS);

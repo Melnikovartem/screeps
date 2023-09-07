@@ -4,6 +4,7 @@ import { findCoordsInsideRect } from "static/utils";
 import { addRoad, initMatrix } from "./addRoads";
 import { addStampSomewhere, canAddStamp } from "./addStamps";
 import { minCutToExit, surroundingPoints } from "./min-cut";
+import { PLANNER_EMPTY_METRICS } from "./planner-active";
 import { addTowers, PLANNER_FREE_MATRIX } from "./planner-towers";
 import {
   addContainer,
@@ -53,7 +54,7 @@ function innitActive(ch: PlannerChecking) {
     centers: [pos],
     posCell: {},
     rooms: { [ch.roomName]: initMatrix(ch.roomName) },
-    metrics: {},
+    metrics: { ...PLANNER_EMPTY_METRICS },
   };
 
   const ap = ch.active;
@@ -230,6 +231,7 @@ function addController(ch: PlannerChecking) {
     pos
   );
   if (posContrLink === ERR_NOT_FOUND) return ERR_FULL;
+  ch.active.posCell[prefix.upgradeCell] = [posContrLink.x, posContrLink.y];
   if (addRoad(pos, posContrLink, ch.active)[1] === ERR_NOT_IN_RANGE)
     return ERR_FULL;
   return OK;
