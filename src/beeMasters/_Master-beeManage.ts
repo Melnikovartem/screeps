@@ -10,6 +10,8 @@ const BEE_QUE_PER_MASTER = 3;
 // some smartass (me) ovverrided next 3 functions down the road so we make them methods
 // 1 overrided to add extra actions when catching bee
 export function newBee(master: Master<MasterParent>, bee: Bee) {
+  // link bee
+  bee.master = master;
   // 0.2 cost is a no from me
   bee.memory.refMaster = master.ref;
   if (bee.state === beeStates.idle)

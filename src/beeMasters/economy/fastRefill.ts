@@ -103,6 +103,9 @@ export class FastRefillMaster extends Master<FastRefillCell> {
     }
     if (this.checkBees(true)) {
       const setup = setups.fastRefill.copy();
+      setup.patternLimit = Math.ceil(
+        EXTENSION_ENERGY_CAPACITY[this.hive.controller.level] / CARRY_CAPACITY
+      );
       this.wish({
         setup,
         priority: 1,

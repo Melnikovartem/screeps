@@ -155,7 +155,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     if (!(this.pos.roomName in Game.rooms)) {
       this.target = undefined;
       if (this.decay <= 0 && this.hive.cells.observe)
-        Apiary.requestSight(this.pos.roomName);
+        Apiary.oracle.requestSight(this.pos.roomName);
       return;
     }
     this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];

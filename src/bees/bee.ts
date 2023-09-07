@@ -354,10 +354,8 @@ export class Bee extends ProtoBee<Creep> {
     this.creep = Game.creeps[this.ref];
     if (!this.master) {
       if (!Apiary.masters[this.creep.memory.refMaster]) this.findMaster();
-      if (Apiary.masters[this.creep.memory.refMaster]) {
-        this.master = Apiary.masters[this.creep.memory.refMaster];
-        this.master.newBee(this);
-      }
+      if (Apiary.masters[this.creep.memory.refMaster])
+        Apiary.masters[this.creep.memory.refMaster].newBee(this);
     }
   }
 

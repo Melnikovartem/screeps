@@ -505,7 +505,7 @@ export class DefenseCell extends Cell {
           !(annexName in Game.rooms) &&
           !Apiary.intel.getInfo(annexName, 50).safePlace
         )
-          Apiary.requestSight(annexName); // to set / reposessFlag i need sight}
+          Apiary.oracle.requestSight(annexName); // to set / reposessFlag i need sight}
       });
     }
     if (Game.time % 10 === 9 && this.timeToLand > 200) {

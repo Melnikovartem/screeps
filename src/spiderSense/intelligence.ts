@@ -270,7 +270,7 @@ export class Intel {
     let returnLag = roomInfo.lastUpdated + lag >= Game.time;
     const visibleRoom = roomName in Game.rooms;
     if (!returnLag && !visibleRoom) {
-      Apiary.requestSight(roomName);
+      Apiary.oracle.requestSight(roomName);
       returnLag = true;
     }
 

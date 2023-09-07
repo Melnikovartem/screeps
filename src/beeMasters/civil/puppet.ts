@@ -1,5 +1,6 @@
 import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { hiveStates } from "static/enums";
 
@@ -8,6 +9,11 @@ import { SwarmMaster } from "../_SwarmMaster";
 @profile
 export class PuppetMaster extends SwarmMaster<undefined> {
   // #region Properties (1)
+
+  public constructor(parent: SwarmOrder<undefined>) {
+    super(parent);
+    Apiary.oracle.catchSpotter(this);
+  }
 
   public override movePriority: MovePriority = 5;
 

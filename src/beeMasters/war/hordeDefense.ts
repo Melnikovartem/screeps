@@ -68,7 +68,8 @@ export class HordeDefenseMaster extends HordeMaster {
     )
       return;
     if (!(this.pos.roomName in Game.rooms)) {
-      if (this.hive.cells.observe) Apiary.requestSight(this.pos.roomName);
+      if (this.hive.cells.observe)
+        Apiary.oracle.requestSight(this.pos.roomName);
       return;
     }
     const order = {

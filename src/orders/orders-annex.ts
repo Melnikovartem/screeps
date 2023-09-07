@@ -15,7 +15,7 @@ export function actAnnex(order: FlagOrder) {
       }
 
       if (!(order.pos.roomName in Game.rooms)) {
-        Apiary.requestSight(order.pos.roomName);
+        Apiary.oracle.requestSight(order.pos.roomName);
         if (
           !order.hive.cells.observe &&
           !order.master &&

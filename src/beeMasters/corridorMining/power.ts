@@ -353,7 +353,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     if (!(this.roomName in Game.rooms)) {
       this.target = undefined;
       if (this.hits <= 0 && this.hive.cells.observe)
-        Apiary.requestSight(this.roomName);
+        Apiary.oracle.requestSight(this.roomName);
       return;
     }
 

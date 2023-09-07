@@ -16,59 +16,97 @@ import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
 import { Intel } from "spiderSense/intelligence";
+import { Oracle } from "spiderSense/oracle";
 import { safeWrap } from "static/utils";
 
 const STARVE_HIM_OUT_CLAIMS = [""];
 
 @profile
 export class _Apiary {
-  // #region Properties (19)
+  // #region Properties (11)
 
-  private requestRoomSightNextTick: string[] = [];
+  // careful ordered list!
+  private modules = {
+    intel: new Intel(),
+    broker: new Broker(),
+    network: new Network(),
+    war: new WarcrimesModule(),
+    colony: new ColonyBrianModule(),
+    engine: new Engine(),
+    oracle: new Oracle(),
+    visuals: new Visuals(),
+    logger: new EmptyLogger(),
+  };
 
   public bees: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
-  public broker: Broker = new Broker();
   public createTime: number;
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public destroyTime: number;
-  public engine: Engine = new Engine();
   public hives: { [id: string]: Hive } = {};
-  public intel: Intel = new Intel();
-  public logger: EmptyLogger;
   public masters: { [id: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
-  public network: Network = new Network();
   public orders: { [ref: string]: SwarmOrder<any> } = {};
-  public requestRoomSight: string[] = [];
   public useBucket: boolean = false;
   public username: string = "";
-  public visuals: Visuals = new Visuals();
-  public war: WarcrimesModule = new WarcrimesModule();
-  public colony: ColonyBrianModule = new ColonyBrianModule();
 
-  // #endregion Properties (19)
+  // #endregion Properties (11)
 
   // #region Constructors (1)
 
   public constructor() {
     this.createTime = Game.time;
     this.destroyTime = this.createTime + APIARY_LIFETIME;
-    if (LOGGING_CYCLE) this.logger = new Logger();
-    else this.logger = new EmptyLogger();
+    if (LOGGING_CYCLE) this.modules.logger = new Logger();
   }
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (1)
+  // #region Public Accessors (10)
+
+  public get broker() {
+    return this.modules.broker;
+  }
+
+  public get colony() {
+    return this.modules.colony;
+  }
+
+  public get engine() {
+    return this.modules.engine;
+  }
 
   /** internal clock time */
   public get intTime() {
     return Game.time - this.createTime;
   }
 
-  // #endregion Public Accessors (1)
+  public get intel() {
+    return this.modules.intel;
+  }
 
-  // #region Public Methods (5)
+  public get logger() {
+    return this.modules.logger;
+  }
+
+  public get network() {
+    return this.modules.network;
+  }
+
+  public get oracle() {
+    return this.modules.oracle;
+  }
+
+  public get visuals() {
+    return this.modules.visuals;
+  }
+
+  public get war() {
+    return this.modules.war;
+  }
+
+  // #endregion Public Accessors (10)
+
+  // #region Public Methods (4)
 
   public init() {
     _.forEach(Game.rooms, (room) => {
@@ -85,16 +123,12 @@ export class _Apiary {
       protoHive.update = () => {};
       protoHive.run = () => {};
       this.hives[roomName] = protoHive;
-      this.logger = new EmptyLogger(); // failsafe
+      this.modules.logger = new EmptyLogger(); // failsafe
     }
-    this.network.init();
-    this.war.init();
+    _.forEach(this.modules, (module) => {
+      if ("init" in module) module.init();
+    });
     SwarmOrder.init();
-  }
-
-  public requestSight(roomName: string) {
-    if (!this.requestRoomSightNextTick.includes(roomName))
-      this.requestRoomSightNextTick.push(roomName);
   }
 
   // run phase
@@ -109,40 +143,38 @@ export class _Apiary {
     });
 
     Bee.beesMove();
-    this.wrap(
-      () => this.network.run(),
-      "network",
-      "run",
-      this.network.nodes.length
-    );
-    this.wrap(() => this.war.run(), "warcrimes", "run", 1);
-    this.wrap(() => this.colony.run(), "colonybrain", "run", 1);
 
-    this.engine.run();
-
-    this.wrap(
-      () => this.visuals.run(),
-      "visuals",
-      "run",
-      Object.keys(this.hives).length
-    );
-    this.updateRoomSight();
-
-    if (this.logger) this.logger.run();
+    // run modules
+    _.forEach(this.modules, (module, ref) => {
+      let amount = 1;
+      switch (ref) {
+        case "network":
+          amount = this.network.nodes.length;
+          break;
+        case "engine":
+          (module as Engine).run();
+          return;
+      }
+      if ("run" in module)
+        this.wrap(() => module.run(), ref || "", "run", amount);
+    });
   }
 
   // update phase
   public update() {
     this.useBucket = Game.cpu.bucket > 500;
-    this.wrap(() => this.intel.update(), "intel", "update");
 
-    this.wrap(() => this.broker.update(), "broker", "update");
-
-    // this.wrap(() => FlagOrder.checkFlags(), "checkFlags", "update");
-
-    this.wrap(() => this.network.update(), "network", "update", 0);
-
-    this.wrap(() => this.war.update(), "warcrimes", "update");
+    // update modules
+    _.forEach(this.modules, (module, ref) => {
+      let amount = 1;
+      switch (ref) {
+        case "network":
+          amount = 0;
+          break;
+      }
+      if ("update" in module)
+        this.wrap(() => module.update(), ref || "", "update", amount);
+    });
 
     // loses about 0.05 per hive of cpu log, but more detailed
     _.forEach(this.hives, (hive) => {
@@ -180,21 +212,5 @@ export class _Apiary {
       this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 
-  // #endregion Public Methods (5)
-
-  // #region Private Methods (1)
-
-  private updateRoomSight() {
-    // 80% chance to keep each request
-    _.forEach(this.requestRoomSight, (roomName) =>
-      this.requestRoomSightNextTick.indexOf(roomName) === -1 &&
-      Math.random() < 0.8
-        ? this.requestRoomSight.push(roomName)
-        : undefined
-    );
-    this.requestRoomSight = this.requestRoomSightNextTick;
-    this.requestRoomSightNextTick = [];
-  }
-
-  // #endregion Private Methods (1)
+  // #endregion Public Methods (4)
 }

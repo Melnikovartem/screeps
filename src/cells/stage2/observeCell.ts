@@ -124,14 +124,14 @@ export class ObserveCell extends Cell {
     }
 
     if (!this.roomsToCheck.length) {
-      const roomName = Apiary.requestRoomSight.filter(
+      const roomName = Apiary.oracle.roomSight.filter(
         (roomNameRequested) =>
           this.pos.getRoomRangeTo(roomNameRequested, "lin") <= OBSERVER_RANGE
       )[0];
       if (roomName) {
         this.roomsToCheck = [roomName];
-        const index = Apiary.requestRoomSight.indexOf(roomName);
-        if (index !== -1) Apiary.requestRoomSight.splice(index, 1);
+        const index = Apiary.oracle.roomSight.indexOf(roomName);
+        if (index !== -1) Apiary.oracle.roomSight.splice(index, 1);
       } else if (this.hive.mode.powerMining || this.hive.mode.depositMining)
         this.roomsToCheck = this.corridorRooms;
     }

@@ -2,6 +2,7 @@ import type { Master, MasterParent } from "beeMasters/_Master";
 import { BUILDING_PER_PATTERN } from "beeMasters/economy/builder";
 import { setups } from "bees/creepSetups";
 import { TransferRequest } from "bees/transferRequest";
+import type { ResourceCell } from "cells/base/resourceCell";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
@@ -49,8 +50,7 @@ export class DevelopmentCell extends Cell {
         cell.ratePT,
         cell.master.ratePT * cell.master.beesAmount
       );
-      if (!cell.container)
-        coef = Math.max(coef - this.minerBeeCount(cell.resource), 0);
+      if (!cell.container) coef = Math.max(coef - this.minerBeeCount(cell), 0);
 
       accumRoadTime +=
         (cell.roadTime + Math.max(cell.restTime, cell.roadTime, 100)) * coef;
@@ -104,30 +104,43 @@ export class DevelopmentCell extends Cell {
 
   private swapBees(
     master1: Master<MasterParent>,
-    master2: Master<MasterParent>
+    master2: Master<MasterParent>,
+    amount = Infinity
   ) {
-    _.forEach(master1.activeBees, (bee) => {
+    let count = 0;
+    for (let i = 0; i < master1.activeBees.length; ++i) {
+      if (count >= amount) break;
+      const bee = master1.activeBees[i];
       master1.removeBee(bee);
       master2.newBee(bee);
-    });
+      --i;
+      ++count;
+    }
+    return count;
   }
 
   // #endregion Public Accessors (4)
 
   // #region Public Methods (3)
 
-  public minerBeeCount(resource: Source | Mineral) {
-    if (resource instanceof Mineral) return 0;
+  public minerBeeCount(cell: ResourceCell) {
+    if (cell.resource instanceof Mineral) return 0;
     const harvestAmount =
       Math.floor(
         this.hive.room.energyCapacityAvailable /
           (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5)
       ) * HARVEST_POWER;
-    const maxBees = Math.round(
-      resource.energyCapacity / ENERGY_REGEN_TIME / harvestAmount
+    let maxBees = Math.round(
+      cell.resource.energyCapacity / ENERGY_REGEN_TIME / harvestAmount
     );
+    // will be buidling and not mining
+    const c = cell.master.construction;
+    if (c && c.progressTotal - c.progress > 1_000) maxBees *= 2;
     return Math.max(
-      Math.min(Math.floor(resource.pos.getOpenPositions().length), maxBees),
+      Math.min(
+        Math.floor(cell.resource.pos.getOpenPositions().length),
+        maxBees
+      ),
       1
     );
   }
@@ -146,8 +159,12 @@ export class DevelopmentCell extends Cell {
     const upgrader = this.hive.cells.upgrade.master;
     const upgTarget = upgrader.targetBeeCount;
     const buildTarget = builder.targetBeeCount;
-    if (!upgTarget && buildTarget) this.swapBees(upgrader, builder);
-    else if (!buildTarget) this.swapBees(builder, upgrader);
+    if (!upgTarget && buildTarget) {
+      const buildBees =
+        this.hive.cells.build.sumCost /
+        (BUILDING_PER_PATTERN.normal.hive.build * 0.5);
+      this.swapBees(upgrader, builder, Math.floor(buildBees));
+    } else if (!buildTarget) this.swapBees(builder, upgrader);
   }
 
   // #endregion Public Methods (3)

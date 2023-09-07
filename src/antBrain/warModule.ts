@@ -201,7 +201,7 @@ export class WarcrimesModule {
       const room = Game.rooms[roomName];
       if (!room) {
         siedge.lastUpdated = -1;
-        Apiary.requestSight(roomName);
+        Apiary.oracle.requestSight(roomName);
         return;
       }
       siedge.lastUpdated = Game.time;

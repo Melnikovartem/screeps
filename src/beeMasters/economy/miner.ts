@@ -73,7 +73,7 @@ export class MinerMaster extends Master<ResourceCell> {
 
   public get targetBeeCount() {
     if (this.hive.cells.dev)
-      return this.hive.cells.dev.minerBeeCount(this.resource);
+      return this.hive.cells.dev.minerBeeCount(this.parent);
     return 1;
   }
 
