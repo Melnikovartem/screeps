@@ -1,19 +1,21 @@
-export type FnEngine = () => void | FnEngine;
+/** return function and it's activation time */
+export type FnEngine = () => void | { f: FnEngine; ac?: number };
 
 interface Task {
   // #region Properties (3)
 
   func: FnEngine;
   ref: string;
-  time: number;
+  timeInit: number;
+  timeAct: number;
 
   // #endregion Properties (3)
 }
 
 /** what cpu to save based on bucket */
 const CPU_ENGINE = {
-  0: 10,
-  1000: 1,
+  0: 100,
+  1000: 10,
   9000: 0,
 };
 
@@ -29,10 +31,11 @@ export class Engine {
 
   private get canRun() {
     let cpuToSave = CPU_ENGINE[0];
-    _.forEach(CPU_ENGINE, (cpuSaveBucket, thrshBucket) => {
-      if (cpuSaveBucket >= cpuToSave) return;
-      if (Game.cpu.bucket > +thrshBucket!) return;
-      cpuToSave = cpuSaveBucket;
+    _.forEach(CPU_ENGINE, (cpuToSaveIter, thrshBucket) => {
+      // bucket is too small so we dont save it
+      if (Game.cpu.bucket < +thrshBucket!) return;
+      // the new metric is better
+      cpuToSave = Math.min(cpuToSave, cpuToSaveIter);
     });
     return Game.cpu.limit - Game.cpu.getUsed() > cpuToSave;
   }
@@ -41,23 +44,26 @@ export class Engine {
 
   // #region Public Methods (3)
 
-  public addTask(ref: string, func: FnEngine, time = Game.time) {
+  public addTask(
+    ref: string,
+    func: FnEngine,
+    timeAct = Game.time,
+    timeInit = Game.time
+  ) {
     this.que.push({
       ref,
       func,
-      time,
+      timeInit,
+      timeAct,
     });
   }
 
   public run() {
-    while (this.canRun) {
-      const task = this.que.shift();
-      if (!task) break;
-      if (task.time === Game.time) {
-        // throttle for debug a little bit
-        this.que.push(task);
-        return;
-      }
+    for (let i = 0; i < this.que.length && this.canRun; ++i) {
+      const task = this.que[i];
+      if (task.timeAct > Game.time) continue;
+      this.que.splice(i, 1);
+      --i;
       this.runTask(task);
     }
   }
@@ -65,7 +71,8 @@ export class Engine {
   public runTask(task: Task) {
     const wrapFunc = () => {
       const nextUp = task.func();
-      if (nextUp) this.addTask(task.ref, nextUp, task.time);
+      if (nextUp)
+        this.addTask(task.ref, nextUp.f, nextUp.ac || Game.time, task.timeInit);
     };
     Apiary.wrap(wrapFunc, task.ref, "run", 1);
   }

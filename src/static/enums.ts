@@ -49,13 +49,14 @@ export enum beeStates {
  */
 export enum prefix {
   // orders
+  spotter = "spot_",
   steal = "borrow_" /** Steal prefix */,
   build = "wax_" /** Build prefix */,
   surrender = "FFF_" /** Surrender prefix */,
   boost = "boost_" /** Boost prefix */,
   defSwarm = "protect_" /** Defensive swarm prefix */,
   puppet = "pup_" /** Puppet prefix */,
-  annex = "annex_" /** Annex prefix */,
+  reserve = "reserve_" /** Annex prefix */,
   claim = "claim_" /** Claim prefix */,
   mine = "mine_" /** Mine prefix */,
   clear = "clear_" /** Clear prefix */,
@@ -83,6 +84,7 @@ export enum prefix {
   factoryCell = "factory" /** Factory cell prefix */,
   corridorMiningCell = "corridor" /** CorridorMining cell prefix */,
   buildingCell = "build",
+  annexCell = "annex",
 
   builder = "builder_" /** Builder prefix */,
   puller = "depositPuller_" /** Deposit puller prefix */,

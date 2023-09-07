@@ -31,7 +31,7 @@ export class ObserveCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (6)
 
   public get corridorRooms(): string[] {
     return this._corridorRooms;
@@ -39,6 +39,10 @@ export class ObserveCell extends Cell {
 
   public set corridorRooms(value) {
     this._corridorRooms = this.cache("_corridorRooms", value);
+  }
+
+  public get observerRange() {
+    return OBSERVER_RANGE;
   }
 
   public override get pos() {
@@ -53,7 +57,7 @@ export class ObserveCell extends Cell {
     this._prevRoom = this.cache("_prevRoom", value);
   }
 
-  // #endregion Public Accessors (5)
+  // #endregion Public Accessors (6)
 
   // #region Public Methods (5)
 
@@ -126,7 +130,8 @@ export class ObserveCell extends Cell {
     if (!this.roomsToCheck.length) {
       const roomName = Apiary.oracle.roomSight.filter(
         (roomNameRequested) =>
-          this.pos.getRoomRangeTo(roomNameRequested, "lin") <= OBSERVER_RANGE
+          this.pos.getRoomRangeTo(roomNameRequested, "lin") <=
+          this.observerRange
       )[0];
       if (roomName) {
         this.roomsToCheck = [roomName];

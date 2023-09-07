@@ -3,7 +3,6 @@
  * Example: var Traveler = require('Traveler.js');
  */
 import { profile } from "../profiler/decorator";
-import { TRAVELER_MESSAGE, VISUALS_TRAVELER } from "../settings";
 import { roomStates } from "../static/enums";
 
 // this might be higher than you wish, setting it lower is a great way to diagnose creep behavior issues. When creeps
@@ -165,7 +164,7 @@ export class Traveler {
 
       const cpuUsed = Game.cpu.getUsed() - cpu;
       state.cpu = _.round(cpuUsed + state.cpu); // accumulated cpu over ticks
-      if (state.cpu > REPORT_CPU_THRESHOLD && TRAVELER_MESSAGE) {
+      if (state.cpu > REPORT_CPU_THRESHOLD && Memory.settings.richMovement) {
         // see note at end of file for more info on this
         console.log(
           `TRAVELER: heavy cpu use: ${
@@ -282,7 +281,7 @@ export class Traveler {
    */
 
   public static circle(pos: RoomPosition, color: string, opacity?: number) {
-    if (VISUALS_TRAVELER)
+    if (Memory.settings.richMovement)
       new RoomVisual(pos.roomName).circle(pos, {
         radius: 0.45,
         fill: "transparent",
@@ -689,7 +688,7 @@ export class Traveler {
     this.circle(startPos, color);
     for (const position of path) {
       if (position.roomName === lastPosition.roomName) {
-        if (VISUALS_TRAVELER)
+        if (Memory.settings.richMovement)
           new RoomVisual(position.roomName).line(position, lastPosition, {
             color,
             lineStyle: "dashed",

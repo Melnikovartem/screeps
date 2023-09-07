@@ -1,4 +1,8 @@
 import type { PuppetMaster } from "beeMasters/civil/puppet";
+import { SwarmOrder } from "orders/swarmOrder";
+import { SWARM_MASTER } from "orders/swarmOrder-masters";
+import { prefix } from "static/enums";
+import { goodSpot, makeId } from "static/utils";
 
 export class Oracle {
   // #region Properties (2)
@@ -10,10 +14,11 @@ export class Oracle {
   /** the ones that can't be reached by observer  */
   public roomSightSpotter: string[] = [];
 
-  private spotters: PuppetMaster[] = [];
+  private spotters: { [roomName: string]: PuppetMaster } = {};
 
   public catchSpotter(master: PuppetMaster) {
-    this.spotters.push(master);
+    if (this.spotters[master.roomName]) return;
+    this.spotters[master.roomName] = master;
   }
 
   // #endregion Properties (2)
@@ -22,6 +27,29 @@ export class Oracle {
 
   public requestSight(roomName: string) {
     if (!this.sightNextTick.has(roomName)) this.sightNextTick.add(roomName);
+  }
+
+  public update() {
+    _.forEach(this.roomSight, (roomName) => {
+      if (
+        _.filter(
+          Apiary.hives,
+          (h) =>
+            h.cells.observe &&
+            h.pos.getRoomRangeTo(roomName) < h.cells.observe.observerRange
+        ).length ||
+        this.spotters[roomName] ||
+        Game.rooms[roomName]
+      )
+        return;
+      const hive = _.min(Apiary.hives, (h) => h.pos.getRoomRangeTo(roomName));
+      const order = new SwarmOrder(
+        prefix.spotter + makeId(6),
+        hive,
+        goodSpot(roomName),
+        SWARM_MASTER.puppet
+      );
+    });
   }
 
   public run() {

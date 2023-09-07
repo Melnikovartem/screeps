@@ -24,7 +24,7 @@ import {
   STAMP_REST,
 } from "./stamps";
 
-type plannerStep = (ch: PlannerChecking) => OK | ERR_FULL;
+type PlannerStep = (ch: PlannerChecking) => OK | ERR_FULL;
 
 const PLANNER_PADDING = {
   resource: 1,
@@ -41,7 +41,7 @@ const PLANNER_REST_COEF = {
   center: 4,
 };
 
-export const PLANNER_STEPS: plannerStep[] = [
+export const PLANNER_STEPS: PlannerStep[] = [
   innitActive,
   addMainStamps,
   addExtentions,
@@ -53,6 +53,8 @@ export const PLANNER_STEPS: plannerStep[] = [
   addRestPos,
   finalDefenses,
 ];
+
+export const PLANNER_ROADS: PlannerStep[] = [addResources];
 
 function innitActive(ch: PlannerChecking) {
   const posIter = ch.positions.shift();

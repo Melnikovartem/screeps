@@ -1,14 +1,22 @@
 import type { FnEngine } from "engine";
+import type { Hive } from "hive/hive";
 import { ERR_NO_VISION, ROOM_DIMENTIONS } from "static/constants";
 
 import { initMatrix } from "./addRoads";
 import { floodFill } from "./flood-fill";
 import {
   type ActivePlan,
+  fromCache,
+  parseRoom,
   PLANNER_EMPTY_METRICS,
   savePlan,
+  toActive,
 } from "./planner-active";
-import { PLANNER_EXTENSION, PLANNER_STEPS } from "./planner-pipeline";
+import {
+  PLANNER_EXTENSION,
+  PLANNER_ROADS,
+  PLANNER_STEPS,
+} from "./planner-pipeline";
 import { PLANNER_TOWERS } from "./planner-towers";
 import { endBlock, PLANNER_COST } from "./planner-utils";
 import { distanceTransform } from "./wall-dist";
@@ -47,16 +55,29 @@ export interface PlannerChecking {
 }
 */
 export class RoomPlanner {
-  // #region Properties (2)
+  // #region Properties (6)
+
+  protected fromCache = fromCache;
+  protected parsingRooms:
+    | {
+        roomName: string;
+        rooms: string[];
+        sources: RoomPosition[];
+        minerals: RoomPosition[];
+        controller: RoomPosition;
+      }
+    | undefined;
+  protected toActive = toActive;
 
   public checking: PlannerChecking | undefined;
+  public parseRoom = parseRoom;
   public savePlan = savePlan;
 
-  // #endregion Properties (2)
+  // #endregion Properties (6)
 
-  // #region Public Methods (1)
+  // #region Public Methods (3)
 
-  public createPlan(roomName: string, addPositions = true) {
+  public createPlan(roomName: string) {
     const room = Game.rooms[roomName];
     if (!room) return ERR_NO_VISION;
     const posCont = room.controller?.pos;
@@ -65,45 +86,70 @@ export class RoomPlanner {
     const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
     const mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
 
-    // add postion to check / road to exit to corridor ?
+    const posInterest: Pos[] = [posCont].concat(sourcesPos).concat(mineralsPos);
+    let positions: [Pos, number][] = [];
+    positions = this.startingPos(roomName, posInterest);
+    if (!positions.length) return;
 
-    Apiary.engine.addTask("planner " + roomName, () => {
-      const posInterest: Pos[] = [posCont]
-        .concat(sourcesPos)
-        .concat(mineralsPos);
-      let positions: [Pos, number][] = [];
-      if (addPositions) {
-        positions = this.startingPos(roomName, posInterest);
-        if (!positions.length) return;
-      }
-      this.checking = {
-        roomName,
-        activeStep: 0,
-        controller: posCont,
-        sources: sourcesPos,
-        minerals: mineralsPos,
-        bestMetric: Infinity,
-        best: {
-          centers: [],
-          posCell: {},
-          rooms: {},
-          metrics: { ...PLANNER_EMPTY_METRICS },
-        },
-        active: {
-          centers: [],
-          posCell: {},
-          rooms: {},
-          metrics: { ...PLANNER_EMPTY_METRICS },
-        },
-        positions,
-      };
-      if (!addPositions) return undefined;
-      return () => this.checkPosition(roomName);
+    // add postion to check / road to exit to corridor ??
+    Apiary.engine.addTask("planner main @" + roomName, () => {
+      this.initPlan(roomName, posCont, sourcesPos, mineralsPos, positions);
+      return { f: () => this.checkPosition(roomName, PLANNER_STEPS) };
     });
     return OK;
   }
 
-  // #endregion Public Methods (1)
+  public createRoads(hive: Hive) {
+    Apiary.engine.addTask("roads plan @" + hive.roomName, () =>
+      this.toActive(
+        hive.roomName,
+        hive.annexNames,
+        this.checkPosition(hive.roomName, PLANNER_ROADS)?.f
+      )
+    );
+  }
+
+  public justShow(hive: Hive) {
+    Apiary.engine.addTask("show plan @" + hive.roomName, () =>
+      this.toActive(hive.roomName, hive.annexNames, undefined)
+    );
+  }
+
+  // #endregion Public Methods (3)
+
+  // #region Protected Methods (1)
+
+  protected initPlan(
+    roomName: string,
+    posCont: RoomPosition,
+    sourcesPos: RoomPosition[],
+    mineralsPos: RoomPosition[],
+    positions: [Pos, number][] = []
+  ) {
+    this.checking = {
+      roomName,
+      activeStep: 0,
+      controller: posCont,
+      sources: sourcesPos,
+      minerals: mineralsPos,
+      bestMetric: Infinity,
+      best: {
+        centers: [],
+        posCell: {},
+        rooms: {},
+        metrics: { ...PLANNER_EMPTY_METRICS },
+      },
+      active: {
+        centers: [],
+        posCell: {},
+        rooms: {},
+        metrics: { ...PLANNER_EMPTY_METRICS },
+      },
+      positions,
+    };
+  }
+
+  // #endregion Protected Methods (1)
 
   // #region Private Methods (3)
 
@@ -130,10 +176,13 @@ export class RoomPlanner {
     return metric;
   }
 
-  private checkPosition(roomName: string): FnEngine | void {
+  private checkPosition(
+    roomName: string,
+    steps: typeof PLANNER_STEPS
+  ): ReturnType<FnEngine> {
     if (!this.checking) return;
 
-    const rFunc = () => this.checkPosition(roomName);
+    const rFunc = { f: () => this.checkPosition(roomName, steps) };
 
     const cpu = Game.cpu.getUsed();
     let ans: OK | ERR_FULL | ERR_NOT_FOUND = OK;
@@ -158,10 +207,12 @@ export class RoomPlanner {
       // finished all positions
       ans = this.savePlan();
       this.checking = undefined;
-      return () =>
-        console.log(
-          `PLANNER SAVING ${ans === OK ? "DONE" : "FAILED"} @${roomName}`
-        );
+      return {
+        f: () =>
+          console.log(
+            `PLANNER SAVING ${ans === OK ? "DONE" : "FAILED"} @${roomName}`
+          ),
+      };
     }
 
     desc();

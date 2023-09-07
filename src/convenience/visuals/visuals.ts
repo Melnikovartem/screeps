@@ -329,8 +329,8 @@ export class Visuals {
       });
     }
 
-    this.table(
-      [["", "current", "best", "      "]].concat(
+    const table = this.table(
+      [["                  ", "current", "best", "      "]].concat(
         _.map(
           ch.active.metrics as unknown as { [ref: string]: number },
           (value, ref) =>
@@ -341,6 +341,25 @@ export class Visuals {
             ] as string[]
         )
       ),
+      this.anchor
+    );
+    this.updateAnchor(table);
+
+    // table: number of sources/minerals by roomName
+    const roomResources = _.map(
+      _.unique(
+        _.map(ch.sources, (p) => p.roomName).concat(
+          _.map(ch.minerals, (p) => p.roomName)
+        )
+      ),
+      (roomName) => [
+        roomName,
+        "" + ch.sources.filter((p) => p.roomName === roomName).length,
+        "" + ch.minerals.filter((p) => p.roomName === roomName).length,
+      ]
+    );
+    this.table(
+      [["name  ", "sources", "minerals"]].concat(roomResources),
       this.anchor
     );
     this.exportAnchor(1);

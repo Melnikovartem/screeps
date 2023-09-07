@@ -117,19 +117,13 @@ CustomConsole.prototype.printMasters = function (ref?: string) {
   return this.printByHive(obj);
 };
 
-/* CustomConsole.prototype.printOrders = function (ref?: string) {
-  const extraFilter = (rr: string) =>
-    !rr.includes(prefix.annex) &&
-    !rr.includes(prefix.mine) &&
-    !rr.includes(prefix.puppet);
+CustomConsole.prototype.printOrders = function (ref?: string) {
   const obj = _.filter(
     Apiary.orders,
-    (o) =>
-      (!ref || o.hive.roomName === ref || o.ref.includes(ref)) &&
-      extraFilter(o.ref)
+    (m) => !ref || m.hive.roomName === ref || m.ref.includes(ref)
   );
   return this.printByHive(obj);
-}; */
+};
 
 CustomConsole.prototype.printBees = function (
   ref?: string,

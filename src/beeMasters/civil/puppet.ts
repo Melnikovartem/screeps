@@ -42,6 +42,10 @@ export class PuppetMaster extends SwarmMaster<undefined> {
 
   public override update() {
     super.update();
+    if (this.pos.roomName in Game.rooms && !this.beesAmount) {
+      this.parent.delete();
+      return;
+    }
     if (
       !(this.pos.roomName in Game.rooms) &&
       (this.maxSpawns !== Infinity ||

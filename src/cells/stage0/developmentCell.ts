@@ -5,7 +5,7 @@ import { TransferRequest } from "bees/transferRequest";
 import type { ResourceCell } from "cells/base/resourceCell";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { hiveStates, prefix } from "static/enums";
+import { hiveStates, prefix, setupsNames } from "static/enums";
 
 import { Cell } from "../_Cell";
 
@@ -105,15 +105,19 @@ export class DevelopmentCell extends Cell {
   private swapBees(
     master1: Master<MasterParent>,
     master2: Master<MasterParent>,
-    amount = Infinity
+    amount = Infinity,
+    namespace = ""
   ) {
+    // move 5 bee at a time
+    amount = Math.min(amount, 5);
     let count = 0;
-    for (let i = 0; i < master1.activeBees.length; ++i) {
+    while (master1.activeBees.length) {
       if (count >= amount) break;
-      const bee = master1.activeBees[i];
+      const bee = master1.activeBees.reduce((a, b) =>
+        a.ref.includes(namespace) ? a : b
+      );
       master1.removeBee(bee);
       master2.newBee(bee);
-      --i;
       ++count;
     }
     return count;
@@ -159,12 +163,32 @@ export class DevelopmentCell extends Cell {
     const upgrader = this.hive.cells.upgrade.master;
     const upgTarget = upgrader.targetBeeCount;
     const buildTarget = builder.targetBeeCount;
-    if (!upgTarget && buildTarget) {
-      const buildBees =
-        this.hive.cells.build.sumCost /
-        (BUILDING_PER_PATTERN.normal.hive.build * 0.5);
-      this.swapBees(upgrader, builder, Math.floor(buildBees));
-    } else if (!buildTarget) this.swapBees(builder, upgrader);
+
+    // how many bees to send help fomr upgraders to builders
+    // (no more then 5)
+
+    const buildBees =
+      Math.min(
+        Math.floor(
+          this.hive.cells.build.sumCost /
+            (BUILDING_PER_PATTERN.normal.hive.build * 0.5)
+        ),
+        5
+      ) - builder.beesAmount;
+
+    if (buildBees >= 1 && !upgTarget && buildTarget) {
+      // send some upgraders to help with building
+      this.swapBees(upgrader, builder, buildBees, setupsNames.builder);
+      return;
+    }
+    // too many of builders send some to upgrade
+    if (buildBees < 0 && builder.beesAmount > buildTarget * 1.5)
+      this.swapBees(
+        builder,
+        upgrader,
+        builder.beesAmount - buildTarget,
+        setupsNames.upgrader
+      );
   }
 
   // #endregion Public Methods (3)

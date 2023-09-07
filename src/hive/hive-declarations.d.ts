@@ -1,4 +1,5 @@
 import type { CreepSetup } from "bees/creepSetups";
+import type { AnnexCell } from "cells/base/annexCell";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import type { BuildCell } from "cells/building/buildCell";
@@ -43,6 +44,7 @@ export interface HiveCells {
   build: BuildCell;
   upgrade: UpgradeCell;
   excavation: ExcavationCell;
+  annex: AnnexCell;
   dev?: DevelopmentCell;
   lab?: LaboratoryCell;
   factory?: FactoryCell;

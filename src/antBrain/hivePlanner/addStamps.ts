@@ -37,7 +37,6 @@ export function addStampSomewhere(
       pos = checkQue.reduce(reducer);
       const index = checkQue.indexOf(pos);
       if (index !== -1) checkQue.splice(index, 1);
-      else console.log("err??");
     } else pos = checkQue.shift();
     if (!pos) break;
     if (canAddStamp(pos, stamp, roomMatrix) === OK) {

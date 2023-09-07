@@ -1,6 +1,10 @@
+import type { FnEngine } from "engine";
 import type { Hive } from "hive/hive";
 import type { HiveCells } from "hive/hive-declarations";
+import { ERR_NO_VISION } from "static/constants";
+import { roomStates } from "static/enums";
 
+import { initMatrix } from "./addRoads";
 import { PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
 
@@ -65,12 +69,13 @@ export interface ActivePlan {
   // controller of room
 }
 
+export type CompressedRoom = {
+  [tt in BuildableStructureConstant]?: CompressedStructures;
+};
 export interface RoomPlannerHiveCache {
   posCell: ActivePlan["posCell"];
   rooms: {
-    [roomName: string]: {
-      [tt in BuildableStructureConstant]?: CompressedStructures;
-    };
+    [roomName: string]: CompressedRoom;
   };
   metrics: ActivePlan["metrics"];
 }
@@ -110,12 +115,121 @@ export function savePlan(this: RoomPlanner) {
   }
   // update memory
   for (const [ref, poss] of Object.entries(bp.posCell)) {
-    if (!hiveMemory.cells[ref] || true) hiveMemory.cells[ref] = {};
+    if (!hiveMemory.cells[ref]) hiveMemory.cells[ref] = {};
     hiveMemory.cells[ref].poss = { x: poss[0], y: poss[1] };
   }
   return OK;
 }
 
-export function fromCache(this: RoomPlanner, roomName: string) {
-  this.createPlan(roomName, false);
+export function toActive(
+  this: RoomPlanner,
+  hiveName: string,
+  annexNames: string[],
+  payload: FnEngine | undefined
+): ReturnType<FnEngine> {
+  const ans = this.parseRoom(hiveName, annexNames);
+  if (ans === ERR_NO_VISION)
+    return {
+      f: () => this.toActive(hiveName, annexNames, payload),
+      ac: Game.time + 10,
+    }; // no vision try again
+  if (ans !== OK) return undefined; // smth broke end
+  return {
+    // finished so we go on
+    f: () => {
+      if (!this.parsingRooms) return undefined;
+      const pr = this.parsingRooms;
+      this.initPlan(hiveName, pr.controller, pr.sources, pr.minerals);
+      this.fromCache(hiveName);
+      return payload && { f: payload };
+    },
+  };
+}
+
+/** parses rooms until all in this.parsingRoom
+ *
+ * payload is returned when finished
+ *
+ * ERR_NO_VISION if no vision
+ *
+ * other mistakes if error
+ *
+ * OK if no payload
+ */
+export function parseRoom(
+  this: RoomPlanner,
+  hiveName: string,
+  annexNames: string[]
+) {
+  if (!this.parsingRooms) {
+    const room = Game.rooms[hiveName];
+    if (!room) return ERR_NO_VISION;
+    const posCont = room.controller?.pos;
+    if (!posCont) return ERR_INVALID_TARGET;
+    this.parsingRooms = {
+      roomName: hiveName,
+      rooms: [hiveName].concat(annexNames),
+      sources: [],
+      minerals: [],
+      controller: posCont,
+    };
+  }
+
+  const pr = this.parsingRooms;
+
+  for (const roomName of this.parsingRooms.rooms) {
+    const state = Apiary.intel.getRoomState(roomName);
+    switch (state) {
+      case roomStates.ownedByMe:
+      case roomStates.reservedByMe:
+      case roomStates.noOwner:
+      case roomStates.reservedByInvader:
+      case roomStates.SKfrontier:
+      case roomStates.SKcentral:
+        if (!pr.sources.filter((p) => p.roomName === roomName).length) break;
+      // fall through
+      default:
+        continue;
+    }
+    const room = Game.rooms[roomName];
+    if (!room) return ERR_NO_VISION;
+
+    const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
+    let mineralsPos: RoomPosition[] = [];
+    if (
+      [
+        roomStates.ownedByMe,
+        roomStates.SKcentral,
+        roomStates.SKfrontier,
+      ].includes(state)
+    )
+      mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
+
+    pr.sources = pr.sources.concat(sourcesPos);
+    pr.minerals = pr.minerals.concat(mineralsPos);
+  }
+
+  return OK;
+}
+
+export function fromCache(this: RoomPlanner, hiveName: string) {
+  if (!this.checking) return ERR_NOT_FOUND;
+  const mem = Memory.longterm.roomPlanner[hiveName];
+  if (!mem) return ERR_NOT_FOUND;
+  const ch = this.checking;
+  ch.best.posCell = _.cloneDeep(mem.posCell);
+  ch.best.metrics = _.cloneDeep(mem.metrics);
+  _.forEach(mem.rooms, (roomPlan, roomName) => {
+    if (!roomName) return;
+    ch.best.rooms[roomName] = initMatrix(roomName);
+    _.forEach(roomPlan, (buildInfo, sType) => {
+      const structureType = sType as BuildableStructureConstant;
+      ch.best.rooms[roomName].compressed[structureType] = {
+        que: _.cloneDeep(buildInfo),
+        len: _.sum(buildInfo, (b) => (b === PLANNER_STAMP_STOP ? 0 : 1)),
+      };
+    });
+  });
+  ch.active = _.cloneDeep(ch.best);
+  return OK;
 }

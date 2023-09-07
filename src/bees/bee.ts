@@ -160,7 +160,7 @@ export class Bee extends ProtoBee<Creep> {
         this.findClosestByHive(
           _.filter(
             Apiary.masters,
-            (m) => m.ref.includes(prefix.annex) && "reservationTime" in m
+            (m) => m.ref.includes(prefix.reserve) && "reservationTime" in m
           )
         )
       )

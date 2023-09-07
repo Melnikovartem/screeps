@@ -35,7 +35,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
     } else if (this.parent.ref.includes(prefix.claim)) {
       this.setup = setups.claimer;
       this.cycle = CREEP_CLAIM_LIFE_TIME;
-    } else if (this.parent.ref.includes(prefix.annex)) {
+    } else if (this.parent.ref.includes(prefix.reserve)) {
       this.setup = setups.claimer.copy();
       this.setup.patternLimit += 2;
     } else if (this.parent.ref.includes("defense")) {

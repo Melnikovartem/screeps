@@ -55,7 +55,7 @@ export function actAnnex(order: FlagOrder) {
         order.master = undefined;
       }
 
-      if (!order.fixedName(prefix.annex + order.pos.roomName)) break;
+      if (!order.fixedName(prefix.reserve + order.pos.roomName)) break;
 
       if (!order.master) {
         const roomState = Apiary.intel.getInfo(

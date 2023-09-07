@@ -219,3 +219,36 @@ export function findCoordsInsideRect(
 
   return positions;
 }
+
+const SPOT_ATTEMPTS = 20;
+
+/** tries to return a position on plains in the center of the room */
+export function goodSpot(roomName: string) {
+  const terrain = Game.map.getRoomTerrain(roomName);
+  let [x, y] = [25, 25];
+  let [xbest, ybest] = [25, 25];
+  const checkPos = (x1: number, y1: number) => {
+    switch (terrain.get(x1, y1)) {
+      case TERRAIN_MASK_WALL:
+        return 0; // not great position
+      case TERRAIN_MASK_SWAMP:
+        // found a swamp
+        xbest = x;
+        ybest = y;
+        return 0; // but not great
+      default:
+        xbest = x;
+        ybest = y;
+        return 1; // found plains
+    }
+  };
+
+  for (let i = 0; i <= SPOT_ATTEMPTS; ++i) {
+    if (checkPos(x, y)) break;
+    // random spot in 15 to 35
+    x = Math.random() * 20 + 15;
+    y = Math.random() * 20 + 15;
+  }
+
+  return new RoomPosition(xbest, ybest, roomName);
+}

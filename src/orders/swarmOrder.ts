@@ -7,14 +7,16 @@ const CACHE_ORDER_POS = 0;
 const CACHE_ORDER_HIVE = 1;
 const CACHE_ORDER_SPAWNED = 2;
 const CACHE_ORDER_TYPE = 3;
-const CACHE_ORDEC_SPECIAL = 4;
+const CACHE_ORDER_CREATE = 4;
+const CACHE_ORDER_SPECIAL = 10;
 
 export interface SwarmOrderInfo {
   [CACHE_ORDER_POS]: [number, number, string?];
   [CACHE_ORDER_HIVE]: string;
   [CACHE_ORDER_SPAWNED]: number;
   [CACHE_ORDER_TYPE]: keyof typeof SWARM_ORDER_TYPES;
-  [CACHE_ORDEC_SPECIAL]?: any;
+  [CACHE_ORDER_CREATE]: number;
+  [CACHE_ORDER_SPECIAL]?: any;
 }
 
 type MasterConstructor<T> = new (order: SwarmOrder<T>) => SwarmMaster<T>;
@@ -43,17 +45,21 @@ export class SwarmOrder<T> {
   ) {
     // if we have an order with same name then prev one is invalidated
     this.ref = ref;
+    const possToSave: SwarmOrderInfo[0] = [pos.x, pos.y];
+    if (pos.roomName !== hive.roomName) possToSave.push(pos.roomName);
     if (!this.cache)
       Memory.cache.orders[this.ref] = {
-        [CACHE_ORDER_POS]: [pos.x, pos.y],
+        [CACHE_ORDER_POS]: possToSave,
         [CACHE_ORDER_HIVE]: hive.roomName,
         [CACHE_ORDER_SPAWNED]: 0,
         [CACHE_ORDER_TYPE]: type,
+        [CACHE_ORDER_CREATE]: Game.time,
       };
     else {
       // hande same name or smth
       const cache = Memory.cache.orders[this.ref];
-      cache[CACHE_ORDER_POS] = [pos.x, pos.y];
+      // we preserve create time and special info
+      cache[CACHE_ORDER_POS] = possToSave;
       cache[CACHE_ORDER_HIVE] = hive.roomName;
       cache[CACHE_ORDER_TYPE] = type;
     }
@@ -70,10 +76,14 @@ export class SwarmOrder<T> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (5)
 
   public get pos() {
     return this._pos;
+  }
+
+  public get print() {
+    return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.ref}"]</a>`;
   }
 
   // keep how many bees used up for this order
@@ -82,14 +92,14 @@ export class SwarmOrder<T> {
   }
 
   public get special(): T {
-    return this.cache[CACHE_ORDEC_SPECIAL] as T;
+    return this.cache[CACHE_ORDER_SPECIAL] as T;
   }
 
   public set special(value) {
-    this.cache[CACHE_ORDEC_SPECIAL] = value;
+    this.cache[CACHE_ORDER_SPECIAL] = value;
   }
 
-  // #endregion Public Accessors (4)
+  // #endregion Public Accessors (5)
 
   // #region Private Accessors (1)
 

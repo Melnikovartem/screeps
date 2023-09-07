@@ -516,7 +516,6 @@ export function minCutToExit(sources: Point[], costMap: CostMatrix): Point[] {
     return a.x - b.x;
   });
   assert.deepStrictEqual(result, expected);
-  console.log("Yes!");
 }
 
 USAGE(); 

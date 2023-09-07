@@ -441,7 +441,6 @@ function getCircleCenter(bx: number, by: number, cx: number, cy: number) {
   const B = bx * bx + by * by;
   const C = cx * cx + cy * cy;
   const D = bx * cy - by * cx;
-  if (D === 0) console.log("!", bx, by, " ", cx, cy);
   return new Point((cy * B - by * C) / (2 * D), (bx * C - cx * B) / (2 * D));
 }
 
@@ -505,7 +504,6 @@ function minCircleTrivial(P: Point[]): Circle {
 function welzlHelper(P: Point[], n: number, R: Point[]): Circle {
   // Base case when all points processed or |R| = 3
   if (n === 0 || R.length === 3) {
-    // console.log(n, R.length);
     return minCircleTrivial(R);
   }
 

@@ -1,7 +1,9 @@
 /**
  * Import statements
  */
+import type { CompressedRoom } from "antBrain/hivePlanner/planner-active";
 import type { Cell } from "cells/_Cell";
+import { AnnexCell } from "cells/base/annexCell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { BuildCell } from "cells/building/buildCell";
@@ -14,7 +16,7 @@ import { APPROX_PROFIT_RESOURCE, BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import type { HiveCells, ResTarget } from "./hive-declarations";
-import { addAnex, addResourceCells, updateDangerAnnex } from "./hive-mining";
+import { addResourceCells } from "./hive-mining";
 import { opt, updateCellData } from "./hive-utils";
 
 // Constant for a minimum amount of a certain mineral in the hive
@@ -28,18 +30,15 @@ export class Hive {
   /** List of annex names */
   private _annexNames: string[];
   private updateCellData = updateCellData;
-  private updateDangerAnnex = updateDangerAnnex;
 
   /** Configuration of different cell types within the hive */
   public readonly cells: HiveCells;
   /** Hive room name */
   public readonly roomName: string;
 
-  public addAnex = addAnex;
   /** added all resources from cache */
   public allResources = false;
   /** List of annexes in danger */
-  public annexInDanger: string[] = [];
   public bassboost: Hive | null = null;
   public mastersResTarget: ResTarget = {};
   public resState: { energy: number } & ResTarget = { energy: 0 };
@@ -82,6 +81,7 @@ export class Hive {
       build: new BuildCell(this),
       storage: new StorageCell(this),
       upgrade: new UpgradeCell(this),
+      annex: new AnnexCell(this),
     };
 
     if (!this.controller) return;
@@ -113,6 +113,12 @@ export class Hive {
 
     // creates all optional cells based on objectives
     this.updateCellData(true);
+  }
+
+  public roomPlanner(
+    roomName: string = this.roomName
+  ): CompressedRoom | undefined {
+    return Memory.longterm.roomPlanner[this.roomName]?.rooms[roomName];
   }
 
   // #endregion Constructors (1)
@@ -172,6 +178,10 @@ export class Hive {
   public get pos() {
     if (this.cells) return this.cells.defense.pos;
     return this.controller.pos;
+  }
+
+  public get annexInDanger() {
+    return this.cells.annex.annexInDanger;
   }
 
   public get print(): string {
@@ -244,8 +254,6 @@ export class Hive {
       this.updateCellData();
 
     if (!this.allResources && Apiary.intTime % 10 === 0) addResourceCells(this);
-
-    if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
 
     // ask for help
     if (

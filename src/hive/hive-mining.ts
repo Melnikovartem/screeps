@@ -1,45 +1,11 @@
 import { prefix, roomStates } from "static/enums";
-import { Traveler } from "Traveler/TravelerModified";
 
 import type { Hive } from "./hive";
-
-/**
- * Add an annex to the hive
- * @param {string} annexName - The name of the annex to add
- */
-export function addAnex(this: Hive, annexName: string) {
-  if (!this.annexNames.includes(annexName)) {
-    this.annexNames.push(annexName);
-    markResources(this);
-  }
-}
-
-export function updateDangerAnnex(this: Hive) {
-  this.annexInDanger = [];
-  _.forEach(this.annexNames, (annexName) => {
-    const path = Traveler.findRoute(this.roomName, annexName);
-    if (path)
-      for (const roomName in path) {
-        if (roomName === this.roomName) continue;
-        if (
-          !Apiary.intel.getInfo(roomName, 25).safePlace &&
-          (!Apiary.hives[roomName] ||
-            Apiary.hives[roomName].cells.defense.isBreached)
-        ) {
-          this.annexInDanger.push(annexName);
-          return;
-        }
-      }
-  });
-}
 
 // actually needs to be done only once, but well couple times each reboot is (not) worst scenario
 export function markResources(hive: Hive) {
   const annexes = _.compact(
-    _.map(hive.annexNames, (annexName) => {
-      const annex = Game.rooms[annexName];
-      return annex;
-    })
+    _.map(hive.annexNames, (annexName) => Game.rooms[annexName])
   );
   const rooms = [hive.room].concat(annexes);
 
