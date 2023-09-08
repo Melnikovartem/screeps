@@ -108,10 +108,13 @@ export class RoomPlanner {
         .concat(this.checking.minerals);
 
       const positions = this.startingPos(roomName, posInterest).concat(
-        extraStartingPos
+        _.map(extraStartingPos, (p) => {
+          return { x: p.x, y: p.y }; // if we add roompositions we drop roomName
+        })
       );
       if (!positions.length) return;
 
+      this.checking.positions = positions;
       return this.checkPosition(roomName, PLANNER_STEPS);
     });
     if (firstIter)

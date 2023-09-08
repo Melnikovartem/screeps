@@ -77,21 +77,35 @@ export class BuilderMaster extends Master<BuildCell> {
     return this.hive.state === hiveStates.battle ? 4 : 5;
   }
 
-  public get targetBeeCount() {
-    const boost = this.boosts ? "boost" : "normal";
+  private get patternsNeeded() {
     let patternsNeeded = 0;
+    /** how much generations of bees to complete all buildings */
+    let genToComplete = 1;
+
+    if (this.hive.phase < 1) genToComplete = 0.25; // rush things
+    else if (this.hive.phase === 2 && this.hive.state === hiveStates.economy)
+      genToComplete = 2; // no need to rush big projects
+
+    const boost = this.boosts ? "boost" : "normal";
     for (const mode of ["hive", "annex"] as M[])
       for (const rr of ["repair", "build"] as R[])
         patternsNeeded +=
           this.parent.buildingCosts[mode][rr] /
-          BUILDING_PER_PATTERN[boost][mode][rr];
+          BUILDING_PER_PATTERN[boost][mode][rr] /
+          genToComplete;
+
+    return patternsNeeded;
+  }
+
+  public get targetBeeCount() {
+    const patternsNeeded = this.patternsNeeded;
 
     this.patternPerBee = setups.builder.patternLimit;
-
     if (this.realBattle || this.otherEmergency) {
       this.patternPerBee = Infinity;
       this.patternPerBee = Math.min(this.maxPatternBee, this.patternPerBee);
     }
+
     let target = patternsNeeded / this.patternPerBee;
     let maxBees = this.parent.buildingCosts.hive.build > 5_000 ? 2 : 1;
 

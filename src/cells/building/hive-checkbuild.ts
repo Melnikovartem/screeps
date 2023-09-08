@@ -321,9 +321,10 @@ export function addUpgradeBoost(hiveName: string): checkBuildingsReturn {
   const energyCost = { ...ZERO_COSTS_BUILDING_HIVE.hive };
   // dont need to manually add container for upgrading
 
+  // first 2 links are for storage / fastRef
   if (
     !hive ||
-    CONTROLLER_STRUCTURES[STRUCTURE_LINK][hive.controller.level] > 0 ||
+    CONTROLLER_STRUCTURES[STRUCTURE_LINK][hive.controller.level] > 2 ||
     hive.controller.level <= 1
   )
     return [buildProjectList, energyCost];

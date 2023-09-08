@@ -23,21 +23,31 @@ export class FastRefillCell extends Cell {
   public constructor(parent: RespawnCell) {
     super(parent.hive, prefix.fastRefillCell);
     this.parentCell = this.hive.cells.spawn;
+
+    const masterPositions = [];
     for (let dx = -1; dx <= 1; dx += 2)
-      for (let dy = -1; dy <= 1; dy += 2) {
-        const pos = new RoomPosition(
-          this.pos.x + dx,
-          this.pos.y + dy,
-          this.pos.roomName
+      for (let dy = -1; dy <= 1; dy += 2)
+        masterPositions.push(
+          new RoomPosition(this.pos.x + dx, this.pos.y + dy, this.pos.roomName)
         );
-        const container = this.pos.findClosest(
-          pos
-            .findInRange(FIND_STRUCTURES, 1)
-            .filter((s) => s.structureType === STRUCTURE_CONTAINER)
-        ) as StructureContainer | null;
-        if (container)
-          this.masters.push(new FastRefillMaster(this, container, pos));
-      }
+
+    // sort for faster upgrading earlygame
+    masterPositions.sort(
+      (a, b) =>
+        a.getRangeApprox(this.hive.controller) -
+        b.getRangeApprox(this.hive.controller)
+    );
+
+    // add the masters
+    for (const pos of masterPositions) {
+      const container = this.pos.findClosest(
+        pos
+          .findInRange(FIND_STRUCTURES, 1)
+          .filter((s) => s.structureType === STRUCTURE_CONTAINER)
+      ) as StructureContainer | null;
+      if (container)
+        this.masters.push(new FastRefillMaster(this, container, pos));
+    }
 
     this.link = this.pos
       .lookFor(LOOK_STRUCTURES)

@@ -250,7 +250,10 @@ export class Hive {
 
     this.mastersResTarget = {};
 
-    if (Apiary.intTime % 1500 === 1499 || this.state === hiveStates.nospawn)
+    if (
+      Apiary.intTime % 1500 === 1499 ||
+      this.cells.spawn.recordedCapacity !== this.room.energyCapacityAvailable
+    )
       this.updateCellData();
 
     if (!this.allResources && Apiary.intTime % 10 === 0) addResourceCells(this);

@@ -86,13 +86,11 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     const targetPrecise =
       Math.min(desiredRate, this.parent.maxPossibleRate) /
       this.parent.ratePerCreepMax;
-    let ans = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
+    const beeCount = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
     this.patternPerBee = Math.round(
-      (targetPrecise / ans) * this.parent.workPerCreepMax
+      (targetPrecise / beeCount) * this.parent.workPerCreepMax
     );
-    if (this.hive.cells.dev)
-      ans = Math.min(ans, this.hive.cells.dev.maxUpgraderBeeCount);
-    return ans;
+    return beeCount;
   }
 
   // #endregion Public Accessors (2)
@@ -145,6 +143,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
         // let pos = target.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
         if (suckerTarget && suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY))
           bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        else bee.goRest(this.pos);
         bee.state = beeStates.work;
       }
 

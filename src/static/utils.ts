@@ -252,3 +252,9 @@ export function goodSpot(roomName: string) {
 
   return new RoomPosition(xbest, ybest, roomName);
 }
+
+/** reverses direction */
+export function reverseDirection(direction: DirectionConstant) {
+  const newDirection = ((direction - 1 + 4) % 8) + 1;
+  return newDirection as DirectionConstant;
+}

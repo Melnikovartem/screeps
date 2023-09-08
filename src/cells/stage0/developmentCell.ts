@@ -66,7 +66,7 @@ export class DevelopmentCell extends Cell {
       //  * 2 * 0.8 : 2 for trips, 0.8 for overhead
     }
 
-    const body = setups.managerQueen.getBody(
+    const body = this.sCell.master.setup.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;
     this.carryCapacity =
@@ -97,7 +97,8 @@ export class DevelopmentCell extends Cell {
 
   // upper bound on builders
   public get maxBuilderBeeCount() {
-    const energyPerBee =
+    // much can we consume per tick if we build inside hive (costliest)
+    const energyPerBeeTick =
       (BUILDING_PER_PATTERN.normal.hive.build *
         Math.max(
           this.hive.cells.build.master.maxPatternBee,
@@ -107,7 +108,7 @@ export class DevelopmentCell extends Cell {
 
     // send all energy instead of upgrading to building
     return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
-      ? Math.round(this.hive.approxIncome / energyPerBee) + 1
+      ? Math.ceil(this.hive.approxIncome / energyPerBeeTick) // do not consume more then we produce
       : 0;
   }
 
@@ -142,17 +143,21 @@ export class DevelopmentCell extends Cell {
 
   public minerBeeCount(cell: ResourceCell) {
     if (cell.resType !== RESOURCE_ENERGY) return 0;
-    const harvestAmount =
+    let harvestAmount =
       Math.floor(
         this.hive.room.energyCapacityAvailable /
           (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5)
       ) * HARVEST_POWER;
-    let maxBees = Math.round(
-      cell.resourceCapacity / ENERGY_REGEN_TIME / harvestAmount
-    );
+
     // will be buidling and not mining
     const c = cell.master.construction;
-    if (c && c.progressTotal - c.progress > 1_000) maxBees *= 2;
+    // 3m-b-2m-b (5 mine 2 build actions)
+    if (c && c.progressTotal - c.progress > 1_000) harvestAmount *= 5 / 7;
+
+    const maxBees = Math.round(
+      cell.resourceCapacity / ENERGY_REGEN_TIME / harvestAmount
+    );
+
     return Math.max(
       Math.min(
         Math.floor(cell.resource?.pos.getOpenPositions().length || 1),
@@ -188,6 +193,8 @@ export class DevelopmentCell extends Cell {
         ),
         5
       ) - builder.beesAmount;
+
+    if (buildBees !== 0) console.log("build bee in dev balance", buildBees);
 
     if (buildBees >= 1 && !upgTarget && buildTarget) {
       // send some upgraders to help with building
@@ -269,7 +276,8 @@ export class DevelopmentCell extends Cell {
       this.hive.storage,
       4,
       RESOURCE_ENERGY,
-      amount
+      amount,
+      true
     );
     if (!request.isValid()) return;
     this.sCell.requests[ref] = request;

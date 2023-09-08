@@ -17,14 +17,33 @@ export class ManagerMaster extends Master<StorageCell> {
 
   // #endregion Properties (1)
 
-  // #region Public Accessors (1)
+  // #region Public Accessors (2)
+
+  public get setup() {
+    const setup = setups.managerQueen.copy();
+    const lvl = this.hive.controller.level;
+    // some cool function i came up with. It works utill lvl 8 though
+
+    setup.patternLimit = Math.round(-0.004 * Math.pow(lvl, 3) + 1.8 * lvl + 8); // math out of my ass again
+
+    if (this.hive.state === hiveStates.lowenergy)
+      setup.patternLimit = Math.ceil(setup.patternLimit / 2);
+
+    // bunch of very small ones
+    if (this.hive.cells.dev) {
+      setup.patternLimit = DEV_MAX_HAULER_PATTERN;
+      // support all carry parts cause no roads early
+      if (this.hive.controller.level <= 2) setup.moveMax = MAX_CREEP_SIZE / 2;
+    }
+    return setup;
+  }
 
   public get targetBeeCount() {
     if (this.hive.cells.dev) return this.hive.cells.dev.managerBeeCount;
     return 2;
   }
 
-  // #endregion Public Accessors (1)
+  // #endregion Public Accessors (2)
 
   // #region Private Accessors (1)
 
@@ -188,26 +207,11 @@ export class ManagerMaster extends Master<StorageCell> {
       }
     });
 
-    if (this.checkBees(true)) {
-      const setup = setups.managerQueen.copy();
-      const lvl = this.hive.controller.level;
-      // some cool function i came up with. It works utill lvl 8 though
-
-      setup.patternLimit = Math.round(
-        -0.004 * Math.pow(lvl, 3) + 1.8 * lvl + 8
-      ); // math out of my ass again
-
-      if (this.hive.state === hiveStates.lowenergy)
-        setup.patternLimit = Math.ceil(setup.patternLimit / 2);
-
-      // bunch of very small ones
-      if (this.hive.cells.dev) setup.patternLimit = DEV_MAX_HAULER_PATTERN;
-
+    if (this.checkBees(true))
       this.wish({
-        setup,
+        setup: this.setup,
         priority: 0,
       });
-    }
   }
 
   // #endregion Public Methods (2)

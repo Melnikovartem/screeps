@@ -98,7 +98,7 @@ export class UpgradeCell extends Cell {
       | undefined;
     if (!link) {
       const links = this.pos
-        .findInRange(FIND_MY_STRUCTURES, 3)
+        .findInRange(FIND_MY_STRUCTURES, 2)
         .filter((s) => s.structureType === STRUCTURE_LINK);
       if (links.length)
         link = links.reduce((prev, curr) =>

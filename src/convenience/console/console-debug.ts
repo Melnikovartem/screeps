@@ -148,7 +148,12 @@ CustomConsole.prototype.printBees = function (
     return this.printByHive(obj);
   }
   obj = _.map(bees, (b) => {
-    return { print: b.print, master: b.master };
+    return {
+      print: `${b.print} : ${b.state} : ${
+        Game.getObjectById(b.target as Id<_HasId>) || b.target || ""
+      }`,
+      master: b.master,
+    };
   });
   return this.printByMasters(obj);
 };

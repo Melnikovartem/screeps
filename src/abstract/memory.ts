@@ -20,7 +20,10 @@ export class Mem {
     for (const name in Memory.flags)
       if (!Game.creeps[name]) delete Memory.flags[name];
     for (const name in Apiary.flags)
-      if (!Game.flags[name]) Apiary.flags[name].delete();
+      if (!Game.flags[name]) {
+        Apiary.flags[name].delete();
+        delete Apiary.flags[name];
+      }
 
     Apiary.logger.clean();
   }

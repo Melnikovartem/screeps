@@ -1,7 +1,12 @@
 import type { FlagCommand } from "./flagCommands";
 
-// can be only one of this at each time
-const ONLY_ONE_ACTIVE_PLAN: number[] = [COLOR_BLUE, COLOR_YELLOW];
+// can be only one of this at each time cause they create checking object on planner
+const ONLY_ONE_ACTIVE_PLAN: number[] = [
+  COLOR_BLUE,
+  COLOR_YELLOW,
+  COLOR_CYAN,
+  COLOR_ORANGE,
+];
 
 export function actPlanner(cm: FlagCommand) {
   // remove other active ones so that it can do it's job
@@ -18,31 +23,35 @@ export function actPlanner(cm: FlagCommand) {
   const pl = Apiary.colony.planner;
 
   switch (cm.secondaryColor) {
-    case COLOR_BROWN: {
-      // clean from hostile stuff room
-      const room = Game.rooms[cm.pos.roomName];
-      if (room && room.controller && room.controller.my) {
-        _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => s.destroy());
-        _.forEach(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), (c) =>
-          c.remove()
-        );
-      }
-      break;
-    }
     case COLOR_BLUE: {
+      // create plan for new room
       if (!pl.canStartNewPlan) {
-        if (Apiary.intTime % 100 === 0)
+        if ((Game.time - cm.createTime) % 100 === 0)
           console.log(`!CAN'T START PLAN @${cm.print}`);
         cm.acted = false;
         return;
       }
-      pl.createPlan(cm.pos.roomName, [cm.pos.print]);
+      pl.createPlan(cm.pos.roomName, [], [cm.pos]);
       console.log(`STARTED PLAN @${cm.pos.print}`);
       break;
     }
-    case COLOR_YELLOW:
+    case COLOR_CYAN: {
+      // create plan for hive (placed inside one)
+      if (cm.hiveName !== cm.pos.roomName) return;
       if (!pl.canStartNewPlan) {
-        if (Apiary.intTime % 100 === 0)
+        if ((Game.time - cm.createTime) % 100 === 0)
+          console.log(`!CAN'T START PLAN @${cm.hive.print}`);
+        cm.acted = false;
+        return;
+      }
+      pl.createPlan(cm.hiveName, cm.hive.annexNames, [cm.pos, cm.hive.pos]);
+      console.log(`STARTED PLAN @${cm.hive.print}`);
+      break;
+    }
+    case COLOR_YELLOW:
+      // create annex roads for hive
+      if (!pl.canStartNewPlan) {
+        if ((Game.time - cm.createTime) % 100 === 0)
           console.log(`!CAN'T START ROADS @${cm.print}`);
         cm.acted = false;
         return;
@@ -74,6 +83,17 @@ export function actPlanner(cm: FlagCommand) {
         );
       else if (sType === "null") pl.emptySpot(cm.pos);
       else console.log(`NOT KNOWN STRUCTURE TYPE ${cm.print}`);
+      break;
+    }
+    case COLOR_BROWN: {
+      // clean from hostile stuff room
+      const room = Game.rooms[cm.pos.roomName];
+      if (room && room.controller && room.controller.my) {
+        _.forEach(room.find(FIND_HOSTILE_STRUCTURES), (s) => s.destroy());
+        _.forEach(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), (c) =>
+          c.remove()
+        );
+      }
       break;
     }
     case COLOR_GREY:

@@ -39,6 +39,7 @@ interface TravelToOptions {
   // mine
   weightOffRoad?: number;
   ignoreCurrent?: boolean;
+  flee?: boolean;
 }
 
 interface TravelData {

@@ -413,6 +413,7 @@ export class Traveler {
           ? 5
           : 10,
         roomCallback: callback,
+        flee: options.flee,
       }
     );
 
