@@ -154,10 +154,10 @@ export class UpgradeCell extends Cell {
   public override update() {
     this.updateObjects([]);
 
-    // at creation time or while room is small each 2K ticks
+    // at creation time or while room is small each 1.5K ticks (Math.random() < 0.0005)
     if (
       Apiary.intTime === 0 ||
-      (this.controller.level < 8 && Math.random() < 0.0005)
+      (this.controller.level < 8 && Apiary.intTime % CREEP_LIFE_TIME === 0)
     )
       this.recalculateRate();
 

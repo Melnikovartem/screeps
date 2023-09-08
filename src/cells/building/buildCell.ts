@@ -32,7 +32,7 @@ export class BuildCell extends Cell {
 
   /** sum of construction cost */
   public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
-  public forceCheck: "" | "mainroom" | "annex" = "";
+  public forceCheck: "" | "mainroom" | "annex" = "annex";
   public getBuildTarget = getBuildTarget;
   public override master: BuilderMaster;
   public structuresConst: BuildProject[] = [];

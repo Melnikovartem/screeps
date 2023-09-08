@@ -147,7 +147,6 @@ function addConstruction(
     }
     // add even if no construction cost so we can plan bases at all volume of jobs
     energyCost.build += CONSTRUCTION_COST[sType];
-    if (energyCost.build) console.log(sType, toadd[i]);
 
     if (isDefense) {
       let heal = WALLS_START;

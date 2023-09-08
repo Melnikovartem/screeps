@@ -203,7 +203,7 @@ export class Hive {
         1,
         _.filter(
           this.cells.excavation.resourceCells,
-          (s) => s.resType === RESOURCE_ENERGY
+          (s) => s.resType === RESOURCE_ENERGY && s.operational
         ).length
       ) * APPROX_PROFIT_RESOURCE
     );

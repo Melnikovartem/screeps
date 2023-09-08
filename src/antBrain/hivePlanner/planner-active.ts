@@ -223,7 +223,6 @@ export function fromCache(this: RoomPlanner, hiveName: string) {
   if (!mem) return ERR_NOT_FOUND;
 
   const mainPos = mem.posCell[prefix.defenseCell];
-  console.log("3 fromCache", mainPos);
   if (!mainPos) return ERR_NOT_FOUND;
   const ch = this.checking;
   ch.positions = [new RoomPosition(mainPos[0], mainPos[1], ch.roomName)];
