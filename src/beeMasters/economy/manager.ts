@@ -7,6 +7,8 @@ import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 
+export const DEV_MAX_HAULER_PATTERN = 6; // 300 carry and 9 body blocks
+
 @profile
 export class ManagerMaster extends Master<StorageCell> {
   // #region Properties (1)
@@ -44,7 +46,7 @@ export class ManagerMaster extends Master<StorageCell> {
         return;
       }
 
-      if (bee.pos.roomName !== this.pos.roomName) bee.state = beeStates.chill;
+      // if (bee.pos.roomName !== this.pos.roomName) bee.state = beeStates.chill;
       if (bee.ticksToLive < 10) bee.state = beeStates.fflush;
 
       const transfer = bee.target && this.requests[bee.target];
@@ -197,6 +199,9 @@ export class ManagerMaster extends Master<StorageCell> {
 
       if (this.hive.state === hiveStates.lowenergy)
         setup.patternLimit = Math.ceil(setup.patternLimit / 2);
+
+      // bunch of very small ones
+      if (this.hive.cells.dev) setup.patternLimit = DEV_MAX_HAULER_PATTERN;
 
       this.wish({
         setup,

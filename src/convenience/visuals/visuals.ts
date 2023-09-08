@@ -291,13 +291,14 @@ export class Visuals {
       return;
 
     // add structures
-    for (const roomName in ch.best.rooms) {
+    const ap = ch.active;
+    for (const roomName in ap.rooms) {
       if (
         this.caching[roomName] &&
         this.caching[roomName].lastRecalc > Game.time
       )
         continue;
-      const plan = ch.best.rooms[roomName].compressed;
+      const plan = ap.rooms[roomName].compressed;
       this.changeAnchor(0, 0, roomName, true);
       const vis = this.anchor.vis;
       const hive = Apiary.hives[roomName];

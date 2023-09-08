@@ -101,10 +101,8 @@ export class RoomPlanner {
 
   public createRoads(hive: Hive) {
     Apiary.engine.addTask("roads plan @" + hive.roomName, () =>
-      this.toActive(
-        hive.roomName,
-        hive.annexNames,
-        this.checkPosition(hive.roomName, PLANNER_ROADS)?.f
+      this.toActive(hive.roomName, hive.annexNames, () =>
+        this.checkPosition(hive.roomName, PLANNER_ROADS)
       )
     );
   }
@@ -185,25 +183,24 @@ export class RoomPlanner {
     const rFunc = { f: () => this.checkPosition(roomName, steps) };
 
     const cpu = Game.cpu.getUsed();
-    let ans: OK | ERR_FULL | ERR_NOT_FOUND = OK;
+    let ans: OK | ERR_FULL | ERR_NOT_FOUND | ERR_NOT_IN_RANGE = OK;
     const desc = () =>
-      ans !== OK
-        ? console.log(
-            `\tPLANNER STEP ${
-              this.checking
-                ? PLANNER_STEPS[this.checking.activeStep].name
-                : "NOCKECKING"
-            } ${"FAILED!!!"} IN ${
-              // ans === OK ? "FINISHED" : "FAILED!!!"
-              Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000
-            }`
-          )
-        : undefined;
+      console.log(
+        `\tPLANNER STEP ${
+          this.checking ? steps[this.checking.activeStep].name : "NOCKECKING"
+        } ${
+          ans === OK
+            ? "FINISHED"
+            : ans === ERR_NOT_IN_RANGE
+            ? "REPEATING"
+            : "FAILED!!!"
+        } IN ${Math.round((Game.cpu.getUsed() - cpu) * 1000) / 1000}`
+      );
 
-    ans = PLANNER_STEPS[this.checking.activeStep](this.checking);
+    ans = steps[this.checking.activeStep](this.checking);
     endBlock(this.checking.active);
 
-    if (ans === ERR_FULL && !this.checking.activeStep) {
+    if (ans === ERR_NOT_FOUND) {
       // finished all positions
       ans = this.savePlan();
       this.checking = undefined;
@@ -215,7 +212,11 @@ export class RoomPlanner {
       };
     }
 
-    desc();
+    if (ans === ERR_NOT_IN_RANGE) {
+      return rFunc;
+    }
+
+    if (ans !== OK) desc();
 
     if (ans === ERR_FULL) {
       // error go next position
@@ -225,7 +226,7 @@ export class RoomPlanner {
     }
 
     ++this.checking.activeStep;
-    if (this.checking.activeStep >= PLANNER_STEPS.length) {
+    if (this.checking.activeStep >= steps.length) {
       // finished full position
       // 100+ CPU final product
       this.checking.activeStep = 0;

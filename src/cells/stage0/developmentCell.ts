@@ -1,5 +1,6 @@
 import type { Master, MasterParent } from "beeMasters/_Master";
 import { BUILDING_PER_PATTERN } from "beeMasters/economy/builder";
+import { DEV_MAX_HAULER_PATTERN } from "beeMasters/economy/manager";
 import { setups } from "bees/creepSetups";
 import { TransferRequest } from "bees/transferRequest";
 import type { ResourceCell } from "cells/base/resourceCell";
@@ -10,7 +11,10 @@ import { hiveStates, prefix, setupsNames } from "static/enums";
 import { Cell } from "../_Cell";
 
 // just to failsafe cap
-const MAX_HAULERS_ON_TARGET = 8;
+const DEV_MAX_HAULERS_ON_TARGET = 8;
+// cap on size of haulers cause tick time
+const DEV_MAX_HAULER_PER_SPAWN = 32;
+const DEV_RESOURCE_COEF_FULL = 0.75;
 
 /** takes over in case of emergencies
  * // no spawn
@@ -68,9 +72,18 @@ export class DevelopmentCell extends Cell {
     this.carryCapacity =
       body.filter((b) => b === CARRY).length * CARRY_CAPACITY;
 
+    this.carryCapacity = Math.min(
+      this.carryCapacity,
+      DEV_MAX_HAULER_PATTERN * CARRY_CAPACITY
+    );
+
     let rounding = (x: number) => Math.round(x + 0.1);
     if (this.controller.level <= 2) rounding = (x) => Math.round(x);
-    return rounding(accumRoadTime / this.carryCapacity);
+    return Math.min(
+      DEV_MAX_HAULER_PER_SPAWN *
+        Object.keys(this.hive.cells.spawn.spawns).length,
+      rounding(accumRoadTime / this.carryCapacity)
+    );
   }
 
   // upper bound on upgraders
@@ -201,8 +214,7 @@ export class DevelopmentCell extends Cell {
       if (!room) return;
 
       _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
-        if (cell.container)
-          this.sCell.requestToStorage([cell.container], 4, RESOURCE_ENERGY);
+        if (cell.container) this.sendToStorage(cell.container);
       });
 
       _.forEach(room.find(FIND_DROPPED_RESOURCES), (r) => {
@@ -234,19 +246,17 @@ export class DevelopmentCell extends Cell {
     if (target instanceof Resource) amount = target.amount;
     else amount = target.store.getUsedCapacity(RESOURCE_ENERGY);
     // ignore super small piles
-    if (amount <= CARRY_CAPACITY * 0.5) return;
+    if (amount <= this.carryCapacity * DEV_RESOURCE_COEF_FULL) return;
     let it = 0;
     let ref = target.id + "_" + it;
     let existing = this.sCell.requests[ref];
-    while (existing && it <= MAX_HAULERS_ON_TARGET) {
+    while (existing && it <= DEV_MAX_HAULERS_ON_TARGET) {
       // already an unused order for this just update amount
-      if (!existing.beeProcess) {
-        existing.amount = amount;
-        return;
-      } else if (!(target instanceof Resource)) {
+      if (!existing.beeProcess) return;
+      else {
         // some of the resource will be hauled out
         amount -= this.carryCapacity;
-        if (amount <= CARRY_CAPACITY * 0.5) return;
+        if (amount <= this.carryCapacity * DEV_RESOURCE_COEF_FULL) return;
       }
       ref = target.id + "_" + ++it;
       existing = this.sCell.requests[ref];

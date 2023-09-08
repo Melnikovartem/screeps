@@ -2,10 +2,10 @@ import type { FnEngine } from "engine";
 import type { Hive } from "hive/hive";
 import type { HiveCells } from "hive/hive-declarations";
 import { ERR_NO_VISION } from "static/constants";
-import { roomStates } from "static/enums";
+import { prefix, roomStates } from "static/enums";
 
 import { initMatrix } from "./addRoads";
-import { PLANNER_STAMP_STOP } from "./planner-utils";
+import { addStructure, PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
 
 type CompressedStructures = ([number, number] | typeof PLANNER_STAMP_STOP)[];
@@ -222,14 +222,22 @@ export function fromCache(this: RoomPlanner, hiveName: string) {
   _.forEach(mem.rooms, (roomPlan, roomName) => {
     if (!roomName) return;
     ch.best.rooms[roomName] = initMatrix(roomName);
+
     _.forEach(roomPlan, (buildInfo, sType) => {
       const structureType = sType as BuildableStructureConstant;
-      ch.best.rooms[roomName].compressed[structureType] = {
-        que: _.cloneDeep(buildInfo),
-        len: _.sum(buildInfo, (b) => (b === PLANNER_STAMP_STOP ? 0 : 1)),
-      };
+      _.forEach(buildInfo, (b) => {
+        if (b !== PLANNER_STAMP_STOP)
+          addStructure(
+            { x: b[0], y: b[1] },
+            structureType,
+            ch.best.rooms[roomName]
+          );
+      });
     });
   });
-  ch.active = _.cloneDeep(ch.best);
+  const mainPos = ch.best.posCell[prefix.defenseCell];
+  if (mainPos)
+    ch.positions = [[new RoomPosition(mainPos[0], mainPos[1], ch.roomName), 0]];
+  ch.active = ch.best;
   return OK;
 }

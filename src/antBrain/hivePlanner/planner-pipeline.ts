@@ -12,6 +12,7 @@ import {
   addStructure,
   endBlock,
   PLANNER_COST,
+  PLANNER_STAMP_STOP,
 } from "./planner-utils";
 import type { PlannerChecking } from "./roomPlanner";
 import {
@@ -24,7 +25,10 @@ import {
   STAMP_REST,
 } from "./stamps";
 
-type PlannerStep = (ch: PlannerChecking) => OK | ERR_FULL;
+// ok, error, done, repeat step
+type PlannerStep = (
+  ch: PlannerChecking
+) => OK | ERR_FULL | ERR_NOT_FOUND | ERR_NOT_IN_RANGE;
 
 const PLANNER_PADDING = {
   resource: 1,
@@ -54,18 +58,27 @@ export const PLANNER_STEPS: PlannerStep[] = [
   finalDefenses,
 ];
 
-export const PLANNER_ROADS: PlannerStep[] = [addResources];
+export const PLANNER_ROADS: PlannerStep[] = [updateActive, addResources];
+
+// first one should return ERR_NOT_FOUND if done with positions
 
 function innitActive(ch: PlannerChecking) {
-  const posIter = ch.positions.shift();
-  if (!posIter) return ERR_FULL;
-  const pos = new RoomPosition(posIter[0].x, posIter[0].y, ch.roomName);
   ch.active = {
-    centers: [pos],
+    centers: [],
     posCell: {},
-    rooms: { [ch.roomName]: initMatrix(ch.roomName) },
+    rooms: {},
     metrics: { ...PLANNER_EMPTY_METRICS },
   };
+  ch.active.rooms[ch.roomName] = initMatrix(ch.roomName);
+
+  return updateActive(ch);
+}
+
+function updateActive(ch: PlannerChecking) {
+  const posIter = ch.positions.shift();
+  if (!posIter) return ERR_NOT_FOUND;
+  const pos = new RoomPosition(posIter[0].x, posIter[0].y, ch.roomName);
+  ch.active.centers = [pos];
 
   const ap = ch.active;
 
@@ -252,9 +265,20 @@ function addResources(ch: PlannerChecking) {
   const roomMatrix = ch.active.rooms[ch.roomName];
   ch.active.metrics.sumRoadRes = 0;
 
-  for (const resPos of ch.sources) {
+  const addResourceBasic = (resPos: RoomPosition) => {
+    if (
+      _.filter(
+        ch.active.rooms[resPos.roomName]?.compressed[STRUCTURE_CONTAINER]
+          ?.que || [],
+        (p) =>
+          p !== PLANNER_STAMP_STOP &&
+          resPos.getRangeTo(new RoomPosition(p[0], p[1], resPos.roomName)) === 1
+      ).length
+    ) {
+      return OK;
+    }
     const [ans, time] = addRoad(pos, resPos, ch.active);
-    if (ans !== OK) return ERR_FULL;
+    if (ans !== OK) return ERR_NOT_IN_RANGE;
     if (resPos.roomName === ch.roomName) ch.active.metrics.sumRoadRes += time;
     const containerPos = addContainer(
       resPos,
@@ -262,9 +286,19 @@ function addResources(ch: PlannerChecking) {
       pos
     );
     if (containerPos === ERR_NOT_FOUND) return ERR_FULL;
+    return containerPos;
+  };
+
+  for (const resPos of ch.sources) {
+    const ansRes = addResourceBasic(resPos);
+    if (ansRes === OK) continue;
+    if (ansRes === ERR_FULL) return ERR_FULL;
+    if (ansRes === ERR_NOT_IN_RANGE) return ERR_NOT_IN_RANGE;
+
+    // adding link
     if (
       ch.roomName === resPos.roomName &&
-      addLink(containerPos, roomMatrix, pos, 1, false) === ERR_NOT_FOUND
+      addLink(ansRes, roomMatrix, pos, 1, false) === ERR_NOT_FOUND
     )
       return ERR_FULL;
     endBlock(ch.active, STRUCTURE_ROAD);
@@ -272,15 +306,11 @@ function addResources(ch: PlannerChecking) {
   endBlock(ch.active);
 
   for (const resPos of ch.minerals) {
-    const [ans, time] = addRoad(pos, resPos, ch.active);
-    if (ans !== OK) return ERR_FULL;
-    if (resPos.roomName === ch.roomName) ch.active.metrics.sumRoadRes += time;
-    const containerPos = addContainer(
-      resPos,
-      ch.active.rooms[resPos.roomName],
-      pos
-    );
-    if (containerPos === ERR_NOT_FOUND) return ERR_FULL;
+    const ansRes = addResourceBasic(resPos);
+    if (ansRes === OK) continue;
+    if (ansRes === ERR_FULL) return ERR_FULL;
+    if (ansRes === ERR_NOT_IN_RANGE) return ERR_NOT_IN_RANGE;
+
     if (ch.roomName === resPos.roomName)
       addStructure(resPos, STRUCTURE_EXTRACTOR, roomMatrix);
     endBlock(ch.active);
