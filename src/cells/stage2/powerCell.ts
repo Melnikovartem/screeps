@@ -72,7 +72,7 @@ export class PowerCell extends Cell {
   }
 
   public override update() {
-    this.updateObject();
+    this.updateObjects([]);
     if (!this.powerSpawn) {
       this.delete();
       return;

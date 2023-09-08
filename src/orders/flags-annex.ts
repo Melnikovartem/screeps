@@ -1,58 +1,16 @@
-import { ClaimerMaster } from "beeMasters/civil/claimer";
 import { PuppetMaster } from "beeMasters/civil/puppet";
 import { AnnexMaster } from "beeMasters/economy/annexer";
 import { SKMaster } from "beeMasters/war/safeSK";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import type { FlagOrder } from "./order";
+import type { FlagCommand } from "./flagCommands";
 
-export function actAnnex(order: FlagOrder) {
+export function actAnnex(order: FlagCommand) {
   switch (order.secondaryColor) {
     case COLOR_PURPLE:
       if (order.pos.getRoomRangeTo(order.hive, "path") >= 6) {
         order.delete();
         break;
-      }
-
-      if (!(order.pos.roomName in Game.rooms)) {
-        Apiary.oracle.requestSight(order.pos.roomName);
-        if (
-          !order.hive.cells.observe &&
-          !order.master &&
-          !Game.flags[prefix.puppet + order.pos.roomName]
-        ) {
-          order.master = new PuppetMaster(order);
-          order.master.maxSpawns = Infinity; // order.master.spawned + 1;
-        }
-        order.acted = false;
-        break;
-      }
-
-      if (order.master instanceof PuppetMaster) {
-        let nonClaim = order.master.beesAmount;
-        _.forEach(order.master.bees, (b) =>
-          !b.getBodyParts(CLAIM)
-            ? (b.creep.memory.refMaster =
-                prefix.master +
-                prefix.swarm +
-                prefix.puppet +
-                order.pos.roomName)
-            : --nonClaim
-        );
-        if (nonClaim) {
-          const ans = order.pos.createFlag(
-            prefix.puppet + order.pos.roomName,
-            COLOR_GREY,
-            COLOR_PURPLE
-          );
-          if (typeof ans === "string")
-            Game.flags[ans].memory = {
-              hive: order.hiveName,
-              info: order.master.spawned,
-            };
-        }
-        order.master.delete();
-        order.master = undefined;
       }
 
       if (!order.fixedName(prefix.reserve + order.pos.roomName)) break;
@@ -106,7 +64,7 @@ export function actAnnex(order: FlagOrder) {
       break;
     case COLOR_GREY:
       if (Object.keys(Apiary.hives).length < Game.gcl.level) {
-        if (!order.master) order.master = new ClaimerMaster(order);
+        order.cre();
       } else order.acted = false;
       break;
     case COLOR_WHITE: {
@@ -142,7 +100,7 @@ export function actAnnex(order: FlagOrder) {
   }
 }
 
-export function deleteAnnex(order: FlagOrder) {
+export function deleteAnnex(order: FlagCommand) {
   switch (order.secondaryColor) {
     case COLOR_WHITE: {
       const hiveBoosted = Apiary.hives[order.pos.roomName];

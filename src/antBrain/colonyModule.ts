@@ -4,22 +4,18 @@ import { roomStates } from "static/enums";
 import { RoomPlanner } from "./hivePlanner/roomPlanner";
 
 export class ColonyBrianModule {
-  // #region Properties (2)
-
-  private test = false;
+  // #region Properties (1)
 
   public planner = new RoomPlanner();
 
-  // #endregion Properties (2)
+  // #endregion Properties (1)
 
   // #region Public Methods (2)
 
-  public run() {
-    if (this.test) this.planner.createPlan(Object.keys(Apiary.hives)[0]);
-    this.test = false;
-  }
+  public run() {}
 
   public update() {
+    this.planner.update();
     _.forEach(Apiary.hives, (hive) => this.updateHive(hive));
   }
 
@@ -36,9 +32,17 @@ export class ColonyBrianModule {
   }
 
   private checkBuildings(hive: Hive) {
-    if (!hive.roomPlanner()) this.planner.createPlan(hive.roomName);
-    else if (!hive.cells.annex.allResourcesRoads)
-      this.planner.createRoads(hive);
+    if (!this.planner.canStartNewPlan) return;
+    if (!hive.roomPlanner()) {
+      if (hive.phase < 2)
+        // do not destroy if hive is setup for lategame
+        this.planner.createPlan(hive.roomName, hive.annexNames);
+      else {
+        // current to active ?
+      }
+      return;
+    }
+    if (!hive.cells.annex.allResourcesRoads) this.planner.createRoads(hive);
   }
 
   private updateHive(hive: Hive) {

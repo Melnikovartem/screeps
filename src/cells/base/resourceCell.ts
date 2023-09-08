@@ -12,7 +12,9 @@ const MAX_MINING_DIST = 200;
 // cell that will extract energy or minerals? from ground <- i am proud with this smart comment i made at 1am
 @profile
 export class ResourceCell extends Cell {
-  // #region Properties (12)
+  // #region Properties (13)
+
+  private resId: Id<Source | Mineral>;
 
   public _fleeLairTime: number = this.cache("_fleeLairTime") || Infinity;
   public _restTime: number = this.cache("_restTime") || Infinity;
@@ -25,9 +27,9 @@ export class ResourceCell extends Cell {
   public parentCell: ExcavationCell;
   public poss: { x: number; y: number; roomName?: string };
   public resType: ResourceConstant = RESOURCE_ENERGY;
-  public resource: Source | Mineral;
+  public resource: Source | Mineral | null;
 
-  // #endregion Properties (12)
+  // #endregion Properties (13)
 
   // #region Constructors (1)
 
@@ -38,6 +40,7 @@ export class ResourceCell extends Cell {
   ) {
     super(hive, prefix.resourceCells + resource.id);
     this.resource = resource;
+    this.resId = resource.id;
 
     this.poss = this.cache("poss") || this.resource.pos;
 
@@ -48,7 +51,7 @@ export class ResourceCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (13)
+  // #region Public Accessors (14)
 
   public get fleeLairTime() {
     return this._fleeLairTime;
@@ -68,11 +71,11 @@ export class ResourceCell extends Cell {
   }
 
   public get loggerRef() {
-    return "mining_" + this.resource.id.slice(this.resource.id.length - 4);
+    return "mining_" + this.resId.slice(this.resId.length - 4);
   }
 
   public get loggerUpkeepRef() {
-    return "upkeep_" + this.resource.id.slice(this.resource.id.length - 4);
+    return "upkeep_" + this.resId.slice(this.resId.length - 4);
   }
 
   public get operational() {
@@ -85,7 +88,7 @@ export class ResourceCell extends Cell {
       (
         !!this.extractor &&
         !!this.container &&
-        (this.resource.ticksToRegeneration || 0 < 10)
+        ((this.resource && this.resource.ticksToRegeneration) || 0 < 10)
       ) // start beeing operational for 10ticks before
     );
   }
@@ -105,9 +108,7 @@ export class ResourceCell extends Cell {
   }
 
   public get ratePT() {
-    if (this.resource instanceof Source)
-      return this.resource.energyCapacity / ENERGY_REGEN_TIME;
-    else if (this.operational) {
+    if (this.operational && this.resource instanceof Mineral) {
       const timeToChop =
         Math.max(
           this.master.activeBees.length
@@ -115,9 +116,40 @@ export class ResourceCell extends Cell {
             : CREEP_LIFE_TIME,
           201
         ) - 200;
-      return this.resource.mineralAmount / timeToChop;
-    }
+      return this.resourceCapacity / timeToChop;
+    } else if (this.resource instanceof Source)
+      return this.resourceCapacity / ENERGY_REGEN_TIME;
     return 0;
+  }
+
+  public get resourceCapacity() {
+    let capacity: number | undefined = 0;
+    if (this.resType === RESOURCE_ENERGY) {
+      capacity = (this.resource as Source | undefined)?.energyCapacity;
+      if (capacity === undefined) {
+        const state = Apiary.intel.getRoomState(this.pos.roomName);
+        switch (state) {
+          case roomStates.ownedByMe:
+          case roomStates.reservedByMe:
+            capacity = SOURCE_ENERGY_CAPACITY;
+            break;
+          case roomStates.SKcentral:
+            capacity = SOURCE_ENERGY_KEEPER_CAPACITY;
+            break;
+          case roomStates.noOwner:
+            capacity = SOURCE_ENERGY_NEUTRAL_CAPACITY;
+            break;
+          default:
+            capacity = 0;
+        }
+      }
+    } else if (this.operational) {
+      capacity = (this.resource as Mineral | undefined)?.mineralAmount;
+      if (capacity === undefined) capacity = 0;
+      // we say this one doesn't have capacity if we dont see it
+    }
+    // zero is a failsafe
+    return capacity || 0;
   }
 
   public get restTime() {
@@ -136,7 +168,7 @@ export class ResourceCell extends Cell {
     this._roadTime = this.cache("_roadTime", value);
   }
 
-  // #endregion Public Accessors (13)
+  // #endregion Public Accessors (14)
 
   // #region Public Methods (4)
 
@@ -200,7 +232,8 @@ export class ResourceCell extends Cell {
   }
 
   public update() {
-    this.updateObject(undefined, ["resource"]);
+    this.updateObjects([]);
+    this.resource = Game.getObjectById(this.resId);
     if (Apiary.intTime % (this.resType === RESOURCE_ENERGY ? 10 : 100) === 0)
       this.updateStructure();
   }
@@ -252,7 +285,7 @@ export class ResourceCell extends Cell {
     let pos: RoomPosition = this.pos;
     if (this.container) pos = this.container.pos;
     if (this.link) {
-      const poss = this.resource.pos.getOpenPositions();
+      const poss = this.resource?.pos.getOpenPositions() || [pos];
       const posNearLink = this.link.pos
         .getOpenPositions()
         .filter((p) => poss.filter((pp) => p.equal(pp)).length);
@@ -266,7 +299,7 @@ export class ResourceCell extends Cell {
 
   private updateStructure() {
     this.updateRoadTime();
-    if (!(this.pos.roomName in Game.rooms)) return;
+    if (!(this.pos.roomName in Game.rooms) || !this.resource) return;
 
     if (this.resType !== RESOURCE_ENERGY && this.extractor && this.container)
       return;

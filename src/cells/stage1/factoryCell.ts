@@ -109,7 +109,6 @@ export class FactoryCell extends Cell {
   } = {
     energy: FACTORY_ENERGY,
   };
-  public roomsToCheck: string[] = [];
   public uncommon: boolean = false;
 
   // #endregion Properties (10)
@@ -266,9 +265,11 @@ export class FactoryCell extends Cell {
   }
 
   public override update() {
-    if (!this.factory) this.delete();
-
-    this.roomsToCheck = this.hive.annexNames;
+    this.updateObjects([]);
+    if (!this.factory) {
+      this.delete();
+      return;
+    }
 
     this.level = 0;
     if (this.factory.effects) {

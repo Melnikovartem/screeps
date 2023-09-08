@@ -12,6 +12,7 @@ import { EmptyLogger } from "convenience/logger-empty";
 import { Visuals } from "convenience/visuals/visuals";
 import { Engine } from "engine";
 import { Hive } from "hive/hive";
+import { FlagCommand } from "orders/flagCommands";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
@@ -38,12 +39,13 @@ export class _Apiary {
     logger: new EmptyLogger(),
   };
 
-  public bees: { [id: string]: ProtoBee<Creep | PowerCreep> } = {};
+  public bees: { [creepName: string]: ProtoBee<Creep | PowerCreep> } = {};
   public createTime: number;
+  public flags: { [flagName: string]: FlagCommand } = {};
   public defenseSwarms: { [id: string]: HordeMaster } = {};
   public destroyTime: number;
-  public hives: { [id: string]: Hive } = {};
-  public masters: { [id: string]: Master<MasterParent> } = {};
+  public hives: { [roomName: string]: Hive } = {};
+  public masters: { [mParentRef: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
   public orders: { [ref: string]: SwarmOrder<any> } = {};
   public useBucket: boolean = false;
@@ -181,8 +183,10 @@ export class _Apiary {
       this.wrap(() => hive.update(), hive.roomName, "update", 0);
     });
 
+    this.wrap(() => FlagCommand.checkFlags(), "checkFlags", "update");
     this.wrap(() => Bee.checkAliveBees(), "checkBees", "update");
     this.wrap(() => PowerBee.checkAliveBees(), "checkPowerBees", "update");
+
     _.forEach(this.bees, (bee) => {
       bee.update();
     });
@@ -196,6 +200,15 @@ export class _Apiary {
           master.beesAmount
         );
     });
+
+    this.wrap(
+      () => {
+        _.forEach(this.flags, (f) => f.update());
+      },
+      "actFlags",
+      "update",
+      Object.keys(this.flags).length
+    );
   }
 
   public wrap(

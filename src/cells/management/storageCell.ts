@@ -207,9 +207,13 @@ export class StorageCell extends Cell {
   }
 
   public override update() {
-    this.updateObject();
+    this.updateObjects([]);
 
-    if (!this.link && this.hive.controller.level >= 5) this.findLink();
+    if (
+      !this.link &&
+      CONTROLLER_STRUCTURES[STRUCTURE_LINK][this.hive.controller.level] > 0
+    )
+      this.findLink();
 
     for (const k in this.requests) this.requests[k].update();
 

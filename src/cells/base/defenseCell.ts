@@ -433,7 +433,7 @@ export class DefenseCell extends Cell {
   }
 
   public update() {
-    this.updateObject(["towers", "nukes"]);
+    this.updateObjects(["towers", "nukes"]);
     this.dmgAtPos = {};
     if (
       Game.time % 500 === 333 ||

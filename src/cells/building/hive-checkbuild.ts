@@ -8,13 +8,18 @@ import { getCase, makeId } from "static/utils";
 import type { BuildProject } from "./buildCell";
 
 const RAMPART_BUFFER_ZONE = {
-  aliveBees: 20_000, // 6_666 ticks
-  noBees: 50_000, // 16_666 ticks
+  aliveBees: 15_000, // 5_000 ticks
+  noBees: 45_000, // 15_666 ticks
 };
 
 const ROAD_BUFFER_ZONE = {
   aliveBees: 500, // 5_000 ticks
   noBees: 1_500, // 15_0000 ticks
+};
+
+const CONTAINER_BUFFE_ZONE = {
+  aliveBees: 50_000, // 5_000 ticks
+  noBees: 150_000, // 15_000 ticks
 };
 
 // absolute max to add
@@ -142,6 +147,7 @@ function addConstruction(
     }
     // add even if no construction cost so we can plan bases at all volume of jobs
     energyCost.build += CONSTRUCTION_COST[sType];
+    if (energyCost.build) console.log(sType, toadd[i]);
 
     if (isDefense) {
       let heal = WALLS_START;
@@ -185,21 +191,21 @@ function checkStructureBuild(
     type = "structure";
     let heal = getCase(structure).heal;
     if (sType in specials) heal = specials[sType]!;
-    if (sType === STRUCTURE_RAMPART)
-      heal -= Math.min(
+
+    const calcBuffer = (buffer: typeof RAMPART_BUFFER_ZONE, coef = 1) => {
+      return Math.min(
         heal * 0.5,
-        hive && hive.cells.build.master?.activeBees.length
-          ? RAMPART_BUFFER_ZONE.aliveBees
-          : RAMPART_BUFFER_ZONE.noBees
+        (hive && hive.cells.build.master.activeBees.length
+          ? buffer.aliveBees
+          : buffer.noBees) * coef
       );
-    if (sType === STRUCTURE_ROAD)
-      heal -= Math.min(
-        heal * 0.5,
-        (hive && hive.cells.build.master?.activeBees.length
-          ? ROAD_BUFFER_ZONE.aliveBees
-          : ROAD_BUFFER_ZONE.noBees) *
-          (structure.hitsMax / ROAD_HITS) // coef for swamp / walls
-      );
+    };
+    if (sType === STRUCTURE_RAMPART) heal -= calcBuffer(RAMPART_BUFFER_ZONE);
+    else if (sType === STRUCTURE_ROAD)
+      heal -= calcBuffer(ROAD_BUFFER_ZONE, structure.hitsMax / ROAD_HITS);
+    // coef for swamp / walls;
+    else if (sType === STRUCTURE_CONTAINER)
+      heal -= calcBuffer(CONTAINER_BUFFE_ZONE);
     if (nukeAlert && isDefense) {
       const nukeDmg = _.sum(
         pos.findInRange(FIND_NUKES, 2),
@@ -217,6 +223,7 @@ function checkStructureBuild(
         type: "repair",
       });
   } else {
+    // check for own construction sites?
     const constructionSite = _.filter(
       pos.lookFor(LOOK_CONSTRUCTION_SITES),
       (s) => s.structureType === sType
@@ -262,7 +269,7 @@ function checkStructureBuild(
         }).amount === 1;
 
       if (
-        !place &&
+        (!place || sType === STRUCTURE_RAMPART) &&
         (!nukeAlert || !pos.findInRange(FIND_NUKES, 2).length) &&
         !onlySpawn // do not add spawns if we have only one
       ) {

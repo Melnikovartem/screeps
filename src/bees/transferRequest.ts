@@ -78,7 +78,7 @@ export class TransferRequest {
     if (this.amount <= 0) return false;
     if (this.toAmount <= 0) return false;
     if (!this.stillExists) return false;
-    if (this.from.id === this.to.id) return false;
+    if (this.from?.id === this.to?.id) return false;
     return true;
   }
 

@@ -67,10 +67,18 @@ export class SwarmOrder<T> {
     this.type = type;
     this._pos = pos;
 
-    const masterProto = SWARM_ORDER_TYPES[
-      type
-    ] as MasterConstructor<any> as MasterConstructor<T>;
-    this.master = new masterProto(this);
+    let master;
+    if (Apiary.orders[this.ref]?.type === type) {
+      // do not create new master if the ref + type is same
+      master = Apiary.orders[this.ref].master as SwarmMaster<T>;
+      master.parent = this;
+    } else {
+      const masterProto = SWARM_ORDER_TYPES[
+        type
+      ] as MasterConstructor<any> as MasterConstructor<T>;
+      master = new masterProto(this);
+    }
+    this.master = master;
     Apiary.orders[this.ref] = this;
   }
 

@@ -152,7 +152,7 @@ export class UpgradeCell extends Cell {
   }
 
   public override update() {
-    this.updateObject();
+    this.updateObjects([]);
 
     // at creation time or while room is small each 2K ticks
     if (

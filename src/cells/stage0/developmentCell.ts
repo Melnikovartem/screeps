@@ -141,21 +141,21 @@ export class DevelopmentCell extends Cell {
   // #region Public Methods (3)
 
   public minerBeeCount(cell: ResourceCell) {
-    if (cell.resource instanceof Mineral) return 0;
+    if (cell.resType !== RESOURCE_ENERGY) return 0;
     const harvestAmount =
       Math.floor(
         this.hive.room.energyCapacityAvailable /
           (BODYPART_COST[WORK] + BODYPART_COST[MOVE] * 0.5)
       ) * HARVEST_POWER;
     let maxBees = Math.round(
-      cell.resource.energyCapacity / ENERGY_REGEN_TIME / harvestAmount
+      cell.resourceCapacity / ENERGY_REGEN_TIME / harvestAmount
     );
     // will be buidling and not mining
     const c = cell.master.construction;
     if (c && c.progressTotal - c.progress > 1_000) maxBees *= 2;
     return Math.max(
       Math.min(
-        Math.floor(cell.resource.pos.getOpenPositions().length),
+        Math.floor(cell.resource?.pos.getOpenPositions().length || 1),
         maxBees
       ),
       1

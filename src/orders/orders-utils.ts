@@ -1,61 +1,31 @@
-import { PortalMaster } from "beeMasters/civil/portal";
-import { PuppetMaster } from "beeMasters/civil/puppet";
+import type { Cell } from "cells/_Cell";
 import { prefix } from "static/enums";
 
-import type { FlagOrder } from "./order";
+import type { FlagCommand } from "./flagCommands";
+import { SWARM_MASTER } from "./swarmOrder-masters";
 
-export function actUtilsActions(order: FlagOrder) {
-  switch (order.secondaryColor) {
+export function actUtilsActions(command: FlagCommand) {
+  switch (command.secondaryColor) {
     case COLOR_BROWN: {
-      const parsed = /^(sell|buy)_([A-Za-z0-9]*)?/.exec(order.ref);
+      const parsed = /^(sell|buy)_([A-Za-z0-9]*)?/.exec(command.ref);
       const res = parsed && (parsed[2] as ResourceConstant);
       const mode = parsed && parsed[1];
-      order.acted = false;
+      command.acted = false;
       if (!Apiary.useBucket) break;
+      const sCell = command.hive.cells.storage;
       if (
         res &&
         mode &&
-        order.hiveName === order.pos.roomName &&
-        order.hive.cells.storage &&
-        order.hive.cells.storage.terminal
+        command.hiveName === command.pos.roomName &&
+        sCell.storage &&
+        sCell.terminal
       ) {
-        const fast = order.ref.includes("fast");
-        if ("all" === parsed[2]) {
-          if (mode === "sell") {
-            // if (hurry || Game.time % 10 === 0)
-            Apiary.broker.update();
-            const getAmount = (res?: ResourceConstant) =>
-              order.hive.cells.storage!.storage.store.getUsedCapacity(res) +
-              order.hive.cells.storage!.terminal!.store.getUsedCapacity(res);
-            _.forEach(
-              Object.keys(order.hive.cells.storage.storage.store).concat(
-                Object.keys(order.hive.cells.storage.terminal.store)
-              ),
-              (ress) => {
-                const res = ress as ResourceConstant;
-                if (
-                  res === RESOURCE_ENERGY &&
-                  getAmount() - getAmount(RESOURCE_ENERGY) >
-                    2 * getAmount(RESOURCE_ENERGY)
-                )
-                  return;
-                // get rid of shit in order hive
-                Apiary.broker.sellOff(
-                  order.hive.cells.storage!.terminal!,
-                  res,
-                  Math.min(5000, getAmount(res)),
-                  order.hive.cells.defense.isBreached
-                );
-              }
-            );
-          } else order.delete();
-          return;
-        }
+        const fast = command.ref.includes("fast");
         const [low, high, avg] = Apiary.broker.priceSpread(res);
         if (RESOURCES_ALL.includes(res)) {
           if (Game.time === Apiary.createTime)
             console.log(
-              `@ ${order.hive.print} : ${mode} ${res} ${
+              `@ ${command.hive.print} : ${mode} ${res} ${
                 fast ? "fast" : " "
               } : ${low || avg} - ${high || avg}`
             );
@@ -63,113 +33,105 @@ export function actUtilsActions(order: FlagOrder) {
             switch (mode) {
               case "sell":
                 if (
-                  order.hive.cells.storage.getUsedCapacity(res) +
-                    order.hive.cells.storage.terminal.store.getUsedCapacity(
-                      res
-                    ) >
+                  (sCell.storage.store.getUsedCapacity(res) || 0) +
+                    sCell.terminal.store.getUsedCapacity(res) >
                   0
-                ) {
-                  Apiary.broker.sellOff(
-                    order.hive.cells.storage.terminal,
-                    res,
-                    500,
-                    fast
-                  );
-                  return;
-                }
+                )
+                  Apiary.broker.sellOff(sCell.terminal, res, 500, fast);
                 break;
               case "buy":
                 // @MARKETDANGER
                 if (
-                  (order.hive.resState[res] || 0) <= 0 ||
-                  (avg <= 1000 && (order.hive.resState[res] || 0) < 1000) // can afford 100K credits stockpile
+                  (command.hive.resState[res] || 0) <= 0 ||
+                  (avg <= 1000 && (command.hive.resState[res] || 0) < 1000) // can afford 100K credits stockpile
                 ) {
-                  Apiary.broker.buyIn(
-                    order.hive.cells.storage.terminal,
-                    res,
-                    res === RESOURCE_ENERGY ? 16384 : 2048,
-                    fast
-                  );
-                  return;
+                  const toBuy = res === RESOURCE_ENERGY ? 16384 : 2048;
+                  Apiary.broker.buyIn(sCell.terminal, res, toBuy, fast);
                 }
                 break;
             }
-            if (order.ref.includes("nokeep")) order.delete();
           }
-        } else order.delete();
-      } else order.delete();
+        } else command.delete();
+      } else command.delete();
       break;
     }
     case COLOR_RED:
-      if (!order.memory.extraInfo) order.memory.extraInfo = Game.time;
-      order.acted = false;
+      command.acted = false;
       if (Game.time % 25 !== 0) break;
       if (
-        (order.pos.roomName in Game.rooms &&
-          !order.pos.lookFor(LOOK_STRUCTURES).length) ||
-        order.memory.extraInfo + 5000 < Game.time
+        (command.pos.roomName in Game.rooms &&
+          !command.pos.lookFor(LOOK_STRUCTURES).length) ||
+        command.createTime + 5000 < Game.time
       )
-        order.delete();
+        command.delete();
       break;
     case COLOR_PURPLE:
-      if (!order.master) order.master = new PuppetMaster(order);
+      if (!Game.rooms[command.pos.roomName]) {
+        command.acted = false;
+        Apiary.oracle.requestSight(command.pos.roomName);
+      }
       break;
     case COLOR_BLUE:
-      if (!order.master) order.master = new PortalMaster(order);
+      command.createSwarm(SWARM_MASTER.portal);
       break;
   }
 }
 
-export function actUtilsPositions(order: FlagOrder) {
-  if (order.hiveName === order.pos.roomName) {
-    let cellType = "";
-    let action = () => {};
-    switch (order.secondaryColor) {
-      case COLOR_BROWN:
-        cellType = prefix.excavationCell;
-        action = () =>
-          _.forEach(
-            order.hive.cells.excavation.resourceCells,
-            (cell) => (cell.restTime = cell.pos.getTimeForPath(order.hive.rest))
-          );
-        break;
-      case COLOR_CYAN:
-        cellType = prefix.laboratoryCell;
-        break;
-      case COLOR_WHITE:
-        cellType = prefix.defenseCell;
-        action = () =>
-          _.forEach(
-            order.hive.cells.excavation.resourceCells,
-            (cell) => (cell.roadTime = cell.pos.getTimeForPath(order.hive.pos))
-          );
-        break;
-      case COLOR_RED:
-        cellType = prefix.powerCell;
-        break;
-      case COLOR_GREEN:
-        cellType = prefix.fastRefillCell;
-        break;
-    }
-    if (cellType) {
-      if (!order.hive.cache.cells[cellType])
-        order.hive.cache.cells[cellType] = {};
-      order.hive.cache.cells.poss = {
-        x: order.pos.x,
-        y: order.pos.y,
-      };
-      action();
-      if (Apiary.planner.activePlanning[order.hiveName]) {
-        if (!Apiary.planner.activePlanning[order.hiveName].cellsCache[cellType])
-          Apiary.planner.activePlanning[order.hiveName].cellsCache[cellType] = {
-            poss: { x: order.pos.x, y: order.pos.y },
-          };
-        else
-          Apiary.planner.activePlanning[order.hiveName].cellsCache[
-            cellType
-          ].poss = { x: order.pos.x, y: order.pos.y };
-      }
-    }
+export function actUtilsPositions(command: FlagCommand) {
+  if (command.hiveName !== command.pos.roomName) return;
+  const hive = command.hive;
+  let cell: Cell | undefined;
+  let cellCache: string | undefined;
+
+  let action = () => {};
+  switch (command.secondaryColor) {
+    case COLOR_YELLOW:
+      cell = hive.cells.excavation;
+      cellCache = prefix.excavationCell;
+      action = () =>
+        _.forEach(command.hive.cells.excavation.resourceCells, (resCell) =>
+          resCell.updateRoadTime(true)
+        );
+      break;
+    case COLOR_CYAN:
+      cell = hive.cells.lab;
+      cellCache = prefix.laboratoryCell;
+      break;
+    case COLOR_WHITE:
+      cell = hive.cells.defense;
+      cellCache = prefix.defenseCell;
+      action = () =>
+        _.forEach(command.hive.cells.excavation.resourceCells, (resCell) =>
+          resCell.updateRoadTime(true)
+        );
+      break;
+    case COLOR_RED:
+      cell = hive.cells.power;
+      cellCache = prefix.powerCell;
+      break;
+    case COLOR_GREEN:
+      cell = hive.cells.spawn.fastRef;
+      cellCache = prefix.fastRefillCell;
+      break;
   }
-  order.delete();
+  if (!cellCache && cell) cellCache = cell.refCache;
+  if (!cellCache) return;
+
+  const poss = {
+    x: command.pos.x,
+    y: command.pos.y,
+  };
+  if (!command.hive.cache.cells[cellCache])
+    command.hive.cache.cells[cellCache] = {};
+  command.hive.cache.cells.poss = poss;
+
+  if (!cell) return;
+  if ("poss" in cell) cell.poss = poss;
+  action();
+
+  const ch = Apiary.colony.planner.checking;
+  if (!ch || ch.positions.length > 1) return;
+
+  ch.best.posCell[cell.refCache] = [poss.x, poss.y];
+  ch.active.posCell[cell.refCache] = [poss.x, poss.y];
 }

@@ -88,7 +88,7 @@ export class ExcavationCell extends Cell {
           padding = cell.restTime * cell.master.ratePT + 25;
           if (cell.resource instanceof Source)
             padding = Math.min(padding, cell.resource.energy);
-          else padding = Math.min(padding, cell.resource.mineralAmount);
+          else padding = Math.min(padding, cell.resourceCapacity);
         }
         if (
           cell.lair &&

@@ -1,4 +1,5 @@
 import type { ActivePlan, RoomPlannerMatrix } from "./planner-active";
+import type { RoomPlanner } from "./roomPlanner";
 
 export const PLANNER_STAMP_STOP = "#";
 
@@ -16,6 +17,9 @@ export function addStructure(
   structureType: BuildableStructureConstant,
   ap: RoomPlannerMatrix
 ) {
+  if (pos.x <= 0 || pos.y <= 0 || pos.x >= 49 || pos.y >= 49)
+    return ERR_INVALID_ARGS;
+
   if (!ap.compressed[structureType])
     ap.compressed[structureType] = {
       que: [],
@@ -122,5 +126,20 @@ function endBlockRoom(
     const que = ap.compressed[structureType]!.que;
     if (que[que.length - 1] !== PLANNER_STAMP_STOP)
       que.push(PLANNER_STAMP_STOP);
+  }
+}
+
+export function emptySpot(
+  this: RoomPlanner,
+  pos: { x: number; y: number; roomName: string }
+) {
+  if (!this.checking) return;
+  const roomMatrix = this.checking.active.rooms[pos.roomName];
+  for (const sType of Object.keys(roomMatrix.compressed)) {
+    const sInfo = roomMatrix.compressed[sType as BuildableStructureConstant]!;
+    sInfo.que = sInfo.que.filter(
+      (p) => p === PLANNER_STAMP_STOP || p[0] !== pos.x || p[1] !== pos.y
+    );
+    sInfo.len = sInfo.que.filter((p) => p !== PLANNER_STAMP_STOP).length;
   }
 }

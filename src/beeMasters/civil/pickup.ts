@@ -13,7 +13,7 @@ type PickupTarget =
   | Resource
   | StructureStorage
   | StructureContainer;
-interface PickupInfo {
+export interface PickupInfo {
   // #region Properties (2)
 
   id: Id<PickupTarget> | undefined;

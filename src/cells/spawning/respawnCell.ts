@@ -243,7 +243,7 @@ export class RespawnCell extends Cell {
   }
 
   public update() {
-    this.updateObject(["extensions", "spawns"]);
+    this.updateObjects(["extensions", "spawns"]);
 
     if (this.recycledPrev && this.recycleSpawn) {
       // here we only deal with energy

@@ -77,7 +77,7 @@ function innitActive(ch: PlannerChecking) {
 function updateActive(ch: PlannerChecking) {
   const posIter = ch.positions.shift();
   if (!posIter) return ERR_NOT_FOUND;
-  const pos = new RoomPosition(posIter[0].x, posIter[0].y, ch.roomName);
+  const pos = new RoomPosition(posIter.x, posIter.y, ch.roomName);
   ch.active.centers = [pos];
 
   const ap = ch.active;

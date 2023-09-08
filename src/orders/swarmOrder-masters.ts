@@ -10,6 +10,7 @@ import { DepositMaster } from "beeMasters/corridorMining/deposit";
 import { PowerMiningMaster } from "beeMasters/corridorMining/power";
 import { AnnexMaster } from "beeMasters/economy/annexer";
 import { SquadWarCrimesMaster } from "beeMasters/squads/squadWarcrimes";
+import { DowngradeMaster } from "beeMasters/war/downgrader";
 import { HordeMaster } from "beeMasters/war/horde";
 import { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { SKMaster } from "beeMasters/war/safeSK";
@@ -33,6 +34,7 @@ export enum SWARM_MASTER {
 
   squadwarcrimes = 242,
   horde = 200,
+  downgrader = 205,
 }
 
 export const SWARM_ORDER_TYPES = {
@@ -53,5 +55,7 @@ export const SWARM_ORDER_TYPES = {
   [SWARM_MASTER.powermining]: PowerMiningMaster,
 
   [SWARM_MASTER.horde]: HordeMaster,
+  // requires extra info in memory by hand
   [SWARM_MASTER.squadwarcrimes]: SquadWarCrimesMaster,
+  [SWARM_MASTER.downgrader]: DowngradeMaster,
 };

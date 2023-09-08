@@ -251,6 +251,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
     fearNukes = false
   ) =>
     _.forEach(toCheck, (type) => {
+      // we do not check def before storage
       const ans = checkBuildings(
         this.hiveName,
         this.hiveName,

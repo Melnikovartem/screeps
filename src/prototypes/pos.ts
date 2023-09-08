@@ -9,7 +9,7 @@ Object.defineProperty(RoomPosition.prototype, "to_str", {
 
 Object.defineProperty(RoomPosition.prototype, "print", {
   get: function str(this: RoomPosition) {
-    return this.roomName + "_" + this.x + "_" + this.y;
+    return `<a href=#!/room/${Game.shard.name}/${this.roomName}>[room ${this.roomName} pos ${this.x},${this.y}]</a>`;
   },
 });
 

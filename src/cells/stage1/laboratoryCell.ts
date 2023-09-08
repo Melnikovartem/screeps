@@ -543,7 +543,7 @@ export class LaboratoryCell extends Cell {
   }
 
   public override update() {
-    this.updateObject(["laboratories"]);
+    this.updateObjects(["laboratories"]);
     if (!Object.keys(this.laboratories).length) return;
 
     let priority = 5 as 2 | 5;

@@ -60,9 +60,8 @@ export class AnnexCell extends Cell {
             (r) => annexName === r.pos.roomName
           ).length
         ) {
-          if (!Memory.longterm.roomPlanner[this.hiveName].rooms[annexName]) {
+          if (!Memory.longterm.roomPlanner[this.hiveName]?.rooms[annexName])
             this.allResourcesRoads = false;
-          }
           return;
         }
 

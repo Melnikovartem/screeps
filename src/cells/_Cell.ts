@@ -75,10 +75,7 @@ export abstract class Cell {
 
   /** updates instances for objects in Cell by Game.getObjectById */
   /** do i even need this in newer versions? */
-  public updateObject<K extends keyof this>(
-    updateMapKey: K[] = [],
-    nonforceMapKey: K[] = []
-  ): void {
+  public updateObjects<K extends keyof this>(updateMapKey: K[]): void {
     // updating structure object to actual data :/
 
     _.forEach(Object.keys(this), (key: K) => {
@@ -89,8 +86,7 @@ export abstract class Cell {
         data instanceof Mineral
       ) {
         const gameObject = Game.getObjectById(data.id);
-        if (gameObject || !nonforceMapKey.includes(key))
-          this[key] = gameObject as typeof data;
+        this[key] = gameObject as typeof data; // can also be null
       }
     });
 

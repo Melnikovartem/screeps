@@ -44,9 +44,10 @@ export class MinerMaster extends Master<ResourceCell> {
     if (this.roomName !== this.hiveName && this.container) return undefined;
     if (this.roomName === this.hiveName && this.link && this.container)
       return undefined;
-    if (!(this.roomName in Game.rooms)) return undefined;
+    if (!(this.roomName in Game.rooms) || !this.resource) return undefined;
+    const res = this.resource;
+    const sites = res.pos.findInRange(FIND_CONSTRUCTION_SITES, 3);
 
-    const sites = this.resource.pos.findInRange(FIND_CONSTRUCTION_SITES, 3);
     let construction = sites.filter(
       (c) => c.structureType === STRUCTURE_ROAD
     )[0];
@@ -54,16 +55,13 @@ export class MinerMaster extends Master<ResourceCell> {
 
     if (this.roomName === this.hiveName) {
       construction = sites.filter(
-        (c) =>
-          c.structureType === STRUCTURE_LINK &&
-          c.pos.getRangeTo(this.resource) <= 2
+        (c) => c.structureType === STRUCTURE_LINK && c.pos.getRangeTo(res) <= 2
       )[0];
       if (construction) return construction;
     }
     return sites.filter(
       (c) =>
-        c.structureType === STRUCTURE_CONTAINER &&
-        c.pos.getRangeTo(this.resource) <= 1
+        c.structureType === STRUCTURE_CONTAINER && c.pos.getRangeTo(res) <= 1
     )[0];
   }
 
@@ -215,10 +213,10 @@ export class MinerMaster extends Master<ResourceCell> {
       }
 
       if (!bee.pos.equal(this.pos) && mode !== "busy") {
-        if (bee.pos.isNearTo(this.resource) && mode === "mine")
+        if (this.resource && bee.pos.isNearTo(this.resource) && mode === "mine")
           bee.harvest(this.resource, this.hive.opt);
         bee.goTo(this.pos, this.hive.opt);
-      } else if (mode === "mine") {
+      } else if (mode === "mine" && this.resource) {
         bee.harvest(this.resource, this.hive.opt);
       } else if (
         mode === "chill" &&

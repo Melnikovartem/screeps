@@ -13,10 +13,14 @@ export class Mem {
 
   public static clean() {
     for (const name in Memory.creeps)
-      if (!(name in Game.creeps)) {
-        delete Memory.creeps[name];
-        if (Apiary.bees[name]) delete Apiary.bees[name];
-      }
+      if (!Game.creeps[name]) delete Memory.creeps[name];
+    for (const name in Apiary.bees)
+      if (!Game.creeps[name]) delete Apiary.bees[name];
+
+    for (const name in Memory.flags)
+      if (!Game.creeps[name]) delete Memory.flags[name];
+    for (const name in Apiary.flags)
+      if (!Game.flags[name]) Apiary.flags[name].delete();
 
     Apiary.logger.clean();
   }

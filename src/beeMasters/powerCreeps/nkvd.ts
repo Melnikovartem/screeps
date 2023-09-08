@@ -1,11 +1,11 @@
 import type { PowerBee } from "bees/powerBee";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ResourceCell } from "cells/base/resourceCell";
-import type { RespawnCell } from "cells/spawning/respawnCell";
 import type { StorageCell } from "cells/management/storageCell";
+import type { UpgradeCell } from "cells/management/upgradeCell";
+import type { RespawnCell } from "cells/spawning/respawnCell";
 import type { FactoryCell } from "cells/stage1/factoryCell";
 import type { LaboratoryCell } from "cells/stage1/laboratoryCell";
-import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { ObserveCell } from "cells/stage2/observeCell";
 import type { PowerCell } from "cells/stage2/powerCell";
 import { profile } from "profiler/decorator";
@@ -196,13 +196,13 @@ export class NKVDMaster extends PowerCreepMaster {
         case PWR_REGEN_SOURCE:
           _.forEach(
             _.map(targets as ResourceCell[], (r) => r.resource),
-            (s) => andNextup(s)
+            (s) => s && andNextup(s)
           );
           break;
         case PWR_REGEN_MINERAL:
           _.forEach(
             _.map(targets as ResourceCell[], (r) => r.resource),
-            (s) => andNextup(s)
+            (s) => s && andNextup(s)
           );
           break;
       }

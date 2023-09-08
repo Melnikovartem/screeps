@@ -22,4 +22,4 @@ pinnedPackages:
   tar: 5.0.11
   minipass-fetch: 2.1.2
   make-fetch-happen: 10.2.1
-  # node-gyp: 9.4.0
+  node-gyp: 9.4.0

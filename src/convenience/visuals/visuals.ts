@@ -84,7 +84,7 @@ export class Visuals {
     };
   }
 
-  public update() {
+  private render() {
     let allglobal = true;
     for (const name in this.caching)
       if (name.slice(0, GLOBAL_VISUALS.length) !== GLOBAL_VISUALS) {
@@ -128,7 +128,7 @@ export class Visuals {
     }
     this.visualizePlanner();
 
-    this.update();
+    this.render();
   }
 
   public createHive(name: string) {
@@ -322,7 +322,7 @@ export class Visuals {
 
     this.changeAnchor(0, 0, hiveName);
     for (const pos of ch.positions) {
-      this.anchor.vis.circle(pos[0].x, pos[0].y, {
+      this.anchor.vis.circle(pos.x, pos.y, {
         fill: "#FFC82A",
         opacity: 0.5,
         stroke: "#FFA600",
@@ -366,7 +366,7 @@ export class Visuals {
     this.exportAnchor(1);
 
     // add info about cells
-    for (const [cellRef, value] of Object.entries(ch.best.posCell)) {
+    for (const [cellRef, value] of Object.entries(ap.posCell)) {
       const style: LineStyle = {};
       switch (cellRef) {
         case prefix.laboratoryCell:

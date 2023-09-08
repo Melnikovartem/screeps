@@ -83,6 +83,8 @@ export interface RoomPlannerHiveCache {
 export function savePlan(this: RoomPlanner) {
   if (!this.checking) return ERR_NOT_FOUND;
   const bp = this.checking.best;
+  // show / allow to modify best plan
+  this.checking.active = bp;
   const mem = Memory.longterm.roomPlanner;
   const hiveName = this.checking.roomName;
 
@@ -121,16 +123,16 @@ export function savePlan(this: RoomPlanner) {
   return OK;
 }
 
-export function toActive(
+export function parseInitPlan(
   this: RoomPlanner,
   hiveName: string,
   annexNames: string[],
   payload: FnEngine | undefined
 ): ReturnType<FnEngine> {
-  const ans = this.parseRoom(hiveName, annexNames);
+  const ans = this.parseRoomInternal(hiveName, annexNames);
   if (ans === ERR_NO_VISION)
     return {
-      f: () => this.toActive(hiveName, annexNames, payload),
+      f: () => this.parseInitPlan(hiveName, annexNames, payload),
       ac: Game.time + 10,
     }; // no vision try again
   if (ans !== OK) return undefined; // smth broke end
@@ -140,7 +142,7 @@ export function toActive(
       if (!this.parsingRooms) return undefined;
       const pr = this.parsingRooms;
       this.initPlan(hiveName, pr.controller, pr.sources, pr.minerals);
-      this.fromCache(hiveName);
+      this.parsingRooms = undefined;
       return payload && { f: payload };
     },
   };
@@ -156,12 +158,12 @@ export function toActive(
  *
  * OK if no payload
  */
-export function parseRoom(
+export function parseRoomInternal(
   this: RoomPlanner,
   hiveName: string,
   annexNames: string[]
 ) {
-  if (!this.parsingRooms) {
+  if (!this.parsingRooms || this.parsingRooms.roomName !== hiveName) {
     const room = Game.rooms[hiveName];
     if (!room) return ERR_NO_VISION;
     const posCont = room.controller?.pos;
@@ -192,7 +194,10 @@ export function parseRoom(
         continue;
     }
     const room = Game.rooms[roomName];
-    if (!room) return ERR_NO_VISION;
+    if (!room) {
+      Apiary.oracle.requestSight(roomName);
+      return ERR_NO_VISION;
+    }
 
     const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
     let mineralsPos: RoomPosition[] = [];
@@ -216,9 +221,15 @@ export function fromCache(this: RoomPlanner, hiveName: string) {
   if (!this.checking) return ERR_NOT_FOUND;
   const mem = Memory.longterm.roomPlanner[hiveName];
   if (!mem) return ERR_NOT_FOUND;
+
+  const mainPos = mem.posCell[prefix.defenseCell];
+  console.log("3 fromCache", mainPos);
+  if (!mainPos) return ERR_NOT_FOUND;
   const ch = this.checking;
+  ch.positions = [new RoomPosition(mainPos[0], mainPos[1], ch.roomName)];
   ch.best.posCell = _.cloneDeep(mem.posCell);
   ch.best.metrics = _.cloneDeep(mem.metrics);
+
   _.forEach(mem.rooms, (roomPlan, roomName) => {
     if (!roomName) return;
     ch.best.rooms[roomName] = initMatrix(roomName);
@@ -235,9 +246,6 @@ export function fromCache(this: RoomPlanner, hiveName: string) {
       });
     });
   });
-  const mainPos = ch.best.posCell[prefix.defenseCell];
-  if (mainPos)
-    ch.positions = [[new RoomPosition(mainPos[0], mainPos[1], ch.roomName), 0]];
   ch.active = ch.best;
   return OK;
 }

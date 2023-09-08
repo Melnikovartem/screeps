@@ -1,16 +1,16 @@
 import type { FnEngine } from "engine";
 import type { Hive } from "hive/hive";
-import { ERR_NO_VISION, ROOM_DIMENTIONS } from "static/constants";
+import { ROOM_DIMENTIONS } from "static/constants";
 
-import { initMatrix } from "./addRoads";
+import { addRoad, initMatrix } from "./addRoads";
 import { floodFill } from "./flood-fill";
 import {
   type ActivePlan,
   fromCache,
-  parseRoom,
+  parseInitPlan,
+  parseRoomInternal,
   PLANNER_EMPTY_METRICS,
   savePlan,
-  toActive,
 } from "./planner-active";
 import {
   PLANNER_EXTENSION,
@@ -18,7 +18,12 @@ import {
   PLANNER_STEPS,
 } from "./planner-pipeline";
 import { PLANNER_TOWERS } from "./planner-towers";
-import { endBlock, PLANNER_COST } from "./planner-utils";
+import {
+  addStructure,
+  emptySpot,
+  endBlock,
+  PLANNER_COST,
+} from "./planner-utils";
 import { distanceTransform } from "./wall-dist";
 
 const DIST_FROM_WALL = {
@@ -28,22 +33,25 @@ const DIST_FROM_WALL = {
   absoluteLow: 4,
 };
 
+const PLANNER_INVALIDATE_TIME = 1000;
+
 const TAKE_N_BEST = 10;
 
 export interface PlannerChecking {
-  // #region Properties (9)
+  // #region Properties (10)
 
   active: ActivePlan;
   activeStep: number;
   best: ActivePlan;
   bestMetric: number;
   controller: RoomPosition;
+  lastUpdated: number;
   minerals: RoomPosition[];
-  positions: [Pos, number][];
+  positions: Pos[];
   roomName: string;
   sources: RoomPosition[];
 
-  // #endregion Properties (9)
+  // #endregion Properties (10)
 }
 
 /* chain startingPos -> {
@@ -55,9 +63,11 @@ export interface PlannerChecking {
 }
 */
 export class RoomPlanner {
-  // #region Properties (6)
+  // #region Properties (9)
 
   protected fromCache = fromCache;
+  protected parseInitPlan = parseInitPlan;
+  protected parseRoomInternal = parseRoomInternal;
   protected parsingRooms:
     | {
         roomName: string;
@@ -67,53 +77,74 @@ export class RoomPlanner {
         controller: RoomPosition;
       }
     | undefined;
-  protected toActive = toActive;
 
+  public addRoad = addRoad;
+  public addStructure = addStructure;
   public checking: PlannerChecking | undefined;
-  public parseRoom = parseRoom;
+  public emptySpot = emptySpot;
   public savePlan = savePlan;
 
-  // #endregion Properties (6)
+  // #endregion Properties (9)
 
-  // #region Public Methods (3)
+  // #region Public Accessors (1)
 
-  public createPlan(roomName: string) {
-    const room = Game.rooms[roomName];
-    if (!room) return ERR_NO_VISION;
-    const posCont = room.controller?.pos;
-    if (!posCont) return ERR_INVALID_TARGET;
+  public get canStartNewPlan() {
+    return !this.checking && !this.parsingRooms;
+  }
 
-    const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
-    const mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
+  // #endregion Public Accessors (1)
 
-    const posInterest: Pos[] = [posCont].concat(sourcesPos).concat(mineralsPos);
-    let positions: [Pos, number][] = [];
-    positions = this.startingPos(roomName, posInterest);
-    if (!positions.length) return;
+  // #region Public Methods (4)
 
-    // add postion to check / road to exit to corridor ??
-    Apiary.engine.addTask("planner main @" + roomName, () => {
-      this.initPlan(roomName, posCont, sourcesPos, mineralsPos, positions);
-      return { f: () => this.checkPosition(roomName, PLANNER_STEPS) };
+  public createPlan(
+    roomName: string,
+    annexNames: string[],
+    extraStartingPos: Pos[] = []
+  ) {
+    const firstIter = this.parseInitPlan(roomName, annexNames, () => {
+      if (!this.checking) return; // something failed
+      const posInterest: Pos[] = [this.checking.controller]
+        .concat(this.checking.sources)
+        .concat(this.checking.minerals);
+
+      const positions = this.startingPos(roomName, posInterest).concat(
+        extraStartingPos
+      );
+      if (!positions.length) return;
+
+      return this.checkPosition(roomName, PLANNER_STEPS);
     });
+    if (firstIter)
+      Apiary.engine.addTask("planner main @" + roomName, () => firstIter);
+
     return OK;
   }
 
   public createRoads(hive: Hive) {
-    Apiary.engine.addTask("roads plan @" + hive.roomName, () =>
-      this.toActive(hive.roomName, hive.annexNames, () =>
-        this.checkPosition(hive.roomName, PLANNER_ROADS)
-      )
-    );
+    const firstIter = this.parseInitPlan(hive.roomName, hive.annexNames, () => {
+      if (this.fromCache(hive.roomName) !== OK) return;
+      return this.checkPosition(hive.roomName, PLANNER_ROADS);
+    });
+    if (firstIter)
+      Apiary.engine.addTask("roads plan @" + hive.roomName, () => firstIter);
   }
 
-  public justShow(hive: Hive) {
-    Apiary.engine.addTask("show plan @" + hive.roomName, () =>
-      this.toActive(hive.roomName, hive.annexNames, undefined)
-    );
+  public justShow(roomName: string) {
+    const posCont =
+      Game.rooms[roomName].controller?.pos ||
+      new RoomPosition(25, 25, roomName);
+    this.initPlan(roomName, posCont, [], []);
+    this.fromCache(roomName);
   }
 
-  // #endregion Public Methods (3)
+  public update() {
+    if (!this.checking) return;
+    if (this.checking.lastUpdated + PLANNER_INVALIDATE_TIME > Game.time) return;
+    // remove checking if is up too long
+    this.checking = undefined;
+  }
+
+  // #endregion Public Methods (4)
 
   // #region Protected Methods (1)
 
@@ -122,7 +153,7 @@ export class RoomPlanner {
     posCont: RoomPosition,
     sourcesPos: RoomPosition[],
     mineralsPos: RoomPosition[],
-    positions: [Pos, number][] = []
+    positions: Pos[] = []
   ) {
     this.checking = {
       roomName,
@@ -144,6 +175,7 @@ export class RoomPlanner {
         metrics: { ...PLANNER_EMPTY_METRICS },
       },
       positions,
+      lastUpdated: Game.time,
     };
   }
 
@@ -216,11 +248,14 @@ export class RoomPlanner {
       return rFunc;
     }
 
+    this.checking.lastUpdated = Game.time;
+
     if (ans !== OK) desc();
 
     if (ans === ERR_FULL) {
       // error go next position
-      console.log(`-FAILED ATTEMPT @${this.checking.active.centers[0]}`);
+      const pos = this.checking.active.centers[0] as RoomPosition;
+      console.log(`-FAILED ATTEMPT @${pos.print}`);
       this.checking.activeStep = 0;
       return rFunc;
     }
@@ -236,8 +271,9 @@ export class RoomPlanner {
         (this.checking.best.metrics.final || 0)
       )
         this.checking.best = this.checking.active;
+      const pos = this.checking.active.centers[0] as RoomPosition;
       console.log(
-        `+SUCCESSFUL ATTEMPT @${this.checking.active.centers[0]} SCORE: ${this.checking.active.metrics.final}`
+        `+SUCCESSFUL ATTEMPT @${pos.print} SCORE: ${this.checking.active.metrics.final}`
       );
       return rFunc;
     }
@@ -288,7 +324,7 @@ export class RoomPlanner {
       return diff;
     });
     positions.splice(TAKE_N_BEST);
-    return positions;
+    return _.map(positions, (p) => p[0]);
   }
 
   // #endregion Private Methods (3)

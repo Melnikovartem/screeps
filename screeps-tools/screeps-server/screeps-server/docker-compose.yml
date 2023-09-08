@@ -11,6 +11,9 @@ services:
     environment:
       MONGO_HOST: mongo
       REDIS_HOST: redis
+      HISTORY_MODE: "sqlite"
+      MAPTOOL_USER: "admin"
+      MAPTOOL_PASS: "admin"
     restart: unless-stopped
 
   mongo:
