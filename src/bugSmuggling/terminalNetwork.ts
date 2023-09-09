@@ -181,7 +181,7 @@ export class Network {
             terminal,
             res,
             amount + PADDING_RESOURCE,
-            hive.cells.storage.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2 // 60
+            hive.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2 // 60
           );
           if (ans === "short") {
             usedTerminal = true;
@@ -234,7 +234,7 @@ export class Network {
       for (const r in hive.mastersResTarget) {
         const res = r as ResourceConstant;
         const balanceShortage =
-          hive.mastersResTarget[res]! - hive.cells.storage.getUsedCapacity(res);
+          hive.mastersResTarget[res]! - hive.getUsedCapacity(res);
         if (balanceShortage > 0 && this.canHiveBuy(hive, res)) {
           ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
           if (ans === "short") {

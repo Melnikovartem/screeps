@@ -44,6 +44,7 @@ export function checkBuildings(
   const buildProjectList: BuildProject[] = [];
   const energyCost = { ...ZERO_COSTS_BUILDING_HIVE.hive };
   let constructions = 0;
+  const blocked = 0;
 
   for (const sType of queToCheck) {
     const mem = hivePlan.rooms[roomName][sType];
@@ -61,7 +62,7 @@ export function checkBuildings(
     for (const positionToPut of mem) {
       if (positionToPut === PLANNER_STAMP_STOP) {
         // added block of constructions no need to add more
-        if (constructions || toadd.length) break;
+        if (constructions || toadd.length || blocked) break;
         continue;
       }
       // no need to check more
@@ -82,6 +83,7 @@ export function checkBuildings(
       );
       if (ans === "structure") ++placed;
       else if (ans === "construction") ++constructions;
+      else if (ans === "blocked") ++constructions;
     }
 
     for (const bProject of buildProjectList)
@@ -183,7 +185,7 @@ function checkStructureBuild(
   const hive = Apiary.hives[pos.roomName] as Hive | undefined;
   const nukeAlert =
     fearNukes && hive && Object.keys(hive.cells.defense.nukes).length > 0;
-  let type: "structure" | "construction" | "none" = "none";
+  let type: "structure" | "construction" | "blocked" | "none" = "none";
   const isDefense = isDefenseStructure(sType);
 
   if (structure) {
@@ -266,24 +268,30 @@ function checkStructureBuild(
           pos: { roomName: pos.roomName },
           hitsMax: 0,
         }).amount === 1;
-
       if (
         (!place || sType === STRUCTURE_RAMPART) &&
         (!nukeAlert || !pos.findInRange(FIND_NUKES, 2).length) &&
         !onlySpawn // do not add spawns if we have only one
       ) {
+        type = "construction";
         toadd.push(pos);
       } else if (hive && place) {
         // our only spawn there
         if (
           place.structureType === STRUCTURE_SPAWN &&
           Object.keys(hive.cells.spawn.spawns).length === 1
-        )
+        ) {
+          // will add but later, skip for now
           type = "structure";
-        // remove if i can and (should?)
-        else place.destroy();
+        } else {
+          // blocked by other one
+          type = "blocked";
+          place.destroy();
+        }
       } else {
-        // @todo demolish whatever was there
+        // blocked by nuke / or just one spawn / or blocked in neutral room
+        // skip for now
+        type = "structure";
       }
     }
   }

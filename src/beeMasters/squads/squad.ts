@@ -572,10 +572,7 @@ export abstract class SquadMaster extends SwarmMaster {
         LAB_BOOST_MINERAL *
         _.sum(body, (bb) => (bb === BOOST_PARTS[b.type] ? 1 : 0)) *
         coef;
-      if (
-        amountNeeded &&
-        this.hive.cells.storage.getUsedCapacity(res) < amountNeeded
-      ) {
+      if (amountNeeded && this.hive.getUsedCapacity(res) < amountNeeded) {
         addResDict(this.hive.mastersResTarget, res, amountNeeded);
         ans = false;
       }

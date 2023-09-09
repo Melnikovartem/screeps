@@ -450,7 +450,7 @@ export class DefenseCell extends Cell {
       "nukealert",
       !!Object.keys(this.nukes).length &&
         !this.nukeCoverReady &&
-        this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
+        this.hive.getUsedCapacity(RESOURCE_ENERGY) >
           this.hive.resTarget[RESOURCE_ENERGY] / 8
     );
 

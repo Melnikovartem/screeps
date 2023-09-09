@@ -132,7 +132,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
         return;
       }
 
-      const inStore = this.hive.cells.storage.storageUsedCapacity(this.res);
+      const inStore = this.hive.getUsedCapacity(this.res);
       shouldSpawn = inStore >= HAUL_PER_TRIP;
     }
 

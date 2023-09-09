@@ -81,9 +81,9 @@ export class HordeDefenseMaster extends HordeMaster {
       order.setup.scheme = 1;
       if (
         this.hive.cells.lab &&
-        this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL.damage[2]) >=
+        this.hive.getUsedCapacity(BOOST_MINERAL.damage[2]) >=
           LAB_BOOST_MINERAL * 2 &&
-        this.hive.cells.storage.getUsedCapacity(
+        this.hive.getUsedCapacity(
           BOOST_MINERAL.rangedAttack[2]
         ) >=
           LAB_BOOST_MINERAL * 10
@@ -188,7 +188,7 @@ export class HordeDefenseMaster extends HordeMaster {
           this.boosts &&
           this.hive.cells.lab &&
           this.boosts.filter((b) => b.type === type).length &&
-          this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL[type][2]) >=
+          this.hive.getUsedCapacity(BOOST_MINERAL[type][2]) >=
             LAB_BOOST_MINERAL * partAmount * beesToGo;
 
         if (this.boosts && checkBoost("fatigue", 10)) moveMax = 10;

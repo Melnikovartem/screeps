@@ -1,5 +1,5 @@
 import { setups } from "bees/creepSetups";
-import { HIVE_ENERGY } from "cells/management/storageCell";
+import { HIVE_ENERGY, LOW_ENERGY } from "cells/management/storageCell";
 import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -8,10 +8,15 @@ import { beeStates } from "static/enums";
 import type { MovePriority } from "../_Master";
 import { Master } from "../_Master";
 
+/** on resState */
 const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgrading
 const SPAWN_SAVE_ENERGY = 250; // when taking from spawn to upgrade leave 250 for miner to spawn
 const MAIN_STORAGE_SAVE_ENERGY = 1000; // leave 1000 if taking from other places
-
+/** on sCell.usedCapacity */
+const UPGRADING_SCALE = {
+  stop: LOW_ENERGY.highEnd,
+  max: HIVE_ENERGY,
+};
 @profile
 export class UpgraderMaster extends Master<UpgradeCell> {
   // #region Properties (2)
@@ -57,20 +62,26 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       this.parent.controller.level < 7 &&
       (this.hive.storage!.store.getUsedCapacity(RESOURCE_ENERGY) > 1000 ||
         this.hive.controller.level < 2)
-    )
-      desiredRate = this.parent.maxRate.local;
-    // just spend all produced energy on upgrading
-    else if (
+    ) {
+      // just spend all produced energy on upgrading
+      const storeAmount = this.hive.getUsedCapacity(RESOURCE_ENERGY);
+      const coef =
+        (storeAmount - UPGRADING_SCALE.stop) /
+        (UPGRADING_SCALE.max - UPGRADING_SCALE.stop);
+      // -> math out of my ass to not consume all energy
+      desiredRate = Math.max(Math.ceil(this.parent.maxRate.local * coef), 0);
+    } else if (
       upgradeMode === 2 &&
       this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
     )
+      // upgrade spend all produced energy on upgrading
       desiredRate = this.parent.maxRate.local;
-    // upgrade spend all produced energy on upgrading
     else if (
       upgradeMode === 3 &&
       this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
     )
-      desiredRate = this.parent.maxRate.import; // upgrade for GCL
+      // boost upgrade for GCL
+      desiredRate = this.parent.maxRate.import;
 
     // failsafe (kidna but no)
     if (

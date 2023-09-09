@@ -423,8 +423,7 @@ export class BuilderMaster extends Master<BuildCell> {
     if (
       this.boosts &&
       this.hive.cells.lab &&
-      this.hive.cells.storage.getUsedCapacity(BOOST_MINERAL.build[2]) >=
-        LAB_BOOST_MINERAL
+      this.hive.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
     )
       _.forEach(this.bees, (b) => {
         if (!b.boosted && b.ticksToLive >= 1200) b.state = beeStates.boosting;
@@ -441,8 +440,7 @@ export class BuilderMaster extends Master<BuildCell> {
 
     if (
       this.checkBees(
-        this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
-          LOW_ENERGY.low, // prevent creation of dev cells
+        this.hive.getUsedCapacity(RESOURCE_ENERGY) > LOW_ENERGY.low, // prevent creation of dev cells
         CREEP_LIFE_TIME - 90
       )
     ) {

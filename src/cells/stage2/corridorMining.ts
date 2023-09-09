@@ -44,7 +44,7 @@ export class CorridorMiningCell extends Cell {
       !inProgress.length &&
       this.hive.mode.powerMining &&
       workingPowerSites.length &&
-      this.hive.cells.storage.getUsedCapacity(RESOURCE_POWER) <=
+      this.hive.getUsedCapacity(RESOURCE_POWER) <=
         MINING_POWER_STOCK
     )
       inProgress = [

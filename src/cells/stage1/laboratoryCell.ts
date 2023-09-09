@@ -405,10 +405,10 @@ export class LaboratoryCell extends Cell {
     boostedSameType?: number
   ): BoostInfo | void {
     const res = BOOST_MINERAL[r.type][r.lvl];
-    let sum: number = this.sCell.getUsedCapacity(res);
+    let sum: number = this.hive.getUsedCapacity(res);
     // kindawhy bother with checking if compund is in prod but ok
     if (bee && this.prod && res === this.prod.res) {
-      sum = this.sCell.storageUsedCapacity(res);
+      sum = this.hive.storage?.store.getUsedCapacity(res) || 0;
       const inBees = _.sum(this.sCell.master.activeBees, (b) =>
         b.store.getUsedCapacity(res)
       );
@@ -594,8 +594,8 @@ export class LaboratoryCell extends Cell {
     if (this.prod) {
       const fact = Math.min(
         this.prod.plan,
-        this.sCell.getUsedCapacity(this.prod.res1),
-        this.sCell.getUsedCapacity(this.prod.res2)
+        this.hive.getUsedCapacity(this.prod.res1),
+        this.hive.getUsedCapacity(this.prod.res2)
       );
       if (fact < this.prod.plan) {
         if (this.patienceProd <= 10) ++this.patienceProd;
@@ -630,7 +630,7 @@ export class LaboratoryCell extends Cell {
       const recipe = REACTION_MAP[resource];
       if (!recipe) {
         if (
-          this.sCell.getUsedCapacity(resource) < amount &&
+          this.hive.getUsedCapacity(resource) < amount &&
           ingredients.indexOf(resource as MineralConstant) === -1
         )
           ingredients.push(resource as MineralConstant);
@@ -639,13 +639,13 @@ export class LaboratoryCell extends Cell {
       const needed =
         resource === res
           ? amount
-          : amount - this.sCell.getUsedCapacity(resource);
+          : amount - this.hive.getUsedCapacity(resource);
       if (needed > 0) {
         if (
           createQue.indexOf(resource) === -1 &&
-          this.sCell.getUsedCapacity(recipe.res1) >=
+          this.hive.getUsedCapacity(recipe.res1) >=
             Math.min(needed, LAB_MINERAL_CAPACITY / 3) &&
-          this.sCell.getUsedCapacity(recipe.res2) >=
+          this.hive.getUsedCapacity(recipe.res2) >=
             Math.min(needed, LAB_MINERAL_CAPACITY / 3)
         )
           createQue.push(resource);
@@ -787,8 +787,8 @@ export class LaboratoryCell extends Cell {
     amount: number = Infinity
   ): number {
     if (!(resource in REACTION_TIME)) return 0;
-    const res1Amount = this.sCell.getUsedCapacity(REACTION_MAP[resource]!.res1);
-    const res2Amount = this.sCell.getUsedCapacity(REACTION_MAP[resource]!.res2);
+    const res1Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res1);
+    const res2Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res2);
     amount = Math.min(amount, res1Amount, res2Amount);
     if (amount > 0)
       this.synthesizeRes = {
@@ -819,7 +819,7 @@ export class LaboratoryCell extends Cell {
       createQue.length &&
       this.newSynthesize(
         createQue.reduce((prev, curr) =>
-          this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev)
+          this.hive.getUsedCapacity(curr) < this.hive.getUsedCapacity(prev)
             ? curr
             : prev
         ),

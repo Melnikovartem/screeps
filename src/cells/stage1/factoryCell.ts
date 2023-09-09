@@ -182,7 +182,7 @@ export class FactoryCell extends Cell {
       if (
         (!recipe.level || recipe.level === this.level) &&
         (resource === res ||
-          this.sCell.getUsedCapacity(resource as CommodityConstant) <
+          this.hive.getUsedCapacity(resource as CommodityConstant) <
             amountOfIngredient)
       ) {
         if (
@@ -190,7 +190,7 @@ export class FactoryCell extends Cell {
           !_.filter(
             recipe.components,
             (amountNeeded, component) =>
-              this.sCell.getUsedCapacity(component as CommodityIngredient) <
+              this.hive.getUsedCapacity(component as CommodityIngredient) <
               amountNeeded
           ).length
         )
@@ -217,7 +217,7 @@ export class FactoryCell extends Cell {
       num,
       ..._.map(recipe.components, (amount, component) =>
         Math.floor(
-          this.sCell.getUsedCapacity(component as CommodityIngredient) / amount
+          this.hive.getUsedCapacity(component as CommodityIngredient) / amount
         )
       )
     );
@@ -348,7 +348,7 @@ export class FactoryCell extends Cell {
         );
       fact = Math.min(
         fact,
-        Math.floor(this.sCell.getUsedCapacity(res) / amount) * amount
+        Math.floor(this.hive.getUsedCapacity(res) / amount) * amount
       );
     }
 
@@ -420,7 +420,7 @@ export class FactoryCell extends Cell {
           _.forEach(recipe.components, (amountNeeded, comp) => {
             const component = comp as FactoryResourceConstant | DepositConstant;
             if (!(COMMON_COMMODITIES as string[]).includes(component)) {
-              let toUse = this.sCell.getUsedCapacity(component);
+              let toUse = this.hive.getUsedCapacity(component);
               const networkAmount = Apiary.network.resState[component] || 0;
               if (
                 recipe.level ||
@@ -473,8 +473,8 @@ export class FactoryCell extends Cell {
       if (ans === 0) ans = curr.amount - prev.amount;
       if (ans === 0)
         ans =
-          this.sCell.getUsedCapacity(curr.res) -
-          this.sCell.getUsedCapacity(prev.res);
+          this.hive.getUsedCapacity(curr.res) -
+          this.hive.getUsedCapacity(prev.res);
       return ans < 0 ? curr : prev;
     });
     return OK;
@@ -508,7 +508,7 @@ export class FactoryCell extends Cell {
       createQue.length &&
       this.newCommodity(
         createQue.reduce((prev, curr) =>
-          this.sCell.getUsedCapacity(curr) < this.sCell.getUsedCapacity(prev)
+          this.hive.getUsedCapacity(curr) < this.hive.getUsedCapacity(prev)
             ? curr
             : prev
         ),

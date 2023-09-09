@@ -219,7 +219,7 @@ export class Hive {
 
   // #endregion Public Static Methods (1)
 
-  // #region Public Methods (5)
+  // #region Public Methods (6)
 
   public createSwarm<T>(
     ref: string,
@@ -234,6 +234,10 @@ export class Hive {
     const order = new SwarmOrder<T>(ref, this, pos, type);
     for (const key in info) (order.special as Partial<T>)[key] = info[key];
     return order;
+  }
+
+  public getUsedCapacity(res: ResourceConstant) {
+    return this.cells.storage.getUsedCapacity(res);
   }
 
   public roomPlanner(
@@ -302,5 +306,5 @@ export class Hive {
     });
   }
 
-  // #endregion Public Methods (5)
+  // #endregion Public Methods (6)
 }
