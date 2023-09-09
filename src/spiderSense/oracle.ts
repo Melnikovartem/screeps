@@ -43,12 +43,14 @@ export class Oracle {
       )
         return;
       const hive = _.min(Apiary.hives, (h) => h.pos.getRoomRangeTo(roomName));
-      const order = new SwarmOrder(
-        prefix.spotter + makeId(6),
-        hive,
-        goodSpot(roomName),
-        SWARM_MASTER.puppet
-      );
+      // stop early spam
+      if (hive.cells.storage.master.beesAmount)
+        new SwarmOrder(
+          prefix.spotter + makeId(6),
+          hive,
+          goodSpot(roomName),
+          SWARM_MASTER.puppet
+        );
     });
   }
 

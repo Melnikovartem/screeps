@@ -3,7 +3,7 @@ import { TransferRequest } from "bees/transferRequest";
 import type { Hive } from "hive/hive";
 import type { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
-import { prefix } from "static/enums";
+import { hiveStates, prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
 
@@ -13,7 +13,8 @@ export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.2);
 
 export const LOW_ENERGY = {
   low: 5_000, // push red button (dev cell)
-  high: 20_000, // just be more frugal lmao
+  highStart: 15_000, // just be more frugal lmao
+  highEnd: 50_000, // stop beeing frugal
 };
 
 @profile
@@ -230,10 +231,15 @@ export class StorageCell extends Cell {
     } else if (this.linkState.lastUpdated + 5 <= Game.time)
       this.linkState = undefined;
 
+    const threshold =
+      this.hive.state === hiveStates.lowenergy
+        ? LOW_ENERGY.highEnd
+        : LOW_ENERGY.highStart;
+
     this.hive.stateChange(
       "lowenergy",
       this.storage instanceof StructureStorage &&
-        this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < LOW_ENERGY.high
+        this.storage.store.getUsedCapacity(RESOURCE_ENERGY) < threshold
     );
 
     // if (!Object.keys(this.requests).length)

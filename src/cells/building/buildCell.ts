@@ -30,9 +30,10 @@ export class BuildCell extends Cell {
 
   private updateStructures = updateStructures;
 
+  protected forceCheck: "" | "mainroom" | "annex" = "annex";
+
   /** sum of construction cost */
   public buildingCosts = _.cloneDeep(ZERO_COSTS_BUILDING_HIVE);
-  public forceCheck: "" | "mainroom" | "annex" = "annex";
   public getBuildTarget = getBuildTarget;
   public override master: BuilderMaster;
   public structuresConst: BuildProject[] = [];
@@ -46,6 +47,11 @@ export class BuildCell extends Cell {
   public constructor(hive: Hive) {
     super(hive, prefix.buildingCell);
     this.master = new BuilderMaster(this);
+  }
+
+  /** interface to recheck buildings */
+  public checkRoom() {
+    if (this.forceCheck === "") this.forceCheck = "mainroom";
   }
 
   // #endregion Constructors (1)

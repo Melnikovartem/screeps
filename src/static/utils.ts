@@ -224,6 +224,7 @@ const SPOT_ATTEMPTS = 20;
 
 /** tries to return a position on plains in the center of the room */
 export function goodSpot(roomName: string) {
+  // @todo a bug here? (spotter try to go into walls)
   const terrain = Game.map.getRoomTerrain(roomName);
   let [x, y] = [25, 25];
   let [xbest, ybest] = [25, 25];

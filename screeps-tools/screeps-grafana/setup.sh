@@ -16,7 +16,7 @@ echo Installing Dashboards...
 for filename in ./dashboards/*.json; do
 	curl -s 'http://admin:admin@localhost:1337/api/dashboards/db' -X POST -H 'Content-Type: application/json;charset=UTF-8' \
     --data "{
-        \"dashboard\": $(sed "s/\"id\": [[:digit:]]\+,/\"id\": null,/g" "$filename"),
+        \"dashboard\": $(cat "$filename"),
         \"message\": \"Uploaded dashboard\",
         \"overwrite\": false
     }" # get dashboard from file, change "id" to null and send it to import

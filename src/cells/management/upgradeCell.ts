@@ -25,6 +25,7 @@ export class UpgradeCell extends Cell {
   public ratePerCreepMax = 1;
   public roadTime: number;
   public workPerCreepMax = 1;
+  public prevLvl = this.controller.level;
 
   // #endregion Properties (9)
 
@@ -153,6 +154,12 @@ export class UpgradeCell extends Cell {
 
   public override update() {
     this.updateObjects([]);
+
+    if (this.prevLvl !== this.controller.level) {
+      // Just upgraded a new lvl
+      this.hive.cells.build.checkRoom();
+    }
+    this.prevLvl = this.controller.level;
 
     // at creation time or while room is small each 1.5K ticks (Math.random() < 0.0005)
     if (

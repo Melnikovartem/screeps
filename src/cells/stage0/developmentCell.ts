@@ -86,12 +86,20 @@ export class DevelopmentCell extends Cell {
     );
   }
 
+  private get enoughManagers() {
+    return (
+      this.sCell.master.beesAmount &&
+      this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
+    );
+  }
+
   // upper bound on upgraders
   public get maxUpgraderBeeCount() {
     const energyPerBee = this.hive.cells.upgrade.ratePerCreepMax;
 
-    return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
-      ? Math.round(this.hive.approxIncome / energyPerBee) + 1
+    // do not consume more then we produce
+    return this.enoughManagers
+      ? Math.ceil(this.hive.approxIncome / energyPerBee)
       : 0;
   }
 
@@ -107,8 +115,9 @@ export class DevelopmentCell extends Cell {
       CREEP_LIFE_TIME;
 
     // send all energy instead of upgrading to building
-    return this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
-      ? Math.ceil(this.hive.approxIncome / energyPerBeeTick) // do not consume more then we produce
+    // do not consume more then we produce
+    return this.enoughManagers
+      ? Math.ceil(this.hive.approxIncome / energyPerBeeTick)
       : 0;
   }
 
@@ -182,14 +191,16 @@ export class DevelopmentCell extends Cell {
     const upgTarget = upgrader.targetBeeCount;
     const buildTarget = builder.targetBeeCount;
 
-    // how many bees to send help fomr upgraders to builders
-    // (no more then 5)
+    // @todo better :/
+    // how many patterns(?) to send help from upgraders to builders
+    // (no more than 5)
 
     const buildBees =
       Math.min(
         Math.floor(
           this.hive.cells.build.sumCost /
-            (BUILDING_PER_PATTERN.normal.hive.build * 0.5)
+            BUILDING_PER_PATTERN.normal.hive.build /
+            0.1 // complete all buildings in 0.1 generations aka 150 ticks
         ),
         5
       ) - builder.beesAmount;

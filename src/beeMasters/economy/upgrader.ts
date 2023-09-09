@@ -86,10 +86,12 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     const targetPrecise =
       Math.min(desiredRate, this.parent.maxPossibleRate) /
       this.parent.ratePerCreepMax;
-    const beeCount = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
+    let beeCount = Math.min(Math.ceil(targetPrecise), this.parent.maxBees);
     this.patternPerBee = Math.round(
       (targetPrecise / beeCount) * this.parent.workPerCreepMax
     );
+    if (this.hive.cells.dev && this.parent.controller.ticksToDowngrade > 1000)
+      beeCount = Math.min(beeCount, this.hive.cells.dev.maxUpgraderBeeCount);
     return beeCount;
   }
 
