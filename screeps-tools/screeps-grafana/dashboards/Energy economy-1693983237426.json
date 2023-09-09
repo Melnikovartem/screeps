@@ -1,0 +1,3656 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 4,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 119,
+      "panels": [],
+      "repeat": "shard",
+      "repeatDirection": "h",
+      "title": "Colony info $shard",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "with import/export",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "1h average"
+            },
+            "properties": [
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5m average"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 0,
+        "y": 1
+      },
+      "id": 137,
+      "maxDataPoints": 1000000,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(divideSeries(movingSum(transformNull(sumSeries(group(#E, #F)), 0), '5min'), #B), '5m average')",
+          "targetFull": "alias(divideSeries(movingSum(transformNull(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), 0), '5min'), movingSum(derivative(stats.gauges.$shard.tick.current), '5min')), '5m average')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(divideSeries(movingSum(transformNull(sumSeries(group(#E, #F)), 0), '1hour'), #D), '1h average')",
+          "targetFull": "alias(divideSeries(movingSum(transformNull(sumSeries(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.*.resourceEvents.$resource.*)), 0), '1hour'), movingSum(derivative(stats.gauges.$shard.tick.current), '1hour')), '1h average')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "movingSum(derivative(stats.gauges.$shard.tick.current), '5min')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "movingSum(derivative(stats.gauges.$shard.tick.current), '1hour')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "E",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "F",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource per tick ",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Income"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Expenditure"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 10,
+        "y": 1
+      },
+      "id": 96,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "name"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(absolute(sumSeries(averageBelow(group(#A, #D), -0.000001))), 'Expenditure')",
+          "targetFull": "alias(absolute(sumSeries(averageBelow(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')), -0.000001))), 'Expenditure')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "alias(sumSeries(averageAbove(group(#A, #D), 0.000001)), 'Income')",
+          "targetFull": "alias(sumSeries(averageAbove(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')), 0.000001)), 'Income')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')"
+        }
+      ],
+      "title": "Income/Expenditure",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 98,
+      "maxDataPoints": 1000000,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(sumSeries(averageAbove(groupByNode(group(#C, #D), 7, 'sum'), 0.000001)), 'Income')",
+          "targetFull": "alias(sumSeries(averageAbove(groupByNode(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')), 7, 'sum'), 0.000001)), 'Income')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(sumSeries(averageBelow(groupByNode(group(#C, #D), 7, 'sum'), -0.000001)), 'Expenditure')",
+          "targetFull": "alias(sumSeries(averageBelow(groupByNode(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')), 7, 'sum'), -0.000001)), 'Expenditure')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')"
+        }
+      ],
+      "title": "$resource over period",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "binary": {
+              "left": "Income",
+              "reducer": "sum",
+              "right": "Expenditure"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 10,
+        "y": 6
+      },
+      "id": 124,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "groupByNode(averageAbove(group(#A, #C), 0.000001), 7, 'sum')",
+          "targetFull": "groupByNode(averageAbove(group(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), 0.000001), 7, 'sum')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource income ",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 17,
+        "y": 6
+      },
+      "id": 2,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "groupByNode(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 7, 'sum')",
+          "targetFull": "groupByNode(removeEmptySeries(absolute(averageBelow(group(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*), -0.000001))), 7, 'sum')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource expenditure ",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "stepBefore",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 10,
+        "x": 0,
+        "y": 9
+      },
+      "hideTimeOverride": false,
+      "id": 3,
+      "maxDataPoints": 1000000,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "10.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "aliasByNode(sortByTotal(groupByNode(transformNull(removeEmptySeries(divideSeries(movingSum(group(#B, #D), '10min'), #A)), 0), 7, 'sum')), 0)",
+          "targetFull": "aliasByNode(sortByTotal(groupByNode(transformNull(removeEmptySeries(divideSeries(movingSum(group(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')), '10min'), movingSum(derivative(stats.gauges.$shard.tick.current), '10min'))), 0), 7, 'sum')), 0)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "movingSum(derivative(stats.gauges.$shard.tick.current), '10min')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local')",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource per tick 10m average",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "maybe some overlap but seems good",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 10,
+        "y": 15
+      },
+      "id": 150,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "absolute(removeEmptySeries(averageBelow(group(#O, #N), -0.000001)))",
+          "targetFull": "absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001)))",
+          "textEditor": true
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "O",
+          "target": "aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "N",
+          "target": "aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(sumSeries(grep(#C, 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), 'managers')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), 'managers')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(sumSeries(grep(#C, 'Honey_bee|upgrade')), 'upgrade')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Honey_bee|upgrade')), 'upgrade')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(sumSeries(grep(#C, 'Mason_bee|build')), 'build')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Mason_bee|build')), 'build')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposit')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposit')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(sumSeries(grep(#C, 'Japanese_beetle')), 'mineral')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Japanese_beetle')), 'mineral')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energy')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Scarabaeus_sacer')), 'energy')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(sumSeries(grep(#C, 'Bumblebee|upkeep\\.[a-z0-9]{4}')), 'haulers')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Bumblebee|upkeep\\.[a-z0-9]{4}')), 'haulers')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexes')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Orchid_Mantis|Firefly')), 'annexes')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(sumSeries(grep(#C, 'Walking_stick|defense')), 'defense')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Walking_stick|defense')), 'defense')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth|power')), 'power')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Hercules_beetle|Atlas_moth|power')), 'power')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers')",
+          "targetFull": "alias(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "P",
+          "target": "alias(sumSeries(grep(#C, 'factory|boosts')), 'production')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'factory|boosts')), 'production')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Q",
+          "target": "alias(sumSeries(grep(#C, 'export|terminal')), 'export')",
+          "targetFull": "alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 'export|terminal')), 'export')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(round(diffSeries(sumSeries(#C), #A, #B, #D, #E, #F, #G, #H, #I, #J, #K, #L, #P, #Q), 10), 'other')",
+          "targetFull": "alias(round(diffSeries(sumSeries(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001)))), alias(sumSeries(grep(absolute(removeEmptySeries(averageBelow(group(#O, #N), -0.000001))), 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), 'managers'), alias(sumSeries(grep(#C, 'Honey_bee|upgrade')), 'upgrade'), alias(sumSeries(grep(#C, 'Mason_bee|build')), 'build'), alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposit'), alias(sumSeries(grep(#C, 'Japanese_beetle')), 'mineral'), alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energy'), alias(sumSeries(grep(#C, 'Bumblebee|upkeep\\.[a-z0-9]{4}')), 'haulers'), alias(sumSeries(grep(#C, 'Walking_stick|defense')), 'defense'), alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexes'), alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth|power')), 'power'), alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attackers'), alias(sumSeries(grep(#C, 'factory|boosts')), 'production'), alias(sumSeries(grep(#C, 'export|terminal')), 'export')), 10), 'other')"
+        }
+      ],
+      "title": "$resource expenditure by category ",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "not ideal as some overlap is still there",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/build/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 17,
+        "y": 15
+      },
+      "id": 144,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.'))",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(sumSeries(grep(#C, 'Queen_bee|Carpenter_bee')), 'managers')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Queen_bee|Carpenter_bee')), 'managers')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(sumSeries(grep(#C, 'Honey_bee')), 'upgrader')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Honey_bee')), 'upgrader')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(sumSeries(grep(#C, 'Mason_bee')), 'builder')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Mason_bee')), 'builder')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposits')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposits')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(sumSeries(grep(#C, 'Japanese_beetle')), 'minerals')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Japanese_beetle')), 'minerals')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energy')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Scarabaeus_sacer')), 'energy')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(sumSeries(grep(#C, 'Bumblebee')), 'haulers')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Bumblebee')), 'haulers')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(sumSeries(grep(#C, 'Walking_stick')), 'defense')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Walking_stick')), 'defense')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexes')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Orchid_Mantis|Firefly')), 'annexes')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth')), 'power')",
+          "targetFull": "alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Hercules_beetle|Atlas_moth')), 'power')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attack')",
+          "targetFull": "alias(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attack')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(diffSeries(sumSeries(#C), #A, #B, #D, #E, #F, #G, #H, #I, #J, #K, #L), 'other')",
+          "targetFull": "alias(diffSeries(sumSeries(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.'))), alias(sumSeries(grep(absolute(grep(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, '\\.spawn\\.')), 'Queen_bee|Carpenter_bee')), 'managers'), alias(sumSeries(grep(#C, 'Honey_bee')), 'upgrader'), alias(sumSeries(grep(#C, 'Mason_bee')), 'builder'), alias(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), 'deposits'), alias(sumSeries(grep(#C, 'Japanese_beetle')), 'minerals'), alias(sumSeries(grep(#C, 'Scarabaeus_sacer')), 'energy'), alias(sumSeries(grep(#C, 'Bumblebee')), 'haulers'), alias(sumSeries(grep(#C, 'Walking_stick')), 'defense'), alias(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), 'annexes'), alias(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth')), 'power'), alias(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect'), 'attack')), 'other')"
+        }
+      ],
+      "title": "$resource on spawning",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "maybe some overlap but seems good",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 166,
+      "maxDataPoints": 1000000,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Mean",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "transformNull(absolute(removeEmptySeries(averageBelow(group(#O, #N), -0.000001))), 0)",
+          "targetFull": "transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "R",
+          "target": "movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "O",
+          "target": "aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": -1,
+          "refId": "N",
+          "target": "aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), '30min'), #R), 'managers')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'managers')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Honey_bee|upgrade')), '30min'), #R), 'upgrade')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Honey_bee|upgrade')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'upgrade')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "D",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Mason_bee|build')), '30min'), #R), 'build')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Mason_bee|build')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'build')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), '30min'), #R), 'deposit')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Garden_bumblebee|Ground_beetle|Dragonfly')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'deposit')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Japanese_beetle')), '30min'), #R), 'mineral')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Japanese_beetle')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'mineral')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "G",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Scarabaeus_sacer')), '30min'), #R), 'energy')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Scarabaeus_sacer')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'energy')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "H",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Bumblebee|upkeep\\.[a-z0-9]{4}')), '30min'), #R), 'haulers')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Bumblebee|upkeep\\.[a-z0-9]{4}')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'haulers')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "J",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), '30min'), #R), 'annexes')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Orchid_Mantis|Firefly')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'annexes')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "I",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Walking_stick|defense')), '30min'), #R), 'defense')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Walking_stick|defense')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'defense')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "K",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth|power')), '30min'), #R), 'power')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Hercules_beetle|Atlas_moth|power')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'power')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "L",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect')), '30min'), #R), 'attackers')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'attackers')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "P",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'factory|boosts')), '30min'), #R), 'production')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'factory|boosts')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'production')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Q",
+          "target": "alias(divideSeries(movingAverage(sumSeries(grep(#C, 'export|terminal')), '30min'), #R), 'export')",
+          "targetFull": "alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0), 'export|terminal')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'export')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "M",
+          "target": "alias(round(diffSeries(sumSeries(#C), #A, #B, #D, #E, #F, #G, #H, #I, #J, #K, #L, #P, #Q), 30min), '#R')",
+          "targetFull": "alias(round(diffSeries(sumSeries(transformNull(absolute(removeEmptySeries(averageBelow(group(aliasByNode(stats.gauges.$shard.hives.*.resourceEvents.$resource.*.*, 7, 8), aliasByNode(exclude(stats.gauges.$shard.hives.*.resourceEvents.$resource.*, '_local'), 7)), -0.000001))), 0)), alias(divideSeries(movingAverage(sumSeries(grep(transformNull(absolute(removeEmptySeries(averageBelow(group(#O, #N), -0.000001))), 0), 'Queen_bee|Carpenter_bee|upkeep(?!\\.)')), '30min'), movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')), 'managers'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Honey_bee|upgrade')), '30min'), #R), 'upgrade'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Mason_bee|build')), '30min'), #R), 'build'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Garden_bumblebee|Ground_beetle|Dragonfly')), '30min'), #R), 'deposit'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Japanese_beetle')), '30min'), #R), 'mineral'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Scarabaeus_sacer')), '30min'), #R), 'energy'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Bumblebee|upkeep\\.[a-z0-9]{4}')), '30min'), #R), 'haulers'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Walking_stick|defense')), '30min'), #R), 'defense'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Orchid_Mantis|Firefly')), '30min'), #R), 'annexes'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Hercules_beetle|Atlas_moth|power')), '30min'), #R), 'power'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'Housefly|Luna_moth|European_hornet|Red_paper_wasp|Assasin_bug|Leaf_insect')), '30min'), #R), 'attackers'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'factory|boosts')), '30min'), #R), 'production'), alias(divideSeries(movingAverage(sumSeries(grep(#C, 'export|terminal')), '30min'), #R), 'export')), 30min), 'movingAverage(derivative(stats.gauges.$shard.tick.current), '30min')')",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource expenditure by category avg 30min",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 83,
+      "panels": [],
+      "repeat": "hiveName",
+      "repeatDirection": "h",
+      "title": "$hiveName",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ffffff",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 87,
+      "maxDataPoints": 1000000,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Mean",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "sortBy(groupByNode(transformNull(removeEmptySeries(divideSeries(movingSum(group(#A, #D), '10min'), #B)), 0), 7, 'sum'), 'average', false)",
+          "targetFull": "sortBy(groupByNode(transformNull(removeEmptySeries(divideSeries(movingSum(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*), '10min'), movingSum(derivative(stats.gauges.$shard.tick.current), '10min'))), 0), 7, 'sum'), 'average', false)",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "E",
+          "target": "alias(sumSeries(#C), 'Total')",
+          "targetFull": "alias(sumSeries(sortBy(groupByNode(transformNull(removeEmptySeries(divideSeries(movingSum(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*), '10min'), movingSum(derivative(stats.gauges.$shard.tick.current), '10min'))), 0), 7, 'sum'), 'average', false)), 'Total')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "B",
+          "target": "movingSum(derivative(stats.gauges.$shard.tick.current), '10min')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "D",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource per Tick 10m avg $hiveName",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 31
+      },
+      "id": 117,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "groupByNode(removeEmptySeries(absolute(averageAbove(group(#A, #C), 0.000001))), 7, 'sum')",
+          "targetFull": "groupByNode(removeEmptySeries(absolute(averageAbove(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), 0.000001))), 7, 'sum')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource per tick $hiveName",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": null
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mining"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ee1b34",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "spawn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#40bd30",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "terminal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "build"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/_local/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1be4ae",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "boosts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22ee0c",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upkeep"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#48484a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "defense"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c1d4d1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upgrade"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c7180e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/export$|import$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3a32e9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pickup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#c021a5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 31
+      },
+      "id": 118,
+      "maxDataPoints": 1000000,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "groupByNode(removeEmptySeries(absolute(averageBelow(group(#A, #C), -0.000001))), 7, 'sum')",
+          "targetFull": "groupByNode(removeEmptySeries(absolute(averageBelow(group(stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*, stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*), -0.000001))), 7, 'sum')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "C",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*.*",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": null
+          },
+          "hide": true,
+          "refCount": 0,
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.$hiveName.resourceEvents.$resource.*",
+          "textEditor": false
+        }
+      ],
+      "title": "$resource expenditure $hiveName",
+      "transformations": [],
+      "type": "piechart"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "screeps",
+    "economy"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "shard2",
+          "value": "shard2"
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": null
+        },
+        "definition": "stats.gauges.*",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "shard",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.*"
+        },
+        "refresh": 1,
+        "regex": "shard.+",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": null
+        },
+        "definition": "stats.gauges.$shard.hives.*",
+        "hide": 0,
+        "includeAll": true,
+        "multi": false,
+        "name": "hiveName",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "stats.gauges.$shard.hives.*"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 3,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "energy",
+          "value": "energy"
+        },
+        "hide": 2,
+        "name": "resource",
+        "options": [
+          {
+            "selected": true,
+            "text": "energy",
+            "value": "energy"
+          }
+        ],
+        "query": "energy",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-5h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Energy economy",
+  "uid": "e8371baf-3c97-4115-838c-5484c5069b64",
+  "version": 31,
+  "weekStart": ""
+}

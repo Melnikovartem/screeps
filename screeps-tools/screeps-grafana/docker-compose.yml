@@ -1,9 +1,19 @@
 version: "2"
 volumes:
   graphite_conf:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "./graphite_conf"
+  statsd_conf:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "./statsd_conf"
   graphite_data:
   grafana_data:
-  statsd_conf:
 services:
   node-shard2:
     build:
@@ -41,17 +51,3 @@ services:
      - graphite-statsd
     ports:
      - "1337:3000"
-#  grafana_setup_datasource:
-#    image: appropriate/curl
-#    links:
-#    - grafana
-#    command: |
-#     curl 'http://admin:admin@grafana:3000/api/datasources' -X POST -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"name":"localGraphite","type":"graphite","url":"http://graphite:8000","access":"proxy","isDefault":true,"database":""}'
-#  grafana_setup_sampledashboard:
-#    image: appropriate/curl
-#    links:
-#     - grafana
-#    volumes:
-#      - ./dashboard.json:/dashboard.json
-#    command: |
-#      curl 'http://admin:admin@grafana:3000/api/dashboards/db' -X POST -H 'Content-Type: application/json;charset=UTF-8' --data @/dashboard.json 
