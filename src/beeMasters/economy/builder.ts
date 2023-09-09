@@ -3,6 +3,7 @@ import type { CreepSetup } from "bees/creepSetups";
 import { setups } from "bees/creepSetups";
 import type { BuildCell } from "cells/building/buildCell";
 import { wallMap } from "cells/building/hive-building";
+import { LOW_ENERGY } from "cells/management/storageCell";
 import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -440,7 +441,8 @@ export class BuilderMaster extends Master<BuildCell> {
 
     if (
       this.checkBees(
-        this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) > 10_000,
+        this.hive.cells.storage.getUsedCapacity(RESOURCE_ENERGY) >
+          LOW_ENERGY.low, // prevent creation of dev cells
         CREEP_LIFE_TIME - 90
       )
     ) {

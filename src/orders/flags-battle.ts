@@ -1,7 +1,7 @@
 import { prefix } from "static/enums";
 
 import type { FlagCommand } from "./flagCommands";
-import { SWARM_MASTER } from "./swarmOrder-masters";
+import { SWARM_MASTER } from "./swarm-nums";
 
 export function actBattle(command: FlagCommand) {
   switch (command.secondaryColor) {

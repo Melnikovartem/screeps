@@ -79,6 +79,8 @@ export class DevelopmentCell extends Cell {
 
     let rounding = (x: number) => Math.round(x + 0.1);
     if (this.controller.level <= 2) rounding = (x) => Math.round(x);
+    // prevent spawn from already established hives
+    if (this.hive.phase > 0) rounding = (x) => Math.min(Math.floor(x), 4);
     return Math.min(
       DEV_MAX_HAULER_PER_SPAWN *
         Object.keys(this.hive.cells.spawn.spawns).length,

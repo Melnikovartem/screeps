@@ -244,7 +244,8 @@ export class BootstrapMaster extends Master<DevelopmentCell> {
           if (!bee.target) {
             source = bee.pos.findClosest(
               sources.filter(
-                (s) => s.pos.getOpenPositions(true).length || s.pos.isNearTo(bee)
+                (s) =>
+                  s.pos.getOpenPositions(true).length || s.pos.isNearTo(bee)
               )
             );
             if (source) bee.target = source.id;

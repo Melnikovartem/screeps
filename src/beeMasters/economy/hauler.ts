@@ -324,7 +324,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
     if (this.checkBeesWithRecalc())
       this.wish({
         setup: setups.hauler,
-        priority: this.beesAmount ? 5 : 3,
+        priority: this.beesAmount || this.waitingForBees ? 5 : 3,
       });
 
     _.forEach(this.parent.quitefullCells, (cell) => {

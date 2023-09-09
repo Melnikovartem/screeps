@@ -31,6 +31,8 @@ declare global {
   }
 }
 
+Memory.cache.intel = {};
+
 // Function for handling global reset
 function onGlobalReset(): void {
   // Initialize memory positions

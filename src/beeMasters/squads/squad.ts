@@ -8,7 +8,7 @@ import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
   Enemy,
-} from "spiderSense/intelligence";
+} from "spiderSense/intel";
 import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 

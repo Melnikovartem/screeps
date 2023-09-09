@@ -7,8 +7,7 @@ import { actBattle } from "./flags-battle";
 import { actCivil } from "./flags-civil";
 import { actPlanner, deletePlanner } from "./flags-planner";
 import { actUtilsActions, actUtilsPositions } from "./orders-utils";
-import { SwarmOrder } from "./swarmOrder";
-import { SWARM_MASTER } from "./swarmOrder-masters";
+import { SWARM_MASTER } from "./swarm-nums";
 
 // remove flag after time
 const FLAG_INVALIDATE_TIME = 10;
@@ -109,13 +108,13 @@ export class FlagCommand {
 
   /** creates master. dont forget about extra info */
   public createSwarm(type: SWARM_MASTER) {
-    if (!Apiary.orders[this.ref]) {
+    if (Apiary.orders[this.ref]) {
       console.log(
         `ERROR: DUPLICATE ${SWARM_MASTER[type].constructor.name} ORDER FOR ${this.print} NOT CREATED`
       );
       return;
     }
-    const order = new SwarmOrder(this.ref, this.hive, this.pos, type);
+    const order = this.hive.createSwarm(this.ref, this.pos, type);
     console.log(
       `OK: ${SWARM_MASTER[type].constructor.name} ORDER FOR ${this.print} CREATED`
     );

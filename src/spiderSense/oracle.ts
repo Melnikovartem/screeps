@@ -1,6 +1,5 @@
 import type { PuppetMaster } from "beeMasters/civil/puppet";
-import { SwarmOrder } from "orders/swarmOrder";
-import { SWARM_MASTER } from "orders/swarmOrder-masters";
+import { SWARM_MASTER } from "orders/swarm-nums";
 import { prefix } from "static/enums";
 import { goodSpot, makeId } from "static/utils";
 
@@ -45,9 +44,8 @@ export class Oracle {
       const hive = _.min(Apiary.hives, (h) => h.pos.getRoomRangeTo(roomName));
       // stop early spam
       if (hive.cells.storage.master.beesAmount)
-        new SwarmOrder(
+        hive.createSwarm(
           prefix.spotter + makeId(6),
-          hive,
           goodSpot(roomName),
           SWARM_MASTER.puppet
         );

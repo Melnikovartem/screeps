@@ -2,8 +2,8 @@ import type { HordeMaster } from "beeMasters/war/horde";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
-import { SwarmOrder } from "orders/swarmOrder";
-import { SWARM_MASTER } from "orders/swarmOrder-masters";
+import { SWARM_MASTER } from "orders/swarm-nums";
+import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates, prefix } from "static/enums";
 import { makeId, towerCoef } from "static/utils";
@@ -423,9 +423,8 @@ export class DefenseCell extends Cell {
       Apiary.defenseSwarms[pos.roomName] = swOrder.master as HordeMaster;
       return swOrder.ref;
     }
-    swOrder = new SwarmOrder(
+    swOrder = (this.hive.bassboost || this.hive).createSwarm(
       prefix.defSwarm + makeId(4),
-      this.hive.bassboost || this.hive,
       pos,
       SWARM_MASTER.hordedefense
     );

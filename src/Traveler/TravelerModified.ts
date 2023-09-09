@@ -506,11 +506,6 @@ export class Traveler {
         )
           return Number.POSITIVE_INFINITY;
 
-        /* if (roomInfo.dangerlvlmax === 8 && roomInfo.lastUpdated >= Game.time - CREEP_LIFE_TIME / 2)
-          return 6; */
-        /* if ([""].includes(roomName))
-          return 1;*/
-
         const roomInfo = Apiary.intel.getInfo(roomName, Infinity);
         switch (roomInfo.roomState) {
           case roomStates.ownedByMe:

@@ -11,8 +11,10 @@ import { HIVE_ENERGY, StorageCell } from "cells/management/storageCell";
 import { UpgradeCell } from "cells/management/upgradeCell";
 import { RespawnCell } from "cells/spawning/respawnCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
+import type { SWARM_MASTER } from "orders/swarm-nums";
+import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import { APPROX_PROFIT_RESOURCE, BASE_MODE_HIVE } from "static/constants";
+import { APPROX_PROFIT_SOURCE, BASE_MODE_HIVE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import type { HiveCells, ResTarget } from "./hive-declarations";
@@ -25,7 +27,7 @@ const HIVE_MINERAL = 5000;
 // Decorator to profile class methods
 @profile
 export class Hive {
-  // #region Properties (15)
+  // #region Properties (12)
 
   /** List of annex names */
   private _annexNames: string[];
@@ -58,7 +60,7 @@ export class Hive {
   public shortages: ResTarget = {};
   public state: hiveStates = hiveStates.economy;
 
-  // #endregion Properties (15)
+  // #endregion Properties (12)
 
   // #region Constructors (1)
 
@@ -115,15 +117,13 @@ export class Hive {
     this.updateCellData(true);
   }
 
-  public roomPlanner(
-    roomName: string = this.roomName
-  ): CompressedRoom | undefined {
-    return Memory.longterm.roomPlanner[this.roomName]?.rooms[roomName];
-  }
-
   // #endregion Constructors (1)
 
-  // #region Public Accessors (12)
+  // #region Public Accessors (14)
+
+  public get annexInDanger() {
+    return this.cells.annex.annexInDanger;
+  }
 
   public get annexNames() {
     return this._annexNames;
@@ -132,6 +132,17 @@ export class Hive {
   public set annexNames(value) {
     this._annexNames = value;
     this.cache.annex = value;
+  }
+
+  public get approxIncome() {
+    let income = 0;
+    _.forEach(this.cells.excavation.resourceCells, (s) => {
+      if (s.resType === RESOURCE_ENERGY && s.operational)
+        income += s.link
+          ? APPROX_PROFIT_SOURCE.link
+          : APPROX_PROFIT_SOURCE.hauling;
+    });
+    return Math.max(1, income);
   }
 
   /** fast way to get to cache */
@@ -180,10 +191,6 @@ export class Hive {
     return this.controller.pos;
   }
 
-  public get annexInDanger() {
-    return this.cells.annex.annexInDanger;
-  }
-
   public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.roomName}"]</a>`;
   }
@@ -197,19 +204,7 @@ export class Hive {
     return this.cells.storage.storage;
   }
 
-  public get approxIncome() {
-    return (
-      Math.max(
-        1,
-        _.filter(
-          this.cells.excavation.resourceCells,
-          (s) => s.resType === RESOURCE_ENERGY && s.operational
-        ).length
-      ) * APPROX_PROFIT_RESOURCE
-    );
-  }
-
-  // #endregion Public Accessors (12)
+  // #endregion Public Accessors (14)
 
   // #region Public Static Methods (1)
 
@@ -224,7 +219,28 @@ export class Hive {
 
   // #endregion Public Static Methods (1)
 
-  // #region Public Methods (3)
+  // #region Public Methods (5)
+
+  public createSwarm<T>(
+    ref: string,
+    pos: RoomPosition,
+    type: SWARM_MASTER,
+    info?: Partial<T>
+  ) {
+    // bug prone, but best what i could think of
+    // if you don't fuckup with defaultInfo in swarm master should be ok
+    // (as it would it set it to T so special would be have some object behind it)
+    // swarmOrder can handle to some extend duplicate order
+    const order = new SwarmOrder<T>(ref, this, pos, type);
+    for (const key in info) (order.special as Partial<T>)[key] = info[key];
+    return order;
+  }
+
+  public roomPlanner(
+    roomName: string = this.roomName
+  ): CompressedRoom | undefined {
+    return Memory.longterm.roomPlanner[this.roomName]?.rooms[roomName];
+  }
 
   public run() {
     _.forEach(this.cells, (cell: Cell) => {
@@ -286,5 +302,5 @@ export class Hive {
     });
   }
 
-  // #endregion Public Methods (3)
+  // #endregion Public Methods (5)
 }

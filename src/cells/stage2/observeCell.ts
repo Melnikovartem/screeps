@@ -1,6 +1,5 @@
 import type { Hive } from "hive/hive";
-import { SwarmOrder } from "orders/swarmOrder";
-import { SWARM_MASTER } from "orders/swarmOrder-masters";
+import { SWARM_MASTER } from "orders/swarm-nums";
 import { profile } from "profiler/decorator";
 import { prefix, roomStates } from "static/enums";
 import { getRoomCoorinates } from "static/utils";
@@ -70,7 +69,7 @@ export class ObserveCell extends Cell {
         return;
       const ref = prefix.depositMining + deposit.id;
       if (Apiary.orders[ref]) return;
-      new SwarmOrder(ref, this.hive, deposit.pos, SWARM_MASTER.depositmining);
+      this.hive.createSwarm(ref, deposit.pos, SWARM_MASTER.depositmining);
     });
   }
 
@@ -88,9 +87,9 @@ export class ObserveCell extends Cell {
         )
           return;
 
-        const ref = prefix.depositMining + power.id;
+        const ref = prefix.powerMining + power.id;
         if (Apiary.orders[ref]) return;
-        new SwarmOrder(ref, this.hive, power.pos, SWARM_MASTER.depositmining);
+        this.hive.createSwarm(ref, power.pos, SWARM_MASTER.powermining);
       }
     );
   }
@@ -115,12 +114,11 @@ export class ObserveCell extends Cell {
     }
     this.roomsToCheck = [];
 
-    if (this.hive.cells.defense.timeToLand < 75) {
+    if (this.hive.cells.defense.timeToLand < 50) {
       const exits = Game.map.describeExits(this.hiveName);
       const roomNames = Object.values(exits);
       for (const roomName of roomNames) {
-        const roomInfoCheck = Apiary.intel.getInfo(roomName, 25);
-        if (Game.time - roomInfoCheck.lastUpdated > 25) {
+        if (!Apiary.intel.somewhatFreshInfo(roomName)) {
           this.roomsToCheck = [roomName];
           break;
         }

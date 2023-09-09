@@ -21,15 +21,15 @@ export enum enemyTypes {
  * Enum defining different states of a room
  */
 export enum roomStates {
-  ownedByMe = 0 /** Owned by the hive */,
-  reservedByMe = 1 /** Reserved by the hive */,
-  noOwner = 2 /** No owner */,
-  corridor = 3 /** Corridor room */,
-  SKcentral = 4 /** Stronghold central room */,
-  SKfrontier = 5 /** Stronghold frontier room */,
-  reservedByInvader = 6 /** Reserved by invader */,
-  reservedByEnemy = 7 /** Reserved by enemy */,
-  ownedByEnemy = 8 /** Owned by enemy */,
+  ownedByMe = 1 /** Owned by the hive */,
+  reservedByMe = 2 /** Reserved by the hive */,
+  noOwner = 3 /** No owner */,
+  corridor = 4 /** Corridor room */,
+  SKcentral = 5 /** Stronghold central room */,
+  SKfrontier = 6 /** Stronghold frontier room */,
+  reservedByInvader = 7 /** Reserved by invader */,
+  reservedByEnemy = 8 /** Reserved by enemy */,
+  ownedByEnemy = 9 /** Owned by enemy */,
 }
 
 /**
@@ -49,25 +49,21 @@ export enum beeStates {
  */
 export enum prefix {
   // orders
-  spotter = "spot_",
+  spotter = "spot_" /** Spotter prefix */,
   steal = "borrow_" /** Steal prefix */,
   build = "wax_" /** Build prefix */,
   surrender = "FFF_" /** Surrender prefix */,
   boost = "boost_" /** Boost prefix */,
   defSwarm = "protect_" /** Defensive swarm prefix */,
-  puppet = "pup_" /** Puppet prefix */,
   reserve = "reserve_" /** Annex prefix */,
   claim = "claim_" /** Claim prefix */,
-  mine = "mine_" /** Mine prefix */,
-  clear = "clear_" /** Clear prefix */,
   downgrade = "downgrade_" /** Downgrade prefix */,
-  powerMining = "bank_" /** Power bank mining prefix */,
-  depositMining = "deposit_" /** Deposit mining prefix */,
-  siedge = "_",
 
-  // deposit master
-  minerDep = "depositMiner_" /** Deposit miner prefix */,
-  pickupDep = "depositPickup_" /** Deposit pickup prefix */,
+  // corridor mining
+  depositMining = "deposit_" /** Deposit mining prefix */,
+  pickup = "pickup_" /** Pickup prefix */,
+  minerDep = "miner_" /** Deposit miner prefix */,
+  powerMining = "bank_" /** Power bank mining prefix */,
 
   // cells
   defenseCell = "def" /** Defense hive cell prefix */,

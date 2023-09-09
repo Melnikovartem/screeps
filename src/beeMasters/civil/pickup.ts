@@ -66,61 +66,60 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
   // #region Public Methods (3)
 
   public getTarget() {
+    const room = Game.rooms[this.roomName];
+    if (!room) return;
     let target: PickupTarget | undefined | null;
-    if (this.pos.roomName in Game.rooms) {
-      if (
-        this.pos
-          .lookFor(LOOK_STRUCTURES)
-          .filter((s) => s.structureType === STRUCTURE_POWER_BANK).length
-      )
-        return target;
-      let targets: PickupTarget[] = this.pos
-        .findInRange(FIND_STRUCTURES, 3)
-        .filter(
-          (s) =>
-            (s as StructureStorage).store &&
-            (s as StructureStorage).store.getUsedCapacity() > 0 &&
-            (!this.hive.room.storage || s.id !== this.hive.room.storage.id)
-        ) as StructureStorage[];
-      if (!targets.length)
-        targets = this.pos
-          .findInRange(FIND_DROPPED_RESOURCES, 3)
-          .filter((r) => r.amount > 0);
-      if (!targets.length)
-        targets = this.pos
-          .findInRange(FIND_RUINS, 3)
-          .filter((r) => r.store.getUsedCapacity() > 0);
-      if (!targets.length)
-        targets = this.pos
-          .findInRange(FIND_TOMBSTONES, 3)
-          .filter((r) => r.store.getUsedCapacity() > 0);
+    if (
+      this.pos
+        .lookFor(LOOK_STRUCTURES)
+        .filter((s) => s.structureType === STRUCTURE_POWER_BANK).length
+    )
+      return target;
+    let targets: PickupTarget[] = this.pos
+      .findInRange(FIND_STRUCTURES, 3)
+      .filter(
+        (s) =>
+          (s as StructureStorage).store &&
+          (s as StructureStorage).store.getUsedCapacity() > 0 &&
+          (!this.hive.room.storage || s.id !== this.hive.room.storage.id)
+      ) as StructureStorage[];
+    if (!targets.length)
+      targets = this.pos
+        .findInRange(FIND_DROPPED_RESOURCES, 3)
+        .filter((r) => r.amount > 0);
+    if (!targets.length)
+      targets = this.pos
+        .findInRange(FIND_RUINS, 3)
+        .filter((r) => r.store.getUsedCapacity() > 0);
+    if (!targets.length)
+      targets = this.pos
+        .findInRange(FIND_TOMBSTONES, 3)
+        .filter((r) => r.store.getUsedCapacity() > 0);
 
-      target = this.pos.findClosest(targets);
-      if (!target) {
-        const room = Game.rooms[this.pos.roomName];
-        // what a lie this is STRUCTURE_POWER_BANK
-        if (this.pos.roomName !== this.hiveName) {
-          if (!target)
-            target = room
-              .find(FIND_STRUCTURES)
-              .filter(
-                (s) =>
-                  (s as StructureStorage).store &&
-                  (s as StructureStorage).store.getUsedCapacity() > 0
-              )[0] as StructureStorage | StructureContainer;
-        }
-        if (!target) target = room.find(FIND_DROPPED_RESOURCES)[0];
+    target = this.pos.findClosest(targets);
+    if (!target) {
+      // what a lie this is STRUCTURE_POWER_BANK
+      if (this.pos.roomName !== this.hiveName) {
         if (!target)
           target = room
-            .find(FIND_TOMBSTONES)
-            .filter((r) => r.store.getUsedCapacity() > 0)[0];
-        if (!target)
-          target = room
-            .find(FIND_RUINS)
-            .filter((r) => r.store.getUsedCapacity() > 0)[0];
-        if (target) this.parent.setPosition(target.pos);
-        else this.parent.delete();
+            .find(FIND_STRUCTURES)
+            .filter(
+              (s) =>
+                (s as StructureStorage).store &&
+                (s as StructureStorage).store.getUsedCapacity() > 0
+            )[0] as StructureStorage | StructureContainer;
       }
+      if (!target) target = room.find(FIND_DROPPED_RESOURCES)[0];
+      if (!target)
+        target = room
+          .find(FIND_TOMBSTONES)
+          .filter((r) => r.store.getUsedCapacity() > 0)[0];
+      if (!target)
+        target = room
+          .find(FIND_RUINS)
+          .filter((r) => r.store.getUsedCapacity() > 0)[0];
+      if (target) this.parent.setPosition(target.pos);
+      else this.parent.delete();
     }
     return target;
   }

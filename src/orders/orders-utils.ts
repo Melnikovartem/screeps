@@ -2,7 +2,7 @@ import type { Cell } from "cells/_Cell";
 import { prefix } from "static/enums";
 
 import type { FlagCommand } from "./flagCommands";
-import { SWARM_MASTER } from "./swarmOrder-masters";
+import { SWARM_MASTER } from "./swarm-nums";
 
 export function actUtilsActions(command: FlagCommand) {
   switch (command.secondaryColor) {

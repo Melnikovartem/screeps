@@ -20,7 +20,7 @@ export class DepositPickupMaster extends Master<DepositMaster> {
   // #region Constructors (1)
 
   public constructor(parent: DepositMaster) {
-    super(parent, prefix.pickupDep + parent.parent.ref);
+    super(parent, prefix.pickup + parent.parent.ref);
     const body = this.setup.getBody(
       this.hive.room.energyCapacityAvailable
     ).body;

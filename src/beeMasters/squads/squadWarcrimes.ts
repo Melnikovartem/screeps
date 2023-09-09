@@ -8,8 +8,8 @@ import { SQUAD_VISUALS } from "settings";
 import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
-  Enemy,
-} from "spiderSense/intelligence";
+} from "spiderSense/intel-creep";
+import type { Enemy } from "spiderSense/intel-runtime";
 import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 
@@ -660,11 +660,10 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
     _.forEach(this.activeBees, (b) => {
       const stats = Apiary.intel.getStats(b.creep);
-      for (const i in stats.max) {
-        this.stats.max[i as keyof CreepBattleInfo] +=
-          stats.max[i as keyof CreepBattleInfo];
-        this.stats.current[i as keyof CreepBattleInfo] +=
-          stats.current[i as keyof CreepBattleInfo];
+      for (const statType in stats.max) {
+        const type = statType as keyof CreepBattleInfo;
+        this.stats.max[type] += stats.max[type];
+        this.stats.current[type] += stats.current[type];
       }
     });
 

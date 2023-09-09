@@ -89,7 +89,7 @@ export function updateCellData(this: Hive, bake = false) {
   switch (this.phase) {
     case 2:
       this.cells.corridorMining = new CorridorMiningCell(this);
-    // @TODO nukes
+    // @todo nukes
     // fall through
     case 1:
       if (

@@ -80,7 +80,7 @@ export class MinerMaster extends Master<ResourceCell> {
   // #region Protected Accessors (1)
 
   protected get shouldSpawn() {
-    if (!this.ownerOkForMining) return false;
+    if (!this.roomOwnerOkForMining) return false;
     if (
       this.roomName !== this.hiveName &&
       this.hive.annexInDanger.includes(this.roomName)
@@ -108,7 +108,7 @@ export class MinerMaster extends Master<ResourceCell> {
     return this.parent.link;
   }
 
-  private get ownerOkForMining() {
+  private get roomOwnerOkForMining() {
     const roomState = Apiary.intel.getRoomState(this.pos);
     switch (roomState) {
       case roomStates.ownedByMe:

@@ -1,9 +1,11 @@
 import type { RoomPlannerHiveCache } from "antBrain/hivePlanner/planner-active";
+import type { SiedgeInfo } from "antBrain/warModule";
 import type { _Apiary } from "Apiary";
 import type { CustomConsole } from "convenience/console/console";
 import type { SwarmOrderInfo } from "orders/swarmOrder";
-import type { CreepAllBattleInfo } from "spiderSense/intelligence";
-import type { beeStates, roomStates } from "static/enums";
+import type { RoomIntelCacheMap } from "spiderSense/intel-cache";
+import type { CreepAllBattleInfo } from "spiderSense/intel-creep";
+import type { beeStates } from "static/enums";
 
 import type { HiveCache, HiveLog } from "./hiveMemory";
 
@@ -21,59 +23,6 @@ interface MemorySettings {
   safeWrap: boolean;
 
   // #endregion Properties (8)
-}
-
-interface IntelGlobal {
-  // #region Properties (2)
-
-  /** structure to keep roomInfo */
-  rooms: {
-    [oomName: string]: {
-      energyRes: number;
-      mineral: MineralConstant | undefined;
-      enemyInfo?: any;
-    };
-  };
-  users: {
-    [username: string]: {
-      rooms: string[];
-    };
-  };
-
-  // #endregion Properties (2)
-}
-
-interface IntelBattle {
-  // #region Public Indexers (1)
-
-  [roomName: string]: {
-    roomState: roomStates;
-    currentOwner: string | undefined;
-    safePlace: boolean;
-    safeModeEndTime: number;
-  };
-
-  // #endregion Public Indexers (1)
-}
-
-interface SiedgeInfo {
-  // #region Properties (7)
-
-  attackTime: number | null;
-  breakIn: { x: number; y: number; ent: string; state: number }[];
-  freeTargets: { x: number; y: number }[];
-  lastUpdated: number;
-  squadSlots: {
-    [id: string]: {
-      lastSpawned: number;
-      type: "range" | "dism" | "duo";
-      breakIn: { x: number; y: number; ent: string; state: number };
-    };
-  };
-  threatLvl: 0 | 1 | 2;
-  towerDmgBreach: number;
-
-  // #endregion Properties (7)
 }
 
 interface LogInfo {
@@ -196,28 +145,22 @@ declare global {
     // #endregion Properties (5)
   }
 
-  interface FlagMemory {
-    hive: string;
-  }
-
   interface Memory {
     // #region Properties (4)
 
     /** important!! operational info, but Apiary could keep on living */
     cache: {
-      intellegence: IntelBattle;
-      map: IntelGlobal;
+      intel: { [roomName: string]: RoomIntelCacheMap };
       hives: {
         [id: string]: HiveCache;
       };
-      war: {
-        siedgeInfo: { [ref: string]: SiedgeInfo };
-      };
       orders: { [ref: string]: SwarmOrderInfo };
+      war: { siedge: { [ref: string]: SiedgeInfo } };
     };
     /** part of the memory that we don't wipe */
     longterm: {
       roomPlanner: { [hiveName: string]: RoomPlannerHiveCache };
+      users: any;
     };
     // my giant log
     log: LogInfo | undefined;

@@ -55,7 +55,7 @@ export function checkFlee(
   const roomInfo = Apiary.intel.getInfo(pos.roomName, lag);
   if (
     pos.roomName !== bee.pos.roomName &&
-    Game.time - roomInfo.lastUpdated <= 20 &&
+    Apiary.intel.somewhatFreshInfo(pos.roomName) &&
     !roomInfo.safePlace &&
     stop
   ) {

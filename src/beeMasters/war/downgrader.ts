@@ -1,7 +1,7 @@
 import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
 import { profile } from "profiler/decorator";
-import { signText } from "static/enums";
+import { roomStates, signText } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
@@ -62,7 +62,7 @@ export class DowngradeMaster extends SwarmMaster<undefined> {
     super.update();
 
     const roomInfo = Apiary.intel.getInfo(this.pos.roomName, Infinity);
-    if (!roomInfo.currentOwner || roomInfo.currentOwner === Apiary.username) {
+    if (roomInfo.roomState !== roomStates.ownedByEnemy) {
       this.parent.delete();
       return;
     }

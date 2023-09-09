@@ -2,7 +2,7 @@ import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
 import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import type { CreepBattleInfo } from "spiderSense/intelligence";
+import type { CreepBattleInfo } from "spiderSense/intel-creep";
 import { beeStates, enemyTypes, hiveStates } from "static/enums";
 
 import type { Boosts } from "../_Master";
@@ -374,9 +374,10 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
       )
         return;
       const stats = Apiary.intel.getStats(b.creep);
-      for (const i in stats.current)
-        myStats[i as keyof CreepBattleInfo] +=
-          stats.current[i as keyof CreepBattleInfo];
+      for (const statType in stats.current) {
+        const type = statType as keyof CreepBattleInfo;
+        myStats[type] += stats.current[type];
+      }
     });
     return myStats;
   }

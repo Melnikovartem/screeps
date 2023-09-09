@@ -2,7 +2,7 @@ import type { PickupInfo } from "beeMasters/civil/pickup";
 import { findOptimalResource } from "static/utils";
 
 import type { FlagCommand } from "./flagCommands";
-import { SWARM_MASTER } from "./swarmOrder-masters";
+import { SWARM_MASTER } from "./swarm-nums";
 
 export function actCivil(command: FlagCommand) {
   if (!command.hive.cells.storage) {

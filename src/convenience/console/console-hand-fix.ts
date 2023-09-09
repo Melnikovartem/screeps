@@ -201,7 +201,7 @@ CustomConsole.prototype.cleanIntel = function (
   ymax: number
 ) {
   const quad = /^([WE])([NS])$/.exec(quadToclean);
-  for (const roomName in Memory.cache.intellegence) {
+  for (const roomName in Memory.cache.intel) {
     const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
     if (parsed && quad) {
       const [, we, x, ns, y] = parsed;
@@ -216,8 +216,8 @@ CustomConsole.prototype.cleanIntel = function (
           (state > roomStates.reservedByMe &&
             state < roomStates.reservedByEnemy))
       )
-        delete Memory.cache.intellegence[roomName];
+        delete Memory.cache.intel[roomName];
       else console.log("SAVED INTEL FROM", this.formatRoom(roomName), "\n");
-    } else delete Memory.cache.intellegence[roomName];
+    } else delete Memory.cache.intel[roomName];
   }
 };

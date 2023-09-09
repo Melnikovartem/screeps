@@ -259,3 +259,12 @@ export function reverseDirection(direction: DirectionConstant) {
   const newDirection = ((direction - 1 + 4) % 8) + 1;
   return newDirection as DirectionConstant;
 }
+
+export function maxEnergyCapacity(lvl: number) {
+  const spawnCapacity =
+    CONTROLLER_STRUCTURES[STRUCTURE_SPAWN][lvl] * SPAWN_ENERGY_CAPACITY;
+  const extensionsCapacity =
+    CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][lvl] *
+    EXTENSION_ENERGY_CAPACITY[lvl];
+  return spawnCapacity + extensionsCapacity;
+}

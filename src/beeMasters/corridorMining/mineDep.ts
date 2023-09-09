@@ -19,7 +19,7 @@ export class DepositMinerMaster extends Master<DepositMaster> {
   // #region Constructors (1)
 
   public constructor(parent: DepositMaster) {
-    super(parent, prefix.pickupDep + parent.parent.ref);
+    super(parent, prefix.minerDep + parent.parent.ref);
   }
 
   // #endregion Constructors (1)

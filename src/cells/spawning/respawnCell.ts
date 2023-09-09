@@ -41,16 +41,6 @@ export class RespawnCell extends Cell {
     return spawnCapacity + extensionsCapacity;
   }
 
-  public get maxCapacity() {
-    const lvl = this.hive.controller.level;
-    const spawnCapacity =
-      CONTROLLER_STRUCTURES[STRUCTURE_SPAWN][lvl] * SPAWN_ENERGY_CAPACITY;
-    const extensionsCapacity =
-      CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][lvl] *
-      EXTENSION_ENERGY_CAPACITY[lvl];
-    return spawnCapacity + extensionsCapacity;
-  }
-
   // #endregion Constructors (1)
 
   // #region Public Accessors (1)

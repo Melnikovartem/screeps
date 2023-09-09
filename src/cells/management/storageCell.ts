@@ -11,10 +11,16 @@ export const TERMINAL_ENERGY = Math.round(TERMINAL_CAPACITY * 0.1);
 
 export const HIVE_ENERGY = Math.round(STORAGE_CAPACITY * 0.2);
 
+/** After dropped below 5K
+ * 0-5K dev cell + less spending
+ * 5-15K dev cells helps build up
+ * 15-30K normal opration
+ * 30K+ normal spending (until drop below 5K / 15K)
+ */
 export const LOW_ENERGY = {
-  low: 5_000, // push red button (dev cell)
-  highStart: 15_000, // just be more frugal lmao
-  highEnd: 50_000, // stop beeing frugal
+  low: 15_000, // push red button (dev cell)
+  highStart: 5_000, // just be more frugal lmao (turns off annexes)
+  highEnd: 30_000, // stop beeing frugal
 };
 
 @profile

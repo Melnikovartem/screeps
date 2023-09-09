@@ -1,19 +1,37 @@
-import { SwarmOrder } from "orders/swarmOrder";
-import { SWARM_MASTER } from "orders/swarmOrder-masters";
+import { SWARM_MASTER } from "orders/swarm-nums";
+import type { Enemy } from "spiderSense/intel-runtime";
 
-import type { SiedgeInfo } from "../abstract/declarations";
 import type {
   SquadInfo,
   SquadWarCrimesMaster,
 } from "../beeMasters/squads/squadWarcrimes";
 import { setups } from "../bees/creepSetups";
 import { profile } from "../profiler/decorator";
-import type { Enemy } from "../spiderSense/intelligence";
 import { enemyTypes, prefix, roomStates } from "../static/enums";
 import { getEnterances, makeId, towerCoef } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
+
+export interface SiedgeInfo {
+  // #region Properties (7)
+
+  attackTime: number | null;
+  breakIn: { x: number; y: number; ent: string; state: number }[];
+  freeTargets: { x: number; y: number }[];
+  lastUpdated: number;
+  squadSlots: {
+    [id: string]: {
+      lastSpawned: number;
+      type: "range" | "dism" | "duo";
+      breakIn: { x: number; y: number; ent: string; state: number };
+    };
+  };
+  threatLvl: 0 | 1 | 2;
+  towerDmgBreach: number;
+
+  // #endregion Properties (7)
+}
 
 @profile
 export class WarcrimesModule {
@@ -26,7 +44,7 @@ export class WarcrimesModule {
   // #region Public Accessors (1)
 
   public get siedge() {
-    return Memory.cache.war.siedgeInfo;
+    return Memory.cache.war.siedge;
   }
 
   // #endregion Public Accessors (1)
@@ -236,7 +254,7 @@ export class WarcrimesModule {
             );
           }
         }
-        delete Memory.cache.war.siedgeInfo[roomName];
+        delete this.siedge[roomName];
         return;
       }
 
@@ -790,15 +808,15 @@ export class WarcrimesModule {
         formation = this.getDuoFormation(dmg);
     }
 
-    const sqOrder = new SwarmOrder<SquadInfo>(
+    hive.createSwarm<SquadInfo>(
       ref,
-      hive,
       new RoomPosition(slot.breakIn.x, slot.breakIn.y, roomName),
-      SWARM_MASTER.squadwarcrimes
+      SWARM_MASTER.squadwarcrimes,
+      {
+        setup: formation,
+        ent: slot.breakIn.ent,
+      }
     );
-
-    sqOrder.special.setup = formation;
-    sqOrder.special.ent = slot.breakIn.ent;
 
     // could use getTimeForPath, but this saves some cpu
     slot.lastSpawned = Game.time;

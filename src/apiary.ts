@@ -16,7 +16,7 @@ import { FlagCommand } from "orders/flagCommands";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
-import { Intel } from "spiderSense/intelligence";
+import { Intel } from "spiderSense/intel";
 import { Oracle } from "spiderSense/oracle";
 import { safeWrap } from "static/utils";
 
@@ -50,6 +50,7 @@ export class _Apiary {
   public orders: { [ref: string]: SwarmOrder<any> } = {};
   public useBucket: boolean = false;
   public username: string = "";
+  public spareCpu: number[] = [];
 
   // #endregion Properties (11)
 
@@ -209,6 +210,9 @@ export class _Apiary {
       "update",
       Object.keys(this.flags).length
     );
+
+    this.spareCpu.push(Game.cpu.limit - Game.cpu.getUsed());
+    if (this.spareCpu.length > 100) this.spareCpu.shift();
   }
 
   public wrap(

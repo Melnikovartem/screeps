@@ -27,8 +27,10 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   buildBoost: 2,
 };
 
-// 10 - 0.5 == 9.9. 0.5 for upkeep
-export const APPROX_PROFIT_RESOURCE = 9.5;
+export const APPROX_PROFIT_SOURCE = {
+  link: 9.2, // 10 - roads - miner - managers - link
+  hauling: 8.7, // 10 - roads - miner - managers - haulers
+};
 
 export const WALLS_START = 10_000;
 
@@ -41,17 +43,15 @@ export const ERR_NO_VISION = -200;
 export const ROOM_DIMENTIONS = 50;
 
 export const CACHE_EMPTY_DEFAULT: Memory["cache"] = {
-  hives: (Memory.cache && Memory.cache.hives) || {},
+  hives: {},
   orders: {},
-
-  intellegence: {},
-  map: { rooms: {}, users: {} },
-
+  intel: {},
   war: (Memory.cache && Memory.cache.war) || { siedgeInfo: {}, squadsInfo: {} },
 };
 
 export const LONGTERM_EMPTY_DEFAULT: Memory["longterm"] = {
   roomPlanner: (Memory.longterm && Memory.longterm.roomPlanner) || {},
+  users: {},
 };
 
 export const ZERO_COSTS_BUILDING_HIVE: buildingCostsHive = {

@@ -34,7 +34,11 @@ export class ColonyBrianModule {
   private checkBuildings(hive: Hive) {
     if (!this.planner.canStartNewPlan) return;
     if (!hive.roomPlanner()) {
-      if (hive.phase < 2)
+      if (
+        hive.phase === 0 ||
+        (hive.phase === 1 &&
+          _.filter(Apiary.hives, (h) => h.phase === 2).length)
+      )
         // do not destroy if hive is setup for lategame
         this.planner.createPlan(hive.roomName, hive.annexNames);
       else {

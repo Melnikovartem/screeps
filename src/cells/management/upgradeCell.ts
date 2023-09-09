@@ -2,7 +2,7 @@ import { UpgraderMaster } from "beeMasters/economy/upgrader";
 import { setups } from "bees/creepSetups";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { APPROX_PROFIT_RESOURCE } from "static/constants";
+import { APPROX_PROFIT_SOURCE } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
@@ -168,8 +168,8 @@ export class UpgradeCell extends Cell {
     )
       this.recalculateRate();
 
-    if (!this.master.beesAmount) return;
     if (
+      !this.master.beesAmount ||
       !this.sCell.master.activeBees.length ||
       this.hive.state === hiveStates.lowenergy
     )
@@ -180,7 +180,7 @@ export class UpgradeCell extends Cell {
       if (this.sCell.link) {
         this.sCell.requestFromStorage(
           [this.sCell.link],
-          freeCap >= LINK_CAPACITY - 100 ? 3 : 1,
+          freeCap >= LINK_CAPACITY * 0.875 ? 1 : 3, // hurry 100 left
           RESOURCE_ENERGY
         );
         if (!this.sCell.linkState || this.sCell.linkState.priority >= 1)
@@ -196,7 +196,7 @@ export class UpgradeCell extends Cell {
     if (freeCap && freeCap >= CONTAINER_CAPACITY / 2) {
       this.sCell.requestFromStorage(
         [this.container!],
-        freeCap >= CONTAINER_CAPACITY - 100 ? 3 : 1,
+        freeCap >= CONTAINER_CAPACITY * 0.875 ? 1 : 3, // hurry 250 left
         RESOURCE_ENERGY
       );
     }
@@ -231,7 +231,7 @@ export class UpgradeCell extends Cell {
         if (cell.link)
           linkLimit += Math.min(
             LINK_CAPACITY / this.link!.pos.getRangeTo(cell.link),
-            APPROX_PROFIT_RESOURCE
+            APPROX_PROFIT_SOURCE.link
           );
       });
       this.maxRate.import = Math.max(this.maxRate.import, linkLimit);

@@ -53,7 +53,7 @@ export class HordeDefenseMaster extends HordeMaster {
     if (
       !shouldSpawn &&
       !this.beesAmount &&
-      Game.time - roomInfo.lastUpdated < 20
+      Apiary.intel.somewhatFreshInfo(this.roomName)
     ) {
       this.parent.delete();
       return;

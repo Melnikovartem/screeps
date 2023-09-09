@@ -1,9 +1,10 @@
+import type { PickupInfo } from "beeMasters/civil/pickup";
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
+import { SWARM_MASTER } from "orders/swarm-nums";
 import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import { beeStates } from "static/enums";
-import { makeId } from "static/utils";
+import { beeStates, prefix } from "static/enums";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
@@ -74,7 +75,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (5)
+  // #region Public Accessors (6)
 
   public get decay() {
     return this.info.dc;
@@ -92,14 +93,6 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     return this.info.rt;
   }
 
-  public get targetBeeCount() {
-    return this.positions.length * 2;
-  }
-
-  // #endregion Public Accessors (5)
-
-  // #region Private Accessors (3)
-
   public get shouldSpawn() {
     // already mined out
     if (this.hits < 0) return false;
@@ -107,6 +100,14 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     if (!this.sitesOn.includes(this)) return false;
     return this.canMineInTime();
   }
+
+  public get targetBeeCount() {
+    return this.positions.length * 2;
+  }
+
+  // #endregion Public Accessors (6)
+
+  // #region Private Accessors (2)
 
   private get sitesAll() {
     // JS gods said i can push/splice this :/ and original will change
@@ -117,7 +118,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     return this.hive.cells.corridorMining?.powerOn || [];
   }
 
-  // #endregion Private Accessors (3)
+  // #endregion Private Accessors (2)
 
   // #region Public Methods (7)
 
@@ -398,22 +399,12 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
   // #region Private Methods (2)
 
   private callPickUp() {
-    if (
-      this.pos
-        .lookFor(LOOK_FLAGS)
-        .filter(
-          (f) => f.color === COLOR_ORANGE && f.secondaryColor === COLOR_GREEN
-        ).length
-    )
-      return;
-    const name = this.pos.createFlag(
-      Math.ceil(this.info.pw / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)) +
-        "_pickup_" +
-        makeId(4),
-      COLOR_ORANGE,
-      COLOR_GREEN
-    );
-    if (typeof name === "string") Game.flags[name].memory.hive = this.hiveName;
+    const ref = prefix.pickup + this.ref;
+    if (Apiary.orders[ref]) return;
+    // carry all power in one go
+    this.hive.createSwarm<PickupInfo>(ref, this.pos, SWARM_MASTER.pickup, {
+      tc: Math.ceil(this.info.pw / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)),
+    });
   }
 
   private pickupTime() {
