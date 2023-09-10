@@ -3,10 +3,10 @@
  */
 import type { CompressedRoom } from "antBrain/hivePlanner/planner-active";
 import type { Cell } from "cells/_Cell";
-import { AnnexCell } from "cells/base/annexCell";
 import { DefenseCell } from "cells/base/defenseCell";
 import { ExcavationCell } from "cells/base/excavationCell";
 import { BuildCell } from "cells/building/buildCell";
+import { AnnexCell } from "cells/management/annexCell";
 import { HIVE_ENERGY, StorageCell } from "cells/management/storageCell";
 import { UpgradeCell } from "cells/management/upgradeCell";
 import { RespawnCell } from "cells/spawning/respawnCell";
@@ -129,11 +129,6 @@ export class Hive {
     return this._annexNames;
   }
 
-  public set annexNames(value) {
-    this._annexNames = value;
-    this.cache.annex = value;
-  }
-
   public get approxIncome() {
     let income = 0;
     _.forEach(this.cells.excavation.resourceCells, (s) => {
@@ -188,6 +183,8 @@ export class Hive {
   /** central position of hive */
   public get pos() {
     if (this.cells) return this.cells.defense.pos;
+    const poss = this.cache.cells[prefix.defenseCell]?.poss as Pos | undefined;
+    if (poss) return new RoomPosition(poss.x, poss.y, this.roomName);
     return this.controller.pos;
   }
 

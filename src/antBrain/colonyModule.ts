@@ -28,7 +28,6 @@ export class ColonyBrianModule {
       if (Apiary.intel.getRoomState(exit) === roomStates.noOwner)
         hive.cells.annex.addAnnex(exit);
     });
-    if (Apiary.intTime % 1000 === 20) this.checkBuildings(hive);
   }
 
   private checkBuildings(hive: Hive) {
@@ -51,6 +50,7 @@ export class ColonyBrianModule {
 
   private updateHive(hive: Hive) {
     if (Object.keys(Apiary.hives).length === 1) this.addNextDoorAnnex(hive);
+    if (Apiary.intTime % 1000 === 20) this.checkBuildings(hive);
   }
 
   // #endregion Private Methods (3)

@@ -2,7 +2,7 @@ import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { hiveStates } from "static/enums";
 
-// import { actAnnex, deleteAnnex } from "./flags-annex";
+import { actAnnex, deleteAnnex } from "./flags-annex";
 import { actBattle } from "./flags-battle";
 import { actCivil } from "./flags-civil";
 import { actPlanner, deletePlanner } from "./flags-planner";
@@ -125,7 +125,7 @@ export class FlagCommand {
   public delete() {
     switch (this.color) {
       case COLOR_PURPLE:
-        // deleteAnnex(this);
+        deleteAnnex(this);
         break;
       case COLOR_WHITE:
         deletePlanner(this);
@@ -167,7 +167,7 @@ export class FlagCommand {
         actBattle(this);
         break;
       case COLOR_PURPLE:
-        // actAnnex(this);
+        actAnnex(this);
         break;
       case COLOR_CYAN:
         actUtilsPositions(this);

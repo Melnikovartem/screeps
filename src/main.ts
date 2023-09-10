@@ -15,7 +15,7 @@ import { Mem } from "abstract/memory";
 import { _Apiary } from "Apiary";
 import { CustomConsole } from "convenience/console/console";
 import profiler from "screeps-profiler";
-import { PROFILER } from "settings";
+import { PROFILER } from "static/settings";
 
 // Declare global namespace properties
 declare global {

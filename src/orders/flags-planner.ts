@@ -60,7 +60,7 @@ export function actPlanner(cm: FlagCommand) {
       console.log(`STARTED ROADS @${cm.hive.print}`);
       break;
     case COLOR_ORANGE:
-      if (!pl.checking) pl.justShow(cm.pos.roomName);
+      if (!pl.checking) pl.justShow(cm.hiveName);
       // keep this flag to show plan
       cm.acted = false;
       break;

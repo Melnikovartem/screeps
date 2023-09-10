@@ -78,15 +78,15 @@ export class StorageCell extends Cell {
   // #region Public Methods (11)
 
   public findLink() {
-    let link: typeof this.link =
-      this.cache("linkId") && Game.getObjectById(this.cache("linkId")!);
-    if (!link)
-      link = this.pos
-        .findInRange(FIND_MY_STRUCTURES, 2)
-        .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
-        | StructureLink
-        | undefined;
-    this.link = link;
+    if (this.link) return;
+    const links = this.pos
+      .findInRange(FIND_MY_STRUCTURES, 2)
+      .filter((s) => s.structureType === STRUCTURE_LINK) as StructureLink[];
+    if (links.length) {
+      this.link = links.reduce((a, b) =>
+        this.pos.getRangeTo(a) <= this.pos.getRangeTo(b) ? a : b
+      );
+    }
   }
 
   public getUsedCapacity(resource: ResourceConstant) {

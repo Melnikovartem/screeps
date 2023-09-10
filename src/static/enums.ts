@@ -55,9 +55,13 @@ export enum prefix {
   surrender = "FFF_" /** Surrender prefix */,
   boost = "boost_" /** Boost prefix */,
   defSwarm = "protect_" /** Defensive swarm prefix */,
-  reserve = "reserve_" /** Annex prefix */,
   claim = "claim_" /** Claim prefix */,
   downgrade = "downgrade_" /** Downgrade prefix */,
+
+  // annexgang
+  safesk = "sk_",
+  reserve = "reserve_" /** Annex prefix */,
+  containerBuilder = "contbuild_",
 
   // corridor mining
   depositMining = "deposit_" /** Deposit mining prefix */,

@@ -63,6 +63,12 @@ export class ExcavationCell extends Cell {
     this.shouldRecalc = true;
   }
 
+  public roomRemoveCells(roomName: string) {
+    for (const ref in this.resourceCells)
+      if (this.resourceCells[ref].pos.roomName === roomName)
+        this.resourceCells[ref].delete();
+  }
+
   public run() {
     _.forEach(this.resourceCells, (cell) =>
       Apiary.wrap(() => cell.run(), cell.print, "run", 0)

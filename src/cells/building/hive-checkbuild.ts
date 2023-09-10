@@ -44,7 +44,7 @@ export function checkBuildings(
   const buildProjectList: BuildProject[] = [];
   const energyCost = { ...ZERO_COSTS_BUILDING_HIVE.hive };
   let constructions = 0;
-  const blocked = 0;
+  let blocked = 0;
 
   for (const sType of queToCheck) {
     const mem = hivePlan.rooms[roomName][sType];
@@ -66,7 +66,7 @@ export function checkBuildings(
         continue;
       }
       // no need to check more
-      if (placed + constructions >= cc.amount) break;
+      if (placed + constructions + blocked >= cc.amount) break;
       const pos = new RoomPosition(
         positionToPut[0],
         positionToPut[1],
@@ -83,7 +83,7 @@ export function checkBuildings(
       );
       if (ans === "structure") ++placed;
       else if (ans === "construction") ++constructions;
-      else if (ans === "blocked") ++constructions;
+      else if (ans === "blocked") ++blocked;
     }
 
     for (const bProject of buildProjectList)
@@ -273,7 +273,8 @@ function checkStructureBuild(
         (!nukeAlert || !pos.findInRange(FIND_NUKES, 2).length) &&
         !onlySpawn // do not add spawns if we have only one
       ) {
-        type = "construction";
+        // need to add construction
+        type = "blocked";
         toadd.push(pos);
       } else if (hive && place) {
         // our only spawn there

@@ -7,8 +7,8 @@ import {
   type RoomInfoBoosts,
   type RoomInfoEconomy,
   type RoomIntelDeep,
-  roomStateNatural,
 } from "./intel-deep";
+import { roomStateNatural } from "./intel-utils";
 
 enum INTEL_CACHE {
   lastUpdatedDeep = 1,

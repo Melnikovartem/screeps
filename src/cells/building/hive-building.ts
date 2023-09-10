@@ -1,5 +1,6 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
 import { HIVE_ENERGY } from "cells/management/storageCell";
+import { SWARM_MASTER } from "orders/swarm-nums";
 import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
@@ -219,15 +220,16 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
           // @todo remove code?
           // normal builder code could fix the problem
           // not more then one active order of booting per hive
+          const ref = prefix.containerBuilder + this.hiveName;
           if (
             mineralsContainer &&
             !annexRoads[0].filter((b) => b.type === "construction").length &&
-            !Game.flags["containerBuilder_" + this.hiveName]
+            !Apiary.orders[ref]
           )
-            mineralsContainer.pos.createFlag(
-              "containerBuilder_" + this.hiveName,
-              COLOR_BLUE,
-              COLOR_YELLOW
+            this.hive.createSwarm(
+              ref,
+              mineralsContainer.pos,
+              SWARM_MASTER.containerbuilder
             );
         }
         /* 

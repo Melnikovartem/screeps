@@ -4,7 +4,6 @@ import { CreepSetup } from "bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "cells/stage1/laboratoryCell";
 import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import { SQUAD_VISUALS } from "settings";
 import type {
   CreepAllBattleInfo,
   CreepBattleInfo,
@@ -21,7 +20,7 @@ type SquadEnemy = Creep | PowerCreep | Structure | undefined | null;
 
 /** last seen position of the target is in pos */
 export interface SquadInfo {
-  // #region Properties (8)
+  // #region Properties (7)
 
   /** center of the squad */
   center: { x: number; y: number; roomName: string };
@@ -38,7 +37,7 @@ export interface SquadInfo {
   /** targetId */
   targetid: Id<_HasId> | "";
 
-  // #endregion Properties (8)
+  // #endregion Properties (7)
 }
 
 const FORMATION = {
@@ -73,7 +72,6 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         break;
       }
   };
-
   public priority = 1 as const;
   public setupParsed?: CreepSetup[];
   public stats: CreepAllBattleInfo = {
@@ -100,12 +98,16 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   // #endregion Properties (7)
 
+  // #region Constructors (1)
+
   public constructor(order: SwarmOrder<SquadInfo>) {
     super(order);
     Apiary.war.squads[this.ref] = this;
   }
 
-  // #region Public Accessors (19)
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (16)
 
   public override get boosts(): Boosts {
     return [
@@ -214,24 +216,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     return this.setup.length;
   }
 
-  // #endregion Public Accessors (19)
-
-  // #region Protected Accessors (1)
-
-  protected checkup() {
-    let ans = true;
-    for (const setup of this.setup) {
-      if (
-        !this.checkMinerals(
-          setup.getBody(this.hive.room.energyCapacityAvailable, 17).body
-        )
-      )
-        ans = false;
-    }
-    return ans;
-  }
-
-  // #endregion Protected Accessors (1)
+  // #endregion Public Accessors (16)
 
   // #region Public Methods (9)
 
@@ -606,7 +591,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       } else bee.goTo(desiredPos);
     }
 
-    if (SQUAD_VISUALS)
+    if (Memory.settings.richMovement)
       for (let i = 0; i < this.formationBees.length; ++i) {
         const bee = this.formationBees[i];
         if (!bee) continue;
@@ -710,7 +695,20 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   // #endregion Public Methods (9)
 
-  // #region Protected Methods (1)
+  // #region Protected Methods (2)
+
+  protected checkup() {
+    let ans = true;
+    for (const setup of this.setup) {
+      if (
+        !this.checkMinerals(
+          setup.getBody(this.hive.room.energyCapacityAvailable, 17).body
+        )
+      )
+        ans = false;
+    }
+    return ans;
+  }
 
   protected override defaultInfo(): SquadInfo {
     // should be innited before as some info comes from decision makers
@@ -727,7 +725,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     };
   }
 
-  // #endregion Protected Methods (1)
+  // #endregion Protected Methods (2)
 
   // #region Private Methods (6)
 

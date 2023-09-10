@@ -1,8 +1,8 @@
 import type { CreepSetup } from "bees/creepSetups";
-import type { AnnexCell } from "cells/base/annexCell";
 import type { DefenseCell } from "cells/base/defenseCell";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import type { BuildCell } from "cells/building/buildCell";
+import type { AnnexCell } from "cells/management/annexCell";
 import type { StorageCell } from "cells/management/storageCell";
 import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { RespawnCell } from "cells/spawning/respawnCell";

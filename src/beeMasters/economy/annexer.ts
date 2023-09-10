@@ -3,7 +3,7 @@ import { profile } from "profiler/decorator";
 
 import { SwarmMaster } from "../_SwarmMaster";
 
-interface AnnexerInfo {
+export interface AnnexerInfo {
   // #region Properties (1)
 
   timeLeft: number;

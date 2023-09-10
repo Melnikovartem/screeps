@@ -15,7 +15,6 @@ import { Hive } from "hive/hive";
 import { FlagCommand } from "orders/flagCommands";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
-import { APIARY_LIFETIME, LOGGING_CYCLE } from "settings";
 import { Intel } from "spiderSense/intel";
 import { Oracle } from "spiderSense/oracle";
 import { safeWrap } from "static/utils";
@@ -24,7 +23,7 @@ const STARVE_HIM_OUT_CLAIMS = [""];
 
 @profile
 export class _Apiary {
-  // #region Properties (11)
+  // #region Properties (12)
 
   // careful ordered list!
   private modules = {
@@ -41,30 +40,28 @@ export class _Apiary {
 
   public bees: { [creepName: string]: ProtoBee<Creep | PowerCreep> } = {};
   public createTime: number;
-  public flags: { [flagName: string]: FlagCommand } = {};
   public defenseSwarms: { [id: string]: HordeMaster } = {};
-  public destroyTime: number;
+  public flags: { [flagName: string]: FlagCommand } = {};
   public hives: { [roomName: string]: Hive } = {};
   public masters: { [mParentRef: string]: Master<MasterParent> } = {};
   public maxFactoryLvl = 0;
   public orders: { [ref: string]: SwarmOrder<any> } = {};
+  public spareCpu: number[] = [];
   public useBucket: boolean = false;
   public username: string = "";
-  public spareCpu: number[] = [];
 
-  // #endregion Properties (11)
+  // #endregion Properties (12)
 
   // #region Constructors (1)
 
   public constructor() {
     this.createTime = Game.time;
-    this.destroyTime = this.createTime + APIARY_LIFETIME;
-    if (LOGGING_CYCLE) this.modules.logger = new Logger();
+    if (Memory.settings.loggingCycle) this.modules.logger = new Logger();
   }
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (10)
+  // #region Public Accessors (11)
 
   public get broker() {
     return this.modules.broker;
@@ -72,6 +69,10 @@ export class _Apiary {
 
   public get colony() {
     return this.modules.colony;
+  }
+
+  public get destroyTime() {
+    return this.createTime + Memory.settings.lifetimeApiary;
   }
 
   public get engine() {
@@ -107,9 +108,9 @@ export class _Apiary {
     return this.modules.war;
   }
 
-  // #endregion Public Accessors (10)
+  // #endregion Public Accessors (11)
 
-  // #region Public Methods (4)
+  // #region Public Methods (5)
 
   public init() {
     _.forEach(Game.rooms, (room) => {
@@ -132,6 +133,10 @@ export class _Apiary {
       if ("init" in module) module.init();
     });
     SwarmOrder.init();
+  }
+
+  public reset() {
+    this.createTime = Game.time - Memory.settings.lifetimeApiary;
   }
 
   // run phase
@@ -229,5 +234,5 @@ export class _Apiary {
       this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 
-  // #endregion Public Methods (4)
+  // #endregion Public Methods (5)
 }

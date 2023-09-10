@@ -15,6 +15,10 @@ export class EmptyLogger {
     Memory.log = undefined;
   }
 
+  public get logCycle() {
+    return Memory.settings.loggingCycle;
+  }
+
   // #endregion Constructors (1)
 
   // #region Public Accessors (1)

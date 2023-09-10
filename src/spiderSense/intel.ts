@@ -11,13 +11,13 @@ import {
   getComplexStats,
   getStats,
 } from "./intel-creep";
-import { roomStateNatural } from "./intel-deep";
 import {
   type DangerLvl,
   type Enemy,
   getIntel,
   type RoomIntelRuntime,
 } from "./intel-runtime";
+import { roomStateNatural } from "./intel-utils";
 
 /** info that is exposed to managers of Apiary */
 interface IntelInfoManagers {
@@ -113,7 +113,7 @@ export class Intel {
     const intel = this.getIntel(roomName, lag);
     // to keep everything fast i also cache dangerlvlmax and towers
     // but prob can calc them here
-    const safeModeEndTime = intel.battle?.safeModeEndTime || Infinity;
+    const safeModeEndTime = intel.battle?.safeModeEndTime || -Infinity;
     // PoorMans check if it is safe in a room
     const safePlace =
       intel.dangerlvlmax < 4 ||

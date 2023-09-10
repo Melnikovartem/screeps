@@ -186,10 +186,9 @@ export class RoomPlanner {
 
   // #region Private Methods (3)
 
-  private calcMetric() {
-    if (!this.checking) return -Infinity;
+  private calcMetric(ap: ActivePlan) {
     let metric = 0;
-    const me = this.checking.active.metrics; // this comment style -> expecteed range
+    const me = ap.metrics; // this comment style -> expecteed range
     // can tollerate no more then 80 ramps
     metric += (1 - me.ramps / 80) * 60; // 0 -> 60
     // baseline is 3 towers full bunker
@@ -205,7 +204,7 @@ export class RoomPlanner {
     addRoadMetric(me.sumRoadRes, 3); // energy 2x + mineral
     addRoadMetric(me.roadLabs);
     addRoadMetric(me.roadFastRef);
-    metric += me.final = Math.round(metric * 1000) / 1000;
+    me.final = Math.round(metric * 1000) / 1000;
     return metric;
   }
 
@@ -268,10 +267,8 @@ export class RoomPlanner {
       // finished full position
       // 100+ CPU final product
       this.checking.activeStep = 0;
-      this.calcMetric();
       if (
-        (this.checking.active.metrics.final || 0) >
-        (this.checking.best.metrics.final || 0)
+        this.calcMetric(this.checking.active) > this.checking.best.metrics.final
       )
         this.checking.best = this.checking.active;
       const pos = this.checking.active.centers[0] as RoomPosition;

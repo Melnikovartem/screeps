@@ -1,6 +1,5 @@
 import type { ResTarget } from "hive/hive-declarations";
 
-import { DEVELOPING, LOGGING_CYCLE, SAFE_DEV } from "../settings";
 import { ROOM_DIMENTIONS } from "./constants";
 
 export function makeId(length: number): string {
@@ -17,14 +16,13 @@ export function makeId(length: number): string {
 // wrap run or update functions
 // not to get colony wide blackout cause i missed something in some master
 export function safeWrap(cycle: () => void, context: string): void {
-  if (SAFE_DEV) {
+  if (Memory.settings.safeWrap) {
     try {
       cycle();
     } catch (e) {
-      if (LOGGING_CYCLE) {
+      if (Memory.settings.loggingCycle) {
         if (!Memory.report.crashes) Memory.report.crashes = {};
         const regex = /"([^"]+)"/.exec(context);
-        if (DEVELOPING) console.log((e as Error).stack);
         Memory.report.crashes[regex ? regex[1] : context] = {
           time: Game.time,
           context,
@@ -220,7 +218,7 @@ export function findCoordsInsideRect(
   return positions;
 }
 
-const SPOT_ATTEMPTS = 20;
+const SPOT_ATTEMPTS = 100;
 
 /** tries to return a position on plains in the center of the room */
 export function goodSpot(roomName: string) {
@@ -234,12 +232,12 @@ export function goodSpot(roomName: string) {
         return 0; // not great position
       case TERRAIN_MASK_SWAMP:
         // found a swamp
-        xbest = x;
-        ybest = y;
+        xbest = x1;
+        ybest = y1;
         return 0; // but not great
       default:
-        xbest = x;
-        ybest = y;
+        xbest = x1;
+        ybest = y1;
         return 1; // found plains
     }
   };
@@ -247,8 +245,8 @@ export function goodSpot(roomName: string) {
   for (let i = 0; i <= SPOT_ATTEMPTS; ++i) {
     if (checkPos(x, y)) break;
     // random spot in 15 to 35
-    x = Math.random() * 20 + 15;
-    y = Math.random() * 20 + 15;
+    x = Math.round(Math.random() * 20 + 15);
+    y = Math.round(Math.random() * 20 + 15);
   }
 
   return new RoomPosition(xbest, ybest, roomName);

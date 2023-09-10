@@ -45,7 +45,7 @@ export class ClaimerMaster extends SwarmMaster<undefined> {
           else {
             if (!controller.owner)
               if (bee.claimController(controller) !== OK) return;
-              else Apiary.destroyTime = Game.time; // create new hive
+              else Apiary.reset(); // create new hive
             bee.creep.signController(controller, signText.my);
             this.parent.delete();
           }

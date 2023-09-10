@@ -214,6 +214,7 @@ export class DefenseCell extends Cell {
         )
         .map((b) => b.creep);
     };
+
     prepareHeal(this.master);
     if (this.hive.cells.power && !healTargets.length) {
       const powerManager = this.hive.cells.power.powerManagerBee;

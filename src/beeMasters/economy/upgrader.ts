@@ -1,5 +1,5 @@
 import { setups } from "bees/creepSetups";
-import { HIVE_ENERGY, LOW_ENERGY } from "cells/management/storageCell";
+import { HIVE_ENERGY } from "cells/management/storageCell";
 import type { UpgradeCell } from "cells/management/upgradeCell";
 import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -9,13 +9,14 @@ import type { MovePriority } from "../_Master";
 import { Master } from "../_Master";
 
 /** on resState */
-const UPGRADING_AFTER_8_ENERGY = HIVE_ENERGY; // double the amount to start upgrading
-const SPAWN_SAVE_ENERGY = 250; // when taking from spawn to upgrade leave 250 for miner to spawn
-const MAIN_STORAGE_SAVE_ENERGY = 1000; // leave 1000 if taking from other places
-/** on sCell.usedCapacity */
 const UPGRADING_SCALE = {
-  stop: LOW_ENERGY.highEnd,
+  stop: 0,
   max: HIVE_ENERGY,
+  after8: HIVE_ENERGY,
+  /** for container/storage/terminal */
+  saveStore: 1000, // save last n
+  /** for spawn */
+  saveSpawn: 250, // save last n
 };
 @profile
 export class UpgraderMaster extends Master<UpgradeCell> {
@@ -58,13 +59,17 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       this.hive.room.terminal
     )
       desiredRate = this.parent.maxRate.import; // can always buy / ask for more
-    else if (
-      this.parent.controller.level < 7 &&
-      (this.hive.storage!.store.getUsedCapacity(RESOURCE_ENERGY) > 1000 ||
-        this.hive.controller.level < 2)
-    ) {
-      // just spend all produced energy on upgrading
-      const storeAmount = this.hive.getUsedCapacity(RESOURCE_ENERGY);
+    else if (this.hive.controller.level < 4) {
+      if (
+        (this.hive.storage?.store.getUsedCapacity(RESOURCE_ENERGY) || 0) >
+          UPGRADING_SCALE.saveStore ||
+        this.hive.controller.level < 2
+      )
+        // early game consume as much as you can
+        desiredRate = this.parent.maxRate.local;
+    } else if (this.parent.controller.level < 7) {
+      // mid game produced energy on upgrading when have enough to build
+      const storeAmount = this.hive.resState[RESOURCE_ENERGY];
       const coef =
         (storeAmount - UPGRADING_SCALE.stop) /
         (UPGRADING_SCALE.max - UPGRADING_SCALE.stop);
@@ -72,13 +77,13 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       desiredRate = Math.max(Math.ceil(this.parent.maxRate.local * coef), 0);
     } else if (
       upgradeMode === 2 &&
-      this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
+      this.hive.resState.energy > UPGRADING_SCALE.after8
     )
       // upgrade spend all produced energy on upgrading
       desiredRate = this.parent.maxRate.local;
     else if (
       upgradeMode === 3 &&
-      this.hive.resState.energy > UPGRADING_AFTER_8_ENERGY
+      this.hive.resState.energy > UPGRADING_SCALE.after8
     )
       // boost upgrade for GCL
       desiredRate = this.parent.maxRate.import;
@@ -119,12 +124,12 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       this.hive.storage?.id === suckerTarget.id &&
       suckerTarget.structureType !== STRUCTURE_SPAWN &&
       (suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY) || 0) <=
-        MAIN_STORAGE_SAVE_ENERGY // do not drain main storage
+        UPGRADING_SCALE.saveStore // do not drain main storage
     )
       suckerTarget = undefined;
     else if (
       suckerTarget?.structureType === STRUCTURE_SPAWN &&
-      this.hive.room.energyAvailable <= SPAWN_SAVE_ENERGY // keep last 150 energy free
+      this.hive.room.energyAvailable <= UPGRADING_SCALE.saveSpawn
     )
       suckerTarget = undefined;
 

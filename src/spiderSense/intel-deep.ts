@@ -1,6 +1,8 @@
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { roomStates } from "static/enums";
 
+import { roomStateNatural } from "./intel-utils";
+
 export interface UserIntelCache {
   rooms: [];
   // can be imported by hand
@@ -41,18 +43,6 @@ export interface RoomInfoBoosts {
   heal?: number;
   damage?: number;
   build?: number;
-}
-
-export function roomStateNatural(roomName: string) {
-  const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
-  if (!parsed) return roomStates.corridor; // failsafe
-  const [x, y] = [+parsed[2] % 10, +parsed[4] % 10];
-  if (x === 0 || y === 0) return roomStates.corridor;
-  if (x === 5 && y === 5) return roomStates.SKcentral;
-  // 4 <= x or y <= 6
-  if (Math.abs(x - 5) <= 1 && Math.abs(y - 5) <= 1)
-    return roomStates.SKfrontier;
-  return roomStates.noOwner;
 }
 
 export function emptyRoomBattleIntel(): RoomInfoBattle {

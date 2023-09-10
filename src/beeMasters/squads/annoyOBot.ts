@@ -1,6 +1,8 @@
 import { setups } from "bees/creepSetups";
+
 import type { Boosts } from "../_Master";
-import { FormationPositions, SquadMaster } from "./squad";
+import type { FormationPositions } from "./squad";
+import { SquadMaster } from "./squad";
 
 // i am poor so there is this for top lvl harass
 const TOWER_NUM = 6; // 6;

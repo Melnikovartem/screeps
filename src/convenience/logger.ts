@@ -4,7 +4,6 @@ import { setups } from "bees/creepSetups";
 import type { ProtoOrder } from "bugSmuggling/broker";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { LOGGING_CYCLE } from "settings";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { makeId } from "static/utils";
 
@@ -341,7 +340,7 @@ export class Logger extends EmptyLogger {
     for (const r in resourceEvents) {
       const res = r as ResourceConstant;
       for (const eventId in resourceEvents[res]) {
-        if (Game.time - resourceEvents[res]![eventId].tick > LOGGING_CYCLE)
+        if (Game.time - resourceEvents[res]![eventId].tick > this.logCycle)
           delete resourceEvents[res]![eventId];
       }
       if (Object.keys(resourceEvents[res]!).length === 0)
@@ -437,7 +436,7 @@ export class Logger extends EmptyLogger {
 
   private reportMarket() {
     for (const transaction of Game.market.incomingTransactions) {
-      if (Game.time - transaction.time > LOGGING_CYCLE) break;
+      if (Game.time - transaction.time > this.logCycle) break;
       if (!transaction.order) continue;
       if (transaction.transactionId in this.log.market.resourceEvents) continue;
       this.reportMarketEvent(
@@ -449,7 +448,7 @@ export class Logger extends EmptyLogger {
       );
     }
     for (const transaction of Game.market.outgoingTransactions) {
-      if (Game.time - transaction.time > LOGGING_CYCLE) break;
+      if (Game.time - transaction.time > this.logCycle) break;
       if (!transaction.order) continue;
       if (transaction.transactionId in this.log.market.resourceEvents) continue;
       this.reportMarketEvent(

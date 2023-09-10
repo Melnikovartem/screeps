@@ -1,6 +1,7 @@
 import { MinerMaster } from "beeMasters/economy/miner";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
+import { naturalResourceCapacity } from "spiderSense/intel-utils";
 import { hiveStates, prefix, roomStates } from "static/enums";
 import { Traveler } from "Traveler/TravelerModified";
 
@@ -126,30 +127,14 @@ export class ResourceCell extends Cell {
     let capacity: number | undefined = 0;
     if (this.resType === RESOURCE_ENERGY) {
       capacity = (this.resource as Source | undefined)?.energyCapacity;
-      if (capacity === undefined) {
-        const state = Apiary.intel.getRoomState(this.pos.roomName);
-        switch (state) {
-          case roomStates.ownedByMe:
-          case roomStates.reservedByMe:
-            capacity = SOURCE_ENERGY_CAPACITY;
-            break;
-          case roomStates.SKcentral:
-            capacity = SOURCE_ENERGY_KEEPER_CAPACITY;
-            break;
-          case roomStates.noOwner:
-            capacity = SOURCE_ENERGY_NEUTRAL_CAPACITY;
-            break;
-          default:
-            capacity = 0;
-        }
-      }
+      if (capacity === undefined)
+        capacity = naturalResourceCapacity(this.pos.roomName, false);
     } else if (this.operational) {
       capacity = (this.resource as Mineral | undefined)?.mineralAmount;
       if (capacity === undefined) capacity = 0;
       // we say this one doesn't have capacity if we dont see it
     }
-    // zero is a failsafe
-    return capacity || 0;
+    return capacity;
   }
 
   public get restTime() {
@@ -170,7 +155,12 @@ export class ResourceCell extends Cell {
 
   // #endregion Public Accessors (14)
 
-  // #region Public Methods (4)
+  // #region Public Methods (5)
+
+  public override delete() {
+    delete this.parentCell.resourceCells[this.resId];
+    super.delete();
+  }
 
   public recalcLairFleeTime() {
     if (!this.lair) return;
@@ -264,7 +254,7 @@ export class ResourceCell extends Cell {
     if (recalcLairTime) this.recalcLairFleeTime();
   }
 
-  // #endregion Public Methods (4)
+  // #endregion Public Methods (5)
 
   // #region Private Methods (3)
 

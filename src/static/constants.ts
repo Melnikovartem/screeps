@@ -4,7 +4,7 @@ export const SETTINGS_DEFAULT: Memory["settings"] = {
   framerate: 10,
   generatePixel: Game.cpu.limit > 20,
   miningDist: 8,
-  reportCPU: true,
+  reportCPU: false,
   richMovement: true,
   loggingCycle: 100,
   lifetimeApiary: 40000,
