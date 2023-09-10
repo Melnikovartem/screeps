@@ -1,5 +1,9 @@
+import { towerCoef } from "static/utils";
+
 import type { ActivePlan, RoomPlannerMatrix } from "./planner-active";
-import type { RoomPlanner } from "./roomPlanner";
+import type { PlannerChecking, RoomPlanner } from "./roomPlanner";
+
+export const PLANNER_TOWERS = CONTROLLER_STRUCTURES[STRUCTURE_TOWER][8];
 
 export const PLANNER_STAMP_STOP = "#";
 
@@ -117,13 +121,13 @@ export function endBlock(ap: ActivePlan, sType?: BuildableStructureConstant) {
 }
 
 function endBlockRoom(
-  ap: RoomPlannerMatrix,
+  roomMatrix: RoomPlannerMatrix,
   sType?: BuildableStructureConstant
 ) {
-  for (const sTypeIter of Object.keys(ap.compressed)) {
+  for (const sTypeIter of Object.keys(roomMatrix.compressed)) {
     const structureType = sTypeIter as BuildableStructureConstant;
     if (sType && sType !== structureType) continue;
-    const que = ap.compressed[structureType]!.que;
+    const que = roomMatrix.compressed[structureType]!.que;
     if (que[que.length - 1] !== PLANNER_STAMP_STOP)
       que.push(PLANNER_STAMP_STOP);
   }
@@ -142,4 +146,44 @@ export function emptySpot(
     );
     sInfo.len = sInfo.que.filter((p) => p !== PLANNER_STAMP_STOP).length;
   }
+}
+
+export function getPos(ch: PlannerChecking) {
+  return new RoomPosition(
+    ch.active.centers[0].x,
+    ch.active.centers[0].y,
+    ch.roomName
+  );
+}
+
+export function calcTowerDmg(
+  roomMatrix: RoomPlannerMatrix,
+  roomName: string
+): [RoomPosition[], { [pos: string]: number }] {
+  // could ignore roomName with W0N0, but decided not to
+  const wallsDmg: { [pos: string]: number } = {};
+  const allWalls = _.map(
+    _.filter(
+      (roomMatrix.compressed[STRUCTURE_RAMPART]?.que || []).concat(
+        roomMatrix.compressed[STRUCTURE_WALL]?.que || []
+      ),
+      (w) => w !== PLANNER_STAMP_STOP
+    ) as [number, number][],
+    (p) => new RoomPosition(p[0], p[1], roomName)
+  );
+
+  _.forEach(allWalls, (val) => (wallsDmg[val.to_str] = 0));
+  _.forEach(roomMatrix.compressed[STRUCTURE_TOWER]?.que || [], (towerPos) => {
+    if (towerPos !== PLANNER_STAMP_STOP)
+      _.forEach(
+        allWalls,
+        (val) =>
+          (wallsDmg[val.to_str] +=
+            towerCoef(
+              { pos: new RoomPosition(towerPos[0], towerPos[1], roomName) },
+              val
+            ) * TOWER_POWER_ATTACK)
+      );
+  });
+  return [allWalls, wallsDmg];
 }

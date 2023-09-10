@@ -1,10 +1,10 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
-import { HIVE_ENERGY } from "cells/management/storageCell";
 import { SWARM_MASTER } from "orders/swarm-nums";
-import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import type { BuildCell, BuildProject } from "./buildCell";
+import { type BuildCell, type BuildProject } from "./buildCell";
+import { HIVE_WALLS_UP, WALLS_HEALTH } from "./_building-constants";
 import {
   addUpgradeBoost,
   checkBuildings,
@@ -29,24 +29,9 @@ const BUILDABLE_PRIORITY = {
   ],
 };
 
-/** add WALL_STEP to target wall health if energy surplus is more than cell */
-export const HIVE_WALLS_UP = {
-  [100_000]: 0,
-  [5_000_000]: HIVE_ENERGY * 0.25, // +100_000 // prob can cell easy
-  [25_000_000]: HIVE_ENERGY, // +200_000 // ok spot to be
-  [50_000_000]: HIVE_ENERGY * 1.5, // +300_000 // kinda overkill
-  // [WALL_HITS_MAX]: HIVE_ENERGY * 2, // big project
-};
-// KEEP BUFFING WALLS IF BATTLE
-const WALLS_BATTLE_BUFFER = 10_000_000;
-/** AVG case boosted ~75k energy
- *
- * worst case unboosted 200k energy */
-const WALLS_STEP = 200_000;
-
 export function wallMap(cell: BuildCell) {
   let targetHealth = cell.wallTargetHealth;
-  if (cell.hive.isBattle) targetHealth += WALLS_BATTLE_BUFFER;
+  if (cell.hive.isBattle) targetHealth += WALLS_HEALTH.battle;
   return {
     [STRUCTURE_WALL]: Math.min(targetHealth, WALL_HITS_MAX),
     [STRUCTURE_RAMPART]: Math.min(
@@ -265,7 +250,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
     });
 
   // get first measure of walls health
-  if (this.wallTargetHealth === WALLS_START)
+  if (this.wallTargetHealth === WALLS_HEALTH.start)
     this.wallTargetHealth = nextWallTargetHealth(this);
 
   switch (this.hive.state) {
@@ -340,9 +325,9 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
         !this.buildingCosts.hive.build &&
         !this.buildingCosts.hive.repair &&
         !this.buildingCosts.annex.build &&
-        this.buildingCosts.annex.repair < 1_000
+        this.buildingCosts.annex.repair < 1_000 &&
+        this.hive.phase === 2
       ) {
-        this.wallTargetHealth = nextWallTargetHealth(this);
         checkAdd(["defense"], true);
       }
       break;
@@ -356,16 +341,24 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
 
 function nextWallTargetHealth(cell: BuildCell) {
   const minHealth = checkMinWallHealth(cell.hiveName);
-  if (cell.wallTargetHealth - minHealth >= WALLS_STEP)
-    return Math.ceil(minHealth / WALLS_STEP) * WALLS_STEP;
+  // downgrade walls if more then step
+  if (cell.wallTargetHealth - minHealth >= WALLS_HEALTH.step)
+    return Math.min(
+      Math.ceil(minHealth / WALLS_HEALTH.step) * WALLS_HEALTH.step
+    );
+  // curr target for walls
   const currTarget = Math.max(cell.wallTargetHealth, minHealth);
 
-  for (const [wallHealth, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
-    if (currTarget > +wallHealth) continue;
+  // check energy to decide if we need to one up the target
+  for (const [wallTarget, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
+    // cap based on phase
+    const wallHealth = Math.min(cell.maxWallHealth, +wallTarget);
+    // only if < new Target
+    if (currTarget >= wallHealth) continue;
     // only if > surplus
     if (cell.hive.resState.energy <= energySurplus) break;
     const newWallTargetHealth = Math.min(
-      Math.ceil(minHealth / WALLS_STEP + 1) * WALLS_STEP,
+      Math.ceil(minHealth / WALLS_HEALTH.step + 1) * WALLS_HEALTH.step,
       +wallHealth
     );
     console.log(
@@ -373,7 +366,8 @@ function nextWallTargetHealth(cell: BuildCell) {
     );
     return newWallTargetHealth;
   }
-  return currTarget < WALLS_STEP
-    ? WALLS_STEP
-    : Math.floor(currTarget / WALLS_STEP) * WALLS_STEP;
+  // will reach if no energy to up the walls or max by phase
+  return currTarget < WALLS_HEALTH.step
+    ? WALLS_HEALTH.step
+    : Math.floor(currTarget / WALLS_HEALTH.step) * WALLS_HEALTH.step;
 }

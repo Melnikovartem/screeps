@@ -1,26 +1,12 @@
 import type { buildingCostsHive } from "abstract/hiveMemory";
 import { PLANNER_STAMP_STOP } from "antBrain/hivePlanner/planner-utils";
 import type { Hive } from "hive/hive";
-import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { prefix } from "static/enums";
 import { getCase, makeId } from "static/utils";
 
-import type { BuildProject } from "./buildCell";
-
-const RAMPART_BUFFER_ZONE = {
-  aliveBees: 15_000, // 5_000 ticks
-  noBees: 45_000, // 15_666 ticks
-};
-
-const ROAD_BUFFER_ZONE = {
-  aliveBees: 500, // 5_000 ticks
-  noBees: 1_500, // 15_0000 ticks
-};
-
-const CONTAINER_BUFFE_ZONE = {
-  aliveBees: 50_000, // 5_000 ticks
-  noBees: 150_000, // 15_000 ticks
-};
+import { BUFFER_ZONE, WALLS_HEALTH } from "./_building-constants";
+import { type BuildProject } from "./buildCell";
 
 // absolute max to add
 const CONSTRUCTIONS_PER_FUNCTION = 30;
@@ -151,7 +137,7 @@ function addConstruction(
     energyCost.build += CONSTRUCTION_COST[sType];
 
     if (isDefense) {
-      let heal = WALLS_START;
+      let heal = WALLS_HEALTH.step;
       if (sType in specials) heal = specials[sType]!;
 
       // need only 1 energy so also add building them u
@@ -192,21 +178,19 @@ function checkStructureBuild(
     type = "structure";
     let heal = getCase(structure).heal;
     if (sType in specials) heal = specials[sType]!;
-
-    const calcBuffer = (buffer: typeof RAMPART_BUFFER_ZONE, coef = 1) => {
+    const calcBuffer = () => {
+      if (!Object.keys(BUFFER_ZONE).includes(sType)) return 0;
+      const key = sType as keyof typeof BUFFER_ZONE;
+      // coef more decay for swamp / walls of roads;
+      const coef = sType === STRUCTURE_ROAD ? structure.hitsMax / ROAD_HITS : 1;
+      const builders = hive && hive.cells.build.master.activeBees.length;
       return Math.min(
         heal * 0.5,
-        (hive && hive.cells.build.master.activeBees.length
-          ? buffer.aliveBees
-          : buffer.noBees) * coef
+        (builders ? BUFFER_ZONE[key].aliveBees : BUFFER_ZONE[key].noBees) * coef
       );
     };
-    if (sType === STRUCTURE_RAMPART) heal -= calcBuffer(RAMPART_BUFFER_ZONE);
-    else if (sType === STRUCTURE_ROAD)
-      heal -= calcBuffer(ROAD_BUFFER_ZONE, structure.hitsMax / ROAD_HITS);
-    // coef for swamp / walls;
-    else if (sType === STRUCTURE_CONTAINER)
-      heal -= calcBuffer(CONTAINER_BUFFE_ZONE);
+    heal -= calcBuffer();
+
     if (nukeAlert && isDefense) {
       const nukeDmg = _.sum(
         pos.findInRange(FIND_NUKES, 2),

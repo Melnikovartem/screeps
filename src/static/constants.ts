@@ -32,8 +32,6 @@ export const APPROX_PROFIT_SOURCE = {
   hauling: 8.7, // 10 - roads - miner - managers - haulers
 };
 
-export const WALLS_START = 10_000;
-
 export type ApiaryReturnCode = ScreepsReturnCode | -101 | -102 | -200;
 // all codes still in int8
 export const ERR_COOLDOWN = -101;

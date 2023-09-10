@@ -482,7 +482,10 @@ export class CustomConsole {
   /** nice output of last crashes */
   public printCrashes() {
     let reportLog = "LAST CRASHES:\n\n";
-    for (const [ref, crash] of Object.entries(Memory.report.crashes || {})) {
+    const crashes = Object.entries(Memory.report.crashes || {});
+    crashes.sort((a) => a[1].time);
+    crashes.reverse();
+    for (const [ref, crash] of crashes) {
       const stackNew = crash.stack?.split("\n").slice(1, 3) || [];
 
       reportLog += `${Game.time - crash.time} ticks ago : ${ref}\nMESSAGE:\n${

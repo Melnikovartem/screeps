@@ -5,6 +5,7 @@ import { ERR_NO_VISION } from "static/constants";
 import { prefix, roomStates } from "static/enums";
 
 import { initMatrix } from "./addRoads";
+import type { PlannerMetrics } from "./planner-metric";
 import { addStructure, PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
 
@@ -26,25 +27,13 @@ export interface RoomPlannerMatrix {
 export interface RoomCellsPlanner {
   [ref: string]: [number, number];
 }
-interface PlannerMetrics {
-  /** number of ramps */
-  ramps: number;
-  /** minDmg in absolute value */
-  minDmg: number;
-  sumRoadTower: number;
-  sumRoadExt: number;
-  sumRoadRes: number;
-  roadLabs: number;
-  roadFastRef: number;
-  final: number;
-}
 
 export const PLANNER_EMPTY_METRICS: PlannerMetrics = {
   ramps: 0,
   minDmg: 0,
   sumRoadTower: 0,
-  sumRoadExt: 0,
-  sumRoadRes: 0,
+  maxRoadExt: 0,
+  roadCont: 0,
   roadLabs: 0,
   roadFastRef: 0,
   final: 0,
@@ -225,9 +214,11 @@ export function fromCache(this: RoomPlanner, hiveName: string) {
   const mainPos = mem.posCell[prefix.defenseCell];
   if (!mainPos) return ERR_NOT_FOUND;
   const ch = this.checking;
-  ch.positions = [new RoomPosition(mainPos[0], mainPos[1], ch.roomName)];
+  const pos = new RoomPosition(mainPos[0], mainPos[1], ch.roomName);
+  ch.positions = [pos];
   ch.best.posCell = _.cloneDeep(mem.posCell);
   ch.best.metrics = _.cloneDeep(mem.metrics);
+  ch.best.centers = [pos];
 
   _.forEach(mem.rooms, (roomPlan, roomName) => {
     if (!roomName) return;

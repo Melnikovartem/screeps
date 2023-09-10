@@ -1,10 +1,16 @@
 import { BuilderMaster } from "beeMasters/economy/builder";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
-import { WALLS_START, ZERO_COSTS_BUILDING_HIVE } from "static/constants";
+import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
+import {
+  HIVE_WALLS_UP,
+  UPDATE_STRUCTURES_BATTLE,
+  UPDATE_STRUCTURES_NORMAL,
+  WALLS_HEALTH,
+} from "./_building-constants";
 import { getBuildTarget, updateStructures } from "./hive-building";
 
 // Define the BuildProject interface for construction projects
@@ -20,10 +26,6 @@ export interface BuildProject {
   // #endregion Properties (5)
 }
 
-// Constants for update intervals
-const UPDATE_STRUCTURES_BATTLE = 100;
-const UPDATE_STRUCTURES_NORMAL = 1500;
-
 @profile
 export class BuildCell extends Cell {
   // #region Properties (7)
@@ -38,7 +40,7 @@ export class BuildCell extends Cell {
   public override master: BuilderMaster;
   public structuresConst: BuildProject[] = [];
   /** current minium wall health */
-  public wallTargetHealth: number = WALLS_START;
+  public wallTargetHealth: number = WALLS_HEALTH.start;
 
   // #endregion Properties (7)
 
@@ -49,14 +51,20 @@ export class BuildCell extends Cell {
     this.master = new BuilderMaster(this);
   }
 
-  /** interface to recheck buildings */
-  public checkRoom() {
-    if (this.forceCheck === "") this.forceCheck = "mainroom";
-  }
-
   // #endregion Constructors (1)
 
-  // #region Public Accessors (1)
+  // #region Public Accessors (2)
+
+  public get maxWallHealth() {
+    switch (this.hive.phase) {
+      case 0:
+        return WALLS_HEALTH.start;
+      case 1:
+        return HIVE_WALLS_UP[WALLS_HEALTH.step];
+      default:
+        return Infinity;
+    }
+  }
 
   public get sumCost() {
     return (
@@ -67,9 +75,14 @@ export class BuildCell extends Cell {
     );
   }
 
-  // #endregion Public Accessors (1)
+  // #endregion Public Accessors (2)
 
-  // #region Public Methods (2)
+  // #region Public Methods (3)
+
+  /** interface to recheck buildings */
+  public checkRoom() {
+    if (this.forceCheck === "") this.forceCheck = "mainroom";
+  }
 
   public run() {}
 
@@ -89,5 +102,5 @@ export class BuildCell extends Cell {
     }
   }
 
-  // #endregion Public Methods (2)
+  // #endregion Public Methods (3)
 }

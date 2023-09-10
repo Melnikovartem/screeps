@@ -166,7 +166,7 @@ export class RespawnCell extends Cell {
       // boosted movement check
       if (order.setup.moveMax === "best" && this.hive.cells.lab) {
         const master = Apiary.masters[order.master];
-        if (master && master.boosts) {
+        if (master && master.boosts.length) {
           _.some(
             master.boosts.filter((b) => b.type === "fatigue"),
             (speedBoost) => {

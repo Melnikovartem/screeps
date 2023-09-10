@@ -10,7 +10,8 @@ export function addRoad(
   from: RoomPosition,
   to: RoomPosition | Pos,
   ap: ActivePlan,
-  range = 1
+  range = 1,
+  blank = false
 ): [OK | ERR_NOT_IN_RANGE, number] {
   let target: RoomPosition;
   if ("roomName" in to) target = to;
@@ -28,11 +29,14 @@ export function addRoad(
       },
     }
   );
-  _.forEach(path.path, (pos) => {
-    const roads = ap.rooms[pos.roomName]?.compressed[STRUCTURE_ROAD]?.que || [];
-    if (_.filter(roads, (r) => r[0] === pos.x && r[1] === pos.y).length) return;
-    addStructure(pos, STRUCTURE_ROAD, ap.rooms[pos.roomName]);
-  });
+  if (!blank)
+    _.forEach(path.path, (pos) => {
+      const roads =
+        ap.rooms[pos.roomName]?.compressed[STRUCTURE_ROAD]?.que || [];
+      if (_.filter(roads, (r) => r[0] === pos.x && r[1] === pos.y).length)
+        return;
+      addStructure(pos, STRUCTURE_ROAD, ap.rooms[pos.roomName]);
+    });
   return [path.incomplete ? ERR_NOT_IN_RANGE : OK, path.path.length];
 }
 

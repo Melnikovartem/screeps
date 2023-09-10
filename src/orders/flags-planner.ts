@@ -99,10 +99,16 @@ export function actPlanner(cm: FlagCommand) {
     case COLOR_GREY:
       // save current to active
       break;
-    case COLOR_GREEN:
+    case COLOR_GREEN: {
+      if (!pl.checking) {
+        console.log("NO PLAN TO SAVE");
+        return;
+      }
+      const metric = pl.recalcMetricsActive();
       pl.savePlan();
-      console.log(`PLAN SAVED`);
+      console.log(`PLAN SAVED @${pl.checking?.roomName || "NONE"} : ${metric}`);
       break;
+    }
     case COLOR_PURPLE: {
       if (!pl.checking) {
         console.log(`NO PLAN FOUND @${cm.pos.print}`);

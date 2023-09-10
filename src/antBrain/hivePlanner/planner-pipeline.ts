@@ -11,6 +11,7 @@ import {
   addLink,
   addStructure,
   endBlock,
+  getPos,
   PLANNER_COST,
   PLANNER_STAMP_STOP,
 } from "./planner-utils";
@@ -150,7 +151,7 @@ function addMainStamps(ch: PlannerChecking) {
 
 function addExtentions(ch: PlannerChecking) {
   const pos = getPos(ch);
-  ch.active.metrics.sumRoadExt = 0;
+  ch.active.metrics.maxRoadExt = 0;
   for (let i = 0; i < PLANNER_EXTENSION; ++i) {
     const extentionPos = addStampSomewhere(
       ch.active.centers,
@@ -160,17 +161,12 @@ function addExtentions(ch: PlannerChecking) {
     );
     if (extentionPos === ERR_NOT_FOUND) return ERR_FULL;
     ch.active.centers.push(extentionPos);
-    ch.active.metrics.sumRoadExt += addRoad(pos, extentionPos, ch.active)[1];
+    ch.active.metrics.maxRoadExt = Math.max(
+      ch.active.metrics.maxRoadExt,
+      addRoad(pos, extentionPos, ch.active)[1] + 1
+    );
   }
   return OK;
-}
-
-function getPos(ch: PlannerChecking) {
-  return new RoomPosition(
-    ch.active.centers[0].x,
-    ch.active.centers[0].y,
-    ch.roomName
-  );
 }
 
 function addPowerObserve(ch: PlannerChecking) {
@@ -255,15 +251,15 @@ function addController(ch: PlannerChecking) {
   );
   if (posContrLink === ERR_NOT_FOUND) return ERR_FULL;
   ch.active.posCell[prefix.upgradeCell] = [posContrLink.x, posContrLink.y];
-  if (addRoad(pos, posContrLink, ch.active)[1] === ERR_NOT_IN_RANGE)
-    return ERR_FULL;
+  const [ans, time] = addRoad(pos, posContrLink, ch.active);
+  if (ans === ERR_NOT_IN_RANGE) return ERR_FULL;
+  ch.active.metrics.roadCont = time;
   return OK;
 }
 
 function addResources(ch: PlannerChecking) {
   const pos = getPos(ch);
   const roomMatrix = ch.active.rooms[ch.roomName];
-  ch.active.metrics.sumRoadRes = 0;
 
   const addResourceBasic = (resPos: RoomPosition) => {
     if (
@@ -277,9 +273,8 @@ function addResources(ch: PlannerChecking) {
     ) {
       return OK;
     }
-    const [ans, time] = addRoad(pos, resPos, ch.active);
+    const [ans] = addRoad(pos, resPos, ch.active);
     if (ans !== OK) return ERR_NOT_IN_RANGE;
-    if (resPos.roomName === ch.roomName) ch.active.metrics.sumRoadRes += time;
     const containerPos = addContainer(
       resPos,
       ch.active.rooms[resPos.roomName],

@@ -10,7 +10,7 @@ import { actUtilsActions, actUtilsPositions } from "./orders-utils";
 import { SWARM_MASTER } from "./swarm-nums";
 
 // remove flag after time
-const FLAG_INVALIDATE_TIME = 10;
+const FLAG_INVALIDATE_TIME = 1;
 
 @profile
 export class FlagCommand {

@@ -4,15 +4,13 @@ import { towerCoef } from "static/utils";
 import { addRoad } from "./addRoads";
 import { addStampSomewhere } from "./addStamps";
 import { surroundingPoints } from "./min-cut";
-import { PLANNER_COST, PLANNER_STAMP_STOP } from "./planner-utils";
+import { calcTowerDmg, PLANNER_COST, PLANNER_TOWERS } from "./planner-utils";
 import type { PlannerChecking } from "./roomPlanner";
 import { STAMP_TOWER } from "./stamps";
 
 const PLANNER_INGORE_DMG_TOWER = 100;
 const PLANNER_PROC_WALLS_CHECK = 0.5;
 const PLANNER_RADIUS_TOWER_CHECK = 10;
-
-export const PLANNER_TOWERS = CONTROLLER_STRUCTURES[STRUCTURE_TOWER][8];
 
 export const PLANNER_FREE_MATRIX = {
   outside: 0,
@@ -33,30 +31,7 @@ export function addTowers(ch: PlannerChecking) {
 
   const roomMatrix = ch.active.rooms[ch.roomName];
 
-  const wallsDmg: { [pos: string]: number } = {};
-  const allWalls = _.map(
-    _.filter(
-      (roomMatrix.compressed[STRUCTURE_RAMPART]?.que || []).concat(
-        roomMatrix.compressed[STRUCTURE_WALL]?.que || []
-      ),
-      (w) => w !== PLANNER_STAMP_STOP
-    ) as [number, number][],
-    (p) => new RoomPosition(p[0], p[1], ch.roomName)
-  );
-
-  _.forEach(allWalls, (val) => (wallsDmg[val.to_str] = 0));
-  _.forEach(roomMatrix.compressed[STRUCTURE_TOWER]?.que || [], (towerPos) => {
-    if (towerPos !== PLANNER_STAMP_STOP)
-      _.forEach(
-        allWalls,
-        (val) =>
-          (wallsDmg[val.to_str] +=
-            towerCoef(
-              { pos: new RoomPosition(towerPos[0], towerPos[1], ch.roomName) },
-              val
-            ) * TOWER_POWER_ATTACK)
-      );
-  });
+  const [allWalls, wallsDmg] = calcTowerDmg(roomMatrix, ch.roomName);
 
   // dfs is not best best to find depth (floodfill is better)
 

@@ -12,12 +12,8 @@ import {
   PLANNER_EMPTY_METRICS,
   savePlan,
 } from "./planner-active";
-import {
-  PLANNER_EXTENSION,
-  PLANNER_ROADS,
-  PLANNER_STEPS,
-} from "./planner-pipeline";
-import { PLANNER_TOWERS } from "./planner-towers";
+import { calcMetric, recalcMetricsActive } from "./planner-metric";
+import { PLANNER_ROADS, PLANNER_STEPS } from "./planner-pipeline";
 import {
   addStructure,
   emptySpot,
@@ -147,6 +143,8 @@ export class RoomPlanner {
     this.checking = undefined;
   }
 
+  public recalcMetricsActive = recalcMetricsActive;
+
   // #endregion Public Methods (4)
 
   // #region Protected Methods (1)
@@ -185,28 +183,6 @@ export class RoomPlanner {
   // #endregion Protected Methods (1)
 
   // #region Private Methods (3)
-
-  private calcMetric(ap: ActivePlan) {
-    let metric = 0;
-    const me = ap.metrics; // this comment style -> expecteed range
-    // can tollerate no more then 80 ramps
-    metric += (1 - me.ramps / 80) * 60; // 0 -> 60
-    // baseline is 3 towers full bunker
-    metric += (me.minDmg / (TOWER_POWER_ATTACK * 3)) * 40; // 0 -> 40
-    const addRoadMetric = (roadTime: number, avg = 1) => {
-      // 0 -> 5
-      metric += (1 - roadTime / avg / ROOM_DIMENTIONS) * 5;
-    };
-    // at all 0 -> 30 for roads
-    addRoadMetric(me.sumRoadRes, PLANNER_TOWERS);
-    // twice the weight
-    addRoadMetric(me.sumRoadExt, PLANNER_EXTENSION / 2);
-    addRoadMetric(me.sumRoadRes, 3); // energy 2x + mineral
-    addRoadMetric(me.roadLabs);
-    addRoadMetric(me.roadFastRef);
-    me.final = Math.round(metric * 1000) / 1000;
-    return metric;
-  }
 
   private checkPosition(
     roomName: string,
@@ -267,9 +243,8 @@ export class RoomPlanner {
       // finished full position
       // 100+ CPU final product
       this.checking.activeStep = 0;
-      if (
-        this.calcMetric(this.checking.active) > this.checking.best.metrics.final
-      )
+      const finalMetric = calcMetric(this.checking.active.metrics);
+      if (finalMetric >= this.checking.best.metrics.final)
         this.checking.best = this.checking.active;
       const pos = this.checking.active.centers[0] as RoomPosition;
       console.log(

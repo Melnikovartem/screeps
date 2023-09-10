@@ -142,6 +142,8 @@ export class MinerMaster extends Master<ResourceCell> {
     // check if we need to run
     const lairSoonSpawn = this.parent.lairSoonSpawn;
 
+    // this.preRunBoost();
+
     // check if we need to work
     let sourceOff: boolean | undefined = !this.parent.operational;
 
