@@ -10,7 +10,7 @@ import { AnnexCell } from "cells/management/annexCell";
 import { HIVE_ENERGY, StorageCell } from "cells/management/storageCell";
 import { UpgradeCell } from "cells/management/upgradeCell";
 import { RespawnCell } from "cells/spawning/respawnCell";
-import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
+import { BASE_MINERALS, BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import type { SWARM_MASTER } from "orders/swarm-nums";
 import { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
@@ -140,6 +140,29 @@ export class Hive {
     return Math.max(1, income);
   }
 
+  public canBuy(res: ResourceConstant) {
+    let canBuyIn = false;
+    switch (this.mode.buyIn) {
+      case 3:
+        canBuyIn = true;
+        break;
+      case 2:
+        if (
+          res === RESOURCE_ENERGY ||
+          res === RESOURCE_OPS ||
+          BASE_MINERALS.includes(res)
+        )
+          canBuyIn = true;
+        break;
+      case 1:
+        if (BASE_MINERALS.includes(res)) canBuyIn = true;
+        break;
+      case 0:
+        break;
+    }
+    return canBuyIn;
+  }
+
   /** fast way to get to cache */
   public get cache() {
     return Memory.cache.hives[this.roomName];
@@ -186,6 +209,10 @@ export class Hive {
     const poss = this.cache.cells[prefix.defenseCell]?.poss as Pos | undefined;
     if (poss) return new RoomPosition(poss.x, poss.y, this.roomName);
     return this.controller.pos;
+  }
+
+  public get allRoomNames() {
+    return [this.roomName].concat(this.annexNames);
   }
 
   public get print(): string {

@@ -36,6 +36,7 @@ const PLANNER_PADDING = {
   controller: 2,
 };
 
+// 9
 export const PLANNER_EXTENSION = Math.ceil(
   CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] / 5 - 3
 );
@@ -48,10 +49,17 @@ const PLANNER_REST_COEF = {
 
 export const PLANNER_STEPS: PlannerStep[] = [
   innitActive,
-  addMainStamps,
-  addExtentions,
+  // stamps
+  addMainStamp,
+  addLabs,
+  addSomeExtensions(4),
+  addFastRef,
+  addSomeExtensions(),
+  addMainRoads,
   addPowerObserve,
+
   addWalls,
+  // after walls
   addController,
   addResources,
   addTowers,
@@ -70,7 +78,8 @@ function innitActive(ch: PlannerChecking) {
     rooms: {},
     metrics: { ...PLANNER_EMPTY_METRICS },
   };
-  ch.active.rooms[ch.roomName] = initMatrix(ch.roomName);
+  // padding 4 from walls to prevents stamps near walls
+  ch.active.rooms[ch.roomName] = initMatrix(ch.roomName, 4);
 
   return updateActive(ch);
 }
@@ -115,7 +124,7 @@ function updateActive(ch: PlannerChecking) {
   return OK;
 }
 
-function addMainStamps(ch: PlannerChecking) {
+function addMainStamp(ch: PlannerChecking) {
   const roomMatrix = ch.active.rooms[ch.roomName];
   const pos = getPos(ch);
 
@@ -123,40 +132,75 @@ function addMainStamps(ch: PlannerChecking) {
   if (canAddStamp(pos, STAMP_CORE, roomMatrix) !== OK) return ERR_FULL;
   addStampSomewhere([pos], STAMP_CORE, roomMatrix, ch.active.posCell, true);
 
-  // add stamp lab
-  const lab = addStampSomewhere(
-    [pos],
-    STAMP_LABS,
-    roomMatrix,
-    ch.active.posCell
-  );
-  if (lab === ERR_NOT_FOUND) return ERR_FULL;
+  return OK;
+}
+
+function addFastRef(ch: PlannerChecking) {
+  const roomMatrix = ch.active.rooms[ch.roomName];
   // add stamp fastrefill
   const fastRef = addStampSomewhere(
-    [pos, lab],
+    ch.active.centers,
     STAMP_FAST_REFILL,
     roomMatrix,
     ch.active.posCell
   );
   if (fastRef === ERR_NOT_FOUND) return ERR_FULL;
 
-  ch.active.metrics.roadLabs = addRoad(pos, lab, ch.active)[1];
-  ch.active.metrics.roadFastRef = addRoad(pos, fastRef, ch.active, 3)[1];
-  addRoad(new RoomPosition(lab.x, lab.y, ch.roomName), fastRef, ch.active, 3);
-
-  ch.active.centers.push(lab);
   ch.active.centers.push(fastRef);
   return OK;
 }
 
-function addExtentions(ch: PlannerChecking) {
+function addLabs(ch: PlannerChecking) {
+  const roomMatrix = ch.active.rooms[ch.roomName];
+  // add stamp lab
+  const lab = addStampSomewhere(
+    ch.active.centers,
+    STAMP_LABS,
+    roomMatrix,
+    ch.active.posCell
+  );
+  if (lab === ERR_NOT_FOUND) return ERR_FULL;
+
+  ch.active.centers.push(lab);
+  return OK;
+}
+
+function addMainRoads(ch: PlannerChecking) {
   const pos = getPos(ch);
-  ch.active.metrics.maxRoadExt = 0;
-  for (let i = 0; i < PLANNER_EXTENSION; ++i) {
+  const labCell = ch.active.posCell[prefix.laboratoryCell];
+  const fasCell = ch.active.posCell[prefix.fastRefillCell];
+
+  const lab = labCell && new RoomPosition(labCell[0], labCell[1], pos.roomName);
+  const fas = fasCell && new RoomPosition(fasCell[0], fasCell[1], pos.roomName);
+
+  if (lab) ch.active.metrics.roadLabs = addRoad(pos, lab, ch.active)[1];
+  if (fas) ch.active.metrics.roadFastRef = addRoad(pos, fas, ch.active, 3)[1];
+  if (lab && fas) addRoad(lab, fas, ch.active, 3);
+
+  return OK;
+}
+
+function addSomeExtensions(num?: number) {
+  return (ch: PlannerChecking) => addExtentions(ch, num);
+}
+
+function addExtentions(ch: PlannerChecking, num: number = PLANNER_EXTENSION) {
+  const pos = getPos(ch);
+  const roomMatrix = ch.active.rooms[ch.roomName];
+
+  const leftToAdd =
+    CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] -
+    (roomMatrix.compressed[STRUCTURE_EXTENSION]?.len || 0);
+  const leftToAddStamps = Math.ceil(
+    leftToAdd / (STAMP_EXTENSION_BLOCK.setup.extension?.length || 1)
+  );
+  const extensionsToAdd = Math.min(num, leftToAddStamps);
+
+  for (let i = 0; i < extensionsToAdd; ++i) {
     const extentionPos = addStampSomewhere(
       ch.active.centers,
       STAMP_EXTENSION_BLOCK,
-      ch.active.rooms[ch.roomName],
+      roomMatrix,
       ch.active.posCell
     );
     if (extentionPos === ERR_NOT_FOUND) return ERR_FULL;

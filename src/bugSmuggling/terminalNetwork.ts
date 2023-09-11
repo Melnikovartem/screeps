@@ -1,11 +1,8 @@
 import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
 import type { ResTarget } from "hive/hive-declarations";
 
-import { TERMINAL_ENERGY } from "../cells/management/storageCell";
-import {
-  BASE_MINERALS,
-  USEFUL_MINERAL_STOCKPILE,
-} from "../cells/stage1/laboratoryCell";
+import { HIVE_ENERGY, TERMINAL_ENERGY } from "../cells/management/storageCell";
+import { USEFUL_MINERAL_STOCKPILE } from "../cells/stage1/laboratoryCell";
 import type { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { hiveStates } from "../static/enums";
@@ -175,7 +172,7 @@ export class Network {
       let ans: "no money" | "long" | "short" = "no money";
       for (const r in hive.shortages) {
         const res = r as ResourceConstant;
-        if (this.canHiveBuy(hive, res)) {
+        if (hive.canBuy(res)) {
           const amount = hive.shortages[res]!;
           ans = Apiary.broker.buyIn(
             terminal,
@@ -235,7 +232,7 @@ export class Network {
         const res = r as ResourceConstant;
         const balanceShortage =
           hive.mastersResTarget[res]! - hive.getUsedCapacity(res);
-        if (balanceShortage > 0 && this.canHiveBuy(hive, res)) {
+        if (balanceShortage > 0 && hive.canBuy(res)) {
           ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
           if (ans === "short") {
             usedTerminal = true;
@@ -290,8 +287,14 @@ export class Network {
           if (stFree > FREE_CAPACITY) break;
           const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
           if (!keys.length) continue;
+          const getSellingState = (resToSell: ResourceConstant) => {
+            let offset = 0;
+            // sell minerals and other stuff before energy
+            if (resToSell === RESOURCE_ENERGY) offset = HIVE_ENERGY;
+            return hive.resState[resToSell]! - offset;
+          };
           const res = keys.reduce((prev, curr) =>
-            hive.resState[curr]! > hive.resState[prev]! ? curr : prev
+            getSellingState(curr) > getSellingState(prev) ? curr : prev
           );
           if (hive.resState[res]! < 0) break;
           ans = Apiary.broker.sellOff(
@@ -421,31 +424,4 @@ export class Network {
   }
 
   // #endregion Public Methods (7)
-
-  // #region Private Methods (1)
-
-  private canHiveBuy(hive: Hive, res: ResourceConstant) {
-    let canBuyIn = false;
-    switch (hive.mode.buyIn) {
-      case 3:
-        canBuyIn = true;
-        break;
-      case 2:
-        if (
-          res === RESOURCE_ENERGY ||
-          res === RESOURCE_OPS ||
-          BASE_MINERALS.includes(res)
-        )
-          canBuyIn = true;
-        break;
-      case 1:
-        if (BASE_MINERALS.includes(res)) canBuyIn = true;
-        break;
-      case 0:
-        break;
-    }
-    return canBuyIn;
-  }
-
-  // #endregion Private Methods (1)
 }

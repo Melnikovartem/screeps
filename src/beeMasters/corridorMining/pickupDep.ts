@@ -1,7 +1,7 @@
 import { setups } from "bees/creepSetups";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
-import { findOptimalResource } from "static/utils";
+import { findOptimalResource, goodSpot } from "static/utils";
 
 import { Master } from "../_Master";
 import type { DepositMaster } from "./deposit";
@@ -10,7 +10,6 @@ import type { DepositMaster } from "./deposit";
 export class DepositPickupMaster extends Master<DepositMaster> {
   // #region Properties (4)
 
-  private carryAmount: number;
   private rest: RoomPosition;
 
   public movePriority = 4 as const;
@@ -21,15 +20,19 @@ export class DepositPickupMaster extends Master<DepositMaster> {
 
   public constructor(parent: DepositMaster) {
     super(parent, prefix.pickup + parent.parent.ref);
-    const body = this.setup.getBody(
-      this.hive.room.energyCapacityAvailable
-    ).body;
-    this.carryAmount = body.filter((b) => b === CARRY).length * CARRY_CAPACITY;
 
     // where to wait for pickup
     this.rest = new RoomPosition(25, 25, this.pos.roomName).findClosest(
-      this.pos.getOpenPositions(true, 2).filter((p) => p.getRangeTo(this) > 1)
+      this.pos.getOpenPositions(true, 4).filter((p) => p.getRangeTo(this) > 2)
     )!;
+  }
+
+  private get carryAmount() {
+    return (
+      (this.hive.room.energyCapacityAvailable /
+        (BODYPART_COST[CARRY] + BODYPART_COST[MOVE])) *
+      CARRY_CAPACITY
+    );
   }
 
   // #endregion Constructors (1)
@@ -40,14 +43,11 @@ export class DepositPickupMaster extends Master<DepositMaster> {
     const setup = setups.pickup.copy();
     if (this.parent.decay)
       setup.patternLimit = Math.ceil(
-        10 *
-          Math.max(
-            1,
-            (this.parent.rate * this.parent.roadTime * 2) / CARRY_CAPACITY / 10,
-            (this.parent.positions.length * this.parent.workAmount * 3) /
-              CARRY_CAPACITY /
-              10
-          )
+        Math.max(
+          10 * CARRY_CAPACITY,
+          this.parent.rate * this.parent.roadTime * 2,
+          this.parent.positions.length * this.parent.workAmount * 3
+        ) / CARRY_CAPACITY
       );
     else setup.patternLimit = 15;
     return setup;

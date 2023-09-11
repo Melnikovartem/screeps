@@ -86,6 +86,8 @@ export function stateShallow(
   // we only care about not OUR signs
   // how they dare!!!
   if (intel.sign === Apiary.username) intel.sign = undefined;
+  // ts doesn't know:
+  // intel.sign === SIGN_PLANNED_AREA
 }
 
 export function deepUpdate(

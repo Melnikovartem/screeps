@@ -7,7 +7,7 @@ import { Cell } from "../_Cell";
 import { HIVE_ENERGY } from "../management/storageCell";
 
 export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16); // 8k
-export const COMPRESS_MAP = {
+const COMPRESS_MAP = {
   [RESOURCE_HYDROGEN]: RESOURCE_REDUCTANT,
   [RESOURCE_OXYGEN]: RESOURCE_OXIDANT,
   [RESOURCE_UTRIUM]: RESOURCE_UTRIUM_BAR,
@@ -42,6 +42,7 @@ export const DEPOSIT_COMMODITIES: DepositConstant[] = [
 ];
 // demand driven production with a little overflow prot
 // so we only keep up to 1k each of pricy commodity
+// no lvl (cell/alloy/etc) included for now!
 const STOCKPILE_HIGH_COMMODITIES = 1000;
 export const COMPLEX_COMMODITIES: CommodityConstant[] = [
   "composite",
@@ -97,7 +98,6 @@ export class FactoryCell extends Cell {
     res: FactoryResourceConstant;
     amount: number;
   } | null = this.cache("_commodityTarget");
-  // @todo move bulk of calc in cache
   public commodityRes?: FactoryResourceConstant;
   public factory: StructureFactory;
   public level: number = 0;
@@ -139,7 +139,7 @@ export class FactoryCell extends Cell {
   // #region Public Methods (4)
 
   public getCreateQue(
-    res: FactoryResourceConstant,
+    resToProduce: FactoryResourceConstant,
     amountToCreate: number,
     factoryLevel = this.factory.level
   ): [CommodityConstant[], { [res in CommodityIngredient]?: number }] {
@@ -147,7 +147,8 @@ export class FactoryCell extends Cell {
     const ingredients: { [res in CommodityIngredient]?: number } = {};
     const createQue: CommodityConstant[] = [];
 
-    const baseResource = res in COMPRESS_MAP;
+    const decompressingResource = resToProduce in COMPRESS_MAP;
+
     const addIngredient = (
       resource: CommodityIngredient,
       amountToAdd: number
@@ -155,6 +156,9 @@ export class FactoryCell extends Cell {
       if (!ingredients[resource]) ingredients[resource] = 0;
       ingredients[resource]! += amountToAdd;
     };
+    // moving through the ingerdient map to get the recepie
+    // maybe can bake before if becomes a problem
+    // @todo
     const dfs = (
       resource: CommodityIngredient,
       depth: number,
@@ -162,31 +166,42 @@ export class FactoryCell extends Cell {
     ) => {
       const recipe = COMMODITIES[resource as CommodityConstant];
       if (
+        // raw ingredient
         !recipe ||
+        // compressed mineral as an ingredient
+        // (added if only needed in the final product aka depth === 0)
         (resource in COMPRESS_MAP && depth > 0) ||
-        (baseResource && depth > 0)
+        // we want to decompress some res so no need for more checks
+        (decompressingResource && depth > 0)
       ) {
         addIngredient(resource, amountOfIngredient);
         return;
       }
       if (
+        // something that we can't produce in this hive
         (recipe.level && recipe.level !== factoryLevel) ||
+        // using lvl 0 of the chains from the network
         (!recipe.level &&
-          resource !== res &&
-          (DEPOSIT_COMMODITIES as string[]).includes(resource) &&
+          resource !== resToProduce &&
+          COMPLEX_COMMODITIES.includes(resource as CommodityConstant) &&
           (Apiary.network.resState[resource] || 0 >= amountOfIngredient))
       ) {
         addIngredient(resource, amountOfIngredient);
         return;
       }
       if (
+        // can produce localy
         (!recipe.level || recipe.level === this.level) &&
-        (resource === res ||
+        // target of production
+        (resource === resToProduce ||
+          // or we need to produce for next step
           this.hive.getUsedCapacity(resource as CommodityConstant) <
             amountOfIngredient)
       ) {
         if (
+          // not already in que to produce
           createQue.indexOf(resource as CommodityConstant) === -1 &&
+          // and have enought resources to produce
           !_.filter(
             recipe.components,
             (amountNeeded, component) =>
@@ -194,7 +209,9 @@ export class FactoryCell extends Cell {
               amountNeeded
           ).length
         )
+          // then add to que
           createQue.push(resource as CommodityConstant);
+        // check all ingredients down the scream
         for (const component in recipe.components)
           dfs(
             component as CommodityIngredient,
@@ -206,7 +223,7 @@ export class FactoryCell extends Cell {
       }
     };
 
-    dfs(res, 0, amountToCreate);
+    dfs(resToProduce, 0, amountToCreate);
 
     return [createQue, ingredients];
   }
@@ -383,7 +400,7 @@ export class FactoryCell extends Cell {
     // dont produce
     if (
       !this.hive.mode.depositRefining ||
-      (!this.commodityTarget && Game.time % COOLDOWN_TARGET_FACTORY !== 8)
+      (!this.commodityTarget && Apiary.intTime % COOLDOWN_TARGET_FACTORY !== 1)
     )
       return ERR_BUSY;
 
@@ -399,7 +416,7 @@ export class FactoryCell extends Cell {
       const recipe = COMMODITIES[res];
       if (recipe.level && recipe.level !== this.factory.level) continue;
       let num = 0;
-      if (recipe.level || (DEPOSIT_COMMODITIES as string[]).includes(res)) {
+      if (recipe.level || (COMPLEX_COMMODITIES as string[]).includes(res)) {
         // if it is from any of the chains of production
 
         const networkResAmount =
@@ -419,16 +436,18 @@ export class FactoryCell extends Cell {
           const componentAmount: number[] = [];
           _.forEach(recipe.components, (amountNeeded, comp) => {
             const component = comp as FactoryResourceConstant | DepositConstant;
-            if (!(COMMON_COMMODITIES as string[]).includes(component)) {
-              let toUse = this.hive.getUsedCapacity(component);
-              const networkAmount = Apiary.network.resState[component] || 0;
-              if (
-                recipe.level ||
-                networkAmount >= STOCKPILE_BASE_COMMODITIES.alot
-              )
-                toUse = Math.max(toUse, networkAmount);
-              componentAmount.push(toUse / amountNeeded);
+            if ((COMMON_COMMODITIES as string[]).includes(component)) return;
+            if ((Object.values(COMPRESS_MAP) as string[]).includes(component)) {
+              return;
             }
+            let toUse = this.hive.getUsedCapacity(component);
+            const networkAmount = Apiary.network.resState[component] || 0;
+            if (
+              recipe.level ||
+              networkAmount >= STOCKPILE_BASE_COMMODITIES.alot
+            )
+              toUse = Math.max(toUse, networkAmount);
+            componentAmount.push(toUse / amountNeeded);
           });
           num = Math.min(num, ...componentAmount);
         }
@@ -454,6 +473,11 @@ export class FactoryCell extends Cell {
       if (num > 1)
         targets.push({ res, amount: Math.floor(num) * recipe.amount });
     }
+    console.log(
+      "1",
+      this.print,
+      _.map(targets, (t) => [t.res, t.amount])
+    );
     if (!targets.length) return ERR_NOT_FOUND;
 
     const nonCommon = targets.filter(
@@ -487,6 +511,14 @@ export class FactoryCell extends Cell {
     const [createQue, ingredients] = this.getCreateQue(
       this.commodityTarget.res,
       this.commodityTarget.amount
+    );
+
+    console.log(
+      "2",
+      this.print,
+      this.commodityTarget.res,
+      createQue,
+      JSON.stringify(ingredients)
     );
 
     _.forEach(ingredients, (amountNeeded, component) => {

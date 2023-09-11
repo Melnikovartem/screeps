@@ -40,9 +40,7 @@ export class ColonyBrianModule {
       )
         // do not destroy if hive is setup for lategame
         this.planner.createPlan(hive.roomName, hive.annexNames);
-      else {
-        // current to active ?
-      }
+      else this.planner.currentToActive(hive);
       return;
     }
     if (!hive.cells.annex.allResourcesRoads) this.planner.createRoads(hive);

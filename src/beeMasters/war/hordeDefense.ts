@@ -83,9 +83,7 @@ export class HordeDefenseMaster extends HordeMaster {
         this.hive.cells.lab &&
         this.hive.getUsedCapacity(BOOST_MINERAL.damage[2]) >=
           LAB_BOOST_MINERAL * 2 &&
-        this.hive.getUsedCapacity(
-          BOOST_MINERAL.rangedAttack[2]
-        ) >=
+        this.hive.getUsedCapacity(BOOST_MINERAL.rangedAttack[2]) >=
           LAB_BOOST_MINERAL * 10
       ) {
         order.setup.patternLimit = 10;
@@ -185,13 +183,12 @@ export class HordeDefenseMaster extends HordeMaster {
           type: "fatigue" | "rangedAttack" | "heal" | "damage" | "attack",
           partAmount: number
         ) =>
-          this.boosts &&
-          this.hive.cells.lab &&
           this.boosts.filter((b) => b.type === type).length &&
+          this.hive.cells.lab &&
           this.hive.getUsedCapacity(BOOST_MINERAL[type][2]) >=
             LAB_BOOST_MINERAL * partAmount * beesToGo;
 
-        if (this.boosts && checkBoost("fatigue", 10)) moveMax = 10;
+        if (this.boosts.length && checkBoost("fatigue", 10)) moveMax = 10;
         const body = order.setup.getBody(
           (this.hive.bassboost &&
             this.hive.bassboost.room.energyCapacityAvailable) ||
@@ -242,7 +239,7 @@ export class HordeDefenseMaster extends HordeMaster {
       this.parent.delete();
       return;
     }
-    if (this.pos.roomName !== this.hiveName && !this.boosts)
+    if (this.pos.roomName !== this.hiveName && !this.boosts.length)
       order.priority = Math.max(4, order.priority) as 4 | 7;
     this.wish(order);
   }

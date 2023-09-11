@@ -278,7 +278,7 @@ export class LaboratoryCell extends Cell {
 
     if (!requests) {
       requests = bee.master && bee.master.boosts;
-      if (!requests) return rCode;
+      if (!requests || !requests.length) return rCode;
     }
 
     if (
@@ -680,7 +680,7 @@ export class LaboratoryCell extends Cell {
     // if nothing to create use mode to choose next target
     if (!targets.length) {
       if (mode === 1) return ERR_NOT_FOUND;
-      // not eve gonna try to create mid ones (not profitable)
+      // not ever gonna try to create mid ones (not profitable)
       let usefulR: ReactionConstant[] = [];
 
       for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {

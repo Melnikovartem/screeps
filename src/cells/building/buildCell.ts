@@ -84,6 +84,10 @@ export class BuildCell extends Cell {
     if (this.forceCheck === "") this.forceCheck = "mainroom";
   }
 
+  public checkAll() {
+    this.forceCheck = "annex";
+  }
+
   public run() {}
 
   public update() {

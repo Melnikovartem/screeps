@@ -8,6 +8,8 @@ const ONLY_ONE_ACTIVE_PLAN: number[] = [
   COLOR_ORANGE,
 ];
 
+const PREFIX_LOADED = "LOAD_";
+
 export function actPlanner(cm: FlagCommand) {
   // remove other active ones so that it can do it's job
   if (ONLY_ONE_ACTIVE_PLAN.includes(cm.flag.secondaryColor))
@@ -15,9 +17,14 @@ export function actPlanner(cm: FlagCommand) {
       if (
         o.color === COLOR_WHITE &&
         ONLY_ONE_ACTIVE_PLAN.includes(o.secondaryColor) &&
-        o.ref !== cm.ref
-      )
+        o.ref !== cm.ref &&
+        o.createTime <= cm.createTime
+      ) {
+        console.log(
+          `FLAG: REMOVED ${o.print} WAS CONFLICTING WITH ${cm.print}`
+        );
         o.delete();
+      }
     });
 
   const pl = Apiary.colony.planner;
@@ -27,12 +34,13 @@ export function actPlanner(cm: FlagCommand) {
       // create plan for new room
       if (!pl.canStartNewPlan) {
         if ((Game.time - cm.createTime) % 100 === 0)
-          console.log(`!CAN'T START PLAN @${cm.print}`);
+          console.log(`!FLAG: CAN'T START PLAN @${cm.print}`);
         cm.acted = false;
         return;
       }
-      pl.createPlan(cm.pos.roomName, [], [cm.pos]);
-      console.log(`STARTED PLAN @${cm.pos.print}`);
+      pl.createPlan(cm.pos.roomName, [], [cm.pos], false);
+      console.log(`FLAG: STARTED PLAN @${cm.pos.print}`);
+      keepLoaded(cm);
       break;
     }
     case COLOR_CYAN: {
@@ -40,27 +48,56 @@ export function actPlanner(cm: FlagCommand) {
       if (cm.hiveName !== cm.pos.roomName) return;
       if (!pl.canStartNewPlan) {
         if ((Game.time - cm.createTime) % 100 === 0)
-          console.log(`!CAN'T START PLAN @${cm.hive.print}`);
+          console.log(`!FLAG: CAN'T START PLAN @${cm.hive.print}`);
         cm.acted = false;
         return;
       }
-      pl.createPlan(cm.hiveName, cm.hive.annexNames, [cm.pos, cm.hive.pos]);
-      console.log(`STARTED PLAN @${cm.hive.print}`);
+      pl.createPlan(
+        cm.hiveName,
+        cm.hive.annexNames,
+        [cm.pos, cm.hive.pos],
+        false
+      );
+      console.log(`FLAG: STARTED PLAN @${cm.hive.print}`);
+      keepLoaded(cm);
       break;
     }
     case COLOR_YELLOW:
       // create annex roads for hive
       if (!pl.canStartNewPlan) {
         if ((Game.time - cm.createTime) % 100 === 0)
-          console.log(`!CAN'T START ROADS @${cm.print}`);
+          console.log(`!FLAG: CAN'T START ROADS @${cm.print}`);
         cm.acted = false;
         return;
       }
-      pl.createRoads(cm.hive);
-      console.log(`STARTED ROADS @${cm.hive.print}`);
+      console.log(`FLAG: STARTED ROADS @${cm.hive.print}`);
+      keepLoaded(cm);
+      break;
+    case COLOR_GREY:
+      if (cm.pos.roomName !== cm.hiveName) {
+        console.log(`!FLAG: NO HIVE @${cm.hive.print}`);
+        return;
+      }
+      if (cm.hive.roomPlanner() && !cm.ref.toLowerCase().includes("force")) {
+        console.log(`!FLAG: EXISTING PLAN @${cm.hive.print}`);
+        console.log(`FLAG: TO OVERWRITE ADD force TO NAME OF FLAG`);
+        return;
+      }
+      if (!pl.canStartNewPlan) {
+        if ((Game.time - cm.createTime) % 100 === 0)
+          console.log(`!FLAG: CAN'T SAVE CURRENT TO PLAN @${cm.print}`);
+        cm.acted = false;
+        return;
+      }
+      pl.currentToActive(cm.hive, false);
+      console.log(`FLAG: SAVED CURRENT TO PLAN @${cm.hive.print}`);
+      keepLoaded(cm);
       break;
     case COLOR_ORANGE:
-      if (!pl.checking) pl.justShow(cm.hiveName);
+      if (pl.canStartNewPlan) {
+        if (!cm.fixedName(PREFIX_LOADED + cm.hiveName)) return;
+        pl.justShow(cm.hiveName);
+      }
       // keep this flag to show plan
       cm.acted = false;
       break;
@@ -68,21 +105,25 @@ export function actPlanner(cm: FlagCommand) {
       const roomMatrix =
         pl.checking && pl.checking.active.rooms[cm.pos.roomName];
       if (!roomMatrix) {
-        console.log(`NO PLAN FOUND @${cm.pos.print}`);
+        console.log(`!FLAG: NO PLAN FOUND @${cm.pos.print}`);
         return;
       }
 
       let sType = cm.ref.split("_")[0];
       if (sType === "wall") sType = STRUCTURE_WALL;
 
-      if (sType in CONTROLLER_STRUCTURES)
+      if (sType in CONTROLLER_STRUCTURES) {
         pl.addStructure(
           cm.pos,
           sType as BuildableStructureConstant,
           roomMatrix
         );
-      else if (sType === "null") pl.emptySpot(cm.pos);
-      else console.log(`NOT KNOWN STRUCTURE TYPE ${cm.print}`);
+        if (sType === STRUCTURE_TOWER) pl.recalcMetricsActive();
+      } else if (sType === "keep") {
+        pl.emptySpot(cm.pos);
+        cm.acted = false;
+      } else pl.emptySpot(cm.pos);
+      // else console.log(`NOT KNOWN STRUCTURE TYPE ${cm.print}`);
       break;
     }
     case COLOR_BROWN: {
@@ -96,22 +137,22 @@ export function actPlanner(cm: FlagCommand) {
       }
       break;
     }
-    case COLOR_GREY:
-      // save current to active
-      break;
     case COLOR_GREEN: {
       if (!pl.checking) {
-        console.log("NO PLAN TO SAVE");
+        console.log("!FLAG: NO PLAN TO SAVE");
         return;
       }
       const metric = pl.recalcMetricsActive();
       pl.savePlan();
-      console.log(`PLAN SAVED @${pl.checking?.roomName || "NONE"} : ${metric}`);
+      console.log(
+        `FLAG: PLAN SAVED @${pl.checking?.roomName || "NONE"} : ${metric}`
+      );
+      cm.hive.cells.build.checkAll();
       break;
     }
     case COLOR_PURPLE: {
       if (!pl.checking) {
-        console.log(`NO PLAN FOUND @${cm.pos.print}`);
+        console.log(`!FLAG: NO PLAN FOUND @${cm.pos.print}`);
         return;
       }
       const ap = pl.checking.active;
@@ -122,8 +163,8 @@ export function actPlanner(cm: FlagCommand) {
         pos.roomName || cm.pos.roomName
       );
       const ans = pl.addRoad(center, cm.pos, ap);
-      if (ans[0] === OK) console.log("ROAD ADDED @" + cm.print);
-      else console.log("!ROAD INCOMPLETE @" + cm.print);
+      if (ans[0] === OK) console.log("FLAG: ROAD ADDED @" + cm.print);
+      else console.log("!FLAG: ROAD INCOMPLETE @" + cm.print);
       break;
     }
   }
@@ -134,6 +175,7 @@ export function deletePlanner(cm: FlagCommand) {
   // there should be white - orange one left
   // if only active left remove checking so it can do it's job
   if (
+    Apiary.colony.planner.checking &&
     !_.filter(
       Apiary.flags,
       (o) =>
@@ -141,6 +183,22 @@ export function deletePlanner(cm: FlagCommand) {
         cm.ref !== o.ref &&
         !ONLY_ONE_ACTIVE_PLAN.includes(cm.secondaryColor)
     ).length
-  )
-    Apiary.colony.planner.checking = undefined;
+  ) {
+    console.log(
+      `FLAG: REMOVING ACTIVE PLAN @${Apiary.colony.planner.checking.roomName}`
+    );
+    Apiary.colony.planner.invalidatePlan();
+  }
+}
+
+function keepLoaded(cm: FlagCommand) {
+  // add a flag to keep the planner loaded
+  const ref = PREFIX_LOADED + cm.pos.roomName;
+  if (Game.flags[ref]) return;
+  let pos = cm.hive.pos;
+  if (cm.pos.roomName in Game.rooms) pos = cm.pos;
+  console.log(
+    `FLAG: KEEPING PLANNER LOADED @${cm.pos.print} with flag @${pos.print}`
+  );
+  pos.createFlag(ref, COLOR_WHITE, COLOR_ORANGE);
 }

@@ -40,8 +40,11 @@ export function addRoad(
   return [path.incomplete ? ERR_NOT_IN_RANGE : OK, path.path.length];
 }
 
-export function initMatrix(roomName: string): RoomPlannerMatrix {
-  const [noExits, withExits] = getTerrainCostMatrix(roomName);
+export function initMatrix(
+  roomName: string,
+  exitPadding?: number
+): RoomPlannerMatrix {
+  const [noExits, withExits] = getTerrainCostMatrix(roomName, exitPadding);
   return {
     compressed: {},
     building: withExits,
@@ -50,7 +53,10 @@ export function initMatrix(roomName: string): RoomPlannerMatrix {
   };
 }
 
-function getTerrainCostMatrix(roomName: string): [CostMatrix, CostMatrix] {
+function getTerrainCostMatrix(
+  roomName: string,
+  exitPadding = 1
+): [CostMatrix, CostMatrix] {
   const costMatrix = new PathFinder.CostMatrix();
   const terrain = Game.map.getRoomTerrain(roomName);
   // set terrain
@@ -73,8 +79,9 @@ function getTerrainCostMatrix(roomName: string): [CostMatrix, CostMatrix] {
   const noExits = costMatrix.clone();
   const addExit = (x: number, y: number) => {
     if (terrain.get(x, y) === TERRAIN_MASK_WALL) return;
-    _.forEach(surroundingPoints({ x, y }), (p) =>
-      costMatrix.set(p.x, p.y, PLANNER_COST.wall)
+    _.forEach(
+      new RoomPosition(x, y, roomName).getPositionsInRange(exitPadding),
+      (p) => costMatrix.set(p.x, p.y, PLANNER_COST.wall)
     );
   };
   for (let x = 0; x < ROOM_DIMENTIONS; ++x) {

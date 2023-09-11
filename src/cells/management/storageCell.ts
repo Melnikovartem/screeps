@@ -334,9 +334,16 @@ export class StorageCell extends Cell {
     _.forEach(this.master.activeBees, (b) => addFromStore(b));
 
     if (this.hive.cells.lab)
-      _.forEach(this.hive.cells.lab.laboratories, (l) => addFromStore(l));
+      _.forEach(this.hive.cells.lab.laboratories, (l) => {
+        addFromStore(l);
+        const energyUsed = l.store[RESOURCE_ENERGY];
+        addFromStore({ store: { [RESOURCE_ENERGY]: energyUsed } }, -1);
+      });
 
-    if (this.hive.cells.factory) addFromStore(this.hive.cells.factory.factory);
+    if (this.hive.cells.factory) {
+      addFromStore(this.hive.cells.factory.factory);
+      addFromStore({ store: this.hive.cells.factory.resTarget }, -1);
+    }
 
     /*  no need to add this cause will be spent anyways
     if (this.hive.cells.power) {

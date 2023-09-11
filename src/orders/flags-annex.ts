@@ -7,6 +7,7 @@ export function actAnnex(cm: FlagCommand) {
   switch (cm.secondaryColor) {
     case COLOR_PURPLE:
       cm.hive.cells.annex.addAnnex(cm.pos.roomName);
+      console.log(`ADDED ANNEX ${cm.pos.print} TO HIVE @${cm.hive.print}`);
       break;
     case COLOR_GREY:
       if (Object.keys(Apiary.hives).length < Game.gcl.level) {

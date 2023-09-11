@@ -207,8 +207,6 @@ export class DevelopmentCell extends Cell {
         5
       ) - builder.beesAmount;
 
-    if (buildBees !== 0) console.log("build bee in dev balance", buildBees);
-
     if (buildBees >= 1 && !upgTarget && buildTarget) {
       // send some upgraders to help with building
       this.swapBees(upgrader, builder, buildBees, setupsNames.builder);

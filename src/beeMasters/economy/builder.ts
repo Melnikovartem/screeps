@@ -164,7 +164,7 @@ export class BuilderMaster extends Master<BuildCell> {
 
     _.forEach(this.bees, (bee) => {
       if (bee.state === beeStates.boosting)
-        if (this.boosts) {
+        if (this.boosts.length) {
           let boosts = this.boosts;
           if (
             this.hive.state === hiveStates.battle ||
@@ -421,7 +421,7 @@ export class BuilderMaster extends Master<BuildCell> {
     super.update();
 
     if (
-      this.boosts &&
+      this.boosts.length &&
       this.hive.cells.lab &&
       this.hive.getUsedCapacity(BOOST_MINERAL.build[2]) >= LAB_BOOST_MINERAL
     )

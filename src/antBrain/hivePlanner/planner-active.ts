@@ -5,7 +5,7 @@ import { ERR_NO_VISION } from "static/constants";
 import { prefix, roomStates } from "static/enums";
 
 import { initMatrix } from "./addRoads";
-import type { PlannerMetrics } from "./planner-metric";
+import type { PlannerMetrics } from "./planner-calc";
 import { addStructure, PLANNER_STAMP_STOP } from "./planner-utils";
 import type { RoomPlanner } from "./roomPlanner";
 
@@ -84,6 +84,7 @@ export function savePlan(this: RoomPlanner) {
   };
 
   _.forEach(bp.rooms, (schematic, roomName) => {
+    if (!Object.keys(schematic.compressed).length) return;
     const ref = roomName || "NaN";
     mem[hiveName].rooms[ref] = {};
     _.forEach(schematic.compressed, (buildInfo, sType) => {
@@ -116,13 +117,14 @@ export function parseInitPlan(
   this: RoomPlanner,
   hiveName: string,
   annexNames: string[],
+  save: boolean,
   payload: FnEngine | undefined
 ): ReturnType<FnEngine> {
-  const ans = this.parseRoomInternal(hiveName, annexNames);
+  const ans = this.parseRoomInternal(hiveName, annexNames, !save);
   if (ans === ERR_NO_VISION)
     return {
-      f: () => this.parseInitPlan(hiveName, annexNames, payload),
-      ac: Game.time + 10,
+      f: () => this.parseInitPlan(hiveName, annexNames, save, payload),
+      ac: Game.time + 1,
     }; // no vision try again
   if (ans !== OK) return undefined; // smth broke end
   return {
@@ -130,7 +132,7 @@ export function parseInitPlan(
     f: () => {
       if (!this.parsingRooms) return undefined;
       const pr = this.parsingRooms;
-      this.initPlan(hiveName, pr.controller, pr.sources, pr.minerals);
+      this.initPlan(hiveName, pr.controller, pr.sources, pr.minerals, save);
       this.parsingRooms = undefined;
       return payload && { f: payload };
     },
@@ -150,10 +152,13 @@ export function parseInitPlan(
 export function parseRoomInternal(
   this: RoomPlanner,
   hiveName: string,
-  annexNames: string[]
+  annexNames: string[],
+  verbose: boolean
 ) {
   if (!this.parsingRooms || this.parsingRooms.roomName !== hiveName) {
     const room = Game.rooms[hiveName];
+    if (verbose) console.log(`!PLANNER: NO VISION MAIN ROOM @${hiveName}`);
+    Apiary.oracle.requestSight(hiveName);
     if (!room) return ERR_NO_VISION;
     const posCont = room.controller?.pos;
     if (!posCont) return ERR_INVALID_TARGET;
@@ -171,12 +176,18 @@ export function parseRoomInternal(
   for (const roomName of this.parsingRooms.rooms) {
     const state = Apiary.intel.getRoomState(roomName);
     switch (state) {
+      case roomStates.reservedByEnemy:
+      case roomStates.ownedByEnemy:
+        // ignore non main rooms by enemies
+        if (roomName !== hiveName) continue;
+      // fall through
       case roomStates.ownedByMe:
       case roomStates.reservedByMe:
       case roomStates.noOwner:
       case roomStates.reservedByInvader:
       case roomStates.SKfrontier:
       case roomStates.SKcentral:
+        // dont ignore rooms with no sources added
         if (!pr.sources.filter((p) => p.roomName === roomName).length) break;
       // fall through
       default:
@@ -184,6 +195,8 @@ export function parseRoomInternal(
     }
     const room = Game.rooms[roomName];
     if (!room) {
+      if (verbose)
+        console.log(`!PLANNER: NO VISION @${roomName} FOR ${hiveName}`);
       Apiary.oracle.requestSight(roomName);
       return ERR_NO_VISION;
     }
@@ -191,11 +204,8 @@ export function parseRoomInternal(
     const sourcesPos = room.find(FIND_SOURCES).map((r) => r.pos);
     let mineralsPos: RoomPosition[] = [];
     if (
-      [
-        roomStates.ownedByMe,
-        roomStates.SKcentral,
-        roomStates.SKfrontier,
-      ].includes(state)
+      [roomStates.SKcentral, roomStates.SKfrontier].includes(state) ||
+      roomName === hiveName
     )
       mineralsPos = room.find(FIND_MINERALS).map((r) => r.pos);
 

@@ -463,10 +463,10 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
         HEAL,
         HEAL,
       ];
-    } else if (this.boosts && !this.ref.includes("full")) {
+    } else if (this.boosts.length && !this.ref.includes("full")) {
       this.setup.patternLimit = 15;
       this.setup.fixed = [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL];
-    } else if (this.boosts) {
+    } else if (this.boosts.length) {
       this.setup.fixed = Array(6)
         .fill(TOUGH)
         .concat(Array(6).fill(HEAL)) as BodyPartConstant[];

@@ -49,10 +49,10 @@ export class AnnexMaster extends SwarmMaster<AnnexerInfo> {
 
   public override run() {
     _.forEach(this.activeBees, (bee) => {
-      if (bee.pos.roomName !== this.pos.roomName)
+      if (bee.pos.roomName !== this.roomName)
         bee.goTo(this.pos, { ignoreRoads: true });
       else {
-        const controller = Game.rooms[this.pos.roomName].controller;
+        const controller = Game.rooms[this.roomName].controller;
         if (controller) {
           if (
             (controller.reservation &&

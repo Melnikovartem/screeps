@@ -10,7 +10,6 @@ import { Cell } from "../_Cell";
 export class ObserveCell extends Cell {
   // #region Properties (5)
 
-  private doPowerCheck = false;
   private roomsToCheck: string[] = [];
 
   public _corridorRooms: string[] = this.cache("_corridorRooms") || [];
@@ -126,15 +125,13 @@ export class ObserveCell extends Cell {
     }
 
     if (!this.roomsToCheck.length) {
-      const roomName = Apiary.oracle.roomSight.filter(
-        (roomNameRequested) =>
-          this.pos.getRoomRangeTo(roomNameRequested, "lin") <=
-          this.observerRange
-      )[0];
+      const roomName = Apiary.oracle.getRoomToCheck(
+        this.pos.roomName,
+        this.observerRange
+      );
       if (roomName) {
         this.roomsToCheck = [roomName];
-        const index = Apiary.oracle.roomSight.indexOf(roomName);
-        if (index !== -1) Apiary.oracle.roomSight.splice(index, 1);
+        Apiary.oracle.roomChecked(roomName);
       } else if (this.hive.mode.powerMining || this.hive.mode.depositMining)
         this.roomsToCheck = this.corridorRooms;
     }

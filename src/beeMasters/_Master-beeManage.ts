@@ -16,7 +16,7 @@ export function newBee(master: Master<MasterParent>, bee: Bee) {
   bee.memory.refMaster = master.ref;
   if (bee.state === beeStates.idle)
     bee.state =
-      master.boosts && master.hive.cells.lab && bee.ticksToLive > 1200
+      master.boosts.length && master.hive.cells.lab && bee.ticksToLive > 1200
         ? beeStates.boosting
         : beeStates.chill;
   master.bees[bee.ref] = bee;

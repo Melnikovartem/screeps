@@ -12,7 +12,11 @@ import {
   PLANNER_EMPTY_METRICS,
   savePlan,
 } from "./planner-active";
-import { calcMetric, recalcMetricsActive } from "./planner-metric";
+import {
+  calcMetric,
+  currentToActive,
+  recalcMetricsActive,
+} from "./planner-calc";
 import { PLANNER_ROADS, PLANNER_STEPS } from "./planner-pipeline";
 import {
   addStructure,
@@ -34,20 +38,20 @@ const PLANNER_INVALIDATE_TIME = 1000;
 const TAKE_N_BEST = 10;
 
 export interface PlannerChecking {
-  // #region Properties (10)
+  // #region Properties (11)
 
   active: ActivePlan;
   activeStep: number;
   best: ActivePlan;
-  bestMetric: number;
   controller: RoomPosition;
   lastUpdated: number;
   minerals: RoomPosition[];
   positions: Pos[];
   roomName: string;
+  saveOnFinish: boolean;
   sources: RoomPosition[];
 
-  // #endregion Properties (10)
+  // #endregion Properties (11)
 }
 
 /* chain startingPos -> {
@@ -59,7 +63,7 @@ export interface PlannerChecking {
 }
 */
 export class RoomPlanner {
-  // #region Properties (9)
+  // #region Properties (11)
 
   protected fromCache = fromCache;
   protected parseInitPlan = parseInitPlan;
@@ -77,10 +81,12 @@ export class RoomPlanner {
   public addRoad = addRoad;
   public addStructure = addStructure;
   public checking: PlannerChecking | undefined;
+  public currentToActive = currentToActive;
   public emptySpot = emptySpot;
+  public recalcMetricsActive = recalcMetricsActive;
   public savePlan = savePlan;
 
-  // #endregion Properties (9)
+  // #endregion Properties (11)
 
   // #region Public Accessors (1)
 
@@ -90,14 +96,15 @@ export class RoomPlanner {
 
   // #endregion Public Accessors (1)
 
-  // #region Public Methods (4)
+  // #region Public Methods (5)
 
   public createPlan(
     roomName: string,
     annexNames: string[],
-    extraStartingPos: Pos[] = []
+    extraStartingPos: Pos[] = [],
+    save = true
   ) {
-    const firstIter = this.parseInitPlan(roomName, annexNames, () => {
+    const firstIter = this.parseInitPlan(roomName, annexNames, save, () => {
       if (!this.checking) return; // something failed
       const posInterest: Pos[] = [this.checking.controller]
         .concat(this.checking.sources)
@@ -119,20 +126,29 @@ export class RoomPlanner {
     return OK;
   }
 
-  public createRoads(hive: Hive) {
-    const firstIter = this.parseInitPlan(hive.roomName, hive.annexNames, () => {
-      if (this.fromCache(hive.roomName) !== OK) return;
-      return this.checkPosition(hive.roomName, PLANNER_ROADS);
-    });
+  public createRoads(hive: Hive, save = true) {
+    const firstIter = this.parseInitPlan(
+      hive.roomName,
+      hive.annexNames,
+      save,
+      () => {
+        if (this.fromCache(hive.roomName) !== OK) return;
+        return this.checkPosition(hive.roomName, PLANNER_ROADS);
+      }
+    );
     if (firstIter)
       Apiary.engine.addTask("roads plan @" + hive.roomName, () => firstIter);
+  }
+
+  public invalidatePlan() {
+    this.checking = undefined;
   }
 
   public justShow(roomName: string) {
     const posCont =
       Game.rooms[roomName].controller?.pos ||
       new RoomPosition(25, 25, roomName);
-    this.initPlan(roomName, posCont, [], []);
+    this.initPlan(roomName, posCont, [], [], false);
     this.fromCache(roomName);
   }
 
@@ -143,9 +159,7 @@ export class RoomPlanner {
     this.checking = undefined;
   }
 
-  public recalcMetricsActive = recalcMetricsActive;
-
-  // #endregion Public Methods (4)
+  // #endregion Public Methods (5)
 
   // #region Protected Methods (1)
 
@@ -154,6 +168,7 @@ export class RoomPlanner {
     posCont: RoomPosition,
     sourcesPos: RoomPosition[],
     mineralsPos: RoomPosition[],
+    saveOnFinish: boolean,
     positions: Pos[] = []
   ) {
     this.checking = {
@@ -162,7 +177,7 @@ export class RoomPlanner {
       controller: posCont,
       sources: sourcesPos,
       minerals: mineralsPos,
-      bestMetric: Infinity,
+      saveOnFinish,
       best: {
         centers: [],
         posCell: {},
@@ -182,7 +197,7 @@ export class RoomPlanner {
 
   // #endregion Protected Methods (1)
 
-  // #region Private Methods (3)
+  // #region Private Methods (2)
 
   private checkPosition(
     roomName: string,
@@ -196,8 +211,8 @@ export class RoomPlanner {
     let ans: OK | ERR_FULL | ERR_NOT_FOUND | ERR_NOT_IN_RANGE = OK;
     const desc = () =>
       console.log(
-        `\tPLANNER STEP ${
-          this.checking ? steps[this.checking.activeStep].name : "NOCKECKING"
+        `\tPLANNER: STEP ${
+          this.checking ? steps[this.checking.activeStep].name : "no_checking"
         } ${
           ans === OK
             ? "FINISHED"
@@ -209,11 +224,12 @@ export class RoomPlanner {
 
     ans = steps[this.checking.activeStep](this.checking);
     endBlock(this.checking.active);
-
     if (ans === ERR_NOT_FOUND) {
       // finished all positions
-      ans = this.savePlan();
-      this.checking = undefined;
+      if (this.checking.saveOnFinish) {
+        ans = this.savePlan();
+        this.invalidatePlan();
+      } else this.checking.active = this.checking.best;
       return {
         f: () =>
           console.log(
@@ -228,12 +244,12 @@ export class RoomPlanner {
 
     this.checking.lastUpdated = Game.time;
 
-    if (ans !== OK) desc();
+    if (ans !== OK) desc(); //  || !this.checking.saveOnFinish
 
     if (ans === ERR_FULL) {
       // error go next position
       const pos = this.checking.active.centers[0] as RoomPosition;
-      console.log(`-FAILED ATTEMPT @${pos.print}`);
+      console.log(`-PLANNER: FAILED ATTEMPT @${pos.print}`);
       this.checking.activeStep = 0;
       return rFunc;
     }
@@ -248,7 +264,7 @@ export class RoomPlanner {
         this.checking.best = this.checking.active;
       const pos = this.checking.active.centers[0] as RoomPosition;
       console.log(
-        `+SUCCESSFUL ATTEMPT @${pos.print} SCORE: ${this.checking.active.metrics.final}`
+        `+PLANNER: SUCCESSFUL ATTEMPT @${pos.print} SCORE: ${this.checking.active.metrics.final}`
       );
       return rFunc;
     }
@@ -302,7 +318,7 @@ export class RoomPlanner {
     return _.map(positions, (p) => p[0]);
   }
 
-  // #endregion Private Methods (3)
+  // #endregion Private Methods (2)
 }
 
 /** 

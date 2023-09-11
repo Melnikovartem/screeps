@@ -158,11 +158,14 @@ export class AnnexCell extends Cell {
     )
       return;
     const existing = Apiary.orders[ref];
+    const contPos = Game.rooms[roomName]?.controller?.pos;
     if (existing) {
+      if (contPos && contPos !== existing.pos) existing.setPosition(contPos);
       this.swarms[roomName] = existing;
       return;
     }
-    const order = this.hive.createSwarm(ref, goodSpot(roomName), type);
+    const pos = contPos || goodSpot(roomName);
+    const order = this.hive.createSwarm(ref, pos, type);
     this.swarms[roomName] = order;
   }
 

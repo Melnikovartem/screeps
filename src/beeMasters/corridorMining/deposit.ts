@@ -48,9 +48,6 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     this.positions = _.map(this.pos.getOpenPositions(), (p) => {
       return { pos: p };
     });
-    // sub masters for mining and hauling
-    this.miners = new DepositMinerMaster(this);
-    this.pickup = new DepositPickupMaster(this);
 
     // how much can we mine
     this.workAmount =
@@ -58,6 +55,10 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
         .getBody(this.hive.room.energyCapacityAvailable)
         .body.filter((b) => b === WORK).length * HARVEST_DEPOSIT_POWER;
     this.updateTarget();
+
+    // sub masters for mining and hauling
+    this.miners = new DepositMinerMaster(this);
+    this.pickup = new DepositPickupMaster(this);
   }
 
   // #endregion Constructors (1)

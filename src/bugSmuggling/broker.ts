@@ -25,7 +25,8 @@ const MAX_DEVIATION_PERCENT = 0.1;
 const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_OFFSET = 0.001;
-const MARKET_FEE = 0.05;
+// ts doesn't know about this constant :/
+// const MARKET_FEE = 0.05; // (added by hand to screeps-ts before MARKET_MAX_ORDERS)
 
 const COEF_GOOD_PRICE_COMMODITY = 0.93;
 
