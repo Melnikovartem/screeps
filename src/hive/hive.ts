@@ -170,7 +170,13 @@ export class Hive {
 
   /** controller of the room */
   public get controller() {
-    return this.room.controller!;
+    return (
+      this.room.controller! ||
+      ({
+        pos: new RoomPosition(25, 25, this.roomName),
+        level: 0,
+      } as StructureController)
+    );
   }
 
   public get isBattle() {

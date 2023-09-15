@@ -35,7 +35,6 @@ export abstract class Master<T extends MasterParent> {
 
   /** this.wish should be used only after checkBees is called. So we check if it happened */
   protected checkBeforeWish = false;
-  public oldestSpawn: number = -Infinity;
 
   public readonly ref: string;
 
@@ -46,6 +45,7 @@ export abstract class Master<T extends MasterParent> {
   /** movePriority of bees that are part of this master */
   public abstract movePriority: MovePriority;
   public notify = false;
+  public oldestSpawn: number = -Infinity;
   public parent: T;
   /** sends to boos any bees with beeState, then frees them with chill status */
   public preRunBoost = preRunBoost;

@@ -216,10 +216,10 @@ export class Logger extends EmptyLogger {
       this.smallProcesses[mode].amount += 1;
       return;
     }
-    usedCPU *= 1000;
+    usedCPU = Math.round(usedCPU * 1000);
     this.log.cpuUsage[mode][ref] = {
       cpu: usedCPU,
-      norm: usedCPU / (amount || 1),
+      norm: Math.round(usedCPU / (amount || 1)),
     };
   }
 
@@ -273,15 +273,8 @@ export class Logger extends EmptyLogger {
   }
 
   public override run() {
-    const cpu = Game.cpu.getUsed();
-
-    _.forEach(Apiary.hives, (hive) => {
-      this.hiveLog(hive);
-    });
-
     this.log.tick.current = Game.time;
     this.log.market.credits = Math.round(Game.market.credits * 1000);
-    this.reportMarket();
     this.log.pixels = Game.resources.pixel as number;
     this.log.gcl = {
       level: Game.gcl.level,
@@ -293,28 +286,26 @@ export class Logger extends EmptyLogger {
       progress: Game.gpl.progress,
       progressTotal: Game.gpl.progressTotal,
     };
-    if (this.shouldReportCpu) {
-      this.reportCPU(
-        "log",
-        "run",
-        Game.cpu.getUsed() - cpu,
-        Object.keys(Apiary.hives).length
-      );
-      this.reportCPU(
-        "small_proc",
-        "update",
-        this.smallProcesses.run.sum,
-        this.smallProcesses.run.amount,
-        true
-      );
-      this.reportCPU(
-        "small_proc",
-        "run",
-        this.smallProcesses.run.sum,
-        this.smallProcesses.run.amount,
-        true
-      );
-    }
+
+    this.reportMarket();
+    _.forEach(Apiary.hives, (hive) => {
+      this.hiveLog(hive);
+    });
+
+    this.reportCPU(
+      "small_proc",
+      "update",
+      this.smallProcesses.run.sum,
+      this.smallProcesses.run.amount,
+      true
+    );
+    this.reportCPU(
+      "small_proc",
+      "run",
+      this.smallProcesses.run.sum,
+      this.smallProcesses.run.amount,
+      true
+    );
     this.log.cpu = {
       limit: Game.cpu.limit,
       used: Game.cpu.getUsed(),

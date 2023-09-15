@@ -1,20 +1,20 @@
 import { setups } from "bees/creepSetups";
 import { profile } from "profiler/decorator";
 import { beeStates, prefix } from "static/enums";
-import { findOptimalResource, goodSpot } from "static/utils";
+import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 import type { DepositMaster } from "./deposit";
 
 @profile
 export class DepositPickupMaster extends Master<DepositMaster> {
-  // #region Properties (4)
+  // #region Properties (2)
 
   private rest: RoomPosition;
 
   public movePriority = 4 as const;
 
-  // #endregion Properties (4)
+  // #endregion Properties (2)
 
   // #region Constructors (1)
 
@@ -27,6 +27,21 @@ export class DepositPickupMaster extends Master<DepositMaster> {
     )!;
   }
 
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (1)
+
+  public override get targetBeeCount(): number {
+    return Math.max(
+      1,
+      Math.round((this.parent.rate * this.parent.roadTime) / this.carryAmount)
+    );
+  }
+
+  // #endregion Public Accessors (1)
+
+  // #region Private Accessors (2)
+
   private get carryAmount() {
     return (
       (this.hive.room.energyCapacityAvailable /
@@ -34,10 +49,6 @@ export class DepositPickupMaster extends Master<DepositMaster> {
       CARRY_CAPACITY
     );
   }
-
-  // #endregion Constructors (1)
-
-  // #region Private Accessors (1)
 
   private get setup() {
     const setup = setups.pickup.copy();
@@ -53,7 +64,7 @@ export class DepositPickupMaster extends Master<DepositMaster> {
     return setup;
   }
 
-  // #endregion Private Accessors (1)
+  // #endregion Private Accessors (2)
 
   // #region Public Methods (2)
 
@@ -198,15 +209,4 @@ export class DepositPickupMaster extends Master<DepositMaster> {
   }
 
   // #endregion Public Methods (2)
-
-  // #region Private Methods (1)
-
-  public override get targetBeeCount(): number {
-    return Math.max(
-      1,
-      Math.round((this.parent.rate * this.parent.roadTime) / this.carryAmount)
-    );
-  }
-
-  // #endregion Private Methods (1)
 }

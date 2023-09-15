@@ -146,7 +146,7 @@ declare global {
   }
 
   interface Memory {
-    // #region Properties (4)
+    // #region Properties (5)
 
     /** important!! operational info, but Apiary could keep on living */
     cache: {
@@ -157,13 +157,13 @@ declare global {
       orders: { [ref: string]: SwarmOrderInfo };
       war: { siedge: { [ref: string]: SiedgeInfo } };
     };
+    // my giant log
+    log: LogInfo | undefined;
     /** part of the memory that we don't wipe */
     longterm: {
       roomPlanner: { [hiveName: string]: RoomPlannerHiveCache };
       users: any;
     };
-    // my giant log
-    log: LogInfo | undefined;
     report: {
       orders?: {
         [id: string]: {
@@ -189,6 +189,6 @@ declare global {
     // some setting that i wan't to be able to change dynamically
     settings: MemorySettings;
 
-    // #endregion Properties (4)
+    // #endregion Properties (5)
   }
 }

@@ -11,45 +11,52 @@ import type { Hive } from "./hive";
 
 export function opt(hive: Hive) {
   const optHive: TravelToOptions = { useFindRoute: true };
-  if (hive.state >= hiveStates.battle) {
-    optHive.stuckValue = 1;
-    const terrain = Game.map.getRoomTerrain(hive.roomName);
-    optHive.roomCallback = (roomName, matrix) => {
-      if (roomName !== hive.roomName) return;
-      const enemies = Apiary.intel
-        .getInfo(roomName, 10)
-        .enemies.map((e) => e.object);
-      _.forEach(enemies, (c) => {
-        let fleeDist = 0;
-        if (c instanceof Creep) fleeDist = Apiary.intel.getFleeDist(c);
-        if (!fleeDist) return;
-        _.forEach(c.pos.getPositionsInRange(fleeDist), (p) => {
-          if (
-            p
-              .lookFor(LOOK_STRUCTURES)
-              .filter(
-                (s) =>
-                  s.structureType === STRUCTURE_RAMPART &&
-                  (s as StructureRampart).my &&
-                  s.hits > 10000
-              ).length
-          )
-            return;
-          let value = p
-            .lookFor(LOOK_STRUCTURES)
-            .filter((s) => s.structureType === STRUCTURE_ROAD).length
-            ? 0x20
-            : terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP
-            ? 0x40
-            : 0x30;
-          if (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL) value = 0xff; // idk why but sometimes the matrix is not with all walls...
-          if (matrix.get(p.x, p.y) < value) matrix.set(p.x, p.y, value);
-        });
-        matrix.set(c.pos.x, c.pos.y, 0xff);
-      });
-      return matrix;
+  if (hive.annexInDanger.length) {
+    optHive.routeCallback = (roomName: string) => {
+      if (hive.annexInDanger.includes(roomName)) return Infinity;
+      return undefined;
     };
+    optHive.useFindRoute = true;
   }
+  optHive.roomCallback = (roomName, matrix) => {
+    if (roomName !== hive.roomName) return;
+    if (!hive.isBattle) return;
+    // avoid enemies if battle in hive
+    const terrain = Game.map.getRoomTerrain(roomName);
+    const enemies = Apiary.intel
+      .getInfo(roomName, 10)
+      .enemies.map((e) => e.object);
+    _.forEach(enemies, (c) => {
+      let fleeDist = 0;
+      if (c instanceof Creep) fleeDist = Apiary.intel.getFleeDist(c);
+      if (!fleeDist) return;
+      _.forEach(c.pos.getPositionsInRange(fleeDist), (p) => {
+        if (
+          p
+            .lookFor(LOOK_STRUCTURES)
+            .filter(
+              (s) =>
+                s.structureType === STRUCTURE_RAMPART &&
+                (s as StructureRampart).my &&
+                s.hits > 10000
+            ).length
+        )
+          return;
+        let value = p
+          .lookFor(LOOK_STRUCTURES)
+          .filter((s) => s.structureType === STRUCTURE_ROAD).length
+          ? 0x20
+          : terrain.get(p.x, p.y) === TERRAIN_MASK_SWAMP
+          ? 0x40
+          : 0x30;
+        if (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL) value = 0xff; // idk why but sometimes the matrix is not with all walls...
+        if (matrix.get(p.x, p.y) < value) matrix.set(p.x, p.y, value);
+      });
+      matrix.set(c.pos.x, c.pos.y, 0xff);
+    });
+    return matrix;
+  };
+  if (hive.state >= hiveStates.battle) optHive.stuckValue = 1;
   return optHive;
 }
 

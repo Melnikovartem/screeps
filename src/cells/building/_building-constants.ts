@@ -1,8 +1,10 @@
 import { HIVE_ENERGY } from "cells/management/storageCell";
 
 // Constants for update intervals
-export const UPDATE_STRUCTURES_BATTLE = 100;
-export const UPDATE_STRUCTURES_NORMAL = 1500;
+export const UPDATE_STRUCTURES = {
+  battle: 100,
+  normal: 1500,
+};
 
 export const WALLS_HEALTH = {
   /** start constat for wall health */

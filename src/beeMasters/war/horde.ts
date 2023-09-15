@@ -12,20 +12,21 @@ const BOOST_LVL = 2;
 const FORGET_ENEMY_ENT = 2;
 
 export interface HordeInfo {
-  // #region Properties (1)
+  // #region Properties (3)
 
-  targetBeeCount: number;
-  maxPath: number;
   boosts: Boosts;
+  maxPath: number;
+  targetBeeCount: number;
 
-  // #endregion Properties (1)
+  // #endregion Properties (3)
 }
 
 // most basic of bitches a horde full of wasps
 @profile
 export class HordeMaster extends SwarmMaster<HordeInfo> {
-  // #region Properties (5)
+  // #region Properties (6)
 
+  private _maxSpawns = 1;
   private enemiesAtEnterance: {
     [enemyId: Id<Creep | PowerCreep | Structure>]: {
       lastSeen: number;
@@ -33,21 +34,13 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     };
   } = {};
 
-  protected override defaultInfo(): HordeInfo {
-    return {
-      targetBeeCount: 1,
-      maxPath: this.pos.getTimeForPath(this.hive),
-      boosts: [],
-    };
-  }
-
   public movePriority = 4 as 3 | 4;
   public recycle = true;
   public setup = setups.archer.copy();
   // 0 if no 1 - 2 - 3 for cycle
   public trio = 0;
 
-  // #endregion Properties (5)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
@@ -58,7 +51,7 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (9)
+  // #region Public Accessors (6)
 
   public override get boosts() {
     return this.info.boosts;
@@ -75,7 +68,6 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     );
   }
 
-  private _maxSpawns = 1;
   public get maxSpawns(): number {
     return this._maxSpawns;
   }
@@ -88,9 +80,9 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     this.info.targetBeeCount = value;
   }
 
-  // #endregion Public Accessors (9)
+  // #endregion Public Accessors (6)
 
-  // #region Public Methods (6)
+  // #region Public Methods (7)
 
   public beeAct(bee: Bee, target: Creep | Structure | PowerCreep | undefined) {
     let action1;
@@ -352,6 +344,14 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     // if (bee.targetPosition && this.roomName === bee.pos.roomName)
     // return ERR_BUSY; // help with deff i guess
     return OK;
+  }
+
+  public override defaultInfo(): HordeInfo {
+    return {
+      targetBeeCount: 1,
+      maxPath: this.pos.getTimeForPath(this.hive),
+      boosts: [],
+    };
   }
 
   public getStats(roomName?: string) {
@@ -660,5 +660,5 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     }
   }
 
-  // #endregion Public Methods (6)
+  // #endregion Public Methods (7)
 }

@@ -262,8 +262,7 @@ export class SiegeMaster extends Master<DefenseCell> {
     this.boostDefender = true;
     if (
       this.hive.cells.lab &&
-      this.hive.getUsedCapacity(BOOST_MINERAL.attack[2]) >=
-        LAB_BOOST_MINERAL
+      this.hive.getUsedCapacity(BOOST_MINERAL.attack[2]) >= LAB_BOOST_MINERAL
     )
       _.forEach(this.bees, (b) => {
         if (!b.boosted && b.ticksToLive >= 600) b.state = beeStates.boosting;

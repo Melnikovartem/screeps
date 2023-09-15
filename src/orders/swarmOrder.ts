@@ -100,6 +100,8 @@ export class SwarmOrder<T> {
   }
 
   public get special(): T {
+    // failsafe (why did it fail tho)
+    if (!this.cache) return this.master.defaultInfo();
     return this.cache[CACHE_ORDER_SPECIAL] as T;
   }
 

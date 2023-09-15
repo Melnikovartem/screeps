@@ -3,8 +3,8 @@ import { SWARM_MASTER } from "orders/swarm-nums";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import { type BuildCell, type BuildProject } from "./buildCell";
 import { HIVE_WALLS_UP, WALLS_HEALTH } from "./_building-constants";
+import { type BuildCell, type BuildProject } from "./buildCell";
 import {
   addUpgradeBoost,
   checkBuildings,
@@ -41,6 +41,11 @@ export function wallMap(cell: BuildCell) {
   };
 }
 
+/**
+ * @param pos find closest target to this pos
+ *
+ * @param ignore ignore some type of task construction / repair
+ */
 export function getBuildTarget(
   this: BuildCell,
   pos: RoomPosition | { pos: RoomPosition },
@@ -56,8 +61,7 @@ export function getBuildTarget(
   let target: Structure | ConstructionSite | undefined;
   let projects: BuildProject[];
 
-  if (ignore) projects = [...this.structuresConst];
-  else projects = this.structuresConst;
+  projects = this.structuresConst;
 
   let getProj = () =>
     projects.length && (pos as RoomPosition).findClosest(projects);
@@ -70,14 +74,14 @@ export function getBuildTarget(
 
   if (this.hive.state >= hiveStates.battle) {
     const inDanger = projects.filter((p) =>
-      p.pos.findInRange(FIND_HOSTILE_CREEPS, 3)
+      p.pos.findInRange(FIND_HOSTILE_CREEPS, 5)
     );
     ignore = "ignoreConst";
     if (inDanger.length) projects = inDanger;
-    else projects = [...projects];
 
     const enemy = Apiary.intel.getEnemyCreep(this);
-    if (enemy) pos = enemy.pos; // dont work well with several points
+
+    if (enemy) pos = enemy.pos;
     getProj = () =>
       projects.length &&
       projects.reduce((prev, curr) => {
@@ -87,9 +91,14 @@ export function getBuildTarget(
       });
   }
 
+  if (ignore) projects = [...projects];
+
+  // pull new build project
   let proj = getProj();
   while (proj && !target) {
+    // if we can see room update target
     if (proj.pos.roomName in Game.rooms)
+      // find target
       switch (proj.type) {
         case "construction":
           if (ignore !== "ignoreConst")
@@ -107,12 +116,14 @@ export function getBuildTarget(
               )[0];
           break;
       }
+    // if target in danger ignore it
     if (
       target &&
       target.pos.roomName !== this.hiveName &&
       this.hive.annexInDanger.includes(target.pos.roomName)
     )
       target = undefined;
+    // remove taregt from orignial array if it doen't exist
     if (!target) {
       for (let k = 0; k < projects.length; ++k)
         if (
@@ -122,6 +133,7 @@ export function getBuildTarget(
           projects.splice(k, 1);
           break;
         }
+      // get new target
       proj = getProj();
     }
   }
@@ -235,6 +247,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
 
   const checkAdd = (
     toCheck: (keyof typeof BUILDABLE_PRIORITY)[],
+    allowConst: boolean = true,
     fearNukes = false
   ) =>
     _.forEach(toCheck, (type) => {
@@ -244,6 +257,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
         this.hiveName,
         BUILDABLE_PRIORITY[type],
         fearNukes,
+        allowConst,
         type === "defense" ? wallMap(this) : undefined
       );
       addCC(ans);
@@ -256,10 +270,10 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
   switch (this.hive.state) {
     case hiveStates.nukealert:
       checkAdd(["mining", "trade"]);
-      if (!this.structuresConst.length) checkAdd(["trade"]);
-      if (!this.structuresConst.length) checkAdd(["defense"]);
+      checkAdd(["trade"], !this.structuresConst.length);
+      checkAdd(["defense"], !this.structuresConst.length);
       checkAdd(["roads"]);
-      if (!this.structuresConst.length) checkAdd(["hightech"], true);
+      checkAdd(["hightech"], !this.structuresConst.length, true);
       if (!this.structuresConst.length)
         addCC(this.hive.cells.defense.getNukeDefMap(true));
       else
@@ -282,6 +296,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
           this.hiveName,
           BUILDABLE_PRIORITY.defense,
           false,
+          true,
           wallMap(this)
         );
         const enemyNearBy = defenseBuildings[0].filter(
@@ -291,15 +306,14 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
         );
         if (enemyNearBy.length) addCC([enemyNearBy, defenseBuildings[1]]);
       }
-      if (!this.structuresConst.length) checkAdd(["defense"], true);
+      checkAdd(["defense"], !this.structuresConst.length, true);
       // no need to fall through cause if no enemies trule left next check will diff type
       break;
     }
-    case hiveStates.economy:
+    case hiveStates.economy: {
       checkAdd(["essential", "mining"]);
-      if (!this.structuresConst.length) checkAdd(["trade"]);
-      if (!this.structuresConst.length) checkAdd(["defense"], true);
-      else {
+      checkAdd(["trade"], !this.structuresConst.length);
+      if (this.structuresConst.length) {
         const defenses = checkBuildings(
           this.hiveName,
           this.hiveName,
@@ -311,30 +325,34 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
           this.structuresConst = [];
         addCC(defenses);
       }
+      checkAdd(["defense"], !this.structuresConst.length, true);
       // hm add roads anyway?
       checkAdd(["roads"]);
-
-      if (!this.structuresConst.length && this.hive.resState.energy > 0)
-        checkAdd(["hightech"], true);
-      checkAnnex();
       // adding container / storage to upgrade faster
       addCC(addUpgradeBoost(this.hiveName));
+
+      if (this.hive.resState.energy > 0)
+        checkAdd(["hightech"], !this.structuresConst.length, true);
+      checkAnnex();
       // @todo up the limit on walls
-      // always a little smth smth on annex repair
       if (
-        !this.buildingCosts.hive.build &&
-        !this.buildingCosts.hive.repair &&
-        !this.buildingCosts.annex.build &&
-        this.buildingCosts.annex.repair < 1_000 &&
-        this.hive.phase === 2
-      ) {
-        checkAdd(["defense"], true);
-      }
+        // always a little smth smth on annex repair roads / containers
+        // but we ignore it
+        this.structuresConst.length &&
+        this.hive.phase < 2
+      )
+        return;
+      const newWallsTarget = nextWallTargetHealth(this);
+      // nothing changed
+      if (this.wallTargetHealth === newWallsTarget) return;
+      this.wallTargetHealth = newWallsTarget;
+      checkAdd(["defense"], true, true);
       break;
+    }
     default:
       // shouldn't happen, but just a failsafe
       checkAdd(["essential", "mining", "trade"]);
-      checkAdd(["defense", "hightech"], true);
+      checkAdd(["defense", "hightech"], true, true);
       checkAnnex();
   }
 }

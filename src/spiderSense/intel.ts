@@ -50,7 +50,7 @@ export class Intel {
 
   // #endregion Properties (6)
 
-  // #region Public Methods (9)
+  // #region Public Methods (10)
 
   public getComplexMyStats(pos: ProtoPos, range = 3, closePadding = 0) {
     return this.getComplexStats(pos, range, closePadding, FIND_MY_CREEPS);
@@ -130,10 +130,6 @@ export class Intel {
     return info;
   }
 
-  public somewhatFreshInfo(roomName: string) {
-    return this.dudInfo(roomName).lastUpdatedShallow < 20;
-  }
-
   public getRoomState(protoName: { roomName: string } | string): roomStates {
     const roomName: string =
       typeof protoName === "string" ? protoName : protoName.roomName;
@@ -154,12 +150,16 @@ export class Intel {
     return ans;
   }
 
+  public somewhatFreshInfo(roomName: string) {
+    return this.dudInfo(roomName).lastUpdatedShallow < 20;
+  }
+
   public update() {
     this.stats = {};
     if (Game.time % 50 === 0) this.intelToCache();
   }
 
-  // #endregion Public Methods (9)
+  // #endregion Public Methods (10)
 
   // #region Protected Methods (1)
 

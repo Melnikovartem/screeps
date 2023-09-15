@@ -1,4 +1,5 @@
 import type { HordeMaster } from "beeMasters/war/horde";
+import type { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { ProtoBee } from "bees/protoBee";
 import type { Hive } from "hive/hive";
@@ -421,7 +422,8 @@ export class DefenseCell extends Cell {
     if (swOrder && swOrder.type === SWARM_MASTER.hordedefense) {
       swOrder.setPosition(pos);
       delete Apiary.defenseSwarms[swOrder.pos.roomName];
-      Apiary.defenseSwarms[pos.roomName] = swOrder.master as HordeMaster;
+      Apiary.defenseSwarms[pos.roomName] =
+        swOrder.master as unknown as HordeDefenseMaster;
       return swOrder.ref;
     }
     swOrder = (this.hive.bassboost || this.hive).createSwarm(

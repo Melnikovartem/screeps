@@ -35,6 +35,8 @@ export class SKMaster extends HordeMaster {
   public override init() {}
 
   public override run() {
+    this.preRunBoost();
+
     _.forEach(this.activeBees, (bee) => {
       if (bee.state === beeStates.boosting) return;
 
@@ -43,7 +45,7 @@ export class SKMaster extends HordeMaster {
         const enemy = Apiary.intel.getEnemy(bee.pos, 20);
         if (enemy && enemy.pos.getRangeTo(bee) <= 3)
           ans = this.beeAct(bee, enemy);
-        if (ans === OK) bee.goTo(this.pos);
+        if (ans === OK) bee.goTo(this.pos, this.hive.opt);
         return;
       }
 

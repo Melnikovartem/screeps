@@ -85,13 +85,9 @@ export class ResourceCell extends Cell {
     if (this.resType === RESOURCE_ENERGY)
       return !!this.link || !!this.container || !!this.hive.cells.dev;
     // mineral source
-    return !!(
-      (
-        !!this.extractor &&
-        !!this.container &&
-        ((this.resource && this.resource.ticksToRegeneration) || 0 < 10)
-      ) // start beeing operational for 10ticks before
-    );
+    // start beeing operational for 10ticks before
+    const ticksToRegen = this.resource && this.resource.ticksToRegeneration;
+    return (ticksToRegen || 0) < 10 && !!this.extractor && !!this.container;
   }
 
   public override get pos(): RoomPosition {

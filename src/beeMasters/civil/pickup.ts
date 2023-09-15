@@ -17,10 +17,10 @@ export interface PickupInfo {
   // #region Properties (2)
 
   id: Id<PickupTarget> | undefined;
+  /** targetBeeCount */
   tc: number;
 
   // #endregion Properties (2)
-  // targetBeeCount
 }
 
 @profile
@@ -63,7 +63,14 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
 
   // #endregion Public Accessors (5)
 
-  // #region Public Methods (3)
+  // #region Public Methods (4)
+
+  public override defaultInfo(): PickupInfo {
+    return {
+      id: undefined,
+      tc: 1,
+    };
+  }
 
   public getTarget() {
     const room = Game.rooms[this.roomName];
@@ -196,16 +203,5 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
     }
   }
 
-  // #endregion Public Methods (3)
-
-  // #region Protected Methods (1)
-
-  protected override defaultInfo(): PickupInfo {
-    return {
-      id: undefined,
-      tc: 1,
-    };
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Public Methods (4)
 }

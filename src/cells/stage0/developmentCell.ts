@@ -40,7 +40,7 @@ export class DevelopmentCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (4)
+  // #region Public Accessors (5)
 
   public get controller() {
     return this.hive.controller;
@@ -88,23 +88,6 @@ export class DevelopmentCell extends Cell {
     );
   }
 
-  private get enoughManagers() {
-    return (
-      this.sCell.master.beesAmount &&
-      this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
-    );
-  }
-
-  // upper bound on upgraders
-  public get maxUpgraderBeeCount() {
-    const energyPerBee = this.hive.cells.upgrade.ratePerCreepMax;
-
-    // do not consume more then we produce
-    return this.enoughManagers
-      ? Math.ceil(this.hive.approxIncome / energyPerBee)
-      : 0;
-  }
-
   // upper bound on builders
   public get maxBuilderBeeCount() {
     // much can we consume per tick if we build inside hive (costliest)
@@ -123,32 +106,32 @@ export class DevelopmentCell extends Cell {
       : 0;
   }
 
+  // upper bound on upgraders
+  public get maxUpgraderBeeCount() {
+    const energyPerBee = this.hive.cells.upgrade.ratePerCreepMax;
+
+    // do not consume more then we produce
+    return this.enoughManagers
+      ? Math.ceil(this.hive.approxIncome / energyPerBee)
+      : 0;
+  }
+
   public override get pos() {
     return this.hive.controller.pos;
   }
 
-  private swapBees(
-    master1: Master<MasterParent>,
-    master2: Master<MasterParent>,
-    amount = Infinity,
-    namespace = ""
-  ) {
-    // move 5 bee at a time
-    amount = Math.min(amount, 5);
-    let count = 0;
-    while (master1.activeBees.length) {
-      if (count >= amount) break;
-      const bee = master1.activeBees.reduce((a, b) =>
-        a.ref.includes(namespace) ? a : b
-      );
-      master1.removeBee(bee);
-      master2.newBee(bee);
-      ++count;
-    }
-    return count;
+  // #endregion Public Accessors (5)
+
+  // #region Private Accessors (1)
+
+  private get enoughManagers() {
+    return (
+      this.sCell.master.beesAmount &&
+      this.sCell.master.beesAmount >= Math.ceil(this.managerBeeCount / 2)
+    );
   }
 
-  // #endregion Public Accessors (4)
+  // #endregion Private Accessors (1)
 
   // #region Public Methods (3)
 
@@ -224,12 +207,12 @@ export class DevelopmentCell extends Cell {
 
   // #endregion Public Methods (3)
 
-  // #region Private Methods (2)
+  // #region Private Methods (3)
 
   private addResources() {
     _.forEach([this.hiveName].concat(this.hive.annexNames), (miningRoom) => {
       const room = Game.rooms[miningRoom];
-      if (!room) return;
+      if (!room || this.hive.annexInDanger.includes(miningRoom)) return;
 
       _.forEach(this.hive.cells.excavation.resourceCells, (cell) => {
         if (cell.container) this.sendToStorage(cell.container);
@@ -295,5 +278,26 @@ export class DevelopmentCell extends Cell {
     return;
   }
 
-  // #endregion Private Methods (2)
+  private swapBees(
+    master1: Master<MasterParent>,
+    master2: Master<MasterParent>,
+    amount = Infinity,
+    namespace = ""
+  ) {
+    // move 5 bee at a time
+    amount = Math.min(amount, 5);
+    let count = 0;
+    while (master1.activeBees.length) {
+      if (count >= amount) break;
+      const bee = master1.activeBees.reduce((a, b) =>
+        a.ref.includes(namespace) ? a : b
+      );
+      master1.removeBee(bee);
+      master2.newBee(bee);
+      ++count;
+    }
+    return count;
+  }
+
+  // #endregion Private Methods (3)
 }

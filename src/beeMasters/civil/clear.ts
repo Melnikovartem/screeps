@@ -31,7 +31,11 @@ export class ClearMaster extends SwarmMaster<undefined> {
 
   // #endregion Public Accessors (2)
 
-  // #region Public Methods (2)
+  // #region Public Methods (3)
+
+  public override defaultInfo(): undefined {
+    return undefined;
+  }
 
   // @todo add functions to manager queen
   public run() {
@@ -65,13 +69,5 @@ export class ClearMaster extends SwarmMaster<undefined> {
     }
   }
 
-  // #endregion Public Methods (2)
-
-  // #region Protected Methods (1)
-
-  protected override defaultInfo(): undefined {
-    return undefined;
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Public Methods (3)
 }

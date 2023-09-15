@@ -31,7 +31,7 @@ export class ManagerMaster extends Master<StorageCell> {
 
     // bunch of very small ones
     if (this.hive.cells.dev) {
-      setup.patternLimit = DEV_MAX_HAULER_PATTERN;
+      if (this.hive.phase === 0) setup.patternLimit = DEV_MAX_HAULER_PATTERN;
       // support all carry parts cause no roads early
       if (this.hive.controller.level <= 2) setup.moveMax = MAX_CREEP_SIZE / 2;
     }

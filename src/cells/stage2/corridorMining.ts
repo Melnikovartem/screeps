@@ -44,8 +44,7 @@ export class CorridorMiningCell extends Cell {
       !inProgress.length &&
       this.hive.mode.powerMining &&
       workingPowerSites.length &&
-      this.hive.getUsedCapacity(RESOURCE_POWER) <=
-        MINING_POWER_STOCK
+      this.hive.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCK
     )
       inProgress = [
         workingPowerSites.reduce((prev, curr) =>
@@ -82,6 +81,16 @@ export class CorridorMiningCell extends Cell {
               STOCKPILE_BASE_COMMODITIES.toomuch)
       );
       if (workingDeposits.length > 1) {
+        console.log(
+          this.print,
+          _.map(
+            workingDeposits,
+            (d) =>
+              (d.resource || "none") +
+              " : " +
+              ((d.resource && this.hive.resState[d.resource]) || "0")
+          ).join("\t")
+        );
         const depositsWithBees = workingDeposits.filter(
           (d) => d.miners.beesAmount || d.pickup.beesAmount
         );

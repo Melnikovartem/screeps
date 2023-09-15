@@ -1,5 +1,7 @@
 import { setups } from "bees/creepSetups";
-import { FormationPositions, SquadMaster } from "./squad";
+
+import type { FormationPositions } from "./squad";
+import { SquadMaster } from "./squad";
 
 const TEST_SUBJECT_ONE = setups.puppet.copy();
 TEST_SUBJECT_ONE.patternLimit = 1;

@@ -11,7 +11,7 @@ const ABSOLUTE_MAX_RATE_UPGRADE = 40 * 8;
 
 @profile
 export class UpgradeCell extends Cell {
-  // #region Properties (9)
+  // #region Properties (10)
 
   public container: StructureContainer | undefined | null;
   public link: StructureLink | undefined | null;
@@ -22,12 +22,12 @@ export class UpgradeCell extends Cell {
     local: 10,
   };
   public poss: RoomPosition;
+  public prevLvl = this.controller.level;
   public ratePerCreepMax = 1;
   public roadTime: number;
   public workPerCreepMax = 1;
-  public prevLvl = this.controller.level;
 
-  // #endregion Properties (9)
+  // #endregion Properties (10)
 
   // #region Constructors (1)
 

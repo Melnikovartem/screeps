@@ -1,14 +1,7 @@
 import type { Bee } from "bees/bee";
 import type { CreepSetup } from "bees/creepSetups";
 import { BOOST_MINERAL, BOOST_PARTS } from "cells/stage1/laboratoryCell";
-import type { FlagOrder } from "orders/flagCommands";
 import { profile } from "profiler/decorator";
-import { SQUAD_VISUALS } from "static/settings";
-import type {
-  CreepAllBattleInfo,
-  CreepBattleInfo,
-  Enemy,
-} from "spiderSense/intel";
 import { beeStates, enemyTypes, hiveStates, roomStates } from "static/enums";
 import { addResDict } from "static/utils";
 

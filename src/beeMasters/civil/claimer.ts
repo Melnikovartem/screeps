@@ -24,7 +24,11 @@ export class ClaimerMaster extends SwarmMaster<undefined> {
 
   // #endregion Public Accessors (2)
 
-  // #region Public Methods (2)
+  // #region Public Methods (3)
+
+  public override defaultInfo(): undefined {
+    return undefined;
+  }
 
   public run() {
     _.forEach(this.activeBees, (bee) => {
@@ -79,13 +83,5 @@ export class ClaimerMaster extends SwarmMaster<undefined> {
     }
   }
 
-  // #endregion Public Methods (2)
-
-  // #region Protected Methods (1)
-
-  protected override defaultInfo(): undefined {
-    return undefined;
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Public Methods (3)
 }

@@ -8,9 +8,10 @@ import { goodSpot } from "static/utils";
 import { Traveler } from "Traveler/TravelerModified";
 
 export class AnnexCell extends Cell {
-  // #region Properties (5)
+  // #region Properties (6)
 
   private allResourcesMarked = true;
+  private noVisionAnnex: string[] = [];
   /** annexer or safeSK master */
   private swarms: { [roomName: string]: SwarmOrder<any> } = {};
 
@@ -18,7 +19,7 @@ export class AnnexCell extends Cell {
   public annexInDanger: string[] = [];
   public override master = undefined;
 
-  // #endregion Properties (5)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
@@ -36,7 +37,7 @@ export class AnnexCell extends Cell {
 
   // #endregion Private Accessors (1)
 
-  // #region Public Methods (6)
+  // #region Public Methods (5)
 
   /**
    * Add an annex to the hive
@@ -52,7 +53,51 @@ export class AnnexCell extends Cell {
     }
   }
 
-  public addAnnexMaster(annexName: string) {
+  public canSpawnMiners(roomName: string) {
+    if (this.annexInDanger.includes(roomName)) return false;
+    const roomState = Apiary.intel.getRoomState(roomName);
+    switch (roomState) {
+      case roomStates.SKfrontier:
+        return this.swarms[roomName].master.beesAmount;
+      case roomStates.ownedByMe:
+      case roomStates.reservedByMe:
+      case roomStates.SKcentral:
+      case roomStates.noOwner:
+        return true;
+      /* case roomStates.corridor:
+      case roomStates.reservedByInvader:
+      case roomStates.reservedByEnemy:
+      case roomStates.ownedByEnemy:
+        return false; */
+    }
+    return false;
+  }
+
+  public removeAnnex(annexName: string) {
+    const index = this.annexNames.indexOf(annexName);
+    if (index !== -1) {
+      this.annexNames.splice(index, 1);
+      // update cache
+      this.hive.cache.annex = this.annexNames;
+    }
+    if (this.swarms[annexName]) this.swarms[annexName].delete();
+    this.hive.cells.excavation.roomRemoveCells(annexName);
+  }
+
+  public override run(): void {}
+
+  public override update(): void {
+    if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
+    if (Apiary.intTime % 200 === 0) this.noVisionAnnex = [...this.annexNames];
+    this.updateVisionAnnex();
+    this.checkResources();
+  }
+
+  // #endregion Public Methods (5)
+
+  // #region Private Methods (5)
+
+  private addAnnexMaster(annexName: string) {
     if (this.swarms[annexName]) return;
     switch (Apiary.intel.getRoomState(annexName)) {
       case roomStates.reservedByEnemy:
@@ -73,77 +118,6 @@ export class AnnexCell extends Cell {
         return;
     }
   }
-
-  public removeAnnex(annexName: string) {
-    const index = this.annexNames.indexOf(annexName);
-    if (index !== -1) {
-      this.annexNames.splice(index, 1);
-      // update cache
-      this.hive.cache.annex = this.annexNames;
-    }
-    if (this.swarms[annexName]) this.swarms[annexName].delete();
-    this.hive.cells.excavation.roomRemoveCells(annexName);
-  }
-
-  public override run(): void {}
-
-  public override update(): void {
-    if (Apiary.intTime % 32 === 0) this.updateDangerAnnex();
-
-    if (
-      Apiary.intTime % 100 === 5 ||
-      !this.allResourcesMarked ||
-      !this.allResourcesRoads
-    ) {
-      this.allResourcesMarked = true;
-      this.allResourcesRoads = true;
-      _.forEach(this.annexNames, (annexName) => {
-        if (
-          _.filter(
-            this.hive.cells.excavation.resourceCells,
-            (r) => annexName === r.pos.roomName
-          ).length
-        ) {
-          if (!Memory.longterm.roomPlanner[this.hiveName]?.rooms[annexName])
-            this.allResourcesRoads = false;
-          else this.addAnnexMaster(annexName);
-          return;
-        }
-
-        if (!Game.rooms[annexName]) {
-          this.allResourcesMarked = false;
-          Apiary.oracle.requestSight(annexName);
-          return;
-        }
-
-        markResources(this.hive);
-      });
-      this.hive.allResources = false;
-    }
-  }
-
-  public updateDangerAnnex() {
-    this.annexInDanger = [];
-    _.forEach(this.annexNames, (annexName) => {
-      const path = Traveler.findRoute(this.hiveName, annexName);
-      if (path)
-        for (const roomName in path) {
-          if (roomName === this.hiveName) continue;
-          if (
-            !Apiary.intel.getInfo(roomName, 25).safePlace &&
-            (!Apiary.hives[roomName] ||
-              Apiary.hives[roomName].cells.defense.isBreached)
-          ) {
-            this.annexInDanger.push(annexName);
-            return;
-          }
-        }
-    });
-  }
-
-  // #endregion Public Methods (6)
-
-  // #region Private Methods (1)
 
   private addMaster(
     prefixMaster: string,
@@ -169,5 +143,69 @@ export class AnnexCell extends Cell {
     this.swarms[roomName] = order;
   }
 
-  // #endregion Private Methods (1)
+  private checkResources() {
+    if (this.allResourcesRoads && this.allResourcesMarked && Apiary.intTime > 0)
+      return;
+    this.allResourcesRoads = true;
+    this.allResourcesMarked = true;
+
+    _.forEach(this.annexNames, (annexName) => {
+      if (
+        _.filter(
+          this.hive.cells.excavation.resourceCells,
+          (r) => annexName === r.pos.roomName
+        ).length
+      ) {
+        if (!Memory.longterm.roomPlanner[this.hiveName]?.rooms[annexName])
+          this.allResourcesRoads = false;
+        else this.addAnnexMaster(annexName);
+        return;
+      }
+
+      if (!Game.rooms[annexName]) {
+        // can't mark the resource
+        // wait for vision code to do it's thing
+        this.allResourcesMarked = false;
+        return;
+      }
+
+      markResources(this.hive);
+    });
+  }
+
+  private updateDangerAnnex() {
+    this.annexInDanger = [];
+    _.forEach(this.annexNames, (annexName) => {
+      const path = Traveler.findRoute(this.hiveName, annexName, {
+        ignoreCurrent: true,
+      });
+      if (path)
+        for (const roomName in path) {
+          if (roomName === this.hiveName) continue;
+          if (
+            !Apiary.intel.getInfo(roomName, 25).safePlace &&
+            (!Apiary.hives[roomName] ||
+              Apiary.hives[roomName].cells.defense.isBreached)
+          ) {
+            this.annexInDanger.push(annexName);
+            return;
+          }
+        }
+    });
+  }
+
+  private updateVisionAnnex() {
+    for (let i = 0; i < this.noVisionAnnex.length; ++i) {
+      const annexName = this.noVisionAnnex[i];
+      const room = Game.rooms[annexName];
+      if (!room) {
+        Apiary.oracle.requestSight(annexName);
+        continue;
+      }
+      this.noVisionAnnex.splice(i, 1);
+      --i;
+    }
+  }
+
+  // #endregion Private Methods (5)
 }

@@ -7,8 +7,7 @@ import { prefix } from "static/enums";
 import { Cell } from "../_Cell";
 import {
   HIVE_WALLS_UP,
-  UPDATE_STRUCTURES_BATTLE,
-  UPDATE_STRUCTURES_NORMAL,
+  UPDATE_STRUCTURES,
   WALLS_HEALTH,
 } from "./_building-constants";
 import { getBuildTarget, updateStructures } from "./hive-building";
@@ -92,16 +91,12 @@ export class BuildCell extends Cell {
 
   public update() {
     if (
-      Apiary.intTime % UPDATE_STRUCTURES_NORMAL === 0 ||
+      Apiary.intTime % UPDATE_STRUCTURES.normal === 0 ||
       (!this.structuresConst.length && this.sumCost) ||
-      (this.hive.isBattle && Game.time % UPDATE_STRUCTURES_BATTLE === 0) ||
+      (this.hive.isBattle && Game.time % UPDATE_STRUCTURES.battle === 0) ||
       this.forceCheck
     ) {
-      Apiary.wrap(
-        () => this.updateStructures(this.forceCheck === "annex"),
-        "structures_" + this.hiveName,
-        "update"
-      );
+      this.updateStructures(this.forceCheck === "annex");
       this.forceCheck = "";
     }
   }

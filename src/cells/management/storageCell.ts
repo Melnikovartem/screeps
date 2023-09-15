@@ -209,6 +209,10 @@ export class StorageCell extends Cell {
     return this.storage?.store.getFreeCapacity(res) || 0;
   }
 
+  public storageUsedCapacity(res?: ResourceConstant) {
+    return this.storage?.store.getUsedCapacity(res) || 0;
+  }
+
   public override update() {
     this.updateObjects([]);
 

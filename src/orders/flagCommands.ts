@@ -6,7 +6,7 @@ import { actAnnex, deleteAnnex } from "./flags-annex";
 import { actBattle } from "./flags-battle";
 import { actCivil } from "./flags-civil";
 import { actPlanner, deletePlanner } from "./flags-planner";
-import { actUtilsActions, actUtilsPositions } from "./orders-utils";
+import { actUtilsActions, actUtilsPositions } from "./flags-utils";
 import { SWARM_MASTER } from "./swarm-nums";
 
 // remove flag after time

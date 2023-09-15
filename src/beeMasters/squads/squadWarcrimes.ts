@@ -218,7 +218,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   // #endregion Public Accessors (16)
 
-  // #region Public Methods (9)
+  // #region Public Methods (10)
 
   public beeAct(
     bee: Bee,
@@ -358,6 +358,21 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     if (action2) action2();
 
     return OK;
+  }
+
+  public override defaultInfo(): SquadInfo {
+    // should be innited before as some info comes from decision makers
+    return {
+      seidgeStuck: 0,
+      center: this.hive.isBattle ? this.hive.pos : this.hive.rest,
+
+      targetLastUpdated: -1,
+      targetid: "",
+
+      rotation: TOP,
+      setup: [],
+      ent: this.hiveName,
+    };
   }
 
   public override delete() {
@@ -693,9 +708,9 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     return OK;
   }
 
-  // #endregion Public Methods (9)
+  // #endregion Public Methods (10)
 
-  // #region Protected Methods (2)
+  // #region Protected Methods (1)
 
   protected checkup() {
     let ans = true;
@@ -710,22 +725,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     return ans;
   }
 
-  protected override defaultInfo(): SquadInfo {
-    // should be innited before as some info comes from decision makers
-    return {
-      seidgeStuck: 0,
-      center: this.hive.isBattle ? this.hive.pos : this.hive.rest,
-
-      targetLastUpdated: -1,
-      targetid: "",
-
-      rotation: TOP,
-      setup: [],
-      ent: this.hiveName,
-    };
-  }
-
-  // #endregion Protected Methods (2)
+  // #endregion Protected Methods (1)
 
   // #region Private Methods (6)
 

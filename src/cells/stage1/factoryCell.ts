@@ -92,7 +92,7 @@ export const STOCKPILE_BASE_COMMODITIES = {
 
 @profile
 export class FactoryCell extends Cell {
-  // #region Properties (10)
+  // #region Properties (9)
 
   public _commodityTarget: {
     res: FactoryResourceConstant;
@@ -111,7 +111,7 @@ export class FactoryCell extends Cell {
   };
   public uncommon: boolean = false;
 
-  // #endregion Properties (10)
+  // #endregion Properties (9)
 
   // #region Constructors (1)
 
@@ -455,6 +455,9 @@ export class FactoryCell extends Cell {
         // energy below 100000
         const toProduce = -this.hive.resState[res] + STOP_PRODUCTION * 1.2; // -resState -60_000
         num = Math.max(0, Math.ceil(toProduce / recipe.amount));
+        const batteryInNetwork = Apiary.network.resState[RESOURCE_BATTERY] || 0;
+        const batteryInHive = this.sCell.storageUsedCapacity(RESOURCE_BATTERY);
+        if (num > 0 && Math.max(batteryInNetwork, batteryInHive) <= 0) num = 0;
       } else if (res === RESOURCE_BATTERY) {
         // can compress some energy
         if (
@@ -473,11 +476,6 @@ export class FactoryCell extends Cell {
       if (num > 1)
         targets.push({ res, amount: Math.floor(num) * recipe.amount });
     }
-    console.log(
-      "1",
-      this.print,
-      _.map(targets, (t) => [t.res, t.amount])
-    );
     if (!targets.length) return ERR_NOT_FOUND;
 
     const nonCommon = targets.filter(
@@ -511,14 +509,6 @@ export class FactoryCell extends Cell {
     const [createQue, ingredients] = this.getCreateQue(
       this.commodityTarget.res,
       this.commodityTarget.amount
-    );
-
-    console.log(
-      "2",
-      this.print,
-      this.commodityTarget.res,
-      createQue,
-      JSON.stringify(ingredients)
     );
 
     _.forEach(ingredients, (amountNeeded, component) => {

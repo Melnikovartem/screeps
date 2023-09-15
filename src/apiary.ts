@@ -1,7 +1,7 @@
 import { ColonyBrianModule } from "antBrain/colonyModule";
 import { WarcrimesModule } from "antBrain/warModule";
 import type { Master, MasterParent } from "beeMasters/_Master";
-import type { HordeMaster } from "beeMasters/war/horde";
+import type { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { Bee } from "bees/bee";
 import { PowerBee } from "bees/powerBee";
 import type { ProtoBee } from "bees/protoBee";
@@ -40,7 +40,7 @@ export class _Apiary {
 
   public bees: { [creepName: string]: ProtoBee<Creep | PowerCreep> } = {};
   public createTime: number;
-  public defenseSwarms: { [id: string]: HordeMaster } = {};
+  public defenseSwarms: { [id: string]: HordeDefenseMaster } = {};
   public flags: { [flagName: string]: FlagCommand } = {};
   public hives: { [roomName: string]: Hive } = {};
   public masters: { [mParentRef: string]: Master<MasterParent> } = {};

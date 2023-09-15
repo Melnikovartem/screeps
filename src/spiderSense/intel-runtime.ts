@@ -44,9 +44,8 @@ const PEACE_PACTS: string[] = [
   "Hi_Melnikov",
   // "Digital",
   // "Lapitz",
-  // "Bestia",
 ]; // "buger"
-const NON_AGRESSION_PACKS: string[] = ["TgDgNU", "6g3y", "YoRHa"];
+const NON_AGRESSION_PACKS: string[] = ["TgDgNU", "6g3y", "YoRHa", "Bestia"];
 
 /** shallow info */
 export interface RoomIntelRuntime extends RoomIntelDeep {
@@ -54,13 +53,14 @@ export interface RoomIntelRuntime extends RoomIntelDeep {
 
   dangerlvlmax: DangerLvl;
   enemies: Enemy[];
-  towers: StructureTower[];
   lastUpdatedShallow: number;
   /** if we lost vision at some point and removed unseen objects */
   lostVision: boolean;
-  state: roomStates; // easier if it is here
+  state: roomStates;
+  towers: StructureTower[];
 
   // #endregion Properties (6)
+  // easier if it is here
 }
 
 export function getIntel(

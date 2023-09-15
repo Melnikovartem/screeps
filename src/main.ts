@@ -58,9 +58,10 @@ function onGlobalReset(): void {
 function main() {
   // Check if CPU bucket is too low to proceed
   if (!Memory.settings.generatePixel && Game.cpu.bucket < 300) {
-    console.log(
-      `CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`
-    );
+    if (Game.cpu.limit > 0)
+      console.log(
+        `CPU bucket is ${Game.cpu.bucket} @ ${Game.shard.name} aborting`
+      );
     return;
   }
 

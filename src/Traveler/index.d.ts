@@ -23,7 +23,7 @@ interface TravelToOptions {
     roomName: string,
     matrix: CostMatrix
   ) => CostMatrix | boolean | undefined;
-  routeCallback?: (roomName: string) => number;
+  routeCallback?: (roomName: string) => number | undefined;
   returnData?: TravelToReturnData;
   restrictDistance?: number;
   useFindRoute?: boolean;

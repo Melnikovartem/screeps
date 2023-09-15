@@ -1,4 +1,5 @@
 import { setups } from "bees/creepSetups";
+import { DEPOSIT_COMMODITIES } from "cells/stage1/factoryCell";
 import type { SwarmOrder } from "orders/swarmOrder";
 import { profile } from "profiler/decorator";
 
@@ -7,16 +8,18 @@ import { DepositMinerMaster } from "./mineDep";
 import { DepositPickupMaster } from "./pickupDep";
 
 interface DepositInfo {
-  // #region Properties (3)
+  // #region Properties (4)
 
+  /** decay */
   dc: number;
-  // decay
+  /** last cooldown */
   lc: number;
-  // lastCooldown
+  /** resource */
+  re: number;
+  /** roadTime */
   rt: number;
 
-  // #endregion Properties (3)
-  // roadTime
+  // #endregion Properties (4)
 }
 
 const MAX_DEPOSIT_COOLDOWN = CREEP_LIFE_TIME / 7.5; // 200
@@ -25,7 +28,7 @@ const MAX_DEPOSIT_COOLDOWN = CREEP_LIFE_TIME / 7.5; // 200
 // holds 2 different masters
 @profile
 export class DepositMaster extends SwarmMaster<DepositInfo> {
-  // #region Properties (8)
+  // #region Properties (7)
 
   public miners: DepositMinerMaster;
   // implementation block
@@ -36,7 +39,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
   public target: Deposit | undefined;
   public workAmount: number;
 
-  // #endregion Properties (8)
+  // #endregion Properties (7)
 
   // #region Constructors (1)
 
@@ -63,10 +66,16 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (7)
+  // #region Public Accessors (8)
 
   public get decay() {
     return this.info.dc;
+  }
+
+  public get keepMining() {
+    return (
+      this.lastCooldown <= MAX_DEPOSIT_COOLDOWN && this.decay > CREEP_LIFE_TIME
+    );
   }
 
   public get lastCooldown() {
@@ -78,18 +87,12 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     return 1;
   }
 
-  public get resource() {
-    return this.target?.depositType;
+  public get resource(): DepositConstant | undefined {
+    return DEPOSIT_COMMODITIES[this.info.re] || this.target?.depositType;
   }
 
   public get roadTime() {
     return this.info.rt;
-  }
-
-  public get keepMining() {
-    return (
-      this.lastCooldown <= MAX_DEPOSIT_COOLDOWN && this.decay > CREEP_LIFE_TIME
-    );
   }
 
   public get shouldSpawn() {
@@ -102,7 +105,7 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     return 0;
   }
 
-  // #endregion Public Accessors (7)
+  // #endregion Public Accessors (8)
 
   // #region Private Accessors (2)
 
@@ -118,6 +121,15 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
   // #endregion Private Accessors (2)
 
   // #region Public Methods (4)
+
+  public defaultInfo() {
+    return {
+      rt: this.pos.getTimeForPath(this.hive),
+      dc: Game.time,
+      lc: 1,
+      re: -1,
+    };
+  }
 
   public override delete() {
     super.delete();
@@ -152,6 +164,10 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
       this.hive.cells.defense.checkAndDefend(this.pos.roomName);
   }
 
+  // #endregion Public Methods (4)
+
+  // #region Private Methods (1)
+
   private updateTarget() {
     if (!(this.pos.roomName in Game.rooms)) {
       this.target = undefined;
@@ -161,22 +177,11 @@ export class DepositMaster extends SwarmMaster<DepositInfo> {
     }
     this.target = this.pos.lookFor(LOOK_DEPOSITS)[0];
     if (this.target) {
+      this.info.re = DEPOSIT_COMMODITIES.indexOf(this.target.depositType);
       this.info.lc = this.target.lastCooldown;
       this.info.dc = this.target.ticksToDecay;
     } else this.info.dc = -Game.time;
   }
 
-  // #endregion Public Methods (4)
-
-  // #region Protected Methods (1)
-
-  protected defaultInfo() {
-    return {
-      rt: this.pos.getTimeForPath(this.hive),
-      dc: Game.time,
-      lc: 1,
-    };
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Private Methods (1)
 }

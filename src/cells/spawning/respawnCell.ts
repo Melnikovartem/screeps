@@ -32,6 +32,10 @@ export class RespawnCell extends Cell {
     super(hive, prefix.respawnCell);
   }
 
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
   public get recordedCapacity() {
     const spawnCapacity =
       Object.keys(this.spawns).length * SPAWN_ENERGY_CAPACITY;
@@ -41,15 +45,11 @@ export class RespawnCell extends Cell {
     return spawnCapacity + extensionsCapacity;
   }
 
-  // #endregion Constructors (1)
-
-  // #region Public Accessors (1)
-
   public get recycleSpawn(): StructureSpawn | undefined {
     return this.spawns[this.recycleSpawnId] || Object.values(this.spawns)[0];
   }
 
-  // #endregion Public Accessors (1)
+  // #endregion Public Accessors (2)
 
   // #region Public Methods (5)
 

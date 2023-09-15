@@ -86,9 +86,6 @@ export enum prefix {
   buildingCell = "build",
   annexCell = "annex",
 
-  builder = "builder_" /** Builder prefix */,
-  puller = "depositPuller_" /** Deposit puller prefix */,
-
   // game constants
   master = "m_" /** Master prefix */,
   swarm = "swarm_" /** Swarm prefix */,

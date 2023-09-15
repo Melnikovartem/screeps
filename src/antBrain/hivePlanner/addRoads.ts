@@ -1,6 +1,5 @@
 import { ROOM_DIMENTIONS } from "static/constants";
 
-import { surroundingPoints } from "./min-cut";
 import type { ActivePlan, RoomPlannerMatrix } from "./planner-active";
 import { addStructure, PLANNER_COST } from "./planner-utils";
 

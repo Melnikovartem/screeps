@@ -84,7 +84,11 @@ export class PortalMaster extends SwarmMaster<undefined> {
 
   // #endregion Public Accessors (2)
 
-  // #region Public Methods (2)
+  // #region Public Methods (3)
+
+  public override defaultInfo(): undefined {
+    return undefined;
+  }
 
   public run() {
     this.preRunBoost();
@@ -162,13 +166,5 @@ export class PortalMaster extends SwarmMaster<undefined> {
     }
   }
 
-  // #endregion Public Methods (2)
-
-  // #region Protected Methods (1)
-
-  protected override defaultInfo(): undefined {
-    return undefined;
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Public Methods (3)
 }

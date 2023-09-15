@@ -102,7 +102,7 @@ export class NKVDMaster extends PowerCreepMaster {
 
   // #endregion Public Methods (2)
 
-  // #region Private Methods (4)
+  // #region Private Methods (3)
 
   private getNext() {
     this.nextup = undefined;
@@ -275,5 +275,5 @@ export class NKVDMaster extends PowerCreepMaster {
     }
   }
 
-  // #endregion Private Methods (4)
+  // #endregion Private Methods (3)
 }

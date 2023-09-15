@@ -10,7 +10,45 @@ import { Master } from "./_Master";
 // can itself spawn masters if needed?
 @profile
 export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
-  // #region Properties (2)
+  // #region Properties (1)
+
+  public override newBee = (bee: Bee) => {
+    super.newBee(bee);
+    if (bee.creep.memory.born + 1 === Game.time) this.parent.newSpawn();
+  };
+
+  // #endregion Properties (1)
+
+  // #region Constructors (1)
+
+  // @todo replace with SwarmOrder that just holds a pos in cache
+  // flags are costly and can't be placed in uloaded rooms :/
+  public constructor(order: SwarmOrder<T>) {
+    super(order);
+    if (!this.info) this.parent.special = this.defaultInfo();
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Abstract Accessors (1)
+
+  public abstract get maxSpawns(): number;
+
+  // #endregion Public Abstract Accessors (1)
+
+  // #region Protected Accessors (2)
+
+  protected get info() {
+    return this.parent.special;
+  }
+
+  protected set info(value) {
+    this.parent.special = value;
+  }
+
+  // #endregion Protected Accessors (2)
+
+  // #region Public Methods (1)
 
   public override checkBees(spawnExtreme?: boolean, spawnCycle?: number) {
     if (
@@ -27,45 +65,11 @@ export abstract class SwarmMaster<T> extends Master<SwarmOrder<T>> {
     return super.checkBees(spawnExtreme, spawnCycle);
   }
 
-  public override newBee = (bee: Bee) => {
-    super.newBee(bee);
-    if (bee.creep.memory.born + 1 === Game.time) this.parent.newSpawn();
-  };
+  // #endregion Public Methods (1)
 
-  // #endregion Properties (2)
+  // #region Public Abstract Methods (1)
 
-  // #region Constructors (1)
+  public abstract defaultInfo(): T;
 
-  // @todo replace with SwarmOrder that just holds a pos in cache
-  // flags are costly and can't be placed in uloaded rooms :/
-  public constructor(order: SwarmOrder<T>) {
-    super(order);
-    if (!this.info) this.parent.special = this.defaultInfo();
-  }
-
-  // #endregion Constructors (1)
-
-  // #region Public Accessors (2)
-
-  protected get info() {
-    return this.parent.special;
-  }
-
-  protected set info(value) {
-    this.parent.special = value;
-  }
-
-  // #endregion Public Accessors (2)
-
-  // #region Public Abstract Accessors (1)
-
-  public abstract get maxSpawns(): number;
-
-  // #endregion Public Abstract Accessors (1)
-
-  // #region Protected Abstract Methods (1)
-
-  protected abstract defaultInfo(): T;
-
-  // #endregion Protected Abstract Methods (1)
+  // #endregion Public Abstract Methods (1)
 }

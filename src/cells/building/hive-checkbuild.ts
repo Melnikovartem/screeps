@@ -16,6 +16,7 @@ export function checkBuildings(
   roomName: string,
   queToCheck: BuildableStructureConstant[],
   fearNukes: boolean,
+  allowConstBase: boolean = true,
   specials: { [key in StructureConstant]?: number } = {}
 ): checkBuildingsReturn {
   const hivePlan = Memory.longterm.roomPlanner[hiveName];
@@ -43,16 +44,20 @@ export function checkBuildings(
     });
 
     const toadd: RoomPosition[] = [];
+    const toaddBlank: RoomPosition[] = [];
+    const buildBlank: BuildProject[] = [];
     let placed = 0;
+    let allowConst = allowConstBase;
 
     for (const positionToPut of mem) {
       if (positionToPut === PLANNER_STAMP_STOP) {
         // added block of constructions no need to add more
-        if (constructions || toadd.length || blocked) break;
+        if (constructions || toadd.length || blocked) allowConst = false;
         continue;
       }
       // no need to check more
       if (placed + constructions + blocked >= cc.amount) break;
+
       const pos = new RoomPosition(
         positionToPut[0],
         positionToPut[1],
@@ -62,8 +67,8 @@ export function checkBuildings(
       const ans = checkStructureBuild(
         pos,
         sType,
-        buildProjectList,
-        toadd,
+        allowConst ? buildProjectList : buildBlank,
+        allowConst && !constructions ? toadd : toaddBlank,
         fearNukes,
         specials
       );
@@ -75,19 +80,32 @@ export function checkBuildings(
     for (const bProject of buildProjectList)
       if (bProject.type === "repair") energyCost.repair += bProject.energyCost;
       else energyCost.build += bProject.energyCost;
-    if (!constructions) {
-      const constructionCost = addConstruction(
-        sType,
-        buildProjectList,
-        toadd,
-        specials,
-        placed,
-        constructions,
-        cc.amount
-      );
-      energyCost.build += constructionCost.build;
-      energyCost.repair += constructionCost.repair;
-    }
+    for (const bProject of buildBlank)
+      if (bProject.type === "repair") energyCost.repair += bProject.energyCost;
+      else energyCost.build += bProject.energyCost;
+    const constructionCost = addConstruction(
+      sType,
+      buildProjectList,
+      toadd,
+      specials,
+      placed,
+      constructions,
+      cc.amount
+    );
+    energyCost.build += constructionCost.build;
+    energyCost.repair += constructionCost.repair;
+    const balnkCost = addConstruction(
+      sType,
+      [],
+      toaddBlank,
+      specials,
+      placed,
+      constructions,
+      cc.amount,
+      true
+    );
+    energyCost.build += balnkCost.build;
+    energyCost.repair += balnkCost.repair;
   }
   return [buildProjectList, energyCost];
 }
@@ -103,7 +121,8 @@ function addConstruction(
   specials: { [key in StructureConstant]?: number } = {},
   placed = 0,
   constructions = 0,
-  maxamount = Infinity
+  maxamount = Infinity,
+  blank = false
 ): buildingCostsHive["hive"] {
   const isDefense = isDefenseStructure(sType);
   const energyCost = {
@@ -111,16 +130,18 @@ function addConstruction(
     repair: 0,
   };
   for (let i = 0; i < toadd.length && placed < maxamount; ++i) {
-    let createAns;
-    if (constructions >= CONSTRUCTIONS_PER_FUNCTION) break;
+    let createAns: ScreepsReturnCode = ERR_NOT_FOUND;
+    if (constructions >= CONSTRUCTIONS_PER_FUNCTION) blank = true;
 
-    if (sType === STRUCTURE_SPAWN)
-      // @todo more original name for spawn
-      createAns = toadd[i].createConstructionSite(
-        sType,
-        toadd[i].roomName.toLowerCase() + "_" + makeId(4)
-      );
-    else createAns = toadd[i].createConstructionSite(sType);
+    // check if we here are only adding power
+    if (!blank)
+      if (sType === STRUCTURE_SPAWN)
+        // @todo more original name for spawn
+        createAns = toadd[i].createConstructionSite(
+          sType,
+          toadd[i].roomName.toLowerCase() + "_" + makeId(4)
+        );
+      else createAns = toadd[i].createConstructionSite(sType);
 
     if (createAns === OK) {
       buildProjectList.push({

@@ -145,7 +145,7 @@ export class Bee extends ProtoBee<Creep> {
         return;
       if (
         this.findClosestByHive(
-          _.filter(Apiary.masters, (m) => m.ref.includes(prefix.builder))
+          _.filter(Apiary.masters, (m) => m.ref.includes(prefix.buildingCell))
         )
       )
         return;
@@ -183,7 +183,7 @@ export class Bee extends ProtoBee<Creep> {
         this.findClosestByHive(
           _.filter(
             Apiary.defenseSwarms,
-            (m) => !m.boosts || m.parent.spawned === m.maxSpawns
+            (m) => !m.boosts && m.parent.spawned >= m.maxSpawns
           )
         )
       )
@@ -191,7 +191,7 @@ export class Bee extends ProtoBee<Creep> {
     } else if (this.ref.includes(setupsNames.builder)) {
       if (
         this.findClosestByHive(
-          _.filter(Apiary.masters, (m) => m.ref.includes(prefix.builder))
+          _.filter(Apiary.masters, (m) => m.ref.includes(prefix.buildingCell))
         )
       )
         return;

@@ -53,40 +53,48 @@ export class UpgraderMaster extends Master<UpgradeCell> {
     const upgradeMode = this.hive.mode.upgrade; // polen
 
     let desiredRate = 0;
-    if (
-      this.parent.controller.level < 7 &&
-      this.hive.resState[RESOURCE_ENERGY] > 0 &&
-      this.hive.room.terminal
-    )
-      desiredRate = this.parent.maxRate.import; // can always buy / ask for more
-    else if (this.hive.controller.level < 4) {
-      if (
-        (this.hive.storage?.store.getUsedCapacity(RESOURCE_ENERGY) || 0) >
-          UPGRADING_SCALE.saveStore ||
-        this.hive.controller.level < 2
-      )
-        // early game consume as much as you can
-        desiredRate = this.parent.maxRate.local;
-    } else if (this.parent.controller.level < 7) {
-      // mid game produced energy on upgrading when have enough to build
-      const storeAmount = this.hive.resState[RESOURCE_ENERGY];
-      const coef =
-        (storeAmount - UPGRADING_SCALE.stop) /
-        (UPGRADING_SCALE.max - UPGRADING_SCALE.stop);
-      // -> math out of my ass to not consume all energy
-      desiredRate = Math.max(Math.ceil(this.parent.maxRate.local * coef), 0);
-    } else if (
-      upgradeMode === 2 &&
-      this.hive.resState.energy > UPGRADING_SCALE.after8
-    )
-      // upgrade spend all produced energy on upgrading
-      desiredRate = this.parent.maxRate.local;
-    else if (
-      upgradeMode === 3 &&
-      this.hive.resState.energy > UPGRADING_SCALE.after8
-    )
-      // boost upgrade for GCL
-      desiredRate = this.parent.maxRate.import;
+    switch (this.hive.phase) {
+      case 0:
+        if (
+          (this.hive.storage?.store.getUsedCapacity(RESOURCE_ENERGY) || 0) >
+            UPGRADING_SCALE.saveStore ||
+          this.hive.controller.level < 2
+        )
+          // early game consume as much as you can
+          desiredRate = this.parent.maxRate.local;
+        break;
+      case 1: {
+        // how much of produciton rate to gobble up
+        const coef =
+          (this.hive.resState[RESOURCE_ENERGY] - UPGRADING_SCALE.stop) /
+          (UPGRADING_SCALE.max - UPGRADING_SCALE.stop);
+        // -> math out of my ass to not consume all energy
+
+        let maxForHive = this.parent.maxRate.local;
+        if (
+          this.hive.room.terminal &&
+          (this.hive.canBuy(RESOURCE_ENERGY) ||
+            _.filter(
+              Apiary.hives,
+              (h) => h.phase === 2 && h.resState.energy > 0
+            ).length)
+        )
+          // can always buy / ask for more energy
+          maxForHive = this.parent.maxRate.import;
+        desiredRate = Math.max(Math.ceil(maxForHive * coef), 0);
+        break;
+      }
+      case 2:
+        if (this.hive.resState.energy <= UPGRADING_SCALE.after8) break;
+        if (upgradeMode === 2)
+          // upgrade spend all produced energy on upgrading
+          desiredRate = this.parent.maxRate.local;
+        else if (upgradeMode === 3)
+          // boost upgrade for GCL
+          desiredRate = this.parent.maxRate.import;
+
+        break;
+    }
 
     // failsafe (kidna but no)
     if (
@@ -159,9 +167,28 @@ export class UpgraderMaster extends Master<UpgradeCell> {
         bee.store.getUsedCapacity(RESOURCE_ENERGY) === 0
       ) {
         // let pos = target.pos.getOpenPositions(true).filter(p => p.getRangeTo(this.parent) <= 3)[0] || target;
-        if (suckerTarget && suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY))
-          bee.withdraw(suckerTarget, RESOURCE_ENERGY);
-        else bee.goRest(this.pos);
+        if (
+          suckerTarget &&
+          suckerTarget.store.getUsedCapacity(RESOURCE_ENERGY)
+        ) {
+          let pos: RoomPosition | undefined;
+          // if close optimize to sit in a free space
+          if (
+            bee.pos.getRangeTo(suckerTarget) > 1 &&
+            bee.pos.getRangeTo(suckerTarget) < 3 &&
+            this.pos.getRangeTo(suckerTarget) <= 2
+          )
+            pos = _.sortBy(
+              suckerTarget.pos
+                .getOpenPositions(true)
+                .filter((p) => p.getRangeTo(this) <= 3),
+              (p) => p.getRangeTo(this)
+            )[0];
+          // move to free space
+          if (pos && !bee.pos.isEqualTo(pos))
+            bee.goTo(pos, { ignoreCreeps: false });
+          else bee.withdraw(suckerTarget, RESOURCE_ENERGY);
+        } else bee.goRest(this.pos);
         bee.state = beeStates.work;
       }
 

@@ -9,13 +9,13 @@ import { HordeMaster } from "./horde";
 
 @profile
 export class HordeDefenseMaster extends HordeMaster {
-  // #region Public Accessors (2)
+  // #region Public Accessors (1)
 
   public override get maxSpawns() {
     return this.targetBeeCount;
   }
 
-  // #endregion Public Accessors (2)
+  // #endregion Public Accessors (1)
 
   // #region Public Methods (3)
 

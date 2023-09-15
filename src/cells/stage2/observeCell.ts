@@ -8,7 +8,7 @@ import { Cell } from "../_Cell";
 
 @profile
 export class ObserveCell extends Cell {
-  // #region Properties (5)
+  // #region Properties (4)
 
   private roomsToCheck: string[] = [];
 
@@ -16,7 +16,7 @@ export class ObserveCell extends Cell {
   public _prevRoom: string = this.cache("_prevRoom") || "";
   public obeserver: StructureObserver;
 
-  // #endregion Properties (5)
+  // #endregion Properties (4)
 
   // #region Constructors (1)
 

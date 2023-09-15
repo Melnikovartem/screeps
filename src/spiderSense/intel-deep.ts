@@ -4,45 +4,68 @@ import { roomStates } from "static/enums";
 import { roomStateNatural } from "./intel-utils";
 
 export interface UserIntelCache {
+  // #region Properties (4)
+
+  glc?: number;
+  gpl?: number;
   rooms: [];
   // can be imported by hand
   roomsAmount: number;
-  glc?: number;
-  gpl?: number;
+
+  // #endregion Properties (4)
 }
 
 /** deep info only for non corridor */
 export interface RoomIntelDeep {
-  lastUpdatedDeep: number;
+  // #region Properties (6)
 
-  state?: roomStates; // if none then natural
-  owner?: string; // if none === no owner / Invader
-  sign?: string; // sign of the user
-  battle?: RoomInfoBattle; // only for enemy rooms
+  // sign of the user
+  battle?: RoomInfoBattle;
+  // only for enemy rooms
   /** stable part of room */
   economy?: RoomInfoEconomy;
+  lastUpdatedDeep: number;
+  // if none then natural
+  owner?: string;
+  // if none === no owner / Invader
+  sign?: string;
+  state?: roomStates;
+
+  // #endregion Properties (6)
 }
 
 export interface RoomInfoEconomy {
-  sources?: number;
+  // #region Properties (2)
+
   mineral?: MineralConstant;
+  sources?: number;
+
+  // #endregion Properties (2)
 }
 
 export interface RoomInfoBattle {
-  safeModeEndTime?: number;
+  // #region Properties (5)
+
+  boosts: RoomInfoBoosts;
   level: number;
+  minTowerDmg: number;
+  safeModeEndTime?: number;
   // terminal is assumed
   storedEnergy: number;
-  minTowerDmg: number;
-  boosts: RoomInfoBoosts;
+
+  // #endregion Properties (5)
 }
 
 export interface RoomInfoBoosts {
+  // #region Properties (5)
+
   attack?: number;
-  rangedAttack?: number;
-  heal?: number;
-  damage?: number;
   build?: number;
+  damage?: number;
+  heal?: number;
+  rangedAttack?: number;
+
+  // #endregion Properties (5)
 }
 
 export function emptyRoomBattleIntel(): RoomInfoBattle {

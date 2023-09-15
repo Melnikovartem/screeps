@@ -321,12 +321,15 @@ export class HaulerMaster extends Master<ExcavationCell> {
       this.recalculateTargetBee();
     }
 
-    if (this.checkBeesWithRecalc())
+    if (this.checkBeesWithRecalc()) {
       this.wish({
         setup: setups.hauler,
         priority: this.beesAmount || this.waitingForBees ? 5 : 3,
       });
+    }
 
+    // find containers that need hauling
+    // and find bees to haul
     _.forEach(this.parent.quitefullCells, (cell) => {
       const container = cell.container;
       if (!container) return;
@@ -340,7 +343,8 @@ export class HaulerMaster extends Master<ExcavationCell> {
           this.activeBees,
           (b) =>
             b.state === beeStates.chill &&
-            b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell) + 15
+            // fancy way to calc cell.roadTime + cell.restTime
+            b.ticksToLive >= cell.roadTime + b.pos.getRangeApprox(cell) + 30
         )
       );
       if (bee) {

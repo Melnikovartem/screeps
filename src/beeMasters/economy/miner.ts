@@ -80,20 +80,14 @@ export class MinerMaster extends Master<ResourceCell> {
   // #region Protected Accessors (1)
 
   protected get shouldSpawn() {
-    if (!this.roomOwnerOkForMining) return false;
-    if (
-      this.roomName !== this.hiveName &&
-      this.hive.annexInDanger.includes(this.roomName)
-    )
-      return false;
-
+    if (!this.hive.cells.annex.canSpawnMiners) return false;
     // can mine or build smth
     return this.parent.operational || !!this.construction;
   }
 
   // #endregion Protected Accessors (1)
 
-  // #region Private Accessors (6)
+  // #region Private Accessors (5)
 
   private get container(): StructureContainer | undefined {
     return this.parent.container;
@@ -108,24 +102,6 @@ export class MinerMaster extends Master<ResourceCell> {
     return this.parent.link;
   }
 
-  private get roomOwnerOkForMining() {
-    const roomState = Apiary.intel.getRoomState(this.pos);
-    switch (roomState) {
-      case roomStates.ownedByMe:
-      case roomStates.reservedByMe:
-      case roomStates.SKcentral:
-      case roomStates.SKfrontier:
-      case roomStates.noOwner:
-        return true;
-      /* case roomStates.corridor:
-      case roomStates.reservedByInvader:
-      case roomStates.reservedByEnemy:
-      case roomStates.ownedByEnemy:
-        return false; */
-    }
-    return false;
-  }
-
   private get resType() {
     return this.parent.resType;
   }
@@ -134,7 +110,7 @@ export class MinerMaster extends Master<ResourceCell> {
     return this.parent.resource;
   }
 
-  // #endregion Private Accessors (6)
+  // #endregion Private Accessors (5)
 
   // #region Public Methods (2)
 
@@ -222,7 +198,7 @@ export class MinerMaster extends Master<ResourceCell> {
         bee.harvest(this.resource, this.hive.opt);
       } else if (
         mode === "chill" &&
-        bee.goTo(this.pos) === OK &&
+        bee.goTo(this.pos, this.hive.opt) === OK &&
         this.resType === RESOURCE_ENERGY
       ) {
         // repair container if nothing to do
@@ -267,6 +243,8 @@ export class MinerMaster extends Master<ResourceCell> {
         order.setup.patternLimit = Math.round(this.parent.ratePT / 2) + 1;
         if (this.link) order.setup.fixed = [CARRY, CARRY, CARRY, CARRY];
         else if (this.hive.controller.level <= 2) order.setup.fixed = [];
+        if (this.hive.phase === 2 && this.hive.mode.saveCpu)
+          order.setup.patternLimit *= 2; // save some cpu on mining
       } else {
         // stop producting minerals
         if (

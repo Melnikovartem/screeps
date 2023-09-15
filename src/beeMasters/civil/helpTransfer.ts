@@ -31,7 +31,11 @@ export class HelpTransferMaster extends SwarmMaster<number> {
 
   // #endregion Public Accessors (3)
 
-  // #region Public Methods (2)
+  // #region Public Methods (3)
+
+  public override defaultInfo(): number {
+    return 10;
+  }
 
   public run() {
     this.preRunBoost();
@@ -106,13 +110,5 @@ export class HelpTransferMaster extends SwarmMaster<number> {
       });
   }
 
-  // #endregion Public Methods (2)
-
-  // #region Protected Methods (1)
-
-  protected override defaultInfo(): number {
-    return 10;
-  }
-
-  // #endregion Protected Methods (1)
+  // #endregion Public Methods (3)
 }

@@ -3,7 +3,7 @@ import type { CreepSetup } from "bees/creepSetups";
 import { setups } from "bees/creepSetups";
 import type { BuildCell } from "cells/building/buildCell";
 import { wallMap } from "cells/building/hive-building";
-import { LOW_ENERGY } from "cells/management/storageCell";
+import { HIVE_ENERGY, LOW_ENERGY } from "cells/management/storageCell";
 import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { BOOST_MINERAL } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -18,6 +18,19 @@ import { findRamp } from "../war/siegeDefender";
 const APPROX_DSIT = {
   hive: 15,
   annex: 60,
+};
+
+const BUILDING_SCALE = {
+  /** stop spawning builders if below this */
+  stop: -HIVE_ENERGY * 0.8,
+  /** cap builders at max after this amount */
+  max: 0,
+  /** cap for scale */
+  capEconomy: 3,
+  /** maximum builders when small emergency */
+  capEmergency: 3,
+  /** maximum builders in battle */
+  capBattle: 5,
 };
 
 /** how many can produce per 1 pattern */
@@ -58,7 +71,7 @@ export class BuilderMaster extends Master<BuildCell> {
 
   // #endregion Properties (1)
 
-  // #region Public Accessors (3)
+  // #region Public Accessors (4)
 
   public override get boosts() {
     switch (this.hive.mode.buildBoost) {
@@ -74,8 +87,68 @@ export class BuilderMaster extends Master<BuildCell> {
     return [];
   }
 
+  public get maxPatternBee() {
+    return setups.builder
+      .getBody(this.hive.room.energyCapacityAvailable)
+      .body.filter((b) => b === WORK).length;
+  }
+
   public get movePriority(): MovePriority {
     return this.hive.state === hiveStates.battle ? 4 : 5;
+  }
+
+  public get targetBeeCount() {
+    const patternsNeeded = this.patternsNeeded;
+
+    this.patternPerBee = setups.builder.patternLimit;
+    if (this.realBattle || this.otherEmergency) {
+      this.patternPerBee = Infinity;
+      this.patternPerBee = Math.min(this.maxPatternBee, this.patternPerBee);
+    }
+
+    let target = patternsNeeded / this.patternPerBee;
+    // @ todo scale bees with energy state
+
+    let maxBees;
+
+    if (this.hive.cells.dev) maxBees = this.hive.cells.dev.maxBuilderBeeCount;
+    else if (this.realBattle) maxBees = BUILDING_SCALE.capBattle;
+    else if (this.otherEmergency) maxBees = BUILDING_SCALE.capEmergency;
+    else {
+      const coef =
+        (this.hive.resState[RESOURCE_ENERGY] - BUILDING_SCALE.stop) /
+        (BUILDING_SCALE.max - BUILDING_SCALE.stop);
+      maxBees = Math.round(BUILDING_SCALE.capEconomy * Math.min(coef, 1));
+    }
+
+    if (target >= maxBees + 2) {
+      // spawn big bees if not enough
+      this.patternPerBee = this.maxPatternBee;
+      target = patternsNeeded / this.patternPerBee;
+    }
+
+    return Math.min(Math.ceil(target), maxBees);
+  }
+
+  // #endregion Public Accessors (4)
+
+  // #region Private Accessors (4)
+
+  private get builderBoosts(): BoostRequest[] {
+    return [
+      { type: "build", lvl: 2 },
+      { type: "build", lvl: 1 },
+      { type: "build", lvl: 0 },
+    ];
+  }
+
+  private get otherEmergency() {
+    return (
+      this.hive.state === hiveStates.nukealert ||
+      this.parent.buildingCosts.hive.build / 5 +
+        this.parent.buildingCosts.hive.repair >
+        500_000
+    );
   }
 
   private get patternsNeeded() {
@@ -96,53 +169,6 @@ export class BuilderMaster extends Master<BuildCell> {
           genToComplete;
 
     return patternsNeeded;
-  }
-
-  public get targetBeeCount() {
-    const patternsNeeded = this.patternsNeeded;
-
-    this.patternPerBee = setups.builder.patternLimit;
-    if (this.realBattle || this.otherEmergency) {
-      this.patternPerBee = Infinity;
-      this.patternPerBee = Math.min(this.maxPatternBee, this.patternPerBee);
-    }
-
-    let target = patternsNeeded / this.patternPerBee;
-    let maxBees = this.parent.buildingCosts.hive.build > 5_000 ? 2 : 1;
-
-    if (this.hive.cells.dev) maxBees = this.hive.cells.dev.maxBuilderBeeCount;
-    else if (this.realBattle) maxBees = 5;
-    else if (this.otherEmergency) maxBees = 3;
-    else if (target > maxBees) target = patternsNeeded / this.maxPatternBee;
-
-    return Math.min(Math.ceil(target), maxBees);
-  }
-
-  // #endregion Public Accessors (3)
-
-  // #region Private Accessors (4)
-
-  private get builderBoosts(): BoostRequest[] {
-    return [
-      { type: "build", lvl: 2 },
-      { type: "build", lvl: 1 },
-      { type: "build", lvl: 0 },
-    ];
-  }
-
-  public get maxPatternBee() {
-    return setups.builder
-      .getBody(this.hive.room.energyCapacityAvailable)
-      .body.filter((b) => b === WORK).length;
-  }
-
-  private get otherEmergency() {
-    return (
-      this.hive.state === hiveStates.nukealert ||
-      this.parent.buildingCosts.hive.build / 5 +
-        this.parent.buildingCosts.hive.repair >
-        500_000
-    );
   }
 
   private get realBattle() {
