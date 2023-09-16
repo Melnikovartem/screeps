@@ -1,4 +1,4 @@
-import type { HordeMaster } from "beeMasters/war/horde";
+import type { HordeInfo, HordeMaster } from "beeMasters/war/horde";
 import type { HordeDefenseMaster } from "beeMasters/war/hordeDefense";
 import { SiegeMaster } from "beeMasters/war/siegeDefender";
 import type { ProtoBee } from "bees/protoBee";
@@ -400,7 +400,7 @@ export class DefenseCell extends Cell {
     }
   }
 
-  public setDefFlag(pos: RoomPosition, swOrder?: SwarmOrder<any>) {
+  public setDefFlag(pos: RoomPosition, swOrder?: SwarmOrder<HordeInfo>) {
     const terrain = Game.map.getRoomTerrain(pos.roomName);
     const centerPoss = new RoomPosition(25, 25, pos.roomName).getOpenPositions(
       true,

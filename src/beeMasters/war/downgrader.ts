@@ -87,7 +87,7 @@ export class DowngradeMaster extends SwarmMaster<undefined> {
 
     if (
       this.checkBees(false, CONTROLLER_ATTACK_BLOCKED_UPGRADE - 50) &&
-      this.hive.resState[RESOURCE_ENERGY] > 0 &&
+      this.hive.getResState(RESOURCE_ENERGY) > 0 &&
       Game.time + CREEP_CLAIM_LIFE_TIME > roomInfo.safeModeEndTime &&
       !roomInfo.towers.length
     )

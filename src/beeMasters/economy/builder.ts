@@ -116,7 +116,7 @@ export class BuilderMaster extends Master<BuildCell> {
     else if (this.otherEmergency) maxBees = BUILDING_SCALE.capEmergency;
     else {
       const coef =
-        (this.hive.resState[RESOURCE_ENERGY] - BUILDING_SCALE.stop) /
+        (this.hive.getResState(RESOURCE_ENERGY) - BUILDING_SCALE.stop) /
         (BUILDING_SCALE.max - BUILDING_SCALE.stop);
       maxBees = Math.round(BUILDING_SCALE.capEconomy * Math.min(coef, 1));
     }
@@ -157,7 +157,12 @@ export class BuilderMaster extends Master<BuildCell> {
     let genToComplete = 1;
 
     if (this.hive.phase < 1) genToComplete = 0.25; // rush things
-    else if (this.hive.phase === 2 && this.hive.state === hiveStates.economy)
+    else if (
+      this.hive.phase === 2 &&
+      this.hive.state === hiveStates.economy &&
+      !this.parent.buildingCosts.hive.build &&
+      !this.parent.buildingCosts.annex.build
+    )
       genToComplete = 2; // no need to rush big projects
 
     const boost = this.boosts ? "boost" : "normal";

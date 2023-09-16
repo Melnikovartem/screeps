@@ -77,7 +77,7 @@ export class CorridorMiningCell extends Cell {
         (d) =>
           d.keepMining &&
           (!d.resource ||
-            (this.hive.resState[d.resource] || 0) <
+            this.hive.getResState(d.resource) <
               STOCKPILE_BASE_COMMODITIES.toomuch)
       );
       if (workingDeposits.length > 1) {
@@ -88,7 +88,7 @@ export class CorridorMiningCell extends Cell {
             (d) =>
               (d.resource || "none") +
               " : " +
-              ((d.resource && this.hive.resState[d.resource]) || "0")
+              ((d.resource && this.hive.getResState(d.resource)) || "0")
           ).join("\t")
         );
         const depositsWithBees = workingDeposits.filter(
@@ -109,7 +109,7 @@ export class CorridorMiningCell extends Cell {
     }
 
     // do not mine if problems
-    if (this.hive.resState[RESOURCE_ENERGY] < 0 || this.hive.isBattle) {
+    if (this.hive.getResState(RESOURCE_ENERGY) < 0 || this.hive.isBattle) {
       this.depositsOn = [];
       this.powerOn = this.powerOn.filter((m) => m.beesAmount);
     }

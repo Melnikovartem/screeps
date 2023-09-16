@@ -36,14 +36,17 @@ const SKIP_SMALL_ORDER = {
   price: 1,
 };
 
-const MARKET_SETTINGS = {
+export const MARKET_SETTINGS = {
   pocketChange: 100, // i do not care if i lose this amount on an order
   okLossAmount: 100_000, // i can pay this price to smooth things
 
   reserveCredits: 1_000_000, // Maintain balance above this amount
   mineralCredits: 5_000_000, // Buy credits if above this amount
-  boostCredits: 10_000_000, // Buy boosts directly if above this amount
-  energyCredits: 50_000_000, // Buy energy if above this amount
+  emergencyRes: 7_000_000,
+  opsCredits: 12_000_000, // Buy ops directly if above this amount
+  boostCredits: 50_000_000, // Buy boosts directly if above this amount
+  energyCredits: 60_000_000, // Buy energy if above this amount
+  anyCredits: 1_000_000_000, // Buy energy if above this amount
   orders: {
     timeout: 1_000_000, // Remove orders after this many ticks if remaining amount < cleanupAmount
     cleanupAmount: 10, // RemainingAmount threshold to remove expiring orders
@@ -105,7 +108,7 @@ export class Broker {
 
   // #endregion Properties (4)
 
-  // #region Public Methods (12)
+  // #region Public Methods (13)
 
   /** Main smart function to buy stuff */
   public buyIn(
@@ -122,7 +125,7 @@ export class Broker {
     if (creditsToUse < MARKET_SETTINGS.reserveCredits) return "no money";
 
     let hurry;
-    const speedUpBuy = hive.resState[res] || 0 <= 0;
+    const speedUpBuy = hive.getResState(res) <= 0;
     if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
     else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
 
@@ -253,7 +256,7 @@ export class Broker {
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodBuy;
     if (!orders.length) return ERR_NOT_FOUND;
-    if (hive.resState[RESOURCE_ENERGY] < 0)
+    if (hive.getResState(RESOURCE_ENERGY) < 0)
       orders = orders.filter(
         (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
       );
@@ -300,6 +303,16 @@ export class Broker {
     const order = Game.market.getOrderById(orderId);
     if (order) Apiary.logger.marketLongRes(order);
     return Game.market.cancelOrder(orderId);
+  }
+
+  /**
+   * Calculate the credits available for use in market transactions
+   *
+   * @returns {number} - The available credits for market transactions
+   */
+  public creditsToUse() {
+    // @todo track credits used this tick
+    return Game.market.credits;
   }
 
   /**
@@ -401,8 +414,7 @@ export class Broker {
     const creditsToUse = this.creditsToUse();
 
     let hurry;
-    const speedUpBuy =
-      (hive.resState[res] || 0) > (hive.resState[res] || 0) + 1000;
+    const speedUpBuy = hive.getResState(res) > hive.getResState(res) + 1000;
     if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
     else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
 
@@ -515,7 +527,7 @@ export class Broker {
     const info = this.updateRes(res, MARKET_LAG);
     let orders = info.goodSell;
     if (!orders.length) return ERR_NOT_FOUND;
-    if (hive.resState[RESOURCE_ENERGY] < 0)
+    if (hive.getResState(RESOURCE_ENERGY) < 0)
       orders = orders.filter(
         (orderIt) => terminal.pos.getRoomRangeTo(orderIt.roomName, "lin") <= 30
       );
@@ -673,9 +685,9 @@ export class Broker {
     return info;
   }
 
-  // #endregion Public Methods (12)
+  // #endregion Public Methods (13)
 
-  // #region Private Methods (4)
+  // #region Private Methods (3)
 
   /**
    * Check if any lab-produced compounds are profitable
@@ -714,15 +726,6 @@ export class Broker {
   }
 
   /**
-   * Calculate the credits available for use in market transactions
-   *
-   * @returns {number} - The available credits for market transactions
-   */
-  private creditsToUse() {
-    return Game.market.credits;
-  }
-
-  /**
    * Calculate the weighted average price of a resource
    * @param res - ResourceConstant for which to calculate the weighted average price.
    * @param lastNDays - Number of days to consider for weighted average calculation.
@@ -741,5 +744,5 @@ export class Broker {
     return volume ? sumPriceWeighted / volume : Infinity;
   }
 
-  // #endregion Private Methods (4)
+  // #endregion Private Methods (3)
 }

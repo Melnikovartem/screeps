@@ -1,4 +1,5 @@
 import { MinerMaster } from "beeMasters/economy/miner";
+import { BASE_MINERAL_STOCKPILE } from "cells/stage1/laboratoryCell";
 import type { Hive } from "hive/hive";
 import { profile } from "profiler/decorator";
 import { naturalResourceCapacity } from "spiderSense/intel-utils";
@@ -85,9 +86,12 @@ export class ResourceCell extends Cell {
     if (this.resType === RESOURCE_ENERGY)
       return !!this.link || !!this.container || !!this.hive.cells.dev;
     // mineral source
-    // start beeing operational for 10ticks before
-    const ticksToRegen = this.resource && this.resource.ticksToRegeneration;
-    return (ticksToRegen || 0) < 10 && !!this.extractor && !!this.container;
+    // do not overmine
+    if (this.hive.getResState(this.resType) > BASE_MINERAL_STOCKPILE.stopMining)
+      return false;
+    const tickRegen = (this.resource && this.resource.ticksToRegeneration) || 0;
+    // start beeing operational for 50ticks before
+    return tickRegen < 50 && !!this.extractor && !!this.container;
   }
 
   public override get pos(): RoomPosition {

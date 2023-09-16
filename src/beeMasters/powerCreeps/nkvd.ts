@@ -107,7 +107,7 @@ export class NKVDMaster extends PowerCreepMaster {
   private getNext() {
     this.nextup = undefined;
     if (
-      (this.hive.resState[RESOURCE_OPS] || 0) < 0 &&
+      this.hive.getResState(RESOURCE_OPS) < 0 &&
       this.hive.state !== hiveStates.battle
     )
       return;

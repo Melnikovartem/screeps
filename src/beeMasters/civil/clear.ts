@@ -49,7 +49,9 @@ export class ClearMaster extends SwarmMaster<undefined> {
       if (this.hive.cells.storage.storageFreeCapacity() <= FULL_CAPACITY) {
         const keys = Object.keys(this.hive.resState) as (keyof ResTarget)[];
         const res = keys.reduce((prev, curr) =>
-          this.hive.resState[curr]! > this.hive.resState[prev]! ? curr : prev
+          this.hive.getResState(curr) > this.hive.getResState(prev)
+            ? curr
+            : prev
         );
         bee.withdraw(storage, res);
       }

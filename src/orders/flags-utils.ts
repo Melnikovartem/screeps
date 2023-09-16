@@ -43,8 +43,8 @@ export function actUtilsActions(cm: FlagCommand) {
               case "buy":
                 // @MARKETDANGER
                 if (
-                  (cm.hive.resState[res] || 0) <= 0 ||
-                  (avg <= 1000 && (cm.hive.resState[res] || 0) < 1000) // can afford 100K credits stockpile
+                  cm.hive.getResState(res) <= 0 ||
+                  (avg <= 1000 && cm.hive.getResState(res) < 1000) // can afford 100K credits stockpile
                 ) {
                   const toBuy = res === RESOURCE_ENERGY ? 16384 : 2048;
                   Apiary.broker.buyIn(sCell.terminal, res, toBuy, fast);
@@ -135,7 +135,7 @@ export function actUtilsPositions(cm: FlagCommand) {
   // update in hive cache
   if (hive) {
     if (!hive.cache.cells[cellCache]) hive.cache.cells[cellCache] = {};
-    hive.cache.cells.poss = poss;
+    hive.cache.cells[cellCache].poss = poss;
   }
 
   // update in current hive

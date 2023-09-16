@@ -775,7 +775,7 @@ export class WarcrimesModule {
       (h) =>
         h.phase === 2 &&
         h.mode.war &&
-        h.resState[RESOURCE_ENERGY] >= 0 &&
+        h.getResState(RESOURCE_ENERGY) >= 0 &&
         h.pos.getRoomRangeTo(roomName) <= 12
     );
     if (!hives.length) return;
@@ -784,7 +784,8 @@ export class WarcrimesModule {
       let ans =
         curr.pos.getRoomRangeTo(roomName) - prev.pos.getRoomRangeTo(roomName);
       if (ans === 0)
-        ans = prev.resState[RESOURCE_ENERGY] - curr.resState[RESOURCE_ENERGY];
+        ans =
+          prev.getResState(RESOURCE_ENERGY) - curr.getResState(RESOURCE_ENERGY);
       return ans < 0 ? curr : prev;
     });
     const ref = makeId(8);

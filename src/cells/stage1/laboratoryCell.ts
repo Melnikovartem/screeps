@@ -97,6 +97,11 @@ export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
   };
 const PROFITABLE_MINERAL_STOCKPILE = 20_000;
 
+export const BASE_MINERAL_STOCKPILE = {
+  sellOff: 70_000,
+  stopMining: 100_000,
+};
+
 const PRODUCE_PER_BATCH = 2500;
 
 export const BASE_MINERALS: ResourceConstant[] = [
@@ -667,7 +672,7 @@ export class LaboratoryCell extends Cell {
     let targets: { res: ReactionConstant; amount: number }[] = [];
     for (const r in this.hive.resState) {
       const res = r as ReactionConstant;
-      const toCreate = -this.hive.resState[res]!;
+      const toCreate = -this.hive.getResState(res);
       if (toCreate > 0 && res in REACTION_MAP)
         targets.push({ res, amount: toCreate });
     }
@@ -686,8 +691,7 @@ export class LaboratoryCell extends Cell {
       for (const comp of Object.keys(USEFUL_MINERAL_STOCKPILE)) {
         const compound = comp as keyof typeof USEFUL_MINERAL_STOCKPILE;
         if (
-          USEFUL_MINERAL_STOCKPILE[compound]! >
-          (this.hive.resState[compound] || 0)
+          USEFUL_MINERAL_STOCKPILE[compound]! > this.hive.getResState(compound)
         )
           usefulR.push(compound);
       }
@@ -695,14 +699,13 @@ export class LaboratoryCell extends Cell {
         usefulR = Apiary.broker.profitableCompounds.filter(
           (c) =>
             PROFITABLE_MINERAL_STOCKPILE + (USEFUL_MINERAL_STOCKPILE[c] || 0) >
-            (this.hive.resState[c] || 0)
+            this.hive.getResState(c)
         );
       if (!usefulR.length) return ERR_NOT_FOUND;
       targets = [
         {
           res: usefulR.reduce((prev, curr) =>
-            (Apiary.network.resState[curr] || 0) <
-            (Apiary.network.resState[prev] || 0)
+            Apiary.network.getResState(curr) < Apiary.network.getResState(prev)
               ? curr
               : prev
           ),

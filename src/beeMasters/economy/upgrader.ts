@@ -66,7 +66,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
       case 1: {
         // how much of produciton rate to gobble up
         const coef =
-          (this.hive.resState[RESOURCE_ENERGY] - UPGRADING_SCALE.stop) /
+          (this.hive.getResState(RESOURCE_ENERGY) - UPGRADING_SCALE.stop) /
           (UPGRADING_SCALE.max - UPGRADING_SCALE.stop);
         // -> math out of my ass to not consume all energy
 

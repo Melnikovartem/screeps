@@ -270,6 +270,10 @@ export class Hive {
     return this.cells.storage.getUsedCapacity(res);
   }
 
+  public getResState(res: ResourceConstant) {
+    return this.resState[res] || 0;
+  }
+
   public roomPlanner(
     roomName: string = this.roomName
   ): CompressedRoom | undefined {

@@ -113,7 +113,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
     if (
       this.checkBees() &&
       Apiary.intel.getInfo(this.pos.roomName).safePlace &&
-      this.hive.resState[RESOURCE_ENERGY] > 0 &&
+      this.hive.getResState(RESOURCE_ENERGY) > 0 &&
       controller.level < 8
     ) {
       const setup = setups.upgrader.fast.copy();

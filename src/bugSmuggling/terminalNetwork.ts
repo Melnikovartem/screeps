@@ -2,11 +2,16 @@ import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
 import type { ResTarget } from "hive/hive-declarations";
 
 import { HIVE_ENERGY, TERMINAL_ENERGY } from "../cells/management/storageCell";
-import { USEFUL_MINERAL_STOCKPILE } from "../cells/stage1/laboratoryCell";
+import {
+  BASE_MINERAL_STOCKPILE,
+  BASE_MINERALS,
+  USEFUL_MINERAL_STOCKPILE,
+} from "../cells/stage1/laboratoryCell";
 import type { Hive } from "../hive/hive";
 import { profile } from "../profiler/decorator";
 import { hiveStates } from "../static/enums";
 import { addResDict } from "../static/utils";
+import { MARKET_SETTINGS } from "./broker";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 /** keep free 100_000 slots free */
@@ -19,6 +24,7 @@ const SELL_STEP_MAX = 4096; // 8192 // careful about selling boosts
 const SELL_THRESHOLD = {
   compound: 4096,
   commodities: 1,
+  mineral: 4096,
 };
 
 @profile
@@ -26,7 +32,9 @@ export class Network {
   // #region Properties (4)
 
   private commoditiesToSell: CommodityConstant[] = [];
+  private resState: ResTarget = {};
 
+  /** from -> to */
   public aid: {
     [hiveNameFrom: string]: {
       to: string;
@@ -36,111 +44,13 @@ export class Network {
     };
   } = {};
   public nodes: Hive[] = [];
-  // from -> to
-  public resState: ResTarget = {};
 
   // #endregion Properties (4)
 
-  // #region Public Methods (7)
+  // #region Public Methods (4)
 
-  public askAid(hive: Hive) {
-    if (!this.hiveValidForAid(hive)) return;
-    hive.shortages = {};
-
-    for (const r in hive.resState) {
-      const res = r as ResourceConstant;
-      if (hive.resState[res]! < 0) {
-        let validHives = _.filter(
-          this.nodes,
-          (h) =>
-            h.roomName !== hive.roomName &&
-            h.state === hiveStates.economy &&
-            this.calcAmount(h.roomName, hive.roomName, res) > 0
-        ).map((h) => h.roomName);
-        const sendCost = (h: string) =>
-          Game.market.calcTransactionCost(100000, hive.roomName, h) / 100000;
-        if (res === RESOURCE_ENERGY)
-          validHives = validHives.filter((h) => sendCost(h) < 0.31); // 11 or less roomDist
-        if (validHives.length) {
-          const validHive = validHives.reduce((prev, curr) =>
-            hive.pos.getRoomRangeTo(curr, "lin") <
-            hive.pos.getRoomRangeTo(prev, "lin")
-              ? curr
-              : prev
-          );
-          const amount = this.calcAmount(validHive, hive.roomName, res);
-          if (this.aid[validHive] && this.aid[validHive].amount > amount)
-            continue;
-          this.aid[validHive] = {
-            to: hive.roomName,
-            res,
-            amount,
-          };
-          break;
-        } else hive.shortages[res] = -hive.resState[res]!;
-      }
-    }
-
-    if (!hive.cells.storage.terminal) return;
-    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY) return;
-    if (!this.aid[hive.roomName]) return;
-
-    // store shit somewhere else
-    const emptyHive = _.filter(
-      this.nodes,
-      (h) =>
-        h.roomName !== hive.roomName &&
-        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY * 1.5 &&
-        h.resState[RESOURCE_ENERGY] >= -h.resTarget[RESOURCE_ENERGY] * 0.5
-    )[0];
-    if (emptyHive) {
-      const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-      if (keys.length) {
-        const res = keys.reduce((prev, curr) =>
-          hive.resState[curr]! > hive.resState[prev]! ? curr : prev
-        );
-        if (hive.resState[res]! > 0)
-          this.aid[hive.roomName] = {
-            to: emptyHive.roomName,
-            res,
-            amount: FREE_CAPACITY * 0.1,
-            excess: 1,
-          };
-      }
-    }
-  }
-
-  public calcAmount(from: string, to: string, res: ResourceConstant) {
-    let fromState = Apiary.hives[from].resState[res];
-    const inProcess =
-      this.aid[from] && this.aid[from].to === to && this.aid[from].res === res
-        ? this.aid[from].amount
-        : 0;
-    let padding = 0;
-
-    if (res === RESOURCE_ENERGY) padding = PADDING_RESOURCE;
-
-    if (fromState === undefined) fromState = inProcess;
-    else fromState = fromState - padding + inProcess;
-
-    let toState = Apiary.hives[to].resState[res];
-    if (toState === undefined) toState = 0;
-    else toState = -toState + padding;
-
-    return Math.max(Math.min(toState, fromState, 50000), 0);
-  }
-
-  public hiveValidForAid(hive: Hive) {
-    const sCell = hive.cells.storage;
-    return (
-      sCell &&
-      sCell.terminal &&
-      !hive.cells.defense.isBreached &&
-      !(
-        sCell.terminal.effects &&
-        sCell.terminal.effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL)
-      )
-    );
+  public getResState(res: ResourceConstant) {
+    return this.resState[res] || 0;
   }
 
   public init() {
@@ -163,199 +73,329 @@ export class Network {
   }
 
   public run() {
-    // to be able to save some cpu on buyIns
-
-    for (const hive of this.nodes) {
-      if (!hive.cells.storage || !hive.cells.storage.terminal) continue;
-      const terminal = hive.cells.storage.terminal;
-      let usedTerminal = false;
-      let ans: "no money" | "long" | "short" = "no money";
-      for (const r in hive.shortages) {
-        const res = r as ResourceConstant;
-        if (hive.canBuy(res)) {
-          const amount = hive.shortages[res]!;
-          ans = Apiary.broker.buyIn(
-            terminal,
-            res,
-            amount + PADDING_RESOURCE,
-            hive.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2 // 60
-          );
-          if (ans === "short") {
-            usedTerminal = true;
-            break;
-          }
-        }
-      }
-      if (usedTerminal) continue;
-
-      const aid = this.aid[hive.roomName];
-      if (aid && !terminal.cooldown) {
-        const sCellTo = Apiary.hives[aid.to].cells.storage;
-        const terminalTo = sCellTo && sCellTo.terminal;
-        if (terminalTo) {
-          const energyCost =
-            Game.market.calcTransactionCost(10000, hive.roomName, aid.to) /
-            10000;
-          const terminalEnergy =
-            terminal.store.getUsedCapacity(RESOURCE_ENERGY);
-          const energyCap = Math.floor(terminalEnergy / energyCost);
-          let amount = Math.min(
-            aid.amount,
-            terminal.store.getUsedCapacity(aid.res),
-            energyCap,
-            terminalTo.store.getFreeCapacity(aid.res)
-          );
-
-          if (
-            aid.res === RESOURCE_ENERGY &&
-            amount * (1 + energyCost) > terminalEnergy
-          )
-            amount = Math.floor(amount * (1 - energyCost));
-
-          if (amount > 0) {
-            const ansTerminal = terminal.send(aid.res, amount, aid.to);
-            if (ansTerminal === OK) {
-              Apiary.logger.newTerminalTransfer(
-                terminal,
-                terminalTo,
-                amount,
-                aid.res
-              );
-              if (aid.excess) aid.amount -= amount;
-            }
-            continue;
-          }
-        }
-      }
-
-      for (const r in hive.mastersResTarget) {
-        const res = r as ResourceConstant;
-        const balanceShortage =
-          hive.mastersResTarget[res]! - hive.getUsedCapacity(res);
-        if (balanceShortage > 0 && hive.canBuy(res)) {
-          ans = Apiary.broker.buyIn(terminal, res, balanceShortage, true);
-          if (ans === "short") {
-            usedTerminal = true;
-            break;
-          }
-        }
-      }
-      if (usedTerminal) continue;
-
-      const stFree = hive.cells.storage.storageFreeCapacity();
-      switch (hive.mode.sellOff) {
-        case 2: {
-          // sell for profit
-
-          // sell some compound that are over stockpile
-          for (const comp of Apiary.broker.profitableCompounds) {
-            // could also check Object.keys(USEFUL_MINERAL_STOCKPILE) if want to sell only! those ones
-            const compound = comp;
-            const toSell =
-              (hive.resState[compound] || 0) -
-              (USEFUL_MINERAL_STOCKPILE[compound] || Infinity); // failsafe
-            if (toSell >= SELL_THRESHOLD.compound) {
-              ans = Apiary.broker.sellOff(
-                terminal,
-                compound,
-                Math.min(SELL_STEP_MAX, toSell),
-                stFree < FREE_CAPACITY // need to free some space
-              );
-            }
-          }
-          if (ans === "short") continue;
-
-          // sell best mineral i can produce
-          // @todo check all minerals and find most profitable
-          const commoditiesToSellHive = _.filter(
-            this.commoditiesToSell,
-            (c) => (hive.resState[c] || 0) >= SELL_THRESHOLD.commodities
-          );
-          for (const commodity of commoditiesToSellHive) {
-            ans = Apiary.broker.sellOff(
-              terminal,
-              commodity,
-              Math.min(SELL_STEP_MAX, hive.resState[commodity] || 0)
-            );
-            if (ans === "short") continue;
-          }
-          // fall through
-        }
-        case 1: {
-          // sell for free space
-          // thought about storing best resources somewhere in the Apiary but rly too much trouble
-          if (stFree > FREE_CAPACITY) break;
-          const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-          if (!keys.length) continue;
-          const getSellingState = (resToSell: ResourceConstant) => {
-            let offset = 0;
-            // sell minerals and other stuff before energy
-            if (resToSell === RESOURCE_ENERGY) offset = HIVE_ENERGY;
-            return hive.resState[resToSell]! - offset;
-          };
-          const res = keys.reduce((prev, curr) =>
-            getSellingState(curr) > getSellingState(prev) ? curr : prev
-          );
-          if (hive.resState[res]! < 0) break;
-          ans = Apiary.broker.sellOff(
-            terminal,
-            res,
-            Math.min(SELL_STEP_MAX, hive.resState[res]! * 0.8), // sell some of the resource
-            stFree < FULL_CAPACITY * 2 // getting close to no space (20_000)
-          );
-          break;
-        }
-        case 0:
-          // dont sell
-          break;
-      }
-    }
+    for (const hive of this.nodes) this.runHiveNode(hive);
   }
 
   public update() {
     this.resState = {};
     Apiary.wrap(
-      () => _.forEach(Apiary.hives, (hive) => this.updateState(hive)),
+      () => _.forEach(Apiary.hives, (hive) => this.updateStateHive(hive)),
       "network_updateState",
       "update",
       Object.keys(Apiary.hives).length
     );
 
-    if (Game.time !== Apiary.createTime)
+    /** wait some time before start sending stuff / buying stuff */
+    if (Apiary.intTime > 10)
       Apiary.wrap(
-        () => _.forEach(this.nodes, (node) => this.askAid(node)),
+        () => _.forEach(this.nodes, (node) => this.updateAskAid(node)),
         "network_askAid",
         "update",
         this.nodes.length
       );
 
     Apiary.wrap(
-      () => {
-        for (const hiveName in this.aid) {
-          const hive = Apiary.hives[hiveName];
-          const sCell = hive.cells.storage;
-          if (!sCell) continue;
-          const aid = this.aid[hiveName];
-          if (!aid.excess)
-            aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
-          if (
-            !this.hiveValidForAid(Apiary.hives[aid.to]) ||
-            aid.amount <= 0 ||
-            hive.state !== hiveStates.economy
-          ) {
-            delete this.aid[hiveName];
-            continue;
-          }
-          addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
-        }
-      },
+      () => this.updatePlanAid(),
       "network_planAid",
       "update",
       Object.keys(this.aid).length
     );
   }
 
-  public updateState(hive: Hive) {
+  // #endregion Public Methods (4)
+
+  // #region Private Methods (7)
+
+  private buyShortages(
+    hive: Hive,
+    terminal: StructureTerminal
+  ): "usedTerminal" | undefined {
+    const creditsToUse = Apiary.broker.creditsToUse();
+
+    for (const r in hive.shortages) {
+      const res = r as ResourceConstant;
+      if (!hive.canBuy(res)) continue;
+      switch (res) {
+        case RESOURCE_ENERGY:
+          if (creditsToUse < MARKET_SETTINGS.energyCredits) continue;
+          break;
+        case RESOURCE_OPS:
+          if (creditsToUse < MARKET_SETTINGS.opsCredits) continue;
+          break;
+        default:
+          if (BASE_MINERALS.includes(res)) {
+            if (creditsToUse < MARKET_SETTINGS.mineralCredits) continue;
+            break;
+          }
+          if (Object.keys(USEFUL_MINERAL_STOCKPILE).includes(res)) {
+            if (creditsToUse < MARKET_SETTINGS.boostCredits) continue;
+            break;
+          }
+          if (creditsToUse < MARKET_SETTINGS.anyCredits) continue;
+      }
+
+      const amount = hive.shortages[res]!;
+      const ans = Apiary.broker.buyIn(
+        terminal,
+        res,
+        amount + PADDING_RESOURCE,
+        hive.getUsedCapacity(res) <= LAB_BOOST_MINERAL * 2 // 60
+      );
+      if (ans === "short") return "usedTerminal";
+    }
+    return undefined;
+  }
+
+  private calcAmount(from: string, to: string, res: ResourceConstant) {
+    let fromState = Apiary.hives[from].getResState(res);
+    const inProcess =
+      this.aid[from] && this.aid[from].to === to && this.aid[from].res === res
+        ? this.aid[from].amount
+        : 0;
+    let padding = 0;
+
+    if (res === RESOURCE_ENERGY) padding = PADDING_RESOURCE;
+
+    if (fromState === undefined) fromState = inProcess;
+    else fromState = fromState - padding + inProcess;
+
+    let toState = Apiary.hives[to].getResState(res);
+    if (toState === undefined) toState = 0;
+    else toState = -toState + padding;
+
+    return Math.max(Math.min(toState, fromState, 50000), 0);
+  }
+
+  private hiveValidForAid(hive: Hive) {
+    return !hive.cells.defense.isBreached && hive.cells.storage.terminalActive;
+  }
+
+  private runHiveNode(hive: Hive) {
+    if (!hive.cells.storage || !hive.cells.storage.terminal) return;
+    const terminal = hive.cells.storage.terminal;
+    if (terminal.cooldown) return;
+
+    if (this.buyShortages(hive, terminal) === "usedTerminal") return;
+
+    const aid = this.aid[hive.roomName];
+    if (aid) {
+      const sCellTo = Apiary.hives[aid.to].cells.storage;
+      const terminalTo = sCellTo && sCellTo.terminal;
+      if (terminalTo) {
+        const energyCost =
+          Game.market.calcTransactionCost(10000, hive.roomName, aid.to) / 10000;
+        const terminalEnergy = terminal.store.getUsedCapacity(RESOURCE_ENERGY);
+        const energyCap = Math.floor(terminalEnergy / energyCost);
+        let amount = Math.min(
+          aid.amount,
+          terminal.store.getUsedCapacity(aid.res),
+          energyCap,
+          terminalTo.store.getFreeCapacity(aid.res)
+        );
+
+        if (
+          aid.res === RESOURCE_ENERGY &&
+          amount * (1 + energyCost) > terminalEnergy
+        )
+          amount = Math.floor(amount * (1 - energyCost));
+
+        if (amount > 0) {
+          const ansTerminal = terminal.send(aid.res, amount, aid.to);
+          if (ansTerminal === OK) {
+            Apiary.logger.newTerminalTransfer(
+              terminal,
+              terminalTo,
+              amount,
+              aid.res
+            );
+            if (aid.excess) aid.amount -= amount;
+          }
+          return;
+        }
+      }
+    }
+
+    const stFree = hive.cells.storage.storageFreeCapacity();
+    switch (hive.mode.sellOff) {
+      case 2: {
+        // sell for profit
+
+        // if need to free some space
+        const sellFaster = stFree < FREE_CAPACITY;
+
+        // sell minerals that are over some limit
+        for (const mineral of BASE_MINERALS) {
+          const toSell =
+            hive.getResState(mineral) - BASE_MINERAL_STOCKPILE.sellOff;
+          if (toSell < SELL_THRESHOLD.mineral) continue;
+          const ans = Apiary.broker.sellOff(
+            terminal,
+            mineral,
+            Math.min(SELL_STEP_MAX, toSell),
+            sellFaster
+          );
+          if (ans === "short") return;
+        }
+
+        // sell some compound that are over stockpile
+        for (const comp of Apiary.broker.profitableCompounds) {
+          // could also check Object.keys(USEFUL_MINERAL_STOCKPILE) if want to sell only! those ones
+          const compound = comp;
+          const toSell =
+            hive.getResState(compound) -
+            (USEFUL_MINERAL_STOCKPILE[compound] || Infinity); // failsafe
+          if (toSell < SELL_THRESHOLD.compound) continue;
+          const ans = Apiary.broker.sellOff(
+            terminal,
+            compound,
+            Math.min(SELL_STEP_MAX, toSell),
+            sellFaster
+          );
+          if (ans === "short") return;
+        }
+
+        // sell best mineral i can produce
+        // @todo check all minerals and find most profitable
+        const commoditiesToSellHive = _.filter(
+          this.commoditiesToSell,
+          (c) => hive.getResState(c) >= SELL_THRESHOLD.commodities
+        );
+        for (const commodity of commoditiesToSellHive) {
+          const ans = Apiary.broker.sellOff(
+            terminal,
+            commodity,
+            Math.min(SELL_STEP_MAX, hive.getResState(commodity))
+          );
+          if (ans === "short") return;
+        }
+        // fall through
+      }
+      case 1: {
+        // sell for free space
+        // thought about storing best resources somewhere in the Apiary but rly too much trouble
+        if (stFree > FREE_CAPACITY) break;
+        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+        if (!keys.length) return;
+        const getSellingState = (resToSell: ResourceConstant) => {
+          let offset = 0;
+          // sell minerals and other stuff before energy
+          if (resToSell === RESOURCE_ENERGY) offset = HIVE_ENERGY;
+          return hive.getResState(resToSell) - offset;
+        };
+        const res = keys.reduce((prev, curr) =>
+          getSellingState(curr) > getSellingState(prev) ? curr : prev
+        );
+        if (hive.getResState(res) < 0) break;
+        Apiary.broker.sellOff(
+          terminal,
+          res,
+          Math.min(SELL_STEP_MAX, hive.getResState(res) * 0.8), // sell some of the resource
+          stFree < FULL_CAPACITY * 2 // getting close to no space (20_000)
+        );
+        break;
+      }
+      case 0:
+        // dont sell
+        break;
+    }
+  }
+
+  private updateAskAid(hive: Hive) {
+    hive.shortages = {};
+
+    // hive is lost, don't help it
+    if (!this.hiveValidForAid(hive)) return;
+
+    for (const [r, amount] of Object.entries(hive.resState)) {
+      if (amount > 0) continue;
+
+      const res = r as ResourceConstant;
+      // hives that can help with resource
+      let validHives = _.filter(
+        this.nodes,
+        (h) =>
+          h.roomName !== hive.roomName &&
+          h.state === hiveStates.economy &&
+          this.calcAmount(h.roomName, hive.roomName, res) > 0
+      ).map((h) => h.roomName);
+
+      // don't send energy if too expensive
+      const sendCost = (h: string) =>
+        Game.market.calcTransactionCost(100000, hive.roomName, h) / 100000;
+      if (res === RESOURCE_ENERGY)
+        validHives = validHives.filter((h) => sendCost(h) < 0.31); // 11 or less roomDist
+
+      if (!validHives.length) {
+        // can't help from some hive
+        // need to buyIn
+        hive.shortages[res] = -hive.getResState(res);
+        continue;
+      }
+
+      // no need to buy in can help from some hive
+      const validHive = validHives.reduce((prev, curr) =>
+        hive.pos.getRoomRangeTo(curr, "lin") <
+        hive.pos.getRoomRangeTo(prev, "lin")
+          ? curr
+          : prev
+      );
+      const amountAid = this.calcAmount(validHive, hive.roomName, res);
+      if (this.aid[validHive] && this.aid[validHive].amount > amountAid)
+        continue;
+      this.aid[validHive] = {
+        to: hive.roomName,
+        res,
+        amount: amountAid,
+      };
+    }
+
+    if (!hive.cells.storage.terminal) return;
+    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY) return;
+    if (!this.aid[hive.roomName]) return;
+
+    // store shit somewhere else
+    const emptyHive = _.filter(
+      this.nodes,
+      (h) =>
+        h.roomName !== hive.roomName &&
+        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY * 1.5 &&
+        h.getResState(RESOURCE_ENERGY) >= -h.resTarget[RESOURCE_ENERGY] * 0.5
+    )[0];
+    if (emptyHive) {
+      const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+      if (keys.length) {
+        const res = keys.reduce((prev, curr) =>
+          hive.getResState(curr) > hive.getResState(prev) ? curr : prev
+        );
+        if (hive.getResState(res) > 0)
+          this.aid[hive.roomName] = {
+            to: emptyHive.roomName,
+            res,
+            amount: FREE_CAPACITY * 0.1,
+            excess: 1,
+          };
+      }
+    }
+  }
+
+  private updatePlanAid() {
+    for (const [hiveName, aid] of Object.entries(this.aid)) {
+      const hiveFrom = Apiary.hives[hiveName];
+      const sCell = hiveFrom.cells.storage;
+      if (!aid.excess) aid.amount = this.calcAmount(hiveName, aid.to, aid.res);
+      if (
+        !this.hiveValidForAid(Apiary.hives[aid.to]) ||
+        aid.amount <= 0 ||
+        hiveFrom.state !== hiveStates.economy
+      ) {
+        delete this.aid[hiveName];
+        continue;
+      }
+      addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
+    }
+  }
+
+  private updateStateHive(hive: Hive) {
     hive.resState = { energy: 0 };
     const sCell = hive.cells.storage;
     if (!sCell) return;
@@ -423,5 +463,5 @@ export class Network {
       addResDict(this.resState, res, amount);
   }
 
-  // #endregion Public Methods (7)
+  // #endregion Private Methods (7)
 }

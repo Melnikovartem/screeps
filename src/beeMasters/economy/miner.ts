@@ -80,7 +80,7 @@ export class MinerMaster extends Master<ResourceCell> {
   // #region Protected Accessors (1)
 
   protected get shouldSpawn() {
-    if (!this.hive.cells.annex.canSpawnMiners) return false;
+    if (!this.hive.cells.annex.canSpawnMiners(this.roomName)) return false;
     // can mine or build smth
     return this.parent.operational || !!this.construction;
   }
@@ -251,7 +251,7 @@ export class MinerMaster extends Master<ResourceCell> {
           (this.hive.phase >= 1 &&
             this.hive.cells.storage.storageFreeCapacity(this.resType) <=
               STOP_MINERAL_PROD) ||
-          this.hive.resState[RESOURCE_ENERGY] < 0
+          this.hive.getResState(RESOURCE_ENERGY) < 0
         )
           return;
         order.priority = 6;

@@ -184,7 +184,7 @@ export class FactoryCell extends Cell {
         (!recipe.level &&
           resource !== resToProduce &&
           COMPLEX_COMMODITIES.includes(resource as CommodityConstant) &&
-          (Apiary.network.resState[resource] || 0 >= amountOfIngredient))
+          Apiary.network.getResState(resource) >= amountOfIngredient)
       ) {
         addIngredient(resource, amountOfIngredient);
         return;
@@ -308,7 +308,7 @@ export class FactoryCell extends Cell {
         -balance
       );
 
-    if (this.hive.resState[RESOURCE_ENERGY] < STOP_PRODUCTION) {
+    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION) {
       if (this.prod && this.prod.res !== RESOURCE_ENERGY) {
         this.prod = undefined;
         this.commodityTarget = null;
@@ -408,7 +408,7 @@ export class FactoryCell extends Cell {
     this.commodityTarget = null;
     let targets: { res: FactoryResourceConstant; amount: number }[] = [];
     let toCheck = Object.keys(COMMODITIES);
-    if (this.hive.resState[RESOURCE_ENERGY] < STOP_PRODUCTION)
+    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION)
       toCheck = [RESOURCE_ENERGY];
 
     for (const resToCheck of toCheck) {
@@ -421,7 +421,7 @@ export class FactoryCell extends Cell {
 
         const networkResAmount =
           (recipe.level !== Apiary.maxFactoryLvl &&
-            Apiary.network.resState[res]) ||
+            Apiary.network.getResState(res)) ||
           0;
         // no need to overproduce the amount of stuff (demand driven production)
         // but produce max of the latest lvl
@@ -429,8 +429,9 @@ export class FactoryCell extends Cell {
 
         num = 40;
         if ((COMMON_COMMODITIES as string[]).includes(res)) {
-          const amountInUse =
-            Apiary.network.resState[res as CommodityConstant] || 0;
+          const amountInUse = Apiary.network.getResState(
+            res as CommodityConstant
+          );
           if (amountInUse >= COMMON_COMMODITIES_STOCKPILE) num = 0;
         } else {
           const componentAmount: number[] = [];
@@ -441,7 +442,7 @@ export class FactoryCell extends Cell {
               return;
             }
             let toUse = this.hive.getUsedCapacity(component);
-            const networkAmount = Apiary.network.resState[component] || 0;
+            const networkAmount = Apiary.network.getResState(component);
             if (
               recipe.level ||
               networkAmount >= STOCKPILE_BASE_COMMODITIES.alot
@@ -453,9 +454,9 @@ export class FactoryCell extends Cell {
         }
       } else if (res === RESOURCE_ENERGY) {
         // energy below 100000
-        const toProduce = -this.hive.resState[res] + STOP_PRODUCTION * 1.2; // -resState -60_000
+        const toProduce = -this.hive.getResState(res) + STOP_PRODUCTION * 1.2; // -resState -60_000
         num = Math.max(0, Math.ceil(toProduce / recipe.amount));
-        const batteryInNetwork = Apiary.network.resState[RESOURCE_BATTERY] || 0;
+        const batteryInNetwork = Apiary.network.getResState(RESOURCE_BATTERY);
         const batteryInHive = this.sCell.storageUsedCapacity(RESOURCE_BATTERY);
         if (num > 0 && Math.max(batteryInNetwork, batteryInHive) <= 0) num = 0;
       } else if (res === RESOURCE_BATTERY) {
@@ -466,7 +467,7 @@ export class FactoryCell extends Cell {
           !(res in this.hive.resState)
         )
           continue;
-        const toProduce = 500 - this.hive.resState[res]!;
+        const toProduce = 500 - this.hive.getResState(res);
         num = Math.max(0, Math.ceil(toProduce / recipe.amount));
       }
       if (recipe.level && recipe.level !== this.level) {

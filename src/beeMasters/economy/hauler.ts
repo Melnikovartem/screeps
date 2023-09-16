@@ -104,7 +104,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
       CONTAINER_CAPACITY,
       body.filter((b) => b === CARRY).length * CARRY_CAPACITY
     );
-    let rounding = (x: number) => Math.ceil(x - 0.15);
+    let rounding = (x: number) => Math.ceil(x);
     if (this.hive.state === hiveStates.lowenergy)
       rounding = (x) => Math.floor(x + 0.15);
     this._targetBeeCount = rounding(
@@ -206,7 +206,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
             if (resource) bee.pickup(resource);
           }
 
-          const ans = bee.transfer(this.dropOff, res);
+          const ans = bee.transfer(this.dropOff, res, undefined, this.hive.opt);
           if (ans === OK) {
             if (bee.target) {
               const source = Game.getObjectById(bee.target);

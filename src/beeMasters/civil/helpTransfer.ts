@@ -102,7 +102,7 @@ export class HelpTransferMaster extends SwarmMaster<number> {
     if (
       this.checkBees() &&
       Apiary.intel.getInfo(this.pos.roomName, 20).safePlace &&
-      (this.hive.resState[this.res] || 0 > 0)
+      this.hive.getResState(this.res) > 0
     )
       this.wish({
         setup: setups.pickup,

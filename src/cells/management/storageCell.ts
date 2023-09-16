@@ -51,7 +51,7 @@ export class StorageCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (2)
+  // #region Public Accessors (3)
 
   /** used to support terminal storage, but not helpful and pain in ass */
   public get storage():
@@ -73,7 +73,17 @@ export class StorageCell extends Cell {
     return this.hive.room.terminal;
   }
 
-  // #endregion Public Accessors (2)
+  public get terminalActive() {
+    if (!this.terminal) return false;
+    if (!this.terminal.isActive()) return false;
+    const effects = this.terminal.effects;
+    const disrupted =
+      effects &&
+      effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL).length;
+    return !disrupted;
+  }
+
+  // #endregion Public Accessors (3)
 
   // #region Public Methods (11)
 
@@ -324,15 +334,9 @@ export class StorageCell extends Cell {
     };
 
     if (this.storage) addFromStore(this.storage);
-    if (this.terminal) {
-      const effects = this.terminal.effects;
-      const disrupted =
-        effects &&
-        effects.filter((e) => e.effect === PWR_DISRUPT_TERMINAL).length;
-      if (!disrupted) {
-        addFromStore(this.terminal);
-        addFromStore({ store: this.resTargetTerminal }, -1);
-      }
+    if (this.terminal && this.terminalActive) {
+      addFromStore(this.terminal);
+      addFromStore({ store: this.resTargetTerminal }, -1);
     }
 
     _.forEach(this.master.activeBees, (b) => addFromStore(b));

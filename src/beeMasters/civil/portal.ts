@@ -78,7 +78,7 @@ export class PortalMaster extends SwarmMaster<undefined> {
 
   public override get targetBeeCount(): number {
     if (!this.res) return 1;
-    const inStore = this.hive.resState[this.res] || 0;
+    const inStore = this.hive.getResState(this.res);
     return inStore >= HAUL_PER_TRIP * 3 ? 2 : 1;
   }
 
