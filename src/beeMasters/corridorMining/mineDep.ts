@@ -50,7 +50,7 @@ export class DepositMinerMaster extends Master<DepositMaster> {
       if (target.pos.isNearTo(bee)) {
         bee.state = beeStates.work;
         if (bee.harvest(target) === OK)
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "deposit",
             this.parent.workAmount,

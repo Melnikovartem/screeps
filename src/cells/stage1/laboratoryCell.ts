@@ -106,13 +106,14 @@ const PRODUCE_PER_BATCH = 2500;
 
 export const BASE_MINERALS: ResourceConstant[] = [
   "H",
+  "O",
+  "X",
   "K",
   "L",
   "U",
-  "X",
-  "O",
   "Z",
 ];
+
 export const REACTION_MAP: {
   [key in ReactionConstant | MineralConstant]?: {
     res1: ReactionConstant | MineralConstant;
@@ -183,15 +184,6 @@ export class LaboratoryCell extends Cell {
   private targetCooldown = Game.time;
   private usedBoost: string[] = [];
 
-  public _boostLabs: { [key in ResourceConstant]?: string } =
-    this.cache("_boostLabs") || {};
-  public _boostRequests: {
-    [id: string]: { info: BoostInfo[]; lastUpdated: number };
-  } = this.cache("_boostRequests") || {};
-  public _labStates: { [id: string]: LabState } =
-    this.cache("_labStates") || {};
-  public _synthesizeTarget: { res: ReactionConstant; amount: number } | null =
-    this.cache("_synthesizeTarget") || null;
   public laboratories: { [id: string]: StructureLab } = {};
   public poss: Pos = this.cache("poss") || {
     x: 25,
@@ -213,30 +205,19 @@ export class LaboratoryCell extends Cell {
 
   // #region Public Accessors (10)
 
-  public get boostLabs() {
-    return this._boostLabs;
+  public get boostLabs(): { [key in ResourceConstant]?: string } {
+    return this.cache("boostLabs") || {};
   }
 
-  public set boostLabs(value) {
-    this._boostLabs = this.cache("_boostLabs", value);
-  }
-
-  public get boostRequests() {
-    return this._boostRequests;
-  }
-
-  public set boostRequests(value) {
-    this._boostRequests = this.cache("_boostRequests", value);
+  public get boostRequests(): {
+    [id: string]: { info: BoostInfo[]; lastUpdated: number };
+  } {
+    return this.cache("boostRequests") || {};
   }
 
   public get labStates(): { [id: string]: LabState } {
-    return this._labStates;
+    return this.cache("labStates") || {};
   }
-
-  public set labStates(value) {
-    this._labStates = this.cache("labStates", value);
-  }
-
   public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
@@ -253,12 +234,15 @@ export class LaboratoryCell extends Cell {
     return [amount, lab1, lab2];
   }
 
-  public get synthesizeTarget() {
-    return this._synthesizeTarget;
+  public get synthesizeTarget(): {
+    res: ReactionConstant;
+    amount: number;
+  } | null {
+    return this.cache("synthesizeTarget");
   }
 
   public set synthesizeTarget(value) {
-    this._synthesizeTarget = this.cache("_synthesizeTarget", value);
+    this.cache("synthesizeTarget", value);
   }
 
   // #endregion Public Accessors (10)
@@ -376,13 +360,13 @@ export class LaboratoryCell extends Cell {
           this.usedBoost.push(lab.id);
           if (ans === OK) {
             bee.boosted = true;
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "boosts",
               -r.amount * LAB_BOOST_MINERAL,
               r.res
             );
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "boosts",
               -r.amount * LAB_BOOST_ENERGY,
@@ -470,9 +454,19 @@ export class LaboratoryCell extends Cell {
       this.synthesizeTarget.amount -= cc;
     this.prod.plan -= cc;
 
-    Apiary.logger.addResourceStat(this.hiveName, "labs", cc, this.prod.res);
-    Apiary.logger.addResourceStat(this.hiveName, "labs", -cc, this.prod.res1);
-    Apiary.logger.addResourceStat(this.hiveName, "labs", -cc, this.prod.res2);
+    Apiary.logger.reportResourceUsage(this.hiveName, "labs", cc, this.prod.res);
+    Apiary.logger.reportResourceUsage(
+      this.hiveName,
+      "labs",
+      -cc,
+      this.prod.res1
+    );
+    Apiary.logger.reportResourceUsage(
+      this.hiveName,
+      "labs",
+      -cc,
+      this.prod.res2
+    );
 
     if (
       !labs.length &&
@@ -536,7 +530,7 @@ export class LaboratoryCell extends Cell {
       if (ans === OK)
         _.forEach(bee.body, (b) => {
           if (b.boost)
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "unboosting",
               LAB_BOOST_MINERAL * 0.5 * 0.9, // LAB_UNBOOST_MINERAL was undefined in .ts
@@ -702,6 +696,7 @@ export class LaboratoryCell extends Cell {
             this.hive.getResState(c)
         );
       if (!usefulR.length) return ERR_NOT_FOUND;
+      // @todo check if can produce without market?
       targets = [
         {
           res: usefulR.reduce((prev, curr) =>
@@ -858,7 +853,7 @@ export class LaboratoryCell extends Cell {
         this.sCell.requestToStorage(resources, 2, undefined);
 
         _.forEach(resources, (r) =>
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "unboost",
             r.amount,

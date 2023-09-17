@@ -311,7 +311,7 @@ export class DefenseCell extends Cell {
           // let toAttack = healer ? healer : enemy;
           // healer = undefined;
           if (tower.attack(enemy) === OK)
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "defense_dmg",
               -10,
@@ -324,7 +324,7 @@ export class DefenseCell extends Cell {
           if (healTarget && toHeal && tower.heal(healTarget) === OK) {
             toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
 
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "defense_heal",
               -10,
@@ -369,7 +369,7 @@ export class DefenseCell extends Cell {
             tower.repair(repairTarget) === OK &&
             Apiary.logger
           )
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "defense_repair",
               -10,
@@ -389,7 +389,7 @@ export class DefenseCell extends Cell {
         if (healTarget && toHeal && tower.heal(healTarget) === OK) {
           toHeal -= towerCoef(tower, healTarget) * TOWER_POWER_HEAL;
 
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "defense_heal",
             -10,

@@ -110,7 +110,7 @@ export class FastRefillCell extends Cell {
           !this.sCell.link.cooldown &&
           this.sCell.link.transferEnergy(this.link, amount) === OK
         )
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "upkeep",
             -amount * 0.03,

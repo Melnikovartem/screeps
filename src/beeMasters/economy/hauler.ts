@@ -222,13 +222,13 @@ export class HaulerMaster extends Master<ExcavationCell> {
                 ? "mining_" + bee.target.slice(bee.target.length - 4)
                 : "pickup";
 
-              Apiary.logger.addResourceStat(
+              Apiary.logger.reportResourceUsage(
                 this.hiveName,
                 ref,
                 this.roadUpkeepCost[bee.ref],
                 RESOURCE_ENERGY
               );
-              Apiary.logger.addResourceStat(
+              Apiary.logger.reportResourceUsage(
                 this.hiveName,
                 sameRes
                   ? "upkeep_" + bee.target.slice(bee.target.length - 4)

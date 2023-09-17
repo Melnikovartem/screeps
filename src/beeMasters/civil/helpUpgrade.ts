@@ -61,7 +61,7 @@ export class HelpUpgradeMaster extends SwarmMaster<number> {
             hiveToUpg.opt
           );
           if (ans === OK)
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               hiveToUpg.roomName,
               "upgrade",
               -Math.min(

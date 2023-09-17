@@ -40,7 +40,7 @@ export class EmptyLogger {
 
   // #region Public Methods (14)
 
-  public addResourceStat(
+  public reportResourceUsage(
     hiveName: string,
     comment: string,
     amount: number,

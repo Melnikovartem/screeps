@@ -82,7 +82,7 @@ export class Logger extends EmptyLogger {
 
   // #region Public Methods (12)
 
-  public override addResourceStat(
+  public override reportResourceUsage(
     hiveName: string,
     comment: string,
     amount: number,
@@ -130,7 +130,7 @@ export class Logger extends EmptyLogger {
       amount *= -1;
       type = "export";
     }
-    this.addResourceStat(order.roomName, type, amount, res);
+    this.reportResourceUsage(order.roomName, type, amount, res);
   }
 
   public override marketShortRes(
@@ -140,7 +140,7 @@ export class Logger extends EmptyLogger {
   ) {
     const res = order.resourceType as ResourceConstant;
     if (!RESOURCES_ALL.includes(res) || !order.roomName) return;
-    this.addResourceStat(
+    this.reportResourceUsage(
       hiveName,
       "terminal",
       -Game.market.calcTransactionCost(amount, hiveName, order.roomName),
@@ -152,7 +152,7 @@ export class Logger extends EmptyLogger {
       amount *= -1;
       type = "export";
     }
-    this.addResourceStat(hiveName, type, amount, res);
+    this.reportResourceUsage(hiveName, type, amount, res);
   }
 
   public override newSpawn(
@@ -164,7 +164,7 @@ export class Logger extends EmptyLogger {
     let name = beeName.substring(0, beeName.length - 5);
     if (name === setups.miner.energy.name)
       name += " " + masterName.slice(masterName.length - 4);
-    this.addResourceStat(
+    this.reportResourceUsage(
       spawn.pos.roomName,
       "spawn_" + name,
       -cost,
@@ -179,19 +179,19 @@ export class Logger extends EmptyLogger {
     amount: number,
     resource: ResourceConstant
   ) {
-    this.addResourceStat(
+    this.reportResourceUsage(
       terminalFrom.pos.roomName,
       "export local",
       -amount,
       resource
     );
-    this.addResourceStat(
+    this.reportResourceUsage(
       terminalTo.pos.roomName,
       "import local",
       amount,
       resource
     );
-    this.addResourceStat(
+    this.reportResourceUsage(
       terminalFrom.pos.roomName,
       "terminal",
       -Game.market.calcTransactionCost(
@@ -266,9 +266,14 @@ export class Logger extends EmptyLogger {
         +storeTo.getFreeCapacity(resource)!
       ) * mode
     ); // * (1 - loss)
-    this.addResourceStat(hiveName, ref, amount, resource);
+    this.reportResourceUsage(hiveName, ref, amount, resource);
     if (loss)
-      this.addResourceStat(hiveName, loss.ref, -amount * loss.per, resource);
+      this.reportResourceUsage(
+        hiveName,
+        loss.ref,
+        -amount * loss.per,
+        resource
+      );
     return OK;
   }
 

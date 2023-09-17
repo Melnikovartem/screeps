@@ -58,7 +58,7 @@ export class AnnexCell extends Cell {
     const roomState = Apiary.intel.getRoomState(roomName);
     switch (roomState) {
       case roomStates.SKfrontier:
-        return this.swarms[roomName].master.beesAmount;
+        return this.swarms[roomName]?.master.beesAmount;
       case roomStates.ownedByMe:
       case roomStates.reservedByMe:
       case roomStates.SKcentral:

@@ -76,7 +76,7 @@ export class NKVDMaster extends PowerCreepMaster {
 
         const pwrInfo = POWER_INFO[this.nextup.power];
         if ("ops" in pwrInfo)
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "NKVD_" + POWER_NAMES[this.nextup.power],
             -pwrInfo.ops,

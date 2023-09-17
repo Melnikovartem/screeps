@@ -116,7 +116,7 @@ export class RespawnCell extends Cell {
     // not sure how to log this cause resources could as well just decay
     // 0.9 to account for failed pickups
     if (ans === OK)
-      Apiary.logger?.addResourceStat(
+      Apiary.logger?.reportResourceUsage(
         this.hiveName,
         "recycle",
         ((_.sum(

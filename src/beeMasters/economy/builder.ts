@@ -155,17 +155,20 @@ export class BuilderMaster extends Master<BuildCell> {
     let patternsNeeded = 0;
     /** how much generations of bees to complete all buildings */
     let genToComplete = 1;
+    const boost = this.boosts ? "boost" : "normal";
 
     if (this.hive.phase < 1) genToComplete = 0.25; // rush things
+    else if (this.hive.isBattle) genToComplete = 0.25; // rush defenses
+    else if (this.parent.buildingCosts.annex.build)
+      genToComplete = 0.5; // build the fucking annexes
+    else if (this.parent.buildingCosts.hive.build) genToComplete = 1;
     else if (
-      this.hive.phase === 2 &&
       this.hive.state === hiveStates.economy &&
-      !this.parent.buildingCosts.hive.build &&
-      !this.parent.buildingCosts.annex.build
+      this.parent.buildingCosts.annex.repair <
+        BUILDING_PER_PATTERN[boost].annex.repair * 20
     )
-      genToComplete = 2; // no need to rush big projects
+      genToComplete = 1.25; // no need to rush walls
 
-    const boost = this.boosts ? "boost" : "normal";
     for (const mode of ["hive", "annex"] as M[])
       for (const rr of ["repair", "build"] as R[])
         patternsNeeded +=

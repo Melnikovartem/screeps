@@ -63,7 +63,7 @@ export class HelpTransferMaster extends SwarmMaster<number> {
           const res = findOptimalResource(bee.store);
           const ans = bee.transfer(storage, res, undefined, this.hive.opt);
           if (ans === OK)
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.pos.roomName,
               "local_import",
               Math.min(
@@ -84,7 +84,7 @@ export class HelpTransferMaster extends SwarmMaster<number> {
           this.hive.opt
         );
         if (ans === OK)
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             "local_export",
             -Math.min(

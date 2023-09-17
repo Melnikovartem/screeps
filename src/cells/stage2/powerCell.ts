@@ -56,13 +56,13 @@ export class PowerCell extends Cell {
         POWER_SPAWN_ENERGY_RATIO
     )
       if (this.powerSpawn.processPower() === OK) {
-        Apiary.logger.addResourceStat(
+        Apiary.logger.reportResourceUsage(
           this.hiveName,
           "power_upgrade",
           -1,
           RESOURCE_POWER
         );
-        Apiary.logger.addResourceStat(
+        Apiary.logger.reportResourceUsage(
           this.hiveName,
           "power_upgrade",
           -1 * POWER_SPAWN_ENERGY_RATIO,

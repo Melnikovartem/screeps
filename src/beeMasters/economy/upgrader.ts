@@ -218,7 +218,7 @@ export class UpgraderMaster extends Master<UpgradeCell> {
             bee.upgradeController(this.parent.controller) === OK &&
             Apiary.logger
           )
-            Apiary.logger.addResourceStat(
+            Apiary.logger.reportResourceUsage(
               this.hiveName,
               "upgrade",
               -Math.min(

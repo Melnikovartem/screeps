@@ -274,13 +274,13 @@ export class MinerMaster extends Master<ResourceCell> {
     } else
       spend = Math.min(bee.workMax * 5, target.progressTotal - target.progress);
     spend = Math.min(bee.store.getUsedCapacity(RESOURCE_ENERGY));
-    Apiary.logger.addResourceStat(
+    Apiary.logger.reportResourceUsage(
       this.hiveName,
       this.parent.loggerRef,
       spend,
       RESOURCE_ENERGY
     );
-    Apiary.logger.addResourceStat(
+    Apiary.logger.reportResourceUsage(
       this.hiveName,
       this.parent.loggerUpkeepRef,
       -spend,

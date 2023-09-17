@@ -20,11 +20,13 @@ export interface ProtoOrder {
   // #endregion Properties (6)
 }
 
+type HurryTypes = "GoodPrice" | "RightNow" | "AnyBuck";
+
 // Constants for controlling market behavior
 const MAX_DEVIATION_PERCENT = 0.1;
 const MAX_DEVIATION_PRICE = 10;
 
-const ORDER_OFFSET = 0.001;
+const ORDER_OFFSET = 0.01;
 const MARKET_PRECISION = 0.001;
 // ts doesn't know about this constant :/
 // const MARKET_FEE = 0.05; // (added by hand to screeps-ts before MARKET_MAX_ORDERS)
@@ -125,7 +127,7 @@ export class Broker {
     const creditsToUse = this.creditsToUse();
     if (creditsToUse < MARKET_SETTINGS.reserveCredits) return "no money";
 
-    let hurry;
+    let hurry: HurryTypes;
     const speedUpBuy = hive.getResState(res) <= 0;
     if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
     else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
@@ -180,31 +182,10 @@ export class Broker {
     }
 
     const orders = this.longOrders(roomName, res, ORDER_BUY);
-    let myPrice = priceToBuyLong + ORDER_OFFSET;
+    const myPrice = priceToBuyLong + ORDER_OFFSET;
     if (!orders.length) this.buyLong(terminal, res, amount, myPrice);
-    else {
-      const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+    else this.changeFee(orders, myPrice, hurry);
 
-      const diffInPrice = myPrice - myOrder.price;
-      const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
-      let stepToPrice = diffInPrice * coefForStep;
-      if (Math.abs(stepToPrice) < MARKET_PRECISION)
-        stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
-      myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
-
-      const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
-
-      // report stuff
-      const fee =
-        (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
-      if (fee > 0 && ans === OK)
-        Apiary.logger.reportMarketFeeChange(
-          myOrder.id,
-          myOrder.resourceType,
-          fee,
-          ORDER_BUY
-        );
-    }
     return "long";
   }
 
@@ -417,7 +398,7 @@ export class Broker {
     if (!hive) return "no money"; // safecheck
     const creditsToUse = this.creditsToUse();
 
-    let hurry;
+    let hurry: HurryTypes;
     const speedUpBuy = hive.getResState(res) > hive.getResState(res) + 1000;
     if (tryFaster) hurry = speedUpBuy ? "AnyBuck" : "RightNow";
     else hurry = speedUpBuy ? "RightNow" : "GoodPrice";
@@ -490,33 +471,48 @@ export class Broker {
     if (commodity) return "long";
 
     const orders = this.longOrders(roomName, res, ORDER_SELL);
-    let myPrice = priceToSellLong - ORDER_OFFSET;
+    const myPrice = priceToSellLong - ORDER_OFFSET;
 
     if (!orders.length) this.sellLong(terminal, res, amount, myPrice);
-    else {
-      const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+    else this.changeFee(orders, myPrice, hurry);
 
-      const diffInPrice = myPrice - myOrder.price;
-      const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
-      let stepToPrice = diffInPrice * coefForStep;
-      if (Math.abs(stepToPrice) < MARKET_PRECISION)
-        stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
-      myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
-
-      const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
-
-      // report stuff
-      const fee =
-        (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
-      if (fee > 0 && ans === OK)
-        Apiary.logger.reportMarketFeeChange(
-          myOrder.id,
-          myOrder.resourceType,
-          fee,
-          ORDER_SELL
-        );
-    }
     return "long";
+  }
+
+  private changeFee(orders: Order[], myPrice: number, hurry: HurryTypes) {
+    const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+
+    const diffInPrice = myPrice - myOrder.price;
+    if (Math.abs(diffInPrice) < MARKET_PRECISION) return;
+
+    let coefForStep = 0.01;
+    switch (hurry) {
+      case "AnyBuck":
+        coefForStep = 0.3;
+        break;
+      case "RightNow":
+        coefForStep = 0.08;
+        break;
+      case "GoodPrice":
+        coefForStep = 0.02;
+        break;
+    }
+    let stepToPrice = diffInPrice * coefForStep;
+    if (Math.abs(stepToPrice) < MARKET_PRECISION)
+      stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
+    myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
+
+    const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
+    // report stuff
+    const fee =
+      (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
+    if (fee > 0 && ans === OK)
+      Apiary.logger.reportMarketFeeChange(
+        myOrder.id,
+        myOrder.resourceType,
+        fee,
+        ORDER_SELL
+      );
   }
 
   /**

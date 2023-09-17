@@ -78,7 +78,7 @@ export abstract class PowerCreepMaster extends Master<PowerCell> {
         const pwrStats = this.powerCreep.powers[PWR_GENERATE_OPS];
         if (pwrStats)
           // failsafe
-          Apiary.logger.addResourceStat(
+          Apiary.logger.reportResourceUsage(
             this.hiveName,
             this.powerCreep.ref.split(" ").join("_"),
             POWER_INFO[PWR_GENERATE_OPS].effect[pwrStats.level - 1],
@@ -114,13 +114,15 @@ export abstract class PowerCreepMaster extends Master<PowerCell> {
       currOps < lowerBound &&
       this.hive.storage &&
       this.hive.storage.store.getUsedCapacity(RESOURCE_OPS)
-    )
+    ) {
       this.powerCreep.withdraw(
         this.hive.storage,
         RESOURCE_OPS,
         targetBalance - currOps,
         this.hive.opt
       );
+      return;
+    }
     if (
       currOps > upperBound &&
       this.hive.storage &&
@@ -132,7 +134,9 @@ export abstract class PowerCreepMaster extends Master<PowerCell> {
         currOps - targetBalance,
         this.hive.opt
       );
-    } else this.powerCreep.goRest(this.parent.pos, this.hive.opt);
+      return;
+    }
+    this.powerCreep.goRest(this.parent.pos, this.hive.opt);
   }
 
   // #endregion Protected Methods (1)
