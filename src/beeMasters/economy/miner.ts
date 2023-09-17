@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
+import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ResourceCell } from "cells/base/resourceCell";
 import { profile } from "profiler/decorator";
 import { beeStates, roomStates } from "static/enums";
@@ -9,7 +9,7 @@ import { findOptimalResource } from "static/utils";
 import { Master } from "../_Master";
 
 /** stop production if backlog too big  */
-const STOP_MINERAL_PROD = FULL_CAPACITY;
+const STOP_MINERAL_PROD = FREE_CAPACITY.max;
 
 @profile
 export class MinerMaster extends Master<ResourceCell> {
@@ -247,13 +247,7 @@ export class MinerMaster extends Master<ResourceCell> {
           order.setup.patternLimit *= 2; // save some cpu on mining
       } else {
         // stop producting minerals
-        if (
-          (this.hive.phase >= 1 &&
-            this.hive.cells.storage.storageFreeCapacity(this.resType) <=
-              STOP_MINERAL_PROD) ||
-          this.hive.getResState(RESOURCE_ENERGY) < 0
-        )
-          return;
+        if (this.hive.getResState(RESOURCE_ENERGY) < 0) return;
         order.priority = 6;
       }
 

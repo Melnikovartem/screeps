@@ -1,6 +1,6 @@
 import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
-import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
+import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ResTarget } from "hive/hive-declarations";
 import { profile } from "profiler/decorator";
 import { findOptimalResource } from "static/utils";
@@ -46,7 +46,7 @@ export class ClearMaster extends SwarmMaster<undefined> {
         const res = findOptimalResource(bee.store);
         bee.drop(res);
       }
-      if (this.hive.cells.storage.storageFreeCapacity() <= FULL_CAPACITY) {
+      if (this.hive.cells.storage.storageFreeCapacity() <= FREE_CAPACITY.max) {
         const keys = Object.keys(this.hive.resState) as (keyof ResTarget)[];
         const res = keys.reduce((prev, curr) =>
           this.hive.getResState(curr) > this.hive.getResState(prev)

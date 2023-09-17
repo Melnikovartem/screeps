@@ -147,7 +147,7 @@ export class BuilderMaster extends Master<BuildCell> {
       this.hive.state === hiveStates.nukealert ||
       this.parent.buildingCosts.hive.build / 5 +
         this.parent.buildingCosts.hive.repair >
-        500_000
+        100_000
     );
   }
 

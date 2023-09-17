@@ -35,14 +35,14 @@ export class UpgradeCell extends Cell {
     super(hive, prefix.upgradeCell);
     let poss = this.cache("poss");
     if (!poss) {
-      const openPositions = this.controller.pos
+      const openPositions = this.contPos
         .getOpenPositions(true, 2)
-        .filter((p) => this.controller.pos.getRangeTo(p) === 2);
+        .filter((p) => this.contPos.getRangeTo(p) === 2);
       if (openPositions.length)
         poss = openPositions.reduce((a, b) =>
           a.getOpenPositions().length >= b.getOpenPositions().length ? a : b
         );
-      else poss = this.controller.pos;
+      else poss = this.contPos;
     }
     this.poss = new RoomPosition(poss.x, poss.y, this.hiveName);
 
@@ -67,7 +67,7 @@ export class UpgradeCell extends Cell {
   }
 
   public get fastModePossible() {
-    return this.suckerTarget && this.pos.getRangeTo(this.suckerTarget) <= 3;
+    return this.suckerTarget && this.contPos.getRangeTo(this.suckerTarget) <= 3;
   }
 
   public get maxPossibleRate() {
@@ -76,11 +76,11 @@ export class UpgradeCell extends Cell {
   }
 
   public override get pos() {
-    return this.controller.pos;
+    return this.poss;
   }
 
   public get suckerTarget() {
-    if (this.hive.storage && this.pos.getRangeTo(this.hive.storage) <= 3)
+    if (this.hive.storage && this.contPos.getRangeTo(this.hive.storage) <= 3)
       return this.hive.storage;
     if (this.link && this.sCell.link) return this.link;
     if (this.container) return this.container;
@@ -89,21 +89,31 @@ export class UpgradeCell extends Cell {
 
   // #endregion Public Accessors (5)
 
+  // #region Private Accessors (1)
+
+  private get contPos() {
+    return this.controller.pos;
+  }
+
+  // #endregion Private Accessors (1)
+
   // #region Public Methods (3)
 
   public findStructures() {
-    let link = this.poss
+    let link = this.pos
       .lookFor(LOOK_STRUCTURES)
       .filter((s) => s.structureType === STRUCTURE_LINK)[0] as
       | StructureLink
       | undefined;
     if (!link) {
-      const links = this.pos
+      const links = this.contPos
         .findInRange(FIND_MY_STRUCTURES, 2)
         .filter((s) => s.structureType === STRUCTURE_LINK);
       if (links.length)
         link = links.reduce((prev, curr) =>
-          this.pos.getRangeTo(prev) <= this.pos.getRangeTo(curr) ? prev : curr
+          this.contPos.getRangeTo(prev) <= this.contPos.getRangeTo(curr)
+            ? prev
+            : curr
         ) as StructureLink;
     }
     this.link = link;
@@ -111,11 +121,13 @@ export class UpgradeCell extends Cell {
     if (!link) {
       this.container = undefined;
       const containers = this.pos
-        .findInRange(FIND_STRUCTURES, 3)
+        .findInRange(FIND_STRUCTURES, 1)
         .filter((s) => s.structureType === STRUCTURE_CONTAINER);
       if (containers.length)
         this.container = containers.reduce((prev, curr) =>
-          this.pos.getRangeTo(prev) <= this.pos.getRangeTo(curr) ? prev : curr
+          this.contPos.getRangeTo(prev) <= this.contPos.getRangeTo(curr)
+            ? prev
+            : curr
         ) as StructureContainer;
     }
   }
@@ -217,7 +229,7 @@ export class UpgradeCell extends Cell {
     this.maxRate.import = 100;
 
     const suckerTime = Math.max(
-      (this.controller.pos.getTimeForPath(suckerTarget) - 3) * 2,
+      (this.contPos.getTimeForPath(suckerTarget) - 3) * 2,
       0
     );
 

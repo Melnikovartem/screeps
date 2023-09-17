@@ -95,7 +95,7 @@ export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
     [BOOST_MINERAL.upgrade[2]]: 20_000,
     [BOOST_MINERAL.damage[2]]: 20_000, // + 10_000
   };
-const PROFITABLE_MINERAL_STOCKPILE = 20_000;
+export const PROFITABLE_MINERAL_STOCKPILE = 5_000;
 
 export const BASE_MINERAL_STOCKPILE = {
   sellOff: 70_000,

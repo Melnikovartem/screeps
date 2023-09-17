@@ -98,7 +98,7 @@ export class DefenseCell extends Cell {
     // now we do not touch 6
     if (
       roomInfo.dangerlvlmax >= 3 &&
-      roomInfo.dangerlvlmax <= 5 &&
+      roomInfo.dangerlvlmax <= 6 &&
       roomInfo.enemies.length &&
       Game.time >= roomInfo.safeModeEndTime - 200
     ) {

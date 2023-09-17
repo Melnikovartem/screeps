@@ -5,6 +5,7 @@ import { HIVE_ENERGY, TERMINAL_ENERGY } from "../cells/management/storageCell";
 import {
   BASE_MINERAL_STOCKPILE,
   BASE_MINERALS,
+  PROFITABLE_MINERAL_STOCKPILE,
   USEFUL_MINERAL_STOCKPILE,
 } from "../cells/stage1/laboratoryCell";
 import type { Hive } from "../hive/hive";
@@ -14,17 +15,20 @@ import { addResDict } from "../static/utils";
 import { MARKET_SETTINGS } from "./broker";
 
 const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
-/** keep free 100_000 slots free */
-export const FREE_CAPACITY = STORAGE_CAPACITY * 0.1;
-/** dump everything / stop drop until have 10_000 slots free */
-export const FULL_CAPACITY = STORAGE_CAPACITY * 0.01;
+
+export const FREE_CAPACITY = {
+  /** keep free 100_000 slots free */
+  min: STORAGE_CAPACITY * 0.1,
+  /** dump everything / stop drop until have 10_000 slots free */
+  max: STORAGE_CAPACITY * 0.01,
+};
 /**  do not sell mare per transaction */
 const SELL_STEP_MAX = 4096; // 8192 // careful about selling boosts
 /** sell for profit if more than this */
 const SELL_THRESHOLD = {
   compound: 4096,
   commodities: 1,
-  mineral: 4096,
+  mineral: Math.min(4096, PROFITABLE_MINERAL_STOCKPILE - 500),
 };
 
 @profile
@@ -221,7 +225,7 @@ export class Network {
         // sell for profit
 
         // if need to free some space
-        const sellFaster = stFree < FREE_CAPACITY;
+        const sellFaster = stFree < FREE_CAPACITY.min;
 
         // sell minerals that are over some limit
         for (const mineral of BASE_MINERALS) {
@@ -270,30 +274,32 @@ export class Network {
         }
         // fall through
       }
-      case 1: {
-        // sell for free space
-        // thought about storing best resources somewhere in the Apiary but rly too much trouble
-        if (stFree > FREE_CAPACITY) break;
-        const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-        if (!keys.length) return;
-        const getSellingState = (resToSell: ResourceConstant) => {
-          let offset = 0;
-          // sell minerals and other stuff before energy
-          if (resToSell === RESOURCE_ENERGY) offset = HIVE_ENERGY;
-          return hive.getResState(resToSell) - offset;
-        };
-        const res = keys.reduce((prev, curr) =>
-          getSellingState(curr) > getSellingState(prev) ? curr : prev
-        );
-        if (hive.getResState(res) < 0) break;
-        Apiary.broker.sellOff(
-          terminal,
-          res,
-          Math.min(SELL_STEP_MAX, hive.getResState(res) * 0.8), // sell some of the resource
-          stFree < FULL_CAPACITY * 2 // getting close to no space (20_000)
-        );
+      case 1:
+        {
+          // sell for free space
+          // thought about storing best resources somewhere in the Apiary but rly too much trouble
+          if (stFree > FREE_CAPACITY.min) break;
+          const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+          if (!keys.length) return;
+          const getSellingState = (resToSell: ResourceConstant) => {
+            let offset = 0;
+            // sell minerals and other stuff before energy
+            if (resToSell === RESOURCE_ENERGY) offset = HIVE_ENERGY;
+            return hive.getResState(resToSell) - offset;
+          };
+          const res = keys.reduce((prev, curr) =>
+            getSellingState(curr) > getSellingState(prev) ? curr : prev
+          );
+          if (hive.getResState(res) <= 0) break;
+          const ans = Apiary.broker.sellOff(
+            terminal,
+            res,
+            Math.min(SELL_STEP_MAX, hive.getResState(res) * 0.8), // sell some of the resource
+            stFree < FREE_CAPACITY.max * 2 // getting close to no space (20_000)
+          );
+          if (ans === "short") return;
+        }
         break;
-      }
       case 0:
         // dont sell
         break;
@@ -307,7 +313,7 @@ export class Network {
     if (!this.hiveValidForAid(hive)) return;
 
     for (const [r, amount] of Object.entries(hive.resState)) {
-      if (amount > 0) continue;
+      if (amount >= 0) continue;
 
       const res = r as ResourceConstant;
       // hives that can help with resource
@@ -349,8 +355,8 @@ export class Network {
       };
     }
 
-    if (!hive.cells.storage.terminal) return;
-    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY) return;
+    /* if (!hive.cells.storage.terminal) return;
+    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY.min) return;
     if (!this.aid[hive.roomName]) return;
 
     // store shit somewhere else
@@ -358,24 +364,22 @@ export class Network {
       this.nodes,
       (h) =>
         h.roomName !== hive.roomName &&
-        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY * 1.5 &&
+        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY.min * 1.5 &&
         h.getResState(RESOURCE_ENERGY) >= -h.resTarget[RESOURCE_ENERGY] * 0.5
     )[0];
-    if (emptyHive) {
-      const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-      if (keys.length) {
-        const res = keys.reduce((prev, curr) =>
-          hive.getResState(curr) > hive.getResState(prev) ? curr : prev
-        );
-        if (hive.getResState(res) > 0)
-          this.aid[hive.roomName] = {
-            to: emptyHive.roomName,
-            res,
-            amount: FREE_CAPACITY * 0.1,
-            excess: 1,
-          };
-      }
-    }
+    if (!emptyHive) return;
+    const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+    if (!keys.length) return;
+    const res = keys.reduce((prev, curr) =>
+      hive.getResState(curr) > hive.getResState(prev) ? curr : prev
+    );
+    if (hive.getResState(res) <= 0) return;
+    this.aid[hive.roomName] = {
+      to: emptyHive.roomName,
+      res,
+      amount: FREE_CAPACITY.min * 0.1,
+      excess: 1,
+    }; */
   }
 
   private updatePlanAid() {

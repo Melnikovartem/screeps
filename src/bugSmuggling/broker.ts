@@ -25,6 +25,7 @@ const MAX_DEVIATION_PERCENT = 0.1;
 const MAX_DEVIATION_PRICE = 10;
 
 const ORDER_OFFSET = 0.001;
+const MARKET_PRECISION = 0.001;
 // ts doesn't know about this constant :/
 // const MARKET_FEE = 0.05; // (added by hand to screeps-ts before MARKET_MAX_ORDERS)
 
@@ -186,7 +187,10 @@ export class Broker {
 
       const diffInPrice = myPrice - myOrder.price;
       const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
-      myPrice = myOrder.price + diffInPrice * coefForStep; // trying to get to myPrice but not too fast
+      let stepToPrice = diffInPrice * coefForStep;
+      if (Math.abs(stepToPrice) < MARKET_PRECISION)
+        stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
+      myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
 
       const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
 
@@ -453,6 +457,7 @@ export class Broker {
       amount;
     const okToShortSell =
       loss < okLoss || creditsToUse < MARKET_SETTINGS.reserveCredits;
+
     if (!okToShortSell && commodity && hurry === "GoodPrice") return "long";
 
     if (okToShortSell || commodity) {
@@ -486,13 +491,17 @@ export class Broker {
 
     const orders = this.longOrders(roomName, res, ORDER_SELL);
     let myPrice = priceToSellLong - ORDER_OFFSET;
+
     if (!orders.length) this.sellLong(terminal, res, amount, myPrice);
     else {
       const myOrder = orders.sort((a, b) => a.created - b.created)[0];
 
       const diffInPrice = myPrice - myOrder.price;
       const coefForStep = hurry === "GoodPrice" ? 0.02 : 0.08;
-      myPrice = myOrder.price + diffInPrice * coefForStep; // trying to get to myPrice but not too fast
+      let stepToPrice = diffInPrice * coefForStep;
+      if (Math.abs(stepToPrice) < MARKET_PRECISION)
+        stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
+      myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
 
       const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
 

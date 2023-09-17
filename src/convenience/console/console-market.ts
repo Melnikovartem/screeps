@@ -355,7 +355,7 @@ CustomConsole.prototype.completeOrder = function (
 
     let terminal;
     let validateTerminal = (t: StructureTerminal) =>
-      t.store.getUsedCapacity(resource) > amount;
+      t.store.getUsedCapacity(resource) > Math.min(amount, 100);
     if (order.type === ORDER_SELL)
       validateTerminal = (t) => t.store.getFreeCapacity(resource) > amount;
 

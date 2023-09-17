@@ -1,6 +1,6 @@
 import type { Bee } from "bees/bee";
 import { setups } from "bees/creepSetups";
-import { FULL_CAPACITY } from "bugSmuggling/terminalNetwork";
+import { FREE_CAPACITY } from "bugSmuggling/terminalNetwork";
 import type { ExcavationCell } from "cells/base/excavationCell";
 import { BASE_MINERALS } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
@@ -9,7 +9,7 @@ import { findOptimalResource } from "static/utils";
 
 import { Master } from "../_Master";
 
-const STOP_HAULING_RESOURCES = FULL_CAPACITY;
+const STOP_HAULING_RESOURCES = FREE_CAPACITY.max;
 
 @profile
 export class HaulerMaster extends Master<ExcavationCell> {

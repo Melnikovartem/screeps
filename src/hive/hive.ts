@@ -147,13 +147,8 @@ export class Hive {
         canBuyIn = true;
         break;
       case 2:
-        if (
-          res === RESOURCE_ENERGY ||
-          res === RESOURCE_OPS ||
-          BASE_MINERALS.includes(res)
-        )
-          canBuyIn = true;
-        break;
+        if (res === RESOURCE_ENERGY || res === RESOURCE_OPS) canBuyIn = true;
+      // fall through
       case 1:
         if (BASE_MINERALS.includes(res)) canBuyIn = true;
         break;

@@ -338,8 +338,9 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
       if (
         // always a little smth smth on annex repair roads / containers
         // but we ignore it
-        this.structuresConst.length &&
-        this.hive.phase < 2
+        this.buildingCosts.hive.build ||
+        this.buildingCosts.hive.repair > 5_000 ||
+        this.buildingCosts.annex.build
       )
         return;
       const newWallsTarget = nextWallTargetHealth(this);
@@ -378,9 +379,6 @@ function nextWallTargetHealth(cell: BuildCell) {
     const newWallTargetHealth = Math.min(
       Math.ceil(minHealth / WALLS_HEALTH.step + 1) * WALLS_HEALTH.step,
       +wallHealth
-    );
-    console.log(
-      `WALLS UP @ ${cell.print}: \t ${minHealth}/${currTarget} -> \t  ${minHealth}/${newWallTargetHealth}`
     );
     return newWallTargetHealth;
   }
