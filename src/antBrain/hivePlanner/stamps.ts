@@ -121,6 +121,13 @@ export const STAMP_EXTENSION_BLOCK: Stamp = {
   },
 };
 
+export const STAMP_EXTENSION_SINGLE: Stamp = {
+  posCell: {},
+  setup: {
+    extension: [{ x: 25, y: 25 }],
+  },
+};
+
 export const STAMP_POWER: Stamp = {
   posCell: {
     [prefix.powerCell]: [25, 25],

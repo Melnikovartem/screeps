@@ -88,27 +88,27 @@ export class ExcavationCell extends Cell {
 
     _.forEach(this.resourceCells, (cell) => {
       if (this.hive.annexInDanger.includes(cell.pos.roomName)) return;
-      if (cell.container) {
-        let padding = 0;
-        if (cell.operational) {
-          padding = cell.restTime * cell.master.ratePT + 25;
-          if (cell.resource instanceof Source)
-            padding = Math.min(padding, cell.resource.energy);
-          else padding = Math.min(padding, cell.resourceCapacity);
-        }
-        if (
-          cell.lair &&
-          (!cell.lair.ticksToSpawn || cell.lair.ticksToSpawn <= cell.restTime)
-        )
-          padding += 600; // usual drop of source keeper if killed by my SK defender
-        if (
-          cell.container.store.getUsedCapacity() + padding >=
-          this.fullContainer
-        ) {
-          const roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 20);
-          if (roomInfo.safePlace || cell.pos.roomName === this.hiveName)
-            this.quitefullCells.push(cell);
-        }
+      if (!cell.container) return;
+      let padding = 0;
+      if (cell.operational) {
+        // how much is mined while we goToCell
+        padding = cell.restTime * cell.master.ratePT + 25;
+        if (cell.resource instanceof Source)
+          padding = Math.min(padding, cell.resource.energy);
+        else padding = Math.min(padding, cell.resourceCapacity);
+      }
+      if (
+        cell.lair &&
+        (!cell.lair.ticksToSpawn || cell.lair.ticksToSpawn <= cell.restTime)
+      )
+        padding += 600; // usual drop of source keeper if killed by my SK defender
+      if (
+        cell.container.store.getUsedCapacity() + padding >=
+        this.fullContainer
+      ) {
+        const roomInfo = Apiary.intel.getInfo(cell.pos.roomName, 20);
+        if (roomInfo.safePlace || cell.pos.roomName === this.hiveName)
+          this.quitefullCells.push(cell);
       }
     });
     this.quitefullCells.sort(

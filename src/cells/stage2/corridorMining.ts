@@ -6,9 +6,16 @@ import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
-import { STOCKPILE_BASE_COMMODITIES } from "../stage1/factoryCell";
 
-const MINING_POWER_STOCK = 30_000;
+const MINING_POWER_STOCKPILE = 30_000;
+
+export const STOCKPILE_CORRIDOR_COMMODITIES = {
+  /** start using not locally but over the apiary */
+  compress: { global: 16_000 },
+  /** stop mining but this time only in the hive with big stockpile  */
+  stopmining: { local: 32_000, global: 100_000 },
+};
+
 @profile
 export class CorridorMiningCell extends Cell {
   // #region Properties (5)
@@ -44,7 +51,7 @@ export class CorridorMiningCell extends Cell {
       !inProgress.length &&
       this.hive.mode.powerMining &&
       workingPowerSites.length &&
-      this.hive.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCK
+      this.hive.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCKPILE
     )
       inProgress = [
         workingPowerSites.reduce((prev, curr) =>
@@ -56,19 +63,20 @@ export class CorridorMiningCell extends Cell {
     // reposess power bees to other masters
     if (workingPowerSites.length)
       _.forEach(this.powerSites, (p) => {
-        if (!p.maxSpawns)
-          _.forEach(p.bees, (b) => {
-            const inNeed = workingPowerSites.filter(
-              (wp) => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1
-            );
-            const nextMaster = b.pos.findClosest(
-              inNeed.length ? inNeed : workingPowerSites
-            );
-            if (nextMaster) {
-              p.removeBee(b);
-              nextMaster.newBee(b);
-            }
-          });
+        if (p.keepMining) return;
+
+        _.forEach(p.bees, (b) => {
+          const inNeed = workingPowerSites.filter(
+            (wp) => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1
+          );
+          const nextMaster = b.pos.findClosest(
+            inNeed.length ? inNeed : workingPowerSites
+          );
+          if (nextMaster) {
+            p.removeBee(b);
+            nextMaster.newBee(b);
+          }
+        });
       });
 
     // decide wich deposits to mine
@@ -76,10 +84,13 @@ export class CorridorMiningCell extends Cell {
       let workingDeposits = this.depositSites.filter(
         (d) =>
           d.keepMining &&
-          (!d.resource ||
-            this.hive.getResState(d.resource) <
-              STOCKPILE_BASE_COMMODITIES.toomuch)
+          d.resource &&
+          this.hive.getResState(d.resource) <
+            STOCKPILE_CORRIDOR_COMMODITIES.stopmining.local &&
+          Apiary.network.getResState(d.resource) <
+            STOCKPILE_CORRIDOR_COMMODITIES.stopmining.global
       );
+
       if (workingDeposits.length > 1) {
         const depositsWithBees = workingDeposits.filter(
           (d) => d.miners.beesAmount || d.pickup.beesAmount

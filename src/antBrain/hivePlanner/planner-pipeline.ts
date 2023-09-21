@@ -16,9 +16,11 @@ import {
   PLANNER_STAMP_STOP,
 } from "./planner-utils";
 import type { PlannerChecking } from "./roomPlanner";
+import type { Stamp } from "./stamps";
 import {
   STAMP_CORE,
   STAMP_EXTENSION_BLOCK,
+  STAMP_EXTENSION_SINGLE,
   STAMP_FAST_REFILL,
   STAMP_LABS,
   STAMP_OBSERVE,
@@ -37,9 +39,10 @@ const PLANNER_PADDING = {
 };
 
 // 9
-export const PLANNER_EXTENSION = Math.ceil(
-  CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] / 5 - 3
-);
+export const PLANNER_EXTENSION = {
+  block: Math.ceil(CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] / 5 - 3),
+  single: CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8],
+};
 
 const PLANNER_REST_COEF = {
   annex: 0.2,
@@ -52,9 +55,10 @@ export const PLANNER_STEPS: PlannerStep[] = [
   // stamps
   addMainStamp,
   addLabs,
-  addSomeExtensions(4),
+  addSomeExtensions("block", 6),
   addFastRef,
-  addSomeExtensions(),
+  addSomeExtensions("block", PLANNER_EXTENSION.block - 6),
+  addSomeExtensions("single"),
   addMainRoads,
   addPowerObserve,
 
@@ -180,11 +184,17 @@ function addMainRoads(ch: PlannerChecking) {
   return OK;
 }
 
-function addSomeExtensions(num?: number) {
-  return (ch: PlannerChecking) => addExtentions(ch, num);
+function addSomeExtensions(type: "block" | "single", num?: number) {
+  if (num === undefined) {
+    if (type === "single") num = PLANNER_EXTENSION.single;
+    else num = PLANNER_EXTENSION.block;
+  }
+  const stamp =
+    type === "single" ? STAMP_EXTENSION_SINGLE : STAMP_EXTENSION_BLOCK;
+  return (ch: PlannerChecking) => addExtentions(ch, num || 0, stamp);
 }
 
-function addExtentions(ch: PlannerChecking, num: number = PLANNER_EXTENSION) {
+function addExtentions(ch: PlannerChecking, num: number, stamp: Stamp) {
   const pos = getPos(ch);
   const roomMatrix = ch.active.rooms[ch.roomName];
 
@@ -192,14 +202,14 @@ function addExtentions(ch: PlannerChecking, num: number = PLANNER_EXTENSION) {
     CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][8] -
     (roomMatrix.compressed[STRUCTURE_EXTENSION]?.len || 0);
   const leftToAddStamps = Math.ceil(
-    leftToAdd / (STAMP_EXTENSION_BLOCK.setup.extension?.length || 1)
+    leftToAdd / (stamp.setup.extension?.length || 1)
   );
   const extensionsToAdd = Math.min(num, leftToAddStamps);
 
   for (let i = 0; i < extensionsToAdd; ++i) {
     const extentionPos = addStampSomewhere(
-      ch.active.centers,
-      STAMP_EXTENSION_BLOCK,
+      ch.active.centers.slice(0, 5),
+      stamp,
       roomMatrix,
       ch.active.posCell
     );

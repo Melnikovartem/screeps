@@ -55,7 +55,7 @@ export const MARKET_SETTINGS = {
     cleanupAmount: 10, // RemainingAmount threshold to remove expiring orders
   },
 };
-export const MARKET_LAG = Game.cpu.limit <= 20 ? 40 : 10;
+export const MARKET_LAG = Game.cpu.limit <= 20 ? 4 : 2;
 
 /* 
   Define the structure to store price statistics for different resources.
@@ -500,6 +500,7 @@ export class Broker {
     let stepToPrice = diffInPrice * coefForStep;
     if (Math.abs(stepToPrice) < MARKET_PRECISION)
       stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
+    stepToPrice = Math.round(stepToPrice / MARKET_PRECISION) * MARKET_PRECISION;
     myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
 
     const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);

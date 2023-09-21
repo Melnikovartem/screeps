@@ -75,7 +75,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (6)
+  // #region Public Accessors (7)
 
   public get decay() {
     return this.info.dc;
@@ -85,8 +85,12 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     return this.info.ht;
   }
 
+  public get keepMining() {
+    return this.hits >= 0;
+  }
+
   public get maxSpawns() {
-    return this.hits >= 0 ? Infinity : 0;
+    return this.keepMining ? Infinity : 0;
   }
 
   public get roadTime() {
@@ -95,7 +99,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   public get shouldSpawn() {
     // already mined out
-    if (this.hits < 0) return false;
+    if (!this.keepMining) return false;
     // decision gods said no!
     if (!this.sitesOn.includes(this)) return false;
     return this.canMineInTime();
@@ -105,7 +109,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     return this.positions.length * 2;
   }
 
-  // #endregion Public Accessors (6)
+  // #endregion Public Accessors (7)
 
   // #region Private Accessors (2)
 

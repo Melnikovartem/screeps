@@ -1,4 +1,4 @@
-/*
+/* finding overused cpu
 let cpu = Game.cpu.getUsed();
 let totalCpu = 0;
 const testingCpu = Game.shard.name === "shard3" &&
@@ -11,8 +11,8 @@ const testingCpu = Game.shard.name === "shard3" &&
     },
     total: () => console.log("\ttotal cpu:", totalCpu),
   };
-if (testingCpu) testingCpu("");
-f (testingCpu) testingCpu.total();
+if (testingCpu) testingCpu.it("");
+if (testingCpu) testingCpu.total();
 */
 
 /*
