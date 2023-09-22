@@ -525,7 +525,12 @@ export class Traveler {
     });
 
     if (!_.isArray(ret)) {
-      console.log(`couldn't findRoute to ${destination}`);
+      if (
+        options.roomCallback &&
+        options.roomCallback(destination, new PathFinder.CostMatrix()) === false
+      )
+        return;
+      console.log(`couldn't findRoute from ${origin} to ${destination}`);
       return;
     }
     for (const value of ret) {

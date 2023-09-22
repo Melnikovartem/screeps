@@ -57,6 +57,7 @@ export enum prefix {
   defSwarm = "protect_" /** Defensive swarm prefix */,
   claim = "claim_" /** Claim prefix */,
   downgrade = "downgrade_" /** Downgrade prefix */,
+  squad = "squad_",
 
   // annexgang
   safesk = "sk_",

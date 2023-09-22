@@ -321,6 +321,8 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
   public override update() {
     super.update();
 
+    this.updateTarget();
+
     for (let i = 0; i < this.knights.length; ++i)
       if (this.createDuplet(this.knights[i])) --i;
 
@@ -330,8 +332,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
       if (healer) dup[1] = this.bees[healer.ref];
     }
 
-    this.updateTarget();
-
+    /** resource deacayed 100 ticks ago */
     if (this.decay < -100) {
       this.parent.delete();
       return;
@@ -404,7 +405,6 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   private callPickUp() {
     const ref = prefix.pickup + this.ref;
-    if (Apiary.orders[ref]) return;
     // carry all power in one go
     this.hive.createSwarm<PickupInfo>(ref, this.pos, SWARM_MASTER.pickup, {
       tc: Math.ceil(this.info.pw / ((MAX_CREEP_SIZE * CARRY_CAPACITY) / 2)),

@@ -3,7 +3,7 @@ import { SWARM_MASTER } from "orders/swarm-nums";
 import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { hiveStates, prefix, roomStates } from "static/enums";
 
-import { HIVE_WALLS_UP, WALLS_HEALTH } from "./_building-constants";
+import { HIVE_WALLS_UP, MAX_WALLS, WALLS_HEALTH } from "./_building-constants";
 import { type BuildCell, type BuildProject } from "./buildCell";
 import {
   addUpgradeBoost,
@@ -220,8 +220,7 @@ export function updateStructures(this: BuildCell, forceAnnexCheck = false) {
           const ref = prefix.containerBuilder + this.hiveName;
           if (
             mineralsContainer &&
-            !annexRoads[0].filter((b) => b.type === "construction").length &&
-            !Apiary.orders[ref]
+            !annexRoads[0].filter((b) => b.type === "construction").length
           )
             this.hive.createSwarm(
               ref,
@@ -371,7 +370,7 @@ function nextWallTargetHealth(cell: BuildCell) {
   // check energy to decide if we need to one up the target
   for (const [wallTarget, energySurplus] of Object.entries(HIVE_WALLS_UP)) {
     // cap based on phase
-    const wallHealth = Math.min(cell.maxWallHealth, +wallTarget);
+    const wallHealth = Math.min(MAX_WALLS[cell.hive.phase], +wallTarget);
     // only if < new Target
     if (currTarget >= wallHealth) continue;
     // only if > surplus

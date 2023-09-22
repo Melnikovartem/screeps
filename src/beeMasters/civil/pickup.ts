@@ -1,6 +1,5 @@
 import type { MovePriority } from "beeMasters/_Master";
 import { setups } from "bees/creepSetups";
-import type { BoostRequest } from "cells/stage1/laboratoryCell";
 import { profile } from "profiler/decorator";
 import { beeStates, hiveStates } from "static/enums";
 import { findOptimalResource } from "static/utils";
@@ -35,13 +34,13 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
 
   // #region Public Accessors (5)
 
-  public override get boosts(): BoostRequest[] {
+  /* public override get boosts(): BoostRequest[] {
     if (this.pos.getRoomRangeTo(this.hive) <= 1) return [];
     return [
       { type: "capacity", lvl: 0 },
       { type: "fatigue", lvl: 0 },
     ];
-  }
+  } */
 
   public override get maxSpawns(): number {
     return this.targetBeeCount;
@@ -192,7 +191,7 @@ export class PickupMaster extends SwarmMaster<PickupInfo> {
     super.update();
     if (this.checkBees(this.hive.state <= hiveStates.battle)) {
       let setup = setups.pickup;
-      if (this.pos.getRoomRangeTo(this.hive) <= 1) {
+      if (!this.pos.getRoomRangeTo(this.hive)) {
         setup = setup.copy();
         setup.moveMax = 50 / 3;
       }

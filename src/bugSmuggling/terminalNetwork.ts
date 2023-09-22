@@ -33,9 +33,10 @@ const SELL_THRESHOLD = {
 
 @profile
 export class Network {
-  // #region Properties (4)
+  // #region Properties (5)
 
   private commoditiesToSell: CommodityConstant[] = [];
+  private nodesTrading: Hive[] = [];
   private resState: ResTarget = {};
 
   /** from -> to */
@@ -49,7 +50,7 @@ export class Network {
   } = {};
   public nodes: Hive[] = [];
 
-  // #endregion Properties (4)
+  // #endregion Properties (5)
 
   // #region Public Methods (4)
 
@@ -108,7 +109,7 @@ export class Network {
 
   // #endregion Public Methods (4)
 
-  // #region Private Methods (7)
+  // #region Private Methods (8)
 
   private buyShortages(
     hive: Hive,
@@ -355,7 +356,8 @@ export class Network {
       };
     }
 
-    /* if (!hive.cells.storage.terminal) return;
+    /* send extra resources to other hives
+    if (!hive.cells.storage.terminal) return;
     if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY.min) return;
     if (!this.aid[hive.roomName]) return;
 
@@ -404,31 +406,11 @@ export class Network {
     const sCell = hive.cells.storage;
     if (!sCell) return;
 
+    this.updateTerminalResState(hive);
     sCell.updateUsedCapacity();
 
     for (const [res, amount] of Object.entries(sCell.usedCapacity))
       addResDict(hive.resState, res, amount);
-
-    if (hive.cells.lab) {
-      for (const [res, amount] of Object.entries(hive.cells.lab.resTarget))
-        addResDict(hive.resState, res, -amount);
-      if (hive.cells.lab.prod) {
-        addResDict(
-          hive.resState,
-          hive.cells.lab.prod.res1,
-          -hive.cells.lab.prod.plan
-        );
-        addResDict(
-          hive.resState,
-          hive.cells.lab.prod.res2,
-          -hive.cells.lab.prod.plan
-        );
-      }
-    }
-
-    if (hive.cells.factory)
-      for (const [res, amount] of Object.entries(hive.cells.factory.resTarget))
-        addResDict(hive.resState, res, -amount);
 
     for (const [res, amount] of Object.entries(hive.resTarget))
       addResDict(hive.resState, res, -amount);
@@ -438,6 +420,13 @@ export class Network {
 
     if (!sCell.terminal) return;
 
+    for (const [res, amount] of Object.entries(hive.resState))
+      addResDict(this.resState, res, amount);
+  }
+
+  private updateTerminalResState(hive: Hive) {
+    const sCell = hive.cells.storage;
+    if (!sCell.terminal) return;
     let fullStorage = Math.min(
       1,
       Math.floor(sCell.getUsedCapacity(RESOURCE_ENERGY) / 1200) / 100 + 0.01
@@ -462,10 +451,7 @@ export class Network {
 
     const aid = this.aid[hive.roomName];
     if (aid) addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
-
-    for (const [res, amount] of Object.entries(hive.resState))
-      addResDict(this.resState, res, amount);
   }
 
-  // #endregion Private Methods (7)
+  // #endregion Private Methods (8)
 }

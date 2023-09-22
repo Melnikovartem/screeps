@@ -67,7 +67,6 @@ export class ObserveCell extends Cell {
       )
         return;
       const ref = prefix.depositMining + deposit.id;
-      if (Apiary.orders[ref]) return;
       this.hive.createSwarm(ref, deposit.pos, SWARM_MASTER.depositmining);
     });
   }
@@ -87,7 +86,6 @@ export class ObserveCell extends Cell {
           return;
 
         const ref = prefix.powerMining + power.id;
-        if (Apiary.orders[ref]) return;
         this.hive.createSwarm(ref, power.pos, SWARM_MASTER.powermining);
       }
     );

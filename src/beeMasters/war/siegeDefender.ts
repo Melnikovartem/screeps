@@ -349,7 +349,7 @@ export class SiegeMaster extends Master<DefenseCell> {
       if (stats.dmgRange > beeStats.heal) targetedRange = 5;
     }
 
-    if (rangeToTarget < 5) bee.memory._trav.path = undefined;
+    if (rangeToTarget < 5) bee.invalidatePath();
 
     // we do not fear this enemy
     const onPosition = posToStay.equal(bee);

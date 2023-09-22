@@ -17,13 +17,29 @@ export const WALLS_HEALTH = {
   battle: 2_000_000,
 };
 
+/** how much of walls to build when hive.phase is [key] */
+export const MAX_WALLS = {
+  0: 0,
+  "1_minimum": WALLS_HEALTH.step,
+  "1_force": 1_000_000,
+  1: 5_000_000,
+  "2_normal": 25_000_000,
+  /** overkill target for hive */
+  2: 50_000_000, // WALL_HITS_MAX
+};
+
 /** add WALL_STEP to target wall health if energy surplus is more than cell */
 export const HIVE_WALLS_UP = {
-  [WALLS_HEALTH.step]: 1_000_000, // resState >= 0 so build up to a minimum of 1m health
-  [5_000_000]: HIVE_ENERGY * 0.25, // +100_000 // prob can cell easy
-  [25_000_000]: HIVE_ENERGY, // +200_000 // ok spot to be
-  [50_000_000]: HIVE_ENERGY * 1.5, // +300_000 // kinda overkill
-  // [WALL_HITS_MAX]: HIVE_ENERGY * 2, // big project
+  /**  minimal walls after we build storage */
+  [MAX_WALLS["1_minimum"]]: -HIVE_ENERGY * 0.75, // -150_000 (50K in storage)
+  /** force build up some actual walls */
+  [MAX_WALLS["1_force"]]: -HIVE_ENERGY * 0.5, // -100_000 (100K in storage)
+  /** balanced hive build up the walls to 5mil */
+  [MAX_WALLS[1]]: 0,
+  /** have some energy to build up walls */
+  [MAX_WALLS["2_normal"]]: HIVE_ENERGY, // + 200_000
+  /** max out walls if have a lot of spare energy */
+  [MAX_WALLS[2]]: HIVE_ENERGY * 1.5, // +300_000
 };
 
 export const BUFFER_ZONE = {

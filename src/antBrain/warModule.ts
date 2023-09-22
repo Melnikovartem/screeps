@@ -8,7 +8,7 @@ import type {
 import { setups } from "../bees/creepSetups";
 import { profile } from "../profiler/decorator";
 import { enemyTypes, prefix, roomStates } from "../static/enums";
-import { getEnterances, makeId, towerCoef } from "../static/utils";
+import { getEnterances, goodSpot, makeId, towerCoef } from "../static/utils";
 import { Traveler } from "../Traveler/TravelerModified";
 
 const HEAL_COEF = 2; // HEAL/TOUGH setup for my bees
@@ -98,20 +98,16 @@ export class WarcrimesModule {
     pos: RoomPosition,
     dismantle: boolean = false
   ): Enemy["object"] | undefined {
+    if (!(pos.roomName in Game.rooms)) return;
+
     let roomInfo = Apiary.intel.getInfo(pos.roomName, 20);
-    const noRamp = (e: { object: { pos: RoomPosition } }) =>
-      !e.object.pos.lookFor(LOOK_STRUCTURES).filter((s) => s.hits > 10000)
-        .length;
     if (roomInfo.roomState === roomStates.ownedByEnemy)
       roomInfo = Apiary.intel.getInfo(pos.roomName, 4);
     const siedge: SiedgeInfo | undefined = this.siedge[pos.roomName];
 
     let enemies: Enemy[] = [];
-    if (!dismantle)
-      roomInfo.enemies.filter(
-        (e) => pos.getRangeTo(e.object) <= 4 && noRamp(e)
-      ); // havoc enemies
-    if (siedge && pos.roomName in Game.rooms) {
+
+    if (siedge) {
       if (roomInfo.safeModeEndTime > 0)
         siedge.attackTime = Math.max(
           roomInfo.safeModeEndTime - 100,
@@ -158,19 +154,21 @@ export class WarcrimesModule {
         }
       }
     }
+
     if (!enemies.length)
       enemies = roomInfo.enemies.filter(
         (e) => e.dangerlvl === roomInfo.dangerlvlmax
       );
 
-    let enemy: Enemy["object"] | undefined;
-    if (enemies.length)
-      enemy = enemies.reduce((prev, curr) => {
-        let ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
-        if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
-        return ans < 0 ? curr : prev;
-      }).object;
-    return enemy;
+    if (dismantle) enemies = enemies.filter((e) => e instanceof Structure);
+
+    if (!enemies.length) return;
+
+    return enemies.reduce((prev, curr) => {
+      let ans = pos.getRangeTo(curr.object) - pos.getRangeTo(prev.object);
+      if (ans === 0) ans = prev.dangerlvl - curr.dangerlvl;
+      return ans < 0 ? curr : prev;
+    }).object;
   }
 
   public init() {}
@@ -450,7 +448,7 @@ export class WarcrimesModule {
         !store.pos
           .lookFor(LOOK_STRUCTURES)
           .filter(
-            (s) => s.structureType === STRUCTURE_RAMPART && s.hits > 25000
+            (s) => s.structureType === STRUCTURE_RAMPART && s.hits > 300_000
           ).length &&
         !Apiary.intel.getTowerAttack(store.pos) &&
         !store.pos
@@ -481,12 +479,13 @@ export class WarcrimesModule {
         !Game.flags["dismantle_" + roomName]
       )
         target.pos.createFlag("dismantle_" + roomName, COLOR_RED, COLOR_RED);
+
       if (
         !siedge.squadSlots.length &&
         addGuard &&
         !Game.flags["guard_" + roomName]
       )
-        new RoomPosition(25, 25, roomName).createFlag(
+        goodSpot(roomName).createFlag(
           "guard_" + roomName,
           COLOR_RED,
           COLOR_RED
@@ -534,18 +533,6 @@ export class WarcrimesModule {
             breakIn: b,
           };
       });
-
-      /* if (!siedge.squadSlots.length && siedge.attackTime)
-        siedge.squadSlots[target.pos.x + "_" + target.pos.y] = {
-          lastSpawned: extraSquads.pop() || -1,
-          type: "duo",
-          breakIn: {
-            x: target.pos.x,
-            y: target.pos.y,
-            ent: roomName,
-            state: 2,
-          },
-        } */
 
       if (attackTime)
         for (const br in siedge.squadSlots)
@@ -605,6 +592,8 @@ export class WarcrimesModule {
           });
     }
   }
+
+  private callHaulers(roomName: string) {}
 
   // #endregion Public Methods (6)
 
@@ -767,28 +756,36 @@ export class WarcrimesModule {
     };
   }
 
-  private sendSquad(roomName: string) {
-    const siedge = this.siedge[roomName];
-    if (!siedge || siedge.lastUpdated + CREEP_LIFE_TIME < Game.time) return;
-    const hives = _.filter(
+  private findHive(targetRoom: string, warUse: boolean) {
+    let hives = _.filter(
       Apiary.hives,
-      (h) =>
-        h.phase === 2 &&
-        h.mode.war &&
-        h.getResState(RESOURCE_ENERGY) >= 0 &&
-        h.pos.getRoomRangeTo(roomName) <= 12
+      (h) => h.phase === 2 && h.pos.getRoomRangeTo(targetRoom) <= 12
     );
+    if (warUse)
+      hives = hives.filter(
+        (h) => h.mode.war && h.getResState(RESOURCE_ENERGY) >= 0
+      );
+
     if (!hives.length) return;
-    const slot = _.min(siedge.squadSlots, (s) => s.lastSpawned);
-    const hive = hives.reduce((prev, curr) => {
+    return hives.reduce((prev, curr) => {
       let ans =
-        curr.pos.getRoomRangeTo(roomName) - prev.pos.getRoomRangeTo(roomName);
+        curr.pos.getRoomRangeTo(targetRoom) -
+        prev.pos.getRoomRangeTo(targetRoom);
       if (ans === 0)
         ans =
           prev.getResState(RESOURCE_ENERGY) - curr.getResState(RESOURCE_ENERGY);
       return ans < 0 ? curr : prev;
     });
-    const ref = makeId(8);
+  }
+
+  private sendSquad(roomName: string) {
+    const siedge = this.siedge[roomName];
+    if (!siedge || siedge.lastUpdated + CREEP_LIFE_TIME < Game.time) return;
+
+    const hive = this.findHive(roomName, true);
+    if (!hive) return;
+
+    const ref = prefix.squad + makeId(8);
     if (ref in this.squads) return; // try next tick bro (can do a while cycle)
 
     let formation;
@@ -796,6 +793,7 @@ export class WarcrimesModule {
     let dmg = siedge.towerDmgBreach;
     if (siedge.threatLvl > 1) dmg += 660;
     dmg = Math.max(dmg, 330);
+    const slot = _.min(siedge.squadSlots, (s) => s.lastSpawned);
 
     switch (slot.type) {
       case "dism":

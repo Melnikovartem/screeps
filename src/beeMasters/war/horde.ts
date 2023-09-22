@@ -93,6 +93,8 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
     const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, Infinity);
 
     const rangeToTarget = target ? bee.pos.getRangeTo(target) : Infinity;
+    const anyDmg = beeStats.dmgClose + beeStats.dmgRange + beeStats.dism;
+
     if (beeStats.dmgRange > 0) {
       if (rangeToTarget <= 3 && !(target instanceof Structure))
         action2 = () => bee.rangedAttack(target!);
@@ -185,20 +187,16 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
       const rangeToHealingTarget = healingTarget
         ? bee.pos.getRangeTo(healingTarget)
         : Infinity;
-      if (
-        rangeToHealingTarget <= 1 &&
-        (!action1 || beeStats.heal > beeStats.dism + beeStats.dmgClose)
-      ) {
+      if (rangeToHealingTarget <= 1 && (!action1 || beeStats.heal > anyDmg)) {
         action1 = () => bee.heal(healingTarget!);
       } else if (
         rangeToHealingTarget <= 3 &&
-        ((!action2 && !action1) || beeStats.heal > beeStats.dmgRange)
+        ((!action2 && !action1) || beeStats.heal > anyDmg)
       )
         action2 = () => bee.rangedHeal(healingTarget!);
     }
-
-    if (action1) action1();
     if (action2) action2();
+    if (action1) action1();
 
     let targetedRange = 1;
     let loosingBattle = 1;
@@ -230,12 +228,7 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
 
     if (!target) return OK;
 
-    if (
-      !beeStats.dmgClose &&
-      !beeStats.dmgRange &&
-      beeStats.heal &&
-      bee.pos.roomName === this.pos.roomName
-    ) {
+    if (!anyDmg && beeStats.heal && bee.pos.roomName === this.pos.roomName) {
       // healer help with attack
       const moveTarget = this.activeBees
         .filter(
@@ -257,10 +250,10 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
       if (moveTarget) bee.goTo(moveTarget, opt);
       return OK;
     }
+
     // are we too close
-    const shouldFlee =
-      rangeToTarget < targetedRange ||
-      (!beeStats.dmgRange && !beeStats.dmgClose);
+    const shouldFlee = rangeToTarget < targetedRange || !anyDmg;
+
     // can we get help from towers inside hive
     const hiveTowers =
       Apiary.hives[bee.pos.roomName] &&
@@ -270,6 +263,7 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
       bee.flee(this.pos, opt, true); // loosingBattle && bee.pos.getRoomRangeTo(this.hive) <= 2 ? this.hive :
       return ERR_BUSY;
     }
+
     // if losing find smaller creeps to bully
     if (loosingBattle <= 0 && bee.pos.roomName === this.pos.roomName) {
       const newEnemy = bee.pos.findClosest(
@@ -522,46 +516,53 @@ export class HordeMaster extends SwarmMaster<HordeInfo> {
           const beeStats = Apiary.intel.getStats(bee.creep).current;
           if (beeStats.dism) {
             const room = Game.rooms[this.pos.roomName];
-            if (room)
-              enemy = _.compact(
+            if (room) {
+              const structures = _.compact(
                 room
                   .find(FIND_FLAGS)
                   .filter(
                     (f) =>
-                      f.color === COLOR_GREY && f.secondaryColor === COLOR_RED
+                      f.color === COLOR_GREY &&
+                      (f.secondaryColor === COLOR_RED ||
+                        f.secondaryColor === COLOR_ORANGE)
                   )
                   .map((f) => f.pos.lookFor(LOOK_STRUCTURES)[0])
-              )[0];
+              );
+              const noStore = structures.filter((s) => !("store" in s));
+              enemy = noStore[0] || structures[0];
+            }
             if (!enemy) enemy = Apiary.intel.getEnemyStructure(pos, 50);
-          } else
-            enemy = Apiary.intel.getEnemy(
-              pos,
+          } else {
+            const nearExit =
               bee.pos.x <= 3 ||
-                bee.pos.x >= 47 ||
-                bee.pos.y <= 3 ||
-                bee.pos.y >= 47
-                ? 0
-                : 10
-            );
+              bee.pos.x >= 47 ||
+              bee.pos.y <= 3 ||
+              bee.pos.y >= 47;
+            enemy = Apiary.intel.getEnemy(pos, nearExit ? 0 : 10);
+          }
 
-          if (!enemy) {
-            const healingTarget = this.activeBees.filter(
-              (b) => b.hits < b.hitsMax && b.pos.getRangeTo(bee) <= 2
-            )[0];
-            if (healingTarget && bee.getActiveBodyParts(HEAL))
-              bee.heal(healingTarget);
-            // @todo finish dying creeps off
-            const restTarget = !Object.keys(this.enemiesAtEnterance).length
-              ? this.pos // no enemy go chill @ pos
-              : _.reduce(
-                  this.enemiesAtEnterance,
-                  (prev: { pos: RoomPosition }, curr) =>
-                    prev.pos.getRangeTo(bee) < curr.pos.getRangeTo(bee)
-                      ? prev
-                      : curr
-                ).pos; // wait for enemy
-            bee.goRest(restTarget);
-          } else this.beeAct(bee, enemy);
+          if (enemy) this.beeAct(bee, enemy);
+          else {
+            const healingTarget =
+              bee.getActiveBodyParts(HEAL) &&
+              this.activeBees.filter(
+                (b) => b.hits < b.hitsMax && b.pos.getRangeTo(bee) <= 2
+              )[0];
+            if (healingTarget) bee.heal(healingTarget);
+            else {
+              // @todo finish dying creeps off
+              const restTarget = !Object.keys(this.enemiesAtEnterance).length
+                ? this.pos // no enemy go chill @ pos
+                : _.reduce(
+                    this.enemiesAtEnterance,
+                    (prev: { pos: RoomPosition }, curr) =>
+                      prev.pos.getRangeTo(bee) < curr.pos.getRangeTo(bee)
+                        ? prev
+                        : curr
+                  ).pos; // wait for enemy
+              bee.goRest(restTarget);
+            }
+          }
           if (
             !this.recycle ||
             enemy ||

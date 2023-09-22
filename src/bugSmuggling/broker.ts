@@ -31,7 +31,11 @@ const MARKET_PRECISION = 0.001;
 // ts doesn't know about this constant :/
 // const MARKET_FEE = 0.05; // (added by hand to screeps-ts before MARKET_MAX_ORDERS)
 
-const COEF_GOOD_PRICE_COMMODITY = 0.93;
+const A_LOT_OF_COMMODITY = 500;
+const COEF_PRICE_COMMODITY = {
+  alot: 0.93,
+  some: 0.97,
+};
 
 // @MARKETDANGER
 const SKIP_SMALL_ORDER = {
@@ -44,12 +48,11 @@ export const MARKET_SETTINGS = {
   okLossAmount: 100_000, // i can pay this price to smooth things
 
   reserveCredits: 1_000_000, // Maintain balance above this amount
-  mineralCredits: 5_000_000, // Buy credits if above this amount
-  emergencyRes: 7_000_000,
-  opsCredits: 12_000_000, // Buy ops directly if above this amount
+  mineralCredits: 10_000_000, // Buy credits if above this amount
+  opsCredits: 15_000_000, // Buy ops directly if above this amount
   boostCredits: 50_000_000, // Buy boosts directly if above this amount
-  energyCredits: 60_000_000, // Buy energy if above this amount
-  anyCredits: 1_000_000_000, // Buy energy if above this amount
+  energyCredits: 70_000_000, // Buy energy if above this amount
+  anyCredits: 1_000_000_000, // Buy anything ergy if above this amount
   orders: {
     timeout: 1_000_000, // Remove orders after this many ticks if remaining amount < cleanupAmount
     cleanupAmount: 10, // RemainingAmount threshold to remove expiring orders
@@ -419,13 +422,18 @@ export class Broker {
     const priceToSellLong = info.bestPriceBuy || info.avgPrice;
     const priceToSellInstant = info.bestPriceSell || info.avgPrice;
 
+    let minPrice = 0;
     // just wait for npc order
     const commodity = COMPLEX_COMMODITIES.includes(res as CommodityConstant);
-    if (
-      commodity &&
-      info.avgPrice * COEF_GOOD_PRICE_COMMODITY > priceToSellInstant
-    ) {
+    if (commodity) {
+      const coefMode = amount >= A_LOT_OF_COMMODITY ? "alot" : "some";
+      minPrice = info.avgPrice * COEF_PRICE_COMMODITY[coefMode];
+    }
+
+    // do not sell cheaply
+    if (minPrice > priceToSellInstant) {
       // no good prices for commodities so we wait
+      this.keepInTerminal(roomName, res, amount);
       // could estimate better, but oh well
       return "long";
     }
@@ -439,8 +447,6 @@ export class Broker {
     const okToShortSell =
       loss < okLoss || creditsToUse < MARKET_SETTINGS.reserveCredits;
 
-    if (!okToShortSell && commodity && hurry === "GoodPrice") return "long";
-
     if (okToShortSell || commodity) {
       const ans = this.sellShort(
         terminal,
@@ -450,25 +456,24 @@ export class Broker {
       );
       switch (ans) {
         case OK:
-          // move reosources to terminal
-          this.shortOrdersSell[roomName].orders[res] = amount;
-          this.shortOrdersSell[roomName].lastUpdated = Game.time;
           return "short";
         case ERR_TIRED:
           return "short";
         case ERR_NOT_FOUND:
         case ERR_NOT_ENOUGH_RESOURCES:
         case ERR_FULL:
-          // move reosources to terminal
-          this.shortOrdersSell[roomName].orders[res] = amount;
-          this.shortOrdersSell[roomName].lastUpdated = Game.time;
+          // move resources to terminal
+          this.keepInTerminal(roomName, res, amount);
           return "long";
         default:
       }
     }
 
     // dont long sell commodities lmao
-    if (commodity) return "long";
+    if (commodity) {
+      this.keepInTerminal(roomName, res, amount);
+      return "long";
+    }
 
     const orders = this.longOrders(roomName, res, ORDER_SELL);
     const myPrice = priceToSellLong - ORDER_OFFSET;
@@ -477,43 +482,6 @@ export class Broker {
     else this.changeFee(orders, myPrice, hurry);
 
     return "long";
-  }
-
-  private changeFee(orders: Order[], myPrice: number, hurry: HurryTypes) {
-    const myOrder = orders.sort((a, b) => a.created - b.created)[0];
-
-    const diffInPrice = myPrice - myOrder.price;
-    if (Math.abs(diffInPrice) < MARKET_PRECISION) return;
-
-    let coefForStep = 0.01;
-    switch (hurry) {
-      case "AnyBuck":
-        coefForStep = 0.3;
-        break;
-      case "RightNow":
-        coefForStep = 0.08;
-        break;
-      case "GoodPrice":
-        coefForStep = 0.02;
-        break;
-    }
-    let stepToPrice = diffInPrice * coefForStep;
-    if (Math.abs(stepToPrice) < MARKET_PRECISION)
-      stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
-    stepToPrice = Math.round(stepToPrice / MARKET_PRECISION) * MARKET_PRECISION;
-    myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
-
-    const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
-    // report stuff
-    const fee =
-      (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
-    if (fee > 0 && ans === OK)
-      Apiary.logger.reportMarketFeeChange(
-        myOrder.id,
-        myOrder.resourceType,
-        fee,
-        ORDER_SELL
-      );
   }
 
   /**
@@ -693,7 +661,47 @@ export class Broker {
 
   // #endregion Public Methods (13)
 
-  // #region Private Methods (3)
+  // #region Private Methods (5)
+
+  private changeFee(orders: Order[], myPrice: number, hurry: HurryTypes) {
+    const myOrder = orders.sort((a, b) => a.created - b.created)[0];
+
+    const diffInPrice = myPrice - myOrder.price;
+    if (Math.abs(diffInPrice) < MARKET_PRECISION) return;
+
+    let coefForStep = 0.01;
+    switch (hurry) {
+      case "AnyBuck":
+        coefForStep = 0.3;
+        break;
+      case "RightNow":
+        coefForStep = 0.08;
+        break;
+      case "GoodPrice":
+        coefForStep = 0.02;
+        break;
+    }
+    let stepToPrice = diffInPrice * coefForStep;
+    if (Math.abs(stepToPrice) < MARKET_PRECISION)
+      stepToPrice = MARKET_PRECISION * Math.sign(diffInPrice);
+    stepToPrice = Math.round(stepToPrice / MARKET_PRECISION) * MARKET_PRECISION;
+    myPrice = myOrder.price + stepToPrice; // trying to get to myPrice but not too fast
+
+    const ans = Game.market.changeOrderPrice(myOrder.id, myPrice);
+
+    if (ans !== OK) return;
+    const fee =
+      (myPrice - myOrder.price) * myOrder.remainingAmount * MARKET_FEE;
+    if (fee <= 0) return;
+
+    // report change
+    Apiary.logger.reportMarketFeeChange(
+      myOrder.id,
+      myOrder.resourceType,
+      fee,
+      ORDER_SELL
+    );
+  }
 
   /**
    * Check if any lab-produced compounds are profitable
@@ -731,6 +739,15 @@ export class Broker {
     return this.info[compound]!.avgPrice - costToProduce - energyCosts > 0;
   }
 
+  private keepInTerminal(
+    roomName: string,
+    res: ResourceConstant,
+    amount: number
+  ) {
+    this.shortOrdersSell[roomName].orders[res] = amount;
+    this.shortOrdersSell[roomName].lastUpdated = Game.time;
+  }
+
   /**
    * Calculate the weighted average price of a resource
    * @param res - ResourceConstant for which to calculate the weighted average price.
@@ -750,5 +767,5 @@ export class Broker {
     return volume ? sumPriceWeighted / volume : Infinity;
   }
 
-  // #endregion Private Methods (3)
+  // #endregion Private Methods (5)
 }

@@ -68,7 +68,12 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
               );
           }
           if (
-            bee.withdraw(mainHiveStorage, RESOURCE_ENERGY, undefined) === OK &&
+            bee.withdraw(
+              mainHiveStorage,
+              RESOURCE_ENERGY,
+              undefined,
+              this.hive.opt
+            ) === OK &&
             !otherRes
           ) {
             bee.state = beeStates.work;
@@ -79,7 +84,7 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
               mainHiveStorage.store,
               bee.store
             );
-            bee.goTo(target.pos);
+            bee.goTo(target.pos, this.hive.opt);
             break;
           }
           const resource = bee.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0];
@@ -92,7 +97,8 @@ export class ContainerBuilderMaster extends SwarmMaster<undefined> {
             bee.state = beeStates.refill;
             bee.target = undefined;
           } else {
-            if (target instanceof ConstructionSite) bee.build(target);
+            if (target instanceof ConstructionSite)
+              bee.build(target, this.hive.opt);
             let resource;
             if (bee.pos.getRangeTo(target) <= 3) {
               resource = bee.pos.findClosest(

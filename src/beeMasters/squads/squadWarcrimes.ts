@@ -517,16 +517,17 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       this.formationCenter.roomName === this.pos.roomName &&
       (!this.enemy || this.info.targetLastUpdated + 100 < Game.time)
     ) {
-      if (
+      const anyDmg =
         this.stats.current.dmgClose +
-          this.stats.current.dmgRange +
-          this.stats.current.dism >
-        0
-      ) {
+        this.stats.current.dmgRange +
+        this.stats.current.dism;
+
+      if (anyDmg) {
         const enemy = Apiary.war.getEnemy(
           this.info.targetLastUpdated === -1 ? this.pos : this.formationCenter,
           this.stats.current.dism > 0
         );
+
         if (enemy) {
           this.enemy = enemy;
           this.info.targetLastUpdated = Game.time;
@@ -588,6 +589,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       this.stuckValue = 0;
       this.moveCenter(centerBee, this.enemy as SquadEnemy, tempTargets);
     } else this.stuckValue += 1;
+
     const desired = this.desiredPoss;
     for (let i = 0; i < this.formationBees.length; ++i) {
       const bee = this.formationBees[i];
@@ -606,27 +608,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       } else bee.goTo(desiredPos);
     }
 
-    if (Memory.settings.richMovement)
-      for (let i = 0; i < this.formationBees.length; ++i) {
-        const bee = this.formationBees[i];
-        if (!bee) continue;
-        const desiredPos = this.getDeisredPos(i);
-        if (!desiredPos) continue;
-        const vis = Apiary.visuals;
-        if (
-          vis.caching[desiredPos.roomName] &&
-          Game.time > vis.caching[desiredPos.roomName].lastRecalc
-        )
-          continue;
-        const style: CircleStyle = {};
-        if (this.formationBees[i] && bee.ref === centerBee.ref)
-          style.fill = "#FF0000";
-        new RoomVisual(desiredPos.roomName).circle(
-          desiredPos.x,
-          desiredPos.y,
-          style
-        );
-      }
+    if (Memory.settings.richMovement) this.visualsSquad(centerBee.ref);
   }
 
   public override update() {
@@ -727,9 +709,9 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
 
   // #endregion Protected Methods (1)
 
-  // #region Private Methods (6)
+  // #region Private Methods (7)
 
-  private canBeOutDmged(pos: RoomPosition, padding = 1) {
+  private canBeOutDmged(pos: RoomPosition, padding: number) {
     for (let i = 0; i < this.setup.length; ++i) {
       const bee = this.formationBees[i];
       if (!bee) continue;
@@ -745,9 +727,10 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       const beeStats = Apiary.intel.getStats(bee.creep);
       // let myStats = Apiary.intel.getComplexMyStats(desiredPos).current;
       const heal = this.stats.current.heal;
+      const resistCanHold = beeStats.current.resist - towerDmg - creepDmg;
       if (
         towerDmg + creepDmg >
-        heal + Math.min(beeStats.current.resist, (heal * 0.7) / 0.3)
+        heal + Math.min(resistCanHold, (heal * 0.7) / 0.3)
       )
         return true;
     }
@@ -902,6 +885,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     tempTarget: Enemy[]
   ) {
     const roomInfo = Apiary.intel.getInfo(bee.pos.roomName, 10);
+
     let moveTarget =
       this.formationCenter.getRoomRangeTo(this.pos) <= 1 &&
       (this.pos.roomName === this.formationCenter.roomName ||
@@ -913,7 +897,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         : new RoomPosition(25, 25, this.info.ent);
     let opt = this.getPathArgs(bee.ref);
     let fatigue = 0;
-    let padding = 1;
+    let padding = 0;
 
     const targetPosRoomState = Apiary.intel.getInfo(
       this.pos.roomName,
@@ -924,11 +908,19 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       !targetPosRoomState.enemies.length;
 
     const ticksToEndSafeMode = targetPosRoomState.safeModeEndTime - Game.time;
+    const isSkRaid =
+      roomInfo.roomState === roomStates.SKfrontier ||
+      roomInfo.roomState === roomStates.SKcentral;
+    if (isSkRaid) padding = -1;
+
     // @todo wait untill all resources removed cause ppl steal :/
     const endOfRaid =
-      (roomInfo.roomState === roomStates.SKfrontier ||
-        roomInfo.roomState === roomStates.SKcentral) &&
-      !roomInfo.enemies.length;
+      isSkRaid &&
+      !enemy &&
+      roomInfo.safePlace &&
+      !this.pos
+        .findInRange(FIND_STRUCTURES, 3)
+        .filter((s) => "store" in s && s.store.getUsedCapacity()).length;
 
     if (endOfRaid) {
       this.info.targetid = "";
@@ -948,7 +940,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       moveTarget = new RoomPosition(25, 25, this.info.ent);
 
     if (this.stuckSiedge > 10) {
-      padding = this.stuckSiedge > 15 ? -1 : 0;
+      if (this.stuckSiedge > 15) padding = -1;
       if (this.stuckSiedge > 20) {
         opt = this.getPathArgs(bee.ref, true);
         ++this.stuckSiedge;
@@ -971,6 +963,9 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         if (this.stuckSiedge > 50) this.stuckSiedge = 0;
       }
     }
+
+    if (enemy instanceof Structure && moveTarget.roomName === this.pos.roomName)
+      this.parent.setPosition(moveTarget);
 
     if (
       enemy &&
@@ -1029,90 +1024,93 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
         }
         const rotate: 0 | 1 | -1 = this.checkRotation(direction);
         if (rotate) {
-          bee.memory._trav.path = undefined;
+          bee.invalidatePath();
           busy = this.rotate(rotate);
         }
       }
     }
 
-    if (!busy) {
-      bee.goTo(moveTarget, opt);
-      if (moveTarget.roomName === this.pos.roomName)
-        this.parent.setPosition(moveTarget);
-      if (
-        moveTarget.getRangeTo(bee) <= 3 &&
-        (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
-        this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
+    if (busy) {
+      bee.goTo(this.formationCenter);
+      return;
+    }
+
+    bee.goTo(moveTarget, opt);
+
+    if (
+      moveTarget.getRangeTo(bee) <= 3 &&
+      (!bee.targetPosition || bee.targetPosition.equal(bee.pos)) &&
+      this.getSquadMoveMentValue(bee.pos, bee.ref, false) > 5
+    ) {
+      const poss = bee.pos.getOpenPositions();
+      if (poss.length) {
+        const newPos = poss.reduce((prev, curr) => {
+          let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
+          if (ans === 0)
+            ans =
+              this.getSquadMoveMentValue(curr, bee.ref, false) -
+              this.getSquadMoveMentValue(prev, bee.ref, false);
+          return ans < 0 ? curr : prev;
+        });
+        if (!newPos.equal(bee.pos)) bee.goTo(newPos, opt);
+      }
+    }
+
+    if (!roomInfo.safePlace && this.stats.current.heal) {
+      const targetRoom =
+        bee.pos.roomName === this.pos.roomName || this.stuckSiedge < 25;
+
+      if (this.canBeOutDmged(bee.pos, padding) && targetRoom) {
+        opt = this.getPathArgs(bee.ref, true);
+        const exit = bee.pos.findClosest(
+          Game.rooms[bee.pos.roomName].find(FIND_EXIT)
+        );
+        // flee
+        this.stuckSiedge++;
+        bee.goTo(exit || this.pos, opt);
+      } else if (
+        bee.targetPosition &&
+        this.canBeOutDmged(bee.targetPosition, padding)
       ) {
-        const poss = bee.pos.getOpenPositions();
-        if (poss.length) {
-          const newPos = poss.reduce((prev, curr) => {
-            let ans = curr.getRangeTo(moveTarget) - prev.getRangeTo(moveTarget);
-            if (ans === 0)
-              ans =
-                this.getSquadMoveMentValue(curr, bee.ref, false) -
-                this.getSquadMoveMentValue(prev, bee.ref, false);
-            return ans < 0 ? curr : prev;
-          });
-          if (!newPos.equal(bee.pos)) bee.goTo(newPos, opt);
-        }
-      }
-
-      if (!roomInfo.safePlace && this.stats.current.heal) {
-        const rightRoom =
-          bee.pos.roomName === this.pos.roomName || this.stuckSiedge < 25;
-        if (this.canBeOutDmged(bee.pos, padding) && rightRoom) {
-          opt = this.getPathArgs(bee.ref, true);
-          const exit = bee.pos.findClosest(
-            Game.rooms[bee.pos.roomName].find(FIND_EXIT)
-          );
-          // flee
-          this.stuckSiedge++;
-          bee.goTo(exit || this.pos, opt);
-        } else if (
+        this.stuckSiedge++;
+        // stop in place
+        if (targetRoom) bee.stop();
+      } else if (
+        roomInfo.roomState === roomStates.ownedByEnemy &&
+        notNearExit
+      ) {
+        const formationBreak =
           bee.targetPosition &&
-          this.canBeOutDmged(bee.targetPosition, padding)
-        ) {
-          this.stuckSiedge++;
-          // stop in place
-          if (rightRoom) bee.stop();
-        } else if (
-          roomInfo.roomState === roomStates.ownedByEnemy &&
-          notNearExit
-        ) {
-          const formationBreak =
-            bee.targetPosition &&
-            this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
-          if (formationBreak) {
-            // take a break
-            let range = 2;
-            if (this.stats.current.dism) range = 1;
-            if (
-              this.activeBees.filter((b) => this.pos.getRangeTo(b) <= range)
-                .length
-            )
-              bee.stop();
-          }
+          this.getSquadMoveMentValue(bee.targetPosition, bee.ref, false) > 5;
+        if (formationBreak) {
+          // take a break
+          let range = 2;
+          if (this.stats.current.dism) range = 1;
+          if (
+            this.activeBees.filter((b) => this.pos.getRangeTo(b) <= range)
+              .length
+          )
+            bee.stop();
         }
       }
+    }
 
-      let newCenter =
-        bee.targetPosition && bee.targetPosition.isFree()
-          ? bee.targetPosition
-          : bee.pos;
-      if (
-        bee.pos.roomName === newCenter.roomName &&
-        newCenter.enteranceToRoom &&
-        bee.pos.enteranceToRoom
-      )
-        newCenter =
-          bee.pos
-            .getOpenPositions()
-            .filter((p) => !p.enteranceToRoom)
-            .sort((a, b) => bee.pos.getRangeTo(a) - bee.pos.getRangeTo(b))[0] ||
-          newCenter;
-      this.formationCenter = newCenter;
-    } else bee.goTo(this.formationCenter);
+    let newCenter =
+      bee.targetPosition && bee.targetPosition.isFree()
+        ? bee.targetPosition
+        : bee.pos;
+    if (
+      bee.pos.roomName === newCenter.roomName &&
+      newCenter.enteranceToRoom &&
+      bee.pos.enteranceToRoom
+    )
+      newCenter =
+        bee.pos
+          .getOpenPositions()
+          .filter((p) => !p.enteranceToRoom)
+          .sort((a, b) => bee.pos.getRangeTo(a) - bee.pos.getRangeTo(b))[0] ||
+        newCenter;
+    this.formationCenter = newCenter;
   }
 
   private rotate(direction: -1 | 1) {
@@ -1186,5 +1184,28 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
     return false;
   }
 
-  // #endregion Private Methods (6)
+  private visualsSquad(centerBeeRef: string = "") {
+    for (let i = 0; i < this.formationBees.length; ++i) {
+      const bee = this.formationBees[i];
+      if (!bee) continue;
+      const desiredPos = this.getDeisredPos(i);
+      if (!desiredPos) continue;
+      const vis = Apiary.visuals;
+      if (
+        vis.caching[desiredPos.roomName] &&
+        Game.time > vis.caching[desiredPos.roomName].lastRecalc
+      )
+        continue;
+      const style: CircleStyle = {};
+      if (this.formationBees[i] && bee.ref === centerBeeRef)
+        style.fill = "#FF0000";
+      new RoomVisual(desiredPos.roomName).circle(
+        desiredPos.x,
+        desiredPos.y,
+        style
+      );
+    }
+  }
+
+  // #endregion Private Methods (7)
 }

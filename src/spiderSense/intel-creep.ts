@@ -32,13 +32,15 @@ export interface CreepAllBattleInfo {
 
 export function getComplexStats(
   this: Intel,
-  pos: ProtoPos,
+  protoPos: ProtoPos,
   range = 1,
   closePadding = 0,
   mode: FIND_HOSTILE_CREEPS | FIND_MY_CREEPS = FIND_HOSTILE_CREEPS
 ) {
+  let pos: RoomPosition;
   // i could filter enemies for creeps, but i belive that it would mean more iterations in case of seidge (but i guess in rest of cases it would mean better results...)
-  if (!(pos instanceof RoomPosition)) pos = pos.pos;
+  if (!(protoPos instanceof RoomPosition)) pos = protoPos.pos;
+  else pos = protoPos;
 
   const ref = mode + "_" + range + "_" + closePadding + "_" + pos.to_str;
   if (this.stats[ref]) return this.stats[ref];
@@ -73,16 +75,16 @@ export function getComplexStats(
       switch (key) {
         case "dmgClose":
         case "dism":
-          if ((pos as RoomPosition).getRangeTo(creep) > 1 + closePadding)
-            continue;
+          if (pos.getRangeTo(creep) > 1 + closePadding) continue;
           break;
         case "resist":
         case "hits":
-          if ((pos as RoomPosition).getRangeTo(creep) > 0) continue;
+          if (pos.getRangeTo(creep) > 0) continue;
           break;
         case "heal":
-          if ((pos as RoomPosition).getRangeTo(creep) > 1 + closePadding)
+          if (pos.getRangeTo(creep) > 1 + closePadding)
             current = (current * RANGED_HEAL_POWER) / HEAL_POWER;
+          break;
       }
       ans.max[key] += max;
       ans.current[key] += current;

@@ -252,6 +252,9 @@ export class Hive {
     type: SWARM_MASTER,
     info?: Partial<T>
   ) {
+    // do not create duplicate
+    const existing = Apiary.orders[ref];
+    if (existing && existing.type === type) return existing as SwarmOrder<T>;
     // bug prone, but best what i could think of
     // if you don't fuckup with defaultInfo in swarm master should be ok
     // (as it would it set it to T so special would be have some object behind it)

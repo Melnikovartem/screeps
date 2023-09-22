@@ -14,7 +14,7 @@ const DEEP_LAG = 10000;
  *
  * 2 source keeper (ignore defender of sources) OR non agression pacts in non hives (rooms not owned by me) OR spawn/extension  in enemy room
  *
- * 3 just hostile OR invaderCore in normal rooms OR invaderCore structures in normal rooms marked by Red_Grey flag
+ * 3 just hostile OR invaderCore in normal rooms OR any structure in normal rooms marked by Red_Grey flag OR ramparts in raidRooms
  *
  * 4 hostile that can bite (range >= 0 || melee >= 0) OR any powerlvl of Invader
  *
@@ -223,15 +223,18 @@ function updateEnemiesInRoom(
       break;
   }
 
-  if (structures)
+  if (structures) {
+    const SKroom =
+      intel.state === roomStates.SKfrontier ||
+      intel.state === roomStates.SKcentral;
     _.forEach(structures, (s) => {
       let dangerlvl: DangerLvl = 0;
       switch (s.structureType) {
+        case STRUCTURE_RAMPART:
+          if (SKroom) dangerlvl = 3;
+          break;
         case STRUCTURE_INVADER_CORE:
-          if (
-            intel.state === roomStates.SKfrontier ||
-            intel.state === roomStates.SKcentral
-          ) {
+          if (SKroom) {
             if (
               s.effects &&
               s.effects.filter((e) => e.effect === EFFECT_INVULNERABILITY)[0]
@@ -289,6 +292,7 @@ function updateEnemiesInRoom(
           type: enemyTypes.static,
         });
     });
+  }
 
   if (!intel.enemies.length && structures && structures.length) {
     // start removing old ramparts / walls

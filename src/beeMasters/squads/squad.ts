@@ -428,8 +428,7 @@ export abstract class SquadMaster extends SwarmMaster {
 
     const valid: number = this.validFormation();
 
-    if (this.stuckValue > 0 && valid === OK)
-      centerBee.memory._trav.path = undefined;
+    if (this.stuckValue > 0 && valid === OK) centerbee.invalidatePath();
 
     if (valid === OK || this.canValidate() !== OK || this.stuckValue > 6) {
       this.stuckValue = 0;
@@ -758,7 +757,7 @@ export abstract class SquadMaster extends SwarmMaster {
       if (notNearExit && bee.pos.getRangeTo(enemy) < 10) {
         const rotate = this.checkRotation(bee.pos.getDirectionTo(enemy));
         if (rotate) {
-          bee.memory._trav.path = undefined;
+          bee.invalidatePath();
           busy = this.rotate(rotate);
         }
       }

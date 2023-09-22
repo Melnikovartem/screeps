@@ -56,6 +56,7 @@ export function actUtilsActions(cm: FlagCommand) {
       } else cm.delete();
       break;
     }
+    case COLOR_ORANGE:
     case COLOR_RED:
       cm.acted = false;
       if (Game.time % 25 !== 0) break;

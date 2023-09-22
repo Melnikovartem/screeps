@@ -206,18 +206,25 @@ export class LaboratoryCell extends Cell {
   // #region Public Accessors (10)
 
   public get boostLabs(): { [key in ResourceConstant]?: string } {
-    return this.cache("boostLabs") || {};
+    const cached = this.cache("boostLabs");
+    if (!cached) return this.cache("boostLabs", {});
+    return cached;
   }
 
   public get boostRequests(): {
     [id: string]: { info: BoostInfo[]; lastUpdated: number };
   } {
-    return this.cache("boostRequests") || {};
+    const cached = this.cache("boostRequests");
+    if (!cached) return this.cache("boostRequests", {});
+    return cached;
   }
 
   public get labStates(): { [id: string]: LabState } {
-    return this.cache("labStates") || {};
+    const cached = this.cache("labStates");
+    if (!cached) return this.cache("labStates", {});
+    return cached;
   }
+
   public override get pos(): RoomPosition {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
@@ -263,7 +270,7 @@ export class LaboratoryCell extends Cell {
     let rCode: ScreepsReturnCode = OK;
 
     // do not boost old guys lmao
-    if (bee.ticksToLive < 1000) return rCode;
+    if (bee.ticksToLive < 400) return rCode;
 
     if (!requests) {
       requests = bee.master && bee.master.boosts;

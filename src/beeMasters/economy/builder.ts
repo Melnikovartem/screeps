@@ -320,7 +320,8 @@ export class BuilderMaster extends Master<BuildCell> {
 
             Apiary.logger.resourceTransfer(
               this.hiveName,
-              this.hive.state === hiveStates.nukealert
+              this.hive.state === hiveStates.nukealert ||
+                this.hive.state === hiveStates.battle
                 ? "defense_build"
                 : "build",
               this.hive.storage.store,

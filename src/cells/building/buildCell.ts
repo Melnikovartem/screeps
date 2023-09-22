@@ -5,11 +5,7 @@ import { ZERO_COSTS_BUILDING_HIVE } from "static/constants";
 import { prefix } from "static/enums";
 
 import { Cell } from "../_Cell";
-import {
-  HIVE_WALLS_UP,
-  UPDATE_STRUCTURES,
-  WALLS_HEALTH,
-} from "./_building-constants";
+import { UPDATE_STRUCTURES, WALLS_HEALTH } from "./_building-constants";
 import { getBuildTarget, updateStructures } from "./hive-building";
 
 // Define the BuildProject interface for construction projects
@@ -52,18 +48,7 @@ export class BuildCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (2)
-
-  public get maxWallHealth() {
-    switch (this.hive.phase) {
-      case 0:
-        return WALLS_HEALTH.start;
-      case 1:
-        return HIVE_WALLS_UP[WALLS_HEALTH.step];
-      default:
-        return Infinity;
-    }
-  }
+  // #region Public Accessors (1)
 
   public get sumCost() {
     return (
@@ -74,17 +59,17 @@ export class BuildCell extends Cell {
     );
   }
 
-  // #endregion Public Accessors (2)
+  // #endregion Public Accessors (1)
 
-  // #region Public Methods (3)
+  // #region Public Methods (4)
+
+  public checkAll() {
+    this.forceCheck = "annex";
+  }
 
   /** interface to recheck buildings */
   public checkRoom() {
     if (this.forceCheck === "") this.forceCheck = "mainroom";
-  }
-
-  public checkAll() {
-    this.forceCheck = "annex";
   }
 
   public run() {}
@@ -101,5 +86,5 @@ export class BuildCell extends Cell {
     }
   }
 
-  // #endregion Public Methods (3)
+  // #endregion Public Methods (4)
 }

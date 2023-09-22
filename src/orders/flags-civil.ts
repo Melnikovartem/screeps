@@ -12,9 +12,9 @@ export function actCivil(command: FlagCommand) {
 
   switch (command.secondaryColor) {
     case COLOR_GREEN: {
-      command.acted = false;
       const hive = Apiary.hives[command.pos.roomName];
       if (hive && hive.cells.storage && !command.ref.includes("manual")) {
+        command.acted = false;
         // if inside room move by storage system
         let targets: (Tombstone | Ruin | Resource | StructureStorage)[] =
           command.pos.lookFor(LOOK_RESOURCES).filter((r) => r.amount > 0);

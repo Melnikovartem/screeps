@@ -95,8 +95,12 @@ export class SwarmOrder<T> {
   }
 
   // keep how many bees used up for this order
-  public get spawned() {
-    return 0;
+  public get spawned(): number {
+    return this.cache[CACHE_ORDER_SPAWNED];
+  }
+
+  public set spawned(value) {
+    this.cache[CACHE_ORDER_SPAWNED] = value;
   }
 
   public get special(): T {
@@ -153,7 +157,9 @@ export class SwarmOrder<T> {
     this.master.delete();
   }
 
-  public newSpawn() {}
+  public newSpawn() {
+    this.spawned = this.spawned + 1;
+  }
 
   public setPosition(value: RoomPosition) {
     const toSave: SwarmOrderInfo[typeof CACHE_ORDER_POS] = [value.x, value.y];

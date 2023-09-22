@@ -47,6 +47,7 @@ export function checkFlee(
   lag = FLEE_INTEL_LAG
 ) {
   let pos = bee.pos;
+
   if (bee.targetPosition)
     pos =
       (bee.targetPosition.roomName === pos.roomName &&
@@ -55,8 +56,8 @@ export function checkFlee(
   const roomInfo = Apiary.intel.getInfo(pos.roomName, lag);
   if (
     pos.roomName !== bee.pos.roomName &&
-    Apiary.intel.somewhatFreshInfo(pos.roomName) &&
     !roomInfo.safePlace &&
+    Apiary.intel.somewhatFreshInfo(pos.roomName) &&
     stop
   ) {
     const hive = Apiary.hives[pos.roomName];
@@ -69,8 +70,8 @@ export function checkFlee(
         if (bee.movePosition && bee.movePosition.roomName !== pos.roomName) {
           if (!this.stcukEnterance[bee.ref]) this.stcukEnterance[bee.ref] = 0;
           ++this.stcukEnterance[bee.ref]!;
-          if (this.stcukEnterance[bee.ref]! > 10 && bee.memory._trav) {
-            bee.memory._trav.path = undefined;
+          if (this.stcukEnterance[bee.ref]! > 20) {
+            bee.invalidatePath();
             this.stcukEnterance[bee.ref] = undefined;
           }
         }
@@ -78,6 +79,7 @@ export function checkFlee(
     }
     return true;
   }
+
   const enemies = roomInfo.enemies
     .filter((e) => {
       if (!(e.object instanceof Creep)) return false;
