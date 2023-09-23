@@ -66,9 +66,11 @@ export class HaulerMaster extends Master<ExcavationCell> {
         CREEP_LIFE_TIME - this.minRoadTime - 10
       );
     // double check to be sure
-    if (this.targetBeeCount && !check()) return false;
+    if (this.targetBeeCount && !check() && !this.parent.shouldRecalc)
+      return false;
     this.recalculateRoadTime();
     this.recalculateTargetBee();
+    this.parent.shouldRecalc = false;
     return check();
   }
 
@@ -113,6 +115,8 @@ export class HaulerMaster extends Master<ExcavationCell> {
   }
 
   public run() {
+    const stopHauling = this.stopHauling;
+
     _.forEach(this.activeBees, (bee) => {
       if (this.hive.cells.defense.timeToLand < 50 && bee.ticksToLive > 50) {
         bee.fleeRoom(this.hiveName, this.hive.opt);
@@ -206,6 +210,11 @@ export class HaulerMaster extends Master<ExcavationCell> {
             if (resource) bee.pickup(resource);
           }
 
+          if (stopHauling) {
+            bee.goRest(this.dropOff.pos);
+            break;
+          }
+
           const ans = bee.transfer(this.dropOff, res, undefined, this.hive.opt);
           if (ans === OK) {
             if (bee.target) {
@@ -287,6 +296,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
           // this.recycleBee(bee, { offRoad: true, ...this.hive.opt });
           break;
       }
+
       if (this.checkFlee(bee) && bee.targetPosition && bee.hits < bee.hitsMax) {
         const diff =
           bee.store.getUsedCapacity() -
@@ -310,20 +320,19 @@ export class HaulerMaster extends Master<ExcavationCell> {
 
     // dont haul resources if we are already full
     // failsafe
-    if (
-      this.dropOff.store.getFreeCapacity() <=
-      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
-    )
-      return;
-
-    if (this.parent.shouldRecalc) {
-      this.recalculateRoadTime();
-      this.recalculateTargetBee();
-    }
+    if (this.stopHauling) return;
 
     if (this.checkBeesWithRecalc()) {
+      const setup = setups.hauler.copy();
+
+      const anyEnergyHauling = _.some(
+        this.parent.resourceCells,
+        (s) => s.resType === RESOURCE_ENERGY && !s.link
+      );
+      if (anyEnergyHauling) setup.fixed = [WORK];
+
       this.wish({
-        setup: setups.hauler,
+        setup,
         priority: this.beesAmount || this.waitingForBees ? 5 : 3,
       });
     }
@@ -354,6 +363,13 @@ export class HaulerMaster extends Master<ExcavationCell> {
         this.targetMap[container.id] = bee.ref;
       }
     });
+  }
+
+  private get stopHauling() {
+    return (
+      this.dropOff.store.getFreeCapacity() <=
+      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
+    );
   }
 
   // #endregion Public Methods (5)

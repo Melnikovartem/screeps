@@ -1,4 +1,4 @@
-import { COMMON_COMMODITIES } from "cells/stage1/factoryCell";
+import { COMPLEX_COMMODITIES } from "cells/stage1/factoryCell";
 import type { ResTarget } from "hive/hive-declarations";
 
 import { HIVE_ENERGY, TERMINAL_ENERGY } from "../cells/management/storageCell";
@@ -36,7 +36,6 @@ export class Network {
   // #region Properties (5)
 
   private commoditiesToSell: CommodityConstant[] = [];
-  private nodesTrading: Hive[] = [];
   private resState: ResTarget = {};
 
   /** from -> to */
@@ -49,6 +48,7 @@ export class Network {
     };
   } = {};
   public nodes: Hive[] = [];
+  public nodesTrading: Hive[] = [];
 
   // #endregion Properties (5)
 
@@ -69,12 +69,14 @@ export class Network {
         lastUpdated: Game.time,
       };
     });
-    for (const [comm, commInfo] of Object.entries(COMMODITIES))
+    for (const [commS, commInfo] of Object.entries(COMMODITIES)) {
+      const comm = commS as CommodityConstant;
       if (
         commInfo.level === Apiary.maxFactoryLvl &&
-        !COMMON_COMMODITIES.includes(comm as CommodityConstant)
+        COMPLEX_COMMODITIES.includes(comm)
       )
-        this.commoditiesToSell.push(comm as CommodityConstant);
+        this.commoditiesToSell.push(comm);
+    }
   }
 
   public run() {
@@ -109,7 +111,7 @@ export class Network {
 
   // #endregion Public Methods (4)
 
-  // #region Private Methods (8)
+  // #region Private Methods (9)
 
   private buyShortages(
     hive: Hive,
@@ -307,6 +309,39 @@ export class Network {
     }
   }
 
+  private storeExtraRes(hive: Hive) {
+    if (!hive.cells.storage.terminal) return;
+    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY.min) return;
+    if (!this.aid[hive.roomName]) return;
+
+    const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
+    if (!keys.length) return;
+    const res = keys.reduce((prev, curr) =>
+      hive.getResState(curr) > hive.getResState(prev) ? curr : prev
+    );
+    const resIsValuable = res in [RESOURCE_POWER] || res in COMPLEX_COMMODITIES;
+
+    if (!resIsValuable) return;
+    if (hive.getResState(res) <= 0) return;
+
+    // store shit somewhere else
+    const emptyHive = _.filter(
+      this.nodes,
+      (h) =>
+        h.roomName !== hive.roomName &&
+        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY.min * 1.5 &&
+        h.getResState(RESOURCE_ENERGY) >= -h.resTarget[RESOURCE_ENERGY] * 0.5
+    )[0];
+    if (!emptyHive) return;
+
+    this.aid[hive.roomName] = {
+      to: emptyHive.roomName,
+      res,
+      amount: FREE_CAPACITY.min * 0.1,
+      excess: 1,
+    };
+  }
+
   private updateAskAid(hive: Hive) {
     hive.shortages = {};
 
@@ -355,33 +390,7 @@ export class Network {
         amount: amountAid,
       };
     }
-
-    /* send extra resources to other hives
-    if (!hive.cells.storage.terminal) return;
-    if (hive.cells.storage.storageFreeCapacity() >= FREE_CAPACITY.min) return;
-    if (!this.aid[hive.roomName]) return;
-
-    // store shit somewhere else
-    const emptyHive = _.filter(
-      this.nodes,
-      (h) =>
-        h.roomName !== hive.roomName &&
-        h.cells.storage.storageFreeCapacity() > FREE_CAPACITY.min * 1.5 &&
-        h.getResState(RESOURCE_ENERGY) >= -h.resTarget[RESOURCE_ENERGY] * 0.5
-    )[0];
-    if (!emptyHive) return;
-    const keys = Object.keys(hive.resState) as (keyof ResTarget)[];
-    if (!keys.length) return;
-    const res = keys.reduce((prev, curr) =>
-      hive.getResState(curr) > hive.getResState(prev) ? curr : prev
-    );
-    if (hive.getResState(res) <= 0) return;
-    this.aid[hive.roomName] = {
-      to: emptyHive.roomName,
-      res,
-      amount: FREE_CAPACITY.min * 0.1,
-      excess: 1,
-    }; */
+    this.storeExtraRes(hive);
   }
 
   private updatePlanAid() {
@@ -453,5 +462,5 @@ export class Network {
     if (aid) addResDict(sCell.resTargetTerminal, aid.res, aid.amount);
   }
 
-  // #endregion Private Methods (8)
+  // #endregion Private Methods (9)
 }

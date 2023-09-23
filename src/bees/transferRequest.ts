@@ -175,7 +175,7 @@ export class TransferRequest {
         );
         // no need to force transfer for non valid transfer
         if (!amountBee && bee.pos.getRangeTo(this.to) <= 2) {
-          // edgecase where managers surround to
+          // edgecase where managers surround spawn
           if (bee.pos.getRangeTo(this.to) === 1) {
             const awayFromTo = reverseDirection(
               bee.pos.getDirectionTo(this.to)

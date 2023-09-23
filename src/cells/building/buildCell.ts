@@ -75,12 +75,14 @@ export class BuildCell extends Cell {
   public run() {}
 
   public update() {
-    if (
-      Apiary.intTime % UPDATE_STRUCTURES.normal === 0 ||
-      (!this.structuresConst.length && this.sumCost) ||
-      (this.hive.isBattle && Game.time % UPDATE_STRUCTURES.battle === 0) ||
-      this.forceCheck
-    ) {
+    if (!this.structuresConst.length && this.sumCost)
+      this.forceCheck = "mainroom";
+    if (Apiary.intTime % UPDATE_STRUCTURES.normal === 0)
+      this.forceCheck = "annex";
+    if (this.hive.isBattle && Apiary.intTime % UPDATE_STRUCTURES.battle === 0)
+      this.forceCheck = "mainroom";
+
+    if (this.forceCheck) {
       this.updateStructures(this.forceCheck === "annex");
       this.forceCheck = "";
     }

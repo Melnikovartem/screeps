@@ -74,12 +74,12 @@ export class RespawnCell extends Cell {
 
   public getTargets() {
     if (this.fastRef) this.fastRef.refillTargets = [];
-    const targets = _.filter(
-      (
-        Object.values(this.spawns) as (StructureSpawn | StructureExtension)[]
-      ).concat(Object.values(this.extensions)),
-      (s) => this.checkTarget(s)
-    );
+
+    const targets = ([] as (StructureSpawn | StructureExtension)[])
+      .concat(Object.values(this.spawns))
+      .concat(Object.values(this.extensions))
+      .filter((s) => this.checkTarget(s));
+
     targets.sort(
       (a, b) =>
         (this.priorityMap[a.id] || Infinity) -
@@ -277,11 +277,12 @@ export class RespawnCell extends Cell {
     this.freeSpawns.sort((a, b) => this.spawnEval(b) - this.spawnEval(a));
     this.hive.stateChange("nospawn", !Object.keys(this.spawns).length);
 
-    this.hive.cells.storage.requestFromStorage(
-      this.getTargets(),
-      0,
-      RESOURCE_ENERGY
-    );
+    if (this.hive.room.energyAvailable < this.hive.room.energyCapacityAvailable)
+      this.hive.cells.storage.requestFromStorage(
+        this.getTargets(),
+        0,
+        RESOURCE_ENERGY
+      );
 
     if (this.fastRef) this.fastRef.update();
   }
@@ -348,6 +349,7 @@ export class RespawnCell extends Cell {
     );
   }
 
+  /** lower value = better spawn is better */
   private spawnEval(spawn: StructureSpawn) {
     if (!spawn.effects) return 0;
     const powerup = spawn.effects.filter(

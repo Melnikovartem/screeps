@@ -199,7 +199,7 @@ export const setups = {
   hauler: new CreepSetup(
     setupsNames.hauler,
     {
-      fixed: [WORK],
+      fixed: [],
       pattern: [CARRY],
     },
     50 / 3
