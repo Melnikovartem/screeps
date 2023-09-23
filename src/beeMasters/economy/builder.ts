@@ -142,25 +142,45 @@ export class BuilderMaster extends Master<BuildCell> {
     ];
   }
 
+  /** need too much bees or too much energy */
   private get otherEmergency() {
-    return (
-      this.hive.state === hiveStates.nukealert ||
-      this.parent.buildingCosts.hive.build / 5 +
-        this.parent.buildingCosts.hive.repair >
-        100_000
-    );
+    if (this.hive.state === hiveStates.nukealert) return true;
+    const costs = this.parent.buildingCosts;
+    const energySpend =
+      costs.hive.build +
+      costs.hive.repair +
+      (costs.annex.build + costs.annex.repair) * 0.5;
+    // save some energy by boosting
+    if (energySpend > 50_000) return true;
+
+    const beesNeeded = this.patternSum("normal", 1) / this.maxPatternBee;
+    // if need too many bees
+    return beesNeeded >= 5;
+  }
+
+  private patternSum(boost: "boost" | "normal", genToComplete: number) {
+    let patternsNeeded = 0;
+    for (const mode of ["hive", "annex"] as M[])
+      for (const rr of ["repair", "build"] as R[])
+        patternsNeeded +=
+          this.parent.buildingCosts[mode][rr] /
+          BUILDING_PER_PATTERN[boost][mode][rr] /
+          genToComplete;
+    return patternsNeeded;
   }
 
   private get patternsNeeded() {
-    let patternsNeeded = 0;
     /** how much generations of bees to complete all buildings */
     let genToComplete = 1;
-    const boost = this.boosts ? "boost" : "normal";
+    const boost = this.boosts.length ? "boost" : "normal";
 
     if (this.hive.phase < 1) genToComplete = 0.25; // rush things
     else if (this.hive.isBattle) genToComplete = 0.25; // rush defenses
-    else if (this.parent.buildingCosts.annex.build)
-      genToComplete = 0.5; // build the fucking annexes
+    else if (
+      this.parent.buildingCosts.annex.build ||
+      this.parent.buildingCosts.hive.build < 50_000
+    )
+      genToComplete = 0.5; // build the fucking things
     else if (this.parent.buildingCosts.hive.build) genToComplete = 1;
     else if (
       this.hive.state === hiveStates.economy &&
@@ -169,14 +189,7 @@ export class BuilderMaster extends Master<BuildCell> {
     )
       genToComplete = 1.25; // no need to rush walls
 
-    for (const mode of ["hive", "annex"] as M[])
-      for (const rr of ["repair", "build"] as R[])
-        patternsNeeded +=
-          this.parent.buildingCosts[mode][rr] /
-          BUILDING_PER_PATTERN[boost][mode][rr] /
-          genToComplete;
-
-    return patternsNeeded;
+    return this.patternSum(boost, genToComplete);
   }
 
   private get realBattle() {

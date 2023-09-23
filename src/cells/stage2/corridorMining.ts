@@ -42,78 +42,86 @@ export class CorridorMiningCell extends Cell {
   public run() {}
 
   public override update() {
-    // decide wich powerSites to mine
-    const workingPowerSites = this.powerSites.filter((p) => p.canMineInTime());
-    let inProgress = workingPowerSites.filter(
-      (p) => p.beesAmount || p.waitingForBees
+    this.turnOnDeposits();
+    this.turnOnPower();
+  }
+
+  private get stopMining() {
+    return this.hive.getResState(RESOURCE_ENERGY) < 0 || this.hive.isBattle;
+  }
+
+  private turnOnDeposits() {
+    this.depositsOn = [];
+    if (!this.hive.mode.depositMining) return;
+    if (this.stopMining) return;
+
+    let depOn = this.depositSites.filter(
+      (d) =>
+        d.keepMining &&
+        d.resource &&
+        this.hive.getResState(d.resource) <
+          STOCKPILE_CORRIDOR_COMMODITIES.stopmining.local &&
+        Apiary.network.getResState(d.resource) <
+          STOCKPILE_CORRIDOR_COMMODITIES.stopmining.global
     );
+
+    if (depOn.length > 1) {
+      const depositsWithBees = depOn.filter(
+        (d) => d.miners.beesAmount || d.pickup.beesAmount
+      );
+      if (depositsWithBees.length) depOn = depositsWithBees;
+      else {
+        const bestDep = depOn.reduce((prev, curr) => {
+          let ans = curr.roadTime - prev.roadTime;
+          if (Math.abs(ans) < 65) ans = curr.lastCooldown - prev.lastCooldown;
+          return ans < 0 ? curr : prev;
+        });
+        depOn = [bestDep];
+      }
+    }
+    this.depositsOn = depOn;
+  }
+
+  private turnOnPower() {
+    if (this.stopMining) {
+      this.powerOn = this.powerOn.filter((m) => m.beesAmount);
+      return;
+    }
+    // decide wich powerSites to mine
+    const alivePower = this.powerSites.filter((p) => p.canMineInTime);
+    let powOn = alivePower.filter((p) => p.beesAmount || p.waitingForBees);
     if (
-      !inProgress.length &&
+      this.hive.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCKPILE &&
+      !powOn.length &&
       this.hive.mode.powerMining &&
-      workingPowerSites.length &&
-      this.hive.getUsedCapacity(RESOURCE_POWER) <= MINING_POWER_STOCKPILE
-    )
-      inProgress = [
-        workingPowerSites.reduce((prev, curr) =>
-          prev.roadTime > curr.roadTime ? curr : prev
-        ),
-      ];
-    this.powerOn = inProgress;
+      alivePower.length
+    ) {
+      const bestPower = alivePower.reduce((prev, curr) =>
+        prev.roadTime > curr.roadTime ? curr : prev
+      );
+      powOn = [bestPower];
+    }
+    this.powerOn = powOn;
 
     // reposess power bees to other masters
-    if (workingPowerSites.length)
+    if (alivePower.length)
       _.forEach(this.powerSites, (p) => {
         if (p.keepMining) return;
+        if (!p.beesAmount) return;
 
         _.forEach(p.bees, (b) => {
-          const inNeed = workingPowerSites.filter(
+          const inNeed = alivePower.filter(
             (wp) => Math.floor(wp.beesAmount / 2) < wp.targetBeeCount / 2 + 1
           );
           const nextMaster = b.pos.findClosest(
-            inNeed.length ? inNeed : workingPowerSites
+            inNeed.length ? inNeed : alivePower
           );
-          if (nextMaster) {
-            p.removeBee(b);
-            nextMaster.newBee(b);
-          }
+          if (!nextMaster) return;
+
+          p.removeBee(b);
+          nextMaster.newBee(b);
         });
       });
-
-    // decide wich deposits to mine
-    if (this.hive.mode.depositMining) {
-      let workingDeposits = this.depositSites.filter(
-        (d) =>
-          d.keepMining &&
-          d.resource &&
-          this.hive.getResState(d.resource) <
-            STOCKPILE_CORRIDOR_COMMODITIES.stopmining.local &&
-          Apiary.network.getResState(d.resource) <
-            STOCKPILE_CORRIDOR_COMMODITIES.stopmining.global
-      );
-
-      if (workingDeposits.length > 1) {
-        const depositsWithBees = workingDeposits.filter(
-          (d) => d.miners.beesAmount || d.pickup.beesAmount
-        );
-        if (depositsWithBees.length) workingDeposits = depositsWithBees;
-        else
-          workingDeposits = [
-            workingDeposits.reduce((prev, curr) => {
-              let ans = curr.roadTime - prev.roadTime;
-              if (Math.abs(ans) < 65)
-                ans = curr.lastCooldown - prev.lastCooldown;
-              return ans < 0 ? curr : prev;
-            }),
-          ];
-      }
-      this.depositsOn = workingDeposits;
-    }
-
-    // do not mine if problems
-    if (this.hive.getResState(RESOURCE_ENERGY) < 0 || this.hive.isBattle) {
-      this.depositsOn = [];
-      this.powerOn = this.powerOn.filter((m) => m.beesAmount);
-    }
   }
 
   // #endregion Public Methods (2)

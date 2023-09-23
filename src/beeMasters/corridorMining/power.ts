@@ -75,7 +75,32 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (7)
+  // #region Public Accessors (8)
+
+  public get canMineInTime() {
+    const dmgFuture =
+      ATTACK_POWER *
+      20 *
+      _.sum(this.duplets, (dd) =>
+        !dd[0]
+          ? 0
+          : Math.min(
+              this.decay,
+              dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)
+            )
+      );
+    // already enough dmg to mine out
+    if (this.hits - dmgFuture <= 0) return false;
+    // wont be in time for decay
+    if (this.decay < this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME)
+      return false;
+    const dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
+    // do i have enough dmg to kill in time?
+    return (
+      this.hits / dmgPerSecond <=
+      this.decay - (this.activeBees.length ? 0 : this.roadTime)
+    );
+  }
 
   public get decay() {
     return this.info.dc;
@@ -102,14 +127,14 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
     if (!this.keepMining) return false;
     // decision gods said no!
     if (!this.sitesOn.includes(this)) return false;
-    return this.canMineInTime();
+    return this.canMineInTime;
   }
 
   public get targetBeeCount() {
     return this.positions.length * 2;
   }
 
-  // #endregion Public Accessors (7)
+  // #endregion Public Accessors (8)
 
   // #region Private Accessors (2)
 
@@ -124,32 +149,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
 
   // #endregion Private Accessors (2)
 
-  // #region Public Methods (7)
-
-  public canMineInTime() {
-    const dmgFuture =
-      ATTACK_POWER *
-      20 *
-      _.sum(this.duplets, (dd) =>
-        !dd[0]
-          ? 0
-          : Math.min(
-              this.decay,
-              dd[0].ticksToLive - (dd[0].pos.isNearTo(this) ? 0 : this.roadTime)
-            )
-      );
-    // already enough dmg to mine out
-    if (this.hits - dmgFuture <= 0) return false;
-    // wont be in time for decay
-    if (this.decay < this.roadTime + MAX_CREEP_SIZE * CREEP_SPAWN_TIME)
-      return false;
-    const dmgPerSecond = ATTACK_POWER * 20 * this.positions.length;
-    // do i have enough dmg to kill in time?
-    return (
-      this.hits / dmgPerSecond <=
-      this.decay - (this.activeBees.length ? 0 : this.roadTime)
-    );
-  }
+  // #region Public Methods (6)
 
   public createDuplet(knight: Bee) {
     let goodHealers;
@@ -399,7 +399,7 @@ export class PowerMiningMaster extends SwarmMaster<PowerInfo> {
       );
   }
 
-  // #endregion Public Methods (7)
+  // #endregion Public Methods (6)
 
   // #region Private Methods (2)
 

@@ -173,7 +173,7 @@ export class HordeDefenseMaster extends HordeMaster {
 
       order.setup.patternLimit = Math.min(
         Math.max(killFastRangeNeeded, rangedNeeded),
-        this.boosts ? Infinity : roomInfo.dangerlvlmax >= 4 ? 20 : 10
+        this.boosts.length ? Infinity : roomInfo.dangerlvlmax >= 4 ? 20 : 10
       ); // Math.max(rangedNeeded * 3, 6) -> 25
 
       if (!noFear) {

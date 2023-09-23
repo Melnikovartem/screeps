@@ -1,20 +1,3 @@
-/* finding overused cpu
-let cpu = Game.cpu.getUsed();
-let totalCpu = 0;
-const testingCpu = Game.shard.name === "shard3" &&
-  this.hive.room.name === "E39S19" && {
-    it: (ref: string) => {
-      const diff = Game.cpu.getUsed() - cpu;
-      totalCpu += diff;
-      console.log("after", ref, Math.round(diff * 1000) / 1000);
-      cpu = Game.cpu.getUsed();
-    },
-    total: () => console.log("\ttotal cpu:", totalCpu),
-  };
-if (testingCpu) testingCpu.it("");
-if (testingCpu) testingCpu.total();
-*/
-
 /*
 // i rly don't like to type in all the reactions;
 let s: string[] = []; REACTION_TIME
@@ -98,3 +81,20 @@ printSetup(setups.archer, undefined, 17);
 */
 
 // console .log(rCode, JSON.stringify(this.boostRequests[bee.ref]), _.map(this.boostRequests[bee.ref], d => `${bee.getBodyParts(BOOST_PARTS[d.type], 1)} ${d.res}`))
+
+/* finding overused cpu
+let cpu = Game.cpu.getUsed();
+let totalCpu = 0;
+const testingCpu = Game.shard.name === "shard3" &&
+  this.hive.room.name === "E39S19" && {
+    it: (ref: string) => {
+      const diff = Game.cpu.getUsed() - cpu;
+      totalCpu += diff;
+      console.log("after", ref, Math.round(diff * 1000) / 1000);
+      cpu = Game.cpu.getUsed();
+    },
+    total: () => console.log("\ttotal cpu:", totalCpu),
+  };
+if (testingCpu) testingCpu.it("");
+if (testingCpu) testingCpu.total();
+*/
