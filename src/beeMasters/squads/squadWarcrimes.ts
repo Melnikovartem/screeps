@@ -1191,11 +1191,7 @@ export class SquadWarCrimesMaster extends SwarmMaster<SquadInfo> {
       const desiredPos = this.getDeisredPos(i);
       if (!desiredPos) continue;
       const vis = Apiary.visuals;
-      if (
-        vis.caching[desiredPos.roomName] &&
-        Game.time > vis.caching[desiredPos.roomName].lastRecalc
-      )
-        continue;
+      if (vis.objectBusy(desiredPos.roomName)) continue;
       const style: CircleStyle = {};
       if (this.formationBees[i] && bee.ref === centerBeeRef)
         style.fill = "#FF0000";

@@ -6,112 +6,127 @@ import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
 import { makeId } from "static/utils";
 
-const TEXT_SIZE = 0.8;
-const TEXT_HEIGHT = TEXT_SIZE * 0.9;
-const SPACING = 0.3;
+import { SPACING, TEXT_HEIGHT, TEXT_SIZE } from "./visuals-constants";
+import { statsNetwork } from "./visuals-hive";
 
 interface VisInfo {
-  // #region Properties (4)
+  // #region Properties (5)
 
+  keepInMemory: number;
   ref: string;
   vis: RoomVisual;
   x: number;
   y: number;
 
-  // #endregion Properties (4)
+  // #endregion Properties (5)
 }
 
-const GLOBAL_VISUALS = "global";
-const GLOBAL_VISUALS_HEAVY = GLOBAL_VISUALS + "h";
+interface VisCache {
+  // #region Properties (2)
+
+  data: string[];
+  keepUntil: number;
+
+  // #endregion Properties (2)
+}
+
+const GLOBAL_VISUALS_REF = {
+  main: "global",
+  heavy: "heavy",
+};
 
 @profile
 export class Visuals {
   // #region Properties (3)
 
+  private statsNetwork = statsNetwork;
+
+  /** current point for adding visuals */
   public anchor: VisInfo = {
     x: 1,
     y: 1,
     vis: new RoomVisual(makeId(8)),
     ref: "",
+    keepInMemory: 1,
   };
-  public caching: { [id: string]: { data: string; lastRecalc: number } } = {
-    [GLOBAL_VISUALS]: { data: "", lastRecalc: -1 },
-    [GLOBAL_VISUALS_HEAVY]: { data: "", lastRecalc: -1 },
-  };
-  public usedAnchors: { [roomName: string]: VisInfo } = {};
+  /** already added visuals */
+  public caching: {
+    [ref: string]: VisCache | undefined;
+  } = {};
 
   // #endregion Properties (3)
 
-  // #region Public Methods (9)
+  // #region Public Methods (10)
+
+  public objectBusy(ref: string) {
+    const ex = this.caching[ref];
+    return ex && ex.keepUntil >= Apiary.intTime;
+  }
+
+  public objectBusyNexTick(ref: string) {
+    const ex = this.caching[ref];
+    return ex && ex.keepUntil >= Apiary.intTime + 1;
+  }
 
   /**
-   * @param x x value of new anchor
-   * @param y y value of new anchor
+   * @param pos {x: x, y: y} pos of new anchor. Any value can be ommited
    * @param roomName new roomName. by default anchor is kept within a tick
-   * @param newAnchor should we wipe prev anchor for this room
+   * @param keepInMemory how long to keep in memory
    * @returns new anchor to stack visuals on
    */
-  public changeAnchor(
-    x?: number,
-    y?: number,
-    roomName?: string,
-    newAnchor = false
+  public objectNew(
+    pos?: { x?: number; y?: number },
+    ref?: string,
+    keepInMemory = 0
   ) {
-    if (x !== undefined) this.anchor.x = x;
-    if (y !== undefined) this.anchor.y = y;
-    else this.anchor.y = this.anchor.y + SPACING;
+    this.objectExport();
+    if (!pos) pos = {};
 
-    if (roomName) {
-      this.usedAnchors[this.anchor.ref] = this.anchor;
-      if (!newAnchor && roomName in this.usedAnchors)
-        this.anchor = this.usedAnchors[roomName];
-      else {
-        this.anchor = {
-          vis: new RoomVisual(makeId(8)),
-          ref: roomName,
-          x: this.anchor.x,
-          y: this.anchor.y,
-        };
-      }
-    }
+    if (ref === undefined) this.objectMoveAnchor(pos, false);
+    else this.emptyAnchor(pos, ref, keepInMemory);
 
     return this.anchor;
   }
 
-  /** saves the anchor
-   *
-   * @param offset how long to keep visual around
-   * @param ref refernce to anchor (by default it is roomLocal)
-   */
-  public exportAnchor(offset = 0, ref = this.anchor.ref) {
-    this.caching[ref] = {
-      data: this.anchor.vis.export() || "",
-      lastRecalc: Game.time + offset,
-    };
+  public objectsWipe(ref: string) {
+    this.caching[ref] = undefined;
+    if (this.anchor.ref === ref) this.emptyAnchor({}, ref, -1);
+  }
+
+  public objectMoveAnchor(
+    pos: { x?: number; y?: number },
+    addYSpacing: boolean
+  ) {
+    if (pos.x === undefined) pos.x = this.anchor.x;
+    if (pos.y === undefined) pos.y = this.anchor.y + SPACING;
+    else if (addYSpacing) pos.y = pos.y + SPACING;
+
+    this.anchor.x = pos.x;
+    this.anchor.y = pos.y;
   }
 
   public run() {
     if (Memory.settings.framerate < 0) return;
 
-    if (
-      Game.time % Memory.settings.framerate === 0 ||
-      Game.time === Apiary.createTime
-    ) {
+    if (Apiary.intTime % Memory.settings.framerate === 0) {
       if (Apiary.useBucket) {
+        // heavy calcs
         for (const name in Apiary.hives) this.createHive(name);
 
-        this.changeAnchor(30, 1, GLOBAL_VISUALS_HEAVY, true);
+        this.objectNew({ x: 30, y: 1 }, GLOBAL_VISUALS_REF.heavy);
         this.battleInfo();
         this.miningInfo();
-        this.exportAnchor();
       }
 
-      this.changeAnchor(49, 1, GLOBAL_VISUALS, true);
+      // normal stuff
+
+      this.objectNew({ x: 49, y: 1 }, GLOBAL_VISUALS_REF.main);
       this.global();
-      this.exportAnchor();
     }
     this.visualizePlanner();
 
+    // export last uncommited objects
+    this.objectExport();
     this._render();
   }
 
@@ -156,7 +171,7 @@ export class Visuals {
         : "??";
       const target =
         process(fac.commodityTarget.res) + " " + fac.commodityTarget.amount;
-      this.updateAnchor(this.label(`⚒️ ${prod} -> ${target}`, this.anchor));
+      this.label(`⚒️ ${prod} -> ${target}`, this.anchor);
     }
   }
 
@@ -330,22 +345,19 @@ export class Visuals {
       ]);
 
     let minSize = 0;
-    const table = this.table(ans, this.anchor, undefined, minSize);
-    this.changeAnchor(table.x, table.y);
     minSize = Math.max(minSize, this.anchor.x - 1);
+    this.table(ans, this.anchor, undefined, minSize);
   }
 
   public statsLab(hive: Hive) {
     if (!hive.cells.lab) return;
     const lab = hive.cells.lab;
     if (lab.synthesizeTarget)
-      this.updateAnchor(
-        this.label(
-          `🧪 ${lab.prod ? lab.prod.res + " " + lab.prod.plan : "??"} -> ${
-            lab.synthesizeTarget.res
-          } ${lab.synthesizeTarget.amount}`,
-          this.anchor
-        )
+      this.label(
+        `🧪 ${lab.prod ? lab.prod.res + " " + lab.prod.plan : "??"} -> ${
+          lab.synthesizeTarget.res
+        } ${lab.synthesizeTarget.amount}`,
+        this.anchor
       );
 
     if (Object.keys(hive.cells.lab.boostRequests).length) {
@@ -367,34 +379,8 @@ export class Visuals {
         }
       }
 
-      this.updateAnchor(this.table(ans, this.anchor, undefined));
+      this.table(ans, this.anchor, undefined);
     }
-  }
-
-  public statsNetwork(hive: Hive) {
-    const negative: string[][] = [["deficiency"], ["💱", "📉"]];
-
-    for (const res in hive.resState) {
-      const amount = hive.resState[res as ResourceConstant];
-      if (amount && amount < 0) {
-        let str = " " + -amount;
-        if (amount < -1000) str = " " + -Math.round(amount / 100) / 10 + "K";
-        negative.push([res, str]);
-      }
-    }
-    const [x, y] = [this.anchor.x, this.anchor.y];
-    let yNew = this.anchor.y;
-    if (negative.length > 2) {
-      this.changeAnchor(x + SPACING, 1);
-      yNew = this.table(negative, this.anchor, undefined).y;
-    }
-    this.changeAnchor(1, Math.max(y, yNew) + SPACING);
-
-    const aid = Apiary.network.aid[hive.roomName];
-    if (aid)
-      this.updateAnchor(
-        this.label(`💸 ${aid.to} -> ${aid.res} ${aid.amount}`, this.anchor)
-      );
   }
 
   public textStyle(style: TextStyle = {}): TextStyle {
@@ -410,9 +396,26 @@ export class Visuals {
     });
   }
 
-  // #endregion Public Methods (9)
+  // #endregion Public Methods (10)
 
-  // #region Protected Methods (6)
+  // #region Protected Methods (7)
+
+  protected formatNumber(num: number) {
+    const prefixS = num < 0 ? "-" : "";
+    num = Math.abs(num);
+    let postfixS = "";
+    if (num > 1_000_000) {
+      num = Math.round(num / 100_000) / 10;
+      postfixS = "M";
+    } else if (num > 100_000) {
+      num = Math.round(num / 1_000);
+      postfixS = "K";
+    } else if (num > 10_000) {
+      num = Math.round(num / 100) * 10;
+      postfixS = "K";
+    }
+    return prefixS + num + postfixS;
+  }
 
   protected getBeesAmount(
     master:
@@ -427,21 +430,6 @@ export class Visuals {
 
   protected getTextLength(str: string) {
     return TEXT_SIZE * str.length * 0.52;
-    /* let coefsum = 0;
-    for (let i = 0; i < str.length; ++i) {
-      let coef = 0.5;
-      let code = str.charCodeAt(i);
-
-      if (code == 0x2F || code === 0x3A)
-        coef = 0.3;
-      else if (0x41 <= code && code <= 0x5A)
-        coef = 0.55;
-      else if (code > 0x7F)
-        coef = 0.8;
-
-      coefsum += coef;
-    }
-    return TEXT_SIZE * coefsum; */
   }
 
   protected label(
@@ -470,6 +458,7 @@ export class Visuals {
       [xMax, info.y],
       [info.x, info.y],
     ]);
+    this.objectMoveAnchor({ y: yMax }, true);
     return { x: xMax, y: yMax };
   }
 
@@ -481,20 +470,19 @@ export class Visuals {
     minSize: number = 1,
     maxSize: number = 15
   ) {
+    const [x, y] = [info.x, info.y];
     const lab = this.label(label, info, style, minSize, maxSize);
     const xMin = style.align === "right" ? lab.x : info.x;
     const xMax =
       xMin +
-      (lab.x - info.x) *
-        Math.min(1, progress) *
-        (style.align === "right" ? -1 : 1);
+      (lab.x - x) * Math.min(1, progress) * (style.align === "right" ? -1 : 1);
     info.vis.poly(
       [
-        [xMin, info.y],
+        [xMin, y],
         [xMin, lab.y],
         [xMax, lab.y],
-        [xMax, info.y],
-        [xMin, info.y],
+        [xMax, y],
+        [xMin, y],
       ],
       {
         fill: "#ffdd80",
@@ -588,37 +576,45 @@ export class Visuals {
       [xMax, yMin],
       [xMin, yMin],
     ]);
+    this.objectMoveAnchor(
+      { x: align === "right" ? info.x : xMax, y: yMax },
+      true
+    );
     return { x: align === "right" ? info.x : xMax, y: yMax };
   }
 
-  protected updateAnchor(info: { x: number; y: number }) {
-    this.anchor.y = info.y + SPACING;
-  }
+  // #endregion Protected Methods (7)
 
-  // #endregion Protected Methods (6)
-
-  // #region Private Methods (8)
+  // #region Private Methods (10)
 
   private _render() {
-    let allglobal = true;
-    for (const name in this.caching)
-      if (name.slice(0, GLOBAL_VISUALS.length) !== GLOBAL_VISUALS) {
-        const vis = new RoomVisual(name);
-        vis.import(this.caching[name].data);
-        if (this.caching[name].lastRecalc > Game.time) allglobal = false;
+    const drainData = (vis: RoomVisual, ref: string) => {
+      if (!this.objectBusy(ref)) {
+        delete this.caching[ref];
+        return;
       }
-    if (allglobal) {
-      const vis = new RoomVisual();
-      vis.import(this.caching[GLOBAL_VISUALS].data);
-      vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
-    } else
-      for (const name in this.caching)
-        if (this.caching[name].lastRecalc <= Game.time) {
-          const vis = new RoomVisual(name);
-          vis.import(this.caching[GLOBAL_VISUALS].data);
-          vis.import(this.caching[GLOBAL_VISUALS_HEAVY].data);
-        }
-    this.usedAnchors = {};
+      _.forEach(this.caching[ref]!.data, (c) => vis.import(c));
+    };
+
+    const addGlobal = (vis: RoomVisual) => {
+      _.forEach(Object.values(GLOBAL_VISUALS_REF), (globalRef) =>
+        drainData(vis, globalRef)
+      );
+    };
+
+    const everyGlobal = _.some(
+      Object.keys(this.caching),
+      (ref) =>
+        this.objectBusy(ref) && !Object.values(GLOBAL_VISUALS_REF).includes(ref)
+    );
+
+    if (everyGlobal) addGlobal(new RoomVisual());
+
+    for (const ref in this.caching) {
+      const vis = new RoomVisual(ref);
+      drainData(vis, ref);
+      if (!everyGlobal && !this.objectBusyNexTick(ref)) addGlobal(vis);
+    }
   }
 
   private battleInfo() {
@@ -638,81 +634,87 @@ export class Visuals {
       ]);
     });
     if (battleInfo.length > 2)
-      this.updateAnchor(
-        this.table(battleInfo, this.anchor, undefined, 10, 15, "center")
-      );
+      this.table(battleInfo, this.anchor, undefined, 10, 15, "center");
   }
 
-  private createHive(name: string) {
-    const hive = Apiary.hives[name];
+  private createHive(roomName: string) {
+    const hive = Apiary.hives[roomName];
     if (!hive.controller) return;
-    this.changeAnchor(1, 1, name);
+
+    const fakeRef = roomName + "_" + Apiary.intTime;
+
+    this.objectNew({ x: 1, y: 1 }, fakeRef);
     this.statsHive(hive);
     this.statsNetwork(hive);
     this.statsLab(hive);
     this.statsFactory(hive);
     this.statsNukes(hive);
 
+    const hiveVisuals = this.anchor.vis;
+
     _.forEach(hive.annexNames, (annexName) => {
-      if (
-        (!this.caching[annexName] ||
-          Game.time > this.caching[annexName].lastRecalc) &&
-        !Apiary.hives[annexName]
-      )
-        this.exportAnchor(0, annexName);
+      if (Apiary.hives[annexName]) return;
+      if (this.objectBusy(annexName)) return;
+      this.objectNew({}, annexName);
+      this.anchor.vis = hiveVisuals;
     });
 
+    if (this.objectBusy(roomName)) return;
+
+    this.objectNew({ x: 1, y: 1 }, roomName);
+    this.anchor.vis = hiveVisuals;
     this.nukeInfo(hive);
     this.spawnInfo(hive);
+  }
 
-    if (!this.caching[name] || Game.time > this.caching[name].lastRecalc)
-      this.exportAnchor();
+  private emptyAnchor(
+    pos: { x?: number; y?: number },
+    ref: string,
+    keepInMemory: number
+  ) {
+    this.anchor = {
+      vis: new RoomVisual(makeId(8)),
+      ref,
+      x: pos.x || 0,
+      y: pos.y || 0,
+      keepInMemory,
+    };
   }
 
   private global() {
     const minLen = 6.2;
     if (!Apiary.useBucket)
-      this.updateAnchor(
-        this.label("LOW CPU", this.anchor, { align: "right" }, minLen)
-      );
-    this.updateAnchor(
-      this.progressbar(
-        Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU",
-        this.anchor,
-        Game.cpu.getUsed() / Game.cpu.limit,
-        { align: "right" },
-        minLen
-      )
+      this.label("LOW CPU", this.anchor, { align: "right" }, minLen);
+    this.progressbar(
+      Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU",
+      this.anchor,
+      Game.cpu.getUsed() / Game.cpu.limit,
+      { align: "right" },
+      minLen
     );
-    this.updateAnchor(
-      this.progressbar(
-        (Game.cpu.bucket === 10000 ? "10K" : Math.round(Game.cpu.bucket)) +
-          " : BUCKET",
-        this.anchor,
-        Game.cpu.bucket / 10000,
-        { align: "right" },
-        minLen
-      )
-    ); // PIXEL_CPU_COST but not everywhere exists
-    this.updateAnchor(
-      this.progressbar(
-        Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL",
-        this.anchor,
-        Game.gcl.progress / Game.gcl.progressTotal,
-        { align: "right" },
-        minLen
-      )
+    this.progressbar(
+      (Game.cpu.bucket === 10000 ? "10K" : Math.round(Game.cpu.bucket)) +
+        " : BUCKET",
+      this.anchor,
+      Game.cpu.bucket / 10000,
+      { align: "right" },
+      minLen
+    );
+    this.progressbar(
+      Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL",
+      this.anchor,
+      Game.gcl.progress / Game.gcl.progressTotal,
+      { align: "right" },
+      minLen
     );
     const heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
     if (heapStat)
-      this.updateAnchor(
-        this.progressbar(
-          "HEAP",
-          this.anchor,
-          heapStat.used_heap_size / heapStat.total_available_size,
-          { align: "right" },
-          minLen
-        )
+      this.progressbar(
+        "HEAP",
+        this.anchor,
+        heapStat.used_heap_size / heapStat.total_available_size,
+        { align: "right" },
+        minLen
       );
   }
 
@@ -767,9 +769,7 @@ export class Visuals {
       }
     }
     if (miningInfo.length > 2)
-      this.updateAnchor(
-        this.table(miningInfo, this.anchor, undefined, 10, 15, "center")
-      );
+      this.table(miningInfo, this.anchor, undefined, 10, 15, "center");
   }
 
   private nukeInfo(hive: Hive) {
@@ -793,19 +793,31 @@ export class Visuals {
     });
   }
 
+  /** saves the objects currently on the anchor */
+  private objectExport() {
+    const ref = this.anchor.ref;
+    const keepInMemory = this.anchor.keepInMemory;
+    if (!this.objectBusy(ref))
+      this.caching[ref] = {
+        data: [],
+        keepUntil: Apiary.intTime + keepInMemory,
+      };
+    const ex = this.caching[ref]!;
+    ex.data.push(this.anchor.vis.export() || "");
+    ex.keepUntil = Math.max(ex.keepUntil, keepInMemory);
+  }
+
   private statsNukes(hive: Hive) {
     _.forEach(hive.cells.defense.nukes, (nuke) => {
       const percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
-      this.updateAnchor(
-        this.progressbar(
-          `☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${
-            Math.round(percent * 1000) / 10
-          }%`,
-          this.anchor,
-          percent,
-          undefined,
-          9.65
-        )
+      this.progressbar(
+        `☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${
+          Math.round(percent * 1000) / 10
+        }%`,
+        this.anchor,
+        percent,
+        undefined,
+        9.65
       );
     });
   }
@@ -813,52 +825,23 @@ export class Visuals {
   private visualizePlanner() {
     const ch = Apiary.colony.planner.checking;
     if (!ch) return;
-    const hiveName = ch.roomName;
 
-    if (this.caching[hiveName] && this.caching[hiveName].lastRecalc > Game.time)
-      return;
+    const hiveName = ch.roomName;
+    if (this.objectBusy(hiveName)) return;
 
     // add structures
     const ap = ch.active;
-    for (const roomName in ap.rooms) {
-      if (
-        this.caching[roomName] &&
-        this.caching[roomName].lastRecalc > Game.time
-      )
-        continue;
-      const plan = ap.rooms[roomName].compressed;
-      this.changeAnchor(0, 0, roomName, true);
-      const vis = this.anchor.vis;
-      const hive = Apiary.hives[roomName];
-      if (hive) {
-        this.nukeInfo(hive);
-        _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) =>
-          vis.structure(p.pos.x, p.pos.y, STRUCTURE_RAMPART)
-        );
-      }
 
-      for (const sType in plan) {
-        const structureType = sType as BuildableStructureConstant;
-        for (const value of plan[structureType]!.que) {
-          if (value !== PLANNER_STAMP_STOP)
-            vis.structure(value[0], value[1], structureType);
-        }
-      }
-      vis.connectRoads();
-      this.exportAnchor(1);
-    }
-
-    this.changeAnchor(0, 0, hiveName);
-    for (const pos of ch.positions) {
+    this.objectNew({}, hiveName);
+    for (const pos of ch.positions)
       this.anchor.vis.circle(pos.x, pos.y, {
         fill: "#FFC82A",
         opacity: 0.5,
         stroke: "#FFA600",
         strokeWidth: 1,
       });
-    }
 
-    const table = this.table(
+    this.table(
       [["                  ", "current", "best", "      "]].concat(
         _.map(
           ch.active.metrics as unknown as { [ref: string]: number },
@@ -872,7 +855,6 @@ export class Visuals {
       ),
       this.anchor
     );
-    this.updateAnchor(table);
 
     // table: number of sources/minerals by roomName
     const roomResources = _.map(
@@ -891,12 +873,10 @@ export class Visuals {
       [["name  ", "sources", "minerals"]].concat(roomResources),
       this.anchor
     );
-    this.exportAnchor(1);
 
     // add info about cells
     for (const [cellRef, value] of Object.entries(ap.posCell)) {
       const SIZE = 0.3;
-      this.changeAnchor(0, 0, hiveName);
       const pos = { x: value[0], y: value[1] };
 
       const outEdge = { width: 0.15, color: "#010B13" };
@@ -957,9 +937,32 @@ export class Visuals {
         pos.y + SIZE,
         style
       );
-      this.exportAnchor(1);
+    }
+
+    for (const roomName in ap.rooms) {
+      if (this.objectBusy(roomName)) continue;
+      const plan = ap.rooms[roomName].compressed;
+      this.objectNew({}, roomName);
+
+      const vis = this.anchor.vis;
+      const hive = Apiary.hives[roomName];
+      if (hive) {
+        this.nukeInfo(hive);
+        _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) =>
+          vis.structure(p.pos.x, p.pos.y, STRUCTURE_RAMPART)
+        );
+      }
+
+      for (const sType in plan) {
+        const structureType = sType as BuildableStructureConstant;
+        for (const value of plan[structureType]!.que) {
+          if (value !== PLANNER_STAMP_STOP)
+            vis.structure(value[0], value[1], structureType);
+        }
+      }
+      vis.connectRoads();
     }
   }
 
-  // #endregion Private Methods (8)
+  // #endregion Private Methods (10)
 }

@@ -17,8 +17,8 @@ export interface HiveCache {
     upgrade: 0 | 1 | 2 | 3;
     // do not, if any is needed, (up to some stockpile after if profitable) */
     lab: 0 | 1 | 2;
-    /** nothing, minerals, minerals + ops + energy, anything */
-    buyIn: 0 | 1 | 2 | 3;
+    /** nothing, minerals, + ops, + energy, anything */
+    buyIn: 0 | 1 | 2 | 3 | 4;
     /** drop / sellOff for balance / sellOff for profit (schemes) */
     sellOff: 0 | 1 | 2;
     /** no boosting / only war / all cases (nukes, walls etc) / even when peaceful */

@@ -121,6 +121,10 @@ export class Hive {
 
   // #region Public Accessors (14)
 
+  public get allRoomNames() {
+    return [this.roomName].concat(this.annexNames);
+  }
+
   public get annexInDanger() {
     return this.cells.annex.annexInDanger;
   }
@@ -138,24 +142,6 @@ export class Hive {
           : APPROX_PROFIT_SOURCE.hauling;
     });
     return Math.max(1, income);
-  }
-
-  public canBuy(res: ResourceConstant) {
-    let canBuyIn = false;
-    switch (this.mode.buyIn) {
-      case 3:
-        canBuyIn = true;
-        break;
-      case 2:
-        if (res === RESOURCE_ENERGY || res === RESOURCE_OPS) canBuyIn = true;
-      // fall through
-      case 1:
-        if (BASE_MINERALS.includes(res)) canBuyIn = true;
-        break;
-      case 0:
-        break;
-    }
-    return canBuyIn;
   }
 
   /** fast way to get to cache */
@@ -212,10 +198,6 @@ export class Hive {
     return this.controller.pos;
   }
 
-  public get allRoomNames() {
-    return [this.roomName].concat(this.annexNames);
-  }
-
   public get print(): string {
     return `<a href=#!/room/${Game.shard.name}/${this.pos.roomName}>["${this.roomName}"]</a>`;
   }
@@ -244,7 +226,28 @@ export class Hive {
 
   // #endregion Public Static Methods (1)
 
-  // #region Public Methods (6)
+  // #region Public Methods (8)
+
+  public canBuy(res: ResourceConstant) {
+    let canBuyIn = false;
+    switch (this.mode.buyIn) {
+      case 4:
+        canBuyIn = true;
+        break;
+      case 3:
+        if (res === RESOURCE_ENERGY) canBuyIn = true;
+      // fall through
+      case 2:
+        if (res === RESOURCE_OPS) canBuyIn = true;
+      // fall through
+      case 1:
+        if (BASE_MINERALS.includes(res)) canBuyIn = true;
+        break;
+      case 0:
+        break;
+    }
+    return canBuyIn;
+  }
 
   public createSwarm<T>(
     ref: string,
@@ -264,12 +267,12 @@ export class Hive {
     return order;
   }
 
-  public getUsedCapacity(res: ResourceConstant) {
-    return this.cells.storage.getUsedCapacity(res);
-  }
-
   public getResState(res: ResourceConstant) {
     return this.resState[res] || 0;
+  }
+
+  public getUsedCapacity(res: ResourceConstant) {
+    return this.cells.storage.getUsedCapacity(res);
   }
 
   public roomPlanner(
@@ -338,5 +341,5 @@ export class Hive {
     });
   }
 
-  // #endregion Public Methods (6)
+  // #endregion Public Methods (8)
 }

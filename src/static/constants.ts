@@ -1,9 +1,10 @@
 import type { buildingCostsHive, HiveCache } from "abstract/hiveMemory";
 
+const highCpuCap = Game.cpu.limit > 20;
 export const SETTINGS_DEFAULT: Memory["settings"] = {
-  framerate: 10,
-  generatePixel: Game.cpu.limit > 20,
-  miningDist: 8,
+  framerate: highCpuCap ? 1 : 10,
+  generatePixel: !!Game.cpu.generatePixel && highCpuCap,
+  miningDist: highCpuCap ? 8 : 4,
   reportCPU: false,
   richMovement: true,
   loggingCycle: 100,
@@ -21,7 +22,7 @@ export const BASE_MODE_HIVE: HiveCache["do"] = {
   saveCpu: 0,
   upgrade: 1,
   lab: 2,
-  buyIn: 2,
+  buyIn: 3,
   sellOff: 2,
   buildBoost: 2,
 };
