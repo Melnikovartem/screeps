@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description" content="Webpage description goes here" />
+  <meta charset="utf-8">
+  <title>Change_me</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="">
+</head>
+
+<body>
+    <input placeholder="Enter some text" value = "⚒️⚒️⚒️⚒️be⚒️e🐝🐝🐝🐝🐝" name="name" />
+    <h1>Width: <div id="width-info"></div></h1>
+    <h1>Actual Height: <div id="height-info"></div></h1>
+    <h1>Bounding Box: <div id="box-info"></div></h1>
+    <canvas id="canvas"></canvas>
+    <h1><div id="sizeMap"></div></h1>
+</body>
+<script>
+
+    const input = document.querySelector("input");
+    const a = document.getElementById("width-info");
+    const b = document.getElementById("height-info");
+    const c = document.getElementById("box-info");
+    const sz = document.getElementById("sizeMap");
+
+    function getMetrics(label) {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.font = "0.8px Trebuchet MS";
+        let metrics = ctx.measureText(label);
+        let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+        let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+        return [metrics.width, actualHeight, fontHeight];
+    }
+
+    function valueChanged() {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const [width, height, box] = getMetrics(input.value);
+    
+        ctx.font = "20px Trebuchet MS";
+        ctx.strokeText(width, 20, 20);
+        ctx.strokeText(height, 20, 40);
+        ctx.strokeText(box, 20, 60);  
+
+
+        ctx.strokeText(input.value, 10, 100);  
+        
+        a.textContent = width;
+        b.textContent = height;
+        c.textContent = box;
+    }
+    input.addEventListener("change", valueChanged);
+    valueChanged();
+
+    const emojis = [
+        "⏳",
+        "🐝",
+        "➡️",
+        "📉",
+        "💱",
+        "💸",
+        "🏭",
+        "🧪",
+        "🧬",
+        "🥼",
+        "🎯",
+        "☠️",
+        "💀",
+        "⚒️",
+        "🖼️",
+        "📋",
+        "💬",
+        "🔍",
+        "🔧",
+        "📱",
+        "💡",
+        "📅",
+        "🔊",
+        "📤",
+        "📦",
+        "📇",
+        "🚀",
+        "🎨",
+        "📡",
+        "💹",
+        "🚨",
+        "☢️",
+        "🔴",
+        "❓"
+        ];
+    const lettersToCheck = emojis;
+    console.log(lettersToCheck);
+    
+    for (let i = 'a'.charCodeAt(0); i <= 'z'.charCodeAt(0); ++i)
+        lettersToCheck.push(String.fromCharCode(i));
+    for (let i = 'A'.charCodeAt(0); i <= 'Z'.charCodeAt(0); ++i)
+        lettersToCheck.push(String.fromCharCode(i));
+
+    const sizeMap = {};
+    lettersToCheck.map((l) => {
+        const [width, height, box] = getMetrics(l);
+        sizeMap[l] = [width, Math.min(height, box)];
+    });
+    console.log(sizeMap)
+    sz.textContent = JSON.stringify(sizeMap);
+</script>
+
+</body>
+</html>
