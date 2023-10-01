@@ -447,7 +447,11 @@ export class FactoryCell extends CellWithTarget {
 
   private newTarget() {
     // prev target is fine
-    if (this.commodityTarget && this.commodityTarget.amount > 0) return OK;
+    if (
+      this.commodityTarget &&
+      this.commodityTarget.amount > COMMODITIES[this.commodityTarget.res].amount
+    )
+      return OK;
     // cooldown for finding target
     if (!this.shouldFindTarget) return ERR_BUSY;
     this.invalidateTarget();
