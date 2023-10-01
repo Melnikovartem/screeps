@@ -39,6 +39,7 @@ export class SiegeMaster extends Master<DefenseCell> {
   // #region Public Accessors (2)
 
   public override get boosts(): BoostRequest[] {
+    if (!this.boostDefender) return [];
     return [
       { type: "fatigue", lvl: 2 },
       { type: "fatigue", lvl: 1 },
@@ -54,7 +55,26 @@ export class SiegeMaster extends Master<DefenseCell> {
   }
 
   public override get targetBeeCount(): number {
-    return 1;
+    if ((this.hive.controller.safeMode || 0) > 100) return 0;
+    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
+    let shouldSpawn = roomInfo.dangerlvlmax >= 6;
+    if (shouldSpawn) return 1;
+    _.some(Game.map.describeExits(this.hiveName), (exit) => {
+      if (!exit) return;
+      const roomInfoExit = Apiary.intel.getInfo(exit, 50);
+      // spawn if enemy quad is coming
+      if (
+        roomInfoExit.dangerlvlmax >= 8 &&
+        roomInfoExit.enemies.length > 2 &&
+        roomInfoExit.roomState !== roomStates.SKfrontier &&
+        roomInfoExit.roomState !== roomStates.corridor &&
+        roomInfoExit.roomState !== roomStates.ownedByEnemy &&
+        roomInfoExit.roomState !== roomStates.ownedByMe
+      )
+        shouldSpawn = true;
+      return shouldSpawn;
+    });
+    return shouldSpawn ? 1 : 0;
   }
 
   // #endregion Public Accessors (2)
@@ -224,29 +244,9 @@ export class SiegeMaster extends Master<DefenseCell> {
   public override update() {
     super.update();
     this.boostDefender = false;
+    this.movePriority = 5;
     if (this.hive.phase < 1) return;
-    const roomInfo = Apiary.intel.getInfo(this.hiveName, 10);
-    let shouldSpawn = roomInfo.dangerlvlmax >= 6;
-    if (!shouldSpawn)
-      _.some(Game.map.describeExits(this.hiveName), (exit) => {
-        if (!exit) return;
-        const roomInfoExit = Apiary.intel.getInfo(exit, 50);
-        if (
-          roomInfoExit.dangerlvlmax >= 8 &&
-          roomInfoExit.enemies.length > 2 &&
-          roomInfoExit.roomState !== roomStates.SKfrontier &&
-          roomInfoExit.roomState !== roomStates.corridor &&
-          roomInfoExit.roomState !== roomStates.ownedByEnemy &&
-          roomInfoExit.roomState !== roomStates.ownedByMe
-        )
-          shouldSpawn = true;
-        return shouldSpawn;
-      });
-    this.movePriority = 5 as const;
-    if (
-      !shouldSpawn ||
-      (this.hive.controller.safeMode && this.hive.controller.safeMode > 100)
-    ) {
+    if (!this.targetBeeCount) {
       if (this.waitingForBees) this.removeWishes();
       return;
     }
@@ -267,7 +267,7 @@ export class SiegeMaster extends Master<DefenseCell> {
       _.forEach(this.bees, (b) => {
         if (!b.boosted && b.ticksToLive >= 600) b.state = beeStates.boosting;
       });
-    this.movePriority = 1 as const;
+    this.movePriority = 1;
     addResDict(this.hive.mastersResTarget, RESOURCE_ENERGY, 50000);
     addResDict(this.hive.mastersResTarget, BOOST_MINERAL.attack[2], 2000);
 

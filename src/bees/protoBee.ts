@@ -157,7 +157,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
 
   // #endregion Public Static Methods (1)
 
-  // #region Public Methods (14)
+  // #region Public Methods (15)
 
   // for future: could path to open position near object for targets that require isNearTo
   // but is it worh in terms of CPU?
@@ -343,6 +343,10 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ans === OK ? this.creep.pickup(t) : ans;
   }
 
+  public say(text: string, toPublic: boolean) {
+    this.creep.say(text, toPublic);
+  }
+
   public stop() {
     this.targetPosition = undefined;
     if (this.memory._trav) this.memory._trav.state[STATE_STUCK] = 0;
@@ -374,7 +378,7 @@ export abstract class ProtoBee<ProtoCreep extends Creep | PowerCreep> {
     return ans === OK ? this.creep.withdraw(t, resourceType, amount) : ans;
   }
 
-  // #endregion Public Methods (14)
+  // #endregion Public Methods (15)
 
   // #region Private Static Methods (1)
 

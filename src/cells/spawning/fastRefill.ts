@@ -1,14 +1,19 @@
 import { FastRefillMaster } from "beeMasters/economy/fastRefill";
 import { profile } from "profiler/decorator";
 import { prefix } from "static/enums";
+import { HIVE_MAJESTY_PUNS, PUNS_UPTIME } from "static/slogans";
 
 import { Cell } from "../_Cell";
 import type { RespawnCell } from "./respawnCell";
 
 @profile
 export class FastRefillCell extends Cell {
-  // #region Properties (5)
+  // #region Properties (6)
 
+  private text = {
+    time: -PUNS_UPTIME,
+    index: 0,
+  };
   private needEnergy = false;
   private parentCell: RespawnCell;
 
@@ -16,7 +21,7 @@ export class FastRefillCell extends Cell {
   public masters: FastRefillMaster[] = [];
   public refillTargets: (StructureSpawn | StructureExtension)[] = [];
 
-  // #endregion Properties (5)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
@@ -94,6 +99,35 @@ export class FastRefillCell extends Cell {
   }
 
   public run() {
+    if (Apiary.intTime - this.text.time >= PUNS_UPTIME) {
+      this.text = {
+        index: Math.floor(Math.random() * HIVE_MAJESTY_PUNS.length),
+        time: Apiary.intTime,
+      };
+    }
+    let indexOfMaster = (Apiary.intTime - this.text.time) % this.masters.length;
+    if (this.masters.length >= 4) {
+      // do the circle wave
+      switch (indexOfMaster) {
+        case 0:
+        case 1:
+          break;
+        case 2:
+          indexOfMaster = 3;
+          break;
+        case 3:
+          indexOfMaster = 2;
+          break;
+      }
+    }
+    const text = HIVE_MAJESTY_PUNS[this.text.index] || "?";
+    for (let i = 0; i < this.masters.length; ++i) {
+      const bee = this.masters[i].activeBees[0];
+      if (!bee) continue;
+      if (i === indexOfMaster) bee.say(text, true);
+      else bee.say(" ", true);
+    }
+
     if (!this.needEnergy) return;
     if (this.link && this.sCell.link) {
       const freeCap = this.link.store.getFreeCapacity(RESOURCE_ENERGY);
@@ -123,6 +157,7 @@ export class FastRefillCell extends Cell {
   public override update() {
     // do i even need it here. we do not perform any actions FROM this cell
     this.updateObjects([]);
+
     const emptyContainers = this.masters
       .filter(
         (m) =>

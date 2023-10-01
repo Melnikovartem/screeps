@@ -19,8 +19,8 @@ const PADDING_RESOURCE = MAX_CREEP_SIZE * LAB_BOOST_MINERAL;
 export const FREE_CAPACITY = {
   /** keep free 100_000 slots free */
   min: STORAGE_CAPACITY * 0.1,
-  /** dump everything / stop drop until have 10_000 slots free */
-  max: STORAGE_CAPACITY * 0.01,
+  /** dump everything / stop drop until have 50_000 slots free */
+  max: STORAGE_CAPACITY * 0.05,
 };
 /**  do not sell mare per transaction */
 const SELL_STEP_MAX = 4096; // 8192 // careful about selling boosts

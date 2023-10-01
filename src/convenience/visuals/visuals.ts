@@ -1,6 +1,7 @@
 import "./visluals-planning";
 
 import type { Hive } from "hive/hive";
+import { SWARM_MASTER } from "orders/swarm-nums";
 import { profile } from "profiler/decorator";
 import { hiveStates } from "static/enums";
 import { makeId } from "static/utils";
@@ -52,15 +53,9 @@ const GLOBAL_VISUALS_REF = {
 
 @profile
 export class Visuals {
-  // #region Properties (10)
+  // #region Properties (4)
 
-  private aidHive = aidHive;
   private globalStats = globalStats;
-  private mastersStateHive = mastersStateHive;
-  private resStateHive = resStateHive;
-  private statsFactory = statsFactory;
-  private statsLab = statsLab;
-  private statsNukes = statsNukes;
   private visualizePlanner = visualizePlanner;
 
   /** current point for adding visuals */
@@ -76,9 +71,73 @@ export class Visuals {
     [ref: string]: VisCache | undefined;
   } = {};
 
-  // #endregion Properties (10)
+  // #endregion Properties (4)
 
-  // #region Public Methods (9)
+  // #region Private Accessors (1)
+
+  private get framerate() {
+    return Memory.settings.framerate;
+  }
+
+  // #endregion Private Accessors (1)
+
+  // #region Public Methods (14)
+
+  public formatNumber(num: number) {
+    const prefixS = num < 0 ? "-" : "";
+    num = Math.abs(num);
+    let postfixS = "";
+    if (num >= 1_000_000) {
+      num = Math.round(num / 100_000) / 10;
+      postfixS = "M";
+    } else if (num >= 100_000) {
+      num = Math.round(num / 1_000);
+      postfixS = "K";
+    } else if (num >= 5_000) {
+      num = Math.round(num / 100) / 10;
+      postfixS = "K";
+    } else num = Math.round(num * 100) / 100;
+    return prefixS + num + postfixS;
+  }
+
+  public getBeesAmount(master: {
+    waitingForBees: number;
+    beesAmount: number;
+    targetBeeCount: number;
+  }): string[] {
+    const allBees =
+      master.beesAmount + master.beesAmount + master.targetBeeCount;
+    if (!allBees) return [];
+    return [
+      "" + (master.waitingForBees || ""),
+      master.beesAmount + "/" + master.targetBeeCount,
+    ];
+  }
+
+  public label(
+    label: string,
+    minSize: number = 1,
+    maxSize: number = 15,
+    addBox = true,
+    style: TextStyle = {},
+    anchor = this.anchor
+  ) {
+    const [x, y] = [anchor.x, anchor.y];
+
+    const [width, height, padLeft, padTop] = this.getSizeLabel(
+      label,
+      minSize,
+      maxSize,
+      style
+    );
+
+    if (addBox) this.box(x, y, width, height);
+    anchor.vis.text(label, x + padLeft, y + padTop, this.textStyle(style));
+
+    const endY = y + height;
+    this.objectMoveAnchor({ y: endY }, false, true);
+    return { x: x + width, y: endY };
+  }
 
   public objectBusy(ref: string) {
     const ex = this.caching[ref];
@@ -92,7 +151,7 @@ export class Visuals {
 
   /** reset anchor to default pos */
   public objectDefaultPos(roomName: string) {
-    this.objectNew({ x: 1, y: 1 }, roomName);
+    this.objectNew({ x: 1, y: 11.5 }, roomName);
   }
 
   public objectMoveAnchor(
@@ -130,23 +189,53 @@ export class Visuals {
     if (this.anchor.ref === ref) this.emptyAnchor({}, ref, -1);
   }
 
+  public progressbar(
+    label: string,
+    progress: number,
+    minSize?: number,
+    maxSize?: number,
+    style: TextStyle = {},
+    anchor = this.anchor
+  ) {
+    const [x, y] = [anchor.x, anchor.y];
+    const [width, height] = this.getSizeLabel(label, minSize, maxSize, style);
+
+    const widthBar = width * Math.min(1, progress);
+
+    // yellow part
+    this.rect(x, y, widthBar, height, {
+      fill: VISUAL_COLORS.hiveMain,
+      opacity: progress >= 1 ? 0.5 : 0.3,
+    });
+
+    // grey part
+    this.box(x + widthBar, y, width - widthBar, height, undefined, false);
+
+    // stroke
+    this.box(x, y, width, height, false, undefined);
+
+    return this.label(label, minSize, maxSize, false, style, anchor);
+  }
+
   public run() {
-    if (Memory.settings.framerate < 0) return;
+    if (this.framerate < 0) return;
 
     this.visualizePlanner();
 
-    if (Apiary.intTime % Memory.settings.framerate === 0) {
+    if (Apiary.intTime % this.framerate === 0) {
       if (Apiary.useBucket) {
         // heavy calcs
         for (const name in Apiary.hives) this.hiveVisuals(name);
 
         this.objectNew({ x: 30, y: 1 }, GLOBAL_VISUALS_REF.heavy);
-        this.battleInfo();
-        this.miningInfo();
+        // this.battleInfo();
+        // this.miningInfo();
       }
 
       // normal stuff
-      this.objectNew({ x: 49, y: 1 }, GLOBAL_VISUALS_REF.main);
+      this.objectNew({ x: 1, y: 1 }, GLOBAL_VISUALS_REF.main);
+      this.logo();
+      this.objectMoveAnchor({ x: 49, y: 1 });
       this.globalStats();
     }
 
@@ -188,169 +277,6 @@ export class Visuals {
     });
   }
 
-  public textStyle(style: TextStyle = {}): TextStyle {
-    return _.defaults({ ...style }, DEFAULT_TEXTSTYLE);
-  }
-
-  // #endregion Public Methods (9)
-
-  // #region Protected Methods (9)
-
-  /** alias for default colors / boxes */
-  protected box(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    fillStyle: PolyStyle | false = {},
-    strokeStyle: PolyStyle | false = {}
-  ) {
-    if (fillStyle) {
-      if (fillStyle.fill === undefined) fillStyle.fill = VISUAL_COLORS.gray;
-      if (fillStyle.opacity === undefined) fillStyle.opacity = 0.3;
-      this.rect(x, y, w, h, fillStyle);
-    }
-    if (strokeStyle) {
-      if (strokeStyle.stroke === undefined)
-        strokeStyle.stroke = VISUAL_COLORS.hiveMain;
-      if (strokeStyle.opacity === undefined) strokeStyle.opacity = 0.3;
-      this.rect(x, y, w, h, strokeStyle);
-    }
-  }
-
-  protected formatNumber(num: number) {
-    const prefixS = num < 0 ? "-" : "";
-    num = Math.abs(num);
-    let postfixS = "";
-    if (num > 1_000_000) {
-      num = Math.round(num / 100_000) / 10;
-      postfixS = "M";
-    } else if (num > 100_000) {
-      num = Math.round(num / 1_000);
-      postfixS = "K";
-    } else if (num > 10_000) {
-      num = Math.round(num / 100) * 10;
-      postfixS = "K";
-    }
-    return prefixS + num + postfixS;
-  }
-
-  protected getBeesAmount(
-    master:
-      | { waitingForBees: number; beesAmount: number; targetBeeCount: number }
-      | undefined
-  ): string {
-    if (!master) return ":";
-    return `: ${master.waitingForBees ? "(" : ""}${master.beesAmount}${
-      master.waitingForBees ? "+" + master.waitingForBees + ")" : ""
-    }/${master.targetBeeCount}`;
-  }
-
-  protected label(
-    label: string,
-    minSize: number = 1,
-    maxSize: number = 15,
-    addBox = true,
-    style: TextStyle = {},
-    anchor = this.anchor
-  ) {
-    const [x, y] = [anchor.x, anchor.y];
-
-    let [width, height] = this.textSize(label);
-    width =
-      Math.min(Math.max(minSize, width), maxSize) *
-      (style.align === "right" ? -1 : 1);
-    height += 0.5;
-
-    if (addBox) this.box(x, y, width, height);
-
-    anchor.vis.text(
-      label,
-      x + 0.25 * (style.align === "right" ? -1 : 1),
-      y + height - 0.26,
-      this.textStyle(style)
-    );
-
-    const endY = y + height;
-    this.objectMoveAnchor({ y: endY }, false, true);
-    return { x: x + width, y: endY };
-  }
-
-  protected nukeInfo(hive: Hive) {
-    _.forEach(hive.cells.defense.nukes, (nuke) => {
-      const n = nuke.pos;
-      const xMin = n.x - 2.5;
-      const xMax = n.x + 2.5;
-      const yMin = n.y - 2.5;
-      const yMax = n.y + 2.5;
-      this.anchor.vis.poly(
-        [
-          [xMin, yMin],
-          [xMin, yMax],
-          [xMax, yMax],
-          [xMax, yMin],
-          [xMin, yMin],
-        ],
-        { stroke: VISUAL_COLORS.nuke.edge }
-      );
-      this.anchor.vis.circle(n.x, n.y, { fill: VISUAL_COLORS.nuke.center });
-    });
-  }
-
-  protected progressbar(
-    label: string,
-    progress: number,
-    minSize: number = 1,
-    maxSize: number = 15,
-    style: TextStyle = {},
-    anchor = this.anchor
-  ) {
-    const [x, y] = [anchor.x, anchor.y];
-
-    let [width, height] = this.textSize(label);
-    width =
-      Math.min(Math.max(minSize, width), maxSize) *
-      (style.align === "right" ? -1 : 1);
-    height += 0.5;
-
-    const widthBar = width * Math.min(1, progress);
-
-    // yellow part
-    this.rect(x, y, widthBar, height, {
-      fill: VISUAL_COLORS.hiveMain,
-      opacity: progress >= 1 ? 0.5 : 0.3,
-    });
-
-    // grey part
-    this.box(x + widthBar, y, width - widthBar, height, undefined, false);
-
-    // stroke
-    this.box(x, y, width, height, false, undefined);
-
-    return this.label(label, minSize, maxSize, false, style, anchor);
-  }
-
-  /** proper rectangle */
-  protected rect(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    style: PolyStyle = {}
-  ) {
-    if (style.stroke === undefined) style.stroke = "";
-    this.anchor.vis.poly(
-      [
-        [x, y],
-        [x + w, y],
-        [x + w, y + h],
-        [x, y + h],
-        [x, y],
-      ],
-      style
-    );
-  }
-
   /**
    *
    * @param strings
@@ -362,7 +288,7 @@ export class Visuals {
    * @param info
    * @returns
    */
-  protected table(
+  public table(
     strings: string[][],
     header: string | undefined = undefined,
     align: "center" | "right" | "left" = "left",
@@ -430,6 +356,78 @@ export class Visuals {
     return { x: x + width, y: endY };
   }
 
+  public textStyle(style: TextStyle = {}): TextStyle {
+    return _.defaults({ ...style }, DEFAULT_TEXTSTYLE);
+  }
+
+  // #endregion Public Methods (14)
+
+  // #region Protected Methods (4)
+
+  /** alias for default colors / boxes */
+  protected box(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fillStyle: PolyStyle | false = {},
+    strokeStyle: PolyStyle | false = {}
+  ) {
+    if (fillStyle) {
+      if (fillStyle.fill === undefined) fillStyle.fill = VISUAL_COLORS.gray;
+      if (fillStyle.opacity === undefined) fillStyle.opacity = 0.3;
+      this.rect(x, y, w, h, fillStyle);
+    }
+    if (strokeStyle) {
+      if (strokeStyle.stroke === undefined)
+        strokeStyle.stroke = VISUAL_COLORS.hiveMain;
+      if (strokeStyle.opacity === undefined) strokeStyle.opacity = 0.3;
+      this.rect(x, y, w, h, strokeStyle);
+    }
+  }
+
+  protected nukeInfo(hive: Hive) {
+    _.forEach(hive.cells.defense.nukes, (nuke) => {
+      const n = nuke.pos;
+      const xMin = n.x - 2.5;
+      const xMax = n.x + 2.5;
+      const yMin = n.y - 2.5;
+      const yMax = n.y + 2.5;
+      this.anchor.vis.poly(
+        [
+          [xMin, yMin],
+          [xMin, yMax],
+          [xMax, yMax],
+          [xMax, yMin],
+          [xMin, yMin],
+        ],
+        { stroke: VISUAL_COLORS.nuke.edge }
+      );
+      this.anchor.vis.circle(n.x, n.y, { fill: VISUAL_COLORS.nuke.center });
+    });
+  }
+
+  /** proper rectangle */
+  protected rect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    style: PolyStyle = {}
+  ) {
+    if (style.stroke === undefined) style.stroke = "";
+    this.anchor.vis.poly(
+      [
+        [x, y],
+        [x + w, y],
+        [x + w, y + h],
+        [x, y + h],
+        [x, y],
+      ],
+      style
+    );
+  }
+
   protected textSize(str: string): [number, number] {
     const sizes = _.map(str, (s) => {
       const ex = VISUALS_SIZE_MAP[s];
@@ -442,13 +440,14 @@ export class Visuals {
     return [width, height];
   }
 
-  // #endregion Protected Methods (9)
+  // #endregion Protected Methods (4)
 
   // #region Private Methods (7)
 
   private _render() {
     const drainData = (vis: RoomVisual, ref: string) => {
-      if (!this.objectBusy(ref)) {
+      const diff = Apiary.intTime - (this.caching[ref]?.keepUntil || 0);
+      if (diff > this.framerate) {
         delete this.caching[ref];
         return;
       }
@@ -476,7 +475,7 @@ export class Visuals {
     }
   }
 
-  private battleInfo() {
+  /* private battleInfo() {
     const battleInfo: string[][] = [["", "🎯", " ☠️❗", "💀", "🐝"]];
     _.forEach(Apiary.war.squads, (squad) => {
       const roomInfo = Apiary.intel.getInfo(squad.pos.roomName, 500);
@@ -491,8 +490,7 @@ export class Visuals {
     });
     if (battleInfo.length > 1)
       this.table(battleInfo, "siedge squads", "center");
-  }
-
+  } */
   private emptyAnchor(
     pos: { x?: number; y?: number },
     ref: string,
@@ -507,6 +505,22 @@ export class Visuals {
     };
   }
 
+  private getSizeLabel(
+    label: string,
+    minSize = 1,
+    maxSize = 15,
+    style: TextStyle = {}
+  ) {
+    let [width, height] = this.textSize(label);
+    width =
+      Math.min(Math.max(minSize, width + 0.5), maxSize) *
+      (style.align === "right" ? -1 : 1);
+    height += 0.5;
+    const padLeft = 0.25 * (style.align === "right" ? -1 : 1);
+    const padTop = height - 0.26;
+    return [width, height, padLeft, padTop];
+  }
+
   private hiveVisuals(roomName: string) {
     // if want to keep visuals in annex can preLoad
     // in fakeRef = roomName + "_" + Apiary.intTime
@@ -519,21 +533,27 @@ export class Visuals {
 
     const [x, y] = [this.anchor.x, this.anchor.y];
     let xRight = x;
+    const allY = [];
+
     xRight = this.statsHive(hive).x;
-    this.objectMoveAnchor({ y, x: xRight }, true);
-    xRight = this.mastersStateHive(hive).x;
-    this.objectMoveAnchor({ y, x: xRight }, true);
-    this.resStateHive(hive);
+    allY.push(this.anchor.y);
 
-    const endY = this.anchor.y;
+    this.objectMoveAnchor({ y, x: xRight }, true);
+    xRight = mastersStateHive(this, hive).x;
+    allY.push(this.anchor.y);
+
+    this.objectMoveAnchor({ y, x: xRight }, true);
+    resStateHive(this, hive);
+    allY.push(this.anchor.y);
+
     this.objectDefaultPos(roomName);
-    this.objectMoveAnchor({ y: endY });
+    this.objectMoveAnchor({ y: _.max(allY) });
 
-    this.aidHive(hive);
-    this.statsFactory(hive);
-    this.statsLab(hive);
+    aidHive(this, hive);
+    statsFactory(this, hive);
+    statsLab(this, hive);
 
-    this.statsNukes(hive);
+    statsNukes(this, hive);
 
     // copy info to annexeses
     const hiveVisuals = this.anchor.vis;
@@ -550,7 +570,14 @@ export class Visuals {
     this.spawnInfo(hive);
   }
 
-  private miningInfo() {
+  private logo() {
+    this.anchor.vis.rect(this.anchor.x, this.anchor.y, 10, 10, {
+      fill: VISUAL_COLORS.hiveSupport,
+      opacity: 0.3,
+    });
+  }
+
+  /* private miningInfo() {
     const miningInfo: string[][] = [["", "🎯", "❓", "🐝"]];
     for (const hiveName in Apiary.hives) {
       const corMine = Apiary.hives[hiveName].cells.corridorMining;
@@ -601,7 +628,7 @@ export class Visuals {
       }
     }
     if (miningInfo.length > 2) this.table(miningInfo, "mining sites", "center");
-  }
+  } */
 
   /** saves the objects currently on the anchor */
   private objectExport() {
@@ -637,11 +664,89 @@ export class Visuals {
         break;
     }
     const header = `hive ${hive.roomName} ${hiveState}`;
-    // wall health
-    // building costs
-    // spawn que length
-    //
-    return this.table([], header);
+    const info: string[][] = [];
+
+    info.push([
+      "walls health",
+      this.formatNumber(hive.cells.build.wallTargetHealth),
+    ]);
+    info.push([
+      "build costs",
+      this.formatNumber(hive.cells.build.sumCost) +
+        "/" +
+        hive.cells.build.structuresConst.length,
+    ]);
+    let spawnInfo = "" + hive.cells.spawn.spawnQue.length || "";
+    if (hive.bassboost) {
+      const bassQue = hive.bassboost.cells.spawn.spawnQue;
+      const formThisHive = bassQue.filter(
+        (r) => Apiary.masters[r.master]?.hiveName === hive.roomName
+      ).length;
+      spawnInfo = `→${hive.bassboost.roomName} ${formThisHive}/${bassQue.length}`;
+    }
+    info.push(["spawn que", spawnInfo]);
+
+    const storageQue = Object.keys(hive.cells.storage.requests).length;
+    const nonRefilling = _.filter(
+      hive.cells.storage.requests,
+      (r) => r.priority
+    ).length;
+    info.push(["storage que", `${nonRefilling}/${storageQue}`]);
+
+    if (hive.phase > 0) {
+      const fullCells = hive.cells.excavation.quitefullCells.length;
+      const needHauling = _.filter(
+        hive.cells.excavation.resourceCells,
+        (c) => c.operational && !c.link
+      ).length;
+      info.push(["excav que", `${fullCells}/${needHauling}`]);
+    }
+
+    const addSats = (
+      ref: string,
+      stats: { all: number; operational: number }
+    ) => {
+      if (!stats.all) return;
+      info.push([ref, `${stats.operational}/${stats.all}`]);
+    };
+
+    const stasRes = { all: 0, operational: 0 };
+    _.forEach(hive.cells.excavation.resourceCells, (s) => {
+      stasRes.all += 1;
+      stasRes.operational += s.operational ? 1 : 0;
+    });
+    addSats("resources", stasRes);
+
+    const statsAnnex = { all: 0, operational: 0 };
+    const statsSk = { all: 0, operational: 0 };
+    _.forEach(hive.cells.annex.swarms, (s) => {
+      let stats;
+      switch (s.type) {
+        case SWARM_MASTER.sk:
+          stats = statsSk;
+          break;
+        case SWARM_MASTER.annex:
+          stats = statsAnnex;
+          break;
+        default:
+          return;
+      }
+      stats.all += 1;
+      stats.operational += s.master.targetBeeCount ? 1 : 0;
+    });
+    addSats("annex", statsAnnex);
+    addSats("sk", statsSk);
+
+    if (
+      hive.isBattle ||
+      hive.cells.defense.master.beesAmount ||
+      hive.cells.defense.master.waitingForBees
+    )
+      info.push([
+        "defense lvl",
+        "" + Apiary.intel.getInfo(hive.roomName, 20).dangerlvlmax,
+      ]);
+    return this.table(info, header);
   }
 
   // #endregion Private Methods (7)

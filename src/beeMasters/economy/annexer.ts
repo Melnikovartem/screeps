@@ -36,6 +36,12 @@ export class AnnexMaster extends SwarmMaster<AnnexerInfo> {
   }
 
   public get targetBeeCount() {
+    if (!this.hive.cells.annex.canSpawnAnnexer(this.roomName)) return 0;
+    if (
+      this.hive.bassboost &&
+      this.pos.getRoomRangeTo(this.hive.bassboost, "path") < 5
+    )
+      return 0;
     return 1;
   }
 
@@ -83,12 +89,7 @@ export class AnnexMaster extends SwarmMaster<AnnexerInfo> {
 
     if (this.reservationTime > 2000) return;
 
-    let doAnnex = !this.hive.annexInDanger.includes(this.pos.roomName);
-
-    if (doAnnex && this.hive.bassboost)
-      doAnnex = this.pos.getRoomRangeTo(this.hive.bassboost, "path") < 5;
-
-    if (doAnnex && this.checkBees(true, CREEP_CLAIM_LIFE_TIME - 10)) {
+    if (this.checkBees(true, CREEP_CLAIM_LIFE_TIME - 10)) {
       const setup = setups.claimer.copy();
       setup.patternLimit =
         Math.floor((CONTROLLER_RESERVE_MAX - this.reservationTime) / 600) + 1;

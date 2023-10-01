@@ -25,10 +25,12 @@ const BUILDING_SCALE = {
   stop: -HIVE_ENERGY * 0.8,
   /** cap builders at max after this amount */
   max: 0,
+  /** request faster complition of tasks if above this */
+  overflowEnergy: HIVE_ENERGY,
   /** cap for scale */
   capEconomy: 3,
   /** maximum builders when small emergency */
-  capEmergency: 3,
+  capEmergency: 4,
   /** maximum builders in battle */
   capBattle: 5,
 };
@@ -174,21 +176,23 @@ export class BuilderMaster extends Master<BuildCell> {
     let genToComplete = 1;
     const boost = this.boosts.length ? "boost" : "normal";
 
+    const costs = this.parent.buildingCosts;
+
     if (this.hive.phase < 1) genToComplete = 0.25; // rush things
     else if (this.hive.isBattle) genToComplete = 0.25; // rush defenses
-    else if (
-      this.parent.buildingCosts.annex.build ||
-      this.parent.buildingCosts.hive.build < 50_000
-    )
+    else if (costs.annex.build || costs.hive.build < 50_000)
       genToComplete = 0.5; // build the fucking things
     else if (this.parent.buildingCosts.hive.build) genToComplete = 1;
+    else if (this.hive.state !== hiveStates.economy) genToComplete = 1;
     else if (
-      this.hive.state === hiveStates.economy &&
-      this.parent.buildingCosts.annex.repair <
-        BUILDING_PER_PATTERN[boost].annex.repair * 20
+      costs.annex.repair >=
+      BUILDING_PER_PATTERN[boost].annex.repair * 20
     )
-      genToComplete = 1.25; // no need to rush walls
-
+      genToComplete = 0.75; // hurry up with those annex repairs
+    else if (
+      this.hive.getResState(RESOURCE_ENERGY) > BUILDING_SCALE.overflowEnergy
+    )
+      genToComplete = 0.5; // to much energy so can rush things a little
     return this.patternSum(boost, genToComplete);
   }
 

@@ -12,12 +12,12 @@ export class AnnexCell extends Cell {
 
   private allResourcesMarked = true;
   private noVisionAnnex: string[] = [];
-  /** annexer or safeSK master */
-  private swarms: { [roomName: string]: SwarmOrder<any> } = {};
 
   public allResourcesRoads = true;
   public annexInDanger: string[] = [];
   public override master = undefined;
+  /** annexer or safeSK master */
+  public swarms: { [roomName: string]: SwarmOrder<any> } = {};
 
   // #endregion Properties (6)
 
@@ -68,6 +68,28 @@ export class AnnexCell extends Cell {
       case roomStates.reservedByInvader:
       case roomStates.reservedByEnemy:
       case roomStates.ownedByEnemy:
+        return false; */
+    }
+    return false;
+  }
+
+  public canSpawnAnnexer(roomName: string) {
+    if (this.annexInDanger.includes(roomName)) return false;
+    if (Apiary.intel.getInfo(this.pos.roomName, 100).dangerlvlmax >= 6)
+      return false;
+    const roomState = Apiary.intel.getRoomState(roomName);
+    switch (roomState) {
+      case roomStates.SKfrontier:
+        return this.swarms[roomName]?.master.beesAmount;
+      case roomStates.noOwner:
+      case roomStates.reservedByMe:
+      case roomStates.reservedByInvader:
+      case roomStates.reservedByEnemy:
+        return true;
+      /* case roomStates.corridor:
+      case roomStates.ownedByMe:
+      case roomStates.ownedByEnemy:
+      case roomStates.SKcentral:
         return false; */
     }
     return false;

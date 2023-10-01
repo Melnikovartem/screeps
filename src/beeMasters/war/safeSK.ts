@@ -25,6 +25,7 @@ export class SKMaster extends HordeMaster {
   }
 
   public override get targetBeeCount() {
+    if (!this.hive.cells.annex.canSpawnAnnexer(this.roomName)) return 0;
     return 1;
   }
 
@@ -113,8 +114,6 @@ export class SKMaster extends HordeMaster {
         this.lairs = Game.rooms[this.pos.roomName].find(FIND_STRUCTURES, {
           filter: { structureType: STRUCTURE_KEEPER_LAIR },
         });
-        /* if (!this.lairs.length)
-          this.order.delete(); */
       }
 
       if (!this.info.maxPath && this.lairs.length) {
@@ -135,8 +134,6 @@ export class SKMaster extends HordeMaster {
     if (this.hive.bassboost) return;
 
     if (
-      !this.hive.annexInDanger.includes(this.pos.roomName) &&
-      Apiary.intel.getInfo(this.pos.roomName, 100).dangerlvlmax < 8 &&
       this.checkBees(
         this.hive.state !== hiveStates.battle &&
           this.hive.state !== hiveStates.lowenergy,

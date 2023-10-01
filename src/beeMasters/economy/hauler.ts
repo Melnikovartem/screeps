@@ -368,7 +368,7 @@ export class HaulerMaster extends Master<ExcavationCell> {
   private get stopHauling() {
     return (
       this.dropOff.store.getFreeCapacity() <=
-      Math.min(this.dropOff.store.getCapacity() * 0.01, STOP_HAULING_RESOURCES)
+      Math.min(this.dropOff.store.getCapacity() * 0.1, STOP_HAULING_RESOURCES)
     );
   }
 

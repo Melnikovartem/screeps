@@ -234,5 +234,11 @@ export class _Apiary {
       this.logger.reportCPU(ref, mode, Game.cpu.getUsed() - cpu, amount);
   }
 
+  public get print() {
+    return `The Hive | bees: ${Object.keys(this.bees).length} | hives: ${
+      Object.keys(this.hives).length
+    } [${Game.time} | ${this.intTime}]`;
+  }
+
   // #endregion Public Methods (5)
 }
