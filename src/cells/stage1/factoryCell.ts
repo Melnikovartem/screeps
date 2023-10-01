@@ -4,8 +4,8 @@ import { profile } from "profiler/decorator";
 import { hiveStates, prefix } from "static/enums";
 import { findOptimalResource } from "static/utils";
 
-import { Cell } from "../_Cell";
 import { HIVE_ENERGY } from "../management/storageCell";
+import { CellWithTarget, PRODUCTION_COOLDOWNS } from "./cellWithTarget";
 
 export const FACTORY_ENERGY = Math.round(FACTORY_CAPACITY * 0.16); // 8k
 
@@ -33,7 +33,10 @@ export const COMMON_COMMODITIES: CommodityConstant[] = [
   RESOURCE_LIQUID,
 ];
 
-const STOP_PRODUCTION = -HIVE_ENERGY * 0.25; // 50000
+const STOP_PRODUCTION = {
+  stop: -HIVE_ENERGY * 0.25, // -50_000
+  unpackEnergy: -HIVE_ENERGY * 0.4, // -80_000
+};
 
 const FACTORY_SETTINGS = {
   stockpile: {
@@ -95,18 +98,14 @@ type CommodityIngredient =
   | RESOURCE_ENERGY
   | RESOURCE_GHODIUM;
 
-const COOLDOWN_TARGET_FACTORY = 50;
-
 @profile
-export class FactoryCell extends Cell {
-  // #region Properties (8)
+export class FactoryCell extends CellWithTarget {
+  // #region Properties (5)
 
-  public commodityRes?: FactoryResourceConstant;
+  private level: number = 0;
+
   public factory: StructureFactory;
-  public level: number = 0;
-  public patience: number = 0;
-  public patienceProd: number = 0;
-  public prod?: { res: FactoryResourceConstant; plan: number };
+  public prod: { res: FactoryResourceConstant; plan: number } | undefined;
   public resTarget: { energy: number } & {
     [key in ResourceConstant]?: number;
   } = {
@@ -114,7 +113,7 @@ export class FactoryCell extends Cell {
   };
   public uncommon: boolean = false;
 
-  // #endregion Properties (8)
+  // #endregion Properties (5)
 
   // #region Constructors (1)
 
@@ -141,6 +140,23 @@ export class FactoryCell extends Cell {
   }
 
   // #endregion Public Accessors (2)
+
+  // #region Protected Accessors (3)
+
+  protected get cooldownProd() {
+    return PRODUCTION_COOLDOWNS.prod.factory;
+  }
+
+  protected get cooldownTarget() {
+    return PRODUCTION_COOLDOWNS.target.factory;
+  }
+
+  protected get shouldProduce() {
+    if (this.hive.resState.energy < STOP_PRODUCTION.unpackEnergy) return true;
+    return !!this.hive.mode.depositRefining;
+  }
+
+  // #endregion Protected Accessors (3)
 
   // #region Public Methods (4)
 
@@ -253,12 +269,7 @@ export class FactoryCell extends Cell {
   public run() {
     if (!this.prod || this.factory.cooldown) return;
     const recipe = COMMODITIES[this.prod.res];
-    // the buff run out and new one didn't come
-    if (recipe.level && this.level !== recipe.level) {
-      // reset prod if buff didn't come in long time
-      if (Apiary.intTime % COOLDOWN_TARGET_FACTORY === 0) this.prod = undefined;
-      return;
-    }
+
     // all components are in
     for (const r in recipe.components) {
       const res = r as CommodityConstant;
@@ -319,11 +330,9 @@ export class FactoryCell extends Cell {
         -balance
       );
 
-    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION) {
-      if (this.prod && this.prod.res !== RESOURCE_ENERGY) {
-        this.prod = undefined;
-        this.commodityTarget = null;
-      }
+    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION.stop) {
+      if (this.prod && this.prod.res !== RESOURCE_ENERGY)
+        this.invalidateTarget();
     }
 
     if (!this.prod) this.stepToTarget();
@@ -336,8 +345,11 @@ export class FactoryCell extends Cell {
       }
       return;
     }
-
     const recipe = COMMODITIES[this.prod.res];
+
+    // the buff run out and new one didn't come
+    if (recipe.level && this.level !== recipe.level) this.prodWaitingToStart();
+
     for (const r in this.factory.store) {
       const res = r as ResourceConstant;
       const amountToTransfer =
@@ -390,20 +402,27 @@ export class FactoryCell extends Cell {
           FACTORY_CAPACITY / 10
         );
     }
-    if (fact < this.prod.plan) {
-      if (this.patienceProd <= 10) ++this.patienceProd;
-      else {
-        this.prod.plan = fact;
-        this.patienceProd = 0;
-      }
-    }
-    if (this.prod.plan < recipe.amount || !this.commodityTarget)
-      this.prod = undefined;
+    this.CanProduceNow(fact, recipe.amount);
   }
 
   // #endregion Public Methods (4)
 
-  // #region Private Methods (7)
+  // #region Protected Methods (1)
+
+  public invalidateTarget() {
+    this.prod = undefined;
+    this.uncommon = false;
+    this.commodityTarget = null;
+    this.emptyResTarget();
+  }
+
+  // #endregion Protected Methods (1)
+
+  // #region Private Methods (8)
+
+  private emptyResTarget() {
+    this.resTarget = { [RESOURCE_ENERGY]: FACTORY_ENERGY };
+  }
 
   private isCommonComodity(res: string) {
     return (COMMON_COMMODITIES as string[]).includes(res);
@@ -429,18 +448,13 @@ export class FactoryCell extends Cell {
   private newTarget() {
     // prev target is fine
     if (this.commodityTarget && this.commodityTarget.amount > 0) return OK;
-    // dont produce
-    if (
-      !this.hive.mode.depositRefining ||
-      (!this.commodityTarget && Apiary.intTime % COOLDOWN_TARGET_FACTORY !== 1)
-    )
-      return ERR_BUSY;
+    // cooldown for finding target
+    if (!this.shouldFindTarget) return ERR_BUSY;
+    this.invalidateTarget();
 
-    this.uncommon = false;
-    this.commodityTarget = null;
     let targets: { res: FactoryResourceConstant; amount: number }[] = [];
     let toCheck = Object.keys(COMMODITIES);
-    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION)
+    if (this.hive.getResState(RESOURCE_ENERGY) < STOP_PRODUCTION.stop)
       toCheck = [RESOURCE_ENERGY];
 
     for (const resToCheck of toCheck) {
@@ -452,7 +466,8 @@ export class FactoryCell extends Cell {
 
       if (res === RESOURCE_ENERGY) {
         // energy below 100000
-        const toProduce = -this.hive.getResState(res) + STOP_PRODUCTION * 1.2; // -resState -60_000
+        const toProduce =
+          -this.hive.getResState(res) + STOP_PRODUCTION.unpackEnergy;
         num = Math.max(0, Math.ceil(toProduce / recipe.amount));
         const batteryInNetwork = Apiary.network.getResState(RESOURCE_BATTERY);
         const batteryInHive = this.sCell.storageUsedCapacity(RESOURCE_BATTERY);
@@ -514,17 +529,20 @@ export class FactoryCell extends Cell {
 
       if (recipe.level && recipe.level !== this.level) {
         num = 0;
-        this.uncommon = true; // ask for boost if not yet
+        // ask for boost if not yet boosted
+        this.uncommon = true;
       }
       if (num > 1)
         targets.push({ res, amount: Math.floor(num) * recipe.amount });
     }
-    if (!targets.length) return ERR_NOT_FOUND;
+    if (!targets.length) {
+      /** recheck after cooldown time if we got boosts or anything changed */
+      this.notFoundTarget();
+      return ERR_NOT_FOUND;
+    }
 
     const nonCommon = targets.filter((t) => !this.isCommonComodity(t.res));
     if (nonCommon.length) targets = nonCommon;
-
-    this.patience = 0;
 
     // higher is more urgent
     const getlvlPriority = (cc: { res: FactoryResourceConstant }) => {
@@ -545,11 +563,12 @@ export class FactoryCell extends Cell {
           this.hive.getUsedCapacity(prev.res);
       return ans < 0 ? curr : prev;
     });
+    this.foundTarget();
     return OK;
   }
 
   private stepToTarget() {
-    this.resTarget = { [RESOURCE_ENERGY]: FACTORY_ENERGY };
+    this.emptyResTarget();
     if (this.newTarget() !== OK || !this.commodityTarget) return;
 
     const [createQue, ingredients] = this.getCreateQue(
@@ -578,16 +597,8 @@ export class FactoryCell extends Cell {
         this.commodityTarget.amount / recipeTarget.amount
       );
 
-    // if we can't produce stuff lose patience
-    if (amountInProduction) this.patience = 0;
-    else ++this.patience;
-
-    // @todo better patience system so no need to recreate que
-    if (this.patience >= 100) {
-      this.patience = 0;
-      this.commodityTarget = null;
-    }
+    this.prodPatienceCheck(amountInProduction);
   }
 
-  // #endregion Private Methods (7)
+  // #endregion Private Methods (8)
 }

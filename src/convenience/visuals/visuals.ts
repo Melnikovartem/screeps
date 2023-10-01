@@ -13,12 +13,14 @@ import {
   VISUAL_COLORS,
   VISUALS_SIZE_MAP,
 } from "./visuals-constants";
+import { globalStats } from "./visuals-global";
 import {
   aidHive,
   mastersStateHive,
   resStateHive,
   statsFactory,
   statsLab,
+  statsNukes,
 } from "./visuals-hive";
 import { visualizePlanner } from "./visuals-planner";
 
@@ -50,13 +52,15 @@ const GLOBAL_VISUALS_REF = {
 
 @profile
 export class Visuals {
-  // #region Properties (8)
+  // #region Properties (10)
 
   private aidHive = aidHive;
+  private globalStats = globalStats;
   private mastersStateHive = mastersStateHive;
   private resStateHive = resStateHive;
   private statsFactory = statsFactory;
   private statsLab = statsLab;
+  private statsNukes = statsNukes;
   private visualizePlanner = visualizePlanner;
 
   /** current point for adding visuals */
@@ -72,9 +76,9 @@ export class Visuals {
     [ref: string]: VisCache | undefined;
   } = {};
 
-  // #endregion Properties (8)
+  // #endregion Properties (10)
 
-  // #region Public Methods (8)
+  // #region Public Methods (9)
 
   public objectBusy(ref: string) {
     const ex = this.caching[ref];
@@ -86,11 +90,18 @@ export class Visuals {
     return ex && ex.keepUntil >= Apiary.intTime + 1;
   }
 
+  /** reset anchor to default pos */
+  public objectDefaultPos(roomName: string) {
+    this.objectNew({ x: 1, y: 1 }, roomName);
+  }
+
   public objectMoveAnchor(
     pos: { x?: number; y?: number },
-    addYSpacing: boolean
+    addXSpacing: boolean = false,
+    addYSpacing: boolean = false
   ) {
     if (pos.x === undefined) pos.x = this.anchor.x;
+    else if (addXSpacing) pos.x = pos.x + SPACING;
     if (pos.y === undefined) pos.y = this.anchor.y + SPACING;
     else if (addYSpacing) pos.y = pos.y + SPACING;
 
@@ -105,16 +116,12 @@ export class Visuals {
    * @returns new anchor to stack visuals on
    */
   public objectNew(
-    pos?: { x?: number; y?: number },
-    ref?: string,
+    pos: { x?: number; y?: number },
+    ref: string,
     keepInMemory = 0
   ) {
     this.objectExport();
-    if (!pos) pos = {};
-
-    if (ref === undefined) this.objectMoveAnchor(pos, false);
-    else this.emptyAnchor(pos, ref, keepInMemory);
-
+    this.emptyAnchor(pos, ref, keepInMemory);
     return this.anchor;
   }
 
@@ -125,6 +132,8 @@ export class Visuals {
 
   public run() {
     if (Memory.settings.framerate < 0) return;
+
+    this.visualizePlanner();
 
     if (Apiary.intTime % Memory.settings.framerate === 0) {
       if (Apiary.useBucket) {
@@ -138,9 +147,8 @@ export class Visuals {
 
       // normal stuff
       this.objectNew({ x: 49, y: 1 }, GLOBAL_VISUALS_REF.main);
-      this.global();
+      this.globalStats();
     }
-    this.visualizePlanner();
 
     // export last uncommited objects
     this.objectExport();
@@ -175,7 +183,7 @@ export class Visuals {
       );
       const label = `⚒️ ${beeName} ${spawnReady}%`;
 
-      this.objectNew({ x, y });
+      this.objectMoveAnchor({ x, y });
       this.label(label, undefined, undefined, true, style);
     });
   }
@@ -184,9 +192,31 @@ export class Visuals {
     return _.defaults({ ...style }, DEFAULT_TEXTSTYLE);
   }
 
-  // #endregion Public Methods (8)
+  // #endregion Public Methods (9)
 
-  // #region Protected Methods (7)
+  // #region Protected Methods (9)
+
+  /** alias for default colors / boxes */
+  protected box(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fillStyle: PolyStyle | false = {},
+    strokeStyle: PolyStyle | false = {}
+  ) {
+    if (fillStyle) {
+      if (fillStyle.fill === undefined) fillStyle.fill = VISUAL_COLORS.gray;
+      if (fillStyle.opacity === undefined) fillStyle.opacity = 0.3;
+      this.rect(x, y, w, h, fillStyle);
+    }
+    if (strokeStyle) {
+      if (strokeStyle.stroke === undefined)
+        strokeStyle.stroke = VISUAL_COLORS.hiveMain;
+      if (strokeStyle.opacity === undefined) strokeStyle.opacity = 0.3;
+      this.rect(x, y, w, h, strokeStyle);
+    }
+  }
 
   protected formatNumber(num: number) {
     const prefixS = num < 0 ? "-" : "";
@@ -216,31 +246,6 @@ export class Visuals {
     }/${master.targetBeeCount}`;
   }
 
-  protected textSize(str: string): [number, number] {
-    const sizes = _.map(str, (s) => {
-      const ex = VISUALS_SIZE_MAP[s];
-      if (ex) return ex;
-      return [TEXT_WIDTH, TEXT_HEIGHT];
-    });
-
-    const width = _.sum(sizes, (s) => s[0]);
-    const height = _.max(_.map(sizes, (s) => s[1]));
-    return [width, height];
-  }
-
-  private testLabel(label: string) {
-    const [x, y] = [this.anchor.x, this.anchor.y];
-
-    const [width, height] = this.textSize(label);
-
-    this.rect(x, y, width, -height, {
-      fill: VISUAL_COLORS.hiveSupport,
-      opacity: 0.7,
-    });
-    this.anchor.vis.text(label, x, y, this.textStyle());
-    this.objectMoveAnchor({ y: y + height }, true);
-  }
-
   protected label(
     label: string,
     minSize: number = 1,
@@ -265,8 +270,10 @@ export class Visuals {
       y + height - 0.26,
       this.textStyle(style)
     );
-    this.objectMoveAnchor({ y: y + height }, true);
-    return { x: x + width, y: y + height };
+
+    const endY = y + height;
+    this.objectMoveAnchor({ y: endY }, false, true);
+    return { x: x + width, y: endY };
   }
 
   protected nukeInfo(hive: Hive) {
@@ -320,9 +327,7 @@ export class Visuals {
     // stroke
     this.box(x, y, width, height, false, undefined);
 
-    const lab = this.label(label, minSize, maxSize, false, style, anchor);
-
-    return lab;
+    return this.label(label, minSize, maxSize, false, style, anchor);
   }
 
   /** proper rectangle */
@@ -344,28 +349,6 @@ export class Visuals {
       ],
       style
     );
-  }
-
-  /** alias for default colors / boxes */
-  protected box(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    fillStyle: PolyStyle | false = {},
-    strokeStyle: PolyStyle | false = {}
-  ) {
-    if (fillStyle) {
-      if (fillStyle.fill === undefined) fillStyle.fill = VISUAL_COLORS.gray;
-      if (fillStyle.opacity === undefined) fillStyle.opacity = 0.3;
-      this.rect(x, y, w, h, fillStyle);
-    }
-    if (strokeStyle) {
-      if (strokeStyle.stroke === undefined)
-        strokeStyle.stroke = VISUAL_COLORS.hiveMain;
-      if (strokeStyle.opacity === undefined) strokeStyle.opacity = 0.3;
-      this.rect(x, y, w, h, strokeStyle);
-    }
   }
 
   /**
@@ -410,34 +393,31 @@ export class Visuals {
     const rowHeight = TEXT_HEIGHT + padBetweenCols;
     const height = rowHeight * strings.length + padBetweenCols;
 
-    let x1 = anchor.x;
-    if (align === "center") x1 = anchor.x - width / 2;
-    if (align === "right") x1 = anchor.x - width;
-    let y1 = anchor.y;
-
+    let x = anchor.x;
+    if (align === "center") x = anchor.x - width / 2;
+    if (align === "right") x = anchor.x - width;
+    const y = anchor.y;
     const headerHeight = header ? TEXT_HEIGHT + padBetweenCols * 2 : 0;
-    const y2 = y1;
 
     if (header) {
       const labelStyle = this.textStyle(textStyle);
       labelStyle.align = "center";
       anchor.vis.text(
         header,
-        x1 + width / 2,
-        y1 + headerHeight - padBetweenCols,
+        x + width / 2,
+        y + headerHeight - padBetweenCols,
         labelStyle
       );
-      this.box(x1, y1, width, headerHeight, headerStyle, false);
-      y1 += headerHeight;
+      this.box(x, y, width, headerHeight, headerStyle, false);
     }
 
-    this.box(x1, y1, width, height, tableStyle, false);
-    this.box(x1, y2, width, height + headerHeight, false, strokeStyle);
+    this.box(x, y + headerHeight, width, height, tableStyle, false);
+    this.box(x, y, width, height + headerHeight, false, strokeStyle);
 
-    let currY = y1 + rowHeight;
+    let currY = y + headerHeight + rowHeight;
 
     _.forEach(strings, (row) => {
-      let currX = x1 + padBetweenRows;
+      let currX = x + padBetweenRows;
       for (let i = 0; i < row.length; ++i) {
         anchor.vis.text(row[i], currX, currY, this.textStyle(textStyle));
         currX += widths[i] + padBetweenCols;
@@ -445,15 +425,26 @@ export class Visuals {
       currY += rowHeight;
     });
 
-    // bottom corner to snap next object
-    const endOfTable = align === "right" ? anchor.x : x1 + width;
-    this.objectMoveAnchor({ x: endOfTable, y: currY }, true);
-    return { x: endOfTable, y: currY };
+    const endY = y + headerHeight + height;
+    this.objectMoveAnchor({ y: endY }, false, true);
+    return { x: x + width, y: endY };
   }
 
-  // #endregion Protected Methods (7)
+  protected textSize(str: string): [number, number] {
+    const sizes = _.map(str, (s) => {
+      const ex = VISUALS_SIZE_MAP[s];
+      if (ex) return ex;
+      return [TEXT_WIDTH, TEXT_HEIGHT];
+    });
 
-  // #region Private Methods (9)
+    const width = _.sum(sizes, (s) => s[0]);
+    const height = _.max(_.map(sizes, (s) => s[1]));
+    return [width, height];
+  }
+
+  // #endregion Protected Methods (9)
+
+  // #region Private Methods (7)
 
   private _render() {
     const drainData = (vis: RoomVisual, ref: string) => {
@@ -516,58 +507,27 @@ export class Visuals {
     };
   }
 
-  private global() {
-    const size = 6.2;
-    const style: { align: "right" } = { align: "right" };
-
-    if (!Apiary.useBucket) this.label("LOW CPU", size, size, undefined, style);
-
-    this.progressbar(
-      Math.round(Game.cpu.getUsed() * 100) / 100 + " : CPU",
-      Game.cpu.getUsed() / Game.cpu.limit,
-      size,
-      size,
-      style
-    );
-
-    this.progressbar(
-      (Game.cpu.bucket === 10000 ? "10K" : Math.round(Game.cpu.bucket)) +
-        " : BUCKET",
-      Game.cpu.bucket / 10000,
-      size,
-      size,
-      style
-    );
-    this.progressbar(
-      Game.gcl.level + "→" + (Game.gcl.level + 1) + " : GCL",
-      Game.gcl.progress / Game.gcl.progressTotal,
-      size,
-      size,
-      style
-    );
-    const heapStat = Game.cpu.getHeapStatistics && Game.cpu.getHeapStatistics();
-    if (heapStat)
-      this.progressbar(
-        "HEAP",
-        heapStat.used_heap_size / heapStat.total_available_size,
-        size,
-        size,
-        style
-      );
-  }
-
   private hiveVisuals(roomName: string) {
+    // if want to keep visuals in annex can preLoad
+    // in fakeRef = roomName + "_" + Apiary.intTime
+    if (this.objectBusy(roomName)) return;
+
     const hive = Apiary.hives[roomName];
     if (!hive.controller) return;
 
-    const fakeRef = roomName + "_" + Apiary.intTime;
+    this.objectDefaultPos(roomName);
 
-    this.objectNew({ x: 1, y: 1 }, fakeRef);
-
-    this.statsHive(hive);
-    this.objectNew({ x: 1 });
-    this.mastersStateHive(hive);
+    const [x, y] = [this.anchor.x, this.anchor.y];
+    let xRight = x;
+    xRight = this.statsHive(hive).x;
+    this.objectMoveAnchor({ y, x: xRight }, true);
+    xRight = this.mastersStateHive(hive).x;
+    this.objectMoveAnchor({ y, x: xRight }, true);
     this.resStateHive(hive);
+
+    const endY = this.anchor.y;
+    this.objectDefaultPos(roomName);
+    this.objectMoveAnchor({ y: endY });
 
     this.aidHive(hive);
     this.statsFactory(hive);
@@ -575,20 +535,17 @@ export class Visuals {
 
     this.statsNukes(hive);
 
-    const hiveVisuals = this.anchor.vis;
-
     // copy info to annexeses
+    const hiveVisuals = this.anchor.vis;
     _.forEach(hive.annexNames, (annexName) => {
       if (Apiary.hives[annexName]) return;
       if (this.objectBusy(annexName)) return;
-      this.objectNew({}, annexName);
+      this.objectDefaultPos(annexName);
       this.anchor.vis = hiveVisuals;
     });
-    if (this.objectBusy(roomName)) return;
 
     // room specific stuff
-    this.objectNew({ x: 1, y: 1 }, roomName);
-    this.anchor.vis = hiveVisuals;
+    this.objectDefaultPos(roomName);
     this.nukeInfo(hive);
     this.spawnInfo(hive);
   }
@@ -680,27 +637,12 @@ export class Visuals {
         break;
     }
     const header = `hive ${hive.roomName} ${hiveState}`;
-    this.table([], header);
     // wall health
     // building costs
     // spawn que length
     //
+    return this.table([], header);
   }
 
-  private statsNukes(hive: Hive) {
-    const size = 10;
-    _.forEach(hive.cells.defense.nukes, (nuke) => {
-      const percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
-      this.progressbar(
-        `☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${
-          Math.round(percent * 1000) / 10
-        }%`,
-        percent,
-        size,
-        size
-      );
-    });
-  }
-
-  // #endregion Private Methods (9)
+  // #endregion Private Methods (7)
 }

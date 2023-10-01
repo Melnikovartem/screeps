@@ -14,7 +14,31 @@ export function visualizePlanner(this: Visuals) {
   // add structures
   const ap = ch.active;
 
-  this.objectNew({}, hiveName);
+  for (const roomName in ap.rooms) {
+    if (this.objectBusy(roomName)) continue;
+    const plan = ap.rooms[roomName].compressed;
+    this.objectDefaultPos(roomName);
+
+    const vis = this.anchor.vis;
+    const hive = Apiary.hives[roomName];
+    if (hive) {
+      this.nukeInfo(hive);
+      _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) =>
+        vis.structure(p.pos.x, p.pos.y, STRUCTURE_RAMPART)
+      );
+    }
+
+    for (const sType in plan) {
+      const structureType = sType as BuildableStructureConstant;
+      for (const value of plan[structureType]!.que) {
+        if (value !== PLANNER_STAMP_STOP)
+          vis.structure(value[0], value[1], structureType);
+      }
+    }
+    vis.connectRoads();
+  }
+
+  this.objectDefaultPos(hiveName);
   for (const pos of ch.positions)
     this.anchor.vis.circle(pos.x, pos.y, {
       fill: "#FFC82A",
@@ -22,35 +46,6 @@ export function visualizePlanner(this: Visuals) {
       stroke: "#FFA600",
       strokeWidth: 1,
     });
-
-  this.table(
-    [["                  ", "current", "best", "      "]].concat(
-      _.map(
-        ch.active.metrics as unknown as { [ref: string]: number },
-        (value, ref) =>
-          [
-            ref || "NaN",
-            "" + value,
-            ch.best.metrics[ref as "ramps"] || "NaN",
-          ] as string[]
-      )
-    )
-  );
-
-  // table: number of sources/minerals by roomName
-  const roomResources = _.map(
-    _.unique(
-      _.map(ch.sources, (p) => p.roomName).concat(
-        _.map(ch.minerals, (p) => p.roomName)
-      )
-    ),
-    (roomName) => [
-      roomName,
-      "" + ch.sources.filter((p) => p.roomName === roomName).length,
-      "" + ch.minerals.filter((p) => p.roomName === roomName).length,
-    ]
-  );
-  this.table([["name  ", "sources", "minerals"]].concat(roomResources));
 
   // add info about cells
   for (const [cellRef, value] of Object.entries(ap.posCell)) {
@@ -120,27 +115,32 @@ export function visualizePlanner(this: Visuals) {
     );
   }
 
-  for (const roomName in ap.rooms) {
-    if (this.objectBusy(roomName)) continue;
-    const plan = ap.rooms[roomName].compressed;
-    this.objectNew({}, roomName);
+  this.table(
+    [["", "current", "best"]].concat(
+      _.map(
+        ch.active.metrics as unknown as { [ref: string]: number },
+        (value, ref) =>
+          [
+            ref || "NaN",
+            "" + value,
+            ch.best.metrics[ref as "ramps"] || "NaN",
+          ] as string[]
+      )
+    )
+  );
 
-    const vis = this.anchor.vis;
-    const hive = Apiary.hives[roomName];
-    if (hive) {
-      this.nukeInfo(hive);
-      _.forEach(hive.cells.defense.getNukeDefMap()[0], (p) =>
-        vis.structure(p.pos.x, p.pos.y, STRUCTURE_RAMPART)
-      );
-    }
-
-    for (const sType in plan) {
-      const structureType = sType as BuildableStructureConstant;
-      for (const value of plan[structureType]!.que) {
-        if (value !== PLANNER_STAMP_STOP)
-          vis.structure(value[0], value[1], structureType);
-      }
-    }
-    vis.connectRoads();
-  }
+  // table: number of sources/minerals by roomName
+  const roomResources = _.map(
+    _.unique(
+      _.map(ch.sources, (p) => p.roomName).concat(
+        _.map(ch.minerals, (p) => p.roomName)
+      )
+    ),
+    (roomName) => [
+      roomName,
+      "" + ch.sources.filter((p) => p.roomName === roomName).length,
+      "" + ch.minerals.filter((p) => p.roomName === roomName).length,
+    ]
+  );
+  this.table([["name", "sources", "minerals"]].concat(roomResources));
 }

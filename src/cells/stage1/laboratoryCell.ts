@@ -5,7 +5,7 @@ import type { ApiaryReturnCode } from "static/constants";
 import { ERR_COOLDOWN, ERR_INVALID_ACTION } from "static/constants";
 import { hiveStates, prefix } from "static/enums";
 
-import { Cell } from "../_Cell";
+import { CellWithTarget, PRODUCTION_COOLDOWNS } from "./cellWithTarget";
 
 export type ReactionConstant =
   | "G"
@@ -80,6 +80,8 @@ export const BOOST_PARTS: { [key in BoostType]: BodyPartConstant } = {
   fatigue: MOVE,
   damage: TOUGH,
 };
+
+const MIN_LAB_PROD_AMOUNT = 15;
 
 // in comments + x_000 are from HIVE_MINERAL in hive.resTarget
 export const USEFUL_MINERAL_STOCKPILE: { [key in ReactionConstant]?: number } =
@@ -170,18 +172,13 @@ type LabState =
   | "unboosted"
   | ReactionConstant;
 
-const COOLDOWN_TARGET_LAB = 1000;
-
 @profile
-export class LaboratoryCell extends Cell {
-  // #region Properties (15)
+export class LaboratoryCell extends CellWithTarget {
+  // #region Properties (8)
 
-  private patience: number = 0;
-  private patienceProd: number = 0;
   private positions: RoomPosition[] = [];
   private prodCooldown = 0;
   /** if nothing to create we take a break for COOLDOWN_TARGET_LAB ticks */
-  private targetCooldown = Game.time;
   private usedBoost: string[] = [];
 
   public laboratories: { [id: string]: StructureLab } = {};
@@ -189,11 +186,11 @@ export class LaboratoryCell extends Cell {
     x: 25,
     y: 25,
   };
-  public prod?: SynthesizeRequest & { lab1: string; lab2: string };
+  public prod: (SynthesizeRequest & { lab1: string; lab2: string }) | undefined;
+  public prodWithoutLabs: SynthesizeRequest | undefined;
   public resTarget: { [key in ResourceConstant]?: number } = {};
-  public synthesizeRes: SynthesizeRequest | undefined;
 
-  // #endregion Properties (15)
+  // #endregion Properties (8)
 
   // #region Constructors (1)
 
@@ -203,7 +200,7 @@ export class LaboratoryCell extends Cell {
 
   // #endregion Constructors (1)
 
-  // #region Public Accessors (10)
+  // #region Public Accessors (6)
 
   public get boostLabs(): { [key in ResourceConstant]?: string } {
     const cached = this.cache("boostLabs");
@@ -229,18 +226,6 @@ export class LaboratoryCell extends Cell {
     return new RoomPosition(this.poss.x, this.poss.y, this.hiveName);
   }
 
-  public get prodSetup(): [number, StructureLab, StructureLab] | undefined {
-    if (!this.prod || this.prod.plan <= 0) return undefined;
-    const lab1 = this.laboratories[this.prod.lab1];
-    const lab2 = this.laboratories[this.prod.lab2];
-    const amount = Math.min(
-      lab1.store[this.prod.res1],
-      lab2.store[this.prod.res2]
-    );
-    if (amount < 15) return undefined;
-    return [amount, lab1, lab2];
-  }
-
   public get synthesizeTarget(): {
     res: ReactionConstant;
     amount: number;
@@ -252,7 +237,23 @@ export class LaboratoryCell extends Cell {
     this.cache("synthesizeTarget", value);
   }
 
-  // #endregion Public Accessors (10)
+  // #endregion Public Accessors (6)
+
+  // #region Protected Accessors (3)
+
+  protected get cooldownProd() {
+    return PRODUCTION_COOLDOWNS.prod.lab;
+  }
+
+  protected get cooldownTarget() {
+    return PRODUCTION_COOLDOWNS.target.lab;
+  }
+
+  protected get shouldProduce() {
+    return !!this.hive.mode.lab;
+  }
+
+  // #endregion Protected Accessors (3)
 
   // #region Public Methods (6)
 
@@ -401,20 +402,10 @@ export class LaboratoryCell extends Cell {
     boostedSameType?: number
   ): BoostInfo | void {
     const res = BOOST_MINERAL[r.type][r.lvl];
-    let sum: number = this.hive.getUsedCapacity(res);
-    // kindawhy bother with checking if compund is in prod but ok
-    if (bee && this.prod && res === this.prod.res) {
-      sum = this.hive.storage?.store.getUsedCapacity(res) || 0;
-      const inBees = _.sum(this.sCell.master.activeBees, (b) =>
-        b.store.getUsedCapacity(res)
-      );
-      if (inBees) sum += inBees;
-      const boostLab = this.boostLabs[res];
-      if (boostLab)
-        sum += this.laboratories[boostLab].store.getUsedCapacity(res);
-    }
+    const amountInHive: number = this.hive.getUsedCapacity(res);
     let amount = r.amount || Infinity;
-    amount = Math.min(amount, Math.floor(sum / LAB_BOOST_MINERAL));
+
+    amount = Math.min(amount, Math.floor(amountInHive / LAB_BOOST_MINERAL));
     if (bee) {
       if (!boostedSameType) boostedSameType = 0;
       amount =
@@ -429,35 +420,47 @@ export class LaboratoryCell extends Cell {
 
   public run() {
     --this.prodCooldown;
-    const prodSetup = this.prodSetup;
-    if (!prodSetup || this.prodCooldown > 0 || !this.prod) return;
-    const [amount, lab1, lab2] = prodSetup;
+    if (this.prodCooldown > 0) return;
+    if (!this.prod || this.prod.plan <= 0) return;
 
+    const lab1 = this.laboratories[this.prod.lab1];
+    const lab2 = this.laboratories[this.prod.lab2];
+    const amount = Math.min(
+      lab1.store[this.prod.res1],
+      lab2.store[this.prod.res2]
+    );
+    if (amount < MIN_LAB_PROD_AMOUNT) return;
+
+    const resource = this.prod.res;
     const labs = _.filter(
       this.laboratories,
       (lab) =>
-        lab.store.getFreeCapacity(this.prod!.res) >= 5 &&
+        lab.store.getFreeCapacity(resource) >= 5 &&
         !lab.cooldown &&
         (this.labStates[lab.id] === "production" ||
-          this.labStates[lab.id] === this.prod!.res)
+          this.labStates[lab.id] === resource)
     );
+    if (!labs.length) {
+      this.prodWaitingToStart();
+      return;
+    }
     let cc = 0;
     for (let k = 0; k < labs.length && amount >= cc; ++k) {
       const lab = labs[k];
       const ans = lab.runReaction(lab1, lab2);
-      if (ans === OK) {
-        let produced = 5;
-        const powerup =
-          lab.effects &&
-          (lab.effects.filter(
-            (p) => p.effect === PWR_OPERATE_LAB
-          )[0] as PowerEffect);
-        if (powerup) produced += powerup.level * 2;
-        cc += produced;
-      }
+      if (ans !== OK) continue;
+
+      let produced = 5;
+      const powerup =
+        lab.effects &&
+        (lab.effects.filter(
+          (p) => p.effect === PWR_OPERATE_LAB
+        )[0] as PowerEffect);
+      if (powerup) produced += powerup.level * 2;
+      cc += produced;
     }
     if (cc) this.prodCooldown = this.prod.cooldown;
-    if (this.synthesizeTarget && this.prod.res === this.synthesizeTarget.res)
+    if (this.synthesizeTarget && resource === this.synthesizeTarget.res)
       this.synthesizeTarget.amount -= cc;
     this.prod.plan -= cc;
 
@@ -474,18 +477,6 @@ export class LaboratoryCell extends Cell {
       -cc,
       this.prod.res2
     );
-
-    if (
-      !labs.length &&
-      !_.filter(
-        this.laboratories,
-        (l) =>
-          l.id !== lab1.id &&
-          l.id !== lab2.id &&
-          l.cooldown <= this.prod!.cooldown * 2
-      ).length
-    )
-      this.prod = undefined;
   }
 
   /** move bee to lab and unboost it
@@ -583,18 +574,15 @@ export class LaboratoryCell extends Cell {
       }
     }
 
-    const needNewTarget =
+    const needNewProd =
       !this.prod && // we have no prod FIND new one
       Object.keys(this.laboratories).length > 3 && // no need to find prod if no labs
       _.filter(this.laboratories, (l) => !l.cooldown).length > 1 && // no need to target prod if all labs busy
-      this.newProd() === ERR_NOT_FOUND; // getting new prod // if no prod then target
+      this.prodFindLabs() === ERR_NOT_FOUND; // getting new prod // if no prod then target
 
-    if (needNewTarget) {
+    if (needNewProd) {
       this.stepToTarget();
-      // chill if nothing to produce
-      if (this.newProd() === ERR_NOT_FOUND && Game.time >= this.targetCooldown)
-        // no target found so wait COOLDOWN_TIME_LAB ticks
-        this.targetCooldown = Game.time + COOLDOWN_TARGET_LAB;
+      this.prodFindLabs();
     }
 
     if (this.prod) {
@@ -603,16 +591,7 @@ export class LaboratoryCell extends Cell {
         this.hive.getUsedCapacity(this.prod.res1),
         this.hive.getUsedCapacity(this.prod.res2)
       );
-      if (fact < this.prod.plan) {
-        if (this.patienceProd <= 10) ++this.patienceProd;
-        else {
-          this.prod.plan = fact;
-          this.patienceProd = 0;
-        }
-      }
-      if (this.synthesizeTarget && this.synthesizeTarget.amount < 15)
-        this.synthesizeTarget = null;
-      if (this.prod.plan < 15 || !this.synthesizeTarget) this.prod = undefined;
+      this.CanProduceNow(fact, MIN_LAB_PROD_AMOUNT);
     }
 
     for (const ref in this.boostRequests)
@@ -622,7 +601,22 @@ export class LaboratoryCell extends Cell {
 
   // #endregion Public Methods (6)
 
-  // #region Private Methods (6)
+  // #region Protected Methods (1)
+
+  public invalidateTarget() {
+    this.prod = undefined;
+    this.prodWithoutLabs = undefined;
+    this.synthesizeTarget = null;
+    this.emptyResTarget();
+  }
+
+  // #endregion Protected Methods (1)
+
+  // #region Private Methods (7)
+
+  private emptyResTarget() {
+    this.resTarget = {};
+  }
 
   private getCreateQue(
     res: ReactionConstant,
@@ -665,11 +659,10 @@ export class LaboratoryCell extends Cell {
     return [createQue, ingredients];
   }
 
-  private getNewTarget(ignorePrevTarget: boolean): ApiaryReturnCode {
-    if (this.synthesizeTarget && !ignorePrevTarget) return OK;
-    if (Game.time < this.targetCooldown) return ERR_COOLDOWN;
-    const mode = this.hive.mode.lab;
-    if (!mode) return ERR_INVALID_ACTION;
+  private getNewTarget() {
+    if (this.synthesizeTarget) return OK;
+    if (!this.shouldFindTarget) return ERR_COOLDOWN;
+
     let targets: { res: ReactionConstant; amount: number }[] = [];
     for (const r in this.hive.resState) {
       const res = r as ReactionConstant;
@@ -685,7 +678,10 @@ export class LaboratoryCell extends Cell {
 
     // if nothing to create use mode to choose next target
     if (!targets.length) {
-      if (mode === 1) return ERR_NOT_FOUND;
+      if (this.hive.mode.lab === 1) {
+        this.notFoundTarget();
+        return ERR_NOT_FOUND;
+      }
       // not ever gonna try to create mid ones (not profitable)
       let usefulR: ReactionConstant[] = [];
 
@@ -702,7 +698,10 @@ export class LaboratoryCell extends Cell {
             PROFITABLE_MINERAL_STOCKPILE + (USEFUL_MINERAL_STOCKPILE[c] || 0) >
             this.hive.getResState(c)
         );
-      if (!usefulR.length) return ERR_NOT_FOUND;
+      if (!usefulR.length) {
+        this.notFoundTarget();
+        return ERR_NOT_FOUND;
+      }
       // @todo check if can produce without market?
       targets = [
         {
@@ -717,7 +716,6 @@ export class LaboratoryCell extends Cell {
       // targets = [{ res: usefulM[Math.floor(Math.random() * usefulM.length)], amount: 2048 }];
     }
 
-    this.patience = 0;
     targets.sort((a, b) => b.amount - a.amount);
     this.synthesizeTarget = targets[0];
     // produce form 1/3 lab to 2 full labs of mineral (6_000 to 1_000)
@@ -725,15 +723,35 @@ export class LaboratoryCell extends Cell {
       Math.min(this.synthesizeTarget.amount, LAB_MINERAL_CAPACITY * 2),
       LAB_MINERAL_CAPACITY / 3
     );
+    this.foundTarget();
     return OK;
   }
 
-  /** new production towards the final target */
-  private newProd(): ERR_NOT_FOUND | OK {
-    if (!this.synthesizeRes) return ERR_NOT_FOUND;
+  private newSynthesize(
+    resource: ReactionConstant,
+    amount: number = Infinity
+  ): number {
+    if (!(resource in REACTION_TIME)) return 0;
+    const res1Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res1);
+    const res2Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res2);
+    amount = Math.min(amount, res1Amount, res2Amount);
+    if (amount > 0)
+      this.prodWithoutLabs = {
+        plan: amount,
+        res: resource,
+        res1: REACTION_MAP[resource]!.res1,
+        res2: REACTION_MAP[resource]!.res2,
+        cooldown: REACTION_TIME[resource],
+      };
+    return amount;
+  }
 
-    const res1 = this.synthesizeRes.res1;
-    const res2 = this.synthesizeRes.res2;
+  /** new production towards the final target */
+  private prodFindLabs(): ERR_NOT_FOUND | OK {
+    if (!this.prodWithoutLabs) return ERR_NOT_FOUND;
+
+    const res1 = this.prodWithoutLabs.res1;
+    const res2 = this.prodWithoutLabs.res2;
 
     const prodAmount: { [id: string]: number } = {};
     for (const id in this.laboratories)
@@ -752,8 +770,8 @@ export class LaboratoryCell extends Cell {
           prev.store.getUsedCapacity(res) - curr.store.getUsedCapacity(res);
       if (cond === 0)
         cond =
-          curr.pos.getTimeForPath(this.sCell) -
-          prev.pos.getTimeForPath(this.sCell);
+          curr.pos.getRangeApprox(this.sCell) -
+          prev.pos.getRangeApprox(this.sCell);
       return cond < 0 ? curr : prev;
     };
 
@@ -765,50 +783,33 @@ export class LaboratoryCell extends Cell {
       lab2 = _.filter(this.laboratories, (l) => l.id !== lab1.id).reduce(
         (prev, curr) => comp(prev, curr, res2)
       );
-    if (
-      lab1 &&
-      lab2 &&
-      _.filter(
-        this.laboratories,
-        (l) =>
-          l.id !== lab1.id &&
-          l.id !== lab2!.id &&
-          l.cooldown <= this.synthesizeRes!.cooldown
-      ).length
-    ) {
-      this.prod = { ...this.synthesizeRes, lab1: lab1.id, lab2: lab2.id };
-      this.prodCooldown = 0;
-      this.labStates[lab1.id] = "source";
-      this.updateLabState(lab1, 1);
-      this.labStates[lab2.id] = "source";
-      this.updateLabState(lab2, 1);
-      this.synthesizeRes = undefined;
+    const cooldown = this.prodWithoutLabs.cooldown;
+    if (!lab1 || !lab2) {
+      this.prodWaitingToStart();
+      return OK;
     }
+    const anyLab = _.filter(
+      this.laboratories,
+      (l) => l.id !== lab1.id && l.id !== lab2!.id && l.cooldown <= cooldown
+    ).length;
+    if (!anyLab) {
+      this.prodWaitingToStart();
+      return OK;
+    }
+
+    this.prod = { ...this.prodWithoutLabs, lab1: lab1.id, lab2: lab2.id };
+    this.prodCooldown = 0;
+    this.labStates[lab1.id] = "source";
+    this.updateLabState(lab1, 1);
+    this.labStates[lab2.id] = "source";
+    this.updateLabState(lab2, 1);
+    this.prodWithoutLabs = undefined;
     return OK;
   }
 
-  private newSynthesize(
-    resource: ReactionConstant,
-    amount: number = Infinity
-  ): number {
-    if (!(resource in REACTION_TIME)) return 0;
-    const res1Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res1);
-    const res2Amount = this.hive.getUsedCapacity(REACTION_MAP[resource]!.res2);
-    amount = Math.min(amount, res1Amount, res2Amount);
-    if (amount > 0)
-      this.synthesizeRes = {
-        plan: amount,
-        res: resource,
-        res1: REACTION_MAP[resource]!.res1,
-        res2: REACTION_MAP[resource]!.res2,
-        cooldown: REACTION_TIME[resource],
-      };
-    return amount;
-  }
-
   private stepToTarget() {
-    this.resTarget = {};
-    if (this.getNewTarget(false) !== OK || !this.synthesizeTarget) return;
+    this.emptyResTarget();
+    if (this.getNewTarget() !== OK || !this.synthesizeTarget) return;
 
     const [createQue, ingredients] = this.getCreateQue(
       this.synthesizeTarget.res,
@@ -830,13 +831,7 @@ export class LaboratoryCell extends Cell {
         ),
         this.synthesizeTarget.amount
       );
-    if (amount) this.patience = 0;
-    else ++this.patience;
-
-    if (this.patience >= 100) {
-      this.patience = 0;
-      this.synthesizeTarget = null;
-    }
+    this.prodPatienceCheck(amount);
   }
 
   private updateLabState(l: StructureLab, rec = 0) {
@@ -964,5 +959,5 @@ export class LaboratoryCell extends Cell {
     }
   }
 
-  // #endregion Private Methods (6)
+  // #endregion Private Methods (7)
 }

@@ -138,21 +138,19 @@ CustomConsole.prototype.produce = function (
   this.lastActionRoomName = hive.roomName;
   if (REACTION_MAP[resource as ReactionConstant]) {
     if (!hive.cells.lab) return `ERROR: LAB NOT FOUND @ ${hive.print}`;
+    hive.cells.lab.invalidateTarget();
     hive.cells.lab.synthesizeTarget = {
       res: resource as ReactionConstant,
       amount,
     };
-    hive.cells.lab.prod = undefined;
-    hive.cells.lab.synthesizeRes = undefined;
     return `OK LAB @ ${hive.print}: ${resource} ${amount}`;
   } else if (COMMODITIES[resource as CommodityConstant]) {
     if (!hive.cells.factory) return `ERROR: FACTORY NOT FOUND @ ${hive.print}`;
+    hive.cells.factory.invalidateTarget();
     hive.cells.factory.commodityTarget = {
       res: resource as CommodityConstant,
       amount,
     };
-    hive.cells.factory.prod = undefined;
-    hive.cells.factory.commodityRes = undefined;
     return `OK FACTORY @ ${hive.print}: ${resource} ${amount}`;
   }
   return `ERROR: NOT A VALID COMPOUND ${resource}`;

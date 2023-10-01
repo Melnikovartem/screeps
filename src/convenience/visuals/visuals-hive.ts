@@ -1,7 +1,6 @@
 import type { Hive } from "hive/hive";
 
 import type { Visuals } from "./visuals";
-import { SPACING } from "./visuals-constants";
 
 export function mastersStateHive(this: Visuals, hive: Hive) {
   const ans: string[][] = [["", "⏳", "🐝"]];
@@ -147,8 +146,9 @@ export function mastersStateHive(this: Visuals, hive: Hive) {
       this.getBeesAmount(hive.cells.defense.master),
     ]);
 
-  this.table(ans);
+  return this.table(ans);
 }
+
 export function resStateHive(this: Visuals, hive: Hive) {
   const negative: string[][] = [["💱", "📉"]];
 
@@ -160,12 +160,9 @@ export function resStateHive(this: Visuals, hive: Hive) {
       negative.push([res, str]);
     }
   }
-  const [x, y] = [this.anchor.x, this.anchor.y];
-  if (negative.length > 2) {
-    this.objectNew({ x: x + SPACING, y: 1 });
-    this.table(negative, "deficiency");
-  }
-  this.objectNew({ x: 1, y: Math.max(y, this.anchor.y) + SPACING });
+
+  if (negative.length <= 2) return;
+  return this.table(negative, "deficiency");
 }
 
 export function aidHive(this: Visuals, hive: Hive) {
@@ -173,32 +170,46 @@ export function aidHive(this: Visuals, hive: Hive) {
   if (aid) this.label(`💸 ${aid.to} -> ${aid.res} ${aid.amount}`);
 }
 
+export function statsNukes(this: Visuals, hive: Hive) {
+  const size = 10;
+  _.forEach(hive.cells.defense.nukes, (nuke) => {
+    const percent = 1 - nuke.timeToLand / NUKE_LAND_TIME;
+    this.progressbar(
+      `☢ ${nuke.launchRoomName} ${nuke.timeToLand} : ${
+        Math.round(percent * 1000) / 10
+      }%`,
+      percent,
+      size
+    );
+  });
+}
+
 export function statsFactory(this: Visuals, hive: Hive) {
   if (!hive.cells.factory) return;
   const fac = hive.cells.factory;
-  if (!fac.commodityTarget) return;
-
+  const symbol = "🏭";
+  if (!fac.commodityTarget) {
+    const porgress = fac.progressToNewTarget;
+    if (porgress === -1) return;
+    return this.progressbar(`${symbol} 🔍 looking for taret...`, porgress);
+  }
   const process = (ss: string) => {
     const splt = ss.split("_");
     if (splt.length > 1) splt[0] = splt[0].slice(0, 6);
     return splt.join(" ").slice(0, 15);
   };
-  const prod = fac.prod ? process(fac.prod.res) + " " + fac.prod.plan : "??";
-  const target =
-    process(fac.commodityTarget.res) + " " + fac.commodityTarget.amount;
-  this.label(`🏭 ${prod} -> ${target}`);
+
+  const prodInfo = `${symbol} ${process(fac.commodityTarget.res)} ${
+    fac.commodityTarget.amount
+  } -> `;
+  if (!fac.prod)
+    return this.progressbar(`${prodInfo}🔍 prod`, fac.progressToProd);
+  return this.label(`${prodInfo}${process(fac.prod.res)} ${fac.prod.plan}`);
 }
 
 export function statsLab(this: Visuals, hive: Hive) {
   if (!hive.cells.lab) return;
   const lab = hive.cells.lab;
-
-  if (lab.synthesizeTarget)
-    this.label(
-      `🧪 ${lab.prod ? lab.prod.res + " " + lab.prod.plan : "??"} -> ${
-        lab.synthesizeTarget.res
-      } ${lab.synthesizeTarget.amount}`
-    );
 
   if (Object.keys(hive.cells.lab.boostRequests).length) {
     const ans = [["🐝", "", "🧬", " 🧪", "🥼"]];
@@ -221,4 +232,23 @@ export function statsLab(this: Visuals, hive: Hive) {
 
     this.table(ans);
   }
+
+  const symbol = "🧪";
+  if (!lab.synthesizeTarget) {
+    const porgress = lab.progressToNewTarget;
+    if (porgress === -1) return;
+    return this.progressbar(`${symbol} 🔍 looking for taret...`, porgress);
+  }
+
+  const prodInfo = `${symbol} ${lab.synthesizeTarget.res} ${lab.synthesizeTarget.amount} -> `;
+  if (!lab.prod) {
+    if (!lab.prodWithoutLabs)
+      return this.progressbar(`${prodInfo}🔍 prod`, lab.progressToProd);
+    const lookingForLabs = `${prodInfo}${lab.prodWithoutLabs.res} ${lab.prodWithoutLabs.plan} -> `;
+    return this.progressbar(
+      `${prodInfo}${lookingForLabs}🔍 labs`,
+      lab.progressToProd
+    );
+  }
+  return this.label(`${prodInfo}${lab.prod.res} ${lab.prod.plan}`);
 }
